@@ -1,0 +1,29 @@
+<!DOCTYPE RCC><RCC version="1.0">
+    <qresource>
+        <file>resources/images/about/rmontella_64x64.png</file>
+        <file>resources/images/about/gmellone_64x64.png</file>
+        <file>resources/images/about/cgdevita_64x64.png</file>
+        <file>resources/images/about/mdicapua_64x64.png</file>
+        <file>resources/images/about/nmarinello_64x64.png</file>
+        <file>resources/images/about/ddiluccio_64x64.png</file>
+        <file>resources/images/about/aciaramella_64x64.png</file>
+        <file>resources/images/about/fizzo_64x64.png</file>
+
+
+        <file>resources/images/other/carbon_base.png</file>
+        <file>resources/images/other/splash_logo.png</file>
+
+        <file>resources/images/icons/imagebutton_mydata.png</file>
+        <file>resources/images/icons/imagebutton_mob.png</file>
+        <file>resources/images/icons/imagebutton_apps.png</file>
+        <file>resources/images/icons/imagebutton_alarms.png</file>
+        <file>resources/images/icons/imagebutton_settings.png</file>
+
+        <file>resources/images/icons/fairwind_icon.png</file>
+        <file>resources/images/icons/apps_icon.png</file>
+
+
+	
+
+    </qresource>
+</RCC>
