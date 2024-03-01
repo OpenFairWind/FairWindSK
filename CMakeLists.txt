@@ -41,6 +41,10 @@ add_executable(${PROJECT_NAME}
         ui/about/About.cpp ui/about/About.hpp ui/about/About.ui
         ui/topbar/TopBar.cpp ui/topbar/TopBar.hpp ui/topbar/TopBar.ui
         ui/bottombar/BottomBar.cpp ui/bottombar/BottomBar.hpp ui/bottombar/BottomBar.ui
+        ui/web/Web.cpp ui/web/Web.hpp ui/web/Web.ui
+        ui/web/WebView.cpp ui/web/WebView.hpp
+        ui/web/WebPage.cpp ui/web/WebPage.hpp
+        ui/web/WebPopupWindow.cpp ui/web/WebPopupWindow.hpp
 
         resources.qrc
 
