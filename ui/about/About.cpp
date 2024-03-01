@@ -4,10 +4,10 @@
 
 // You may need to build the project (run Qt uic code generator) to get "ui_Colophon.h" resolved
 
-#include <ui/MainWindow.hpp>
+
 #include <QDialogButtonBox>
 #include "About.hpp"
-#include "ui_About.h"
+#include <ui/MainWindow.hpp>
 
 namespace fairwindsk::ui::about {
     About::About(QWidget *parent,  QWidget *currenWidget) :

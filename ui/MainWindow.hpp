@@ -2,33 +2,40 @@
 // Created by Raffaele Montella on 21/03/21.
 //
 
-#ifndef FAIRWINDSK_MAINWINDOW_HPP
-#define FAIRWINDSK_MAINWINDOW_HPP
+#ifndef MAINWINDOW_HPP
+#define MAINWINDOW_HPP
 
 #include <QMainWindow>
 #include <QMap>
 #include <QDebug>
 
+#include <FairWindSK.hpp>
+#include "ui_MainWindow.h"
+
 #include <ui/topbar/TopBar.hpp>
+#include <ui/Launcher.hpp>
 #include <ui/bottombar/BottomBar.hpp>
 #include <ui/about/About.hpp>
 
+class TopBar;
+class Launcher;
 class BottomBar;
 
-class TopBar;
-
-namespace Ui {
-    class MainWindow;
-}
+namespace Ui { class MainWindow; }
 
 namespace fairwindsk::ui {
+
+
+
+
+
     class MainWindow : public QMainWindow {
         Q_OBJECT
 
     public:
-        explicit MainWindow(QWidget *parent = 0);
+        explicit MainWindow(QWidget *parent = nullptr);
 
-        ~MainWindow();
+        ~MainWindow() override;
 
         Ui::MainWindow *getUi();
 
@@ -57,6 +64,10 @@ namespace fairwindsk::ui {
 
         // QWidget containing useful infos
         topbar::TopBar *m_topBar = nullptr;
+
+        // QWidget containing the launcher
+        Launcher *m_launcher = nullptr;
+
         // QWidget containing navigation buttons
         bottombar::BottomBar *m_bottonBar = nullptr;
 
@@ -67,4 +78,4 @@ namespace fairwindsk::ui {
     };
 }
 
-#endif //FAIRWINDS_MAINWINDOW_HPP
+#endif //MAINWINDOW_HPP

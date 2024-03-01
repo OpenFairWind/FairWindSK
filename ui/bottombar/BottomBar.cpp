@@ -2,8 +2,8 @@
 // Created by Raffaele Montella on 12/04/21.
 //
 
-#include <ui_BottomBar.h>
-#include <FairWindSK.hpp>
+
+
 #include <QGeoLocation>
 #include <QGeoCoordinate>
 #include <QToolButton>

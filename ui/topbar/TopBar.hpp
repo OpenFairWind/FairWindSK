@@ -2,23 +2,25 @@
 // Created by Raffaele Montella on 12/04/21.
 //
 
-#ifndef FAIRWINDSK_TOPBAR_HPP
-#define FAIRWINDSK_TOPBAR_HPP
+#ifndef TOPBAR_HPP
+#define TOPBAR_HPP
 
 #include <QWidget>
-#include <FairWindSK.hpp>
 
-namespace Ui {
-    class TopBar;
-}
+#include <FairWindSK.hpp>
+#include "ui_TopBar.h"
+
+namespace Ui { class TopBar; }
 
 namespace fairwindsk::ui::topbar {
+
+
     class TopBar : public QWidget {
     Q_OBJECT
     public:
-        explicit TopBar(QWidget *parent = 0);
+        explicit TopBar(QWidget *parent = nullptr);
 
-        ~TopBar();
+        ~TopBar() override;
 
 
 
@@ -44,4 +46,4 @@ namespace fairwindsk::ui::topbar {
     };
 }
 
-#endif //FAIRWIND_TOPBAR_HPP
+#endif //TOPBAR_HPP

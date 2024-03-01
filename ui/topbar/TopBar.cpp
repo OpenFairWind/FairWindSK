@@ -8,11 +8,13 @@
 #include <QAbstractButton>
 #include <QGeoCoordinate>
 #include <QJsonObject>
+#include <QToolButton>
 
-#include "../../FairWindSK.hpp"
+
+
 
 #include "TopBar.hpp"
-#include "ui_TopBar.h"
+
 
 namespace fairwindsk::ui::topbar {
 /*
@@ -38,7 +40,7 @@ namespace fairwindsk::ui::topbar {
         connect(ui->toolButton_UR, &QToolButton::released, this, &TopBar::toolbuttonUR_clicked);
 
         // Create a new timer which will contain the current time
-        QTimer *timer = new QTimer(this);
+        auto *timer = new QTimer(this);
 
         // When the timer stops, update the time
         connect(timer, &QTimer::timeout, this, &TopBar::updateTime);

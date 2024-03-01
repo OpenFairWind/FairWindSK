@@ -7,13 +7,14 @@
 
 #include <QWidget>
 #include <QToolButton>
-#include "ui_Launcher.h"
+
 #include <FairWindSK.hpp>
+#include "ui_Launcher.h"
+
+namespace Ui { class Launcher; }
 
 namespace fairwindsk::ui {
-    QT_BEGIN_NAMESPACE
-    namespace Ui { class Launcher; }
-    QT_END_NAMESPACE
+
 
     class Launcher : public QWidget {
     Q_OBJECT

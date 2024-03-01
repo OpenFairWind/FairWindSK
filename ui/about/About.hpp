@@ -7,10 +7,15 @@
 
 #include <QWidget>
 
+#include <FairWindSK.hpp>
+#include "ui_About.h"
+
+namespace Ui { class About; }
+
 namespace fairwindsk::ui::about {
-    QT_BEGIN_NAMESPACE
-    namespace Ui { class About; }
-    QT_END_NAMESPACE
+
+
+
 
     class About : public QWidget {
     Q_OBJECT
@@ -32,6 +37,6 @@ namespace fairwindsk::ui::about {
         Ui::About *ui;
         QWidget *m_currentWidget;
     };
-} // fairwind::ui::about
+} // fairwindsk::ui::about
 
 #endif //FAIRWINDSK_ABOUT_HPP

@@ -13,6 +13,12 @@
         <file>resources/images/other/carbon_base.png</file>
         <file>resources/images/other/splash_logo.png</file>
 
+        <file>resources/images/icons/toolbutton_cancel.png</file>
+        <file>resources/images/icons/toolbutton_save.png</file>
+        <file>resources/images/icons/toolbutton_remove.png</file>
+        <file>resources/images/icons/toolbutton_left.png</file>
+        <file>resources/images/icons/toolbutton_right.png</file>
+
         <file>resources/images/icons/imagebutton_mydata.png</file>
         <file>resources/images/icons/imagebutton_mob.png</file>
         <file>resources/images/icons/imagebutton_apps.png</file>

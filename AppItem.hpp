@@ -5,18 +5,19 @@
 #ifndef APPITEM_HPP
 #define APPITEM_HPP
 
-#include <QMap>
 
-#include "FairWindSK.hpp"
+#include <QMap>
+#include <QJsonObject>
+#include <QImage>
 
 
 namespace fairwindsk {
-    class FAIRWINDSK_LIB_DECL AppItem: QObject {
+    class AppItem: QObject {
     Q_OBJECT
     public:
     AppItem();
 
-    AppItem(QJsonObject appJson, bool active=false, int order=1);
+    AppItem(QJsonObject *appJson, bool active=false, int order=1);
 
     AppItem(const AppItem &app);
 

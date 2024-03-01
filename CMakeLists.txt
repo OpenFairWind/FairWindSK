@@ -10,16 +10,16 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_PREFIX_PATH "/usr/local/opt/qt6/")
 
 # Include the support to external projects
-include(ExternalProject)
+#include(ExternalProject)
 
 # Set the external install location
-set(EXTERNAL_INSTALL_LOCATION ${CMAKE_BINARY_DIR}/external)
+#set(EXTERNAL_INSTALL_LOCATION ${CMAKE_BINARY_DIR}/external)
 
 # Add to the includes
-include_directories(SYSTEM ${EXTERNAL_INSTALL_LOCATION}/include)
+#include_directories(SYSTEM ${EXTERNAL_INSTALL_LOCATION}/include)
 
 # Add to the libraries
-link_directories(${EXTERNAL_INSTALL_LOCATION}/lib)
+#link_directories(${EXTERNAL_INSTALL_LOCATION}/lib)
 
 find_package(Qt6 COMPONENTS
         Core
@@ -32,18 +32,21 @@ find_package(Qt6 COMPONENTS
         WebEngineWidgets
         REQUIRED)
 
-add_executable(FairWindSK
+add_executable(${PROJECT_NAME}
         main.cpp
         FairWindSK.cpp FairWindSK.hpp
-        ui/MainWindow.ui ui/MainWindow.cpp ui/MainWindow.hpp
-        ui/about/About.cpp ui/about/About.hpp
-        ui/topbar/TopBar.cpp ui/topbar/TopBar.hpp
-        ui/bottombar/BottomBar.cpp ui/bottombar/BottomBar.hpp
+        AppItem.cpp AppItem.hpp
+        ui/Launcher.cpp ui/Launcher.hpp ui/Launcher.cpp ui/Launcher.ui
+        ui/MainWindow.cpp ui/MainWindow.hpp ui/MainWindow.ui
+        ui/about/About.cpp ui/about/About.hpp ui/about/About.ui
+        ui/topbar/TopBar.cpp ui/topbar/TopBar.hpp ui/topbar/TopBar.ui
+        ui/bottombar/BottomBar.cpp ui/bottombar/BottomBar.hpp ui/bottombar/BottomBar.ui
+
         resources.qrc
 
 )
 
-target_link_libraries(FairWindSK
+target_link_libraries(${PROJECT_NAME}
         Qt::Core
         Qt::Gui
         Qt::Widgets

@@ -10,7 +10,7 @@
 #include <QGridLayout>
 
 #include "Launcher.hpp"
-#include "ui_Launcher.h"
+
 #include "AppItem.hpp"
 
 namespace fairwindsk::ui {
@@ -41,6 +41,7 @@ namespace fairwindsk::ui {
         QMap<double, QPair<AppItem *, QString>> map;
 
         // Populate the inverted list
+        /*
         for (auto &hash : fairWindSK->getExtensionsHashes()) {
             // Get the hash value
             auto app = fairWindSK->getAppItemByHash(hash);
@@ -52,6 +53,7 @@ namespace fairwindsk::ui {
             }
 
         }
+        */
 
         // Iterate on the available apps' hash values
         for (auto item: map) {

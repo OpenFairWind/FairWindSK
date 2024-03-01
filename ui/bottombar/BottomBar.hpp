@@ -2,22 +2,28 @@
 // Created by Raffaele Montella on 12/04/21.
 //
 
-#ifndef FAIRWINDSK_BOTTOMBAR_HPP
-#define FAIRWINDSK_BOTTOMBAR_HPP
+#ifndef BOTTOMBAR_HPP
+#define BOTTOMBAR_HPP
 
 #include <QWidget>
 
-namespace Ui {
-    class BottomBar;
-}
+#include <FairWindSK.hpp>
+#include <ui_BottomBar.h>
+
+namespace Ui { class BottomBar; }
 
 namespace fairwindsk::ui::bottombar {
+
+
+
+
+
     class BottomBar : public QWidget {
         Q_OBJECT
     public:
         explicit BottomBar(QWidget *parent = 0);
 
-        ~BottomBar();
+        ~BottomBar() override;
 
     public
         slots:
@@ -31,7 +37,7 @@ namespace fairwindsk::ui::bottombar {
         signals:
         void setMyData();
         void setMOB();
-                void setApps();
+        void setApps();
         void setAlarms();
         void setSettings();
 
@@ -40,4 +46,4 @@ namespace fairwindsk::ui::bottombar {
     };
 }
 
-#endif //FAIRWINDSK_BOTTOMBAR_HPP
+#endif //BOTTOMBAR_HPP
