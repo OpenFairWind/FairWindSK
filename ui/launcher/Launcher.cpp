@@ -171,11 +171,18 @@ namespace fairwindsk::ui::launcher {
                 // Set the app's name as the button's text
                 button->setText(displayName);
 
+                // Get the icon URL
+                QString iconUrl;
+                iconUrl = "http://172.24.1.1:3000/" + name + "/" + appIcon;
+
+                qDebug()<< iconUrl;
+
                 // Get the app's icon
-                //QImage icon = app->getIcon();
+                QImage icon;
+                icon.load(iconUrl,"PNG");
 
                 // Set the app's icon as the button's icon
-                //button->setIcon(QPixmap::fromImage(icon));
+                button->setIcon(QPixmap::fromImage(icon));
 
                 // Give the button's icon a fixed square
                 button->setIconSize(QSize(m_IconSize, m_IconSize));
@@ -216,7 +223,7 @@ namespace fairwindsk::ui::launcher {
 
         }
         */
-
+        /*
         // Iterate on the available apps' hash values
         for (auto item: map) {
             // Get the hash value
@@ -259,6 +266,7 @@ namespace fairwindsk::ui::launcher {
                 col++;
             }
         }
+         */
     }
 
 
