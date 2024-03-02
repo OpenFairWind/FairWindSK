@@ -13,7 +13,7 @@
 #include "ui_MainWindow.h"
 
 #include <ui/topbar/TopBar.hpp>
-#include <ui/Launcher.hpp>
+#include <ui/launcher/Launcher.hpp>
 #include <ui/bottombar/BottomBar.hpp>
 #include <ui/about/About.hpp>
 
@@ -24,10 +24,6 @@ class BottomBar;
 namespace Ui { class MainWindow; }
 
 namespace fairwindsk::ui {
-
-
-
-
 
     class MainWindow : public QMainWindow {
         Q_OBJECT
@@ -66,7 +62,7 @@ namespace fairwindsk::ui {
         topbar::TopBar *m_topBar = nullptr;
 
         // QWidget containing the launcher
-        Launcher *m_launcher = nullptr;
+        launcher::Launcher *m_launcher = nullptr;
 
         // QWidget containing navigation buttons
         bottombar::BottomBar *m_bottonBar = nullptr;

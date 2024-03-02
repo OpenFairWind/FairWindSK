@@ -17,16 +17,15 @@ QT_END_NAMESPACE
 namespace fairwindsk::ui::web {
     class WebView;
 
-    class WebPopupWindow : public QWidget {
+    class WebPopupWindow : public QWidget
+    {
     Q_OBJECT
 
     public:
-        WebPopupWindow(QWebEngineProfile *profile);
-
+        explicit WebPopupWindow(QWebEngineProfile *profile);
         WebView *view() const;
 
     private slots:
-
         void handleGeometryChangeRequested(const QRect &newGeometry);
 
     private:

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.28)
+cmake_minimum_required(VERSION 3.25)
 project(FairWindSK)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -36,15 +36,17 @@ add_executable(${PROJECT_NAME}
         main.cpp
         FairWindSK.cpp FairWindSK.hpp
         AppItem.cpp AppItem.hpp
-        ui/Launcher.cpp ui/Launcher.hpp ui/Launcher.cpp ui/Launcher.ui
-        ui/MainWindow.cpp ui/MainWindow.hpp ui/MainWindow.ui
+
+        ui/launcher/Launcher.cpp ui/launcher/Launcher.hpp ui/launcher/Launcher.ui
         ui/about/About.cpp ui/about/About.hpp ui/about/About.ui
         ui/topbar/TopBar.cpp ui/topbar/TopBar.hpp ui/topbar/TopBar.ui
         ui/bottombar/BottomBar.cpp ui/bottombar/BottomBar.hpp ui/bottombar/BottomBar.ui
+        ui/MainWindow.cpp ui/MainWindow.hpp ui/MainWindow.ui
+
         ui/web/Web.cpp ui/web/Web.hpp ui/web/Web.ui
-        ui/web/WebView.cpp ui/web/WebView.hpp
         ui/web/WebPage.cpp ui/web/WebPage.hpp
         ui/web/WebPopupWindow.cpp ui/web/WebPopupWindow.hpp
+        ui/web/WebView.cpp ui/web/WebView.hpp
 
         resources.qrc
 

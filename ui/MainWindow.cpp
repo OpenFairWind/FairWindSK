@@ -24,7 +24,7 @@ fairwindsk::ui::MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), u
 
     // Instantiate TopBar and BottomBar object
     m_topBar = new fairwindsk::ui::topbar::TopBar(ui->widget_Top);
-    m_launcher = new Launcher(ui->stackedWidget_Center);
+    m_launcher = new fairwindsk::ui::launcher::Launcher(ui->stackedWidget_Center);
     m_bottonBar = new fairwindsk::ui::bottombar::BottomBar(ui->widget_Bottom);
 
     // Place the Apps object at the center of the UI

@@ -7,6 +7,12 @@
 
 #include <QIcon>
 #include <QWebEngineView>
+#include <QWebEngineCertificateError>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
+#include <QWebEngineFileSystemAccessRequest>
+#endif
+#include <QWebEnginePage>
+#include <QWebEngineRegisterProtocolHandlerRequest>
 
 class WebPage;
 
@@ -15,7 +21,7 @@ namespace fairwindsk::ui::web {
     Q_OBJECT
 
     public:
-        WebView(QWidget *parent = nullptr);
+        explicit WebView(QWidget *parent = nullptr);
 
         void setPage(WebPage *page);
 
@@ -24,8 +30,6 @@ namespace fairwindsk::ui::web {
         bool isWebActionEnabled(QWebEnginePage::WebAction webAction) const;
 
         QIcon favIcon() const;
-
-    public slots:
 
     protected:
         void contextMenuEvent(QContextMenuEvent *event) override;
@@ -40,13 +44,33 @@ namespace fairwindsk::ui::web {
 
         void devToolsRequested(QWebEnginePage *source);
 
+    private slots:
+
+        void handleCertificateError(QWebEngineCertificateError error);
+
+        void handleAuthenticationRequired(const QUrl &requestUrl, QAuthenticator *auth);
+
+        void handleFeaturePermissionRequested(const QUrl &securityOrigin,
+                                              QWebEnginePage::Feature feature);
+
+        void handleProxyAuthenticationRequired(const QUrl &requestUrl, QAuthenticator *auth,
+                                               const QString &proxyHost);
+
+        void handleRegisterProtocolHandlerRequested(QWebEngineRegisterProtocolHandlerRequest request);
+
+    #if QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
+
+        void handleFileSystemAccessRequested(QWebEngineFileSystemAccessRequest request);
+
+    #endif
 
     private:
         void createWebActionTrigger(QWebEnginePage *page, QWebEnginePage::WebAction);
 
     private:
-        int m_loadProgress;
+        int m_loadProgress = 100;
     };
+
 }
 
 #endif //FAIRWINDSK_WEBVIEW_HPP

@@ -9,12 +9,13 @@
 #include <QToolButton>
 
 #include <FairWindSK.hpp>
+#include <QNetworkRequest>
+#include <QNetworkAccessManager>
 #include "ui_Launcher.h"
 
 namespace Ui { class Launcher; }
 
-namespace fairwindsk::ui {
-
+namespace fairwindsk::ui::launcher {
 
     class Launcher : public QWidget {
     Q_OBJECT
@@ -22,12 +23,13 @@ namespace fairwindsk::ui {
     public:
         explicit Launcher(QWidget *parent = nullptr);
 
-        ~Launcher() ;
+        ~Launcher() override ;
 
         void resizeEvent(QResizeEvent *event) override;
         void toolButton_App_released();
 
     public slots:
+        void onReplyFinished(QNetworkReply *reply);
         void onScrollLeft();
         void onScrollRight();
 
@@ -40,9 +42,13 @@ namespace fairwindsk::ui {
 
     private:
         Ui::Launcher *ui;
-        int mCols;
-        int mRows;
+        int m_Cols;
+        int m_Rows;
+        int m_IconSize;
+        QGridLayout *m_layout;
         QMap<QString, QToolButton *> mButtons;
+        QNetworkAccessManager *manager;
+        QNetworkRequest request;
     };
 } // fairwindsk::ui
 

@@ -8,10 +8,8 @@
 
 #include "Web.hpp"
 
-
 namespace fairwindsk::ui::web {
-    Web::Web(QWidget *parent) :
-            QWidget(parent), ui(new Ui::Web) {
+    Web::Web(QWidget *parent): QWidget(parent), ui(new Ui::Web) {
 
         ui->setupUi((QWidget *)this);
 

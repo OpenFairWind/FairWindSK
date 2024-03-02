@@ -25,7 +25,7 @@ namespace fairwindsk::ui::web {
 
         //void onAdded() override;
 
-        ~Web();
+        ~Web() override;
 
     public slots:
         void toolButton_home_clicked();
@@ -35,6 +35,6 @@ namespace fairwindsk::ui::web {
         WebView *m_webView = nullptr;
         QString m_url;
     };
-} // fairwind::apps::web
+} // fairwindsk::ui::web
 
 #endif //FAIRWIND_MAINPAGE_HPP
