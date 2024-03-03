@@ -40,13 +40,14 @@ namespace fairwindsk::ui::launcher {
     private:
         void resize();
 
+
     private:
         Ui::Launcher *ui;
-        int m_Cols;
-        int m_Rows;
-        int m_IconSize;
+        int m_cols;
+        int m_rows;
+        int m_iconSize;
         QGridLayout *m_layout;
-        QMap<QString, QToolButton *> mButtons;
+        QMap<QString, QToolButton *> m_buttons;
         QNetworkAccessManager *manager;
         QNetworkRequest request;
     };

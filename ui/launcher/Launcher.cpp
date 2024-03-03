@@ -20,9 +20,9 @@ namespace fairwindsk::ui::launcher {
 
         ui->setupUi((QWidget *)this);
 
-        m_Cols = 4;
-        m_Rows = 2;
-        m_IconSize = 32;
+        m_cols = 4;
+        m_rows = 2;
+        m_iconSize = 256;
 
         // Create a new grid layout
         m_layout = new QGridLayout(ui->scrollAreaWidgetContents);
@@ -92,41 +92,41 @@ namespace fairwindsk::ui::launcher {
     void Launcher::resize() {
 
         int iconSize;
-        iconSize = height() / m_Rows;
-        iconSize = iconSize - 48*m_Rows;
+        iconSize = height() / m_rows;
+        iconSize = iconSize - 48*m_rows;
 
         auto *layout = (QGridLayout *)ui->scrollAreaWidgetContents->layout();
 
         // Iterate on the columns
-        for (int col = 0; col < m_Cols; col++) {
+        for (int col = 0; col < m_cols; col++) {
             // Set the column width for each column
             layout->setColumnMinimumWidth(col, iconSize);
         }
 
         // Iterate on the rows
-        for (int row = 0; row < m_Rows; row++) {
+        for (int row = 0; row < m_rows; row++) {
             // Set the row height for each row
             layout->setRowMinimumHeight(row, iconSize);
         }
 
-        for(auto button:mButtons) {
+        for(auto button:m_buttons) {
             // Give the button's icon a fixed square
             button->setIconSize(QSize(iconSize, iconSize));
         }
     }
 
     void Launcher::onScrollLeft() {
-        if (mButtons.size()>0) {
+        if (m_buttons.size()>0) {
             ui->scrollArea->horizontalScrollBar()->setValue(
-                    ui->scrollArea->horizontalScrollBar()->value() - mButtons.first()->iconSize().width() * 2
+                    ui->scrollArea->horizontalScrollBar()->value() - m_buttons.first()->iconSize().width() * 2
             );
         }
     }
 
     void Launcher::onScrollRight() {
-        if (mButtons.size()>0) {
+        if (m_buttons.size()>0) {
             ui->scrollArea->horizontalScrollBar()->setValue(
-                    ui->scrollArea->horizontalScrollBar()->value() + mButtons.first()->iconSize().width() * 2
+                    ui->scrollArea->horizontalScrollBar()->value() + m_buttons.first()->iconSize().width() * 2
             );
         }
     }
@@ -134,119 +134,63 @@ namespace fairwindsk::ui::launcher {
     void Launcher::onReplyFinished(QNetworkReply *reply){
 
         // Order by order value
-        QMap<double, QPair<AppItem *, QString>> map;
+        QMap<int, QPair<AppItem *, QString>> map;
         int row = 0, col = 0;
 
         QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
 
         qDebug()<< doc;
 
+        int count = 0;
+
         auto appsJsonArray = doc.array();
         for (auto appJsonItem : appsJsonArray) {
-            QString name;
-            QString appIcon;
-            QString displayName;
 
             if (appJsonItem.isObject()) {
-                auto appJsonObject = appJsonItem.toObject();
-                if (appJsonObject.contains("name") && appJsonObject.value("name").isString()) {
-                    name = appJsonObject.value("name").toString();
+                auto appItem = new AppItem(appJsonItem.toObject());
+
+                auto position = appItem->getOrder();
+                position = count;
+
+
+                // Check if the app is active
+                if (appItem->getActive()) {
+                    map[position] = QPair<AppItem *, QString>(appItem, appItem->getName());
                 }
-                if (appJsonObject.contains("signalk") &&  appJsonObject.value("signalk").isObject()) {
-                    auto signalkJsonObject = appJsonObject.value("signalk").toObject();
-                    if (signalkJsonObject.contains("appIcon") && signalkJsonObject.value("appIcon").isString()) {
-                        appIcon = signalkJsonObject.value("appIcon").toString();
-                    }
-                    if (signalkJsonObject.contains("displayName") && signalkJsonObject.value("displayName").isString()) {
-                        displayName = signalkJsonObject.value("displayName").toString();
-                    }
-                }
-
-                // Create a new button
-                auto *button = new QToolButton();
-
-                // Set the app's hash value as the button's object name
-                button->setObjectName("toolbutton_" + name);
-
-                // Set the app's name as the button's text
-                button->setText(displayName);
-
-                // Get the icon URL
-                QString iconUrl;
-                iconUrl = "http://172.24.1.1:3000/" + name + "/" + appIcon;
-
-                qDebug()<< iconUrl;
-
-                // Get the app's icon
-                QImage icon;
-                icon.load(iconUrl,"PNG");
-
-                // Set the app's icon as the button's icon
-                button->setIcon(QPixmap::fromImage(icon));
-
-                // Give the button's icon a fixed square
-                button->setIconSize(QSize(m_IconSize, m_IconSize));
-
-                // Set the button's style to have an icon and some text beneath it
-                button->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-
-                // Launch the app when the button is clicked
-                connect(button, &QToolButton::released, this, &Launcher::toolButton_App_released);
-
-                // Add the newly created button to the grid layout as a widget
-                m_layout->addWidget(button, row, col);
-
-                // Store in buttons in a map
-                mButtons[name] = button;
-
-                row++;
-                if (row == m_Rows) {
-                    row = 0;
-                    col++;
-                }
+                count++;
             }
         }
 
 
 
-        // Populate the inverted list
-        /*
-        for (auto &hash : fairWindSK->getExtensionsHashes()) {
-            // Get the hash value
-            auto app = fairWindSK->getAppItemByHash(hash);
-            auto position = app->getOrder();
-
-            // Check if the app is active
-            if (app->getActive()) {
-                map[position] = QPair<AppItem *, QString>(app, hash);
-            }
-
-        }
-        */
-        /*
         // Iterate on the available apps' hash values
-        for (auto item: map) {
+        for (const auto& item: map) {
             // Get the hash value
-            auto app = item.first;
-            auto hash = item.second;
+            auto appItem = item.first;
+            auto name = item.second;
 
             // Create a new button
             auto *button = new QToolButton();
 
-            // Set the app's hash value as the button's object name
-            button->setObjectName("toolbutton_" + hash);
+            // Set the app's hash value as the 's object name
+            button->setObjectName("toolbutton_" + name);
 
             // Set the app's name as the button's text
-            button->setText(app->getName());
+            button->setText(appItem->getDisplayName());
 
-            // Get the app's icon
-            QImage icon = app->getIcon();
+            // Get the application icon
+            QPixmap pixmap = appItem->getIcon();
 
-            // Set the app's icon as the button's icon
-            button->setIcon(QPixmap::fromImage(icon));
+            if (!pixmap.isNull()) {
+                // Scale the icon
+                pixmap.scaled(m_iconSize, m_iconSize);
 
-            // Give the button's icon a fixed square
-            //button->setIconSize(QSize(iconSize, iconSize));
+                // Set the app's icon as the button's icon
+                button->setIcon(pixmap);
+
+                // Give the button's icon a fixed square
+                button->setIconSize(QSize(m_iconSize, m_iconSize));
+            }
 
             // Set the button's style to have an icon and some text beneath it
             button->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
@@ -258,16 +202,15 @@ namespace fairwindsk::ui::launcher {
             m_layout->addWidget(button, row, col);
 
             // Store in buttons in a map
-            mButtons[hash] = button;
+            m_buttons[name] = button;
 
             row++;
-            if (row == m_Rows) {
+            if (row == m_rows) {
                 row = 0;
                 col++;
             }
+
+            qDebug()<< name;
         }
-         */
     }
-
-
 } // fairwindsk::apps::launcherax10m

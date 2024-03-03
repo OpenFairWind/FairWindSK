@@ -4,6 +4,9 @@
 
 #include <QCryptographicHash>
 #include <utility>
+#include <QNetworkReply>
+#include <QEventLoop>
+#include <QtCore/qjsonarray.h>
 
 #include "AppItem.hpp"
 #include "FairWindSK.hpp"
@@ -16,53 +19,24 @@ namespace fairwindsk {
  */
     AppItem::AppItem(const fairwindsk::AppItem &app) {
         // Retrieve the app's infos from the provided App instance
-        this->m_extension = app.m_extension;
+        this->m_jsonApp = app.m_jsonApp;
         this->m_active = app.m_active;
         this->m_order = app.m_order;
-        this->m_name = app.m_name;
-        this->m_desc = app.m_desc;
-        this->m_icon = app.m_icon;
-        this->m_args = app.m_args;
-        generateHash();
+
     }
 
 /*
  * Public Constructor
  */
-    AppItem::AppItem(QJsonObject *jsonApp, bool active, int order) {
+    AppItem::AppItem(QJsonObject jsonApp, bool active, int order) {
         // Get the app's infos and store them for future usage
+        m_jsonApp = jsonApp;
+        m_active = active;
+        m_order = order;
 
-
-        generateHash();
     }
 
-
-
-    /*
-     * getName
-     * Returns the app's name
-     */
-    QString AppItem::getName() {
-        return m_name;
-    }
-
-    /*
-     * getDesc
-     * Returns the app's description
-     */
-    QString AppItem::getDesc() {
-        return m_desc;
-    }
-
-    /*
-     * getIcon
-     * Returns the app's icon
-     */
-    QImage AppItem::getIcon() {
-        return m_icon;
-    }
-
-    /*
+/*
      * setOrder
      * Sets the app's order
      */
@@ -95,36 +69,80 @@ namespace fairwindsk {
     }
 
     /*
+     * getName
+     * Returns the app's name
+     */
+    QString AppItem::getName() {
+        QString name;
+        if (m_jsonApp.contains("name") && m_jsonApp.value("name").isString()) {
+            name = m_jsonApp.value("name").toString();
+        }
+        return name;
+    }
+
+    /*
+     * getDesc
+     * Returns the app's description
+     */
+    QString AppItem::getDescription() {
+        QString desc;
+        if (m_jsonApp.contains("description") && m_jsonApp.value("description").isString()) {
+            desc = m_jsonApp.value("description").toString();
+        }
+        return desc;
+    }
+
+    /*
+     * getIcon
+     * Returns the app's icon
+     */
+    QPixmap AppItem::getIcon() {
+        QPixmap pixmap;
+        if (m_jsonApp.contains("signalk") &&  m_jsonApp.value("signalk").isObject()) {
+            auto signalkJsonObject = m_jsonApp.value("signalk").toObject();
+            if (signalkJsonObject.contains("appIcon") && signalkJsonObject.value("appIcon").isString()) {
+                auto appIcon = signalkJsonObject.value("appIcon").toString();
+
+                if (appIcon.isEmpty()) {
+                    pixmap = QPixmap::fromImage(QImage(":/resources/images/icons/fairwind_icon.png"));
+                }
+                else {
+
+                    // Get the icon URL
+                    QString url = "http://172.24.1.1:3000/" + getName() + "/" + appIcon;
+
+                    qDebug() << url;
+
+                    QNetworkAccessManager nam;
+                    QEventLoop loop;
+                    QObject::connect(&nam,&QNetworkAccessManager::finished,&loop,&QEventLoop::quit);
+                    QNetworkReply *reply = nam.get(QNetworkRequest(url));
+                    loop.exec();
+
+                    pixmap.loadFromData(reply->readAll());
+
+                    delete reply;
+                }
+
+            }
+
+        }
+        return pixmap;
+    }
+
+    /*
      * getHash
      * Returns the app's generated hash
      */
-    QString AppItem::getHash() {
-        return m_hash;
-    }
-
-    /*
-     * generateHash
-     * Generates a new hash value for the app
-     */
-    void AppItem::generateHash() {
-        QString text = m_extension + "/" + m_route;
-        for (const QString& key: m_args.keys()) {
-            text = text + " " + key + "=" + "\"" + m_args[key].toString() + "\"";
+    QString AppItem::getDisplayName() {
+        QString displayName;
+        if (m_jsonApp.contains("signalk") &&  m_jsonApp.value("signalk").isObject()) {
+            auto signalkJsonObject = m_jsonApp.value("signalk").toObject();
+            if (signalkJsonObject.contains("displayName") && signalkJsonObject.value("displayName").isString()) {
+                displayName = signalkJsonObject.value("displayName").toString();
+            }
         }
-
-        m_hash = QString(QCryptographicHash::hash((text.toUtf8()), QCryptographicHash::Md5).toHex());
-    }
-
-    QString AppItem::getRoute() {
-        return m_route;
-    }
-
-    /*
-     * getArgs
-     * Returns the app's args
-     */
-    QMap<QString, QVariant> AppItem::getArgs() {
-        return m_args;
+        return displayName;
     }
 
     /*
@@ -132,15 +150,41 @@ namespace fairwindsk {
      * Returns the app's version
      */
     QString AppItem::getVersion() {
-        return m_version;
+        QString version;
+        if (m_jsonApp.contains("version") && m_jsonApp.value("version").isString()) {
+            version = m_jsonApp.value("version").toString();
+        }
+        return version;
     }
 
     /*
-     * getVendor
-     * Returns the app's vendor
+     * getAuthor
+     * Returns the app's author
      */
-    QString AppItem::getVendor() {
-        return m_vendor;
+    QString AppItem::getAuthor() {
+        QString author;
+        if (m_jsonApp.contains("author") && m_jsonApp.value("author").isString()) {
+            author = m_jsonApp.value("author").toString();
+        }
+        return author;
+    }
+
+    /*
+     * getContributors
+     * Returns the app's contributors
+     */
+    QVector<QString> AppItem::getContributors() {
+        QVector<QString> contributors;
+        if (m_jsonApp.contains("contributors") && m_jsonApp.value("contributors").isArray()) {
+            QJsonArray contributorsJsonArray = m_jsonApp.value("contributors").toArray();
+            for (auto jsonItem: contributorsJsonArray) {
+                if (jsonItem.isString() && !jsonItem.toString().isEmpty()) {
+                    contributors.append(jsonItem.toString());
+                }
+
+            }
+        }
+        return contributors;
     }
 
     /*
@@ -148,7 +192,23 @@ namespace fairwindsk {
      * Returns the app's copyright
      */
     QString AppItem::getCopyright() {
-        return m_copyright;
+        QString copyright;
+        if (m_jsonApp.contains("copyright") && m_jsonApp.value("copyright").isString()) {
+            copyright = m_jsonApp.value("copyright").toString();
+        }
+        return copyright;
+    }
+
+    /*
+     * getCopyright
+     * Returns the app's vendor
+     */
+    QString AppItem::getVendor() {
+        QString vendor;
+        if (m_jsonApp.contains("vendor") && m_jsonApp.value("vendor").isString()) {
+            vendor = m_jsonApp.value("vendor").toString();
+        }
+        return vendor;
     }
 
     /*
@@ -156,11 +216,24 @@ namespace fairwindsk {
      * Returns the app's license
      */
     QString AppItem::getLicense() {
-        return m_license;
+        QString license;
+        if (m_jsonApp.contains("license") && m_jsonApp.value("license").isString()) {
+            license = m_jsonApp.value("license").toString();
+        }
+        return license;
+    }
+
+    /*
+     * getLicense
+     * Returns the app's license
+     */
+    QString AppItem::getUrl() {
+        QString url;
+        url = "https://172.24.1.1:3000/" + getName() + "/";
+        return url;
     }
 
     bool AppItem::operator<(const AppItem &o) const {
         return std::tie(m_order) < std::tie(o.m_order);
     }
-
 }
