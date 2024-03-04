@@ -8,6 +8,8 @@
 #include <utility>
 
 #include "Web.hpp"
+#include "ui/topbar/TopBar.hpp"
+
 
 namespace fairwindsk::ui::web {
     Web::Web(QWidget *parent): QWidget(parent), ui(new Ui::Web) {
@@ -19,8 +21,8 @@ namespace fairwindsk::ui::web {
         m_webView = new WebView((QWidget *)this);
         m_webView->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
         ui->verticalLayout_WebView->addWidget(m_webView);
-        connect(ui->pushButton_Home, &QPushButton::clicked, this, &Web::toolButton_home_clicked);
 
+        connect(ui->pushButton_Home, &QPushButton::clicked, this, &Web::toolButton_home_clicked);
 
     }
 

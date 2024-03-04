@@ -25,13 +25,7 @@ namespace fairwindsk {
 
     }
 
-    void FairWindSK::setMainWindow(QMainWindow *mainWindow) {
-        m_mainWindow = mainWindow;
-    }
 
-    QMainWindow * FairWindSK::getMainWindow() {
-        return m_mainWindow;
-    }
 
 /*
  * getInstance
@@ -116,6 +110,10 @@ namespace fairwindsk {
 
     QList<QString> FairWindSK::getAppsHashes() {
         return m_mapHash2AppItem.keys();
+    }
+
+    bool FairWindSK::useVirtualKeyboard() {
+        return false;
     }
 
 }

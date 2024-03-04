@@ -28,7 +28,7 @@ fairwindsk::ui::MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), u
     m_topBar = new fairwindsk::ui::topbar::TopBar(ui->widget_Top);
     m_launcher = new fairwindsk::ui::launcher::Launcher();
     ui->stackedWidget_Center->addWidget(m_launcher);
-    m_bottonBar = new fairwindsk::ui::bottombar::BottomBar(ui->widget_Bottom);
+    m_bottomBar = new fairwindsk::ui::bottombar::BottomBar(ui->widget_Bottom);
 
     m_browser = new web::Browser();
 
@@ -39,15 +39,15 @@ fairwindsk::ui::MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), u
     auto fairWindSK = FairWindSK::getInstance();
 
     // Show the apps view when the user clicks on the Apps button inside the BottomBar object
-    QObject::connect(m_bottonBar, &bottombar::BottomBar::setApps, this, &MainWindow::onApps);
+    QObject::connect(m_bottomBar, &bottombar::BottomBar::setApps, this, &MainWindow::onApps);
 
     // Show the settings view when the user clicks on the Settings button inside the BottomBar object
-    QObject::connect(m_bottonBar, &bottombar::BottomBar::setSettings, this, &MainWindow::onSettings);
+    QObject::connect(m_bottomBar, &bottombar::BottomBar::setSettings, this, &MainWindow::onSettings);
 
     // Show the settings view when the user clicks on the Settings button inside the BottomBar object
     QObject::connect(m_topBar, &topbar::TopBar::clickedToolbuttonUL, this, &MainWindow::onUpperLeft);
 
-    // Show the settings view when the user clicks on the Settings button inside the BottomBar object
+    // Show the settings view when the user clicks on the Settings button inside the TopBar object
     QObject::connect(m_topBar, &topbar::TopBar::clickedToolbuttonUR, this, &MainWindow::onUpperRight);
 
     QObject::connect(m_launcher, &fairwindsk::ui::launcher::Launcher::foregroundAppChanged, this,
@@ -62,9 +62,9 @@ fairwindsk::ui::MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), u
  */
 fairwindsk::ui::MainWindow::~MainWindow() {
 
-    if (m_bottonBar) {
-        delete m_bottonBar;
-        m_bottonBar = nullptr;
+    if (m_bottomBar) {
+        delete m_bottomBar;
+        m_bottomBar = nullptr;
     }
 
     if (m_launcher) {
@@ -206,6 +206,19 @@ void fairwindsk::ui::MainWindow::onUpperRight() {
         m_fairWindApp->colophon();
     }
      */
+
+}
+
+TopBar *fairwindsk::ui::MainWindow::getTopBar() {
+    return reinterpret_cast<TopBar *>(&m_topBar);
+}
+
+Launcher *fairwindsk::ui::MainWindow::getLauncher() {
+    return reinterpret_cast<Launcher *>(&m_launcher);;
+}
+
+BottomBar *fairwindsk::ui::MainWindow::getBottomBar() {
+    return reinterpret_cast<BottomBar *>(&m_bottomBar);
 }
 
 

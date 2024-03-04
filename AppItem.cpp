@@ -7,6 +7,7 @@
 #include <QNetworkReply>
 #include <QEventLoop>
 #include <QtCore/qjsonarray.h>
+#include <QPixmap>
 
 #include "AppItem.hpp"
 #include "FairWindSK.hpp"

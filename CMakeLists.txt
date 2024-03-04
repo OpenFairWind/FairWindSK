@@ -30,6 +30,7 @@ find_package(Qt6 COMPONENTS
         Xml
         Positioning
         WebEngineWidgets
+        VirtualKeyboard
         REQUIRED)
 
 add_executable(${PROJECT_NAME}
@@ -68,5 +69,6 @@ target_link_libraries(${PROJECT_NAME}
         Qt::Xml
         Qt::Positioning
         Qt::WebEngineWidgets
+        Qt::VirtualKeyboard
 )
 

@@ -2,8 +2,8 @@
 // Created by Raffaele Montella on 28/03/21.
 //
 
-#include "Browser.hpp"
-#include "BrowserWindow.hpp"
+//#include "Browser.hpp"
+//#include "BrowserWindow.hpp"
 #include "TabWidget.hpp"
 #include "WebPage.hpp"
 #include "WebPopupWindow.hpp"
@@ -165,12 +165,13 @@ namespace fairwindsk::ui::web {
 
     QWebEngineView *WebView::createWindow(QWebEnginePage::WebWindowType type)
     {
-
+        /*
         BrowserWindow *mainWindow = qobject_cast<BrowserWindow*>(window());
         if (!mainWindow)
             return nullptr;
-
+        */
         switch (type) {
+            /*
             case QWebEnginePage::WebBrowserTab: {
                 return mainWindow->tabWidget()->createTab();
             }
@@ -180,6 +181,15 @@ namespace fairwindsk::ui::web {
             case QWebEnginePage::WebBrowserWindow: {
                 return mainWindow->browser()->createWindow()->currentTab();
             }
+             */
+            case QWebEnginePage::WebBrowserTab:
+            case QWebEnginePage::WebBrowserBackgroundTab:
+            case QWebEnginePage::WebBrowserWindow: {
+                auto *popup = new WebPopupWindow(page()->profile());
+                connect(popup->view(), &WebView::devToolsRequested, this, &WebView::devToolsRequested);
+                return popup->view();
+            }
+
             case QWebEnginePage::WebDialog: {
                 auto *popup = new WebPopupWindow(page()->profile());
                 connect(popup->view(), &WebView::devToolsRequested, this, &WebView::devToolsRequested);

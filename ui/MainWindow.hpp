@@ -35,6 +35,11 @@ namespace fairwindsk::ui {
 
         Ui::MainWindow *getUi();
 
+        TopBar *getTopBar();
+        Launcher *getLauncher();
+        BottomBar *getBottomBar();
+
+
     public
         slots:
                 void setForegroundApp(QString hash);
@@ -67,7 +72,7 @@ namespace fairwindsk::ui {
         launcher::Launcher *m_launcher = nullptr;
 
         // QWidget containing navigation buttons
-        bottombar::BottomBar *m_bottonBar = nullptr;
+        bottombar::BottomBar *m_bottomBar = nullptr;
 
         // The pointer to the foreground app
         fairwindsk::AppItem *m_currentApp = nullptr;

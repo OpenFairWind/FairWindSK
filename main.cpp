@@ -15,6 +15,8 @@ using namespace Qt::StringLiterals;
 
 int main(int argc, char *argv[]) {
 
+
+
     // Set the organization name
     QCoreApplication::setOrganizationName("uniparthenope.it");
 
@@ -27,6 +29,7 @@ int main(int argc, char *argv[]) {
     // Enable high DPI support
     //QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 
+    // The QT application
     QApplication a(argc, argv);
 
     // Get the splash screen logo
@@ -41,14 +44,18 @@ int main(int argc, char *argv[]) {
     // Get the FairWind singleton
     auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
+    // Check if the virtual keyboard have to be activated
+    if (fairWindSK->useVirtualKeyboard()) {
+
+        // Activate the virtual keyboard
+        qputenv("QT_IM_MODULE", QByteArray("qtvirtualkeyboard"));
+    }
+
     // Set the window icon
     QApplication::setWindowIcon(QIcon(QPixmap::fromImage(QImage(":/resources/images/icons/fairwind_icon.png"))));
 
     // Create a new MainWindow object
     fairwindsk::ui::MainWindow w;
-
-    // Register the main window
-    fairWindSK->setMainWindow(&w);
 
     // Close the splash screen presenting the MainWindow UI
     splash.finish((QWidget *)&w);

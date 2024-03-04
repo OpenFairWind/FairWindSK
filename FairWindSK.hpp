@@ -6,12 +6,10 @@
 #define FAIRWINDSK_FAIRWINDSK_HPP
 
 #include <QString>
-#include <QMainWindow>
 #include <QList>
 #include <QMap>
 #include <QJsonDocument>
 #include "AppItem.hpp"
-
 
 namespace fairwindsk {
     /*
@@ -23,21 +21,23 @@ namespace fairwindsk {
 
 
 
+
     public:
         static FairWindSK *getInstance();
 
         QJsonObject getConfig();
 
-        void setMainWindow(QMainWindow *mainWindow);
-        QMainWindow *getMainWindow();
+
 
         void loadApps();
         AppItem *getAppItemByHash(QString hash);
         QString getAppHashById(QString appId);
         QList<QString> getAppsHashes();
 
+        bool useVirtualKeyboard();
+
     private:
-        QMainWindow *m_mainWindow;
+
         QMap<QString, AppItem *> m_mapHash2AppItem;
         QMap<QString, QString> m_mapAppId2Hash;
 
