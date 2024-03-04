@@ -52,6 +52,8 @@ namespace fairwindsk::ui {
     private:
         Ui::MainWindow *ui;
 
+        fairwindsk::ui::web::Browser *m_browser;
+
         // This will be populated with the apps launched by the user for quick usage
         QMap<QString, QWidget *> m_mapHash2Widget;
 
@@ -68,7 +70,7 @@ namespace fairwindsk::ui {
         bottombar::BottomBar *m_bottonBar = nullptr;
 
         // The pointer to the foreground app
-        //fairwind::apps::IFairWindApp *m_fairWindApp = nullptr;
+        fairwindsk::AppItem *m_currentApp = nullptr;
 
 
     };

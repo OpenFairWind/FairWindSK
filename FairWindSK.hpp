@@ -7,10 +7,10 @@
 
 #include <QString>
 #include <QMainWindow>
-#include <map>
+#include <QList>
+#include <QMap>
 #include <QJsonDocument>
-
-
+#include "AppItem.hpp"
 
 
 namespace fairwindsk {
@@ -20,6 +20,9 @@ namespace fairwindsk {
      */
     class FairWindSK: public QObject {
         Q_OBJECT
+
+
+
     public:
         static FairWindSK *getInstance();
 
@@ -28,8 +31,15 @@ namespace fairwindsk {
         void setMainWindow(QMainWindow *mainWindow);
         QMainWindow *getMainWindow();
 
+        void loadApps();
+        AppItem *getAppItemByHash(QString hash);
+        QString getAppHashById(QString appId);
+        QList<QString> getAppsHashes();
+
     private:
         QMainWindow *m_mainWindow;
+        QMap<QString, AppItem *> m_mapHash2AppItem;
+        QMap<QString, QString> m_mapAppId2Hash;
 
 
         FairWindSK();

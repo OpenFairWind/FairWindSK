@@ -2,16 +2,15 @@
 // Created by Raffaele Montella on 28/03/21.
 //
 
-/*
-#include "browser.h"
-#include "browserwindow.h"
-#include "tabwidget.h"
- */
+#include "Browser.hpp"
+#include "BrowserWindow.hpp"
+#include "TabWidget.hpp"
 #include "WebPage.hpp"
 #include "WebPopupWindow.hpp"
 #include "WebView.hpp"
 #include "ui_certificateerrordialog.h"
 #include "ui_passworddialog.h"
+
 #include <QContextMenuEvent>
 #include <QDebug>
 #include <QMenu>
@@ -167,7 +166,7 @@ namespace fairwindsk::ui::web {
 
     QWebEngineView *WebView::createWindow(QWebEnginePage::WebWindowType type)
     {
-        /*
+
         BrowserWindow *mainWindow = qobject_cast<BrowserWindow*>(window());
         if (!mainWindow)
             return nullptr;
@@ -188,7 +187,7 @@ namespace fairwindsk::ui::web {
                 return popup->view();
             }
         }
-         */
+
         return nullptr;
     }
 

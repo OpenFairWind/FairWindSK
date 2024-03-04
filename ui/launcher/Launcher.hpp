@@ -12,6 +12,7 @@
 #include <QNetworkRequest>
 #include <QNetworkAccessManager>
 #include "ui_Launcher.h"
+#include "ui/web/Browser.hpp"
 
 namespace Ui { class Launcher; }
 
@@ -29,7 +30,6 @@ namespace fairwindsk::ui::launcher {
         void toolButton_App_released();
 
     public slots:
-        void onReplyFinished(QNetworkReply *reply);
         void onScrollLeft();
         void onScrollRight();
 
@@ -39,17 +39,16 @@ namespace fairwindsk::ui::launcher {
 
     private:
         void resize();
-
+        void update();
 
     private:
         Ui::Launcher *ui;
+
         int m_cols;
         int m_rows;
         int m_iconSize;
         QGridLayout *m_layout;
         QMap<QString, QToolButton *> m_buttons;
-        QNetworkAccessManager *manager;
-        QNetworkRequest request;
     };
 } // fairwindsk::ui
 

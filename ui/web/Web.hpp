@@ -20,10 +20,13 @@ namespace fairwindsk::ui::web {
     class Web : public QWidget {
     Q_OBJECT
 
+
+
     public:
         explicit Web(QWidget *parent = nullptr);
 
         //void onAdded() override;
+        void setUrl(QString qString);
 
         ~Web() override;
 

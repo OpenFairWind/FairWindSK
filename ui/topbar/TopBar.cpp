@@ -154,14 +154,13 @@ namespace fairwindsk::ui::topbar {
 
     }
 
-    /*
-    void TopBar::setFairWindApp(AppItem *appItem) {
-        mAppItem = appItem;
-        if (mAppItem) {
-            ui->toolButton_UR->setIcon(QPixmap::fromImage(mAppItem->getIcon()));
+    void TopBar::setCurrentApp(AppItem *appItem) {
+        m_currentApp = appItem;
+        if (m_currentApp) {
+            ui->toolButton_UR->setIcon(m_currentApp->getIcon());
             ui->toolButton_UR->setIconSize(QSize(32, 32));
-            ui->label_ApplicationName->setText(mAppItem->getName());
-            ui->label_ApplicationName->setToolTip(mAppItem->getDesc());
+            ui->label_ApplicationName->setText(m_currentApp->getDisplayName());
+            ui->label_ApplicationName->setToolTip(m_currentApp->getDescription());
         } else {
             ui->toolButton_UR->setIcon(QPixmap::fromImage(QImage(":resources/images/icons/apps_icon.png")));
             ui->toolButton_UR->setIconSize(QSize(32, 32));
@@ -169,5 +168,5 @@ namespace fairwindsk::ui::topbar {
             ui->label_ApplicationName->setToolTip("");
         }
     }
-    */
+
 }

@@ -5,6 +5,7 @@
 // You may need to build the project (run Qt uic code generator) to get "ui_MainPage.h" resolved
 
 #include <QPushButton>
+#include <utility>
 
 #include "Web.hpp"
 
@@ -40,6 +41,11 @@ namespace fairwindsk::ui::web {
     }
 
     void Web::toolButton_home_clicked() {
+        m_webView->load(m_url);
+    }
+
+    void Web::setUrl(QString url) {
+        m_url = std::move(url);
         m_webView->load(m_url);
     }
 } // fairwindsk::ui::web

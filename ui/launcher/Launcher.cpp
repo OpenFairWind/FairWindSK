@@ -36,14 +36,6 @@ namespace fairwindsk::ui::launcher {
 
 
 
-        // Get the FairWind singleton
-        auto fairWindSK = fairwindsk::FairWindSK::getInstance();
-
-
-
-        manager = new QNetworkAccessManager(this);
-
-        connect(manager, &QNetworkAccessManager::finished, this, &Launcher::onReplyFinished);
 
 
         // Right scroll
@@ -52,12 +44,13 @@ namespace fairwindsk::ui::launcher {
         // Left scroll
         connect(ui->toolButton_Left, &QToolButton::clicked, this, &Launcher::onScrollLeft);
 
+        // Update
+        update();
+
         // Resize the icons
         resize();
 
-        // Update apps
-        request.setUrl(QUrl("http://172.24.1.1:3000/skServer/webapps"));
-        manager->get(request);
+
     }
 
     Launcher::~Launcher() {
@@ -131,37 +124,29 @@ namespace fairwindsk::ui::launcher {
         }
     }
 
-    void Launcher::onReplyFinished(QNetworkReply *reply){
-
+    void Launcher::update() {
         // Order by order value
         QMap<int, QPair<AppItem *, QString>> map;
         int row = 0, col = 0;
 
-        QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
+        // Get the FairWind singleton
+        auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
-        qDebug()<< doc;
+        // Update the apps
+        fairWindSK->loadApps();
 
-        int count = 0;
+        // Populate the inverted list
+        for (auto &hash : fairWindSK->getAppsHashes()) {
+            // Get the hash value
+            auto app = fairWindSK->getAppItemByHash(hash);
+            auto position = app->getOrder();
 
-        auto appsJsonArray = doc.array();
-        for (auto appJsonItem : appsJsonArray) {
-
-            if (appJsonItem.isObject()) {
-                auto appItem = new AppItem(appJsonItem.toObject());
-
-                auto position = appItem->getOrder();
-                position = count;
-
-
-                // Check if the app is active
-                if (appItem->getActive()) {
-                    map[position] = QPair<AppItem *, QString>(appItem, appItem->getName());
-                }
-                count++;
+            // Check if the app is active
+            if (app->getActive()) {
+                map[position] = QPair<AppItem *, QString>(app, hash);
             }
+
         }
-
-
 
         // Iterate on the available apps' hash values
         for (const auto& item: map) {
@@ -181,9 +166,10 @@ namespace fairwindsk::ui::launcher {
             // Get the application icon
             QPixmap pixmap = appItem->getIcon();
 
+            // Check if the icon is available
             if (!pixmap.isNull()) {
                 // Scale the icon
-                pixmap.scaled(m_iconSize, m_iconSize);
+                pixmap = pixmap.scaled(m_iconSize, m_iconSize);
 
                 // Set the app's icon as the button's icon
                 button->setIcon(pixmap);
@@ -213,4 +199,4 @@ namespace fairwindsk::ui::launcher {
             qDebug()<< name;
         }
     }
-} // fairwindsk::apps::launcherax10m
+} // fairwindsk::ui::launcher

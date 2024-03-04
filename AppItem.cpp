@@ -30,7 +30,7 @@ namespace fairwindsk {
  */
     AppItem::AppItem(QJsonObject jsonApp, bool active, int order) {
         // Get the app's infos and store them for future usage
-        m_jsonApp = jsonApp;
+        m_jsonApp = std::move(jsonApp);
         m_active = active;
         m_order = order;
 
@@ -97,17 +97,13 @@ namespace fairwindsk {
      * Returns the app's icon
      */
     QPixmap AppItem::getIcon() {
-        QPixmap pixmap;
+        QPixmap pixmap = QPixmap::fromImage(QImage(":/resources/images/icons/webapp-256x256.png"));
         if (m_jsonApp.contains("signalk") &&  m_jsonApp.value("signalk").isObject()) {
             auto signalkJsonObject = m_jsonApp.value("signalk").toObject();
             if (signalkJsonObject.contains("appIcon") && signalkJsonObject.value("appIcon").isString()) {
                 auto appIcon = signalkJsonObject.value("appIcon").toString();
 
-                if (appIcon.isEmpty()) {
-                    pixmap = QPixmap::fromImage(QImage(":/resources/images/icons/fairwind_icon.png"));
-                }
-                else {
-
+                if (!appIcon.isEmpty()) {
                     // Get the icon URL
                     QString url = "http://172.24.1.1:3000/" + getName() + "/" + appIcon;
 
@@ -135,7 +131,7 @@ namespace fairwindsk {
      * Returns the app's generated hash
      */
     QString AppItem::getDisplayName() {
-        QString displayName;
+        QString displayName = getName();
         if (m_jsonApp.contains("signalk") &&  m_jsonApp.value("signalk").isObject()) {
             auto signalkJsonObject = m_jsonApp.value("signalk").toObject();
             if (signalkJsonObject.contains("displayName") && signalkJsonObject.value("displayName").isString()) {
@@ -229,7 +225,7 @@ namespace fairwindsk {
      */
     QString AppItem::getUrl() {
         QString url;
-        url = "https://172.24.1.1:3000/" + getName() + "/";
+        url = "http://172.24.1.1:3000/" + getName() + "/";
         return url;
     }
 

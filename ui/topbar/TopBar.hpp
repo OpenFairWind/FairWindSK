@@ -22,7 +22,7 @@ namespace fairwindsk::ui::topbar {
 
         ~TopBar() override;
 
-
+        void setCurrentApp(AppItem *appItem);
 
     public slots:
         void toolbuttonUL_clicked();
@@ -42,7 +42,7 @@ namespace fairwindsk::ui::topbar {
 
     private:
         Ui::TopBar *ui;
-
+        AppItem *m_currentApp;
     };
 }
 

@@ -12,6 +12,8 @@
 #include "ui/bottombar/BottomBar.hpp"
 
 #include "ui/about/About.hpp"
+#include "ui/web/TabWidget.hpp"
+#include "ui/web/Web.hpp"
 
 
 /*
@@ -24,17 +26,17 @@ fairwindsk::ui::MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), u
 
     // Instantiate TopBar and BottomBar object
     m_topBar = new fairwindsk::ui::topbar::TopBar(ui->widget_Top);
-    m_launcher = new fairwindsk::ui::launcher::Launcher(ui->stackedWidget_Center);
+    m_launcher = new fairwindsk::ui::launcher::Launcher();
+    ui->stackedWidget_Center->addWidget(m_launcher);
     m_bottonBar = new fairwindsk::ui::bottombar::BottomBar(ui->widget_Bottom);
+
+    m_browser = new web::Browser();
 
     // Place the Apps object at the center of the UI
     setCentralWidget(ui->centralwidget);
 
-
     // Show the settings view
     auto fairWindSK = FairWindSK::getInstance();
-
-
 
     // Show the apps view when the user clicks on the Apps button inside the BottomBar object
     QObject::connect(m_bottonBar, &bottombar::BottomBar::setApps, this, &MainWindow::onApps);
@@ -48,6 +50,9 @@ fairwindsk::ui::MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), u
     // Show the settings view when the user clicks on the Settings button inside the BottomBar object
     QObject::connect(m_topBar, &topbar::TopBar::clickedToolbuttonUR, this, &MainWindow::onUpperRight);
 
+    QObject::connect(m_launcher, &fairwindsk::ui::launcher::Launcher::foregroundAppChanged, this,
+                     &MainWindow::setForegroundApp);
+
     QTimer::singleShot(0, this, SLOT(showFullScreen()));
 }
 
@@ -60,6 +65,11 @@ fairwindsk::ui::MainWindow::~MainWindow() {
     if (m_bottonBar) {
         delete m_bottonBar;
         m_bottonBar = nullptr;
+    }
+
+    if (m_launcher) {
+        delete m_launcher;
+        m_launcher = nullptr;
     }
 
     if (m_topBar) {
@@ -87,15 +97,13 @@ Ui::MainWindow *fairwindsk::ui::MainWindow::getUi() {
  */
 void fairwindsk::ui::MainWindow::setForegroundApp(QString hash) {
     qDebug() << "MainWindow hash:" << hash;
-    /*
+
     // Get the FairWind singleton
-    auto fairWind = fairWindSk::FairWindSk::getInstance();
+    auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
     // Get the map containing all the loaded apps and pick the one that matches the provided hash
-    auto appItem = fairWind->getAppItemByHash(hash);
+    auto appItem = fairWindSK->getAppItemByHash(hash);
 
-    // Get the fairwind app
-    fairWindSk::apps::IFairWindApp *fairWindApp = fairWind->getAppByExtensionId(appItem->getExtension());
 
     // The QT widget implementing the app
     QWidget *widgetApp = nullptr;
@@ -106,17 +114,15 @@ void fairwindsk::ui::MainWindow::setForegroundApp(QString hash) {
         // If yes, get its widget from mapWidgets
         widgetApp = m_mapHash2Widget[hash];
     } else {
-        // Set the route
-        fairWindApp->setRoute(appItem->getRoute());
 
-        // Set the args
-        fairWindApp->setArgs(appItem->getArgs());
+        auto web = new fairwindsk::ui::web::Web();
 
-        // invoke the app onStart method
-        fairWindApp->onStart();
+
+
+        web->setUrl(appItem->getUrl());
 
         // Get the app widget
-        widgetApp = ((fairwind::apps::FairWindApp *)fairWindApp)->getWidget();
+        widgetApp = web;
 
         // Check if the widget is valid
         if (widgetApp) {
@@ -133,26 +139,15 @@ void fairwindsk::ui::MainWindow::setForegroundApp(QString hash) {
     // Check if the widget is valid
     if (widgetApp) {
 
-        // Check if there is an app on foreground
-        if (m_fairWindApp) {
-
-            // Call the foreground app onPause method
-            m_fairWindApp->onPause();
-        }
-
         // Set the current app
-        m_fairWindApp = fairWindApp;
+        m_currentApp = appItem;
 
         // Update the UI with the new widget
         ui->stackedWidget_Center->setCurrentWidget(widgetApp);
 
-        // Call the new foreground app onResume method
-        m_fairWindApp->onResume();
-
         // Set the current app in ui components
-        m_topBar->setFairWindApp(appItem);
+        m_topBar->setCurrentApp(m_currentApp);
     }
-     */
 }
 
 /*
@@ -160,13 +155,14 @@ void fairwindsk::ui::MainWindow::setForegroundApp(QString hash) {
  * Method called when the user clicks the Apps button on the BottomBar object
  */
 void fairwindsk::ui::MainWindow::onApps() {
-    /*
-    // Show the settings view
-    auto fairWindSk = FairWindSk::getInstance();
+    // Set the current app
+    m_currentApp = nullptr;
 
-    // Show the launcher
-    setForegroundApp(fairWind->getAppHashById(fairWind->getLauncherFairWindAppId()));
-    */
+    // Update the UI with the new widget
+    ui->stackedWidget_Center->setCurrentWidget(m_launcher);
+
+    // Set the current app in ui components
+    m_topBar->setCurrentApp(m_currentApp);
 }
 
 /*
@@ -174,15 +170,7 @@ void fairwindsk::ui::MainWindow::onApps() {
  * Method called when the user clicks the Settings button on the BottomBar object
  */
 void fairwindsk::ui::MainWindow::onSettings() {
-    /*
-    // Show the settings view
-    auto fairWindSk = FairWindSk::getInstance();
-
-    auto settingsFairWindAppId = fairWind->getSettingsFairWindAppId();
-    if (!settingsFairWindAppId.isEmpty()) {
-        setForegroundApp(fairWindSk->getAppHashById(settingsFairWindAppId));
-    }
-     */
+    setForegroundApp("admin");
 }
 
 /*

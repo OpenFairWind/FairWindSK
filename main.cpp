@@ -1,11 +1,23 @@
 #include <QApplication>
 #include <QPushButton>
 #include <QSplashScreen>
+#include <QWebEngineProfile>
+#include <QWebEngineSettings>
+#include <QLoggingCategory>
 
 #include "FairWindSK.hpp"
 #include "ui/MainWindow.hpp"
+#include "ui/web/Browser.hpp"
+#include "ui/web/BrowserWindow.hpp"
+#include "ui/web/TabWidget.hpp"
+
+using namespace Qt::StringLiterals;
 
 int main(int argc, char *argv[]) {
+
+    // Set the organization name
+    QCoreApplication::setOrganizationName("uniparthenope.it");
+
     // Enable OpenGL shared contexts
     QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts );
 
@@ -40,5 +52,20 @@ int main(int argc, char *argv[]) {
 
     // Close the splash screen presenting the MainWindow UI
     splash.finish((QWidget *)&w);
+
+    QLoggingCategory::setFilterRules(u"qt.webenginecontext.debug=true"_s);
+
+    QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
+    QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::DnsPrefetchEnabled, true);
+
+    /*
+    QUrl url = QUrl("http://172.24.1.1:3000/");
+    fairwindsk::ui::web::Browser browser;
+    fairwindsk::ui::web::BrowserWindow *window = browser.createHiddenWindow();
+    window->tabWidget()->setUrl(url);
+    window->show();
+    splash.finish((QWidget *)window);
+     */
+
     return QApplication::exec();
 }

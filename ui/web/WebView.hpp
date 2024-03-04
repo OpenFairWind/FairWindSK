@@ -11,6 +11,7 @@
 #if QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
 #include <QWebEngineFileSystemAccessRequest>
 #endif
+
 #include <QWebEnginePage>
 #include <QWebEngineRegisterProtocolHandlerRequest>
 
@@ -58,19 +59,19 @@ namespace fairwindsk::ui::web {
 
         void handleRegisterProtocolHandlerRequested(QWebEngineRegisterProtocolHandlerRequest request);
 
-    #if QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
+#if QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
 
         void handleFileSystemAccessRequested(QWebEngineFileSystemAccessRequest request);
 
-    #endif
+#endif
 
     private:
         void createWebActionTrigger(QWebEnginePage *page, QWebEnginePage::WebAction);
 
     private:
         int m_loadProgress = 100;
-    };
 
+    };
 }
 
 #endif //FAIRWINDSK_WEBVIEW_HPP
