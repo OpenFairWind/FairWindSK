@@ -6,7 +6,7 @@
 #define FAIRWINDSK_DOWNLOADWIDGET_HPP
 
 
-#include "ui_downloadwidget.h"
+#include "ui_DownloadWidget.h"
 
 #include <QFrame>
 #include <QElapsedTimer>

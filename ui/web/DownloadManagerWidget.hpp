@@ -5,7 +5,7 @@
 #ifndef FAIRWINDSK_DOWNLOADMANAGERWIDGET_HPP
 #define FAIRWINDSK_DOWNLOADMANAGERWIDGET_HPP
 
-#include "ui_downloadmanagerwidget.h"
+#include "ui_DownloadManagerWidget.h"
 
 #include <QWidget>
 

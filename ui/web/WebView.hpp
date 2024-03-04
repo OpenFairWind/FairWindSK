@@ -15,6 +15,9 @@
 #include <QWebEnginePage>
 #include <QWebEngineRegisterProtocolHandlerRequest>
 
+#include "ui_CertificateErrorDialog.h"
+#include "ui_PasswordDialog.h"
+
 class WebPage;
 
 namespace fairwindsk::ui::web {

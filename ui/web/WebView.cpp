@@ -8,8 +8,7 @@
 #include "WebPage.hpp"
 #include "WebPopupWindow.hpp"
 #include "WebView.hpp"
-#include "ui_certificateerrordialog.h"
-#include "ui_passworddialog.h"
+
 
 #include <QContextMenuEvent>
 #include <QDebug>
