@@ -67,7 +67,7 @@ color: rgb(250, 255, 255);</string>
             <string notr="true">background-color: rgba(255, 255, 255, 0);</string>
            </property>
            <property name="text">
-            <string>Version 1.01</string>
+            <string>Signal K Version 0.01</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignCenter</set>
@@ -80,7 +80,7 @@ color: rgb(250, 255, 255);</string>
             <string notr="true">background-color: rgba(255, 255, 255, 0);</string>
            </property>
            <property name="text">
-            <string>Copyright 2021</string>
+            <string>Copyright 2024</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignCenter</set>
