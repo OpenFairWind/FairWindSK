@@ -30,7 +30,7 @@ fairwindsk::ui::MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), u
     ui->stackedWidget_Center->addWidget(m_launcher);
     m_bottomBar = new fairwindsk::ui::bottombar::BottomBar(ui->widget_Bottom);
 
-    m_browser = new web::Browser();
+    //m_browser = new web::Browser();
 
     // Place the Apps object at the center of the UI
     setCentralWidget(ui->centralwidget);
