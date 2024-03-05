@@ -14,6 +14,7 @@
 #include <QNetworkReply>
 
 
+
 namespace fairwindsk {
 /*
  * FairWind
@@ -50,6 +51,14 @@ namespace fairwindsk {
 
         // Return the config object
         return config;
+    }
+
+    /*
+ * getSignalKDocument
+ * Returns the SignalK document
+ */
+    signalk::Document *FairWindSK::getSignalKDocument() {
+        return &m_signalkDocument;
     }
 
     AppItem *FairWindSK::getAppItemByHash(QString hash) {

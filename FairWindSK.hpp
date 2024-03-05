@@ -10,6 +10,7 @@
 #include <QMap>
 #include <QJsonDocument>
 #include "AppItem.hpp"
+#include "signalk/Document.hpp"
 
 namespace fairwindsk {
     /*
@@ -36,6 +37,8 @@ namespace fairwindsk {
 
         bool useVirtualKeyboard();
 
+        signalk::Document *getSignalKDocument();
+
     private:
 
         QMap<QString, AppItem *> m_mapHash2AppItem;
@@ -45,7 +48,7 @@ namespace fairwindsk {
         FairWindSK();
         inline static FairWindSK *m_instance = nullptr;
 
-
+        signalk::Document m_signalkDocument;
     };
 }
 
