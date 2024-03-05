@@ -10,9 +10,6 @@
 #include <QJsonObject>
 #include <QToolButton>
 
-
-
-
 #include "TopBar.hpp"
 
 
@@ -51,12 +48,51 @@ namespace fairwindsk::ui::topbar {
         // Get the FairWind singleton
         auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
+        // Get the signalk document from the FairWind singleton itslef
+        auto signalKDocument = fairWindSK->getSignalKDocument();
 
         // Get the configuration object
         auto config = fairWindSK->getConfig();
 
 
+        // Check if the configuration object has the key Options
+        if (config.contains("Options") && config["Options"].isObject()) {
 
+            // Get the Options object
+            auto jsonObjectOptions = config["Options"].toObject();
+
+            // Check if the Options object has tHe Position key and if it is a string
+            if (jsonObjectOptions.contains("Position") && jsonObjectOptions["Position"].isString()) {
+
+                // Get the position SignalK key
+                auto positionSignalK = jsonObjectOptions["Position"].toString();
+
+                // Subscribe to signalk and make sure that navigation infos are updated accordingly
+                signalKDocument->subscribe(positionSignalK, this, SLOT(fairwind::ui::topbar::TopBar::updateNavigationPosition));
+            }
+
+            // Check if the Options object has tHe Heading key and if it is a string
+            if (jsonObjectOptions.contains("Heading") && jsonObjectOptions["Heading"].isString()) {
+
+                // Get the heading SignalK key
+                auto headingSignalK = jsonObjectOptions["Heading"].toString();
+
+                // Subscribe to signalk and make sure that navigation infos are updated accordingly
+                signalKDocument->subscribe(headingSignalK, this,
+                                           SLOT(fairwind::ui::topbar::TopBar::updateNavigationCourseOverGroundTrue));
+            }
+
+            // Check if the Options object has tHe Speed key and if it is a string
+            if (jsonObjectOptions.contains("Speed") && jsonObjectOptions["Speed"].isString()) {
+
+                // Get the speed SignalK key
+                auto speedSignalK = jsonObjectOptions["Speed"].toString();
+
+                // Subscribe to signalk and make sure that navigation infos are updated accordingly
+                signalKDocument->subscribe(speedSignalK, this,
+                                           SLOT(fairwind::ui::topbar::TopBar::updateNavigationSpeedOverGround));
+            }
+        }
     }
 
 /*
@@ -118,24 +154,37 @@ namespace fairwindsk::ui::topbar {
         // Get the FairWind singleton
         auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
-        // Show the coordinates
-        ui->label_Position_value->setText("sss");
+        // Get the signalk document from the FairWind singleton itself
+        auto signalKDocument = fairWindSK->getSignalKDocument();
 
+        // Show the coordinates
+        ui->label_Position_value->setText(
+                signalKDocument->getNavigationPosition().toString(
+                        QGeoCoordinate::DegreesMinutesSecondsWithHemisphere
+                )
+        );
 
     }
 
-/*
+
+    /*
  * updateNavigationCourseOverGroundTrue
  * Method called in accordance to signalk to update the navigation course over ground
  */
     void TopBar::updateNavigationCourseOverGroundTrue(const QJsonObject &update) {
         // Get the FairWind singleton
         auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+        // Get the signalk document from the FairWind singleton itself
+        auto signalKDocument = fairWindSK->getSignalKDocument();
 
+        // Get the Course over ground
+        double courseOverGroundTrue = signalKDocument->getNavigationCourseOverGroundTrue() * 57.2958;
 
+        // Build the formatted value
+        QString sCourseOverGroundTrue = QString{"%1"}.arg(courseOverGroundTrue, 3, 'f', 0, '0');
 
         // Set the course over ground label from the UI to the formatted value
-        ui->label_COG->setText("000");
+        ui->label_COG->setText(sCourseOverGroundTrue);
 
     }
 
@@ -145,12 +194,17 @@ namespace fairwindsk::ui::topbar {
  */
     void TopBar::updateNavigationSpeedOverGround(const QJsonObject &update) {
         // Get the FairWind singleton
-        auto fairWind = fairwindsk::FairWindSK::getInstance();
+        auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+        // Get the signalk document from the FairWind singleton itself
+        auto signalKDocument = fairWindSK->getSignalKDocument();
 
-
+        // Get the speed value
+        double speedverGround = signalKDocument->getNavigationSpeedOverGround() * 1.94384;
+        // Build the formatted value
+        QString sSpeedOverGround = QString{"%1"}.arg(speedverGround, 3, 'f', 1, '0');
 
         // Set the speed over ground label from the UI to the formatted value
-        ui->label_SOG->setText("000");
+        ui->label_SOG->setText(sSpeedOverGround);
 
     }
 
