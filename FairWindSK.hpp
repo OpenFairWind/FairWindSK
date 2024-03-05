@@ -11,6 +11,7 @@
 #include <QJsonDocument>
 #include "AppItem.hpp"
 #include "signalk/Document.hpp"
+#include "SignalKClient.hpp"
 
 namespace fairwindsk {
     /*
@@ -28,6 +29,7 @@ namespace fairwindsk {
 
         QJsonObject getConfig();
 
+        void startSignalK();
 
 
         void loadApps();
@@ -49,6 +51,8 @@ namespace fairwindsk {
         inline static FairWindSK *m_instance = nullptr;
 
         signalk::Document m_signalkDocument;
+
+        SignalKClient m_signalkClient;
     };
 }
 

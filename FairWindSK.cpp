@@ -40,6 +40,14 @@ namespace fairwindsk {
     }
 
 
+    void FairWindSK::startSignalK() {
+        QMap<QString,QVariant> params;
+        params["debug"] = true;
+        params["active"] = true;
+        params["restore"] = true;
+        m_signalkClient.init(params);
+    }
+
 /*
  * getConfig
  * Returns the configuration infos
