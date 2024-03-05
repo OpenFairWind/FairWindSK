@@ -96,6 +96,7 @@ namespace fairwindsk {
             if (mRestore) {
                 QJsonObject allSignalK = getAll();
                 fairWindSK->getSignalKDocument()->insert("", allSignalK);
+                qDebug() << allSignalK;
             }
 
             // Check if the self is defined
