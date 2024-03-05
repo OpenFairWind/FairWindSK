@@ -44,6 +44,8 @@ int main(int argc, char *argv[]) {
     // Get the FairWind singleton
     auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
+    fairWindSK->startSignalK();
+
     // Check if the virtual keyboard have to be activated
     if (fairWindSK->useVirtualKeyboard()) {
 
