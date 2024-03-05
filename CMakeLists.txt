@@ -37,6 +37,11 @@ add_executable(${PROJECT_NAME}
         main.cpp
         FairWindSK.cpp FairWindSK.hpp
         AppItem.cpp AppItem.hpp
+        SignalKClient.cpp SignalKClient.hpp
+        signalk/Document.cpp signalk/Document.hpp
+        signalk/Note.cpp signalk/Note.hpp
+        signalk/Waypoint.cpp signalk/Waypoint.hpp
+        signalk/Subscription.cpp signalk/Subscription.hpp
 
         ui/launcher/Launcher.cpp ui/launcher/Launcher.hpp ui/launcher/Launcher.ui
         ui/about/About.cpp ui/about/About.hpp ui/about/About.ui
@@ -44,10 +49,9 @@ add_executable(${PROJECT_NAME}
         ui/bottombar/BottomBar.cpp ui/bottombar/BottomBar.hpp ui/bottombar/BottomBar.ui
         ui/MainWindow.cpp ui/MainWindow.hpp ui/MainWindow.ui
 
-        #ui/web/Web.cpp ui/web/Web.hpp ui/web/Web.ui
-
-        ui/web/Browser.cpp ui/web/Browser.hpp
-        ui/web/BrowserWindow.cpp ui/web/BrowserWindow.hpp
+        ui/web/Web.cpp ui/web/Web.hpp ui/web/Web.ui
+        #ui/web/Browser.cpp ui/web/Browser.hpp
+        #ui/web/BrowserWindow.cpp ui/web/BrowserWindow.hpp
         ui/web/WebPage.cpp ui/web/WebPage.hpp
         ui/web/WebPopupWindow.cpp ui/web/WebPopupWindow.hpp
         ui/web/WebView.cpp ui/web/WebView.hpp
@@ -56,8 +60,6 @@ add_executable(${PROJECT_NAME}
         ui/web/DownloadWidget.cpp ui/web/DownloadWidget.hpp ui/web/DownloadWidget.ui
 
         resources.qrc
-        ui/web/Web.hpp
-        ui/web/Web.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
