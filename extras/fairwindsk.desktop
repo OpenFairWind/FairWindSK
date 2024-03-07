@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=FairWind++
+Comment=FairWind
+NoDisplay=false
+Exec=/usr/bin/lxterminal -e /home/pi/fairwindplusplus/FairWind.sh
+NotShowIn=GNOME;KDE;XFCE;
