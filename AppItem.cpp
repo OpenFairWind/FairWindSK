@@ -106,7 +106,7 @@ namespace fairwindsk {
 
                 if (!appIcon.isEmpty()) {
                     // Get the icon URL
-                    QString url = "http://172.24.1.1:3000/" + getName() + "/" + appIcon;
+                    QString url = FairWindSK::getInstance()->getSignalKServerUrl() + "/" + getName() + "/" + appIcon;
 
                     qDebug() << url;
 
@@ -226,7 +226,7 @@ namespace fairwindsk {
      */
     QString AppItem::getUrl() {
         QString url;
-        url = "http://172.24.1.1:3000/" + getName() + "/";
+        url = FairWindSK::getInstance()->getSignalKServerUrl() + "/" + getName() + "/";
         return url;
     }
 
