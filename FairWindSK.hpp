@@ -21,13 +21,10 @@ namespace fairwindsk {
     class FairWindSK: public QObject {
         Q_OBJECT
 
-
-
-
     public:
         static FairWindSK *getInstance();
 
-        QJsonObject getConfig();
+        QJsonObject getConfiguration();
 
         void startSignalK();
 
@@ -41,6 +38,12 @@ namespace fairwindsk {
 
         signalk::Document *getSignalKDocument();
 
+        QString getSignalKServerUrl();
+        QString getUsername();
+        QString getPassword();
+
+        bool isDebug();
+
     private:
 
         QMap<QString, AppItem *> m_mapHash2AppItem;
@@ -53,6 +56,12 @@ namespace fairwindsk {
         signalk::Document m_signalkDocument;
 
         SignalKClient m_signalkClient;
+
+        QString m_signalKServerUrl;
+        QString m_username;
+        QString m_password;
+
+        bool m_debug;
     };
 }
 
