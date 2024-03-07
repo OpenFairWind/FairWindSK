@@ -36,7 +36,6 @@ namespace fairwindsk {
  * Initialization method
  */
     void SignalKClient::init(QMap<QString, QVariant> params) {
-        qDebug() << "SignalKAPIClient::onInit(" << params << ")";
 
 
         auto fairWindSK = fairwindsk::FairWindSK::getInstance();
@@ -79,7 +78,7 @@ namespace fairwindsk {
         }
 
         if (params.contains("password")) {
-            mUsername = params["password"].toString();
+            mPassword = params["password"].toString();
         }
 
         // Check if the self is set manually
@@ -87,6 +86,9 @@ namespace fairwindsk {
         if (params.contains("self")) {
             self = params["self"].toString();
         }
+
+        if (mDebug)
+            qDebug() << "SignalKAPIClient::onInit(" << params << ")";
 
         if (mActive) {
 
@@ -96,7 +98,9 @@ namespace fairwindsk {
             if (mRestore) {
                 QJsonObject allSignalK = getAll();
                 fairWindSK->getSignalKDocument()->insert("", allSignalK);
-                qDebug() << allSignalK;
+
+                if (mDebug)
+                    qDebug() << allSignalK;
             }
 
             // Check if the self is defined
@@ -118,7 +122,10 @@ namespace fairwindsk {
  */
     QString SignalKClient::getSelf() {
         auto result = httpGet(http()+"self");
-        qDebug() << "SignalKClient::getSelf :" << result;
+
+        if (mDebug)
+            qDebug() << "SignalKClient::getSelf :" << result;
+
         return result.replace("\"","");
     }
 
@@ -154,7 +161,10 @@ namespace fairwindsk {
         if (!mToken.isEmpty()) {
             payload["token"] = mToken;
         }
-        qDebug() << "SignalKClient::signalkPut payload: " << payload;
+
+        if (mDebug)
+            qDebug() << "SignalKClient::signalkPut payload: " << payload;
+
         auto data = httpPut(url,payload);
         return QJsonDocument::fromJson(data).object();
     }
@@ -163,7 +173,10 @@ namespace fairwindsk {
         if (!mToken.isEmpty()) {
             payload["token"] = mToken;
         }
-        qDebug() << "SignalKClient::signalkPost payload: " << payload;
+
+        if (mDebug)
+            qDebug() << "SignalKClient::signalkPost payload: " << payload;
+
         auto data = httpPost(url, payload);
         return QJsonDocument::fromJson(data).object();
     }
@@ -189,7 +202,9 @@ namespace fairwindsk {
         }
 
         if (reply->error() != QNetworkReply::NoError) {
-            qDebug() << "Failure" << reply->errorString();
+
+            if (mDebug)
+                qDebug() << "Failure" << reply->errorString();
         }
         QByteArray data = reply->readAll();
         return data;
@@ -210,7 +225,9 @@ namespace fairwindsk {
 
         if (!mCookie.isEmpty()) {
             req.setRawHeader("Cookie", mCookie.toLatin1());
-            qDebug() << "SignalKClient::httpPost cookie: " << mCookie.toLatin1();
+
+            if (mDebug)
+                qDebug() << "SignalKClient::httpPost cookie: " << mCookie.toLatin1();
         }
 
         QScopedPointer<QNetworkReply> reply(manager.post(req, jsonDocument.toJson()));
@@ -221,14 +238,17 @@ namespace fairwindsk {
         }
 
         if (reply->error() != QNetworkReply::NoError) {
-            qDebug() << "Failure" << reply->errorString();
+            if (mDebug)
+                qDebug() << "Failure" << reply->errorString();
         }
         QByteArray data = reply->readAll();
 
         auto cookie = reply->rawHeader("Set-Cookie");
         if (cookie!= nullptr && cookie.size()>0) {
             mCookie = cookie;
-            qDebug() << "mCookie: " <<mCookie;
+
+            if (mDebug)
+                qDebug() << "mCookie: " <<mCookie;
         }
         /*
         QList<QByteArray> headerList = reply->rawHeaderList();
@@ -277,14 +297,21 @@ namespace fairwindsk {
         payload["username"] = mUsername;
         payload["password"] = mPassword;
         QJsonObject data = signalkPost(mUrl + "/" + mVersion + "/auth/login", payload);
-        qDebug() << "SignalKClient::login : " << data;
+
+        if (mDebug)
+            qDebug() << "SignalKClient::login : " << data;
 
         if (data.contains("token") && data["token"].isString()) {
             mToken = data["token"].toString();
-            qDebug() << "SignalKClient::login token: " << mToken;
+
+            if (mDebug)
+                qDebug() << "SignalKClient::login token: " << mToken;
+
             result = true;
         } else if (data.contains("message") && data["message"].isString() ){
-            qDebug() << data["message"].toString();
+
+            if (mDebug)
+                qDebug() << data["message"].toString();
         }
 
         return result;
