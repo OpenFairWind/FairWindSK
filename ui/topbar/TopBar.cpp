@@ -52,46 +52,41 @@ namespace fairwindsk::ui::topbar {
         auto signalKDocument = fairWindSK->getSignalKDocument();
 
         // Get the configuration object
-        auto config = fairWindSK->getConfig();
+        auto jsonObjectConfiguration = fairWindSK->getConfiguration();
 
 
-        // Check if the configuration object has the key Options
-        if (config.contains("Options") && config["Options"].isObject()) {
 
-            // Get the Options object
-            auto jsonObjectOptions = config["Options"].toObject();
 
-            // Check if the Options object has tHe Position key and if it is a string
-            if (jsonObjectOptions.contains("Position") && jsonObjectOptions["Position"].isString()) {
+        // Check if the Options object has tHe Position key and if it is a string
+        if (jsonObjectConfiguration.contains("position") && jsonObjectConfiguration["position"].isString()) {
 
-                // Get the position SignalK key
-                auto positionSignalK = jsonObjectOptions["Position"].toString();
+            // Get the position SignalK key
+            auto positionSignalK = jsonObjectConfiguration["position"].toString();
 
-                // Subscribe to signalk and make sure that navigation infos are updated accordingly
-                signalKDocument->subscribe(positionSignalK, this, SLOT(fairwind::ui::topbar::TopBar::updateNavigationPosition));
-            }
+            // Subscribe to signalk and make sure that navigation infos are updated accordingly
+            signalKDocument->subscribe(positionSignalK, this, SLOT(fairwindsk::ui::topbar::TopBar::updateNavigationPosition));
+        }
 
-            // Check if the Options object has tHe Heading key and if it is a string
-            if (jsonObjectOptions.contains("Heading") && jsonObjectOptions["Heading"].isString()) {
+        // Check if the Options object has tHe Heading key and if it is a string
+        if (jsonObjectConfiguration.contains("heading") && jsonObjectConfiguration["heading"].isString()) {
 
-                // Get the heading SignalK key
-                auto headingSignalK = jsonObjectOptions["Heading"].toString();
+            // Get the heading SignalK key
+            auto headingSignalK = jsonObjectConfiguration["heading"].toString();
 
-                // Subscribe to signalk and make sure that navigation infos are updated accordingly
-                signalKDocument->subscribe(headingSignalK, this,
-                                           SLOT(fairwind::ui::topbar::TopBar::updateNavigationCourseOverGroundTrue));
-            }
+            // Subscribe to signalk and make sure that navigation infos are updated accordingly
+            signalKDocument->subscribe(headingSignalK, this,
+                                       SLOT(fairwindsk::ui::topbar::TopBar::updateNavigationCourseOverGroundTrue));
+        }
 
-            // Check if the Options object has tHe Speed key and if it is a string
-            if (jsonObjectOptions.contains("Speed") && jsonObjectOptions["Speed"].isString()) {
+        // Check if the Options object has tHe Speed key and if it is a string
+        if (jsonObjectConfiguration.contains("speed") && jsonObjectConfiguration["speed"].isString()) {
 
-                // Get the speed SignalK key
-                auto speedSignalK = jsonObjectOptions["Speed"].toString();
+            // Get the speed SignalK key
+            auto speedSignalK = jsonObjectConfiguration["speed"].toString();
 
-                // Subscribe to signalk and make sure that navigation infos are updated accordingly
-                signalKDocument->subscribe(speedSignalK, this,
-                                           SLOT(fairwind::ui::topbar::TopBar::updateNavigationSpeedOverGround));
-            }
+            // Subscribe to signalk and make sure that navigation infos are updated accordingly
+            signalKDocument->subscribe(speedSignalK, this,
+                                       SLOT(fairwindsk::ui::topbar::TopBar::updateNavigationSpeedOverGround));
         }
     }
 
