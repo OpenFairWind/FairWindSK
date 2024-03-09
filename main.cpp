@@ -1,9 +1,8 @@
 #include <QApplication>
-#include <QPushButton>
 #include <QSplashScreen>
+#include <QTimer>
 #include <QWebEngineProfile>
 #include <QWebEngineSettings>
-#include <QLoggingCategory>
 
 #include "FairWindSK.hpp"
 #include "ui/MainWindow.hpp"
@@ -14,23 +13,29 @@ using namespace Qt::StringLiterals;
 
 int main(int argc, char *argv[]) {
 
-    // The QT application
-    QApplication app(argc, argv);
-
-    // Get the splash screen logo
-    QPixmap pixmap(":/resources/images/other/splash_logo.png");
-
-    // Create a splash screen containing the logo
-    QSplashScreen splash(pixmap);
-
-    // Show the logo
-    splash.show();
-
     // Set the organization name
     QCoreApplication::setOrganizationName("uniparthenope.it");
 
     // Enable OpenGL shared contexts
     QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts );
+
+    // The QT application
+    QApplication app(argc, argv);
+
+    // Set the window icon
+    QApplication::setWindowIcon(QIcon(QPixmap::fromImage(QImage(":/resources/images/icons/fairwind_icon.png"))));
+
+    // Get the splash screen logo
+    QPixmap pixmap(":/resources/images/other/splash_logo.png");
+
+    // Create a splash screen containing the logo
+    QSplashScreen splash(pixmap, Qt::WindowStaysOnTopHint);
+
+    // Show the logo
+    splash.show();
+
+    // Show message
+    splash.showMessage("Welcome to FairWindSK a GUI for the Signal K server!", 500, Qt::white);
 
     // Get the FairWind singleton
     auto fairWindSK = fairwindsk::FairWindSK::getInstance();
@@ -50,11 +55,6 @@ int main(int argc, char *argv[]) {
         // Activate the virtual keyboard
         qputenv("QT_IM_MODULE", QByteArray("qtvirtualkeyboard"));
     }
-
-    // Set the window icon
-    QApplication::setWindowIcon(QIcon(QPixmap::fromImage(QImage(":/resources/images/icons/fairwind_icon.png"))));
-
-    QLoggingCategory::setFilterRules(u"qt.webenginecontext.debug=true"_s);
 
     QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
     QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::DnsPrefetchEnabled, true);

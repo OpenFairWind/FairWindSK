@@ -6,14 +6,15 @@
 #include <QDir>
 #include <QCoreApplication>
 #include <QSettings>
-#include <utility>
 #include <QJsonArray>
+
+#include <QLoggingCategory>
 
 #include <FairWindSK.hpp>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 
-
+using namespace Qt::StringLiterals;
 
 namespace fairwindsk {
 /*
@@ -204,6 +205,10 @@ namespace fairwindsk {
 
         // Store the configuration in the settings
         settings.setValue("debug", m_debug);
+
+        if (m_debug) {
+            QLoggingCategory::setFilterRules(u"qt.webenginecontext.debug=true"_s);
+        }
     }
 
 }
