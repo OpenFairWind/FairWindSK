@@ -38,7 +38,7 @@ namespace fairwindsk::ui::topbar {
 
         signals:
         void clickedToolbuttonUL();
-        void clickedToolbuttonUR();
+        //void clickedToolbuttonUR();
 
     private:
         Ui::TopBar *ui;

@@ -11,7 +11,7 @@
 #include <QToolButton>
 
 #include "TopBar.hpp"
-
+#include "../web/Web.hpp"
 
 namespace fairwindsk::ui::topbar {
 /*
@@ -48,7 +48,7 @@ namespace fairwindsk::ui::topbar {
         // Get the FairWind singleton
         auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
-        // Get the signalk document from the FairWind singleton itslef
+        // Get the signalk document from the FairWind singleton
         auto signalKDocument = fairWindSK->getSignalKDocument();
 
         // Get the configuration object
@@ -127,8 +127,7 @@ namespace fairwindsk::ui::topbar {
  * Method called when the user wants to view the apps screen
  */
     void TopBar::toolbuttonUR_clicked() {
-        // Emit the signal to tell the MainWindow to update the UI and show the apps screen
-        emit clickedToolbuttonUR();
+        m_currentApp->getWeb()->toggleButtons();
     }
 
 /*
