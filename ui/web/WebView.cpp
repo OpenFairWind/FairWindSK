@@ -4,7 +4,7 @@
 
 //#include "Browser.hpp"
 //#include "BrowserWindow.hpp"
-#include "TabWidget.hpp"
+
 #include "WebPage.hpp"
 #include "WebPopupWindow.hpp"
 #include "WebView.hpp"
@@ -27,18 +27,15 @@ namespace fairwindsk::ui::web {
     {
         connect(this, &QWebEngineView::loadStarted, [this]() {
             m_loadProgress = 0;
-            emit favIconChanged(favIcon());
         });
         connect(this, &QWebEngineView::loadProgress, [this](int progress) {
             m_loadProgress = progress;
         });
         connect(this, &QWebEngineView::loadFinished, [this](bool success) {
             m_loadProgress = success ? 100 : -1;
-            emit favIconChanged(favIcon());
         });
-        connect(this, &QWebEngineView::iconChanged, [this](const QIcon &) {
-            emit favIconChanged(favIcon());
-        });
+
+
 
         connect(this, &QWebEngineView::renderProcessTerminated,
                 [this](QWebEnginePage::RenderProcessTerminationStatus termStatus, int statusCode) {
@@ -106,10 +103,7 @@ namespace fairwindsk::ui::web {
                        &WebView::handleFileSystemAccessRequested);
 #endif
         }
-        createWebActionTrigger(page,QWebEnginePage::Forward);
-        createWebActionTrigger(page,QWebEnginePage::Back);
-        createWebActionTrigger(page,QWebEnginePage::Reload);
-        createWebActionTrigger(page,QWebEnginePage::Stop);
+
         QWebEngineView::setPage(page);
         connect(page, &WebPage::createCertificateErrorDialog, this, &WebView::handleCertificateError);
         connect(page, &QWebEnginePage::authenticationRequired, this,
@@ -131,92 +125,6 @@ namespace fairwindsk::ui::web {
         return m_loadProgress;
     }
 
-    void WebView::createWebActionTrigger(QWebEnginePage *page, QWebEnginePage::WebAction webAction)
-    {
-        QAction *action = page->action(webAction);
-        connect(action, &QAction::changed, [this, action, webAction]{
-            emit webActionEnabledChanged(webAction, action->isEnabled());
-        });
-    }
-
-    bool WebView::isWebActionEnabled(QWebEnginePage::WebAction webAction) const
-    {
-        return page()->action(webAction)->isEnabled();
-    }
-
-    QIcon WebView::favIcon() const
-    {
-        QIcon favIcon = icon();
-        if (!favIcon.isNull())
-            return favIcon;
-
-        if (m_loadProgress < 0) {
-            static QIcon errorIcon(u":dialog-error.png"_s);
-            return errorIcon;
-        }
-        if (m_loadProgress < 100) {
-            static QIcon loadingIcon(u":view-refresh.png"_s);
-            return loadingIcon;
-        }
-
-        static QIcon defaultIcon(u":text-html.png"_s);
-        return defaultIcon;
-    }
-
-    QWebEngineView *WebView::createWindow(QWebEnginePage::WebWindowType type)
-    {
-        /*
-        BrowserWindow *mainWindow = qobject_cast<BrowserWindow*>(window());
-        if (!mainWindow)
-            return nullptr;
-        */
-        switch (type) {
-            /*
-            case QWebEnginePage::WebBrowserTab: {
-                return mainWindow->tabWidget()->createTab();
-            }
-            case QWebEnginePage::WebBrowserBackgroundTab: {
-                return mainWindow->tabWidget()->createBackgroundTab();
-            }
-            case QWebEnginePage::WebBrowserWindow: {
-                return mainWindow->browser()->createWindow()->currentTab();
-            }
-             */
-            case QWebEnginePage::WebBrowserTab:
-            case QWebEnginePage::WebBrowserBackgroundTab:
-            case QWebEnginePage::WebBrowserWindow: {
-                auto *popup = new WebPopupWindow(page()->profile());
-                connect(popup->view(), &WebView::devToolsRequested, this, &WebView::devToolsRequested);
-                return popup->view();
-            }
-
-            case QWebEnginePage::WebDialog: {
-                auto *popup = new WebPopupWindow(page()->profile());
-                connect(popup->view(), &WebView::devToolsRequested, this, &WebView::devToolsRequested);
-                return popup->view();
-            }
-        }
-
-        return nullptr;
-    }
-
-    void WebView::contextMenuEvent(QContextMenuEvent *event)
-    {
-        QMenu *menu = createStandardContextMenu();
-        const QList<QAction *> actions = menu->actions();
-        auto inspectElement = std::find(actions.cbegin(), actions.cend(), page()->action(QWebEnginePage::InspectElement));
-        if (inspectElement == actions.cend()) {
-            auto viewSource = std::find(actions.cbegin(), actions.cend(), page()->action(QWebEnginePage::ViewSource));
-            if (viewSource == actions.cend())
-                menu->addSeparator();
-
-            QAction *action = menu->addAction("Open inspector in new window");
-            connect(action, &QAction::triggered, [this]() { emit devToolsRequested(page()); });
-        } else {
-            (*inspectElement)->setText(tr("Inspect element"));
-        }
-        menu->popup(event->globalPos());
-    }
 
     void WebView::handleCertificateError(QWebEngineCertificateError error)
     {

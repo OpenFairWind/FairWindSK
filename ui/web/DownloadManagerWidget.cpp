@@ -4,8 +4,7 @@
 
 #include "DownloadManagerWidget.hpp"
 
-#include "Browser.hpp"
-#include "BrowserWindow.hpp"
+
 #include "DownloadWidget.hpp"
 
 #include <QFileDialog>

@@ -36,7 +36,7 @@ namespace fairwindsk::ui::web {
         connect(m_view, &WebView::urlChanged, [this](const QUrl &url) {
             m_urlLineEdit->setText(url.toDisplayString());
         });
-        connect(m_view, &WebView::favIconChanged, m_favAction, &QAction::setIcon);
+
         connect(m_view->page(), &WebPage::geometryChangeRequested, this, &WebPopupWindow::handleGeometryChangeRequested);
         connect(m_view->page(), &WebPage::windowCloseRequested, this, &QWidget::close);
     }

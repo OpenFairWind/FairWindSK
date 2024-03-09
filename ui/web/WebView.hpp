@@ -18,9 +18,12 @@
 #include "ui_CertificateErrorDialog.h"
 #include "ui_PasswordDialog.h"
 
-class WebPage;
+
 
 namespace fairwindsk::ui::web {
+
+    class WebPage;
+
     class WebView : public QWebEngineView {
     Q_OBJECT
 
@@ -31,22 +34,14 @@ namespace fairwindsk::ui::web {
 
         int loadProgress() const;
 
-        bool isWebActionEnabled(QWebEnginePage::WebAction webAction) const;
 
-        QIcon favIcon() const;
 
     protected:
-        void contextMenuEvent(QContextMenuEvent *event) override;
 
-        QWebEngineView *createWindow(QWebEnginePage::WebWindowType type) override;
 
     signals:
 
-        void webActionEnabledChanged(QWebEnginePage::WebAction webAction, bool enabled);
 
-        void favIconChanged(const QIcon &icon);
-
-        void devToolsRequested(QWebEnginePage *source);
 
     private slots:
 
@@ -69,7 +64,7 @@ namespace fairwindsk::ui::web {
 #endif
 
     private:
-        void createWebActionTrigger(QWebEnginePage *page, QWebEnginePage::WebAction);
+
 
     private:
         int m_loadProgress = 100;
