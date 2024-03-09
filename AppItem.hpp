@@ -5,47 +5,53 @@
 #ifndef APPITEM_HPP
 #define APPITEM_HPP
 
-
 #include <QMap>
 #include <QJsonObject>
 #include <QImage>
 
+namespace fairwindsk::ui::web { class Web; }
 
 namespace fairwindsk {
+
     class AppItem: QObject {
-    Q_OBJECT
-    public:
-    AppItem();
+        Q_OBJECT
 
-    explicit AppItem(QJsonObject jsonApp, bool active=true, int order=1);
+        public:
+            AppItem();
 
-    AppItem(const AppItem &app);
+            explicit AppItem(QJsonObject jsonApp, bool active=true, int order=1);
 
-    QString getDisplayName();
-    QString getExtension();
-    bool getActive();
-    void setActive(bool active);
-    int getOrder();
-    void setOrder(int order);
-    QString getName();
-    QString getDescription();
-    QString getVersion();
-    QString getVendor();
-    QString getCopyright();
-    QString getLicense();
-    QString getAuthor();
-    QVector<QString> getContributors();
-    QString getUrl();
-    QPixmap getIcon();
+            AppItem(const AppItem &app);
 
+            QString getDisplayName();
 
-    bool operator<(const AppItem& o) const;
+            bool getActive();
+            void setActive(bool active);
+            int getOrder();
+            void setOrder(int order);
+            QString getName();
+            QString getDescription();
+            QString getVersion();
+            QString getVendor();
+            QString getCopyright();
+            QString getLicense();
+            QString getAuthor();
+            QVector<QString> getContributors();
+            QString getUrl();
+            QPixmap getIcon();
 
-    private:
-    QJsonObject m_jsonApp;
-    bool m_active;
-    int m_order;
-};
+            void setWeb(ui::web::Web *pWeb);
+            ui::web::Web *getWeb();
+
+            bool operator<(const AppItem& o) const;
+
+        private:
+            QJsonObject m_jsonApp;
+            bool m_active;
+            int m_order;
+
+            ui::web::Web *m_pWeb;
+    };
 }
 
 #endif //APPITEM_HPP

@@ -12,7 +12,6 @@
 #include "ui/bottombar/BottomBar.hpp"
 
 #include "ui/about/About.hpp"
-#include "ui/web/TabWidget.hpp"
 #include "ui/web/Web.hpp"
 
 
@@ -30,7 +29,7 @@ fairwindsk::ui::MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), u
     ui->stackedWidget_Center->addWidget(m_launcher);
     m_bottomBar = new fairwindsk::ui::bottombar::BottomBar(ui->widget_Bottom);
 
-    //m_browser = new web::Browser();
+
 
     // Place the Apps object at the center of the UI
     setCentralWidget(ui->centralwidget);
@@ -47,8 +46,7 @@ fairwindsk::ui::MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), u
     // Show the settings view when the user clicks on the Settings button inside the BottomBar object
     QObject::connect(m_topBar, &topbar::TopBar::clickedToolbuttonUL, this, &MainWindow::onUpperLeft);
 
-    // Show the settings view when the user clicks on the Settings button inside the TopBar object
-    QObject::connect(m_topBar, &topbar::TopBar::clickedToolbuttonUR, this, &MainWindow::onUpperRight);
+
 
     QObject::connect(m_launcher, &fairwindsk::ui::launcher::Launcher::foregroundAppChanged, this,
                      &MainWindow::setForegroundApp);
@@ -117,9 +115,10 @@ void fairwindsk::ui::MainWindow::setForegroundApp(QString hash) {
 
         auto web = new fairwindsk::ui::web::Web();
 
+        // Register the web widget
+        web->setApp(appItem);
+        appItem->setWeb(web);
 
-
-        web->setUrl(appItem->getUrl());
 
         // Get the app widget
         widgetApp = web;
@@ -195,30 +194,16 @@ void fairwindsk::ui::MainWindow::onAboutAccepted(fairwindsk::ui::about::About *a
     ui->stackedWidget_Center->setCurrentWidget(aboutPage->getCurrentWidget());
 }
 
-/*
- * onUpperRight
- * Method called when the user clicks the upper right icon
- */
-void fairwindsk::ui::MainWindow::onUpperRight() {
-    /*
-    // Show the settings view
-    if (m_fairWindApp) {
-        m_fairWindApp->colophon();
-    }
-     */
-
+fairwindsk::ui::topbar::TopBar *fairwindsk::ui::MainWindow::getTopBar() {
+    return reinterpret_cast<topbar::TopBar *>(&m_topBar);
 }
 
-TopBar *fairwindsk::ui::MainWindow::getTopBar() {
-    return reinterpret_cast<TopBar *>(&m_topBar);
+fairwindsk::ui::launcher::Launcher *fairwindsk::ui::MainWindow::getLauncher() {
+    return reinterpret_cast<fairwindsk::ui::launcher::Launcher *>(&m_launcher);;
 }
 
-Launcher *fairwindsk::ui::MainWindow::getLauncher() {
-    return reinterpret_cast<Launcher *>(&m_launcher);;
-}
-
-BottomBar *fairwindsk::ui::MainWindow::getBottomBar() {
-    return reinterpret_cast<BottomBar *>(&m_bottomBar);
+fairwindsk::ui::bottombar::BottomBar *fairwindsk::ui::MainWindow::getBottomBar() {
+    return reinterpret_cast<fairwindsk::ui::bottombar::BottomBar *>(&m_bottomBar);
 }
 
 

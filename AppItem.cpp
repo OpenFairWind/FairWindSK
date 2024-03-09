@@ -10,9 +10,11 @@
 #include <QPixmap>
 
 #include "AppItem.hpp"
+
 #include "FairWindSK.hpp"
 
 namespace fairwindsk {
+
     AppItem::AppItem() {}
 
 /*
@@ -228,6 +230,14 @@ namespace fairwindsk {
         QString url;
         url = FairWindSK::getInstance()->getSignalKServerUrl() + "/" + getName() + "/";
         return url;
+    }
+
+    void AppItem::setWeb(ui::web::Web *pWeb) {
+        m_pWeb = pWeb;
+    }
+
+    ui::web::Web *AppItem::getWeb() {
+        return m_pWeb;
     }
 
     bool AppItem::operator<(const AppItem &o) const {

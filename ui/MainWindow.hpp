@@ -17,13 +17,13 @@
 #include <ui/bottombar/BottomBar.hpp>
 #include <ui/about/About.hpp>
 
-class TopBar;
-class Launcher;
-class BottomBar;
-
 namespace Ui { class MainWindow; }
 
 namespace fairwindsk::ui {
+
+    namespace topbar {class TopBar; }
+    namespace launcher {class Launcher;}
+    namespace bottombar {class BottomBar;}
 
     class MainWindow : public QMainWindow {
         Q_OBJECT
@@ -35,9 +35,9 @@ namespace fairwindsk::ui {
 
         Ui::MainWindow *getUi();
 
-        TopBar *getTopBar();
-        Launcher *getLauncher();
-        BottomBar *getBottomBar();
+        topbar::TopBar *getTopBar();
+        launcher::Launcher *getLauncher();
+        bottombar::BottomBar *getBottomBar();
 
 
     public
@@ -48,7 +48,7 @@ namespace fairwindsk::ui {
 
         void onSettings();
         void onUpperLeft();
-        void onUpperRight();
+
 
         void onAboutAccepted(about::About *aboutPage);
 

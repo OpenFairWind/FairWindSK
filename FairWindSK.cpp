@@ -23,36 +23,7 @@ namespace fairwindsk {
  */
     FairWindSK::FairWindSK() {
         qDebug() << "FairWindSK constructor";
-
-        // Initialize the QT managed settings
-        QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
-
-        // Get the name of the FairWind++ configuration file
-        m_signalKServerUrl = settings.value("signalk-server", "http://172.24.1.1:3000").toString();
-
-        // Store the configuration in the settings
-        settings.setValue("signalk-server", m_signalKServerUrl);
-
-        // Get the name of the FairWind++ configuration file
-        m_username = settings.value("username", "admin").toString();
-
-        // Store the configuration in the settings
-        settings.setValue("username", m_username);
-
-        // Get the name of the FairWind++ configuration file
-        m_password = settings.value("password", "password").toString();
-
-        // Store the configuration in the settings
-        settings.setValue("password", m_password);
-
-        // Get the name of the FairWind++ configuration file
-        m_debug = settings.value("debug", false).toBool();
-
-        // Store the configuration in the settings
-        settings.setValue("debug", m_debug);
     }
-
-
 
 /*
  * getInstance
@@ -204,6 +175,35 @@ namespace fairwindsk {
         }
 
         return result;
+    }
+
+    void FairWindSK::loadConfig() {
+        // Initialize the QT managed settings
+        QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
+
+        // Get the name of the FairWind++ configuration file
+        m_signalKServerUrl = settings.value("signalk-server", "http://172.24.1.1:3000").toString();
+
+        // Store the configuration in the settings
+        settings.setValue("signalk-server", m_signalKServerUrl);
+
+        // Get the name of the FairWind++ configuration file
+        m_username = settings.value("username", "admin").toString();
+
+        // Store the configuration in the settings
+        settings.setValue("username", m_username);
+
+        // Get the name of the FairWind++ configuration file
+        m_password = settings.value("password", "password").toString();
+
+        // Store the configuration in the settings
+        settings.setValue("password", m_password);
+
+        // Get the name of the FairWind++ configuration file
+        m_debug = settings.value("debug", false).toBool();
+
+        // Store the configuration in the settings
+        settings.setValue("debug", m_debug);
     }
 
 }

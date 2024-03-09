@@ -14,6 +14,9 @@
 #include "SignalKClient.hpp"
 
 namespace fairwindsk {
+
+    class AppItem;
+
     /*
      * FairWind
      * Singleton used to handle the entire FairWind ecosystem in a centralized way
@@ -21,15 +24,18 @@ namespace fairwindsk {
     class FairWindSK: public QObject {
         Q_OBJECT
 
+
+
     public:
         static FairWindSK *getInstance();
 
         QJsonObject getConfiguration();
 
+
+        void loadConfig();
         void startSignalK();
-
-
         void loadApps();
+
         AppItem *getAppItemByHash(QString hash);
         QString getAppHashById(QString appId);
         QList<QString> getAppsHashes();
