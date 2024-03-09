@@ -7,30 +7,15 @@
 
 #include "FairWindSK.hpp"
 #include "ui/MainWindow.hpp"
-#include "ui/web/Browser.hpp"
-#include "ui/web/BrowserWindow.hpp"
-#include "ui/web/TabWidget.hpp"
+
+
 
 using namespace Qt::StringLiterals;
 
 int main(int argc, char *argv[]) {
 
-
-
-    // Set the organization name
-    QCoreApplication::setOrganizationName("uniparthenope.it");
-
-    // Enable OpenGL shared contexts
-    QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts );
-
-    // Enable DPI scaling
-    //QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-
-    // Enable high DPI support
-    //QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
-
     // The QT application
-    QApplication a(argc, argv);
+    QApplication app(argc, argv);
 
     // Get the splash screen logo
     QPixmap pixmap(":/resources/images/other/splash_logo.png");
@@ -41,11 +26,24 @@ int main(int argc, char *argv[]) {
     // Show the logo
     splash.show();
 
+    // Set the organization name
+    QCoreApplication::setOrganizationName("uniparthenope.it");
+
+    // Enable OpenGL shared contexts
+    QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts );
+
     // Get the FairWind singleton
     auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
+    // Load the configuration inside the FairWind singleton itself
+    fairWindSK->loadConfig();
+
+    // Start the connection
     fairWindSK->startSignalK();
 
+    // Load the apps inside the FairWind singleton itself
+    fairWindSK->loadApps();
+    
     // Check if the virtual keyboard have to be activated
     if (fairWindSK->useVirtualKeyboard()) {
 
@@ -56,25 +54,16 @@ int main(int argc, char *argv[]) {
     // Set the window icon
     QApplication::setWindowIcon(QIcon(QPixmap::fromImage(QImage(":/resources/images/icons/fairwind_icon.png"))));
 
-    // Create a new MainWindow object
-    fairwindsk::ui::MainWindow w;
-
-    // Close the splash screen presenting the MainWindow UI
-    splash.finish((QWidget *)&w);
-
     QLoggingCategory::setFilterRules(u"qt.webenginecontext.debug=true"_s);
 
     QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
     QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::DnsPrefetchEnabled, true);
 
-    /*
-    QUrl url = QUrl("http://172.24.1.1:3000/");
-    fairwindsk::ui::web::Browser browser;
-    fairwindsk::ui::web::BrowserWindow *window = browser.createHiddenWindow();
-    window->tabWidget()->setUrl(url);
-    window->show();
-    splash.finish((QWidget *)window);
-     */
+    // Create a new MainWindow object
+    fairwindsk::ui::MainWindow w;
+
+    // Close the splash screen presenting the MainWindow UI
+    splash.finish((QWidget *)&w);
 
     return QApplication::exec();
 }
