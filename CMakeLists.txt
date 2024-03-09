@@ -50,12 +50,9 @@ add_executable(${PROJECT_NAME}
         ui/MainWindow.cpp ui/MainWindow.hpp ui/MainWindow.ui
 
         ui/web/Web.cpp ui/web/Web.hpp ui/web/Web.ui
-        #ui/web/Browser.cpp ui/web/Browser.hpp
-        #ui/web/BrowserWindow.cpp ui/web/BrowserWindow.hpp
         ui/web/WebPage.cpp ui/web/WebPage.hpp
         ui/web/WebPopupWindow.cpp ui/web/WebPopupWindow.hpp
         ui/web/WebView.cpp ui/web/WebView.hpp
-        ui/web/TabWidget.cpp ui/web/TabWidget.hpp
         ui/web/DownloadManagerWidget.cpp ui/web/DownloadManagerWidget.hpp ui/web/DownloadManagerWidget.ui
         ui/web/DownloadWidget.cpp ui/web/DownloadWidget.hpp ui/web/DownloadWidget.ui
 
