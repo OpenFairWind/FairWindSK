@@ -34,97 +34,12 @@ namespace fairwindsk::ui::launcher {
         ui->scrollArea->horizontalScrollBar()->setVisible(false);
 
 
-
-
-
-
         // Right scroll
         connect(ui->toolButton_Right, &QToolButton::clicked, this, &Launcher::onScrollRight);
 
         // Left scroll
         connect(ui->toolButton_Left, &QToolButton::clicked, this, &Launcher::onScrollLeft);
 
-        // Update
-        update();
-
-        // Resize the icons
-        resize();
-
-
-    }
-
-    Launcher::~Launcher() {
-        delete ui;
-    }
-
-    /*
- * toolButton_App_released
- * Method called when the user wants to launch an app
- */
-    void Launcher::toolButton_App_released() {
-        // Get the sender button
-        QWidget *buttonWidget = qobject_cast<QWidget *>(sender());
-        // Check if the sender is valid
-        if (!buttonWidget) {
-            return;
-        }
-
-        // Get the app's hash value from the button's object name
-        QString hash = buttonWidget->objectName().replace("toolbutton_", "");
-        qDebug() << "Apps - hash:" << hash;
-        // Emit the signal to tell the MainWindow to update the UI and show the app with that particular hash value
-        emit foregroundAppChanged(hash);
-    }
-
-    void Launcher::resizeEvent(QResizeEvent *event) {
-        QWidget::resizeEvent(event);
-
-        resize();
-    }
-
-    void Launcher::resize() {
-
-        int iconSize;
-        iconSize = height() / m_rows;
-        iconSize = iconSize - 48*m_rows;
-
-        auto *layout = (QGridLayout *)ui->scrollAreaWidgetContents->layout();
-
-        // Iterate on the columns
-        for (int col = 0; col < m_cols; col++) {
-            // Set the column width for each column
-            layout->setColumnMinimumWidth(col, iconSize);
-        }
-
-        // Iterate on the rows
-        for (int row = 0; row < m_rows; row++) {
-            // Set the row height for each row
-            layout->setRowMinimumHeight(row, iconSize);
-        }
-
-        for(auto button:m_buttons) {
-            // Give the button's icon a fixed square
-            button->setIconSize(QSize(iconSize, iconSize));
-        }
-    }
-
-    void Launcher::onScrollLeft() {
-        if (m_buttons.size()>0) {
-            ui->scrollArea->horizontalScrollBar()->setValue(
-                    ui->scrollArea->horizontalScrollBar()->value() - m_buttons.first()->iconSize().width() * 2
-            );
-        }
-    }
-
-    void Launcher::onScrollRight() {
-        if (m_buttons.size()>0) {
-            ui->scrollArea->horizontalScrollBar()->setValue(
-                    ui->scrollArea->horizontalScrollBar()->value() + m_buttons.first()->iconSize().width() * 2
-            );
-        }
-    }
-
-    void Launcher::update() {
         // Order by order value
         QMap<int, QPair<AppItem *, QString>> map;
         int row = 0, col = 0;
@@ -132,8 +47,6 @@ namespace fairwindsk::ui::launcher {
         // Get the FairWind singleton
         auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
-        // Update the apps
-        fairWindSK->loadApps();
 
         // Populate the inverted list
         for (auto &hash : fairWindSK->getAppsHashes()) {
@@ -198,5 +111,85 @@ namespace fairwindsk::ui::launcher {
 
             qDebug()<< name;
         }
+
+        // Resize the icons
+        resize();
+
+
     }
+
+    Launcher::~Launcher() {
+        delete ui;
+    }
+
+    /*
+ * toolButton_App_released
+ * Method called when the user wants to launch an app
+ */
+    void Launcher::toolButton_App_released() {
+        // Get the sender button
+        QWidget *buttonWidget = qobject_cast<QWidget *>(sender());
+        // Check if the sender is valid
+        if (!buttonWidget) {
+            return;
+        }
+
+        // Get the app's hash value from the button's object name
+        QString hash = buttonWidget->objectName().replace("toolbutton_", "");
+
+        if (FairWindSK::getInstance()->isDebug()) {
+            qDebug() << "Apps - hash:" << hash;
+        }
+        // Emit the signal to tell the MainWindow to update the UI and show the app with that particular hash value
+        emit foregroundAppChanged(hash);
+    }
+
+    void Launcher::resizeEvent(QResizeEvent *event) {
+        QWidget::resizeEvent(event);
+
+        resize();
+    }
+
+    void Launcher::resize() {
+
+        int iconSize;
+        iconSize = height() / m_rows;
+        iconSize = iconSize - 48*m_rows;
+
+        auto *layout = (QGridLayout *)ui->scrollAreaWidgetContents->layout();
+
+        // Iterate on the columns
+        for (int col = 0; col < m_cols; col++) {
+            // Set the column width for each column
+            layout->setColumnMinimumWidth(col, iconSize);
+        }
+
+        // Iterate on the rows
+        for (int row = 0; row < m_rows; row++) {
+            // Set the row height for each row
+            layout->setRowMinimumHeight(row, iconSize);
+        }
+
+        for(auto button:m_buttons) {
+            // Give the button's icon a fixed square
+            button->setIconSize(QSize(iconSize, iconSize));
+        }
+    }
+
+    void Launcher::onScrollLeft() {
+        if (!m_buttons.empty()) {
+            ui->scrollArea->horizontalScrollBar()->setValue(
+                    ui->scrollArea->horizontalScrollBar()->value() - m_buttons.first()->iconSize().width() * 2
+            );
+        }
+    }
+
+    void Launcher::onScrollRight() {
+        if (!m_buttons.empty()) {
+            ui->scrollArea->horizontalScrollBar()->setValue(
+                    ui->scrollArea->horizontalScrollBar()->value() + m_buttons.first()->iconSize().width() * 2
+            );
+        }
+    }
+
 } // fairwindsk::ui::launcher

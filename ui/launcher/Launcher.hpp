@@ -12,7 +12,6 @@
 #include <QNetworkRequest>
 #include <QNetworkAccessManager>
 #include "ui_Launcher.h"
-#include "ui/web/Browser.hpp"
 
 namespace Ui { class Launcher; }
 
@@ -39,7 +38,6 @@ namespace fairwindsk::ui::launcher {
 
     private:
         void resize();
-        void update();
 
     private:
         Ui::Launcher *ui;
