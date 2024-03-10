@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
-Name=FairWind++
-Comment=FairWind
+Name=FairWindSK
+Comment=FairWindSK
 NoDisplay=false
-Exec=/usr/bin/lxterminal -e /home/pi/fairwindplusplus/FairWind.sh
+Exec=/home/pi/fairwindsk/FairWindSK.sh
 NotShowIn=GNOME;KDE;XFCE;

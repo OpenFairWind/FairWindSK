@@ -40,11 +40,35 @@ int main(int argc, char *argv[]) {
     // Get the FairWind singleton
     auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
+    // Number of connection tentatives
+    int count = 1;
+
+    // Start the connection
+    while (!fairWindSK->startSignalK()) {
+
+        // Show message
+        splash.showMessage("Signal K Server to available. Retrying... ", 500, Qt::white);
+
+        // Process the events
+        QApplication::processEvents();
+
+        // Increase the number of retry
+        count++;
+
+        // Check if no more retry
+        if (count == 3) {
+
+            // Close the splash screen
+            splash.close();
+
+            exit(-1);
+        }
+    }
+
     // Load the configuration inside the FairWind singleton itself
     fairWindSK->loadConfig();
 
-    // Start the connection
-    fairWindSK->startSignalK();
+
 
     // Load the apps inside the FairWind singleton itself
     fairWindSK->loadApps();

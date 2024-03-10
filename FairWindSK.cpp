@@ -38,14 +38,14 @@ namespace fairwindsk {
     }
 
 
-    void FairWindSK::startSignalK() {
+    bool FairWindSK::startSignalK() {
         QMap<QString,QVariant> params;
         params["debug"] = m_debug;
         params["active"] = true;
         params["restore"] = true;
         params["username"] = m_username;
         params["password"] = m_password;
-        m_signalkClient.init(params);
+        return m_signalkClient.init(params);
     }
 
 /*
@@ -58,7 +58,7 @@ namespace fairwindsk {
         QJsonObject result;
 
         // Be sure the user is logged as admin
-        m_signalkClient.login();
+        //m_signalkClient.login();
 
         // Get the configuration
         auto configurationJsonObject = m_signalkClient.signalkGet(m_signalKServerUrl + "/plugins/dynamo-signalk-fairwindsk-plugin/config");

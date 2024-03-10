@@ -17,7 +17,7 @@ namespace fairwindsk {
         explicit SignalKClient(QObject *parent = nullptr);
         ~SignalKClient() override;
 
-        void init(QMap<QString, QVariant> params);
+        bool init(QMap<QString, QVariant> params);
 
 
         QString getSelf();

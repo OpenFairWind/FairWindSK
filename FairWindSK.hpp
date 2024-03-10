@@ -31,9 +31,8 @@ namespace fairwindsk {
 
         QJsonObject getConfiguration();
 
-
+        bool startSignalK();
         void loadConfig();
-        void startSignalK();
         void loadApps();
 
         AppItem *getAppItemByHash(QString hash);

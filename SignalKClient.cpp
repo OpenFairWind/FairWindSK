@@ -35,8 +35,8 @@ namespace fairwindsk {
  * onInit
  * Initialization method
  */
-    void SignalKClient::init(QMap<QString, QVariant> params) {
-
+    bool SignalKClient::init(QMap<QString, QVariant> params) {
+        bool result = false;
 
         auto fairWindSK = fairwindsk::FairWindSK::getInstance();
         auto signalKDocument = fairWindSK->getSignalKDocument();
@@ -93,26 +93,34 @@ namespace fairwindsk {
         if (mActive) {
 
             mServer = signalkGet(mUrl);
-            login();
 
-            if (mRestore) {
-                QJsonObject allSignalK = getAll();
-                fairWindSK->getSignalKDocument()->insert("", allSignalK);
+            if (login()) {
 
-                if (mDebug)
-                    qDebug() << allSignalK;
+                if (mRestore) {
+                    QJsonObject allSignalK = getAll();
+                    fairWindSK->getSignalKDocument()->insert("", allSignalK);
+
+                    if (mDebug)
+                        qDebug() << allSignalK;
+                }
+
+                // Check if the self is defined
+                if (!self.isEmpty()) {
+
+                    // Override the self definition
+                    signalKDocument->setSelf(self);
+                }
+
+
+                mWebSocket.open(QUrl(ws()));
+
+                if (mWebSocket.state() == QAbstractSocket::ConnectedState) {
+                    result = true;
+                }
             }
-
-            // Check if the self is defined
-            if (!self.isEmpty()) {
-
-                // Override the self definition
-                signalKDocument->setSelf(self);
-            }
-
-            mWebSocket.open(QUrl(ws()));
-
         }
+
+        return result;
     }
 
 
