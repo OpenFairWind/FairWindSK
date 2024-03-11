@@ -1,7 +1,8 @@
 //
 // Created by Raffaele Montella on 03/04/21.
 //
-
+#include <QApplication>
+#include <QThread>
 #include <QPluginLoader>
 #include <QDir>
 #include <QCoreApplication>
@@ -24,6 +25,13 @@ namespace fairwindsk {
  */
     FairWindSK::FairWindSK() {
         qDebug() << "FairWindSK constructor";
+
+        m_debug = true;
+        m_mSleep = 2500;
+        m_nRetry = 10;
+        m_signalKServerUrl = "http://172.24.1.1:3000";
+        m_username = "admin";
+        m_password = "password";
     }
 
 /*
@@ -37,43 +45,192 @@ namespace fairwindsk {
         return m_instance;
     }
 
+    void FairWindSK::loadConfig() {
+
+        // Initialize the QT managed settings
+        QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
+
+        // Get the name of the FairWind++ configuration file
+        m_debug = settings.value("debug", m_debug).toBool();
+
+        // Store the configuration in the settings
+        settings.setValue("debug", m_debug);
+
+        if (m_debug) {
+            qDebug() << "Loading configuration from ini file...";
+        }
+
+        // Get the name of the FairWind++ configuration file
+        m_signalKServerUrl = settings.value("signalk-server", m_signalKServerUrl).toString();
+
+        // Store the configuration in the settings
+        settings.setValue("signalk-server", m_signalKServerUrl);
+
+        // Get the name of the FairWind++ configuration file
+        m_username = settings.value("username", m_username).toString();
+
+        // Store the configuration in the settings
+        settings.setValue("username", m_username);
+
+        // Get the name of the FairWind++ configuration file
+        m_password = settings.value("password", m_password).toString();
+
+        // Store the configuration in the settings
+        settings.setValue("password", m_password);
+
+        // Get the name of the FairWind++ configuration file
+        m_mSleep = settings.value("sleep", m_mSleep).toInt();
+
+        // Store the configuration in the settings
+        settings.setValue("sleep", m_mSleep);
+
+        // Get the name of the FairWind++ configuration file
+        m_nRetry = settings.value("retry", m_nRetry).toInt();
+
+        // Store the configuration in the settings
+        settings.setValue("retry", m_nRetry);
+
+
+        if (m_debug) {
+
+            QLoggingCategory::setFilterRules(u"qt.webenginecontext.debug=true"_s);
+
+            qDebug() << "Configration from ini file loaded.";
+        }
+    }
 
     bool FairWindSK::startSignalK() {
+        bool result = false;
+
         QMap<QString,QVariant> params;
         params["debug"] = m_debug;
         params["active"] = true;
         params["restore"] = true;
         params["username"] = m_username;
         params["password"] = m_password;
-        return m_signalkClient.init(params);
-    }
 
-/*
- * getConfig
- * Returns the configuration infos
- */
-    QJsonObject FairWindSK::getConfiguration() {
+        // Number of connection tentatives
+        int count = 1;
 
-        // Define the result
-        QJsonObject result;
+        // Start the connection
+        do {
 
-        // Be sure the user is logged as admin
-        //m_signalkClient.login();
+            if (m_debug) {
+                qDebug() << "Trying to connect to the " << m_signalKServerUrl << " Signal K server (" << count << "/" << m_nRetry << ")...";
+            }
 
-        // Get the configuration
-        auto configurationJsonObject = m_signalkClient.signalkGet(m_signalKServerUrl + "/plugins/dynamo-signalk-fairwindsk-plugin/config");
+            // Try to connect
+            result = m_signalkClient.init(params);
 
-        // Check if the configuration object has the key Options
-        if (configurationJsonObject.contains("configuration") && configurationJsonObject["configuration"].isObject()) {
+            // Check if the connection is successful
+            if (result) {
 
-            // Get the Options object
-            result = configurationJsonObject["configuration"].toObject();
+                if (m_debug) {
+                    qDebug() << "Connected to " << m_signalKServerUrl;
+                }
+
+                // Exit the loop
+                break;
+            }
+
+            // Process the events
+            QApplication::processEvents();
+
+            // Increase the number of retry
+            count++;
+
+            // Wait for m_mSleep microseconds
+            QThread::msleep(m_mSleep);
+
+            // Loop until the number of retry
+        } while (count < m_nRetry);
+
+        if (m_debug) {
+            qDebug() << "No response from the " << m_signalKServerUrl << " Signal K server!";
         }
 
-        if (m_debug)
-            qDebug() << "Configuration:" << result;
-
         // Return the result
+        return result;
+    }
+
+    bool FairWindSK::loadApps() {
+
+        bool result = false;
+
+        // Remove all app items
+        for (const auto& key: m_mapHash2AppItem.keys()) {
+            delete m_mapHash2AppItem[key];
+        }
+
+        // Remove the map content
+        m_mapHash2AppItem.empty();
+
+        QString settingsString = R"({ "name": "admin" })";
+        QJsonDocument settingsJsonDocument = QJsonDocument::fromJson(settingsString.toUtf8());
+
+        if (m_debug) {
+            qDebug() << settingsJsonDocument;
+        }
+
+        auto settingsAppItem = new AppItem(settingsJsonDocument.object(), false, 0);
+        m_mapHash2AppItem[settingsAppItem->getName()] = settingsAppItem;
+
+        if (m_debug) {
+            qDebug() << "name:" << settingsAppItem->getName() << "url:" << settingsAppItem->getUrl();
+        }
+
+        QUrl url = QUrl(m_signalKServerUrl + "/skServer/webapps");
+        QNetworkAccessManager networkAccessManager;
+        QEventLoop loop;
+        connect(&networkAccessManager, &QNetworkAccessManager::finished, &loop,&QEventLoop::quit);
+        QNetworkReply *reply = networkAccessManager.get(QNetworkRequest(url));
+        loop.exec();
+
+        if (reply->attribute( QNetworkRequest::HttpStatusCodeAttribute ) == 200) {
+
+            QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
+
+            if (m_debug) {
+                qDebug() << doc;
+            }
+
+            int count = 0;
+
+            auto appsJsonArray = doc.array();
+            for (auto appJsonItem: appsJsonArray) {
+
+                if (appJsonItem.isObject()) {
+                    auto appItem = new AppItem(appJsonItem.toObject(), true, count);
+
+                    m_mapHash2AppItem[appItem->getName()] = appItem;
+
+                    count++;
+                }
+            }
+            result = true;
+        }
+
+        return result;
+    }
+
+    QList<QString> FairWindSK::getAppsHashes() {
+        return m_mapHash2AppItem.keys();
+    }
+
+    bool FairWindSK::useVirtualKeyboard() {
+        // Define the result
+        bool result = false;
+
+        // Get the configuration
+        auto configuration = getConfiguration();
+
+        // Check if the value is present in configuration
+        if (configuration.contains("virtualkeyboard") && configuration["virtualkeyboard"].isBool()) {
+
+            // Get the value
+            result = configuration["virtualkeyboard"].toBool();
+        }
+
         return result;
     }
 
@@ -105,110 +262,33 @@ namespace fairwindsk {
         return m_password;
     }
 
-    bool FairWindSK::isDebug() {
+    bool FairWindSK::isDebug() const {
         return m_debug;
     }
 
-    void FairWindSK::loadApps() {
+    /*
+ * getConfig
+ * Returns the configuration infos
+ */
+    QJsonObject FairWindSK::getConfiguration() {
 
-        // Remove all app items
-        for (auto key: m_mapHash2AppItem.keys()) {
-            delete m_mapHash2AppItem[key];
-        }
-
-        // Remove the map content
-        m_mapHash2AppItem.empty();
-
-        QString settingsString = R"({ "name": "admin" })";
-        QJsonDocument settingsJsonDocument = QJsonDocument::fromJson(settingsString.toUtf8());
-
-        qDebug() << settingsJsonDocument;
-
-        auto settingsAppItem = new AppItem(settingsJsonDocument.object(), false, 0);
-        m_mapHash2AppItem[settingsAppItem->getName()] = settingsAppItem;
-
-        qDebug() << "name:" << settingsAppItem->getName() << "url:" << settingsAppItem->getUrl();
-
-
-        QUrl url = QUrl(m_signalKServerUrl + "/skServer/webapps");
-        QNetworkAccessManager networkAccessManager;
-        QEventLoop loop;
-        connect(&networkAccessManager, &QNetworkAccessManager::finished, &loop,&QEventLoop::quit);
-        QNetworkReply *reply = networkAccessManager.get(QNetworkRequest(url));
-        loop.exec();
-
-        QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
-
-        qDebug()<< doc;
-
-        int count = 0;
-
-        auto appsJsonArray = doc.array();
-        for (auto appJsonItem : appsJsonArray) {
-
-            if (appJsonItem.isObject()) {
-                auto appItem = new AppItem(appJsonItem.toObject(), true, count);
-
-                m_mapHash2AppItem[appItem->getName()] = appItem;
-
-                count++;
-            }
-        }
-
-    }
-
-    QList<QString> FairWindSK::getAppsHashes() {
-        return m_mapHash2AppItem.keys();
-    }
-
-    bool FairWindSK::useVirtualKeyboard() {
         // Define the result
-        bool result = false;
+        QJsonObject result;
 
         // Get the configuration
-        auto configuration = getConfiguration();
+        auto configurationJsonObject = m_signalkClient.signalkGet(m_signalKServerUrl + "/plugins/dynamo-signalk-fairwindsk-plugin/config");
 
-        // Check if the value is present in configuration
-        if (configuration.contains("virtualkeyboard") && configuration["virtualkeyboard"].isBool()) {
+        // Check if the configuration object has the key Options
+        if (configurationJsonObject.contains("configuration") && configurationJsonObject["configuration"].isObject()) {
 
-            // Get the value
-            result = configuration["virtualkeyboard"].toBool();
+            // Get the Options object
+            result = configurationJsonObject["configuration"].toObject();
         }
 
+        if (m_debug)
+            qDebug() << "Configuration:" << result;
+
+        // Return the result
         return result;
     }
-
-    void FairWindSK::loadConfig() {
-        // Initialize the QT managed settings
-        QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
-
-        // Get the name of the FairWind++ configuration file
-        m_signalKServerUrl = settings.value("signalk-server", "http://172.24.1.1:3000").toString();
-
-        // Store the configuration in the settings
-        settings.setValue("signalk-server", m_signalKServerUrl);
-
-        // Get the name of the FairWind++ configuration file
-        m_username = settings.value("username", "admin").toString();
-
-        // Store the configuration in the settings
-        settings.setValue("username", m_username);
-
-        // Get the name of the FairWind++ configuration file
-        m_password = settings.value("password", "password").toString();
-
-        // Store the configuration in the settings
-        settings.setValue("password", m_password);
-
-        // Get the name of the FairWind++ configuration file
-        m_debug = settings.value("debug", false).toBool();
-
-        // Store the configuration in the settings
-        settings.setValue("debug", m_debug);
-
-        if (m_debug) {
-            QLoggingCategory::setFilterRules(u"qt.webenginecontext.debug=true"_s);
-        }
-    }
-
 }

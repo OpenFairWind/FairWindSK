@@ -31,9 +31,9 @@ namespace fairwindsk {
 
         QJsonObject getConfiguration();
 
-        bool startSignalK();
         void loadConfig();
-        void loadApps();
+        bool startSignalK();
+        bool loadApps();
 
         AppItem *getAppItemByHash(QString hash);
         QString getAppHashById(QString appId);
@@ -47,7 +47,7 @@ namespace fairwindsk {
         QString getUsername();
         QString getPassword();
 
-        bool isDebug();
+        bool isDebug() const;
 
     private:
 
@@ -65,6 +65,9 @@ namespace fairwindsk {
         QString m_signalKServerUrl;
         QString m_username;
         QString m_password;
+
+        int m_mSleep;
+        int m_nRetry;
 
         bool m_debug;
     };
