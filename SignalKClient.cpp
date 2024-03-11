@@ -114,9 +114,7 @@ namespace fairwindsk {
 
                 mWebSocket.open(QUrl(ws()));
 
-                if (mWebSocket.state() == QAbstractSocket::ConnectedState) {
-                    result = true;
-                }
+                result = true;
             }
         }
 
