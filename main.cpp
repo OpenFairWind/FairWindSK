@@ -1,6 +1,8 @@
 #include <QApplication>
 #include <QSplashScreen>
 #include <QTimer>
+#include <QThread>
+
 #include <QWebEngineProfile>
 #include <QWebEngineSettings>
 
@@ -56,13 +58,15 @@ int main(int argc, char *argv[]) {
         count++;
 
         // Check if no more retry
-        if (count == 3) {
+        if (count == 5) {
 
             // Close the splash screen
             splash.close();
 
             exit(-1);
         }
+
+        QThread::sleep(5);
     }
 
     // Load the configuration inside the FairWind singleton itself
