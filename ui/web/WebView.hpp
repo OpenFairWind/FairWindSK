@@ -34,6 +34,8 @@ namespace fairwindsk::ui::web {
 
         int loadProgress() const;
 
+        ~WebView() override;
+
 
 
     protected:

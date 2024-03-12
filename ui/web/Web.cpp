@@ -15,16 +15,16 @@
 
 
 namespace fairwindsk::ui::web {
-    Web::Web(QWidget *parent): QWidget(parent), ui(new Ui::Web) {
+    Web::Web(QWidget *parent, fairwindsk::AppItem *appItem, QWebEngineProfile *profile): QWidget(parent), ui(new Ui::Web) {
 
-        m_profile = new QWebEngineProfile(QString::fromLatin1("FairWindSK.%1").arg(qWebEngineChromiumVersion()));  // unique profile store per qtwbengine version
+        m_appItem = appItem;
 
         ui->setupUi((QWidget *)this);
 
         m_webView = new WebView((QWidget *)this);
         m_webView->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
 
-        m_webPage = new WebPage(m_profile);
+        m_webPage = new WebPage(profile);
         m_webView->setPage(m_webPage);
 
         ui->verticalLayout_WebView->addWidget(m_webView);
@@ -33,16 +33,18 @@ namespace fairwindsk::ui::web {
 
         connect(ui->pushButton_Home, &QPushButton::clicked, this, &Web::toolButton_home_clicked);
 
+        m_webView->load(QUrl(appItem->getUrl()));
+
     }
 
-
+/*
     void Web::setApp(fairwindsk::AppItem *appItem) {
         m_appItem = appItem;
 
         m_webView->load(QUrl(appItem->getUrl()));
 
     }
-
+*/
     void Web::toggleButtons() {
         showButtons(!ui->pushButton_Home->isVisible());
     }
@@ -63,10 +65,20 @@ namespace fairwindsk::ui::web {
 
 
     Web::~Web() {
-        delete m_webPage;
-        delete m_webView;
-        delete m_profile;
-        delete ui;
+        if (m_webPage) {
+            delete m_webPage;
+            m_webPage = nullptr;
+        }
+
+        if (m_webView) {
+            delete m_webView;
+            m_webView = nullptr;
+        }
+
+        if (ui) {
+            delete ui;
+            ui = nullptr;
+        }
     }
 
     void Web::toolButton_home_clicked() {

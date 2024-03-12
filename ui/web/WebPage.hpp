@@ -19,6 +19,8 @@ namespace fairwindsk::ui::web {
     public:
         explicit WebPage(QWebEngineProfile *profile, QObject *parent = nullptr);
 
+    ~WebPage() override;
+
     signals:
         void createCertificateErrorDialog(QWebEngineCertificateError error);
 

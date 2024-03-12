@@ -5,6 +5,7 @@
 
 #include <QWebEngineProfile>
 #include <QWebEngineSettings>
+#include <QSettings>
 
 #include "FairWindSK.hpp"
 #include "ui/MainWindow.hpp"
@@ -15,6 +16,20 @@ using namespace Qt::StringLiterals;
 
 int main(int argc, char *argv[]) {
 
+
+    // Initialize the QT managed settings
+    QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
+
+    // Get the name of the FairWind++ configuration file
+    bool useVirtualKeyboard = settings.value("virtualKeyboard", false).toBool();
+
+    // Store the configuration in the settings
+    settings.setValue("virtualKeyboard", useVirtualKeyboard);
+
+    if (useVirtualKeyboard) {
+        qputenv("QT_IM_MODULE", QByteArray("qtvirtualkeyboard"));
+    }
+
     // Set the organization name
     QCoreApplication::setOrganizationName("uniparthenope.it");
 
@@ -23,6 +38,7 @@ int main(int argc, char *argv[]) {
 
     // The QT application
     QApplication app(argc, argv);
+
 
     // Set the window icon
     QApplication::setWindowIcon(QIcon(QPixmap::fromImage(QImage(":/resources/images/icons/fairwind_icon.png"))));
@@ -56,19 +72,15 @@ int main(int argc, char *argv[]) {
         // Load the apps inside the FairWind singleton itself
         if (fairWindSK->loadApps()) {
 
-            // Check if the virtual keyboard have to be activated
-            if (fairWindSK->useVirtualKeyboard()) {
-
-                // Activate the virtual keyboard
-                qputenv("QT_IM_MODULE", QByteArray("qtvirtualkeyboard"));
-            }
-
             QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
             QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::DnsPrefetchEnabled,
                                                                           true);
 
             // Create a new MainWindow object
             fairwindsk::ui::MainWindow w;
+
+            // Show the window fullscreen
+            w.showFullScreen();
 
             // Close the splash screen presenting the MainWindow UI
             splash.finish((QWidget *) &w);

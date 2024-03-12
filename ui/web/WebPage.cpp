@@ -32,4 +32,8 @@ namespace fairwindsk::ui::web {
         selection.select(selection.certificates().at(0));
     }
 
+    WebPage::~WebPage() {
+
+    }
+
 }

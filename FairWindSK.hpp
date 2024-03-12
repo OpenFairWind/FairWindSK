@@ -39,7 +39,7 @@ namespace fairwindsk {
         QString getAppHashById(QString appId);
         QList<QString> getAppsHashes();
 
-        bool useVirtualKeyboard();
+
 
         signalk::Document *getSignalKDocument();
 

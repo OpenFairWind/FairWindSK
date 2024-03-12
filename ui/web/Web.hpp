@@ -24,13 +24,13 @@ namespace fairwindsk::ui::web {
     Q_OBJECT
 
     public:
-        explicit Web(QWidget *parent = nullptr);
+        explicit Web(QWidget *parent = nullptr, fairwindsk::AppItem *appItem = nullptr, QWebEngineProfile *profile= nullptr);
 
         void goHome();
 
         ~Web() override;
 
-        void setApp(fairwindsk::AppItem *appItem);
+        //void setApp(fairwindsk::AppItem *appItem);
 
         void showButtons(bool show);
         void toggleButtons();
@@ -50,7 +50,7 @@ namespace fairwindsk::ui::web {
         WebPage *m_webPage = nullptr;
         fairwindsk::AppItem *m_appItem = nullptr;
 
-        QWebEngineProfile *m_profile = nullptr;
+
         DownloadManagerWidget m_downloadManagerWidget;
 
 

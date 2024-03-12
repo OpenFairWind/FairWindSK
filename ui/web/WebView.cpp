@@ -258,5 +258,10 @@ namespace fairwindsk::ui::web {
         else
             request.reject();
     }
+
+    WebView::~WebView() {
+
+    }
+
 #endif // QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
 }

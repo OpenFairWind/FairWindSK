@@ -4,8 +4,8 @@
 
 #include <QTimer>
 #include <QToolButton>
-
-
+#include <QNetworkCookie>
+#include <QWebEngineCookieStore>
 
 #include "MainWindow.hpp"
 #include "ui/topbar/TopBar.hpp"
@@ -20,6 +20,20 @@
  * Public constructor - This presents FairWind's UI
  */
 fairwindsk::ui::MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
+
+    // Show the settings view
+    auto fairWindSK = FairWindSK::getInstance();
+
+    auto profileName = QString::fromLatin1("FairWindSK.%1").arg(qWebEngineChromiumVersion());
+
+    //m_profile = new QWebEngineProfile(profileName );
+    m_profile = QWebEngineProfile::defaultProfile();
+    //m_profile->setPersistentCookiesPolicy(QWebEngineProfile::ForcePersistentCookies);
+
+    if (fairWindSK->isDebug()) {
+        qDebug() << "QWenEngineProfile data store: " << m_profile->persistentStoragePath();
+    }
+
     // Setup the UI
     ui->setupUi(this);
 
@@ -34,8 +48,7 @@ fairwindsk::ui::MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), u
     // Place the Apps object at the center of the UI
     setCentralWidget(ui->centralwidget);
 
-    // Show the settings view
-    auto fairWindSK = FairWindSK::getInstance();
+
 
     // Show the apps view when the user clicks on the Apps button inside the BottomBar object
     QObject::connect(m_bottomBar, &bottombar::BottomBar::setApps, this, &MainWindow::onApps);
@@ -51,7 +64,9 @@ fairwindsk::ui::MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), u
     QObject::connect(m_launcher, &fairwindsk::ui::launcher::Launcher::foregroundAppChanged, this,
                      &MainWindow::setForegroundApp);
 
-    QTimer::singleShot(0, this, SLOT(showFullScreen()));
+    //QTimer::singleShot(0, this, SLOT(showFullScreen()));
+
+
 }
 
 /*
@@ -78,6 +93,11 @@ fairwindsk::ui::MainWindow::~MainWindow() {
     if (ui) {
         delete ui;
         ui = nullptr;
+    }
+
+    if (m_profile) {
+        delete m_profile;
+        m_profile = nullptr;
     }
 }
 
@@ -113,10 +133,10 @@ void fairwindsk::ui::MainWindow::setForegroundApp(QString hash) {
         widgetApp = m_mapHash2Widget[hash];
     } else {
 
-        auto web = new fairwindsk::ui::web::Web();
+        auto web = new fairwindsk::ui::web::Web(nullptr,appItem);
 
         // Register the web widget
-        web->setApp(appItem);
+        //web->setApp(appItem);
         appItem->setWeb(web);
 
 
@@ -147,6 +167,8 @@ void fairwindsk::ui::MainWindow::setForegroundApp(QString hash) {
         // Set the current app in ui components
         m_topBar->setCurrentApp(m_currentApp);
     }
+
+    showFullScreen();
 }
 
 /*
@@ -162,6 +184,8 @@ void fairwindsk::ui::MainWindow::onApps() {
 
     // Set the current app in ui components
     m_topBar->setCurrentApp(m_currentApp);
+
+    showFullScreen();
 }
 
 /*

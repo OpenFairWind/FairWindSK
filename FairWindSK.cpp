@@ -125,10 +125,6 @@ namespace fairwindsk {
             // Check if the connection is successful
             if (result) {
 
-                if (m_debug) {
-                    qDebug() << "Connected to " << m_signalKServerUrl;
-                }
-
                 // Exit the loop
                 break;
             }
@@ -146,7 +142,11 @@ namespace fairwindsk {
         } while (count < m_nRetry);
 
         if (m_debug) {
-            qDebug() << "No response from the " << m_signalKServerUrl << " Signal K server!";
+            if (result) {
+                qDebug() << "Connected to " << m_signalKServerUrl;
+            } else {
+                qDebug() << "No response from the " << m_signalKServerUrl << " Signal K server!";
+            }
         }
 
         // Return the result
@@ -215,23 +215,6 @@ namespace fairwindsk {
 
     QList<QString> FairWindSK::getAppsHashes() {
         return m_mapHash2AppItem.keys();
-    }
-
-    bool FairWindSK::useVirtualKeyboard() {
-        // Define the result
-        bool result = false;
-
-        // Get the configuration
-        auto configuration = getConfiguration();
-
-        // Check if the value is present in configuration
-        if (configuration.contains("virtualkeyboard") && configuration["virtualkeyboard"].isBool()) {
-
-            // Get the value
-            result = configuration["virtualkeyboard"].toBool();
-        }
-
-        return result;
     }
 
     /*
