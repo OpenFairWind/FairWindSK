@@ -12,23 +12,23 @@
 #include <QWebEngineFileSystemAccessRequest>
 #endif
 
-#include <QWebEnginePage>
+
 #include <QWebEngineRegisterProtocolHandlerRequest>
 
 #include "ui_CertificateErrorDialog.h"
 #include "ui_PasswordDialog.h"
-
+#include "WebPage.hpp"
 
 
 namespace fairwindsk::ui::web {
 
-    class WebPage;
+
 
     class WebView : public QWebEngineView {
     Q_OBJECT
 
     public:
-        explicit WebView(QWidget *parent = nullptr);
+        explicit WebView(QWebEngineProfile *profile, QWidget *parent = nullptr);
 
         void setPage(WebPage *page);
 
@@ -67,10 +67,9 @@ namespace fairwindsk::ui::web {
 
     private:
 
-
     private:
         int m_loadProgress = 100;
-
+        WebPage *m_webPage = nullptr;
     };
 }
 

@@ -22,7 +22,7 @@ using namespace Qt::StringLiterals;
 
 namespace fairwindsk::ui::web {
 
-    WebView::WebView(QWidget *parent)
+    WebView::WebView(QWebEngineProfile *profile, QWidget *parent)
             : QWebEngineView(parent)
     {
         connect(this, &QWebEngineView::loadStarted, [this]() {
@@ -60,6 +60,9 @@ namespace fairwindsk::ui::web {
                     if (btn == QMessageBox::Yes)
                         QTimer::singleShot(0, this, &WebView::reload);
                 });
+
+        m_webPage = new WebPage(profile);
+        setPage(m_webPage);
     }
 
     inline QString questionForFeature(QWebEnginePage::Feature feature)
@@ -259,9 +262,7 @@ namespace fairwindsk::ui::web {
             request.reject();
     }
 
-    WebView::~WebView() {
-
-    }
+    WebView::~WebView() = default;
 
 #endif // QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
 }
