@@ -6,6 +6,7 @@
 #include <QToolButton>
 #include <QNetworkCookie>
 #include <QWebEngineCookieStore>
+#include <QMessageBox>
 
 #include "MainWindow.hpp"
 #include "ui/topbar/TopBar.hpp"
@@ -26,12 +27,14 @@ fairwindsk::ui::MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), u
 
     auto profileName = QString::fromLatin1("FairWindSK.%1").arg(qWebEngineChromiumVersion());
 
-    //m_profile = new QWebEngineProfile(profileName );
-    m_profile = QWebEngineProfile::defaultProfile();
-    //m_profile->setPersistentCookiesPolicy(QWebEngineProfile::ForcePersistentCookies);
+    m_profile = new QWebEngineProfile(profileName );
+
+
+    auto cookie = QNetworkCookie("JAUTHENTICATION", fairWindSK->getSignalKClient()->getToken().toUtf8());
+    m_profile->cookieStore()->setCookie(cookie,QUrl(fairWindSK->getSignalKServerUrl()));
 
     if (fairWindSK->isDebug()) {
-        qDebug() << "QWenEngineProfile data store: " << m_profile->persistentStoragePath();
+        qDebug() << "QWenEngineProfile " << m_profile->isOffTheRecord() << " data store: " << m_profile->persistentStoragePath();
     }
 
     // Setup the UI
@@ -48,10 +51,19 @@ fairwindsk::ui::MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), u
     // Place the Apps object at the center of the UI
     setCentralWidget(ui->centralwidget);
 
+    // Show the apps view when the user clicks on the Apps button inside the BottomBar object
+    QObject::connect(m_bottomBar, &bottombar::BottomBar::setMyData, this, &MainWindow::onMyData);
+
+
+    // Show the apps view when the user clicks on the Apps button inside the BottomBar object
+    QObject::connect(m_bottomBar, &bottombar::BottomBar::setMOB, this, &MainWindow::onMOB);
 
 
     // Show the apps view when the user clicks on the Apps button inside the BottomBar object
     QObject::connect(m_bottomBar, &bottombar::BottomBar::setApps, this, &MainWindow::onApps);
+
+    // Show the settings view when the user clicks on the Settings button inside the BottomBar object
+    QObject::connect(m_bottomBar, &bottombar::BottomBar::setAlarms, this, &MainWindow::onAlarms);
 
     // Show the settings view when the user clicks on the Settings button inside the BottomBar object
     QObject::connect(m_bottomBar, &bottombar::BottomBar::setSettings, this, &MainWindow::onSettings);
@@ -133,7 +145,7 @@ void fairwindsk::ui::MainWindow::setForegroundApp(QString hash) {
         widgetApp = m_mapHash2Widget[hash];
     } else {
 
-        auto web = new fairwindsk::ui::web::Web(nullptr,appItem);
+        auto web = new fairwindsk::ui::web::Web(nullptr,appItem, m_profile);
 
         // Register the web widget
         //web->setApp(appItem);
@@ -142,6 +154,7 @@ void fairwindsk::ui::MainWindow::setForegroundApp(QString hash) {
 
         // Get the app widget
         widgetApp = web;
+
 
         // Check if the widget is valid
         if (widgetApp) {
@@ -168,7 +181,7 @@ void fairwindsk::ui::MainWindow::setForegroundApp(QString hash) {
         m_topBar->setCurrentApp(m_currentApp);
     }
 
-    showFullScreen();
+    //showFullScreen();
 }
 
 /*
@@ -185,7 +198,45 @@ void fairwindsk::ui::MainWindow::onApps() {
     // Set the current app in ui components
     m_topBar->setCurrentApp(m_currentApp);
 
-    showFullScreen();
+    //showFullScreen();
+}
+
+/*
+ * onMyData
+ * Method called when the user clicks the Settings button on the BottomBar object
+ */
+void fairwindsk::ui::MainWindow::onMyData() {
+    auto fairWindSK = FairWindSK::getInstance();
+    auto app = fairWindSK->getMyDataApp();
+    if (!app.isEmpty() && fairWindSK->getAppsHashes().contains(app)) {
+        setForegroundApp(app);
+    }
+}
+
+/*
+ * onMOB
+ * Method called when the user clicks the Settings button on the BottomBar object
+ */
+void fairwindsk::ui::MainWindow::onMOB() {
+    auto fairWindSK = FairWindSK::getInstance();
+    auto app = fairWindSK->getMOBApp();
+    if (!app.isEmpty() && fairWindSK->getAppsHashes().contains(app)) {
+        setForegroundApp(app);
+    }
+}
+
+
+
+/*
+ * onAlarms
+ * Method called when the user clicks the Settings button on the BottomBar object
+ */
+void fairwindsk::ui::MainWindow::onAlarms() {
+    auto fairWindSK = FairWindSK::getInstance();
+    auto app = fairWindSK->getAlarmsApp();
+    if (!app.isEmpty() && fairWindSK->getAppsHashes().contains(app)) {
+        setForegroundApp(app);
+    }
 }
 
 /*
@@ -193,8 +244,15 @@ void fairwindsk::ui::MainWindow::onApps() {
  * Method called when the user clicks the Settings button on the BottomBar object
  */
 void fairwindsk::ui::MainWindow::onSettings() {
-    setForegroundApp("admin");
+    auto fairWindSK = FairWindSK::getInstance();
+    auto app = fairWindSK->getSettingsApp();
+    if (!app.isEmpty() && fairWindSK->getAppsHashes().contains(app)) {
+        setForegroundApp(app);
+    }
 }
+
+
+
 
 /*
  * onUpperLeft
@@ -230,6 +288,19 @@ fairwindsk::ui::bottombar::BottomBar *fairwindsk::ui::MainWindow::getBottomBar()
     return reinterpret_cast<fairwindsk::ui::bottombar::BottomBar *>(&m_bottomBar);
 }
 
+void fairwindsk::ui::MainWindow::closeEvent(QCloseEvent *event) {
+
+    QMessageBox::StandardButton reply;
+    reply = QMessageBox::question(this, "Quit FairWindSK", "Are you sure you want to exit theFairWindSK?", QMessageBox::Yes|QMessageBox::No);
+    if (reply == QMessageBox::Yes)
+    {
+        event->accept();
+
+        QApplication::quit();
+    }
+    else
+        event->ignore();
+}
 
 
 

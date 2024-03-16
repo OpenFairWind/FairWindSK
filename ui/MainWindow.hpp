@@ -8,6 +8,7 @@
 #include <QMainWindow>
 #include <QMap>
 #include <QDebug>
+#include <QCloseEvent>
 #include <QWebEngineProfile>
 
 #include <FairWindSK.hpp>
@@ -40,6 +41,8 @@ namespace fairwindsk::ui {
         launcher::Launcher *getLauncher();
         bottombar::BottomBar *getBottomBar();
 
+    private:
+        void closeEvent(QCloseEvent *bar) override;
 
     public
         slots:
@@ -48,6 +51,9 @@ namespace fairwindsk::ui {
         void onApps();
 
         void onSettings();
+        void onAlarms();
+        void onMOB();
+        void onMyData();
         void onUpperLeft();
 
 
