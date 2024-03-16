@@ -5,6 +5,9 @@
 #ifndef ITERABLELAYOUTADAPTER_HPP
 #define ITERABLELAYOUTADAPTER_HPP
 
+// Credits: https://stackoverflow.com/questions/31546511/how-to-find-widgets-of-a-given-type-in-a-qlayout
+
+
 #include <QLayout>
 #include <QDebug>
 #include <QPointer>
