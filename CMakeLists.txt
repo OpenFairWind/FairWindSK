@@ -35,6 +35,7 @@ find_package(Qt6 COMPONENTS
 
 add_executable(${PROJECT_NAME}
         main.cpp
+        IterableLayoutAdapter.hpp
         FairWindSK.cpp FairWindSK.hpp
         AppItem.cpp AppItem.hpp
         SignalKClient.cpp SignalKClient.hpp
