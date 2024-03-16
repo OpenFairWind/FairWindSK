@@ -72,9 +72,9 @@ int main(int argc, char *argv[]) {
         // Load the apps inside the FairWind singleton itself
         if (fairWindSK->loadApps()) {
 
+            QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::Accelerated2dCanvasEnabled, true);
             QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
-            QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::DnsPrefetchEnabled,
-                                                                          true);
+            QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::DnsPrefetchEnabled,true);
 
             // Create a new MainWindow object
             fairwindsk::ui::MainWindow w;
