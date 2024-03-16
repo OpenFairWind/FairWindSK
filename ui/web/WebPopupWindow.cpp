@@ -15,7 +15,7 @@ namespace fairwindsk::ui::web {
     WebPopupWindow::WebPopupWindow(QWebEngineProfile *profile)
             : m_urlLineEdit(new QLineEdit(this))
             , m_favAction(new QAction(this))
-            , m_view(new WebView(this))
+            , m_view(new WebView(profile,this))
     {
         setAttribute(Qt::WA_DeleteOnClose);
         setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);

@@ -25,6 +25,8 @@ namespace fairwindsk::ui::web {
         explicit WebPopupWindow(QWebEngineProfile *profile);
         WebView *view() const;
 
+
+
     private slots:
         void handleGeometryChangeRequested(const QRect &newGeometry);
 
