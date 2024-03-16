@@ -47,7 +47,14 @@ namespace fairwindsk {
         QString getUsername();
         QString getPassword();
 
+        QString getMyDataApp();
+        QString getMOBApp();
+        QString getAlarmsApp();
+        QString getSettingsApp();
+
         bool isDebug() const;
+
+        SignalKClient *getSignalKClient();
 
     private:
 
@@ -70,6 +77,8 @@ namespace fairwindsk {
         int m_nRetry;
 
         bool m_debug;
+
+        QString getAppNameByKeyFromConfiguration(const QString& key);
     };
 }
 

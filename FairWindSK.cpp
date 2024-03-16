@@ -106,6 +106,7 @@ namespace fairwindsk {
         params["debug"] = m_debug;
         params["active"] = true;
         params["restore"] = true;
+        params["url"] = m_signalKServerUrl + "/signalk";
         params["username"] = m_username;
         params["password"] = m_password;
 
@@ -208,6 +209,10 @@ namespace fairwindsk {
                 }
             }
             result = true;
+        } else {
+            if (m_debug) {
+                qDebug() << "Helper plugin not installed on " << m_signalKServerUrl;
+            }
         }
 
         return result;
@@ -274,4 +279,41 @@ namespace fairwindsk {
         // Return the result
         return result;
     }
+
+    QString FairWindSK::getAppNameByKeyFromConfiguration(const QString& key) {
+        QString result = "";
+
+        auto configuration = getConfiguration();
+        if (configuration.contains("bottomBarApps") && configuration["bottomBarApps"].isObject()) {
+            auto apps = configuration["bottomBarApps"].toObject();
+
+            if (apps.contains(key) && apps[key].isString()) {
+                result = apps[key].toString();
+            }
+        }
+
+        return result;
+    }
+
+
+    QString FairWindSK::getMyDataApp() {
+        return getAppNameByKeyFromConfiguration("mydata");
+    }
+
+    QString FairWindSK::getMOBApp() {
+        return getAppNameByKeyFromConfiguration("mob");
+    }
+
+    QString FairWindSK::getAlarmsApp() {
+        return getAppNameByKeyFromConfiguration("alarms");
+    }
+
+    QString FairWindSK::getSettingsApp() {
+        return getAppNameByKeyFromConfiguration("settings");
+    }
+
+    SignalKClient *FairWindSK::getSignalKClient() {
+        return &m_signalkClient;
+    }
 }
+
