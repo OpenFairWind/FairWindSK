@@ -9,6 +9,7 @@
 
 #include <utility>
 
+#include <IterableLayoutAdapter.hpp>
 #include "Web.hpp"
 #include "WebPage.hpp"
 #include "ui/topbar/TopBar.hpp"
@@ -17,59 +18,46 @@
 namespace fairwindsk::ui::web {
     Web::Web(QWidget *parent, fairwindsk::AppItem *appItem, QWebEngineProfile *profile): QWidget(parent), ui(new Ui::Web) {
 
-        m_appItem = appItem;
-
         ui->setupUi((QWidget *)this);
-
-        m_webView = new WebView((QWidget *)this);
-        m_webView->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
-
-        m_webPage = new WebPage(profile);
-        m_webView->setPage(m_webPage);
-
-        ui->verticalLayout_WebView->addWidget(m_webView);
 
         showButtons(false);
 
+        m_webView = new WebView(profile,(QWidget *)this);
+        m_webView->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
+
+        ui->verticalLayout_WebView->addWidget(m_webView);
+
         connect(ui->pushButton_Home, &QPushButton::clicked, this, &Web::toolButton_home_clicked);
 
-        m_webView->load(QUrl(appItem->getUrl()));
-
-    }
-
-/*
-    void Web::setApp(fairwindsk::AppItem *appItem) {
         m_appItem = appItem;
 
-        m_webView->load(QUrl(appItem->getUrl()));
+        m_webView->load(QUrl(m_appItem->getUrl()));
 
     }
-*/
+
     void Web::toggleButtons() {
         showButtons(!ui->pushButton_Home->isVisible());
     }
 
     void Web::showButtons(bool show) {
-        if (show) {
-            ui->pushButton_Home->show();
-            ui->pushButton_Next->show();
-            ui->pushButton_Prev->show();
-            ui->pushButton_Reload->show();
-        } else {
-            ui->pushButton_Home->hide();
-            ui->pushButton_Next->hide();
-            ui->pushButton_Prev->hide();
-            ui->pushButton_Reload->hide();
+        for (auto widget : IterableLayoutAdapter<>(ui->verticalLayout_Buttons)) {
+            if (show) {
+                widget->show();
+            } else {
+                widget->hide();
+            }
+
         }
     }
 
 
     Web::~Web() {
+        /*
         if (m_webPage) {
             delete m_webPage;
             m_webPage = nullptr;
         }
-
+        */
         if (m_webView) {
             delete m_webView;
             m_webView = nullptr;

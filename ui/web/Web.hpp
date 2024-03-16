@@ -47,7 +47,6 @@ namespace fairwindsk::ui::web {
         Ui::Web *ui;
 
         WebView *m_webView = nullptr;
-        WebPage *m_webPage = nullptr;
         fairwindsk::AppItem *m_appItem = nullptr;
 
 
