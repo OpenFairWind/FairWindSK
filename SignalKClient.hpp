@@ -34,6 +34,9 @@ namespace fairwindsk {
         QJsonObject signalkPost(QString url, QJsonObject payload);
         QJsonObject signalkPut(QString url, QJsonObject payload);
 
+        QString getToken();
+        QString getCookie();
+
 
     private slots:
         void onConnected();

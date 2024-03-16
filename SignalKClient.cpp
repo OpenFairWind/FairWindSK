@@ -94,6 +94,10 @@ namespace fairwindsk {
 
             mServer = signalkGet(mUrl);
 
+            if (mDebug) {
+                qDebug() << "Server: " << mServer;
+            }
+
             if (login()) {
 
                 if (mRestore) {
@@ -115,7 +119,14 @@ namespace fairwindsk {
                 mWebSocket.open(QUrl(ws()));
 
                 result = true;
+            } else {
+                if (mDebug)
+                    qDebug() << "Login failed.";
             }
+        }  else {
+            if (mDebug)
+                    qDebug() << "Data connection not active!";
+
         }
 
         return result;
@@ -222,6 +233,9 @@ namespace fairwindsk {
  */
     QByteArray SignalKClient::httpPost(QString url, QJsonObject payload) {
 
+        if (mDebug)
+            qDebug() << "SignalKClient::httpPost url: " << url << " payload: " << payload;
+
         QJsonDocument jsonDocument;
         jsonDocument.setObject(payload);
 
@@ -256,12 +270,13 @@ namespace fairwindsk {
             if (mDebug)
                 qDebug() << "mCookie: " <<mCookie;
         }
-        /*
-        QList<QByteArray> headerList = reply->rawHeaderList();
-                foreach(QByteArray head, headerList) {
-                qDebug() << head << ":" << reply->rawHeader(head);
-            }
-        */
+
+        if (mDebug) {
+            QList<QByteArray> headerList = reply->rawHeaderList();
+                    foreach(QByteArray head, headerList) {
+                    qDebug() << head << ":" << reply->rawHeader(head);
+                }
+        }
 
         return data;
     }
@@ -403,6 +418,14 @@ namespace fairwindsk {
         auto fairWindSK = fairwindsk::FairWindSK::getInstance();
         fairWindSK->getSignalKDocument()->update(jsonObjectUpdate);
 
+    }
+
+    QString SignalKClient::getToken() {
+        return mToken;
+    }
+
+    QString SignalKClient::getCookie() {
+        return mCookie;
     }
 //! [onTextMessageReceived]
 }
