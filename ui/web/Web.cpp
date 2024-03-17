@@ -29,7 +29,10 @@ namespace fairwindsk::ui::web {
         m_webView->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
 
         ui->verticalLayout_WebView->addWidget(m_webView);
-        m_webView->load(QUrl(m_appItem->getUrl()));
+
+        if (m_appItem) {
+            m_webView->load(QUrl(m_appItem->getUrl()));
+        }
 
 
     }

@@ -43,9 +43,9 @@ fairwindsk::ui::MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), u
     // Instantiate TopBar and BottomBar object
     m_topBar = new fairwindsk::ui::topbar::TopBar(ui->widget_Top);
     m_launcher = new fairwindsk::ui::launcher::Launcher();
-    ui->stackedWidget_Center->addWidget(m_launcher);
     m_bottomBar = new fairwindsk::ui::bottombar::BottomBar(ui->widget_Bottom);
 
+    ui->stackedWidget_Center->addWidget(m_launcher);
 
 
     // Place the Apps object at the center of the UI
@@ -76,8 +76,11 @@ fairwindsk::ui::MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), u
     QObject::connect(m_launcher, &fairwindsk::ui::launcher::Launcher::foregroundAppChanged, this,
                      &MainWindow::setForegroundApp);
 
-    //QTimer::singleShot(0, this, SLOT(showFullScreen()));
+    setForegroundApp("admin");
 
+    QTimer::singleShot(1000, this, SLOT(showFullScreen()));
+
+    onApps();
 
 }
 
@@ -160,6 +163,7 @@ void fairwindsk::ui::MainWindow::setForegroundApp(QString hash) {
             // Add it to the UI
             ui->stackedWidget_Center->addWidget(widgetApp);
 
+            /*
             // Patch because an apparent QWebEngineView bug
 
             // Check if the widget added in the stacked section is the first one
@@ -168,9 +172,11 @@ void fairwindsk::ui::MainWindow::setForegroundApp(QString hash) {
                 // Force the main window in full screen
                 showFullScreen();
             }
+            */
 
             // Store it in mapWidgets for future usage
             m_mapHash2Widget.insert(hash, widgetApp);
+
 
         }
     }

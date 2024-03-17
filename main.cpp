@@ -11,7 +11,6 @@
 #include "ui/MainWindow.hpp"
 
 
-
 using namespace Qt::StringLiterals;
 
 int main(int argc, char *argv[]) {
@@ -80,7 +79,7 @@ int main(int argc, char *argv[]) {
             fairwindsk::ui::MainWindow w;
 
             // Show the window fullscreen
-            w.showFullScreen();
+            //w.showFullScreen();
 
             // Close the splash screen presenting the MainWindow UI
             splash.finish((QWidget *) &w);
