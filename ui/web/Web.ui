@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>818</width>
+    <width>876</width>
     <height>498</height>
    </rect>
   </property>
@@ -20,6 +20,9 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
+   <property name="sizeConstraint">
+    <enum>QLayout::SetDefaultConstraint</enum>
+   </property>
    <property name="leftMargin">
     <number>0</number>
    </property>
@@ -31,6 +34,9 @@
    </property>
    <property name="bottomMargin">
     <number>0</number>
+   </property>
+   <property name="spacing">
+    <number>-1</number>
    </property>
    <item row="0" column="0">
     <layout class="QHBoxLayout" name="horizontalLayout">
@@ -59,9 +65,9 @@
         <enum>QLayout::SetMinimumSize</enum>
        </property>
        <item>
-        <widget class="QPushButton" name="pushButton_Home">
+        <widget class="QToolButton" name="toolButton_Home">
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
@@ -69,15 +75,12 @@
          <property name="text">
           <string>Home</string>
          </property>
-         <property name="default">
-          <bool>false</bool>
-         </property>
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="pushButton_Prev">
+        <widget class="QToolButton" name="toolButton_Prev">
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
@@ -88,9 +91,9 @@
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="pushButton_Next">
+        <widget class="QToolButton" name="toolButton_Next">
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
@@ -101,9 +104,9 @@
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="pushButton_Reload">
+        <widget class="QToolButton" name="toolButton_Reload">
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>

@@ -7,8 +7,6 @@
 #include <QPushButton>
 #include <QWebEngineProfile>
 
-#include <utility>
-
 #include <IterableLayoutAdapter.hpp>
 #include "Web.hpp"
 #include "WebPage.hpp"
@@ -17,26 +15,27 @@
 
 namespace fairwindsk::ui::web {
     Web::Web(QWidget *parent, fairwindsk::AppItem *appItem, QWebEngineProfile *profile): QWidget(parent), ui(new Ui::Web) {
+        m_appItem = appItem;
 
         ui->setupUi((QWidget *)this);
 
         showButtons(false);
 
+        connect(ui->toolButton_Home, &QToolButton::clicked, this, &Web::toolButton_home_clicked);
+
+
         m_webView = new WebView(profile,(QWidget *)this);
+
         m_webView->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
 
         ui->verticalLayout_WebView->addWidget(m_webView);
-
-        connect(ui->pushButton_Home, &QPushButton::clicked, this, &Web::toolButton_home_clicked);
-
-        m_appItem = appItem;
-
         m_webView->load(QUrl(m_appItem->getUrl()));
+
 
     }
 
     void Web::toggleButtons() {
-        showButtons(!ui->pushButton_Home->isVisible());
+        showButtons(!ui->toolButton_Home->isVisible());
     }
 
     void Web::showButtons(bool show) {

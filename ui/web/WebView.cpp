@@ -85,7 +85,7 @@ namespace fairwindsk::ui::web {
             case QWebEnginePage::Notifications:
                 return QObject::tr("Allow %1 to show notification on your desktop?");
         }
-        return QString();
+        return {};
     }
 
     void WebView::setPage(WebPage *page)

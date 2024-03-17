@@ -148,9 +148,7 @@ void fairwindsk::ui::MainWindow::setForegroundApp(QString hash) {
         auto web = new fairwindsk::ui::web::Web(nullptr,appItem, m_profile);
 
         // Register the web widget
-        //web->setApp(appItem);
         appItem->setWeb(web);
-
 
         // Get the app widget
         widgetApp = web;
@@ -161,6 +159,15 @@ void fairwindsk::ui::MainWindow::setForegroundApp(QString hash) {
 
             // Add it to the UI
             ui->stackedWidget_Center->addWidget(widgetApp);
+
+            // Patch because an apparent QWebEngineView bug
+
+            // Check if the widget added in the stacked section is the first one
+            if (ui->stackedWidget_Center->count()==1) {
+
+                // Force the main window in full screen
+                showFullScreen();
+            }
 
             // Store it in mapWidgets for future usage
             m_mapHash2Widget.insert(hash, widgetApp);
