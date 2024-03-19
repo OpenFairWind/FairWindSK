@@ -14,6 +14,7 @@
 
 #include "ui/about/About.hpp"
 #include "ui/web/Web.hpp"
+#include "Settings.hpp"
 
 
 /*
@@ -40,13 +41,11 @@ fairwindsk::ui::MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), u
     // Setup the UI
     ui->setupUi(this);
 
-    // Instantiate TopBar and BottomBar object
+    // Create the TopBar object
     m_topBar = new fairwindsk::ui::topbar::TopBar(ui->widget_Top);
-    m_launcher = new fairwindsk::ui::launcher::Launcher();
+
+    // Create the BottomBar object
     m_bottomBar = new fairwindsk::ui::bottombar::BottomBar(ui->widget_Bottom);
-
-    ui->stackedWidget_Center->addWidget(m_launcher);
-
 
     // Place the Apps object at the center of the UI
     setCentralWidget(ui->centralwidget);
@@ -57,7 +56,6 @@ fairwindsk::ui::MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), u
 
     // Show the apps view when the user clicks on the Apps button inside the BottomBar object
     QObject::connect(m_bottomBar, &bottombar::BottomBar::setMOB, this, &MainWindow::onMOB);
-
 
     // Show the apps view when the user clicks on the Apps button inside the BottomBar object
     QObject::connect(m_bottomBar, &bottombar::BottomBar::setApps, this, &MainWindow::onApps);
@@ -71,17 +69,54 @@ fairwindsk::ui::MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), u
     // Show the settings view when the user clicks on the Settings button inside the BottomBar object
     QObject::connect(m_topBar, &topbar::TopBar::clickedToolbuttonUL, this, &MainWindow::onUpperLeft);
 
+    // Check if the server url or token are undefined
+    if (fairWindSK->getSignalKServerUrl().isEmpty() || fairWindSK->getToken().isEmpty()) {
 
+        // Check if the debug is active
+        if (fairWindSK->isDebug()) {
+            qDebug() << "FairWindAK needs to be configured";
+        }
 
-    QObject::connect(m_launcher, &fairwindsk::ui::launcher::Launcher::foregroundAppChanged, this,
-                     &MainWindow::setForegroundApp);
+        // Disable the bottom bar
+        m_bottomBar->setEnabled(false);
 
-    setForegroundApp("admin");
+        // Create the Server Settings
+        auto settings = new fairwindsk::ui::Settings();
 
-    QTimer::singleShot(1000, this, SLOT(showFullScreen()));
+        // Set the server settings as the center widget
+        ui->stackedWidget_Center->addWidget(settings);
 
-    onApps();
+    } else {
 
+        // Create the launcher
+        m_launcher = new fairwindsk::ui::launcher::Launcher();
+
+        // Add the launcher to the stacked widget
+        ui->stackedWidget_Center->addWidget(m_launcher);
+
+        // Connect the foreground app changed signa to the setForegroundApp method
+        QObject::connect(m_launcher, &fairwindsk::ui::launcher::Launcher::foregroundAppChanged,
+                         this,&MainWindow::setForegroundApp);
+
+        // Preload a web application
+        setForegroundApp("admin");
+
+        // Check if the helper app is installed
+        if (fairWindSK->getConfiguration().isEmpty()) {
+
+            // Open the app store
+            setForegroundApp("admin/#/appstore/apps");
+
+        } else {
+
+            // Show the launcher
+            onApps();
+        }
+
+    }
+
+    // Show the window fullscreen
+    QTimer::singleShot(0, this, SLOT(showFullScreen()));
 }
 
 /*
@@ -162,17 +197,6 @@ void fairwindsk::ui::MainWindow::setForegroundApp(QString hash) {
 
             // Add it to the UI
             ui->stackedWidget_Center->addWidget(widgetApp);
-
-            /*
-            // Patch because an apparent QWebEngineView bug
-
-            // Check if the widget added in the stacked section is the first one
-            if (ui->stackedWidget_Center->count()==1) {
-
-                // Force the main window in full screen
-                showFullScreen();
-            }
-            */
 
             // Store it in mapWidgets for future usage
             m_mapHash2Widget.insert(hash, widgetApp);
