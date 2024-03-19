@@ -1,7 +1,7 @@
 #include <QApplication>
 #include <QSplashScreen>
 #include <QTimer>
-
+#include <QTranslator>
 
 #include <QWebEngineProfile>
 #include <QWebEngineSettings>
@@ -14,7 +14,8 @@
 using namespace Qt::StringLiterals;
 
 int main(int argc, char *argv[]) {
-
+    // The translator
+    QTranslator translator;
 
     // Initialize the QT managed settings
     QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
@@ -39,6 +40,11 @@ int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
 
 
+
+    // Install the translator
+    QApplication::installTranslator(&translator);
+
+
     // Set the window icon
     QApplication::setWindowIcon(QIcon(QPixmap::fromImage(QImage(":/resources/images/icons/fairwind_icon.png"))));
 
@@ -52,7 +58,7 @@ int main(int argc, char *argv[]) {
     splash.show();
 
     // Show message
-    splash.showMessage("Welcome to FairWindSK a GUI for the Signal K server!", 500, Qt::white);
+    splash.showMessage(QObject::tr("Welcome to FairWindSK a GUI for the Signal K server!"), 500, Qt::white);
 
     // Get the FairWind singleton
     auto fairWindSK = fairwindsk::FairWindSK::getInstance();
@@ -61,34 +67,28 @@ int main(int argc, char *argv[]) {
     fairWindSK->loadConfig();
 
     // Show message
-    splash.showMessage("Connecting to the Signal K Server...", 500, Qt::white);
+    splash.showMessage(QObject::tr("Connecting to the Signal K Server..."), 500, Qt::white);
 
     // Connect to the Signal K server...
-    if (fairWindSK->startSignalK()) {
-        // Show message
-        splash.showMessage("Loading applications...", 500, Qt::white);
+    fairWindSK->startSignalK();
 
-        // Load the apps inside the FairWind singleton itself
-        if (fairWindSK->loadApps()) {
+    // Show message
+    splash.showMessage(QObject::tr("Loading applications..."), 500, Qt::white);
 
-            QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::Accelerated2dCanvasEnabled, true);
-            QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
-            QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::DnsPrefetchEnabled,true);
+    // Load the apps inside the FairWind singleton itself
+    fairWindSK->loadApps();
 
-            // Create a new MainWindow object
-            fairwindsk::ui::MainWindow w;
+    QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::Accelerated2dCanvasEnabled, true);
+    QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
+    QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::DnsPrefetchEnabled,true);
 
-            // Show the window fullscreen
-            //w.showFullScreen();
+    // Create a new MainWindow object
+    fairwindsk::ui::MainWindow w;
 
-            // Close the splash screen presenting the MainWindow UI
-            splash.finish((QWidget *) &w);
+    // Close the splash screen presenting the MainWindow UI
+    splash.finish((QWidget *) &w);
 
-            return QApplication::exec();
-        }
-    }
+    return QApplication::exec();
 
-    splash.close();
-    QApplication::exit(-1);
 
 }
