@@ -26,6 +26,7 @@ namespace fairwindsk {
 
 
 
+
     public:
         static FairWindSK *getInstance();
 
@@ -44,13 +45,18 @@ namespace fairwindsk {
         signalk::Document *getSignalKDocument();
 
         QString getSignalKServerUrl();
-        QString getUsername();
-        QString getPassword();
+        void setSignalKServerUrl(QString signalKServerUrl);
+
+        QString getToken();
+        void setToken(QString token);
 
         QString getMyDataApp();
         QString getMOBApp();
         QString getAlarmsApp();
         QString getSettingsApp();
+
+        int getSleep();
+        int getRetry();
 
         bool isDebug() const;
 
@@ -72,6 +78,7 @@ namespace fairwindsk {
         QString m_signalKServerUrl;
         QString m_username;
         QString m_password;
+        QString m_token;
 
         int m_mSleep;
         int m_nRetry;

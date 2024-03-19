@@ -16,14 +16,15 @@ namespace fairwindsk {
     SignalKClient::SignalKClient(QObject *parent) :
             QObject(parent) {
 
-        mUrl = "http://172.24.1.1:3000/signalk";
+        mUrl = "";
         mVersion = "v1";
         mActive = false;
         mDebug = false;
         mRestore = true;
         mLabel = "Signal K Connection";
-        mUsername = "admin";
-        mPassword = "password";
+        mUsername = "";
+        mPassword = "";
+        mToken = "";
     }
 
 /*
@@ -38,53 +39,88 @@ namespace fairwindsk {
     bool SignalKClient::init(QMap<QString, QVariant> params) {
         bool result = false;
 
+        // Get the FairWindSK instance
         auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+
+        // Get the Signal K document instance
         auto signalKDocument = fairWindSK->getSignalKDocument();
 
+        // Connect the on created event
         connect(signalKDocument, &signalk::Document::created, this, &SignalKClient::onCreated);
+
+        // Connect the on updated event
         connect(signalKDocument, &signalk::Document::updated, this, &SignalKClient::onUpdated);
+
+        // Connect the on fetched event
         connect(signalKDocument, &signalk::Document::fetched, this, &SignalKClient::onFetched);
 
+        // Connect the on connected event
         connect(&mWebSocket, &QWebSocket::connected, this, &SignalKClient::onConnected);
+
+        // Connect the on disconnected event
         connect(&mWebSocket, &QWebSocket::disconnected, this, &SignalKClient::onDisconnected);
 
+        // Check if the url is present in parameters
         if (params.contains("url")) {
+
+            // Set the url
             mUrl = params["url"].toString();
         }
 
+        // Check if the version is present in parameters
         if (params.contains("version")) {
+
+            // Set the version
             mVersion = params["version"].toString();
         }
 
+        // Check if the label is present in parameters
         if (params.contains("label")) {
+
+            // Set the label
             mLabel = params["label"].toString();
         }
 
+        // Check if the active is present in parameters
         if (params.contains("active")) {
+
+            // Set the active
             mActive = params["active"].toBool();
         }
 
+        // Check if the debug is present in parameters
         if (params.contains("debug")) {
+
+            // Set the debug
             mDebug = params["debug"].toBool();
         }
 
+        // Check if the restore is present in parameters
         if (params.contains("restore")) {
+
+            // Set the restore
             mRestore = params["restore"].toBool();
         }
 
+        // Check if the token is present in parameters
+        if (params.contains("token")) {
 
+            // Set the token
+            mToken = params["token"].toString();
+        }
+
+        // Check if the username is present in parameters
         if (params.contains("username")) {
+
+            // Set the username
             mUsername = params["username"].toString();
         }
 
+        // Check if the password is present in parameters
         if (params.contains("password")) {
-            mPassword = params["password"].toString();
-        }
 
-        // Check if the self is set manually
-        QString self;
-        if (params.contains("self")) {
-            self = params["self"].toString();
+            // Set the password
+            mPassword = params["password"].toString();
         }
 
         if (mDebug)
@@ -98,22 +134,17 @@ namespace fairwindsk {
                 qDebug() << "Server: " << mServer;
             }
 
-            if (login()) {
+            // Check if the token is empty
+            if (mToken.isEmpty()) {
 
-                if (mRestore) {
-                    QJsonObject allSignalK = getAll();
-                    fairWindSK->getSignalKDocument()->insert("", allSignalK);
+                // Perform the login
+                login();
+            }
 
-                    if (mDebug)
-                        qDebug() << allSignalK;
-                }
+            // Check if the token is not empty
+            if (!mToken.isEmpty()) {
 
-                // Check if the self is defined
-                if (!self.isEmpty()) {
-
-                    // Override the self definition
-                    signalKDocument->setSelf(self);
-                }
+                mCookie="JAUTHENTICATION="+mToken+"; Path=/; HttpOnly";
 
 
                 mWebSocket.open(QUrl(ws()));

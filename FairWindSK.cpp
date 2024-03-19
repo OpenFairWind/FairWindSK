@@ -14,6 +14,7 @@
 #include <FairWindSK.hpp>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
+#include <utility>
 
 using namespace Qt::StringLiterals;
 
@@ -29,7 +30,8 @@ namespace fairwindsk {
         m_debug = true;
         m_mSleep = 2500;
         m_nRetry = 10;
-        m_signalKServerUrl = "http://172.24.1.1:3000";
+        m_signalKServerUrl = "";
+        m_token = "";
         m_username = "admin";
         m_password = "password";
     }
@@ -60,23 +62,17 @@ namespace fairwindsk {
             qDebug() << "Loading configuration from ini file...";
         }
 
-        // Get the name of the FairWind++ configuration file
+        // Get the name of the FairWindSK configuration file
         m_signalKServerUrl = settings.value("signalk-server", m_signalKServerUrl).toString();
 
         // Store the configuration in the settings
         settings.setValue("signalk-server", m_signalKServerUrl);
 
-        // Get the name of the FairWind++ configuration file
-        m_username = settings.value("username", m_username).toString();
+        // Get the token of the FairWindSK configuration file
+        m_token = settings.value("token", m_token).toString();
 
         // Store the configuration in the settings
-        settings.setValue("username", m_username);
-
-        // Get the name of the FairWind++ configuration file
-        m_password = settings.value("password", m_password).toString();
-
-        // Store the configuration in the settings
-        settings.setValue("password", m_password);
+        settings.setValue("token", m_token);
 
         // Get the name of the FairWind++ configuration file
         m_mSleep = settings.value("sleep", m_mSleep).toInt();
@@ -102,51 +98,94 @@ namespace fairwindsk {
     bool FairWindSK::startSignalK() {
         bool result = false;
 
-        QMap<QString,QVariant> params;
-        params["debug"] = m_debug;
-        params["active"] = true;
-        params["restore"] = true;
-        params["url"] = m_signalKServerUrl + "/signalk";
-        params["username"] = m_username;
-        params["password"] = m_password;
+        // Check if the Signal K Server url is defined
+        if (!m_signalKServerUrl.isEmpty()) {
 
-        // Number of connection tentatives
-        int count = 1;
+            // Define the parameters map
+            QMap<QString, QVariant> params;
 
-        // Start the connection
-        do {
+            // Set some defaults
+            params["active"] = true;
 
-            if (m_debug) {
-                qDebug() << "Trying to connect to the " << m_signalKServerUrl << " Signal K server (" << count << "/" << m_nRetry << ")...";
-            }
 
-            // Try to connect
-            result = m_signalkClient.init(params);
+            // Setup the debug mode
+            params["debug"] = m_debug;
 
-            // Check if the connection is successful
-            if (result) {
+            // Set the url
+            params["url"] = m_signalKServerUrl + "/signalk";
 
-                // Exit the loop
-                break;
-            }
+            // Check if the token is defined or if username/password are defined
+            if (!m_token.isEmpty() || (!m_username.isEmpty() && !m_password.isEmpty())) {
 
-            // Process the events
-            QApplication::processEvents();
+                // Check if the token is defined
+                if (!m_token.isEmpty()) {
 
-            // Increase the number of retry
-            count++;
+                    // Set the token
+                    params["token"] = m_token;
+                } else {
 
-            // Wait for m_mSleep microseconds
-            QThread::msleep(m_mSleep);
+                    // Set username and password
+                    params["username"] = m_username;
+                    params["password"] = m_password;
+                }
 
-            // Loop until the number of retry
-        } while (count < m_nRetry);
 
-        if (m_debug) {
-            if (result) {
-                qDebug() << "Connected to " << m_signalKServerUrl;
-            } else {
-                qDebug() << "No response from the " << m_signalKServerUrl << " Signal K server!";
+                // Number of connection tentatives
+                int count = 1;
+
+                // Start the connection
+                do {
+
+                    if (m_debug) {
+                        qDebug() << "Trying to connect to the " << m_signalKServerUrl << " Signal K server (" << count
+                                 << "/" << m_nRetry << ")...";
+                    }
+
+                    // Try to connect
+                    result = m_signalkClient.init(params);
+
+                    // Check if the connection is successful
+                    if (result) {
+
+                        // Set the token
+                        setToken(m_signalkClient.getToken());
+
+                        // Get all the document
+                        QJsonObject allSignalK = m_signalkClient.getAll();
+
+                        // Update the local document
+                        m_signalkDocument.insert("", allSignalK);
+
+                        // Check if the debug is active
+                        if (m_debug) {
+
+                            // Printout the document
+                            qDebug() << allSignalK;
+                        }
+
+                        // Exit the loop
+                        break;
+                    }
+
+                    // Process the events
+                    QApplication::processEvents();
+
+                    // Increase the number of retry
+                    count++;
+
+                    // Wait for m_mSleep microseconds
+                    QThread::msleep(m_mSleep);
+
+                    // Loop until the number of retry
+                } while (count < m_nRetry);
+
+                if (m_debug) {
+                    if (result) {
+                        qDebug() << "Connected to " << m_signalKServerUrl;
+                    } else {
+                        qDebug() << "No response from the " << m_signalKServerUrl << " Signal K server!";
+                    }
+                }
             }
         }
 
@@ -180,6 +219,11 @@ namespace fairwindsk {
             qDebug() << "name:" << settingsAppItem->getName() << "url:" << settingsAppItem->getUrl();
         }
 
+        QString appstoreString = R"({"name": "admin/#/appstore/apps"})";
+        QJsonDocument appstoreJsonDocument = QJsonDocument::fromJson(appstoreString.toUtf8());
+        auto appstoreAppItem = new AppItem(appstoreJsonDocument.object(), false, 0);
+        m_mapHash2AppItem[appstoreAppItem->getName()] = appstoreAppItem;
+
         QUrl url = QUrl(m_signalKServerUrl + "/skServer/webapps");
         QNetworkAccessManager networkAccessManager;
         QEventLoop loop;
@@ -195,17 +239,35 @@ namespace fairwindsk {
                 qDebug() << doc;
             }
 
+            // Reset the counter
             int count = 0;
 
+            // Get the application array
             auto appsJsonArray = doc.array();
+
+            // For each item of the array...
             for (auto appJsonItem: appsJsonArray) {
 
+                // Check if the item is an object
                 if (appJsonItem.isObject()) {
-                    auto appItem = new AppItem(appJsonItem.toObject(), true, count);
 
-                    m_mapHash2AppItem[appItem->getName()] = appItem;
+                    // Get the json object
+                    auto appJsonObject = appJsonItem.toObject();
 
-                    count++;
+                    // Check if the app is a signalk-webapp
+                    if (appJsonObject.contains("keywords") &&
+                        appJsonObject["keywords"].isArray() &&
+                        appJsonObject["keywords"].toArray().contains("signalk-webapp")) {
+
+                        // Create an app item object
+                        auto appItem = new AppItem(appJsonObject, true, count);
+
+                        // Add the item to the lookup table
+                        m_mapHash2AppItem[appItem->getName()] = appItem;
+
+                        // Increase the app counter
+                        count++;
+                    }
                 }
             }
             result = true;
@@ -240,14 +302,6 @@ namespace fairwindsk {
 
     QString FairWindSK::getSignalKServerUrl(){
         return m_signalKServerUrl;
-    }
-
-    QString FairWindSK::getUsername()  {
-        return m_username;
-    }
-
-    QString FairWindSK::getPassword()  {
-        return m_password;
     }
 
     bool FairWindSK::isDebug() const {
@@ -314,6 +368,38 @@ namespace fairwindsk {
 
     SignalKClient *FairWindSK::getSignalKClient() {
         return &m_signalkClient;
+    }
+
+    QString FairWindSK::getToken() {
+        return m_token;
+    }
+
+    void FairWindSK::setToken(QString token) {
+        m_token = std::move(token);
+
+        // Initialize the QT managed settings
+        QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
+
+        // Store the configuration in the settings
+        settings.setValue("token", m_token);
+    }
+
+    int FairWindSK::getSleep() {
+        return m_mSleep;
+    }
+
+    int FairWindSK::getRetry() {
+        return m_nRetry;
+    }
+
+    void FairWindSK::setSignalKServerUrl(QString signalKServerUrl) {
+        m_signalKServerUrl = std::move(signalKServerUrl);
+
+        // Initialize the QT managed settings
+        QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
+
+        // Store the configuration in the settings
+        settings.setValue("signalk-server", m_signalKServerUrl);
     }
 }
 
