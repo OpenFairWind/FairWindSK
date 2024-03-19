@@ -10,16 +10,36 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_PREFIX_PATH "/usr/local/opt/qt6/")
 
 # Include the support to external projects
-#include(ExternalProject)
+include(ExternalProject)
 
 # Set the external install location
-#set(EXTERNAL_INSTALL_LOCATION ${CMAKE_BINARY_DIR}/external)
+set(EXTERNAL_INSTALL_LOCATION ${CMAKE_BINARY_DIR}/external)
 
 # Add to the includes
-#include_directories(SYSTEM ${EXTERNAL_INSTALL_LOCATION}/include)
+include_directories(SYSTEM ${EXTERNAL_INSTALL_LOCATION}/include)
 
 # Add to the libraries
-#link_directories(${EXTERNAL_INSTALL_LOCATION}/lib)
+link_directories(${EXTERNAL_INSTALL_LOCATION}/lib)
+
+ExternalProject_Add(QtZeroConf
+        GIT_REPOSITORY https://github.com/jbagg/QtZeroConf.git
+        CMAKE_ARGS -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH} -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION} -DBUILD_SHARED_LIBS=ON
+        TIMEOUT 360
+)
+set(LIBQTZEROCONF ${EXTERNAL_INSTALL_LOCATION}/lib/libqtzeroconf.so)
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    set(LIBQTZEROCONF ${EXTERNAL_INSTALL_LOCATION}/lib/static/libQtZeroConf.lib)
+    add_custom_command(
+            TARGET QtZeroConf
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy
+            ${EXTERNAL_INSTALL_LOCATION}/bin/libQtZeroConf.dll
+            ${CMAKE_BINARY_DIR}
+    )
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    set(LIBQTZEROCONF ${EXTERNAL_INSTALL_LOCATION}/lib/libQtZeroConf.dylib)
+endif()
+set(LIBQTZEROCONF ${LIBQTZEROCONF})
 
 find_package(Qt6 COMPONENTS
         Core
@@ -58,7 +78,12 @@ add_executable(${PROJECT_NAME}
         ui/web/DownloadWidget.cpp ui/web/DownloadWidget.hpp ui/web/DownloadWidget.ui
 
         resources.qrc
+        ui/Settings.cpp
+        ui/Settings.hpp
+        ui/Settings.ui
 )
+
+add_dependencies(${PROJECT_NAME} QtZeroConf)
 
 target_link_libraries(${PROJECT_NAME}
         Qt::Core
@@ -70,5 +95,6 @@ target_link_libraries(${PROJECT_NAME}
         Qt::Positioning
         Qt::WebEngineWidgets
         Qt::VirtualKeyboard
+        ${LIBQTZEROCONF}
 )
 
