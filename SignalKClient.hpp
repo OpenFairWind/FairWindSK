@@ -11,8 +11,14 @@
 #include <QtWebSockets/QWebSocket>
 
 namespace fairwindsk {
+
+    namespace signalk { class Waypoint; }
+
     class SignalKClient : public QObject {
     Q_OBJECT
+
+
+
     public:
         explicit SignalKClient(QObject *parent = nullptr);
         ~SignalKClient() override;
@@ -37,6 +43,9 @@ namespace fairwindsk {
         QString getToken();
         QString getCookie();
 
+        double getDoubleFromUpdateByPath(const QJsonObject &update, const QString& path = "");
+        QJsonObject getObjectFromUpdateByPath(const QJsonObject &update, const QString& path = "");
+        signalk::Waypoint getWaypointByHref(const QString &href);
 
     private slots:
         void onConnected();
@@ -58,7 +67,7 @@ namespace fairwindsk {
 
         QNetworkAccessManager manager;
         QString mUrl;
-        QString mVersion;
+        //QString mVersion;
         bool mRestore;
         bool mDebug;
         bool mActive;

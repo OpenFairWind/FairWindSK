@@ -2,12 +2,16 @@
 // Created by Raffaele Montella on 03/06/21.
 //
 
+#include <limits>
+
 #include <QNetworkReply>
 #include <QCoreApplication>
 #include <QJsonDocument>
+#include <QJsonArray>
 
 #include <SignalKClient.hpp>
 #include "FairWindSK.hpp"
+#include "signalk/Waypoint.hpp"
 
 namespace fairwindsk {
 /*
@@ -17,7 +21,7 @@ namespace fairwindsk {
             QObject(parent) {
 
         mUrl = "";
-        mVersion = "v1";
+        //mVersion = "v1";
         mActive = false;
         mDebug = false;
         mRestore = true;
@@ -67,12 +71,14 @@ namespace fairwindsk {
             mUrl = params["url"].toString();
         }
 
+        /*
         // Check if the version is present in parameters
         if (params.contains("version")) {
 
             // Set the version
             mVersion = params["version"].toString();
         }
+        */
 
         // Check if the label is present in parameters
         if (params.contains("label")) {
@@ -348,7 +354,7 @@ namespace fairwindsk {
         QJsonObject payload;
         payload["username"] = mUsername;
         payload["password"] = mPassword;
-        QJsonObject data = signalkPost(mUrl + "/" + mVersion + "/auth/login", payload);
+        QJsonObject data = signalkPost(mUrl + "/v1/auth/login", payload);
 
         if (mDebug)
             qDebug() << "SignalKClient::login : " << data;
@@ -402,8 +408,8 @@ namespace fairwindsk {
     QString SignalKClient::getEndpointByProtocol(const QString &protocol) {
         if (mServer.contains("endpoints") & mServer["endpoints"].isObject()) {
             auto jsonObjectEndponts = mServer["endpoints"].toObject();
-            if (jsonObjectEndponts.contains(mVersion) && jsonObjectEndponts[mVersion].isObject()) {
-                auto jsonObjectVersion = jsonObjectEndponts[mVersion].toObject();
+            if (jsonObjectEndponts.contains("v1") && jsonObjectEndponts["v1"].isObject()) {
+                auto jsonObjectVersion = jsonObjectEndponts["v1"].toObject();
                 if (jsonObjectVersion.contains("signalk-" + protocol) &&
                     jsonObjectVersion["signalk-" + protocol].isString()) {
                     return jsonObjectVersion["signalk-" + protocol].toString();
@@ -457,6 +463,94 @@ namespace fairwindsk {
 
     QString SignalKClient::getCookie() {
         return mCookie;
+    }
+
+    double SignalKClient::getDoubleFromUpdateByPath(const QJsonObject &update, const QString& path) {
+
+        double result = std::numeric_limits<double>::quiet_NaN();
+        int count = 0;
+        if (update.contains("updates") and update["updates"].isArray()) {
+            auto updatesJsonArray = update["updates"].toArray();
+            for (auto updatesItem: updatesJsonArray) {
+                if (updatesItem.isObject()) {
+                    auto updateJsonObject = updatesItem.toObject();
+                    if (updateJsonObject.contains("values") && updateJsonObject["values"].isArray()) {
+                        auto valuesJsonArray = updateJsonObject["values"].toArray();
+                        for (auto valuesItem: valuesJsonArray) {
+                            if (valuesItem.isObject()) {
+                                auto valueJsonObject = valuesItem.toObject();
+                                if (valueJsonObject.contains("path") && valueJsonObject["path"].isString()) {
+                                    auto valuePath = valueJsonObject["path"].toString();
+                                    if (path.isEmpty() || path == valuePath) {
+                                        if (valueJsonObject.contains("value") && valueJsonObject["value"].isObject()) {
+                                            auto valueValueJsonObject = valueJsonObject["value"].toObject();
+                                            if (valueValueJsonObject.contains("value") && valueValueJsonObject["value"].isDouble()) {
+                                                if (count == 0) {
+                                                    result = valueValueJsonObject["value"].toDouble();
+                                                } else {
+                                                    result = result + valueJsonObject["value"].toDouble();
+                                                }
+                                                count++;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (count>1) {
+            result = result / count;
+        }
+
+        //qDebug() << update;
+        //qDebug() << result;
+
+        return result;
+    }
+
+    QJsonObject SignalKClient::getObjectFromUpdateByPath(const QJsonObject &update, const QString& path) {
+
+        QJsonObject result;
+
+        if (update.contains("updates") and update["updates"].isArray()) {
+            auto updatesJsonArray = update["updates"].toArray();
+            for (auto updatesItem: updatesJsonArray) {
+                if (updatesItem.isObject()) {
+                    auto updateJsonObject = updatesItem.toObject();
+                    if (updateJsonObject.contains("values") && updateJsonObject["values"].isArray()) {
+                        auto valuesJsonArray = updateJsonObject["values"].toArray();
+                        for (auto valuesItem: valuesJsonArray) {
+                            if (valuesItem.isObject()) {
+                                auto valueJsonObject = valuesItem.toObject();
+                                if (valueJsonObject.contains("path") && valueJsonObject["path"].isString()) {
+                                    auto valuePath = valueJsonObject["path"].toString();
+                                    if (path.isEmpty() || path == valuePath) {
+                                        if (valueJsonObject.contains("value") && valueJsonObject["value"].isObject()) {
+                                            auto valueValueJsonObject = valueJsonObject["value"].toObject();
+                                            if (valueValueJsonObject.contains("value") && valueValueJsonObject["value"].isObject()) {
+                                                result = valueValueJsonObject["value"].toObject();
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    signalk::Waypoint SignalKClient::getWaypointByHref(const QString &href) {
+
+        auto data = httpGet(mUrl + "/v2/api" + href);
+        auto jsonDocument = QJsonDocument::fromJson(data);
+        auto result = signalk::Waypoint(jsonDocument.object());
+        return result;
     }
 //! [onTextMessageReceived]
 }
