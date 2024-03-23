@@ -24,7 +24,7 @@ namespace fairwindsk {
     class FairWindSK: public QObject {
         Q_OBJECT
 
-
+        bool getVirtualkeyboard();
 
 
     public:
@@ -61,6 +61,9 @@ namespace fairwindsk {
         bool isDebug() const;
 
         SignalKClient *getSignalKClient();
+
+        static void setVirtualKeyboard(bool value);
+        static bool getVirtualKeyboard();
 
     private:
 

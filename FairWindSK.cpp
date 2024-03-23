@@ -401,5 +401,24 @@ namespace fairwindsk {
         // Store the configuration in the settings
         settings.setValue("signalk-server", m_signalKServerUrl);
     }
+
+    void FairWindSK::setVirtualKeyboard(bool value) {
+        // Initialize the QT managed settings
+        QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
+
+        // Store the configuration in the settings
+        settings.setValue("virtualKeyboard", value);
+    }
+
+    bool FairWindSK::getVirtualKeyboard() {
+        // Initialize the QT managed settings
+        QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
+
+        // Get the name of the FairWind++ configuration file
+        auto value = settings.value("virtualKeyboard", false).toBool();
+
+
+        return value;
+    }
 }
 
