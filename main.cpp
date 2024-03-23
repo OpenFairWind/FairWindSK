@@ -17,16 +17,9 @@ int main(int argc, char *argv[]) {
     // The translator
     QTranslator translator;
 
-    // Initialize the QT managed settings
-    QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
 
-    // Get the name of the FairWind++ configuration file
-    bool useVirtualKeyboard = settings.value("virtualKeyboard", false).toBool();
 
-    // Store the configuration in the settings
-    settings.setValue("virtualKeyboard", useVirtualKeyboard);
-
-    if (useVirtualKeyboard) {
+    if (fairwindsk::FairWindSK::getVirtualKeyboard()) {
         qputenv("QT_IM_MODULE", QByteArray("qtvirtualkeyboard"));
     }
 
