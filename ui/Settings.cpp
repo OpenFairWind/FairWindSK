@@ -16,6 +16,8 @@ namespace fairwindsk::ui {
             QWidget(parent), ui(new Ui::Settings) {
         ui->setupUi(this);
 
+        auto fairWindSK = FairWindSK::getInstance();
+
         // Hide the restart button
         ui->pushButton_restart->setVisible(false);
 
@@ -25,8 +27,14 @@ namespace fairwindsk::ui {
         // Show the connect button
         ui->pushButton_connect->setVisible(true);
 
+        if (fairwindsk::FairWindSK::getVirtualKeyboard()) {
+            ui->checkBox_virtualkeboard->setCheckState(Qt::Checked);
+        } else {
+            ui->checkBox_virtualkeboard->setCheckState(Qt::Unchecked);
+        }
+
         // Show the settings view when the user clicks on the Settings button inside the BottomBar object
-        connect(ui->pushButton_discovery, &QPushButton::clicked, this, &Settings::onDiscovery);
+        connect(ui->checkBox_virtualkeboard, &QCheckBox::stateChanged, this, &Settings::onVirtualKeyboard);
 
         // Show the settings view when the user clicks on the Settings button inside the BottomBar object
         connect(ui->pushButton_connect, &QPushButton::clicked, this, &Settings::onConnect);
@@ -38,20 +46,30 @@ namespace fairwindsk::ui {
         connect(ui->pushButton_restart, &QPushButton::clicked, this, &Settings::onRestart);
 
         connect(&m_zeroConf, &QZeroConf::serviceAdded, this, &Settings::addService);
-    }
 
-    void Settings::onDiscovery() {
+        m_zeroConf.startBrowser("_http._tcp");
 
         if (m_zeroConf.browserExists()) {
-            m_zeroConf.stopBrowser();
-            ui->pushButton_discovery->setText(tr("Discovery"));
+            // Show a message
+            ui->textEdit_message->setText(ui->textEdit_message->toPlainText()+ tr("Zero configuration active.\n"));
         } else {
-            ui->pushButton_discovery->setText(tr("Stop"));
-            m_zeroConf.startBrowser("_http._tcp");
+            // Show a message
+            ui->textEdit_message->setText(ui->textEdit_message->toPlainText()+ tr("Zero configuration not active.\n"));
         }
     }
 
-    void Settings::addService(QZeroConfService zcs)
+    void Settings::onVirtualKeyboard(int state) {
+
+        auto fairWindSK = FairWindSK::getInstance();
+
+        if (state == Qt::Checked) {
+            fairwindsk::FairWindSK::setVirtualKeyboard(true);
+        } else {
+            fairwindsk::FairWindSK::setVirtualKeyboard(false);
+        }
+    }
+
+    void Settings::addService(const QZeroConfService& zcs)
     {
 
         // Show a message
@@ -63,20 +81,20 @@ namespace fairwindsk::ui {
         ui->textEdit_message->setText(ui->textEdit_message->toPlainText()+ tr("Ip: ") + zcs->ip().toString() + "\n");
         ui->textEdit_message->setText(ui->textEdit_message->toPlainText()+ tr("Port: ") + QString("%1").arg(zcs->port()) + "\n\n");
 
-        ui->lineEdit_signalkserverurl->setText("http://" + zcs->ip().toString() + ":" + QString("%1").arg(zcs->port()));
+        ui->comboBox_signalkserverurl->addItem(zcs->type().split(".")[0].replace("_","")+"://" + zcs->ip().toString() + ":" + QString("%1").arg(zcs->port()));
+
     }
 
     void Settings::onConnect() {
         auto fairWinSK = FairWindSK::getInstance();
 
-        auto signalKServerUrl = ui->lineEdit_signalkserverurl->text();
+        auto signalKServerUrl = ui->comboBox_signalkserverurl->currentText();
         auto username = ui->lineEdit_username->text();
         auto password = ui->lineEdit_password->text();
 
         // ui->textEdit_message->setText("");
 
-        ui->lineEdit_signalkserverurl->setEnabled(false);
-        ui->pushButton_discovery->setEnabled(false);
+        ui->comboBox_signalkserverurl->setEnabled(false);
         ui->lineEdit_username->setEnabled(false);
         ui->lineEdit_password->setEnabled(false);
 
@@ -101,7 +119,7 @@ namespace fairwindsk::ui {
         } else {
 
             // Set the url
-            params["url"] = ui->lineEdit_signalkserverurl->text() + "/signalk";
+            params["url"] = ui->comboBox_signalkserverurl->currentText() + "/signalk";
         }
 
         // Check if the user name is empty
@@ -212,10 +230,7 @@ namespace fairwindsk::ui {
                 }
 
                 // Enable the Signal K Server URL widget
-                ui->lineEdit_signalkserverurl->setEnabled(true);
-
-                // Enable the discovery widget
-                ui->pushButton_discovery->setEnabled(true);
+                ui->comboBox_signalkserverurl->setEnabled(true);
 
                 // Enable the username widget
                 ui->lineEdit_username->setEnabled(true);
@@ -240,7 +255,10 @@ namespace fairwindsk::ui {
         QApplication::exit(-1);
     }
     Settings::~Settings() {
+        m_zeroConf.stopBrowser();
         delete ui;
     }
+
+
 
 } // fairwindsk::ui

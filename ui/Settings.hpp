@@ -21,17 +21,20 @@ namespace fairwindsk::ui {
         ~Settings() override;
 
     private slots:
-        void onDiscovery();
+
+        void onVirtualKeyboard(int state);
+
         void onConnect();
         void onStop();
         void onRestart();
 
-        void addService(QZeroConfService item);
+        void addService(const QZeroConfService& item);
 
     private:
         Ui::Settings *ui;
         bool m_stop;
         QZeroConf m_zeroConf;
+
     };
 
 } // fairwindsk::ui

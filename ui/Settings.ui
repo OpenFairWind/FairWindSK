@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>370</width>
-    <height>302</height>
+    <height>340</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -33,14 +33,29 @@
      <property name="horizontalSpacing">
       <number>-1</number>
      </property>
-     <item row="1" column="2">
+     <item row="2" column="2">
       <widget class="QLineEdit" name="lineEdit_username">
        <property name="text">
         <string>admin</string>
        </property>
       </widget>
      </item>
-     <item row="2" column="1">
+     <item row="1" column="2">
+      <widget class="QComboBox" name="comboBox_signalkserverurl">
+       <property name="editable">
+        <bool>true</bool>
+       </property>
+       <property name="currentText">
+        <string notr="true">http://localhost:3000</string>
+       </property>
+       <item>
+        <property name="text">
+         <string notr="true">http://localhost:3000</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item row="3" column="1">
       <widget class="QLabel" name="label_password">
        <property name="text">
         <string>Password</string>
@@ -48,37 +63,40 @@
       </widget>
      </item>
      <item row="1" column="1">
-      <widget class="QLabel" name="label_username">
-       <property name="text">
-        <string>Username</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="2">
-      <widget class="QLineEdit" name="lineEdit_signalkserverurl">
-       <property name="text">
-        <string>http://localhost:3000</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="2">
-      <widget class="QLineEdit" name="lineEdit_password">
-       <property name="text">
-        <string>password</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="1">
       <widget class="QLabel" name="label_signalkserverurl">
        <property name="text">
         <string>Signal K Server URL</string>
        </property>
       </widget>
      </item>
-     <item row="0" column="3">
-      <widget class="QPushButton" name="pushButton_discovery">
+     <item row="3" column="2">
+      <widget class="QLineEdit" name="lineEdit_password">
        <property name="text">
-        <string>Discovery</string>
+        <string>password</string>
+       </property>
+       <property name="echoMode">
+        <enum>QLineEdit::PasswordEchoOnEdit</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QLabel" name="label_username">
+       <property name="text">
+        <string>Username</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QLabel" name="label_virtualkeyboard">
+       <property name="text">
+        <string>Use Virtual Keyboard</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="2">
+      <widget class="QCheckBox" name="checkBox_virtualkeboard">
+       <property name="text">
+        <string/>
        </property>
       </widget>
      </item>
