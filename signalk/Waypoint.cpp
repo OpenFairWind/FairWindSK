@@ -7,7 +7,24 @@
 
 #include "Waypoint.hpp"
 
-
+/*
+ * {
+ *  "name":"Point1",
+ *  "description":"",
+ *  "feature":{
+ *      "type":"Feature",
+ *      "geometry":{
+ *          "type":"Point",
+ *          "coordinates":[23.328516077302734,59.91763457421976]
+ *       },
+ *       "properties":{},
+ *       "id":""
+ *  },
+ *  "type":"",
+ *  "timestamp":"2024-03-19T17:03:57.973Z",
+ *  "$source":"resources-provider"
+ * }
+ */
 
 namespace fairwindsk::signalk {
     Waypoint::Waypoint(const QString &id, const QString &name, const QString &description, const QString &type,
@@ -32,24 +49,27 @@ namespace fairwindsk::signalk {
         this->operator[]("position") = pos;
     }
 
-    QString Waypoint::id() {
+    QString Waypoint::getId() {
         return this->operator[]("feature").toObject()["id"].toString();
     };
 
-    QString Waypoint::name() {
-        return this->operator[]("feature").toObject()["name"].toString();
+    QString Waypoint::getName()  {
+        return this->operator[]("name").toString();
     };
 
-    QString Waypoint::description() {
-        return this->operator[]("feature").toObject()["description"].toString();
+    QString Waypoint::getDescription() {
+        return this->operator[]("description").toString();
     };
 
-    QString Waypoint::type() {
-        return this->operator[]("feature").toObject()["type"].toString();
+    QString Waypoint::getType() {
+        return this->operator[]("type").toString();
     };
 
-    QGeoCoordinate Waypoint::coordinate() {
+    QGeoCoordinate Waypoint::getCoordinates() {
         auto pos = this->operator[]("position").toObject();
         return QGeoCoordinate(pos["latitude"].toDouble(), pos["longitude"].toDouble(), pos["altitude"].toDouble());
+    }
+
+    Waypoint::Waypoint(const QJsonObject &jsonObject) : QJsonObject(jsonObject) {
     };
 }

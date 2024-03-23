@@ -16,17 +16,17 @@ namespace fairwindsk::signalk {
         Waypoint(const QString &id, const QString &name, const QString &description, const QString &type,
                  const QGeoCoordinate &coordinate);
 
-        QString id();
+        Waypoint(const QJsonObject &jsonObject);
 
-        QString name();
+        QString getId();
 
-        QString description();
+        QString getName();
 
-        QString type();
+        QString getDescription();
 
-        QGeoCoordinate coordinate();
+        QString getType();
 
-    private:
+        QGeoCoordinate getCoordinates();
 
     };
 }
