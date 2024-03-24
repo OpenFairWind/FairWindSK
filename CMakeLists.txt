@@ -55,6 +55,7 @@ find_package(Qt6 COMPONENTS
 
 add_executable(${PROJECT_NAME}
         main.cpp
+        Units.cpp Units.hpp
         IterableLayoutAdapter.hpp
         FairWindSK.cpp FairWindSK.hpp
         AppItem.cpp AppItem.hpp
