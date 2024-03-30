@@ -383,7 +383,7 @@ namespace fairwindsk::ui::topbar {
         //qDebug() << "TopBar::updateNavigationPosition:" << update;
 
         // Get the value
-        auto value = FairWindSK::getInstance()->getSignalKClient()->getGeoCoordinateFromUpdateByPath(update);
+        auto value = FairWindSK::getInstance()->getSignalKDocument()->getGeoCoordinateFromUpdateByPath(update);
 
         if (!value.isValid()) {
             ui->widget_POS->setVisible(false);
@@ -425,7 +425,7 @@ namespace fairwindsk::ui::topbar {
         QString text;
 
         // Get the value
-        auto value = FairWindSK::getInstance()->getSignalKClient()->getDoubleFromUpdateByPath(update);
+        auto value = FairWindSK::getInstance()->getSignalKDocument()->getDoubleFromUpdateByPath(update);
 
         if (isnan(value)) {
             ui->widget_COG->setVisible(false);
@@ -456,7 +456,7 @@ namespace fairwindsk::ui::topbar {
         QString text;
 
         // Get the value
-        auto value = FairWindSK::getInstance()->getSignalKClient()->getDoubleFromUpdateByPath(update);
+        auto value = FairWindSK::getInstance()->getSignalKDocument()->getDoubleFromUpdateByPath(update);
 
         if (isnan(value)) {
             ui->widget_SOG->setVisible(false);
@@ -488,7 +488,7 @@ namespace fairwindsk::ui::topbar {
         QString text;
 
         // Get the value
-        auto value = FairWindSK::getInstance()->getSignalKClient()->getDoubleFromUpdateByPath(update);
+        auto value = FairWindSK::getInstance()->getSignalKDocument()->getDoubleFromUpdateByPath(update);
 
         if (isnan(value)) {
             ui->widget_HDG->setVisible(false);
@@ -519,7 +519,7 @@ namespace fairwindsk::ui::topbar {
         QString text;
 
         // Get the value
-        auto value = FairWindSK::getInstance()->getSignalKClient()->getDoubleFromUpdateByPath(update);
+        auto value = FairWindSK::getInstance()->getSignalKDocument()->getDoubleFromUpdateByPath(update);
 
         if (isnan(value)) {
             ui->widget_STW->setVisible(false);
@@ -551,7 +551,7 @@ namespace fairwindsk::ui::topbar {
         QString text;
 
         // Get the value
-        auto value = FairWindSK::getInstance()->getSignalKClient()->getDoubleFromUpdateByPath(update);
+        auto value = FairWindSK::getInstance()->getSignalKDocument()->getDoubleFromUpdateByPath(update);
 
         if (isnan(value)) {
             ui->widget_DPT->setVisible(false);
@@ -577,7 +577,7 @@ namespace fairwindsk::ui::topbar {
     void TopBar::updateWPT(const QJsonObject &update) {
 
         // Get the value
-        auto value =FairWindSK::getInstance()->getSignalKClient()->getObjectFromUpdateByPath(update);
+        auto value =FairWindSK::getInstance()->getSignalKDocument()->getObjectFromUpdateByPath(update);
 
         if (value.isEmpty()) {
             ui->widget_WPT->setVisible(false);
@@ -601,7 +601,7 @@ namespace fairwindsk::ui::topbar {
         QString text;
 
         // Get the value
-        auto value =FairWindSK::getInstance()->getSignalKClient()->getDoubleFromUpdateByPath(update);
+        auto value =FairWindSK::getInstance()->getSignalKDocument()->getDoubleFromUpdateByPath(update);
 
         if (isnan(value)) {
             ui->widget_BTW->setVisible(false);
@@ -629,7 +629,7 @@ namespace fairwindsk::ui::topbar {
         QString text;
 
         // Get the value
-        auto value = FairWindSK::getInstance()->getSignalKClient()->getDoubleFromUpdateByPath(update);
+        auto value = FairWindSK::getInstance()->getSignalKDocument()->getDoubleFromUpdateByPath(update);
 
         if (isnan(value)) {
             ui->widget_DTG->setVisible(false);
@@ -657,7 +657,7 @@ namespace fairwindsk::ui::topbar {
         QString text;
 
         // Get the value
-        auto value = FairWindSK::getInstance()->getSignalKClient()->getDateTimeFromUpdateByPath(update);
+        auto value = FairWindSK::getInstance()->getSignalKDocument()->getDateTimeFromUpdateByPath(update);
 
         if (value.isNull()) {
             ui->widget_TTG->setVisible(false);
@@ -686,7 +686,7 @@ namespace fairwindsk::ui::topbar {
         QString text;
 
         // Get the value
-        auto value = FairWindSK::getInstance()->getSignalKClient()->getDateTimeFromUpdateByPath(update);
+        auto value = FairWindSK::getInstance()->getSignalKDocument()->getDateTimeFromUpdateByPath(update);
 
         if (value.isNull()) {
             ui->widget_ETA->setVisible(false);
@@ -714,7 +714,7 @@ namespace fairwindsk::ui::topbar {
         QString text;
 
         // Get the value
-        auto value = FairWindSK::getInstance()->getSignalKClient()->getDoubleFromUpdateByPath(update);
+        auto value = FairWindSK::getInstance()->getSignalKDocument()->getDoubleFromUpdateByPath(update);
 
         if (isnan(value)) {
             ui->widget_XTE->setVisible(false);
@@ -740,7 +740,7 @@ namespace fairwindsk::ui::topbar {
         QString text;
 
         // Get the value
-        auto value = FairWindSK::getInstance()->getSignalKClient()->getDoubleFromUpdateByPath(update);
+        auto value = FairWindSK::getInstance()->getSignalKDocument()->getDoubleFromUpdateByPath(update);
 
         if (isnan(value)) {
             ui->widget_VMG->setVisible(false);
