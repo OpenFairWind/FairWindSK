@@ -76,6 +76,11 @@ namespace fairwindsk::signalk {
 
         QString generateUUID();
 
+        double getDoubleFromUpdateByPath(const QJsonObject &update, const QString& path = "");
+        QJsonObject getObjectFromUpdateByPath(const QJsonObject &update, const QString& path = "");
+        QDateTime  getDateTimeFromUpdateByPath(const QJsonObject &update, const QString& path = "");
+        QGeoCoordinate getGeoCoordinateFromUpdateByPath(const QJsonObject &update, const QString& path = "");
+
     public slots:
 
         void unsubscribe(QObject *receiver);

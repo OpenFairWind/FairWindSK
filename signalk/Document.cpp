@@ -395,6 +395,164 @@ namespace fairwindsk::signalk {
         auto uuid = QUuid::createUuid();
         return "urn:mrn:signalk:uuid:" + uuid.toString(QUuid::WithoutBraces);
     }
+
+    double Document::getDoubleFromUpdateByPath(const QJsonObject &update, const QString& path) {
+
+        double result = std::numeric_limits<double>::quiet_NaN();
+        int count = 0;
+        if (update.contains("updates") and update["updates"].isArray()) {
+            auto updatesJsonArray = update["updates"].toArray();
+            for (auto updatesItem: updatesJsonArray) {
+                if (updatesItem.isObject()) {
+                    auto updateJsonObject = updatesItem.toObject();
+                    if (updateJsonObject.contains("values") && updateJsonObject["values"].isArray()) {
+                        auto valuesJsonArray = updateJsonObject["values"].toArray();
+                        for (auto valuesItem: valuesJsonArray) {
+                            if (valuesItem.isObject()) {
+                                auto valueJsonObject = valuesItem.toObject();
+                                if (valueJsonObject.contains("path") && valueJsonObject["path"].isString()) {
+                                    auto valuePath = valueJsonObject["path"].toString();
+                                    if (path.isEmpty() || path == valuePath) {
+                                        if (valueJsonObject.contains("value") && valueJsonObject["value"].isObject()) {
+                                            auto valueValueJsonObject = valueJsonObject["value"].toObject();
+                                            if (valueValueJsonObject.contains("value") && valueValueJsonObject["value"].isDouble()) {
+                                                if (count == 0) {
+                                                    result = valueValueJsonObject["value"].toDouble();
+                                                } else {
+                                                    result = result + valueJsonObject["value"].toDouble();
+                                                }
+                                                count++;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (count>1) {
+            result = result / count;
+        }
+
+        //qDebug() << update;
+        //qDebug() << result;
+
+        return result;
+    }
+
+    QJsonObject Document::getObjectFromUpdateByPath(const QJsonObject &update, const QString& path) {
+
+        QJsonObject result;
+
+        if (update.contains("updates") and update["updates"].isArray()) {
+            auto updatesJsonArray = update["updates"].toArray();
+            for (auto updatesItem: updatesJsonArray) {
+                if (updatesItem.isObject()) {
+                    auto updateJsonObject = updatesItem.toObject();
+                    if (updateJsonObject.contains("values") && updateJsonObject["values"].isArray()) {
+                        auto valuesJsonArray = updateJsonObject["values"].toArray();
+                        for (auto valuesItem: valuesJsonArray) {
+                            if (valuesItem.isObject()) {
+                                auto valueJsonObject = valuesItem.toObject();
+                                if (valueJsonObject.contains("path") && valueJsonObject["path"].isString()) {
+                                    auto valuePath = valueJsonObject["path"].toString();
+                                    if (path.isEmpty() || path == valuePath) {
+                                        if (valueJsonObject.contains("value") && valueJsonObject["value"].isObject()) {
+                                            auto valueValueJsonObject = valueJsonObject["value"].toObject();
+                                            if (valueValueJsonObject.contains("value") && valueValueJsonObject["value"].isObject()) {
+                                                result = valueValueJsonObject["value"].toObject();
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    QDateTime Document::getDateTimeFromUpdateByPath(const QJsonObject &update, const QString &path) {
+        QDateTime result;
+
+        qDebug() << update;
+
+        if (update.contains("updates") and update["updates"].isArray()) {
+            auto updatesJsonArray = update["updates"].toArray();
+            for (auto updatesItem: updatesJsonArray) {
+                if (updatesItem.isObject()) {
+                    auto updateJsonObject = updatesItem.toObject();
+                    if (updateJsonObject.contains("values") && updateJsonObject["values"].isArray()) {
+                        auto valuesJsonArray = updateJsonObject["values"].toArray();
+                        for (auto valuesItem: valuesJsonArray) {
+                            if (valuesItem.isObject()) {
+                                auto valueJsonObject = valuesItem.toObject();
+                                if (valueJsonObject.contains("path") && valueJsonObject["path"].isString()) {
+                                    auto valuePath = valueJsonObject["path"].toString();
+                                    if (path.isEmpty() || path == valuePath) {
+                                        if (valueJsonObject.contains("value") && valueJsonObject["value"].isObject()) {
+                                            auto valueValueJsonObject = valueJsonObject["value"].toObject();
+                                            if (valueValueJsonObject.contains("value") && valueValueJsonObject["value"].isObject()) {
+                                                //result = valueValueJsonObject["value"].toObject();
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        qDebug() << result;
+        return result;
+    }
+
+    QGeoCoordinate Document::getGeoCoordinateFromUpdateByPath(const QJsonObject &update, const QString &path) {
+        QGeoCoordinate result;
+
+
+
+        if (update.contains("updates") and update["updates"].isArray()) {
+            auto updatesJsonArray = update["updates"].toArray();
+            for (auto updatesItem: updatesJsonArray) {
+                if (updatesItem.isObject()) {
+                    auto updateJsonObject = updatesItem.toObject();
+                    if (updateJsonObject.contains("values") && updateJsonObject["values"].isArray()) {
+                        auto valuesJsonArray = updateJsonObject["values"].toArray();
+                        for (auto valuesItem: valuesJsonArray) {
+                            if (valuesItem.isObject()) {
+                                auto valueJsonObject = valuesItem.toObject();
+                                if (valueJsonObject.contains("path") && valueJsonObject["path"].isString()) {
+                                    auto valuePath = valueJsonObject["path"].toString();
+                                    if (path.isEmpty() || path == valuePath) {
+                                        if (valueJsonObject.contains("value") && valueJsonObject["value"].isObject()) {
+                                            auto valueValueJsonObject = valueJsonObject["value"].toObject();
+                                            if (valueValueJsonObject.contains("value") && valueValueJsonObject["value"].isObject()) {
+                                                auto position = valueValueJsonObject["value"].toObject();
+                                                result.setLatitude(position["latitude"].toDouble());
+                                                result.setLongitude(position["longitude"].toDouble());
+                                                if (position.contains("altitude")) {
+                                                    result.setAltitude(position["altitude"].toDouble());
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
+
 }
 
 
