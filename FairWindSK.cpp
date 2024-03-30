@@ -34,7 +34,42 @@ namespace fairwindsk {
         m_token = "";
         m_username = "admin";
         m_password = "password";
+
+        QString text = " {"
+                       "  \"signalk\": {"
+                       "    \"pos\": \"navigation.position\","
+                       "    \"cog\": \"navigation.courseOverGroundTrue\","
+                       "    \"sog\": \"navigation.speedOverGround\","
+                       "    \"hdg\": \"navigation.headingTrue\","
+                       "    \"stw\": \"navigation.speedThroughWater\","
+                       "    \"dpt\": \"environment.depth.belowTransducer\","
+                       "    \"wpt\": \"navigation.course.nextPoint\","
+                       "    \"btw\": \"navigation.course.calcValues.bearingTrue\","
+                       "    \"dtg\": \"navigation.course.calcValues.distance\","
+                       "    \"ttg\": \"navigation.course.calcValues.timeToGo\","
+                       "    \"eta\": \"navigation.course.calcValues.estimatedTimeOfArrival\","
+                       "    \"xte\": \"navigation.course.calcValues.crossTrackError\","
+                       "    \"vmg\": \"performance.velocityMadeGood\""
+                       "  },"
+                       "  \"bottomBarApps\": {"
+                       "    \"mydata\": \"\","
+                       "    \"mob\": \"\","
+                       "    \"alarms\": \"\","
+                       "    \"settings\": \"admin\""
+                       "  },"
+                       "  \"units\": {"
+                       "    \"vesselSpeed\": \"kn\","
+                       "    \"windSpeed\": \"kn\","
+                       "    \"distance\": \"nm\","
+                       "    \"depth\": \"m\""
+                       "  }"
+                       "}";
+
+        m_configuration = QJsonDocument::fromJson(text.toUtf8()).object();
+
     }
+
+
 
 /*
  * getInstance
@@ -86,6 +121,18 @@ namespace fairwindsk {
         // Store the configuration in the settings
         settings.setValue("retry", m_nRetry);
 
+        // Get the name of the FairWind++ configuration file
+        m_configuration = QJsonDocument::fromJson(
+                settings.value("configuration",
+                               QJsonDocument(m_configuration).toJson()
+                               ).toString().toUtf8()
+                ).object();
+
+        // Store the configuration in the settings
+        settings.setValue("configuration",
+                          QJsonDocument(m_configuration).toJson()
+                          );
+
 
         if (m_debug) {
 
@@ -93,6 +140,7 @@ namespace fairwindsk {
 
             qDebug() << "Configration from ini file loaded.";
         }
+
     }
 
     bool FairWindSK::startSignalK() {
@@ -314,24 +362,8 @@ namespace fairwindsk {
  */
     QJsonObject FairWindSK::getConfiguration() {
 
-        // Define the result
-        QJsonObject result;
-
-        // Get the configuration
-        auto configurationJsonObject = m_signalkClient.signalkGet(m_signalKServerUrl + "/plugins/dynamo-signalk-fairwindsk-plugin/config");
-
-        // Check if the configuration object has the key Options
-        if (configurationJsonObject.contains("configuration") && configurationJsonObject["configuration"].isObject()) {
-
-            // Get the Options object
-            result = configurationJsonObject["configuration"].toObject();
-        }
-
-        if (m_debug)
-            qDebug() << "Configuration:" << result;
-
         // Return the result
-        return result;
+        return m_configuration;
     }
 
     QString FairWindSK::getAppNameByKeyFromConfiguration(const QString& key) {
@@ -420,5 +452,23 @@ namespace fairwindsk {
 
         return value;
     }
+
+    QString FairWindSK::getVesselSpeedUnits() {
+        return m_configuration["units"].toObject()["vesselSpeed"].toString();
+    }
+
+    QString FairWindSK::getDepthUnits() {
+        return m_configuration["units"].toObject()["depth"].toString();
+    }
+
+    QString FairWindSK::getWindSpeedUnits() {
+        return m_configuration["units"].toObject()["windSpeed"].toString();
+    }
+
+    QString FairWindSK::getDistanceUnits() {
+        return m_configuration["units"].toObject()["distance"].toString();
+    }
+
+
 }
 

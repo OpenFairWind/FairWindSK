@@ -24,7 +24,7 @@ namespace fairwindsk {
     class FairWindSK: public QObject {
         Q_OBJECT
 
-        bool getVirtualkeyboard();
+
 
 
     public:
@@ -39,6 +39,14 @@ namespace fairwindsk {
         AppItem *getAppItemByHash(QString hash);
         QString getAppHashById(QString appId);
         QList<QString> getAppsHashes();
+
+        QString getVesselSpeedUnits();
+        QString getWindSpeedUnits();
+        QString getDistanceUnits();
+        QString getDepthUnits();
+
+
+        bool getVirtualkeyboard();
 
 
 
@@ -65,6 +73,8 @@ namespace fairwindsk {
         static void setVirtualKeyboard(bool value);
         static bool getVirtualKeyboard();
 
+
+
     private:
 
         QMap<QString, AppItem *> m_mapHash2AppItem;
@@ -87,6 +97,8 @@ namespace fairwindsk {
         int m_nRetry;
 
         bool m_debug;
+
+        QJsonObject m_configuration;
 
         QString getAppNameByKeyFromConfiguration(const QString& key);
     };
