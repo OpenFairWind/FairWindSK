@@ -25,11 +25,64 @@ namespace fairwindsk::ui::topbar {
         // Setup the UI
         ui->setupUi(parent);
 
+        // Get the FairWind singleton
+        auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+
+        m_units = Units::getInstance();
+
         ui->toolButton_UL->setIcon(QPixmap::fromImage(QImage(":/resources/images/icons/fairwind_icon.png")));
         ui->toolButton_UL->setIconSize(QSize(32, 32));
 
         ui->toolButton_UR->setIcon(QPixmap::fromImage(QImage(":/resources/images/icons/apps_icon.png")));
         ui->toolButton_UR->setIconSize(QSize(32, 32));
+        
+        ui->label_unitCOG->setText(m_units->getLabel("deg"));
+        ui->label_unitBTW->setText(m_units->getLabel("deg"));
+        ui->label_unitHDG->setText(m_units->getLabel("deg"));
+
+        ui->label_unitSOG->setText(m_units->getLabel(fairWindSK->getVesselSpeedUnits()));
+        ui->label_unitSTW->setText(m_units->getLabel(fairWindSK->getVesselSpeedUnits()));
+        ui->label_unitVMG->setText(m_units->getLabel(fairWindSK->getVesselSpeedUnits()));
+
+        ui->label_unitDPT->setText(m_units->getLabel(fairWindSK->getDepthUnits()));
+
+        ui->label_unitDTG->setText(m_units->getLabel(fairWindSK->getDistanceUnits()));
+        ui->label_unitXTE->setText(m_units->getLabel(fairWindSK->getDistanceUnits()));
+
+
+        double c=1.15;
+        ui->label_POS->setFixedWidth(ui->label_POS->sizeHint().width()*c);
+        ui->label_COG->setFixedWidth(ui->label_COG->sizeHint().width()*c);
+        ui->label_SOG->setFixedWidth(ui->label_SOG->sizeHint().width()*c);
+        ui->label_HDG->setFixedWidth(ui->label_HDG->sizeHint().width()*c);
+        ui->label_STW->setFixedWidth(ui->label_STW->sizeHint().width()*c);
+        ui->label_DPT->setFixedWidth(ui->label_DPT->sizeHint().width()*c);
+
+        ui->label_BTW->setFixedWidth(ui->label_BTW->sizeHint().width()*c);
+        ui->label_DTG->setFixedWidth(ui->label_DTG->sizeHint().width()*c);
+        ui->label_TTG->setFixedWidth(ui->label_TTG->sizeHint().width()*c);
+        ui->label_ETA->setFixedWidth(ui->label_ETA->sizeHint().width()*c);
+        ui->label_XTE->setFixedWidth(ui->label_XTE->sizeHint().width()*c);
+        ui->label_VMG->setFixedWidth(ui->label_VMG->sizeHint().width()*c);
+
+        ui->widget_POS->setVisible(false);
+        ui->widget_COG->setVisible(false);
+        ui->widget_SOG->setVisible(false);
+        ui->widget_HDG->setVisible(false);
+        ui->widget_STW->setVisible(false);
+        ui->widget_DPT->setVisible(false);
+
+        ui->widget_WPT->setVisible(false);
+        ui->widget_BTW->setVisible(false);
+        ui->widget_DTG->setVisible(false);
+        ui->widget_TTG->setVisible(false);
+        ui->widget_ETA->setVisible(false);
+        ui->widget_XTE->setVisible(false);
+        ui->widget_VMG->setVisible(false);
+
+
+
+
 
         // emit a signal when the Apps tool button from the UI is clicked
         connect(ui->toolButton_UL, &QToolButton::released, this, &TopBar::toolbuttonUL_clicked);
@@ -46,8 +99,7 @@ namespace fairwindsk::ui::topbar {
         // Start the timer
         timer->start(1000);
 
-        // Get the FairWind singleton
-        auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+
 
         // Get the signalk document from the FairWind singleton
         auto signalKDocument = fairWindSK->getSignalKDocument();
@@ -60,91 +112,213 @@ namespace fairwindsk::ui::topbar {
 
 
             // Check if the Options object has tHe Position key and if it is a string
-            if (signalkPaths.contains("position") && signalkPaths["position"].isString()) {
+            if (signalkPaths.contains("pos") && signalkPaths["pos"].isString()) {
 
                 // Get the position SignalK key
-                auto positionSignalK = signalkPaths["position"].toString();
+                auto path = signalkPaths["pos"].toString();
 
                 // Subscribe to signalk and make sure that navigation infos are updated accordingly
-                signalKDocument->subscribe(positionSignalK, this,
-                                           SLOT(fairwindsk::ui::topbar::TopBar::updatePosition));
+                signalKDocument->subscribe(path, this,
+                                           SLOT(fairwindsk::ui::topbar::TopBar::updatePOS));
+
+                auto value = signalKDocument->get(path);
+                if (!value.toObject().isEmpty()) {
+                    ui->widget_POS->setVisible(true);
+                }
             }
 
             // Check if the Options object has tHe Heading key and if it is a string
             if (signalkPaths.contains("cog") && signalkPaths["cog"].isString()) {
 
                 // Get the heading SignalK key
-                auto headingSignalK = signalkPaths["cog"].toString();
+                auto path = signalkPaths["cog"].toString();
 
                 // Subscribe to signalk and make sure that navigation infos are updated accordingly
-                signalKDocument->subscribe(headingSignalK, this,
+                signalKDocument->subscribe(path, this,
                                            SLOT(fairwindsk::ui::topbar::TopBar::updateCOG));
+
+                auto value = signalKDocument->get(path);
+                if (!value.toObject().isEmpty()) {
+                    ui->widget_COG->setVisible(true);
+                }
             }
 
             // Check if the Options object has tHe Speed key and if it is a string
             if (signalkPaths.contains("sog") && signalkPaths["sog"].isString()) {
 
                 // Get the speed SignalK key
-                auto speedSignalK = signalkPaths["sog"].toString();
+                auto path = signalkPaths["sog"].toString();
 
                 // Subscribe to signalk and make sure that navigation infos are updated accordingly
-                signalKDocument->subscribe(speedSignalK, this,
+                signalKDocument->subscribe(path, this,
                                            SLOT(fairwindsk::ui::topbar::TopBar::updateSOG));
+
+                auto value = signalKDocument->get(path);
+                if (!value.toObject().isEmpty()) {
+                    ui->widget_SOG->setVisible(true);
+                }
+            }
+
+            // Check if the Options object has tHe Heading key and if it is a string
+            if (signalkPaths.contains("hdg") && signalkPaths["hdg"].isString()) {
+
+                // Get the heading SignalK key
+                auto hdgSignalK = signalkPaths["hdg"].toString();
+
+                // Subscribe to signalk and make sure that navigation infos are updated accordingly
+                signalKDocument->subscribe(hdgSignalK, this,
+                                           SLOT(fairwindsk::ui::topbar::TopBar::updateHDG));
+
+                auto value = signalKDocument->get(hdgSignalK);
+                if (!value.toObject().isEmpty()) {
+                    ui->widget_HDG->setVisible(true);
+                }
+            }
+
+            // Check if the Options object has tHe Speed key and if it is a string
+            if (signalkPaths.contains("stw") && signalkPaths["stw"].isString()) {
+
+                // Get the speed SignalK key
+                auto path = signalkPaths["stw"].toString();
+
+                // Subscribe to signalk and make sure that navigation infos are updated accordingly
+                signalKDocument->subscribe(path, this,
+                                           SLOT(fairwindsk::ui::topbar::TopBar::updateSTW));
+
+                auto value = signalKDocument->get(path);
+                if (!value.toObject().isEmpty()) {
+                    ui->widget_STW->setVisible(true);
+                }
+            }
+
+            // Check if the Options object has tHe Speed key and if it is a string
+            if (signalkPaths.contains("dpt") && signalkPaths["dpt"].isString()) {
+
+                // Get the speed SignalK key
+                auto path = signalkPaths["dpt"].toString();
+
+                // Subscribe to signalk and make sure that navigation infos are updated accordingly
+                signalKDocument->subscribe(path, this,
+                                           SLOT(fairwindsk::ui::topbar::TopBar::updateDPT));
+
+                auto value = signalKDocument->get(path);
+                if (!value.toObject().isEmpty()) {
+                    ui->widget_DPT->setVisible(true);
+                }
             }
 
             // Check if the Options object has tHe Speed key and if it is a string
             if (signalkPaths.contains("wpt") && signalkPaths["wpt"].isString()) {
 
                 // Get the speed SignalK key
-                auto nextPointSignalK = signalkPaths["wpt"].toString();
+                auto path = signalkPaths["wpt"].toString();
 
-                // Subscribe to signalk and make sure that navigation infos are updated accordingly
-                signalKDocument->subscribe(nextPointSignalK, this,
+                // Subscribe to signal k and make sure that navigation infos are updated accordingly
+                signalKDocument->subscribe(path, this,
                                            SLOT(fairwindsk::ui::topbar::TopBar::updateWPT));
+
+                auto value = signalKDocument->get(path);
+                if (!value.toObject().isEmpty()) {
+                    ui->widget_WPT->setVisible(true);
+                }
             }
 
             // Check if the Options object has tHe Speed key and if it is a string
-            if (signalkPaths.contains("brg") && signalkPaths["brg"].isString()) {
+            if (signalkPaths.contains("btw") && signalkPaths["btw"].isString()) {
 
                 // Get the speed SignalK key
-                auto bearingSignalK = signalkPaths["brg"].toString();
+                auto path = signalkPaths["btw"].toString();
 
-                // Subscribe to signalk and make sure that navigation infos are updated accordingly
-                signalKDocument->subscribe(bearingSignalK, this,
-                                           SLOT(fairwindsk::ui::topbar::TopBar::updateBRG));
+                // Subscribe to signal k and make sure that navigation infos are updated accordingly
+                signalKDocument->subscribe(path, this,
+                                           SLOT(fairwindsk::ui::topbar::TopBar::updateBTW));
+
+                auto value = signalKDocument->get(path);
+                if (!value.toObject().isEmpty()) {
+                    ui->widget_BTW->setVisible(true);
+                }
             }
 
             // Check if the Options object has tHe Speed key and if it is a string
             if (signalkPaths.contains("dtg") && signalkPaths["dtg"].isString()) {
 
                 // Get the speed SignalK key
-                auto distanceSignalK = signalkPaths["dtg"].toString();
+                auto path = signalkPaths["dtg"].toString();
 
                 // Subscribe to signalk and make sure that navigation infos are updated accordingly
-                signalKDocument->subscribe(distanceSignalK, this,
+                signalKDocument->subscribe(path, this,
                                            SLOT(fairwindsk::ui::topbar::TopBar::updateDTG));
+
+                auto value = signalKDocument->get(path);
+                if (!value.toObject().isEmpty()) {
+                    ui->widget_DTG->setVisible(true);
+                }
             }
+
+            // Check if the Options object has tHe Speed key and if it is a string
+            if (signalkPaths.contains("ttg") && signalkPaths["ttg"].isString()) {
+
+                // Get the speed SignalK key
+                auto path = signalkPaths["ttg"].toString();
+
+                // Subscribe to signalk and make sure that navigation infos are updated accordingly
+                signalKDocument->subscribe(path, this,
+                                           SLOT(fairwindsk::ui::topbar::TopBar::updateTTG));
+
+                auto value = signalKDocument->get(path);
+                if (!value.toObject().isEmpty()) {
+                    ui->widget_TTG->setVisible(true);
+                }
+            }
+
+            // Check if the Options object has tHe Speed key and if it is a string
+            if (signalkPaths.contains("eta") && signalkPaths["eta"].isString()) {
+
+                // Get the speed SignalK key
+                auto path = signalkPaths["eta"].toString();
+
+                // Subscribe to signalk and make sure that navigation infos are updated accordingly
+                signalKDocument->subscribe(path, this,
+                                           SLOT(fairwindsk::ui::topbar::TopBar::updateETA));
+
+                auto value = signalKDocument->get(path);
+                if (!value.toObject().isEmpty()) {
+                    ui->widget_ETA->setVisible(true);
+                }
+            }
+
+
 
             // Check if the Options object has tHe Speed key and if it is a string
             if (signalkPaths.contains("xte") && signalkPaths["xte"].isString()) {
 
                 // Get the speed SignalK key
-                auto crossTrackErrorSignalK = signalkPaths["xte"].toString();
+                auto path = signalkPaths["xte"].toString();
 
                 // Subscribe to signalk and make sure that navigation infos are updated accordingly
-                signalKDocument->subscribe(crossTrackErrorSignalK, this,
+                signalKDocument->subscribe(path, this,
                                            SLOT(fairwindsk::ui::topbar::TopBar::updateXTE));
+
+                auto value = signalKDocument->get(path);
+                if (!value.toObject().isEmpty()) {
+                    ui->widget_XTE->setVisible(true);
+                }
             }
 
             // Check if the Options object has tHe Speed key and if it is a string
             if (signalkPaths.contains("vmg") && signalkPaths["vmg"].isString()) {
 
                 // Get the speed SignalK key
-                auto velocityMadeGoodSignalK = signalkPaths["vmg"].toString();
+                auto path = signalkPaths["vmg"].toString();
 
                 // Subscribe to signalk and make sure that navigation infos are updated accordingly
-                signalKDocument->subscribe(velocityMadeGoodSignalK, this,
+                signalKDocument->subscribe(path, this,
                                            SLOT(fairwindsk::ui::topbar::TopBar::updateVMG));
+
+                auto value = signalKDocument->get(path);
+                if (!value.toObject().isEmpty()) {
+                    ui->widget_VMG->setVisible(true);
+                }
             }
 
 
@@ -188,7 +362,9 @@ namespace fairwindsk::ui::topbar {
  * Method called when the user wants to view the apps screen
  */
     void TopBar::toolbuttonUR_clicked() {
-        m_currentApp->getWeb()->toggleButtons();
+        if (m_currentApp) {
+            m_currentApp->getWeb()->toggleButtons();
+        }
     }
 
 /*
@@ -203,8 +379,26 @@ namespace fairwindsk::ui::topbar {
  * updateNavigationPosition
  * Method called in accordance to signalk to update the navigation position
  */
-    void TopBar::updatePosition(const QJsonObject &update) {
+    void TopBar::updatePOS(const QJsonObject &update) {
         //qDebug() << "TopBar::updateNavigationPosition:" << update;
+
+        // Get the value
+        auto value = FairWindSK::getInstance()->getSignalKClient()->getGeoCoordinateFromUpdateByPath(update);
+
+        if (!value.isValid()) {
+            ui->widget_POS->setVisible(false);
+        } else {
+
+
+            auto text = value.toString(QGeoCoordinate::DegreesMinutesSecondsWithHemisphere);
+
+            // Set the course over ground label from the UI to the formatted value
+            ui->label_POS->setText(text);
+
+            if (!ui->widget_POS->isVisible()) {
+                ui->widget_POS->setVisible(true);
+            }
+        }
 
         // Get the FairWind singleton
         auto fairWindSK = fairwindsk::FairWindSK::getInstance();
@@ -213,7 +407,7 @@ namespace fairwindsk::ui::topbar {
         auto signalKDocument = fairWindSK->getSignalKDocument();
 
         // Show the coordinates
-        ui->label_Position_value->setText(
+        ui->label_POS->setText(
                 signalKDocument->getNavigationPosition().toString(
                         QGeoCoordinate::DegreesMinutesSecondsWithHemisphere
                 )
@@ -234,17 +428,23 @@ namespace fairwindsk::ui::topbar {
         auto value = FairWindSK::getInstance()->getSignalKClient()->getDoubleFromUpdateByPath(update);
 
         if (isnan(value)) {
-            text = "___._";
+            ui->widget_COG->setVisible(false);
         } else {
 
             // Convert rad to deg
-            value = value  * 57.2958;
+            value = m_units->convert("rad","deg", value);
 
             // Build the formatted value
-            text = QString{"%1"}.arg(value, 4, 'f', 1, '0');
+            text = m_units->format("deg", value);
+
+            // Set the course over ground label from the UI to the formatted value
+            ui->label_COG->setText(text);
+
+            if (!ui->widget_COG->isVisible()) {
+                ui->widget_COG->setVisible(true);
+            }
         }
-        // Set the course over ground label from the UI to the formatted value
-        ui->label_COG->setText(text);
+
     }
 
 /*
@@ -259,18 +459,119 @@ namespace fairwindsk::ui::topbar {
         auto value = FairWindSK::getInstance()->getSignalKClient()->getDoubleFromUpdateByPath(update);
 
         if (isnan(value)) {
-            text = "__._";
+            ui->widget_SOG->setVisible(false);
         } else {
 
             // Convert m/s to knots
-            value = value  * 1.94384;
+            value = m_units->convert("ms-1",FairWindSK::getInstance()->getVesselSpeedUnits(), value);
 
             // Build the formatted value
-            text = QString{"%1"}.arg(value, 3, 'f', 1, '0');
+            text = m_units->format(FairWindSK::getInstance()->getVesselSpeedUnits(), value);
+
+            // Set the speed over ground label from the UI to the formatted value
+            ui->label_SOG->setText(text);
+
+            if (!ui->widget_SOG->isVisible()) {
+                ui->widget_SOG->setVisible(true);
+            }
         }
 
-        // Set the speed over ground label from the UI to the formatted value
-        ui->label_SOG->setText(text);
+
+    }
+
+    /*
+ * updateNavigationCourseOverGroundTrue
+ * Method called in accordance to signalk to update the navigation course over ground
+ */
+    void TopBar::updateHDG(const QJsonObject &update) {
+
+        QString text;
+
+        // Get the value
+        auto value = FairWindSK::getInstance()->getSignalKClient()->getDoubleFromUpdateByPath(update);
+
+        if (isnan(value)) {
+            ui->widget_HDG->setVisible(false);
+        } else {
+
+            // Convert rad to deg
+            value = m_units->convert("rad","deg", value);
+
+            // Build the formatted value
+            text = m_units->format("deg", value);
+
+            // Set the course over ground label from the UI to the formatted value
+            ui->label_HDG->setText(text);
+
+            if (!ui->widget_HDG->isVisible()) {
+                ui->widget_HDG->setVisible(true);
+            }
+        }
+
+    }
+
+/*
+ * updateNavigationSpeedOverGround
+ * Method called in accordance to signalk to update the navigation speed over ground
+ */
+    void TopBar::updateSTW(const QJsonObject &update) {
+
+        QString text;
+
+        // Get the value
+        auto value = FairWindSK::getInstance()->getSignalKClient()->getDoubleFromUpdateByPath(update);
+
+        if (isnan(value)) {
+            ui->widget_STW->setVisible(false);
+        } else {
+
+            // Convert m/s to knots
+            value = m_units->convert("ms-1",FairWindSK::getInstance()->getVesselSpeedUnits(), value);
+
+            // Build the formatted value
+            text = m_units->format(FairWindSK::getInstance()->getVesselSpeedUnits(), value);
+
+            // Set the speed over ground label from the UI to the formatted value
+            ui->label_STW->setText(text);
+
+            if (!ui->widget_STW->isVisible()) {
+                ui->widget_STW->setVisible(true);
+            }
+        }
+
+
+    }
+
+    /*
+ * updateNavigationSpeedOverGround
+ * Method called in accordance to signalk to update the navigation speed over ground
+ */
+    void TopBar::updateDPT(const QJsonObject &update) {
+
+        QString text;
+
+        // Get the value
+        auto value = FairWindSK::getInstance()->getSignalKClient()->getDoubleFromUpdateByPath(update);
+
+        if (isnan(value)) {
+            ui->widget_DPT->setVisible(false);
+        } else {
+
+            // Convert m/s to knots
+            value = m_units->convert("m",FairWindSK::getInstance()->getDepthUnits(), value);
+
+            // Build the formatted value
+            text = m_units->format(FairWindSK::getInstance()->getDepthUnits(), value);
+
+            // Set the speed over ground label from the UI to the formatted value
+            ui->label_DPT->setText(text);
+
+            if (!ui->widget_DPT->isVisible()) {
+                ui->widget_DPT->setVisible(true);
+            }
+        }
+
+
     }
 
     void TopBar::updateWPT(const QJsonObject &update) {
@@ -279,19 +580,23 @@ namespace fairwindsk::ui::topbar {
         auto value =FairWindSK::getInstance()->getSignalKClient()->getObjectFromUpdateByPath(update);
 
         if (value.isEmpty()) {
-            ui->label_Waypoint->setText("");
+            ui->widget_WPT->setVisible(false);
         } else {
             if (value.contains("href") && value["href"].isString()) {
                 auto href = value["href"].toString();
 
                 auto waypoint = FairWindSK::getInstance()->getSignalKClient()->getWaypointByHref(href);
 
-                ui->label_Waypoint->setText(waypoint.getName());
+                ui->label_WPT->setText(waypoint.getName());
+
+                if (!ui->widget_WPT->isVisible()) {
+                    ui->widget_WPT->setVisible(true);
+                }
             }
         }
 
     }
-    void TopBar::updateBRG(const QJsonObject &update) {
+    void TopBar::updateBTW(const QJsonObject &update) {
 
         QString text;
 
@@ -299,17 +604,23 @@ namespace fairwindsk::ui::topbar {
         auto value =FairWindSK::getInstance()->getSignalKClient()->getDoubleFromUpdateByPath(update);
 
         if (isnan(value)) {
-            text = "___._";
+            ui->widget_BTW->setVisible(false);
         } else {
 
             // Convert rad to deg
-            value = value  * 57.2958;
+            value = m_units->convert("rad","deg", value);
 
             // Build the formatted value
-            text = QString{"%1"}.arg(value, 4, 'f', 1, '0');
+            text = m_units->format("deg", value);
+
+            // Set the course over ground label from the UI to the formatted value
+            ui->label_BTW->setText(text);
+
+            if (!ui->widget_BTW->isVisible()) {
+                ui->widget_BTW->setVisible(true);
+            }
         }
-        // Set the course over ground label from the UI to the formatted value
-        ui->label_BRG->setText(text);
+
     }
 
     void TopBar::updateDTG(const QJsonObject &update) {
@@ -321,17 +632,81 @@ namespace fairwindsk::ui::topbar {
         auto value = FairWindSK::getInstance()->getSignalKClient()->getDoubleFromUpdateByPath(update);
 
         if (isnan(value)) {
-            text = "____._";
+            ui->widget_DTG->setVisible(false);
         } else {
 
             // Convert meters to nautical miles
-            value = value / 1852.00;
+            value = m_units->convert("m","nm", value);
 
             // Build the formatted value
-            text = QString{"%1"}.arg(value, 5, 'f', 1, '0');
+            text = m_units->format("nm", value);
+
+            // Set the course over ground label from the UI to the formatted value
+            ui->label_DTG->setText(text);
+
+            if (!ui->widget_DTG->isVisible()) {
+                ui->widget_DTG->setVisible(true);
+            }
         }
-        // Set the course over ground label from the UI to the formatted value
-        ui->label_DTG->setText(text);
+
+    }
+
+    void TopBar::updateTTG(const QJsonObject &update) {
+
+
+        QString text;
+
+        // Get the value
+        auto value = FairWindSK::getInstance()->getSignalKClient()->getDateTimeFromUpdateByPath(update);
+
+        if (value.isNull()) {
+            ui->widget_TTG->setVisible(false);
+        } else {
+
+            // Convert meters to nautical miles
+            //value = m_units->convert("m","nm", value);
+
+            // Build the formatted value
+            //text = m_units->format("nm", value);
+            text = value.toString();
+
+            // Set the course over ground label from the UI to the formatted value
+            ui->label_TTG->setText(text);
+
+            if (!ui->widget_TTG->isVisible()) {
+                ui->widget_TTG->setVisible(true);
+            }
+        }
+
+    }
+
+    void TopBar::updateETA(const QJsonObject &update) {
+
+
+        QString text;
+
+        // Get the value
+        auto value = FairWindSK::getInstance()->getSignalKClient()->getDateTimeFromUpdateByPath(update);
+
+        if (value.isNull()) {
+            ui->widget_ETA->setVisible(false);
+        } else {
+
+            // Convert meters to nautical miles
+            //value = m_units->convert("m","nm", value);
+
+            // Build the formatted value
+            //text = m_units->format("nm", value);
+            text = value.toString();
+
+            // Set the course over ground label from the UI to the formatted value
+            ui->label_ETA->setText(text);
+
+            if (!ui->widget_ETA->isVisible()) {
+                ui->widget_ETA->setVisible(true);
+            }
+        }
+
     }
 
     void TopBar::updateXTE(const QJsonObject &update) {
@@ -342,17 +717,23 @@ namespace fairwindsk::ui::topbar {
         auto value = FairWindSK::getInstance()->getSignalKClient()->getDoubleFromUpdateByPath(update);
 
         if (isnan(value)) {
-            text = "__._";
+            ui->widget_XTE->setVisible(false);
         } else {
 
             // Convert meters to nautical miles
-            value = value  / 1852.00;
+            value = m_units->convert("m","nm", value);
 
             // Build the formatted value
-            text = QString{"%1"}.arg(value, 3, 'f', 1, '0');
+            text = m_units->format("nm", value);
+
+            // Set the course over ground label from the UI to the formatted value
+            ui->label_XTE->setText(text);
+
+            if (!ui->widget_XTE->isVisible()) {
+                ui->widget_XTE->setVisible(true);
+            }
         }
-        // Set the course over ground label from the UI to the formatted value
-        ui->label_XTE->setText(text);
+
     }
 
     void TopBar::updateVMG(const QJsonObject &update) {
@@ -362,17 +743,23 @@ namespace fairwindsk::ui::topbar {
         auto value = FairWindSK::getInstance()->getSignalKClient()->getDoubleFromUpdateByPath(update);
 
         if (isnan(value)) {
-            text = "__._";
+            ui->widget_VMG->setVisible(false);
         } else {
 
             // Convert m/s to knots
-            value = value  * 1.94384;
+            value = m_units->convert("ms-1","kn", value);
 
             // Build the formatted value
-            text = QString{"%1"}.arg(value, 3, 'f', 1, '0');
+            text = m_units->format("kn", value);
+
+            // Set the course over ground label from the UI to the formatted value
+            ui->label_VMG->setText(text);
+
+            if (!ui->widget_VMG->isVisible()) {
+                ui->widget_VMG->setVisible(true);
+            }
         }
-        // Set the course over ground label from the UI to the formatted value
-        ui->label_VMG->setText(text);
+
 
     }
 

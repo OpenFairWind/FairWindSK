@@ -9,6 +9,7 @@
 
 #include <FairWindSK.hpp>
 #include "ui_TopBar.h"
+#include "Units.hpp"
 
 namespace Ui { class TopBar; }
 
@@ -30,12 +31,17 @@ namespace fairwindsk::ui::topbar {
 
     public slots:
 
-        void updatePosition(const QJsonObject& update);
+        void updatePOS(const QJsonObject& update);
         void updateCOG(const QJsonObject& update);
         void updateSOG(const QJsonObject& update);
+        void updateHDG(const QJsonObject& update);
+        void updateSTW(const QJsonObject& update);
+        void updateDPT(const QJsonObject& update);
         void updateWPT(const QJsonObject& update);
-        void updateBRG(const QJsonObject& update);
+        void updateBTW(const QJsonObject& update);
         void updateDTG(const QJsonObject& update);
+        void updateTTG(const QJsonObject& update);
+        void updateETA(const QJsonObject& update);
         void updateXTE(const QJsonObject& update);
         void updateVMG(const QJsonObject& update);
 
@@ -43,11 +49,12 @@ namespace fairwindsk::ui::topbar {
 
         signals:
         void clickedToolbuttonUL();
-        //void clickedToolbuttonUR();
+        void clickedToolbuttonUR();
 
     private:
         Ui::TopBar *ui;
         AppItem *m_currentApp;
+        Units *m_units;
     };
 }
 
