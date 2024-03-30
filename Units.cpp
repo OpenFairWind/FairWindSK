@@ -68,4 +68,44 @@ namespace fairwindsk {
         }
         return unit;
     }
+
+    QString Units::format(const QString &unit, double value) {
+        QString result;
+
+        if (unit == "deg") {
+            result = QString{"%1"}.arg(value, 4, 'f', 1, '0');
+        }
+        else if (unit == "kn") {
+            if (value >= 0.0 and value <=10.0) {
+                result = QString{"%1"}.arg(value, 3, 'f', 2, '0');
+            }
+            else {
+                result = QString{"%1"}.arg(value, 3, 'f', 1, '0');
+            }
+        }
+        else if (unit == "nm") {
+            if (value >= 0.0 and value <=10.0) {
+                result = QString{"%1"}.arg(value, 4, 'f', 2 );
+            }
+            else if (value >= 10.0 and value <=100.0) {
+                result = QString{"%1"}.arg(value, 4, 'f', 1 );
+            }
+            else {
+                result = QString{"%1"}.arg(value, 4, 'f', 0 );
+            }
+        }
+        else if (unit == "m") {
+            if (value >= 0.0 and value <=10.0) {
+                result = QString{"%1"}.arg(value, 4, 'f', 2 );
+            }
+            else if (value >= 10.0 and value <=100.0) {
+                result = QString{"%1"}.arg(value, 4, 'f', 1 );
+            }
+            else {
+                result = QString{"%1"}.arg(value, 4, 'f', 0 );
+            }
+        }
+
+        return result;
+    }
 }

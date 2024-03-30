@@ -22,6 +22,7 @@ namespace fairwindsk {
         static Units *getInstance();
         double convert(const QString& srcUnit, const QString& unit, double value);
         QString getLabel(const QString &unit);
+        QString format(const QString& unit, double value);
 
     private:
         Units();
