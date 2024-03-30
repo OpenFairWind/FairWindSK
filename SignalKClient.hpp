@@ -9,6 +9,7 @@
 #include <QNetworkAccessManager>
 #include <QtCore/QObject>
 #include <QtWebSockets/QWebSocket>
+#include <QGeoCoordinate>
 
 namespace fairwindsk {
 
@@ -43,8 +44,7 @@ namespace fairwindsk {
         QString getToken();
         QString getCookie();
 
-        double getDoubleFromUpdateByPath(const QJsonObject &update, const QString& path = "");
-        QJsonObject getObjectFromUpdateByPath(const QJsonObject &update, const QString& path = "");
+
         signalk::Waypoint getWaypointByHref(const QString &href);
 
     private slots:

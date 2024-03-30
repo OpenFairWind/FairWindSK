@@ -465,85 +465,6 @@ namespace fairwindsk {
         return mCookie;
     }
 
-    double SignalKClient::getDoubleFromUpdateByPath(const QJsonObject &update, const QString& path) {
-
-        double result = std::numeric_limits<double>::quiet_NaN();
-        int count = 0;
-        if (update.contains("updates") and update["updates"].isArray()) {
-            auto updatesJsonArray = update["updates"].toArray();
-            for (auto updatesItem: updatesJsonArray) {
-                if (updatesItem.isObject()) {
-                    auto updateJsonObject = updatesItem.toObject();
-                    if (updateJsonObject.contains("values") && updateJsonObject["values"].isArray()) {
-                        auto valuesJsonArray = updateJsonObject["values"].toArray();
-                        for (auto valuesItem: valuesJsonArray) {
-                            if (valuesItem.isObject()) {
-                                auto valueJsonObject = valuesItem.toObject();
-                                if (valueJsonObject.contains("path") && valueJsonObject["path"].isString()) {
-                                    auto valuePath = valueJsonObject["path"].toString();
-                                    if (path.isEmpty() || path == valuePath) {
-                                        if (valueJsonObject.contains("value") && valueJsonObject["value"].isObject()) {
-                                            auto valueValueJsonObject = valueJsonObject["value"].toObject();
-                                            if (valueValueJsonObject.contains("value") && valueValueJsonObject["value"].isDouble()) {
-                                                if (count == 0) {
-                                                    result = valueValueJsonObject["value"].toDouble();
-                                                } else {
-                                                    result = result + valueJsonObject["value"].toDouble();
-                                                }
-                                                count++;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        if (count>1) {
-            result = result / count;
-        }
-
-        //qDebug() << update;
-        //qDebug() << result;
-
-        return result;
-    }
-
-    QJsonObject SignalKClient::getObjectFromUpdateByPath(const QJsonObject &update, const QString& path) {
-
-        QJsonObject result;
-
-        if (update.contains("updates") and update["updates"].isArray()) {
-            auto updatesJsonArray = update["updates"].toArray();
-            for (auto updatesItem: updatesJsonArray) {
-                if (updatesItem.isObject()) {
-                    auto updateJsonObject = updatesItem.toObject();
-                    if (updateJsonObject.contains("values") && updateJsonObject["values"].isArray()) {
-                        auto valuesJsonArray = updateJsonObject["values"].toArray();
-                        for (auto valuesItem: valuesJsonArray) {
-                            if (valuesItem.isObject()) {
-                                auto valueJsonObject = valuesItem.toObject();
-                                if (valueJsonObject.contains("path") && valueJsonObject["path"].isString()) {
-                                    auto valuePath = valueJsonObject["path"].toString();
-                                    if (path.isEmpty() || path == valuePath) {
-                                        if (valueJsonObject.contains("value") && valueJsonObject["value"].isObject()) {
-                                            auto valueValueJsonObject = valueJsonObject["value"].toObject();
-                                            if (valueValueJsonObject.contains("value") && valueValueJsonObject["value"].isObject()) {
-                                                result = valueValueJsonObject["value"].toObject();
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return result;
-    }
 
     signalk::Waypoint SignalKClient::getWaypointByHref(const QString &href) {
 
@@ -552,5 +473,7 @@ namespace fairwindsk {
         auto result = signalk::Waypoint(jsonDocument.object());
         return result;
     }
+
+
 //! [onTextMessageReceived]
 }
