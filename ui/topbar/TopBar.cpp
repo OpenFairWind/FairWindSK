@@ -328,6 +328,11 @@ namespace fairwindsk::ui::topbar {
  */
     void TopBar::updatePOS(const QJsonObject &update) {
 
+        // Check if for any reason the update is empty
+        if (update.isEmpty()) {
+            return;
+        }
+
 
         // Get the value
         auto value = fairwindsk::signalk::Client::getGeoCoordinateFromUpdateByPath(update);
@@ -354,6 +359,11 @@ namespace fairwindsk::ui::topbar {
  * Method called in accordance to signalk to update the navigation course over ground
  */
     void TopBar::updateCOG(const QJsonObject &update) {
+
+        // Check if for any reason the update is empty
+        if (update.isEmpty()) {
+            return;
+        }
 
 
         QString text;
@@ -387,6 +397,11 @@ namespace fairwindsk::ui::topbar {
  */
     void TopBar::updateSOG(const QJsonObject &update) {
 
+        // Check if for any reason the update is empty
+        if (update.isEmpty()) {
+            return;
+        }
+
         QString text;
 
         // Get the value
@@ -419,6 +434,11 @@ namespace fairwindsk::ui::topbar {
  */
     void TopBar::updateHDG(const QJsonObject &update) {
 
+        // Check if for any reason the update is empty
+        if (update.isEmpty()) {
+            return;
+        }
+
         QString text;
 
         // Get the value
@@ -449,6 +469,11 @@ namespace fairwindsk::ui::topbar {
  * Method called in accordance to signalk to update the navigation speed over ground
  */
     void TopBar::updateSTW(const QJsonObject &update) {
+
+        // Check if for any reason the update is empty
+        if (update.isEmpty()) {
+            return;
+        }
 
         QString text;
 
@@ -482,6 +507,11 @@ namespace fairwindsk::ui::topbar {
  */
     void TopBar::updateDPT(const QJsonObject &update) {
 
+        // Check if for any reason the update is empty
+        if (update.isEmpty()) {
+            return;
+        }
+
         QString text;
 
         // Get the value
@@ -510,7 +540,7 @@ namespace fairwindsk::ui::topbar {
 
     void TopBar::updateWPT(const QJsonObject &update) {
 
-        qDebug() << "updateWPT: update: " << update << " ----";
+        // Check if for any reason the update is empty
         if (update.isEmpty()) {
             return;
         }
@@ -518,7 +548,7 @@ namespace fairwindsk::ui::topbar {
         // Get the value
         auto value =fairwindsk::signalk::Client::getObjectFromUpdateByPath(update);
 
-        qDebug() << "updateWPT: value: " << value << " ----";
+
 
         if (value.isEmpty()) {
             ui->widget_WPT->setVisible(false);
@@ -537,7 +567,13 @@ namespace fairwindsk::ui::topbar {
         }
 
     }
+
     void TopBar::updateBTW(const QJsonObject &update) {
+
+        // Check if for any reason the update is empty
+        if (update.isEmpty()) {
+            return;
+        }
 
         QString text;
 
@@ -566,6 +602,10 @@ namespace fairwindsk::ui::topbar {
 
     void TopBar::updateDTG(const QJsonObject &update) {
 
+        // Check if for any reason the update is empty
+        if (update.isEmpty()) {
+            return;
+        }
 
         QString text;
 
@@ -594,6 +634,10 @@ namespace fairwindsk::ui::topbar {
 
     void TopBar::updateTTG(const QJsonObject &update) {
 
+        // Check if for any reason the update is empty
+        if (update.isEmpty()) {
+            return;
+        }
 
         QString text;
 
@@ -623,6 +667,10 @@ namespace fairwindsk::ui::topbar {
 
     void TopBar::updateETA(const QJsonObject &update) {
 
+        // Check if for any reason the update is empty
+        if (update.isEmpty()) {
+            return;
+        }
 
         QString text;
 
@@ -652,6 +700,11 @@ namespace fairwindsk::ui::topbar {
 
     void TopBar::updateXTE(const QJsonObject &update) {
 
+        // Check if for any reason the update is empty
+        if (update.isEmpty()) {
+            return;
+        }
+
         QString text;
 
         // Get the value
@@ -678,6 +731,12 @@ namespace fairwindsk::ui::topbar {
     }
 
     void TopBar::updateVMG(const QJsonObject &update) {
+
+        // Check if for any reason the update is empty
+        if (update.isEmpty()) {
+            return;
+        }
+
         QString text;
 
         // Get the value

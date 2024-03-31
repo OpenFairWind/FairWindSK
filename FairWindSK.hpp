@@ -10,7 +10,6 @@
 #include <QMap>
 #include <QJsonDocument>
 #include "AppItem.hpp"
-#include "signalk/Document.hpp"
 #include "signalk/Client.hpp"
 
 namespace fairwindsk {
