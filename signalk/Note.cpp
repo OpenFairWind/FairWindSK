@@ -26,7 +26,7 @@ namespace fairwindsk::signalk {
 
         this->operator[]("position") = jsonObjectPosition;
 
-        this->operator[]("timestamp") = Document::currentISO8601TimeUTC();
+        this->operator[]("timestamp") = Client::currentISO8601TimeUTC();
     }
 
     QString Note::getValueStringByKeyOrEmpty(QString key) {
