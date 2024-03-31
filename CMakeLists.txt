@@ -59,11 +59,12 @@ add_executable(${PROJECT_NAME}
         IterableLayoutAdapter.hpp
         FairWindSK.cpp FairWindSK.hpp
         AppItem.cpp AppItem.hpp
-        SignalKClient.cpp SignalKClient.hpp
-        signalk/Document.cpp signalk/Document.hpp
+
+        #signalk/Document.cpp signalk/Document.hpp
         signalk/Note.cpp signalk/Note.hpp
         signalk/Waypoint.cpp signalk/Waypoint.hpp
         signalk/Subscription.cpp signalk/Subscription.hpp
+        signalk/Client.cpp signalk/Client.hpp
 
         ui/launcher/Launcher.cpp ui/launcher/Launcher.hpp ui/launcher/Launcher.ui
         ui/about/About.cpp ui/about/About.hpp ui/about/About.ui
