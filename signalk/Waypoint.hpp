@@ -7,7 +7,7 @@
 
 #include <QObject>
 #include <QGeoCoordinate>
-#include "../FairWindSK.hpp"
+
 
 namespace fairwindsk::signalk {
 
