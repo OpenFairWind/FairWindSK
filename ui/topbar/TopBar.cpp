@@ -102,7 +102,7 @@ namespace fairwindsk::ui::topbar {
 
 
         // Get the signalk document from the FairWind singleton
-        auto signalKDocument = fairWindSK->getSignalKDocument();
+        //auto signalKDocument = fairWindSK->getSignalKDocument();
 
         // Get the configuration object
         auto configuration = fairWindSK->getConfiguration();
@@ -114,177 +114,134 @@ namespace fairwindsk::ui::topbar {
             // Check if the Options object has tHe Position key and if it is a string
             if (signalkPaths.contains("pos") && signalkPaths["pos"].isString()) {
 
-                // Get the position SignalK key
-                auto path = signalkPaths["pos"].toString();
-
-                // Subscribe to signalk and make sure that navigation infos are updated accordingly
-                signalKDocument->subscribe(path, this,
-                                           SLOT(fairwindsk::ui::topbar::TopBar::updatePOS));
-
-                auto value = signalKDocument->get(path);
-                if (!value.toObject().isEmpty()) {
-                    ui->widget_POS->setVisible(true);
-                }
+                // Subscribe and update
+                updatePOS(FairWindSK::getInstance()->getSignalKClient()->subscribe(
+                        signalkPaths["pos"].toString(),
+                        this,
+                        SLOT(fairwindsk::ui::topbar::TopBar::updatePOS)
+                        ));
             }
 
             // Check if the Options object has tHe Heading key and if it is a string
             if (signalkPaths.contains("cog") && signalkPaths["cog"].isString()) {
 
-                // Get the heading SignalK key
-                auto path = signalkPaths["cog"].toString();
+                // Subscribe and update
+                updateCOG(FairWindSK::getInstance()->getSignalKClient()->subscribe(
+                        signalkPaths["cog"].toString(),
+                        this,
+                        SLOT(fairwindsk::ui::topbar::TopBar::updateCOG)
+                ));
 
-                // Subscribe to signalk and make sure that navigation infos are updated accordingly
-                signalKDocument->subscribe(path, this,
-                                           SLOT(fairwindsk::ui::topbar::TopBar::updateCOG));
 
-                auto value = signalKDocument->get(path);
-                if (!value.toObject().isEmpty()) {
-                    ui->widget_COG->setVisible(true);
-                }
+
             }
 
             // Check if the Options object has tHe Speed key and if it is a string
             if (signalkPaths.contains("sog") && signalkPaths["sog"].isString()) {
 
-                // Get the speed SignalK key
-                auto path = signalkPaths["sog"].toString();
-
-                // Subscribe to signalk and make sure that navigation infos are updated accordingly
-                signalKDocument->subscribe(path, this,
-                                           SLOT(fairwindsk::ui::topbar::TopBar::updateSOG));
-
-                auto value = signalKDocument->get(path);
-                if (!value.toObject().isEmpty()) {
-                    ui->widget_SOG->setVisible(true);
-                }
+                // Subscribe and update
+                updateSOG( FairWindSK::getInstance()->getSignalKClient()->subscribe(
+                        signalkPaths["sog"].toString(),
+                        this,
+                        SLOT(fairwindsk::ui::topbar::TopBar::updateSOG)
+                ));
             }
 
             // Check if the Options object has tHe Heading key and if it is a string
             if (signalkPaths.contains("hdg") && signalkPaths["hdg"].isString()) {
 
-                // Get the heading SignalK key
-                auto hdgSignalK = signalkPaths["hdg"].toString();
+                // Subscribe and update
+                updateHDG( FairWindSK::getInstance()->getSignalKClient()->subscribe(
+                        signalkPaths["hdg"].toString(),
+                        this,
+                        SLOT(fairwindsk::ui::topbar::TopBar::updateHDG)
+                ));
 
-                // Subscribe to signalk and make sure that navigation infos are updated accordingly
-                signalKDocument->subscribe(hdgSignalK, this,
-                                           SLOT(fairwindsk::ui::topbar::TopBar::updateHDG));
 
-                auto value = signalKDocument->get(hdgSignalK);
-                if (!value.toObject().isEmpty()) {
-                    ui->widget_HDG->setVisible(true);
-                }
             }
 
             // Check if the Options object has tHe Speed key and if it is a string
             if (signalkPaths.contains("stw") && signalkPaths["stw"].isString()) {
 
-                // Get the speed SignalK key
-                auto path = signalkPaths["stw"].toString();
-
-                // Subscribe to signalk and make sure that navigation infos are updated accordingly
-                signalKDocument->subscribe(path, this,
-                                           SLOT(fairwindsk::ui::topbar::TopBar::updateSTW));
-
-                auto value = signalKDocument->get(path);
-                if (!value.toObject().isEmpty()) {
-                    ui->widget_STW->setVisible(true);
-                }
+                /// Subscribe and update
+                updateSTW( FairWindSK::getInstance()->getSignalKClient()->subscribe(
+                        signalkPaths["stw"].toString(),
+                        this,
+                        SLOT(fairwindsk::ui::topbar::TopBar::updateSTW)
+                ));
             }
 
             // Check if the Options object has tHe Speed key and if it is a string
             if (signalkPaths.contains("dpt") && signalkPaths["dpt"].isString()) {
 
-                // Get the speed SignalK key
-                auto path = signalkPaths["dpt"].toString();
+                // Subscribe and update
+                updateDPT(FairWindSK::getInstance()->getSignalKClient()->subscribe(
+                        signalkPaths["dpt"].toString(),
+                        this,
+                        SLOT(fairwindsk::ui::topbar::TopBar::updateDPT)
+                ));
 
-                // Subscribe to signalk and make sure that navigation infos are updated accordingly
-                signalKDocument->subscribe(path, this,
-                                           SLOT(fairwindsk::ui::topbar::TopBar::updateDPT));
 
-                auto value = signalKDocument->get(path);
-                if (!value.toObject().isEmpty()) {
-                    ui->widget_DPT->setVisible(true);
-                }
             }
 
             // Check if the Options object has tHe Speed key and if it is a string
             if (signalkPaths.contains("wpt") && signalkPaths["wpt"].isString()) {
 
-                // Get the speed SignalK key
-                auto path = signalkPaths["wpt"].toString();
-
-                // Subscribe to signal k and make sure that navigation infos are updated accordingly
-                signalKDocument->subscribe(path, this,
-                                           SLOT(fairwindsk::ui::topbar::TopBar::updateWPT));
-
-                auto value = signalKDocument->get(path);
-                if (!value.toObject().isEmpty()) {
-                    ui->widget_WPT->setVisible(true);
-                }
+                // Subscribe and update
+                updateWPT( FairWindSK::getInstance()->getSignalKClient()->subscribe(
+                        signalkPaths["wpt"].toString(),
+                        this,
+                        SLOT(fairwindsk::ui::topbar::TopBar::updateWPT)
+                ));
             }
 
             // Check if the Options object has tHe Speed key and if it is a string
             if (signalkPaths.contains("btw") && signalkPaths["btw"].isString()) {
 
-                // Get the speed SignalK key
-                auto path = signalkPaths["btw"].toString();
+                // Subscribe and update
+                updateBTW(FairWindSK::getInstance()->getSignalKClient()->subscribe(
+                        signalkPaths["btw"].toString(),
+                        this,
+                        SLOT(fairwindsk::ui::topbar::TopBar::updateBTW)
+                ));
 
-                // Subscribe to signal k and make sure that navigation infos are updated accordingly
-                signalKDocument->subscribe(path, this,
-                                           SLOT(fairwindsk::ui::topbar::TopBar::updateBTW));
 
-                auto value = signalKDocument->get(path);
-                if (!value.toObject().isEmpty()) {
-                    ui->widget_BTW->setVisible(true);
-                }
             }
 
             // Check if the Options object has tHe Speed key and if it is a string
             if (signalkPaths.contains("dtg") && signalkPaths["dtg"].isString()) {
 
-                // Get the speed SignalK key
-                auto path = signalkPaths["dtg"].toString();
+                // Subscribe and update
+                updateDTG(FairWindSK::getInstance()->getSignalKClient()->subscribe(
+                        signalkPaths["dtg"].toString(),
+                        this,
+                        SLOT(fairwindsk::ui::topbar::TopBar::updateDTG)
+                ));
 
-                // Subscribe to signalk and make sure that navigation infos are updated accordingly
-                signalKDocument->subscribe(path, this,
-                                           SLOT(fairwindsk::ui::topbar::TopBar::updateDTG));
 
-                auto value = signalKDocument->get(path);
-                if (!value.toObject().isEmpty()) {
-                    ui->widget_DTG->setVisible(true);
-                }
             }
 
             // Check if the Options object has tHe Speed key and if it is a string
             if (signalkPaths.contains("ttg") && signalkPaths["ttg"].isString()) {
 
-                // Get the speed SignalK key
-                auto path = signalkPaths["ttg"].toString();
+                // Subscribe and update
+                updateTTG(FairWindSK::getInstance()->getSignalKClient()->subscribe(
+                        signalkPaths["ttg"].toString(),
+                        this,
+                        SLOT(fairwindsk::ui::topbar::TopBar::updateTTG)
+                ));
 
-                // Subscribe to signalk and make sure that navigation infos are updated accordingly
-                signalKDocument->subscribe(path, this,
-                                           SLOT(fairwindsk::ui::topbar::TopBar::updateTTG));
-
-                auto value = signalKDocument->get(path);
-                if (!value.toObject().isEmpty()) {
-                    ui->widget_TTG->setVisible(true);
-                }
             }
 
             // Check if the Options object has tHe Speed key and if it is a string
             if (signalkPaths.contains("eta") && signalkPaths["eta"].isString()) {
 
-                // Get the speed SignalK key
-                auto path = signalkPaths["eta"].toString();
-
-                // Subscribe to signalk and make sure that navigation infos are updated accordingly
-                signalKDocument->subscribe(path, this,
-                                           SLOT(fairwindsk::ui::topbar::TopBar::updateETA));
-
-                auto value = signalKDocument->get(path);
-                if (!value.toObject().isEmpty()) {
-                    ui->widget_ETA->setVisible(true);
-                }
+                // Subscribe and update
+                updateETA( FairWindSK::getInstance()->getSignalKClient()->subscribe(
+                        signalkPaths["eta"].toString(),
+                        this,
+                        SLOT(fairwindsk::ui::topbar::TopBar::updateETA)
+                ));
             }
 
 
@@ -292,33 +249,23 @@ namespace fairwindsk::ui::topbar {
             // Check if the Options object has tHe Speed key and if it is a string
             if (signalkPaths.contains("xte") && signalkPaths["xte"].isString()) {
 
-                // Get the speed SignalK key
-                auto path = signalkPaths["xte"].toString();
-
-                // Subscribe to signalk and make sure that navigation infos are updated accordingly
-                signalKDocument->subscribe(path, this,
-                                           SLOT(fairwindsk::ui::topbar::TopBar::updateXTE));
-
-                auto value = signalKDocument->get(path);
-                if (!value.toObject().isEmpty()) {
-                    ui->widget_XTE->setVisible(true);
-                }
+                // Subscribe and update
+                updateXTE(FairWindSK::getInstance()->getSignalKClient()->subscribe(
+                        signalkPaths["xte"].toString(),
+                        this,
+                        SLOT(fairwindsk::ui::topbar::TopBar::updateXTE)
+                ));
             }
 
             // Check if the Options object has tHe Speed key and if it is a string
             if (signalkPaths.contains("vmg") && signalkPaths["vmg"].isString()) {
 
-                // Get the speed SignalK key
-                auto path = signalkPaths["vmg"].toString();
-
-                // Subscribe to signalk and make sure that navigation infos are updated accordingly
-                signalKDocument->subscribe(path, this,
-                                           SLOT(fairwindsk::ui::topbar::TopBar::updateVMG));
-
-                auto value = signalKDocument->get(path);
-                if (!value.toObject().isEmpty()) {
-                    ui->widget_VMG->setVisible(true);
-                }
+                // Subscribe and update
+                updateVMG(FairWindSK::getInstance()->getSignalKClient()->subscribe(
+                        signalkPaths["vmg"].toString(),
+                        this,
+                        SLOT(fairwindsk::ui::topbar::TopBar::updateVMG)
+                ));
             }
 
 
@@ -380,10 +327,10 @@ namespace fairwindsk::ui::topbar {
  * Method called in accordance to signalk to update the navigation position
  */
     void TopBar::updatePOS(const QJsonObject &update) {
-        //qDebug() << "TopBar::updateNavigationPosition:" << update;
+
 
         // Get the value
-        auto value = FairWindSK::getInstance()->getSignalKDocument()->getGeoCoordinateFromUpdateByPath(update);
+        auto value = fairwindsk::signalk::Client::getGeoCoordinateFromUpdateByPath(update);
 
         if (!value.isValid()) {
             ui->widget_POS->setVisible(false);
@@ -399,20 +346,6 @@ namespace fairwindsk::ui::topbar {
                 ui->widget_POS->setVisible(true);
             }
         }
-
-        // Get the FairWind singleton
-        auto fairWindSK = fairwindsk::FairWindSK::getInstance();
-
-        // Get the signalk document from the FairWind singleton itself
-        auto signalKDocument = fairWindSK->getSignalKDocument();
-
-        // Show the coordinates
-        ui->label_POS->setText(
-                signalKDocument->getNavigationPosition().toString(
-                        QGeoCoordinate::DegreesMinutesSecondsWithHemisphere
-                )
-        );
-
     }
 
 
@@ -422,10 +355,11 @@ namespace fairwindsk::ui::topbar {
  */
     void TopBar::updateCOG(const QJsonObject &update) {
 
+
         QString text;
 
         // Get the value
-        auto value = FairWindSK::getInstance()->getSignalKDocument()->getDoubleFromUpdateByPath(update);
+        auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
 
         if (isnan(value)) {
             ui->widget_COG->setVisible(false);
@@ -456,7 +390,7 @@ namespace fairwindsk::ui::topbar {
         QString text;
 
         // Get the value
-        auto value = FairWindSK::getInstance()->getSignalKDocument()->getDoubleFromUpdateByPath(update);
+        auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
 
         if (isnan(value)) {
             ui->widget_SOG->setVisible(false);
@@ -488,7 +422,7 @@ namespace fairwindsk::ui::topbar {
         QString text;
 
         // Get the value
-        auto value = FairWindSK::getInstance()->getSignalKDocument()->getDoubleFromUpdateByPath(update);
+        auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
 
         if (isnan(value)) {
             ui->widget_HDG->setVisible(false);
@@ -519,7 +453,7 @@ namespace fairwindsk::ui::topbar {
         QString text;
 
         // Get the value
-        auto value = FairWindSK::getInstance()->getSignalKDocument()->getDoubleFromUpdateByPath(update);
+        auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
 
         if (isnan(value)) {
             ui->widget_STW->setVisible(false);
@@ -551,7 +485,7 @@ namespace fairwindsk::ui::topbar {
         QString text;
 
         // Get the value
-        auto value = FairWindSK::getInstance()->getSignalKDocument()->getDoubleFromUpdateByPath(update);
+        auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
 
         if (isnan(value)) {
             ui->widget_DPT->setVisible(false);
@@ -576,8 +510,15 @@ namespace fairwindsk::ui::topbar {
 
     void TopBar::updateWPT(const QJsonObject &update) {
 
+        qDebug() << "updateWPT: update: " << update << " ----";
+        if (update.isEmpty()) {
+            return;
+        }
+
         // Get the value
-        auto value =FairWindSK::getInstance()->getSignalKDocument()->getObjectFromUpdateByPath(update);
+        auto value =fairwindsk::signalk::Client::getObjectFromUpdateByPath(update);
+
+        qDebug() << "updateWPT: value: " << value << " ----";
 
         if (value.isEmpty()) {
             ui->widget_WPT->setVisible(false);
@@ -601,7 +542,7 @@ namespace fairwindsk::ui::topbar {
         QString text;
 
         // Get the value
-        auto value =FairWindSK::getInstance()->getSignalKDocument()->getDoubleFromUpdateByPath(update);
+        auto value =fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
 
         if (isnan(value)) {
             ui->widget_BTW->setVisible(false);
@@ -629,7 +570,7 @@ namespace fairwindsk::ui::topbar {
         QString text;
 
         // Get the value
-        auto value = FairWindSK::getInstance()->getSignalKDocument()->getDoubleFromUpdateByPath(update);
+        auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
 
         if (isnan(value)) {
             ui->widget_DTG->setVisible(false);
@@ -657,7 +598,7 @@ namespace fairwindsk::ui::topbar {
         QString text;
 
         // Get the value
-        auto value = FairWindSK::getInstance()->getSignalKDocument()->getDateTimeFromUpdateByPath(update);
+        auto value = fairwindsk::signalk::Client::getDateTimeFromUpdateByPath(update);
 
         if (value.isNull()) {
             ui->widget_TTG->setVisible(false);
@@ -686,7 +627,7 @@ namespace fairwindsk::ui::topbar {
         QString text;
 
         // Get the value
-        auto value = FairWindSK::getInstance()->getSignalKDocument()->getDateTimeFromUpdateByPath(update);
+        auto value = fairwindsk::signalk::Client::getDateTimeFromUpdateByPath(update);
 
         if (value.isNull()) {
             ui->widget_ETA->setVisible(false);
@@ -714,7 +655,7 @@ namespace fairwindsk::ui::topbar {
         QString text;
 
         // Get the value
-        auto value = FairWindSK::getInstance()->getSignalKDocument()->getDoubleFromUpdateByPath(update);
+        auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
 
         if (isnan(value)) {
             ui->widget_XTE->setVisible(false);
@@ -740,7 +681,7 @@ namespace fairwindsk::ui::topbar {
         QString text;
 
         // Get the value
-        auto value = FairWindSK::getInstance()->getSignalKDocument()->getDoubleFromUpdateByPath(update);
+        auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
 
         if (isnan(value)) {
             ui->widget_VMG->setVisible(false);
