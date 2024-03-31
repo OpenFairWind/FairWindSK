@@ -940,6 +940,9 @@ color: rgb(250, 255, 255);</string>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTop|Qt::AlignTrailing</set>
        </property>
+       <property name="margin">
+        <number>5</number>
+       </property>
       </widget>
      </item>
      <item>
@@ -955,6 +958,9 @@ color: rgb(250, 255, 255);</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTop|Qt::AlignTrailing</set>
+       </property>
+       <property name="margin">
+        <number>5</number>
        </property>
       </widget>
      </item>
