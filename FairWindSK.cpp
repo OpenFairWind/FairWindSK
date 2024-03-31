@@ -35,6 +35,7 @@ namespace fairwindsk {
         m_username = "admin";
         m_password = "password";
 
+
         QString text = " {"
                        "  \"signalk\": {"
                        "    \"pos\": \"navigation.position\","
@@ -64,6 +65,7 @@ namespace fairwindsk {
                        "    \"depth\": \"m\""
                        "  }"
                        "}";
+
 
         m_configuration = QJsonDocument::fromJson(text.toUtf8()).object();
 
@@ -198,18 +200,7 @@ namespace fairwindsk {
                         // Set the token
                         setToken(m_signalkClient.getToken());
 
-                        // Get all the document
-                        QJsonObject allSignalK = m_signalkClient.getAll();
 
-                        // Update the local document
-                        m_signalkDocument.insert("", allSignalK);
-
-                        // Check if the debug is active
-                        if (m_debug) {
-
-                            // Printout the document
-                            qDebug() << allSignalK;
-                        }
 
                         // Exit the loop
                         break;
@@ -332,13 +323,7 @@ namespace fairwindsk {
         return m_mapHash2AppItem.keys();
     }
 
-    /*
- * getSignalKDocument
- * Returns the SignalK document
- */
-    signalk::Document *FairWindSK::getSignalKDocument() {
-        return &m_signalkDocument;
-    }
+
 
     AppItem *FairWindSK::getAppItemByHash(QString hash) {
         return m_mapHash2AppItem[hash];
@@ -398,7 +383,7 @@ namespace fairwindsk {
         return getAppNameByKeyFromConfiguration("settings");
     }
 
-    SignalKClient *FairWindSK::getSignalKClient() {
+    signalk::Client *FairWindSK::getSignalKClient() {
         return &m_signalkClient;
     }
 

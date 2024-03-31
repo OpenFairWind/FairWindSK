@@ -11,7 +11,7 @@
 #include <QJsonDocument>
 #include "AppItem.hpp"
 #include "signalk/Document.hpp"
-#include "SignalKClient.hpp"
+#include "signalk/Client.hpp"
 
 namespace fairwindsk {
 
@@ -45,12 +45,7 @@ namespace fairwindsk {
         QString getDistanceUnits();
         QString getDepthUnits();
 
-
         bool getVirtualkeyboard();
-
-
-
-        signalk::Document *getSignalKDocument();
 
         QString getSignalKServerUrl();
         void setSignalKServerUrl(QString signalKServerUrl);
@@ -68,7 +63,7 @@ namespace fairwindsk {
 
         bool isDebug() const;
 
-        SignalKClient *getSignalKClient();
+        signalk::Client *getSignalKClient();
 
         static void setVirtualKeyboard(bool value);
         static bool getVirtualKeyboard();
@@ -84,9 +79,9 @@ namespace fairwindsk {
         FairWindSK();
         inline static FairWindSK *m_instance = nullptr;
 
-        signalk::Document m_signalkDocument;
 
-        SignalKClient m_signalkClient;
+
+        signalk::Client m_signalkClient;
 
         QString m_signalKServerUrl;
         QString m_username;
