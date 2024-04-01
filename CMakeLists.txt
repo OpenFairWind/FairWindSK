@@ -26,7 +26,7 @@ ExternalProject_Add(QtZeroConf
         CMAKE_ARGS -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH} -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION} -DBUILD_SHARED_LIBS=ON
         TIMEOUT 360
 )
-set(LIBQTZEROCONF ${EXTERNAL_INSTALL_LOCATION}/lib/libqtzeroconf.so)
+set(LIBQTZEROCONF ${EXTERNAL_INSTALL_LOCATION}/lib/libQtZeroConf.so)
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     set(LIBQTZEROCONF ${EXTERNAL_INSTALL_LOCATION}/lib/static/libQtZeroConf.lib)
     add_custom_command(
@@ -60,11 +60,12 @@ add_executable(${PROJECT_NAME}
         FairWindSK.cpp FairWindSK.hpp
         AppItem.cpp AppItem.hpp
 
-        #signalk/Document.cpp signalk/Document.hpp
         signalk/Note.cpp signalk/Note.hpp
         signalk/Waypoint.cpp signalk/Waypoint.hpp
         signalk/Subscription.cpp signalk/Subscription.hpp
         signalk/Client.cpp signalk/Client.hpp
+
+        ui/Settings.cpp ui/Settings.hpp ui/Settings.ui
 
         ui/launcher/Launcher.cpp ui/launcher/Launcher.hpp ui/launcher/Launcher.ui
         ui/about/About.cpp ui/about/About.hpp ui/about/About.ui
@@ -80,9 +81,7 @@ add_executable(${PROJECT_NAME}
         ui/web/DownloadWidget.cpp ui/web/DownloadWidget.hpp ui/web/DownloadWidget.ui
 
         resources.qrc
-        ui/Settings.cpp
-        ui/Settings.hpp
-        ui/Settings.ui
+
 )
 
 add_dependencies(${PROJECT_NAME} QtZeroConf)
