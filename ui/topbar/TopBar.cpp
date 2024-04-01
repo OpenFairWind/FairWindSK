@@ -371,7 +371,7 @@ namespace fairwindsk::ui::topbar {
         // Get the value
         auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
 
-        if (isnan(value)) {
+        if (std::isnan(value)) {
             ui->widget_COG->setVisible(false);
         } else {
 
@@ -407,7 +407,7 @@ namespace fairwindsk::ui::topbar {
         // Get the value
         auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
 
-        if (isnan(value)) {
+        if (std::isnan(value)) {
             ui->widget_SOG->setVisible(false);
         } else {
 
@@ -444,7 +444,7 @@ namespace fairwindsk::ui::topbar {
         // Get the value
         auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
 
-        if (isnan(value)) {
+        if (std::isnan(value)) {
             ui->widget_HDG->setVisible(false);
         } else {
 
@@ -480,7 +480,7 @@ namespace fairwindsk::ui::topbar {
         // Get the value
         auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
 
-        if (isnan(value)) {
+        if (std::isnan(value)) {
             ui->widget_STW->setVisible(false);
         } else {
 
@@ -517,7 +517,7 @@ namespace fairwindsk::ui::topbar {
         // Get the value
         auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
 
-        if (isnan(value)) {
+        if (std::isnan(value)) {
             ui->widget_DPT->setVisible(false);
         } else {
 
@@ -580,7 +580,7 @@ namespace fairwindsk::ui::topbar {
         // Get the value
         auto value =fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
 
-        if (isnan(value)) {
+        if (std::isnan(value)) {
             ui->widget_BTW->setVisible(false);
         } else {
 
@@ -612,7 +612,7 @@ namespace fairwindsk::ui::topbar {
         // Get the value
         auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
 
-        if (isnan(value)) {
+        if (std::isnan(value)) {
             ui->widget_DTG->setVisible(false);
         } else {
 
@@ -710,7 +710,7 @@ namespace fairwindsk::ui::topbar {
         // Get the value
         auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
 
-        if (isnan(value)) {
+        if (std::isnan(value)) {
             ui->widget_XTE->setVisible(false);
         } else {
 
@@ -742,7 +742,7 @@ namespace fairwindsk::ui::topbar {
         // Get the value
         auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
 
-        if (isnan(value)) {
+        if (std::isnan(value)) {
             ui->widget_VMG->setVisible(false);
         } else {
 
