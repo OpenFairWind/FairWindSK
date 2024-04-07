@@ -200,8 +200,6 @@ namespace fairwindsk {
                         // Set the token
                         setToken(m_signalkClient.getToken());
 
-
-
                         // Exit the loop
                         break;
                     }
@@ -234,27 +232,45 @@ namespace fairwindsk {
 
     bool FairWindSK::loadApps() {
 
+        // Set the result value
         bool result = false;
 
+        // Get the app keys
+        auto keys = m_mapHash2AppItem.keys();
+
         // Remove all app items
-        for (const auto& key: m_mapHash2AppItem.keys()) {
+        for (const auto& key: keys) {
+
+            // Remove the item
             delete m_mapHash2AppItem[key];
         }
 
         // Remove the map content
         m_mapHash2AppItem.empty();
 
+        // Create an entry for the settings app
         QString settingsString = R"({ "name": "admin" })";
+
+        // Crete the json document
         QJsonDocument settingsJsonDocument = QJsonDocument::fromJson(settingsString.toUtf8());
 
+        // Check if the debug is active
         if (m_debug) {
+
+            // Show a debug message
             qDebug() << settingsJsonDocument;
         }
 
+        // Create an application item
         auto settingsAppItem = new AppItem(settingsJsonDocument.object(), false, 0);
+
+        // Add the admin application to the container
         m_mapHash2AppItem[settingsAppItem->getName()] = settingsAppItem;
 
+        // Check if the debug is active
         if (m_debug) {
+
+            // Show a debug message
             qDebug() << "name:" << settingsAppItem->getName() << "url:" << settingsAppItem->getUrl();
         }
 
@@ -263,18 +279,34 @@ namespace fairwindsk {
         auto appstoreAppItem = new AppItem(appstoreJsonDocument.object(), false, 0);
         m_mapHash2AppItem[appstoreAppItem->getName()] = appstoreAppItem;
 
+        // Set the URL for the application list
         QUrl url = QUrl(m_signalKServerUrl + "/skServer/webapps");
+
+        // Create the network access manager
         QNetworkAccessManager networkAccessManager;
+
+        // Create the event loop component
         QEventLoop loop;
+
+        // Connect the network manager to the event loop
         connect(&networkAccessManager, &QNetworkAccessManager::finished, &loop,&QEventLoop::quit);
+
+        // Create the get request
         QNetworkReply *reply = networkAccessManager.get(QNetworkRequest(url));
+
+        // Wait until the request is satisfied
         loop.exec();
 
+        // Check if the response has been successful
         if (reply->attribute( QNetworkRequest::HttpStatusCodeAttribute ) == 200) {
 
+            // Create a json document with the request response
             QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
 
+            // Check if the debug is active
             if (m_debug) {
+
+                // Show the document
                 qDebug() << doc;
             }
 
@@ -309,13 +341,20 @@ namespace fairwindsk {
                     }
                 }
             }
+
+            // Set the result as successfull
             result = true;
         } else {
+
+            // Check if the debug is active
             if (m_debug) {
-                qDebug() << "Helper plugin not installed on " << m_signalKServerUrl;
+
+                // Show a debug message
+                qDebug() << "Troubles on getting apps from " << m_signalKServerUrl;
             }
         }
 
+        // Return the result
         return result;
     }
 
