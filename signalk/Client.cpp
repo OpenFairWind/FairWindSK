@@ -117,24 +117,30 @@ namespace fairwindsk::signalk {
                 qDebug() << "Server: " << mServer;
             }
 
-            // Check if the token is empty
-            if (mToken.isEmpty()) {
+            if (!mServer.isEmpty()) {
 
-                // Perform the login
-                login();
-            }
+                // Check if the token is empty
+                if (mToken.isEmpty()) {
 
-            // Check if the token is not empty
-            if (!mToken.isEmpty()) {
+                    // Perform the login
+                    login();
+                }
 
-                mCookie="JAUTHENTICATION="+mToken+"; Path=/; HttpOnly";
+                // Check if the token is not empty
+                if (!mToken.isEmpty()) {
 
-                mWebSocket.open(QUrl(ws().toString()+"?subscribe=none"));
+                    mCookie = "JAUTHENTICATION=" + mToken + "; Path=/; HttpOnly";
 
-                result = true;
+                    mWebSocket.open(QUrl(ws().toString() + "?subscribe=none"));
+
+                    result = true;
+                } else {
+                    if (mDebug)
+                        qDebug() << "Login failed.";
+                }
             } else {
                 if (mDebug)
-                    qDebug() << "Login failed.";
+                    qDebug() << "Server: " << mUrl << " not available!";
             }
         }  else {
             if (mDebug)
