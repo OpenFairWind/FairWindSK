@@ -32,11 +32,8 @@ int main(int argc, char *argv[]) {
     // The QT application
     QApplication app(argc, argv);
 
-
-
     // Install the translator
     QApplication::installTranslator(&translator);
-
 
     // Set the window icon
     QApplication::setWindowIcon(QIcon(QPixmap::fromImage(QImage(":/resources/images/icons/fairwind_icon.png"))));
@@ -63,13 +60,23 @@ int main(int argc, char *argv[]) {
     splash.showMessage(QObject::tr("Connecting to the Signal K Server..."), 500, Qt::white);
 
     // Connect to the Signal K server...
-    fairWindSK->startSignalK();
+    auto isConnected = fairWindSK->startSignalK();
 
-    // Show message
-    splash.showMessage(QObject::tr("Loading applications..."), 500, Qt::white);
+    // Check if it is connected
+    if (isConnected) {
 
-    // Load the apps inside the FairWind singleton itself
-    fairWindSK->loadApps();
+        // Show message
+        splash.showMessage(QObject::tr("Loading applications..."), 500, Qt::white);
+
+        // Load the apps inside the FairWind singleton itself
+        fairWindSK->loadApps();
+
+    } else {
+
+        // Show message
+        splash.showMessage(QObject::tr("Signal K server not available!"), 500, Qt::white);
+
+    }
 
     QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::Accelerated2dCanvasEnabled, true);
     QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
