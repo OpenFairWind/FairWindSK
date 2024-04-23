@@ -28,46 +28,11 @@ namespace fairwindsk {
         qDebug() << "FairWindSK constructor";
 
         m_debug = true;
-        m_mSleep = 2500;
-        m_nRetry = 10;
-        m_signalKServerUrl = "";
-        m_token = "";
+
         m_username = "admin";
         m_password = "password";
 
-
-        QString text = " {"
-                       "  \"signalk\": {"
-                       "    \"pos\": \"navigation.position\","
-                       "    \"cog\": \"navigation.courseOverGroundTrue\","
-                       "    \"sog\": \"navigation.speedOverGround\","
-                       "    \"hdg\": \"navigation.headingTrue\","
-                       "    \"stw\": \"navigation.speedThroughWater\","
-                       "    \"dpt\": \"environment.depth.belowTransducer\","
-                       "    \"wpt\": \"navigation.course.nextPoint\","
-                       "    \"btw\": \"navigation.course.calcValues.bearingTrue\","
-                       "    \"dtg\": \"navigation.course.calcValues.distance\","
-                       "    \"ttg\": \"navigation.course.calcValues.timeToGo\","
-                       "    \"eta\": \"navigation.course.calcValues.estimatedTimeOfArrival\","
-                       "    \"xte\": \"navigation.course.calcValues.crossTrackError\","
-                       "    \"vmg\": \"performance.velocityMadeGood\""
-                       "  },"
-                       "  \"bottomBarApps\": {"
-                       "    \"mydata\": \"\","
-                       "    \"mob\": \"\","
-                       "    \"alarms\": \"\","
-                       "    \"settings\": \"admin\""
-                       "  },"
-                       "  \"units\": {"
-                       "    \"vesselSpeed\": \"kn\","
-                       "    \"windSpeed\": \"kn\","
-                       "    \"distance\": \"nm\","
-                       "    \"depth\": \"m\""
-                       "  }"
-                       "}";
-
-
-        m_configuration = QJsonDocument::fromJson(text.toUtf8()).object();
+        m_configFilename = "fairwindsk.json";
 
     }
 
@@ -84,6 +49,14 @@ namespace fairwindsk {
         return m_instance;
     }
 
+    void FairWindSK::saveConfig() {
+
+
+        QFile jsonFile(m_configFilename);
+        jsonFile.open(QFile::WriteOnly);
+        jsonFile.write(QJsonDocument(m_configuration).toJson());
+
+    }
     void FairWindSK::loadConfig() {
 
         // Initialize the QT managed settings
@@ -100,41 +73,172 @@ namespace fairwindsk {
         }
 
         // Get the name of the FairWindSK configuration file
-        m_signalKServerUrl = settings.value("signalk-server", m_signalKServerUrl).toString();
+        m_configFilename = settings.value("config", m_configFilename).toString();
 
-        // Store the configuration in the settings
-        settings.setValue("signalk-server", m_signalKServerUrl);
+        // Store the name of the FairWindSK configuration in the settings
+        settings.setValue("config",m_configFilename);
 
-        // Get the token of the FairWindSK configuration file
-        m_token = settings.value("token", m_token).toString();
+        QString configJson = "";
+        QFileInfo check_file(m_configFilename);
+        // check if file exists and if yes: Is it really a file and no directory?
+        if (check_file.exists() && check_file.isFile()) {
+            QFile configFile(m_configFilename);
+            if (configFile.open(QFile::ReadOnly | QFile::Text)) {
+                QTextStream in(&configFile);
+                configJson = in.readAll();
+            }
+        } else {
+            configJson = R"(
+{
+    "connection": {
+        "server": "http://localhost:3000",
+        "sleep": 5,
+        "retry": 10,
+        "token": ""
+    },
+    "signalk": {
+        "pos": "navigation.position",
+        "cog": "navigation.courseOverGroundTrue",
+        "sog": "navigation.speedOverGround",
+        "hdg": "navigation.headingTrue",
+        "stw": "navigation.speedThroughWater",
+        "dpt": "environment.depth.belowTransducer",
+        "wpt": "navigation.course.nextPoint",
+        "btw": "navigation.course.calcValues.bearingTrue",
+        "dtg": "navigation.course.calcValues.distance",
+        "ttg": "navigation.course.calcValues.timeToGo",
+        "eta": "navigation.course.calcValues.estimatedTimeOfArrival",
+        "xte": "navigation.course.calcValues.crossTrackError",
+        "vmg": "performance.velocityMadeGood"
+    },
+    "bottomBarApps": {
+        "mydata": "",
+        "mob": "",
+        "alarms": "",
+        "settings": "admin"
+    },
+    "units": {
+        "vesselSpeed": "kn",
+        "windSpeed": "kn",
+        "distance": "nm",
+        "depth": "m"
+    },
+    "apps": [
+        {
+            "name": "@signalk/freeboard-sk",
+            "signalk": {
+                "appIcon": "file://icons/chart_icon.png"
+            },
+            "fairwind": {
+                "order": 1
+            }
+        },
+        {
+            "name": "@mxtommy/kip",
+            "signalk": {
+                "appIcon": "file://icons/dashboard_icon.png"
+            },
+            "fairwind": {
+                "order": 2
+            }
+        },
+        {
+            "name": "sk-depth-gauge",
+            "signalk": {
+                "displayName": "Depth",
+                "appIcon": "file://icons/sonar_icon.png"
+            },
+            "fairwind": {
+                "order": 3
+            }
+        },
+        {
+            "name": "signalk-top3ais",
+            "signalk": {
+                "displayName": "AIS",
+                "appIcon": "file://icons/radar_icon.png"
+            },
+            "fairwind": {
+                "order": 4
+            }
+        },
+        {
+            "name": "@signalk/sailgauge",
+            "signalk": {
+                "displayName": "Sail Gauge",
+                "appIcon": "file://icons/sailgauge_icon.png"
+            }
+        },
+        {
+            "name": "admin",
+            "fairwind": {
+                "active": false
+            }
+        },
+        {
+            "name": "admin/#/appstore/apps",
+            "fairwind": {
+                "active": false
+            }
+        },
+        {
+            "name": "__SETTINGS__",
+            "fairwind": {
+                "active": false
+            }
+        },
+        {
+            "name": "http:///",
+            "signalk": {
+                "displayName": "Signal K",
+                "appIcon": "file://icons/signalkserver_icon.png"
+            },
+            "fairwind": {
+                "active": true,
+                "order": 1000
+            }
+        },
+        {
+            "name": "http://spotify.com",
+            "signalk": {
+                "displayName": "Spotify",
+                "appIcon": "file://icons/spotify_icon.png"
+            },
+            "fairwind": {
+                "active": true
+            }
+        },
+        {
+            "name": "http://netflix.com",
+            "signalk": {
+                "displayName": "Netflix",
+                "appIcon": "file://icons/netflix_icon.png"
+            },
+            "fairwind": {
+                "active": true
+            }
+        },
+        {
+            "name": "http://youtube.com",
+            "signalk": {
+                "displayName": "Youtube",
+                "appIcon": "file://icons/youtube_icon.png"
+            },
+            "fairwind": {
+                "active": true
+            }
+        }
+    ]
+}        )";
+            QFile configFile(m_configFilename);
+            if (configFile.open(QFile::WriteOnly | QFile::Text)) {
+                QTextStream out(&configFile);
+                out << configJson << Qt::endl;
+            }
 
-        // Store the configuration in the settings
-        settings.setValue("token", m_token);
+        }
 
-        // Get the name of the FairWind++ configuration file
-        m_mSleep = settings.value("sleep", m_mSleep).toInt();
-
-        // Store the configuration in the settings
-        settings.setValue("sleep", m_mSleep);
-
-        // Get the name of the FairWind++ configuration file
-        m_nRetry = settings.value("retry", m_nRetry).toInt();
-
-        // Store the configuration in the settings
-        settings.setValue("retry", m_nRetry);
-
-        // Get the name of the FairWind++ configuration file
-        m_configuration = QJsonDocument::fromJson(
-                settings.value("configuration",
-                               QJsonDocument(m_configuration).toJson()
-                               ).toString().toUtf8()
-                ).object();
-
-        // Store the configuration in the settings
-        settings.setValue("configuration",
-                          QJsonDocument(m_configuration).toJson()
-                          );
-
+        m_configuration = QJsonDocument::fromJson(configJson.toUtf8()).object();
 
         if (m_debug) {
 
@@ -148,9 +252,9 @@ namespace fairwindsk {
     bool FairWindSK::startSignalK() {
         bool result = false;
 
-        // Check if the Signal K Server url is defined
-        if (!m_signalKServerUrl.isEmpty()) {
+        auto signalKServerUrl = getSignalKServerUrl();
 
+        if (!signalKServerUrl.isEmpty()) {
             // Define the parameters map
             QMap<QString, QVariant> params;
 
@@ -162,23 +266,26 @@ namespace fairwindsk {
             params["debug"] = m_debug;
 
             // Set the url
-            params["url"] = m_signalKServerUrl + "/signalk";
+            params["url"] = signalKServerUrl + "/signalk";
+
+            QString token = getToken();
+            int nRetry = getRetry();
+            int mSleep = getSleep();
 
             // Check if the token is defined or if username/password are defined
-            if (!m_token.isEmpty() || (!m_username.isEmpty() && !m_password.isEmpty())) {
+            if (!token.isEmpty() || (!m_username.isEmpty() && !m_password.isEmpty())) {
 
                 // Check if the token is defined
-                if (!m_token.isEmpty()) {
+                if (!token.isEmpty()) {
 
                     // Set the token
-                    params["token"] = m_token;
+                    params["token"] = token;
                 } else {
 
                     // Set username and password
                     params["username"] = m_username;
                     params["password"] = m_password;
                 }
-
 
                 // Number of connection tentatives
                 int count = 1;
@@ -187,8 +294,9 @@ namespace fairwindsk {
                 do {
 
                     if (m_debug) {
-                        qDebug() << "Trying to connect to the " << m_signalKServerUrl << " Signal K server (" << count
-                                 << "/" << m_nRetry << ")...";
+                        qDebug() << "Trying to connect to the " << signalKServerUrl << " Signal K server ("
+                                 << count
+                                 << "/" << nRetry << ")...";
                     }
 
                     // Try to connect
@@ -211,16 +319,16 @@ namespace fairwindsk {
                     count++;
 
                     // Wait for m_mSleep microseconds
-                    QThread::msleep(m_mSleep);
+                    QThread::msleep(mSleep);
 
                     // Loop until the number of retry
-                } while (count < m_nRetry);
+                } while (count < nRetry);
 
                 if (m_debug) {
                     if (result) {
-                        qDebug() << "Connected to " << m_signalKServerUrl;
+                        qDebug() << "Connected to " << signalKServerUrl;
                     } else {
-                        qDebug() << "No response from the " << m_signalKServerUrl << " Signal K server!";
+                        qDebug() << "No response from the " << signalKServerUrl << " Signal K server!";
                     }
                 }
             }
@@ -248,101 +356,85 @@ namespace fairwindsk {
         // Remove the map content
         m_mapHash2AppItem.empty();
 
-        // Create an entry for the settings app
-        QString settingsString = R"({ "name": "admin" })";
+        // Reset the counter
+        int count = 100;
 
-        // Crete the json document
-        QJsonDocument settingsJsonDocument = QJsonDocument::fromJson(settingsString.toUtf8());
+        auto signalKServerUrl = getSignalKServerUrl();
+        if (!signalKServerUrl.isEmpty()) {
 
-        // Check if the debug is active
-        if (m_debug) {
+            // Set the URL for the application list
+            QUrl url = QUrl(signalKServerUrl + "/skServer/webapps");
 
-            // Show a debug message
-            qDebug() << settingsJsonDocument;
-        }
+            // Create the network access manager
+            QNetworkAccessManager networkAccessManager;
 
-        // Create an application item
-        auto settingsAppItem = new AppItem(settingsJsonDocument.object(), false, 0);
+            // Create the event loop component
+            QEventLoop loop;
 
-        // Add the admin application to the container
-        m_mapHash2AppItem[settingsAppItem->getName()] = settingsAppItem;
+            // Connect the network manager to the event loop
+            connect(&networkAccessManager, &QNetworkAccessManager::finished, &loop,&QEventLoop::quit);
 
-        // Check if the debug is active
-        if (m_debug) {
+            // Create the get request
+            QNetworkReply *reply = networkAccessManager.get(QNetworkRequest(url));
 
-            // Show a debug message
-            qDebug() << "name:" << settingsAppItem->getName() << "url:" << settingsAppItem->getUrl();
-        }
+            // Wait until the request is satisfied
+            loop.exec();
 
-        QString appstoreString = R"({"name": "admin/#/appstore/apps"})";
-        QJsonDocument appstoreJsonDocument = QJsonDocument::fromJson(appstoreString.toUtf8());
-        auto appstoreAppItem = new AppItem(appstoreJsonDocument.object(), false, 0);
-        m_mapHash2AppItem[appstoreAppItem->getName()] = appstoreAppItem;
+            // Check if the response has been successful
+            if (reply->attribute( QNetworkRequest::HttpStatusCodeAttribute ) == 200) {
 
-        // Set the URL for the application list
-        QUrl url = QUrl(m_signalKServerUrl + "/skServer/webapps");
+                // Create a json document with the request response
+                QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
 
-        // Create the network access manager
-        QNetworkAccessManager networkAccessManager;
+                // Check if the debug is active
+                if (m_debug) {
 
-        // Create the event loop component
-        QEventLoop loop;
+                    // Show the document
+                    qDebug() << doc;
+                }
 
-        // Connect the network manager to the event loop
-        connect(&networkAccessManager, &QNetworkAccessManager::finished, &loop,&QEventLoop::quit);
 
-        // Create the get request
-        QNetworkReply *reply = networkAccessManager.get(QNetworkRequest(url));
 
-        // Wait until the request is satisfied
-        loop.exec();
+                // Get the application array
+                auto appsJsonArray = doc.array();
 
-        // Check if the response has been successful
-        if (reply->attribute( QNetworkRequest::HttpStatusCodeAttribute ) == 200) {
+                // For each item of the array...
+                for (auto appJsonItem: appsJsonArray) {
 
-            // Create a json document with the request response
-            QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
+                    // Check if the item is an object
+                    if (appJsonItem.isObject()) {
 
-            // Check if the debug is active
-            if (m_debug) {
+                        // Get the json object
+                        auto appJsonObject = appJsonItem.toObject();
 
-                // Show the document
-                qDebug() << doc;
-            }
+                        // Create the fairwind element if not present or is not an object
+                        if (!appJsonObject.contains("fairwind") ||
+                            (appJsonObject.contains("fairwind") && !appJsonObject["fairwind"].isObject())) {
+                            appJsonObject["fairwind"] = QJsonObject(QJsonDocument::fromJson(
+                                    (QString(R"({ "active": true, "order": %1 })")).arg(
+                                            count).toUtf8()).object());
 
-            // Reset the counter
-            int count = 0;
+                        }
 
-            // Get the application array
-            auto appsJsonArray = doc.array();
+                        // Check if the app is a signalk-webapp
+                        if (appJsonObject.contains("keywords") &&
+                            appJsonObject["keywords"].isArray() &&
+                            appJsonObject["keywords"].toArray().contains("signalk-webapp")) {
 
-            // For each item of the array...
-            for (auto appJsonItem: appsJsonArray) {
+                            // Create an app item object
+                            auto appItem = new AppItem(appJsonObject);
 
-                // Check if the item is an object
-                if (appJsonItem.isObject()) {
+                            // Add the item to the lookup table
+                            m_mapHash2AppItem[appItem->getName()] = appItem;
 
-                    // Get the json object
-                    auto appJsonObject = appJsonItem.toObject();
-
-                    // Check if the app is a signalk-webapp
-                    if (appJsonObject.contains("keywords") &&
-                        appJsonObject["keywords"].isArray() &&
-                        appJsonObject["keywords"].toArray().contains("signalk-webapp")) {
-
-                        // Create an app item object
-                        auto appItem = new AppItem(appJsonObject, true, count);
-
-                        // Add the item to the lookup table
-                        m_mapHash2AppItem[appItem->getName()] = appItem;
-
-                        // Increase the app counter
-                        count++;
+                            // Increase the app counter
+                            count++;
+                        }
                     }
                 }
             }
 
-            // Set the result as successfull
+            // Set the result as successful
             result = true;
         } else {
 
@@ -350,9 +442,41 @@ namespace fairwindsk {
             if (m_debug) {
 
                 // Show a debug message
-                qDebug() << "Troubles on getting apps from " << m_signalKServerUrl;
+                qDebug() << "Troubles on getting apps from " << signalKServerUrl;
             }
         }
+
+
+        auto configuration = getConfiguration();
+        if (configuration.contains("apps") && configuration["apps"].isArray()) {
+            auto appsJsonArray = configuration["apps"].toArray();
+            for (auto app: appsJsonArray) {
+                if (app.isObject()) {
+                    auto appJsonObject = app.toObject();
+                    if (appJsonObject.contains("name") && appJsonObject["name"].isString()) {
+                        auto appName = appJsonObject["name"].toString();
+
+                        if (m_mapHash2AppItem.contains(appName)) {
+
+                            m_mapHash2AppItem[appName]->update(appJsonObject);
+                        } else {
+                            auto appItem = new AppItem(appJsonObject);
+                            if (appItem->getOrder() == 0) {
+                                appItem->setOrder(count);
+                                count++;
+                            }
+                            m_mapHash2AppItem[appName] = appItem;
+
+
+                        }
+                    }
+
+                }
+            }
+        }
+
+        qDebug() << m_mapHash2AppItem.keys();
+
 
         // Return the result
         return result;
@@ -373,7 +497,15 @@ namespace fairwindsk {
     }
 
     QString FairWindSK::getSignalKServerUrl(){
-        return m_signalKServerUrl;
+
+        QString signalKServerUrl = "";
+        if (m_configuration.contains("connection")) {
+            auto connectionJsonObject = m_configuration["connection"].toObject();
+            if (connectionJsonObject.contains("server") & connectionJsonObject["server"].isString()) {
+                signalKServerUrl = connectionJsonObject["server"].toString();
+            }
+        }
+        return signalKServerUrl;
     }
 
     bool FairWindSK::isDebug() const {
@@ -427,35 +559,49 @@ namespace fairwindsk {
     }
 
     QString FairWindSK::getToken() {
-        return m_token;
+        QString token = "";
+        if (m_configuration.contains("connection")) {
+            auto connectionJsonObject = m_configuration["connection"].toObject();
+            if (connectionJsonObject.contains("token") & connectionJsonObject["token"].isString()) {
+                token = connectionJsonObject["token"].toString();
+            }
+        }
+        return token;
     }
 
-    void FairWindSK::setToken(QString token) {
-        m_token = std::move(token);
+    void FairWindSK::setToken(const QString& token) {
 
-        // Initialize the QT managed settings
-        QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
-
-        // Store the configuration in the settings
-        settings.setValue("token", m_token);
+        modifyJsonValue(m_configuration,"connection.token",QJsonValue(token));
+        saveConfig();
     }
 
     int FairWindSK::getSleep() {
-        return m_mSleep;
+        int mSleep = 0;
+
+        if (m_configuration.contains("connection")) {
+            auto connectionJsonObject = m_configuration["connection"].toObject();
+            if (connectionJsonObject.contains("sleep") & connectionJsonObject["sleep"].isDouble()) {
+                mSleep = connectionJsonObject["sleep"].toInt();
+            }
+        }
+        return mSleep;
     }
 
     int FairWindSK::getRetry() {
-        return m_nRetry;
+        int nRetry = 1;
+
+        if (m_configuration.contains("connection")) {
+            auto connectionJsonObject = m_configuration["connection"].toObject();
+            if (connectionJsonObject.contains("retry") & connectionJsonObject["retry"].isDouble()) {
+                nRetry = connectionJsonObject["retry"].toInt();
+            }
+        }
+        return nRetry;
     }
 
-    void FairWindSK::setSignalKServerUrl(QString signalKServerUrl) {
-        m_signalKServerUrl = std::move(signalKServerUrl);
-
-        // Initialize the QT managed settings
-        QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
-
-        // Store the configuration in the settings
-        settings.setValue("signalk-server", m_signalKServerUrl);
+    void FairWindSK::setSignalKServerUrl(const QString& signalKServerUrl) {
+        modifyJsonValue(m_configuration,"connection.server",QJsonValue(signalKServerUrl));
+        saveConfig();
     }
 
     void FairWindSK::setVirtualKeyboard(bool value) {
@@ -493,6 +639,23 @@ namespace fairwindsk {
         return m_configuration["units"].toObject()["distance"].toString();
     }
 
+    void FairWindSK::modifyJsonValue(QJsonObject &obj, const QString &path, const QJsonValue &newValue) {
+        const int indexOfDot = path.indexOf('.');
+        const QString propertyName = path.left(indexOfDot);
+        const QString subPath = indexOfDot > 0 ? path.mid(indexOfDot + 1) : QString();
+
+        QJsonValue subValue = obj[propertyName];
+
+        if (subPath.isEmpty()) {
+            subValue = newValue;
+        } else {
+            QJsonObject obj = subValue.toObject();
+            modifyJsonValue(obj, subPath, newValue);
+            subValue = obj;
+        }
+
+        obj[propertyName] = subValue;
+    }
 
 }
 

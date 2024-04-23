@@ -31,6 +31,7 @@ namespace fairwindsk::ui::web {
         ui->verticalLayout_WebView->addWidget(m_webView);
 
         if (m_appItem) {
+            qDebug() << "::::::::::::: " << m_appItem->getUrl();
             m_webView->load(QUrl(m_appItem->getUrl()));
         }
 

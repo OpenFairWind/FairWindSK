@@ -53,6 +53,7 @@ int main(int argc, char *argv[]) {
     // Get the FairWind singleton
     auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
+
     // Load the configuration inside the FairWind singleton itself
     fairWindSK->loadConfig();
 

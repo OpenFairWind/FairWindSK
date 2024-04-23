@@ -47,12 +47,15 @@ namespace fairwindsk::ui::launcher {
         // Get the FairWind singleton
         auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
+        //qDebug() << "appsHashes: " << fairWindSK->getAppsHashes();
 
         // Populate the inverted list
         for (auto &hash : fairWindSK->getAppsHashes()) {
             // Get the hash value
             auto app = fairWindSK->getAppItemByHash(hash);
             auto position = app->getOrder();
+
+            //qDebug() << "---------AppItem: "  << app->getName() << " IsActive: " << app->getActive() << " order: " << app->getOrder();
 
             // Check if the app is active
             if (app->getActive()) {

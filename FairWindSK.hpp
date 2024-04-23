@@ -32,6 +32,7 @@ namespace fairwindsk {
         QJsonObject getConfiguration();
 
         void loadConfig();
+        void saveConfig();
         bool startSignalK();
         bool loadApps();
 
@@ -47,10 +48,10 @@ namespace fairwindsk {
         bool getVirtualkeyboard();
 
         QString getSignalKServerUrl();
-        void setSignalKServerUrl(QString signalKServerUrl);
+        void setSignalKServerUrl(const QString& signalKServerUrl);
 
         QString getToken();
-        void setToken(QString token);
+        void setToken(const QString& token);
 
         QString getMyDataApp();
         QString getMOBApp();
@@ -67,6 +68,7 @@ namespace fairwindsk {
         static void setVirtualKeyboard(bool value);
         static bool getVirtualKeyboard();
 
+        void modifyJsonValue(QJsonObject &obj, const QString &path, const QJsonValue &newValue);
 
 
     private:
@@ -82,16 +84,19 @@ namespace fairwindsk {
 
         signalk::Client m_signalkClient;
 
-        QString m_signalKServerUrl;
         QString m_username;
         QString m_password;
+        /*
+        QString m_signalKServerUrl;
         QString m_token;
 
         int m_mSleep;
         int m_nRetry;
+         */
 
         bool m_debug;
 
+        QString m_configFilename;
         QJsonObject m_configuration;
 
         QString getAppNameByKeyFromConfiguration(const QString& key);

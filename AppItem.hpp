@@ -19,9 +19,11 @@ namespace fairwindsk {
         public:
             AppItem();
 
-            explicit AppItem(QJsonObject jsonApp, bool active=true, int order=1);
+            explicit AppItem(QJsonObject jsonApp);
 
             AppItem(const AppItem &app);
+
+            void update(QJsonObject jsonApp);
 
             QString getDisplayName();
 
@@ -40,17 +42,21 @@ namespace fairwindsk {
             QString getUrl();
             QPixmap getIcon();
 
-            void setWeb(ui::web::Web *pWeb);
-            ui::web::Web *getWeb();
+            //void setWeb(ui::web::Web *pWeb);
+            //ui::web::Web *getWeb();
+
+            void setWidget(QWidget *pWidget);
+            QWidget *getWidget();
 
             bool operator<(const AppItem& o) const;
 
         private:
             QJsonObject m_jsonApp;
-            bool m_active;
-            int m_order;
+            //bool m_active;
+            //int m_order;
 
-            ui::web::Web *m_pWeb;
+            //ui::web::Web *m_pWeb;
+            QWidget *m_pWidget;
     };
 }
 

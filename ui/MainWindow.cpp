@@ -38,7 +38,7 @@ fairwindsk::ui::MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), u
         qDebug() << "QWenEngineProfile " << m_profile->isOffTheRecord() << " data store: " << m_profile->persistentStoragePath();
     }
 
-    // Setup the UI
+    // Set up the UI
     ui->setupUi(this);
 
     // Create the TopBar object
@@ -69,6 +69,7 @@ fairwindsk::ui::MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), u
     // Show the settings view when the user clicks on the Settings button inside the BottomBar object
     QObject::connect(m_topBar, &topbar::TopBar::clickedToolbuttonUL, this, &MainWindow::onUpperLeft);
 
+    /*
     // Check if the server url or token are undefined
     if (fairWindSK->getSignalKServerUrl().isEmpty() || fairWindSK->getToken().isEmpty()) {
 
@@ -87,7 +88,7 @@ fairwindsk::ui::MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), u
         ui->stackedWidget_Center->addWidget(settings);
 
     } else {
-
+    */
         // Create the launcher
         m_launcher = new fairwindsk::ui::launcher::Launcher();
 
@@ -101,19 +102,9 @@ fairwindsk::ui::MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), u
         // Preload a web application
         setForegroundApp("admin");
 
-        // Check if the helper app is installed
-        if (fairWindSK->getConfiguration().isEmpty()) {
-
-            // Open the app store
-            setForegroundApp("admin/#/appstore/apps");
-
-        } else {
-
-            // Show the launcher
-            onApps();
-        }
-
-    }
+        // Show the launcher
+        onApps();
+    //}
 
     // Show the window fullscreen
     QTimer::singleShot(0, this, SLOT(showFullScreen()));
@@ -182,15 +173,20 @@ void fairwindsk::ui::MainWindow::setForegroundApp(QString hash) {
         // If yes, get its widget from mapWidgets
         widgetApp = m_mapHash2Widget[hash];
     } else {
+        if (appItem->getName() == "__SETTINGS__") {
 
-        auto web = new fairwindsk::ui::web::Web(nullptr,appItem, m_profile);
+            widgetApp = new Settings();
+
+        } else {
+            // Create a new web instance
+            auto web = new fairwindsk::ui::web::Web(nullptr, appItem, m_profile);
+
+            // Get the app widget
+            widgetApp = web;
+        }
 
         // Register the web widget
-        appItem->setWeb(web);
-
-        // Get the app widget
-        widgetApp = web;
-
+        appItem->setWidget(widgetApp);
 
         // Check if the widget is valid
         if (widgetApp) {
@@ -217,8 +213,6 @@ void fairwindsk::ui::MainWindow::setForegroundApp(QString hash) {
         // Set the current app in ui components
         m_topBar->setCurrentApp(m_currentApp);
     }
-
-    //showFullScreen();
 }
 
 /*
@@ -234,8 +228,6 @@ void fairwindsk::ui::MainWindow::onApps() {
 
     // Set the current app in ui components
     m_topBar->setCurrentApp(m_currentApp);
-
-    //showFullScreen();
 }
 
 /*
@@ -282,7 +274,8 @@ void fairwindsk::ui::MainWindow::onAlarms() {
  */
 void fairwindsk::ui::MainWindow::onSettings() {
     auto fairWindSK = FairWindSK::getInstance();
-    auto app = fairWindSK->getSettingsApp();
+    //auto app = fairWindSK->getSettingsApp();
+    QString app = "__SETTINGS__";
     if (!app.isEmpty() && fairWindSK->getAppsHashes().contains(app)) {
         setForegroundApp(app);
     }
