@@ -57,7 +57,7 @@
       </layout>
      </item>
      <item>
-      <layout class="QVBoxLayout" name="verticalLayout_Buttons" stretch="0,0,0,0,0">
+      <layout class="QVBoxLayout" name="verticalLayout_Buttons" stretch="0,0,0,0,0,0">
        <property name="spacing">
         <number>0</number>
        </property>
@@ -75,10 +75,20 @@
          <property name="text">
           <string>Home</string>
          </property>
+         <property name="icon">
+        <iconset>
+         <normaloff>:/resources/images/web/home.png</normaloff>:/resources/images/web/home.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>32</width>
+         <height>32</height>
+        </size>
+       </property>
         </widget>
        </item>
        <item>
-        <widget class="QToolButton" name="toolButton_Prev">
+        <widget class="QToolButton" name="toolButton_Back">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -88,10 +98,20 @@
          <property name="text">
           <string>&lt;</string>
          </property>
+         <property name="icon">
+        <iconset>
+         <normaloff>:/resources/images/web/back.png</normaloff>:/resources/images/web/back.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>32</width>
+         <height>32</height>
+        </size>
+       </property>
         </widget>
        </item>
        <item>
-        <widget class="QToolButton" name="toolButton_Next">
+        <widget class="QToolButton" name="toolButton_Forward">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -101,6 +121,16 @@
          <property name="text">
           <string>&gt;</string>
          </property>
+         <property name="icon">
+        <iconset>
+         <normaloff>:/resources/images/web/forward.png</normaloff>:/resources/images/web/forward.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>32</width>
+         <height>32</height>
+        </size>
+       </property>
         </widget>
        </item>
        <item>
@@ -114,6 +144,39 @@
          <property name="text">
           <string>Reload</string>
          </property>
+         <property name="icon">
+        <iconset>
+         <normaloff>:/resources/images/web/reload.png</normaloff>:/resources/images/web/reload.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>32</width>
+         <height>32</height>
+        </size>
+       </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QToolButton" name="toolButton_Settings">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>Settings</string>
+         </property>
+         <property name="icon">
+        <iconset>
+         <normaloff>:/resources/images/web/wheel.png</normaloff>:/resources/images/web/wheel.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>32</width>
+         <height>32</height>
+        </size>
+       </property>
         </widget>
        </item>
        <item>
