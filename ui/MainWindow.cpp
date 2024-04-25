@@ -7,6 +7,7 @@
 #include <QNetworkCookie>
 #include <QWebEngineCookieStore>
 #include <QMessageBox>
+#include <QProcess>
 
 #include "MainWindow.hpp"
 #include "ui/topbar/TopBar.hpp"
@@ -176,6 +177,20 @@ void fairwindsk::ui::MainWindow::setForegroundApp(QString hash) {
         if (appItem->getName() == "__SETTINGS__") {
 
             widgetApp = new Settings();
+
+        } else if (appItem->getName().startsWith("file://")) {
+            //https://forum.qt.io/topic/44091/embed-an-application-inside-a-qt-window-solved/16
+            qDebug() << appItem->getName() << " is a native app!";
+
+            auto process = new QProcess(this);
+            QString program = appItem->getName().replace("file://","");
+            QStringList arguments;
+            process->setProgram(program);
+            WId winid = this->winId();
+            //arguments << "-wid" << QString::number(winid) << "-fullscreen";
+            //qDebug() << arguments;
+            process->setArguments(arguments);
+            process->start();
 
         } else {
             // Create a new web instance
