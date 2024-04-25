@@ -79,6 +79,9 @@ namespace fairwindsk::ui::launcher {
             // Set the app's name as the button's text
             button->setText(appItem->getDisplayName());
 
+            // Set the tool tip
+            button->setToolTip(appItem->getDescription());
+
             // Get the application icon
             QPixmap pixmap = appItem->getIcon();
 
