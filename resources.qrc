@@ -27,6 +27,11 @@
         <file>resources/images/icons/apps_icon.png</file>
         <file>resources/images/icons/webapp-256x256.png</file>
 
+        <file>resources/images/web/home.png</file>
+        <file>resources/images/web/back.png</file>
+        <file>resources/images/web/forward.png</file>
+        <file>resources/images/web/reload.png</file>
+        <file>resources/images/web/wheel.png</file>
 
 	
 
