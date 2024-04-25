@@ -22,7 +22,10 @@ namespace fairwindsk::ui::web {
         showButtons(false);
 
         connect(ui->toolButton_Home, &QToolButton::clicked, this, &Web::toolButton_home_clicked);
-
+        connect(ui->toolButton_Back, &QToolButton::clicked, this, &Web::toolButton_back_clicked);
+        connect(ui->toolButton_Forward, &QToolButton::clicked, this, &Web::toolButton_forward_clicked);
+        connect(ui->toolButton_Reload, &QToolButton::clicked, this, &Web::toolButton_reload_clicked);
+        connect(ui->toolButton_Settings, &QToolButton::clicked, this, &Web::toolButton_settings_clicked);
 
         m_webView = new WebView(profile,(QWidget *)this);
 
@@ -78,6 +81,22 @@ namespace fairwindsk::ui::web {
 
     void Web::goHome() {
         m_webView->setUrl(m_appItem->getUrl());
+    }
+
+    void Web::toolButton_back_clicked() {
+        m_webView->back();
+    }
+
+    void Web::toolButton_forward_clicked() {
+        m_webView->forward();
+    }
+
+    void Web::toolButton_reload_clicked() {
+        m_webView->reload();
+    }
+
+    void Web::toolButton_settings_clicked() {
+        m_webView->setUrl(FairWindSK::getInstance()->getSignalKServerUrl()+"/admin/#/serverConfiguration/plugins/" + m_appItem->getName());
     }
 
     void Web::handleWebViewLoadProgress(int progress) {

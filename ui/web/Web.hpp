@@ -39,6 +39,10 @@ namespace fairwindsk::ui::web {
 
     public slots:
         void toolButton_home_clicked();
+        void toolButton_back_clicked();
+        void toolButton_forward_clicked();
+        void toolButton_reload_clicked();
+        void toolButton_settings_clicked();
 
     private slots:
         void handleWebViewLoadProgress(int);
