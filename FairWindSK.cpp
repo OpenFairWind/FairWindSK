@@ -183,6 +183,20 @@ namespace fairwindsk {
                 "appIcon": "file://icons/sailgauge_icon.png"
             }
         },
+
+            "description": "OpenCPN Open Source Chart Plotter",
+            "fairwind": {
+                "active": true,
+                "arguments": [
+                    "-fullscreen"
+                ]
+            },
+            "name": "file:///Applications/OpenCPN.app/Contents/MacOS/OpenCPN",
+            "signalk": {
+                "appIcon": "file:///Applications/OpenCPN.app/Contents/SharedSupport/opencpn.png",
+                "displayName": "OpenCPN"
+            }
+        },
         {
             "name": "admin",
             "fairwind": {
@@ -197,6 +211,9 @@ namespace fairwindsk {
         },
         {
             "name": "__SETTINGS__",
+            "signalk": {
+                "displayName": "Settings"
+            },
             "fairwind": {
                 "active": false
             }
