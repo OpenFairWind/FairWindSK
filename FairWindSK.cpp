@@ -163,6 +163,20 @@ namespace fairwindsk {
             }
         },
         {
+            "name": "signalk-multiplex-viewer",
+            "signalk": {
+                "displayName": "Signal K Multiplex Viewer",
+                "appIcon": "file://icons/signalkmultiplexviewer_icon.png"
+            }
+        },
+        {
+            "name": "signalk-browser",
+            "signalk": {
+                "displayName": "Signal K Browser",
+                "appIcon": "file://icons/signalkbrowser_icon.png"
+            }
+        },
+        {
             "name": "@signalk/sailgauge",
             "signalk": {
                 "displayName": "Sail Gauge",
@@ -189,6 +203,7 @@ namespace fairwindsk {
         },
         {
             "name": "http:///",
+            "description": "Signal K Server",
             "signalk": {
                 "displayName": "Signal K",
                 "appIcon": "file://icons/signalkserver_icon.png"
@@ -200,6 +215,7 @@ namespace fairwindsk {
         },
         {
             "name": "http://spotify.com",
+            "description": "Spotify web application",
             "signalk": {
                 "displayName": "Spotify",
                 "appIcon": "file://icons/spotify_icon.png"
@@ -210,6 +226,7 @@ namespace fairwindsk {
         },
         {
             "name": "http://netflix.com",
+            "description": "Netflix web application",
             "signalk": {
                 "displayName": "Netflix",
                 "appIcon": "file://icons/netflix_icon.png"
@@ -220,6 +237,7 @@ namespace fairwindsk {
         },
         {
             "name": "http://youtube.com",
+            "description": "Youtube web application",
             "signalk": {
                 "displayName": "Youtube",
                 "appIcon": "file://icons/youtube_icon.png"
