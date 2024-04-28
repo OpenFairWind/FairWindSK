@@ -8,6 +8,7 @@
 #include <QWebEngineCookieStore>
 #include <QMessageBox>
 #include <QProcess>
+#include <QWindow>
 
 #include "MainWindow.hpp"
 #include "ui/topbar/TopBar.hpp"
@@ -180,17 +181,28 @@ void fairwindsk::ui::MainWindow::setForegroundApp(QString hash) {
 
         } else if (appItem->getName().startsWith("file://")) {
             //https://forum.qt.io/topic/44091/embed-an-application-inside-a-qt-window-solved/16
+            //https://forum.qt.io/topic/101510/calling-a-process-in-the-main-app-and-return-the-process-s-window-id
             qDebug() << appItem->getName() << " is a native app!";
+
 
             auto process = new QProcess(this);
             QString program = appItem->getName().replace("file://","");
-            QStringList arguments;
+            auto arguments = appItem->getArguments();
             process->setProgram(program);
             WId winid = this->winId();
-            //arguments << "-wid" << QString::number(winid) << "-fullscreen";
-            //qDebug() << arguments;
+
+            //arguments << "-wid" << QString::number(winid);
+            qDebug() << arguments;
             process->setArguments(arguments);
             process->start();
+
+
+            /*
+            QWindow *window = QWindow::fromWinId(1130);
+            window->setFlags(Qt::FramelessWindowHint);
+
+            widgetApp = QWidget::createWindowContainer(window);
+             */
 
         } else {
             // Create a new web instance

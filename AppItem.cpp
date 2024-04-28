@@ -42,9 +42,27 @@ namespace fairwindsk {
      */
     void AppItem::setOrder(int order) {
 
-        auto s = QString(R"({ "active": %1, "order": %2 })").arg(getActive() ? "true":"false").arg(order);
-        m_jsonApp["fairwind"] = QJsonDocument::fromJson(s.toUtf8()).object();
+        // Set the order value
+        modifyJsonValue(m_jsonApp,"fairwind.order", order);
 
+    }
+
+    void AppItem::modifyJsonValue(QJsonObject &obj, const QString &path, const QJsonValue &newValue) {
+        const int indexOfDot = path.indexOf('.');
+        const QString propertyName = path.left(indexOfDot);
+        const QString subPath = indexOfDot > 0 ? path.mid(indexOfDot + 1) : QString();
+
+        QJsonValue subValue = obj[propertyName];
+
+        if (subPath.isEmpty()) {
+            subValue = newValue;
+        } else {
+            QJsonObject obj = subValue.toObject();
+            modifyJsonValue(obj, subPath, newValue);
+            subValue = obj;
+        }
+
+        obj[propertyName] = subValue;
     }
 
     /*
@@ -61,7 +79,7 @@ namespace fairwindsk {
         }
      */
     void AppItem::update(QJsonObject jsonApp) {
-        qDebug() << "++++++++++++++++++++++++++++++++ update! " << getName();
+
 
         QJsonObject jsonSignalk(m_jsonApp["signalk"].toObject());
         auto srcSignalk = jsonApp["signalk"].toObject();
@@ -72,43 +90,14 @@ namespace fairwindsk {
         QJsonObject jsonFairwind(m_jsonApp["fairwind"].toObject());
         auto srcFairwind = jsonApp["fairwind"].toObject();
         for (auto it = srcFairwind.constBegin(); it != srcFairwind.constEnd(); it++) {
+
             jsonFairwind.insert(it.key(), it.value());
         }
 
         m_jsonApp.insert("signalk",jsonSignalk);
         m_jsonApp.insert("fairwind",jsonFairwind);
 
-        /*
-        if (jsonApp.contains("signalk") && jsonApp["signalk"].isObject()) {
-            auto jsonAppSignalKJsonObject = jsonApp["signalk"].toObject();
-            if (m_jsonApp.contains("signalk") && m_jsonApp["signalk"].isObject()) {
-                auto mJsonAppSignalKJsonObject = m_jsonApp["signalk"].toObject();
-                if (jsonAppSignalKJsonObject.contains("displayName") && jsonAppSignalKJsonObject["displayName"].isString()) {
-                    mJsonAppSignalKJsonObject["displayName"] = jsonAppSignalKJsonObject["displayName"].toString();
-                }
-                if (jsonAppSignalKJsonObject.contains("appIcon") && jsonAppSignalKJsonObject["appIcon"].isString()) {
-                    mJsonAppSignalKJsonObject["appIcon"] = jsonAppSignalKJsonObject["appIcon"].toString();
-                }
-                m_jsonApp.insert("signalk",mJsonAppSignalKJsonObject);
-            }
-        }
 
-        if (jsonApp.contains("fairwind") && jsonApp["fairwind"].isObject()) {
-            auto jsonAppSignalKJsonObject = jsonApp["fairwind"].toObject();
-            if (m_jsonApp.contains("fairwind") && m_jsonApp["fairwind"].isObject()) {
-                auto mJsonAppSignalKJsonObject = m_jsonApp["fairwind"].toObject();
-                if (jsonAppSignalKJsonObject.contains("active") && jsonAppSignalKJsonObject["active"].isBool()) {
-                    mJsonAppSignalKJsonObject["active"] = jsonAppSignalKJsonObject["active"].toBool();
-                }
-                if (jsonAppSignalKJsonObject.contains("order") && jsonAppSignalKJsonObject["order"].isDouble()) {
-                    mJsonAppSignalKJsonObject["order"] = jsonAppSignalKJsonObject["order"].toInt();
-                }
-
-                m_jsonApp.insert("fairwind",mJsonAppSignalKJsonObject);
-            }
-        }
-        */
-        qDebug() << m_jsonApp;
     }
 
     /*
@@ -130,8 +119,9 @@ namespace fairwindsk {
      * Sets the app's active state
      */
     void AppItem::setActive(bool active) {
-        auto s = QString(R"({ "active": %1, "order": %2 })").arg(active ? "true":"false").arg(getOrder());
-        m_jsonApp["fairwind"] = QJsonDocument::fromJson(s.toUtf8()).object();
+
+        // Set the active value
+        modifyJsonValue(m_jsonApp,"fairwind.order", active);
     }
 
     /*
@@ -344,5 +334,23 @@ namespace fairwindsk {
     bool AppItem::operator<(const AppItem &o) const {
         return int(m_jsonApp["fairwind"].toObject()["order"].toDouble()) < int(o.m_jsonApp["fairwind"].toObject()["order"].toDouble());
         //return std::tie(int(m_jsonApp["fairwind"].toObject()["order"].toDouble())) < std::tie(int(o.m_jsonApp["fairwind"].toObject()["order"].toDouble()));
+    }
+
+    QStringList AppItem::getArguments() {
+        QStringList result;
+        if (m_jsonApp.contains("fairwind") && m_jsonApp["fairwind"].isObject()) {
+            auto fairWindJsonObject = m_jsonApp["fairwind"].toObject();
+            qDebug() << fairWindJsonObject.keys();
+
+            if (fairWindJsonObject.contains("arguments") && fairWindJsonObject["arguments"].isArray()) {
+                auto argumentsJsonArray = fairWindJsonObject["arguments"].toArray();
+                for (auto argument: argumentsJsonArray) {
+                    if (argument.isString()) {
+                        result.append(argument.toString());
+                    }
+                }
+            }
+        }
+        return result;
     }
 }

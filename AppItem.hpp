@@ -42,11 +42,15 @@ namespace fairwindsk {
             QString getUrl();
             QPixmap getIcon();
 
+            QStringList getArguments();
+
             //void setWeb(ui::web::Web *pWeb);
             //ui::web::Web *getWeb();
 
             void setWidget(QWidget *pWidget);
             QWidget *getWidget();
+
+            void modifyJsonValue(QJsonObject &obj, const QString &path, const QJsonValue &newValue);
 
             bool operator<(const AppItem& o) const;
 
