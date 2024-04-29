@@ -6,47 +6,288 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>786</width>
-    <height>504</height>
+    <width>627</width>
+    <height>524</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Settings</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout_2">
+  <layout class="QGridLayout" name="gridLayout_Settings">
    <item row="0" column="0">
     <layout class="QVBoxLayout" name="verticalLayout">
      <item>
       <widget class="QTabWidget" name="tabWidget">
        <property name="currentIndex">
-        <number>0</number>
+        <number>3</number>
        </property>
        <widget class="QWidget" name="tab_main">
         <attribute name="title">
          <string>Main</string>
         </attribute>
-        <layout class="QGridLayout" name="gridLayout_1">
+        <layout class="QGridLayout" name="gridLayout_Main">
+         <item row="1" column="0">
+          <widget class="QGroupBox" name="groupBox_Units">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="title">
+            <string>Units</string>
+           </property>
+           <layout class="QGridLayout" name="gridLayout_Units">
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_Units_BoatSpeed">
+              <property name="text">
+               <string>Boat Speed</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="label_Units_WindSpeed">
+              <property name="text">
+               <string>Wind Speed</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="label_Units_Distance">
+              <property name="text">
+               <string>Distance</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="0">
+             <widget class="QLabel" name="label_Units_Depth">
+              <property name="text">
+               <string>Depth</string>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="0">
+             <widget class="QLabel" name="label_Units_AirTemperature">
+              <property name="text">
+               <string>Air Temperature</string>
+              </property>
+             </widget>
+            </item>
+            <item row="5" column="0">
+             <widget class="QLabel" name="label_Units_AirPressure">
+              <property name="text">
+               <string>Air Pressure</string>
+              </property>
+             </widget>
+            </item>
+            <item row="6" column="0">
+             <widget class="QLabel" name="label_Units_WaterTemperature">
+              <property name="text">
+               <string>Water Temperature</string>
+              </property>
+             </widget>
+            </item>
             <item row="0" column="1">
-      <widget class="QLabel" name="label_virtualkeyboard">
-       <property name="text">
-        <string>Use Virtual Keyboard</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="2">
-      <widget class="QCheckBox" name="checkBox_virtualkeboard">
-       <property name="text">
-        <string/>
-       </property>
-      </widget>
-     </item>
+             <widget class="QComboBox" name="comboBox_Units_BoatSpeed">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <item>
+               <property name="text">
+                <string>Kilometers per hour (Km/h)</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Meters per second (m/s)</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Miles per hpur (mph)</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Knots (kn)</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QComboBox" name="comboBox_Units_WindSpeed">
+              <item>
+               <property name="text">
+                <string>Kilometers per hour (Km/h)</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Meters per second (m/s)</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Miles per hpur (mph)</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Knots (kn)</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QComboBox" name="comboBox_Units_Distance">
+              <item>
+               <property name="text">
+                <string>Kilometers (Km)</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Meters (m)</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Miles (ml)</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Nautical Miles (nm)</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="QComboBox" name="comboBox_Units_Depth">
+              <item>
+               <property name="text">
+                <string>Meters (m)</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Fathoms (ftm)</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Feet (ft)</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item row="4" column="1">
+             <widget class="QComboBox" name="comboBox_Units_AirTemperature">
+              <item>
+               <property name="text">
+                <string>Kelvin Degrees (°K)</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Celsius Degrees (°C)</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Fahrenheit Degrees (°F)</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item row="5" column="1">
+             <widget class="QComboBox" name="comboBox_Units_AirPressure">
+              <item>
+               <property name="text">
+                <string>HectoPascal (HPa)</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Millibar (Mb)</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Pounds per Square Inches (PSI)</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Millimeter of Mercury (mmHg)</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item row="6" column="1">
+             <widget class="QComboBox" name="comboBox_Units_WaterTemperature">
+              <item>
+               <property name="text">
+                <string>Kelvin Degrees (°K)</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Celsius Degrees (°C)</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Fahrenheit Degrees (°F)</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QGroupBox" name="groupBox_Devices">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="title">
+            <string>Devices</string>
+           </property>
+           <layout class="QGridLayout" name="gridLayout_Devices">
+            <property name="spacing">
+             <number>0</number>
+            </property>
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_virtualkeyboard">
+              <property name="text">
+               <string>Use Virtual Keyboard</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QCheckBox" name="checkBox_virtualkeboard">
+              <property name="text">
+               <string/>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
         </layout>
        </widget>
        <widget class="QWidget" name="tab_connection">
         <attribute name="title">
          <string>Connection</string>
         </attribute>
-        <layout class="QGridLayout" name="gridLayout_3">
+        <layout class="QGridLayout" name="gridLayout_Connection">
          <item row="2" column="1">
           <widget class="QPushButton" name="pushButton_connect">
            <property name="text">
@@ -141,11 +382,375 @@
         <attribute name="title">
          <string>Signal K</string>
         </attribute>
+        <layout class="QGridLayout" name="gridLayout_SignalK">
+         <item row="0" column="0">
+          <widget class="QGroupBox" name="groupBox_SignalK_Paths">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="title">
+            <string>Paths</string>
+           </property>
+           <layout class="QGridLayout" name="gridLayout_2">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <property name="spacing">
+             <number>0</number>
+            </property>
+            <item row="0" column="0">
+             <widget class="QScrollArea" name="scrollArea_SignalK">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="horizontalScrollBarPolicy">
+               <enum>Qt::ScrollBarAlwaysOff</enum>
+              </property>
+              <property name="widgetResizable">
+               <bool>true</bool>
+              </property>
+              <widget class="QWidget" name="scrollAreaWidgetContents">
+               <property name="geometry">
+                <rect>
+                 <x>0</x>
+                 <y>0</y>
+                 <width>547</width>
+                 <height>448</height>
+                </rect>
+               </property>
+               <layout class="QGridLayout" name="gridLayout_SignalK_Paths">
+                <property name="horizontalSpacing">
+                 <number>-1</number>
+                </property>
+                <item row="8" column="0">
+                 <widget class="QLabel" name="label_SignalK_WPT">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text">
+                   <string>Waypoint Info (WPT)</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="6" column="1">
+                 <widget class="QLineEdit" name="lineEdit_SignalK_STW"/>
+                </item>
+                <item row="12" column="0">
+                 <widget class="QLabel" name="label_SignalK_ETA">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text">
+                   <string>Estimated Time of Arrival (ETA)</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="5" column="0">
+                 <widget class="QLabel" name="label_SignalK_HDG">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text">
+                   <string>Heading (HDG)</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="7" column="0">
+                 <widget class="QLabel" name="label_SignalK_DPT">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text">
+                   <string>Depth (DPT)</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="11" column="0">
+                 <widget class="QLabel" name="label_SignalK_TTG">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text">
+                   <string>Time To Go (TTG)</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="10" column="1">
+                 <widget class="QLineEdit" name="lineEdit_SignalK_DTG"/>
+                </item>
+                <item row="13" column="0">
+                 <widget class="QLabel" name="label_SignalK_XTE">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text">
+                   <string>Cross Track Error (XTE)</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="1">
+                 <widget class="QLineEdit" name="lineEdit_SignalK_COG"/>
+                </item>
+                <item row="12" column="1">
+                 <widget class="QLineEdit" name="lineEdit_SignalK_ETA"/>
+                </item>
+                <item row="2" column="0">
+                 <widget class="QLabel" name="label_SignalK_COG">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text">
+                   <string>Course Over Ground (COG)</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="8" column="1">
+                 <widget class="QLineEdit" name="lineEdit_SignalK_WPT"/>
+                </item>
+                <item row="7" column="1">
+                 <widget class="QLineEdit" name="lineEdit_SignalK_DPT"/>
+                </item>
+                <item row="1" column="0">
+                 <widget class="QLabel" name="label_SignalK_Position">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text">
+                   <string>Position (POS)</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="4" column="0">
+                 <widget class="QLabel" name="label_SignalK_SOG">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text">
+                   <string>Speed Over Ground (SOG)</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="5" column="1">
+                 <widget class="QLineEdit" name="lineEdit_SignalK_HDG"/>
+                </item>
+                <item row="13" column="1">
+                 <widget class="QLineEdit" name="lineEdit_SignalK_XTE"/>
+                </item>
+                <item row="6" column="0">
+                 <widget class="QLabel" name="label_SignalK_STW">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text">
+                   <string>Speed Through Water (STW)</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="10" column="0">
+                 <widget class="QLabel" name="label_SignalK_DTG">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text">
+                   <string>Distance To Go (DTG)</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="4" column="1">
+                 <widget class="QLineEdit" name="lineEdit_SignalK_SOG"/>
+                </item>
+                <item row="9" column="1">
+                 <widget class="QLineEdit" name="lineEdit_SignalK_BTW"/>
+                </item>
+                <item row="3" column="1">
+                 <widget class="QLineEdit" name="lineEdit_SignalK_SOG"/>
+                </item>
+                <item row="11" column="1">
+                 <widget class="QLineEdit" name="lineEdit_SignalK_TTG"/>
+                </item>
+                <item row="1" column="1">
+                 <widget class="QLineEdit" name="lineEdit_SignalK_Position">
+                  <property name="text">
+                   <string/>
+                  </property>
+                 </widget>
+                </item>
+                <item row="14" column="0">
+                 <widget class="QLabel" name="label_SignalK_VMG">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text">
+                   <string>Velocity Made Good (VMG)</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="3" column="0">
+                 <widget class="QLabel" name="label_SignalK_SOG">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text">
+                   <string>Speed Over Ground (SOG)</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="9" column="0">
+                 <widget class="QLabel" name="label_SignalK_SOG">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text">
+                   <string>Bearing to Waypoint (BTW)</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="14" column="1">
+                 <widget class="QLineEdit" name="lineEdit_SignalK_VMG"/>
+                </item>
+               </layout>
+              </widget>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+        </layout>
        </widget>
        <widget class="QWidget" name="tab_apps">
         <attribute name="title">
          <string>Apps</string>
         </attribute>
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <item>
+          <layout class="QVBoxLayout" name="verticalLayout_Apps_List">
+           <property name="spacing">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="QListWidget" name="listWidget_Apps_List">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="horizontalScrollBarPolicy">
+              <enum>Qt::ScrollBarAlwaysOff</enum>
+             </property>
+             <property name="dragEnabled">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_Apps_List_Buttons">
+             <property name="spacing">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QToolButton" name="toolButton_Up">
+               <property name="text">
+                <string>/\</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QToolButton" name="toolButton_Add">
+               <property name="text">
+                <string>+</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QToolButton" name="toolButton_Remove">
+               <property name="text">
+                <string>-</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QToolButton" name="toolButton_Down">
+               <property name="text">
+                <string>\/</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="groupBox_Apps_Details">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="title">
+            <string>Detail</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </widget>
       </widget>
      </item>

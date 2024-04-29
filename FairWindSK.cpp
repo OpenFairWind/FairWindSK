@@ -121,7 +121,9 @@ namespace fairwindsk {
         "vesselSpeed": "kn",
         "windSpeed": "kn",
         "distance": "nm",
-        "depth": "m"
+        "depth": "m",
+        "airTemperature": "C",
+        "airPressure": "HPa"
     },
     "apps": [
         {
