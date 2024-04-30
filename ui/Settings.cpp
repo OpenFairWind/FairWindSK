@@ -18,6 +18,50 @@ namespace fairwindsk::ui {
 
         auto fairWindSK = FairWindSK::getInstance();
 
+        // Order by order value
+        QMap<int, QPair<AppItem *, QString>> map;
+
+        // Populate the inverted list
+        for (auto &hash : fairWindSK->getAppsHashes()) {
+            // Get the hash value
+            auto app = fairWindSK->getAppItemByHash(hash);
+            auto position = app->getOrder();
+
+            map[position] = QPair<AppItem *, QString>(app, hash);
+        }
+
+        // Iterate on the available apps' hash values
+        for (const auto& item: map) {
+            // Get the hash value
+            auto appItem = item.first;
+            auto name = item.second;
+            auto listWidgetItem = new QListWidgetItem(appItem->getDisplayName());
+            listWidgetItem->setIcon(QIcon(appItem->getIcon()));
+            listWidgetItem->setToolTip(appItem->getDescription());
+            listWidgetItem->setData(Qt::UserRole, name);
+            if (appItem->getActive()) {
+                listWidgetItem->setCheckState(Qt::Checked);
+            } else {
+                listWidgetItem->setCheckState(Qt::Unchecked);
+            }
+            ui->listWidget_Apps_List->addItem(listWidgetItem);
+        }
+
+        auto signalKJsonObject = fairWindSK->getConfiguration()["signalk"].toObject();
+        ui->lineEdit_SignalK_POS->setText(signalKJsonObject["pos"].toString());
+        ui->lineEdit_SignalK_SOG->setText(signalKJsonObject["sog"].toString());
+        ui->lineEdit_SignalK_COG->setText(signalKJsonObject["cog"].toString());
+        ui->lineEdit_SignalK_HDG->setText(signalKJsonObject["hdg"].toString());
+        ui->lineEdit_SignalK_STW->setText(signalKJsonObject["stw"].toString());
+        ui->lineEdit_SignalK_DPT->setText(signalKJsonObject["dpt"].toString());
+        ui->lineEdit_SignalK_WPT->setText(signalKJsonObject["wpt"].toString());
+        ui->lineEdit_SignalK_BTW->setText(signalKJsonObject["btw"].toString());
+        ui->lineEdit_SignalK_DTG->setText(signalKJsonObject["dtg"].toString());
+        ui->lineEdit_SignalK_ETA->setText(signalKJsonObject["eta"].toString());
+        ui->lineEdit_SignalK_TTG->setText(signalKJsonObject["ttg"].toString());
+        ui->lineEdit_SignalK_XTE->setText(signalKJsonObject["xte"].toString());
+        ui->lineEdit_SignalK_VMG->setText(signalKJsonObject["vmg"].toString());
+
         // Hide the restart button
         ui->pushButton_restart->setVisible(false);
 
