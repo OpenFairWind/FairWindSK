@@ -212,15 +212,6 @@ namespace fairwindsk {
             }
         },
         {
-            "name": "__SETTINGS__",
-            "signalk": {
-                "displayName": "Settings"
-            },
-            "fairwind": {
-                "active": false
-            }
-        },
-        {
             "name": "http:///",
             "description": "Signal K Server",
             "signalk": {
