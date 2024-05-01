@@ -11,19 +11,20 @@
         <file>resources/images/other/carbon_base.png</file>
         <file>resources/images/other/splash_logo.png</file>
 
-        <file>resources/images/icons/toolbutton_cancel.png</file>
-        <file>resources/images/icons/toolbutton_save.png</file>
-        <file>resources/images/icons/toolbutton_remove.png</file>
-        <file>resources/images/icons/toolbutton_left.png</file>
-        <file>resources/images/icons/toolbutton_right.png</file>
+        <file>resources/images/settings/toolbutton_cancel.png</file>
+        <file>resources/images/settings/toolbutton_save.png</file>
+        <file>resources/images/settings/toolbutton_remove.png</file>
+        <file>resources/images/launcher/toolbutton_left.png</file>
+        <file>resources/images/launcher/toolbutton_right.png</file>
 
-        <file>resources/images/icons/imagebutton_mydata.png</file>
-        <file>resources/images/icons/imagebutton_mob.png</file>
-        <file>resources/images/icons/imagebutton_apps.png</file>
-        <file>resources/images/icons/imagebutton_alarms.png</file>
-        <file>resources/images/icons/imagebutton_settings.png</file>
+        <file>resources/images/bottombar/imagebutton_mydata.png</file>
+        <file>resources/images/bottombar/imagebutton_mob.png</file>
+        <file>resources/images/bottombar/imagebutton_apps.png</file>
+        <file>resources/images/bottombar/imagebutton_alarms.png</file>
+        <file>resources/images/bottombar/imagebutton_settings.png</file>
 
-        <file>resources/images/icons/fairwind_icon.png</file>
+        <file>resources/images/mainwindow/fairwind_icon.png</file>
+
         <file>resources/images/icons/apps_icon.png</file>
         <file>resources/images/icons/webapp-256x256.png</file>
 
