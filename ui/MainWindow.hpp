@@ -13,6 +13,7 @@
 
 #include <FairWindSK.hpp>
 #include "ui_MainWindow.h"
+#include "Settings.hpp"
 
 #include <ui/topbar/TopBar.hpp>
 #include <ui/launcher/Launcher.hpp>
@@ -58,6 +59,7 @@ namespace fairwindsk::ui {
 
 
         void onAboutAccepted(about::About *aboutPage);
+        void onSettingsAccepted(Settings *settingPage);
 
 
 

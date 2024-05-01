@@ -71,42 +71,23 @@ fairwindsk::ui::MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), u
     // Show the settings view when the user clicks on the Settings button inside the BottomBar object
     QObject::connect(m_topBar, &topbar::TopBar::clickedToolbuttonUL, this, &MainWindow::onUpperLeft);
 
-    /*
-    // Check if the server url or token are undefined
-    if (fairWindSK->getSignalKServerUrl().isEmpty() || fairWindSK->getToken().isEmpty()) {
 
-        // Check if the debug is active
-        if (fairWindSK->isDebug()) {
-            qDebug() << "FairWindAK needs to be configured";
-        }
+    // Create the launcher
+    m_launcher = new fairwindsk::ui::launcher::Launcher();
 
-        // Disable the bottom bar
-        m_bottomBar->setEnabled(false);
+    // Add the launcher to the stacked widget
+    ui->stackedWidget_Center->addWidget(m_launcher);
 
-        // Create the Server Settings
-        auto settings = new fairwindsk::ui::Settings();
+    // Connect the foreground app changed signa to the setForegroundApp method
+    QObject::connect(m_launcher, &fairwindsk::ui::launcher::Launcher::foregroundAppChanged,
+                     this,&MainWindow::setForegroundApp);
 
-        // Set the server settings as the center widget
-        ui->stackedWidget_Center->addWidget(settings);
+    // Preload a web application
+    setForegroundApp("admin");
 
-    } else {
-    */
-        // Create the launcher
-        m_launcher = new fairwindsk::ui::launcher::Launcher();
+    // Show the launcher
+    onApps();
 
-        // Add the launcher to the stacked widget
-        ui->stackedWidget_Center->addWidget(m_launcher);
-
-        // Connect the foreground app changed signa to the setForegroundApp method
-        QObject::connect(m_launcher, &fairwindsk::ui::launcher::Launcher::foregroundAppChanged,
-                         this,&MainWindow::setForegroundApp);
-
-        // Preload a web application
-        setForegroundApp("admin");
-
-        // Show the launcher
-        onApps();
-    //}
 
     // Show the window fullscreen
     QTimer::singleShot(0, this, SLOT(showFullScreen()));
@@ -300,12 +281,14 @@ void fairwindsk::ui::MainWindow::onAlarms() {
  * Method called when the user clicks the Settings button on the BottomBar object
  */
 void fairwindsk::ui::MainWindow::onSettings() {
-    auto fairWindSK = FairWindSK::getInstance();
-    //auto app = fairWindSK->getSettingsApp();
-    QString app = "__SETTINGS__";
-    if (!app.isEmpty() && fairWindSK->getAppsHashes().contains(app)) {
-        setForegroundApp(app);
-    }
+
+    auto settingsPage = new Settings(this, ui->stackedWidget_Center->currentWidget());
+    ui->widget_Top->setDisabled(true);
+    ui->widget_Bottom->setDisabled(true);
+    ui->stackedWidget_Center->addWidget(settingsPage);
+    ui->stackedWidget_Center->setCurrentWidget(settingsPage);
+
+    connect(settingsPage,&Settings::accepted,this, &MainWindow::onSettingsAccepted);
 }
 
 
@@ -331,6 +314,13 @@ void fairwindsk::ui::MainWindow::onAboutAccepted(fairwindsk::ui::about::About *a
     ui->widget_Bottom->setDisabled(false);
     ui->stackedWidget_Center->removeWidget(aboutPage);
     ui->stackedWidget_Center->setCurrentWidget(aboutPage->getCurrentWidget());
+}
+
+void fairwindsk::ui::MainWindow::onSettingsAccepted(Settings *settingsPage) {
+    ui->widget_Top->setDisabled(false);
+    ui->widget_Bottom->setDisabled(false);
+    ui->stackedWidget_Center->removeWidget(settingsPage);
+    ui->stackedWidget_Center->setCurrentWidget(settingsPage->getCurrentWidget());
 }
 
 fairwindsk::ui::topbar::TopBar *fairwindsk::ui::MainWindow::getTopBar() {

@@ -17,7 +17,7 @@
    </sizepolicy>
   </property>
   <property name="windowTitle">
-   <string>FairWind</string>
+   <string>FairWindSK</string>
   </property>
   <property name="styleSheet">
    <string notr="true">background-color: rgb(0, 0, 0);
