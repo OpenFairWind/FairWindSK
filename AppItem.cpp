@@ -168,36 +168,30 @@ namespace fairwindsk {
      */
     QPixmap AppItem::getIcon() {
         QPixmap pixmap = QPixmap::fromImage(QImage(":/resources/images/icons/webapp-256x256.png"));
-        if (m_jsonApp.contains("signalk") &&  m_jsonApp.value("signalk").isObject()) {
-            auto signalkJsonObject = m_jsonApp.value("signalk").toObject();
-            if (signalkJsonObject.contains("appIcon") && signalkJsonObject.value("appIcon").isString()) {
-                auto appIcon = signalkJsonObject.value("appIcon").toString();
+        auto appIcon = getAppIcon();
 
-                if (!appIcon.isEmpty()) {
-                    if (appIcon.startsWith("file://")) {
-                        auto iconFilename = appIcon.replace("file://","");
+        if (!appIcon.isEmpty()) {
+            if (appIcon.startsWith("file://")) {
+                auto iconFilename = appIcon.replace("file://","");
 
-                        pixmap.load(iconFilename);
-                    } else {
-                        // Get the icon URL
-                        QString url =
-                                FairWindSK::getInstance()->getSignalKServerUrl() + "/" + getName() + "/" + appIcon;
+                pixmap.load(iconFilename);
+            } else {
+                // Get the icon URL
+                QString url =
+                        FairWindSK::getInstance()->getSignalKServerUrl() + "/" + getName() + "/" + appIcon;
 
-                        QNetworkAccessManager nam;
-                        QEventLoop loop;
-                        QObject::connect(&nam, &QNetworkAccessManager::finished, &loop, &QEventLoop::quit);
-                        QNetworkReply *reply = nam.get(QNetworkRequest(url));
-                        loop.exec();
+                QNetworkAccessManager nam;
+                QEventLoop loop;
+                QObject::connect(&nam, &QNetworkAccessManager::finished, &loop, &QEventLoop::quit);
+                QNetworkReply *reply = nam.get(QNetworkRequest(url));
+                loop.exec();
 
-                        pixmap.loadFromData(reply->readAll());
+                pixmap.loadFromData(reply->readAll());
 
-                        delete reply;
-                    }
-                }
-
+                delete reply;
             }
-
         }
+
         return pixmap;
     }
 
@@ -333,7 +327,6 @@ namespace fairwindsk {
 
     bool AppItem::operator<(const AppItem &o) const {
         return int(m_jsonApp["fairwind"].toObject()["order"].toDouble()) < int(o.m_jsonApp["fairwind"].toObject()["order"].toDouble());
-        //return std::tie(int(m_jsonApp["fairwind"].toObject()["order"].toDouble())) < std::tie(int(o.m_jsonApp["fairwind"].toObject()["order"].toDouble()));
     }
 
     QStringList AppItem::getArguments() {
@@ -349,6 +342,17 @@ namespace fairwindsk {
                         result.append(argument.toString());
                     }
                 }
+            }
+        }
+        return result;
+    }
+
+    QString AppItem::getAppIcon() {
+        QString result = "";
+        if (m_jsonApp.contains("signalk") &&  m_jsonApp.value("signalk").isObject()) {
+            auto signalkJsonObject = m_jsonApp.value("signalk").toObject();
+            if (signalkJsonObject.contains("appIcon") && signalkJsonObject.value("appIcon").isString()) {
+                result = signalkJsonObject.value("appIcon").toString();
             }
         }
         return result;

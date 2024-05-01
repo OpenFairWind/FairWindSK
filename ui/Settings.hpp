@@ -16,9 +16,17 @@ namespace fairwindsk::ui {
     Q_OBJECT
 
     public:
-        explicit Settings(QWidget *parent = nullptr);
+        explicit Settings(QWidget *parent = nullptr, QWidget *currenWidget = nullptr);
 
         ~Settings() override;
+
+        QWidget *getCurrentWidget();
+
+    public slots:
+        void onAccepted();
+
+    signals:
+        void accepted(Settings *);
 
     private slots:
 
@@ -30,10 +38,22 @@ namespace fairwindsk::ui {
 
         void addService(const QZeroConfService& item);
 
+        void onAppsListSelectionChanged();
+        void onAppsEditSaveClicked();
+        void onAppsDetailsFieldsTextChanged(const QString &text);
+
+    private:
+        void setAppsEditMode(bool appsEditMode);
+        void saveAppsDetails();
+
     private:
         Ui::Settings *ui;
         bool m_stop;
         QZeroConf m_zeroConf;
+        bool m_appsEditMode;
+        bool m_appsEditChanged;
+
+        QWidget *m_currentWidget;
 
     };
 

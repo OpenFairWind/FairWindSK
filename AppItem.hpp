@@ -16,7 +16,9 @@ namespace fairwindsk {
     class AppItem: QObject {
         Q_OBJECT
 
-        public:
+
+
+    public:
             AppItem();
 
             explicit AppItem(QJsonObject jsonApp);
@@ -41,6 +43,7 @@ namespace fairwindsk {
             QVector<QString> getContributors();
             QString getUrl();
             QPixmap getIcon();
+            QString getAppIcon();
 
             QStringList getArguments();
 

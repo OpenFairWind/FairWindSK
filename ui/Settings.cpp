@@ -6,15 +6,21 @@
 
 #include <QThread>
 #include <QTranslator>
+#include <QMessageBox>
 #include "Settings.hpp"
 #include "ui_Settings.h"
 #include "FairWindSK.hpp"
 
 namespace fairwindsk::ui {
 
-    Settings::Settings(QWidget *parent) :
+    Settings::Settings(QWidget *parent, QWidget *currenWidget) :
             QWidget(parent), ui(new Ui::Settings) {
         ui->setupUi(this);
+
+        m_currentWidget = currenWidget;
+        connect(ui->buttonBox,&QDialogButtonBox::accepted,this,&Settings::onAccepted);
+
+        m_appsEditMode = false;
 
         auto fairWindSK = FairWindSK::getInstance();
 
@@ -80,6 +86,15 @@ namespace fairwindsk::ui {
         // Show the settings view when the user clicks on the Settings button inside the BottomBar object
         connect(ui->checkBox_virtualkeboard, &QCheckBox::stateChanged, this, &Settings::onVirtualKeyboard);
 
+        connect(ui->listWidget_Apps_List,&QListWidget::itemSelectionChanged, this, &Settings::onAppsListSelectionChanged);
+
+        connect(ui->pushButton_Apps_EditSave, &QPushButton::clicked,this,&Settings::onAppsEditSaveClicked);
+
+        connect(ui->lineEdit_Apps_Name, &QLineEdit::textChanged, this, &Settings::onAppsDetailsFieldsTextChanged);
+        connect(ui->lineEdit_Apps_Description, &QLineEdit::textChanged, this, &Settings::onAppsDetailsFieldsTextChanged);
+        connect(ui->lineEdit_Apps_DisplayName, &QLineEdit::textChanged, this, &Settings::onAppsDetailsFieldsTextChanged);
+        connect(ui->lineEdit_Apps_AppIcon, &QLineEdit::textChanged, this, &Settings::onAppsDetailsFieldsTextChanged);
+
         // Show the settings view when the user clicks on the Settings button inside the BottomBar object
         connect(ui->pushButton_connect, &QPushButton::clicked, this, &Settings::onConnect);
 
@@ -100,6 +115,14 @@ namespace fairwindsk::ui {
             // Show a message
             ui->textEdit_message->setText(ui->textEdit_message->toPlainText()+ tr("Zero configuration not active.\n"));
         }
+    }
+
+    void Settings::onAccepted() {
+        emit accepted(this);
+    }
+
+    QWidget *Settings::getCurrentWidget() {
+        return m_currentWidget;
     }
 
     void Settings::onVirtualKeyboard(int state) {
@@ -303,6 +326,100 @@ namespace fairwindsk::ui {
         delete ui;
     }
 
+    void Settings::saveAppsDetails() {
+
+        // Reset the apps edit changed flag
+        m_appsEditChanged = false;
+    }
+
+    void Settings::setAppsEditMode(bool editMode) {
+
+        // Check if in edit mode
+        if (m_appsEditMode) {
+
+            // Check if any change has been made
+            if (m_appsEditChanged) {
+
+                QMessageBox msgBox;
+                msgBox.setWindowTitle("Save changes");
+                msgBox.setText("Do you want save application definition edits?");
+                msgBox.setStandardButtons(QMessageBox::Yes);
+                msgBox.addButton(QMessageBox::No);
+                msgBox.setDefaultButton(QMessageBox::No);
+                if (msgBox.exec() == QMessageBox::Yes) {
+                    // Save details
+                    saveAppsDetails();
+                }
+            }
+        }
+
+        // Set the dit mode
+        m_appsEditMode = editMode;
+
+        // Set the edit save button text
+        if (m_appsEditMode)
+            ui->pushButton_Apps_EditSave->setText("Save");
+        else
+            ui->pushButton_Apps_EditSave->setText("Edit");
+
+
+        // Set the read only or write status
+        ui->lineEdit_Apps_Name->setReadOnly(!m_appsEditMode);
+        ui->lineEdit_Apps_Description->setReadOnly(!m_appsEditMode);
+        ui->lineEdit_Apps_DisplayName->setReadOnly(!m_appsEditMode);
+        ui->lineEdit_Apps_AppIcon->setReadOnly(!m_appsEditMode);
+
+        // Enable/disable the app icon browser
+        ui->pushButton_Apps_AppIcon_Browse->setEnabled(m_appsEditMode);
+
+        // Reset the changes flag
+        m_appsEditChanged = false;
+    }
+
+    void Settings::onAppsEditSaveClicked() {
+        // Check if in edit mode
+        if (m_appsEditMode) {
+            saveAppsDetails();
+            setAppsEditMode(false);
+        } else {
+            setAppsEditMode(true);
+        }
+    }
+    void Settings::onAppsListSelectionChanged() {
+        auto fairWindSk = FairWindSK::getInstance();
+
+        setAppsEditMode(false);
+
+        auto name = ui->listWidget_Apps_List->currentItem()->data(Qt::UserRole).toString();
+        auto appItem = fairWindSk->getAppItemByHash(name);
+
+        ui->label_Apps_Url_Text->setText(appItem->getUrl());
+        ui->label_Apps_Version_Text->setText(appItem->getVersion());
+        ui->label_Apps_Author_Text->setText(appItem->getAuthor());
+        ui->label_Apps_Vendor_Text->setText(appItem->getVendor());
+        ui->label_Apps_Copyright_Text->setText(appItem->getCopyright());
+        ui->label_Apps_License_Text->setText(appItem->getLicense());
+
+        ui->lineEdit_Apps_Name->setText(name);
+        ui->lineEdit_Apps_Description->setText(appItem->getDescription());
+        ui->lineEdit_Apps_DisplayName->setText(appItem->getDisplayName());
+        ui->lineEdit_Apps_AppIcon->setText(appItem->getAppIcon());
+
+
+        auto icon = appItem->getIcon();
+
+        // Scale the icon
+        icon = icon.scaled(128, 128);
+
+        ui->label_Apps_Icon->setPixmap(icon);
+
+
+
+    }
+
+    void Settings::onAppsDetailsFieldsTextChanged(const QString &text) {
+        m_appsEditChanged = true;
+    }
 
 
 } // fairwindsk::ui
