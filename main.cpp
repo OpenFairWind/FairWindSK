@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
     QApplication::installTranslator(&translator);
 
     // Set the window icon
-    QApplication::setWindowIcon(QIcon(QPixmap::fromImage(QImage(":/resources/images/icons/fairwind_icon.png"))));
+    QApplication::setWindowIcon(QIcon(QPixmap::fromImage(QImage(":/resources/images/mainwindow/fairwind_icon.png"))));
 
     // Get the splash screen logo
     QPixmap pixmap(":/resources/images/other/splash_logo.png");
