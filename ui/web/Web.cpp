@@ -96,7 +96,10 @@ namespace fairwindsk::ui::web {
     }
 
     void Web::toolButton_settings_clicked() {
-        m_webView->setUrl(FairWindSK::getInstance()->getSignalKServerUrl()+"/admin/#/serverConfiguration/plugins/" + m_appItem->getName());
+        QString settingsUrl = m_appItem->getSettings(FairWindSK::getInstance()->getSignalKServerUrl()+"/admin/#/serverConfiguration/plugins/");
+
+        qDebug() << "------------> settingsUrl: " << settingsUrl;
+        m_webView->setUrl(settingsUrl);
     }
 
     void Web::handleWebViewLoadProgress(int progress) {
