@@ -61,23 +61,17 @@ int main(int argc, char *argv[]) {
     splash.showMessage(QObject::tr("Connecting to the Signal K Server..."), 500, Qt::white);
 
     // Connect to the Signal K server...
-    auto isConnected = fairWindSK->startSignalK();
+    fairWindSK->startSignalK();
 
-    // Check if it is connected
-    if (isConnected) {
 
-        // Show message
-        splash.showMessage(QObject::tr("Loading applications..."), 500, Qt::white);
 
-        // Load the apps inside the FairWind singleton itself
-        fairWindSK->loadApps();
+    // Show message
+    splash.showMessage(QObject::tr("Loading applications..."), 500, Qt::white);
 
-    } else {
+    // Load the apps inside the FairWind singleton itself
+    fairWindSK->loadApps();
 
-        // Show message
-        splash.showMessage(QObject::tr("Signal K server not available!"), 500, Qt::white);
 
-    }
 
     QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::Accelerated2dCanvasEnabled, true);
     QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);

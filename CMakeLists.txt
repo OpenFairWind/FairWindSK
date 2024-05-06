@@ -65,7 +65,7 @@ add_executable(${PROJECT_NAME}
         signalk/Subscription.cpp signalk/Subscription.hpp
         signalk/Client.cpp signalk/Client.hpp
 
-        ui/Settings.cpp ui/Settings.hpp ui/Settings.ui
+        ui/settings/Settings.cpp ui/settings/Settings.hpp ui/settings/Settings.ui
 
         ui/launcher/Launcher.cpp ui/launcher/Launcher.hpp ui/launcher/Launcher.ui
         ui/about/About.cpp ui/about/About.hpp ui/about/About.ui
@@ -81,6 +81,18 @@ add_executable(${PROJECT_NAME}
         ui/web/DownloadWidget.cpp ui/web/DownloadWidget.hpp ui/web/DownloadWidget.ui
 
         resources.qrc
+        ui/settings/Apps.cpp
+        ui/settings/Apps.hpp
+        ui/settings/Apps.ui
+        ui/settings/Main.cpp
+        ui/settings/Main.hpp
+        ui/settings/Main.ui
+        ui/settings/Connection.cpp
+        ui/settings/Connection.hpp
+        ui/settings/Connection.ui
+        ui/settings/SignalK.cpp
+        ui/settings/SignalK.hpp
+        ui/settings/SignalK.ui
 
 )
 
@@ -99,3 +111,6 @@ target_link_libraries(${PROJECT_NAME}
         ${LIBQTZEROCONF}
 )
 
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/resources/images/icons $<TARGET_FILE_DIR:${PROJECT_NAME}>/icons/)
