@@ -132,7 +132,8 @@ namespace fairwindsk {
                 "appIcon": "file://icons/chart_icon.png"
             },
             "fairwind": {
-                "order": 1
+                "order": 1,
+                "settings": "freeboard-sk"
             }
         },
         {
@@ -185,7 +186,7 @@ namespace fairwindsk {
                 "appIcon": "file://icons/sailgauge_icon.png"
             }
         },
-
+        {
             "description": "OpenCPN Open Source Chart Plotter",
             "fairwind": {
                 "active": true,
@@ -198,6 +199,22 @@ namespace fairwindsk {
                 "appIcon": "file:///Applications/OpenCPN.app/Contents/SharedSupport/opencpn.png",
                 "displayName": "OpenCPN"
             }
+        },
+        {
+            "name": "@signalk/signalk-autopilot",
+            "fairwind": {
+                "active": true,
+                "settings": "autopilot"
+            }
+
+        },
+        {
+            "name": "@signalk/signalk-node-red",
+            "fairwind": {
+                "active": true,
+                "settings": "signalk-node-red"
+            }
+
         },
         {
             "name": "admin",
@@ -386,6 +403,7 @@ namespace fairwindsk {
 
         // Reset the counter
         int count = 100;
+
 
         auto signalKServerUrl = getSignalKServerUrl();
         if (!signalKServerUrl.isEmpty()) {
