@@ -357,4 +357,45 @@ namespace fairwindsk {
         }
         return result;
     }
+
+    QString AppItem::getSettings(QString pluginUrl) {
+        QString result = "";
+        if (m_jsonApp.contains("fairwind") && m_jsonApp["fairwind"].isObject()) {
+            auto fairwindJsonObject = m_jsonApp["fairwind"].toObject();
+            if (fairwindJsonObject.contains("settings") && fairwindJsonObject["settings"].isString()) {
+                result = fairwindJsonObject["settings"].toString();
+            }
+        }
+        if (result.isEmpty()) {
+            result = getName();
+        }
+        if (result.startsWith("file://")) {
+            result = result.replace("file://","");
+        } else if (!result.startsWith("http://") && !result.startsWith("https://")) {
+            result = pluginUrl + result;
+        }
+        return result;
+    }
+
+    QString AppItem::getAbout(QString pluginUrl) {
+        QString result = "";
+        if (m_jsonApp.contains("fairwind") && m_jsonApp["fairwind"].isObject()) {
+            auto fairwindJsonObject = m_jsonApp["fairwind"].toObject();
+            if (fairwindJsonObject.contains("about") && fairwindJsonObject["about"].isString()) {
+                result = fairwindJsonObject["about"].toString();
+            }
+        }
+        return result;
+    }
+
+    QString AppItem::getHelp(QString pluginUrl) {
+        QString result = "";
+        if (m_jsonApp.contains("fairwind") && m_jsonApp["fairwind"].isObject()) {
+            auto fairwindJsonObject = m_jsonApp["fairwind"].toObject();
+            if (fairwindJsonObject.contains("help") && fairwindJsonObject["help"].isString()) {
+                result = fairwindJsonObject["help"].toString();
+            }
+        }
+        return result;
+    }
 }

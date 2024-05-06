@@ -44,6 +44,9 @@ namespace fairwindsk {
             QString getUrl();
             QPixmap getIcon();
             QString getAppIcon();
+            QString getSettings(QString pluginUrl);
+            QString getAbout(QString pluginUrl);
+            QString getHelp(QString pluginUrl);
 
             QStringList getArguments();
 
