@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+    <author/>
+    <comment/>
+    <exportmacro/>
+    <class>fairwindsk::ui::settings::SignalK</class>
+    <widget class="QWidget" name="tab_signalk">
+        <attribute name="title">
+            <string>Signal K</string>
+        </attribute>
+        <layout class="QGridLayout" name="gridLayout_SignalK">
+            <item row="0" column="0">
+                <widget class="QGroupBox" name="groupBox_SignalK_Paths">
+                    <property name="sizePolicy">
+                        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                        </sizepolicy>
+                    </property>
+                    <property name="title">
+                        <string>Paths</string>
+                    </property>
+                    <layout class="QGridLayout" name="gridLayout_2">
+                        <item row="0" column="0">
+                            <widget class="QScrollArea" name="scrollArea_SignalK">
+                                <property name="sizePolicy">
+                                    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                                        <horstretch>0</horstretch>
+                                        <verstretch>0</verstretch>
+                                    </sizepolicy>
+                                </property>
+                                <property name="horizontalScrollBarPolicy">
+                                    <enum>Qt::ScrollBarAlwaysOff</enum>
+                                </property>
+                                <property name="widgetResizable">
+                                    <bool>true</bool>
+                                </property>
+                                <widget class="QWidget" name="scrollAreaWidgetContents">
+                                    <property name="geometry">
+                                        <rect>
+                                            <x>0</x>
+                                            <y>0</y>
+                                            <width>509</width>
+                                            <height>417</height>
+                                        </rect>
+                                    </property>
+                                    <layout class="QGridLayout" name="gridLayout_SignalK_Paths">
+                                        <property name="horizontalSpacing">
+                                            <number>-1</number>
+                                        </property>
+                                        <item row="9" column="1">
+                                            <widget class="QLineEdit" name="lineEdit_SignalK_DTG"/>
+                                        </item>
+                                        <item row="7" column="1">
+                                            <widget class="QLineEdit" name="lineEdit_SignalK_WPT"/>
+                                        </item>
+                                        <item row="10" column="1">
+                                            <widget class="QLineEdit" name="lineEdit_SignalK_TTG"/>
+                                        </item>
+                                        <item row="8" column="1">
+                                            <widget class="QLineEdit" name="lineEdit_SignalK_BTW"/>
+                                        </item>
+                                        <item row="6" column="0">
+                                            <widget class="QLabel" name="label_SignalK_DPT">
+                                                <property name="sizePolicy">
+                                                    <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                                                        <horstretch>0</horstretch>
+                                                        <verstretch>0</verstretch>
+                                                    </sizepolicy>
+                                                </property>
+                                                <property name="text">
+                                                    <string>Depth (DPT)</string>
+                                                </property>
+                                            </widget>
+                                        </item>
+                                        <item row="10" column="0">
+                                            <widget class="QLabel" name="label_SignalK_TTG">
+                                                <property name="sizePolicy">
+                                                    <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                                                        <horstretch>0</horstretch>
+                                                        <verstretch>0</verstretch>
+                                                    </sizepolicy>
+                                                </property>
+                                                <property name="text">
+                                                    <string>Time To Go (TTG)</string>
+                                                </property>
+                                            </widget>
+                                        </item>
+                                        <item row="12" column="1">
+                                            <widget class="QLineEdit" name="lineEdit_SignalK_XTE"/>
+                                        </item>
+                                        <item row="9" column="0">
+                                            <widget class="QLabel" name="label_SignalK_DTG">
+                                                <property name="sizePolicy">
+                                                    <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                                                        <horstretch>0</horstretch>
+                                                        <verstretch>0</verstretch>
+                                                    </sizepolicy>
+                                                </property>
+                                                <property name="text">
+                                                    <string>Distance To Go (DTG)</string>
+                                                </property>
+                                            </widget>
+                                        </item>
+                                        <item row="13" column="0">
+                                            <widget class="QLabel" name="label_SignalK_VMG">
+                                                <property name="sizePolicy">
+                                                    <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                                                        <horstretch>0</horstretch>
+                                                        <verstretch>0</verstretch>
+                                                    </sizepolicy>
+                                                </property>
+                                                <property name="text">
+                                                    <string>Velocity Made Good (VMG)</string>
+                                                </property>
+                                            </widget>
+                                        </item>
+                                        <item row="7" column="0">
+                                            <widget class="QLabel" name="label_SignalK_WPT">
+                                                <property name="sizePolicy">
+                                                    <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                                                        <horstretch>0</horstretch>
+                                                        <verstretch>0</verstretch>
+                                                    </sizepolicy>
+                                                </property>
+                                                <property name="text">
+                                                    <string>Waypoint Info (WPT)</string>
+                                                </property>
+                                            </widget>
+                                        </item>
+                                        <item row="2" column="1">
+                                            <widget class="QLineEdit" name="lineEdit_SignalK_COG"/>
+                                        </item>
+                                        <item row="12" column="0">
+                                            <widget class="QLabel" name="label_SignalK_XTE">
+                                                <property name="sizePolicy">
+                                                    <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                                                        <horstretch>0</horstretch>
+                                                        <verstretch>0</verstretch>
+                                                    </sizepolicy>
+                                                </property>
+                                                <property name="text">
+                                                    <string>Cross Track Error (XTE)</string>
+                                                </property>
+                                            </widget>
+                                        </item>
+                                        <item row="5" column="0">
+                                            <widget class="QLabel" name="label_SignalK_STW">
+                                                <property name="sizePolicy">
+                                                    <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                                                        <horstretch>0</horstretch>
+                                                        <verstretch>0</verstretch>
+                                                    </sizepolicy>
+                                                </property>
+                                                <property name="text">
+                                                    <string>Speed Through Water (STW)</string>
+                                                </property>
+                                            </widget>
+                                        </item>
+                                        <item row="11" column="1">
+                                            <widget class="QLineEdit" name="lineEdit_SignalK_ETA"/>
+                                        </item>
+                                        <item row="3" column="0">
+                                            <widget class="QLabel" name="label_SignalK_SOG">
+                                                <property name="sizePolicy">
+                                                    <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                                                        <horstretch>0</horstretch>
+                                                        <verstretch>0</verstretch>
+                                                    </sizepolicy>
+                                                </property>
+                                                <property name="text">
+                                                    <string>Speed Over Ground (SOG)</string>
+                                                </property>
+                                            </widget>
+                                        </item>
+                                        <item row="5" column="1">
+                                            <widget class="QLineEdit" name="lineEdit_SignalK_STW"/>
+                                        </item>
+                                        <item row="1" column="0">
+                                            <widget class="QLabel" name="label_SignalK_POS">
+                                                <property name="sizePolicy">
+                                                    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                                                        <horstretch>0</horstretch>
+                                                        <verstretch>0</verstretch>
+                                                    </sizepolicy>
+                                                </property>
+                                                <property name="text">
+                                                    <string>Position (POS)</string>
+                                                </property>
+                                            </widget>
+                                        </item>
+                                        <item row="6" column="1">
+                                            <widget class="QLineEdit" name="lineEdit_SignalK_DPT"/>
+                                        </item>
+                                        <item row="3" column="1">
+                                            <widget class="QLineEdit" name="lineEdit_SignalK_SOG"/>
+                                        </item>
+                                        <item row="8" column="0">
+                                            <widget class="QLabel" name="label_SignalK_BTW">
+                                                <property name="sizePolicy">
+                                                    <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                                                        <horstretch>0</horstretch>
+                                                        <verstretch>0</verstretch>
+                                                    </sizepolicy>
+                                                </property>
+                                                <property name="text">
+                                                    <string>Bearing to Waypoint (BTW)</string>
+                                                </property>
+                                            </widget>
+                                        </item>
+                                        <item row="2" column="0">
+                                            <widget class="QLabel" name="label_SignalK_COG">
+                                                <property name="sizePolicy">
+                                                    <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                                                        <horstretch>0</horstretch>
+                                                        <verstretch>0</verstretch>
+                                                    </sizepolicy>
+                                                </property>
+                                                <property name="text">
+                                                    <string>Course Over Ground (COG)</string>
+                                                </property>
+                                            </widget>
+                                        </item>
+                                        <item row="13" column="1">
+                                            <widget class="QLineEdit" name="lineEdit_SignalK_VMG"/>
+                                        </item>
+                                        <item row="1" column="1">
+                                            <widget class="QLineEdit" name="lineEdit_SignalK_POS">
+                                                <property name="text">
+                                                    <string/>
+                                                </property>
+                                            </widget>
+                                        </item>
+                                        <item row="11" column="0">
+                                            <widget class="QLabel" name="label_SignalK_ETA">
+                                                <property name="sizePolicy">
+                                                    <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                                                        <horstretch>0</horstretch>
+                                                        <verstretch>0</verstretch>
+                                                    </sizepolicy>
+                                                </property>
+                                                <property name="text">
+                                                    <string>Estimated Time of Arrival (ETA)</string>
+                                                </property>
+                                            </widget>
+                                        </item>
+                                        <item row="4" column="0">
+                                            <widget class="QLabel" name="label_SignalK_HDG">
+                                                <property name="sizePolicy">
+                                                    <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                                                        <horstretch>0</horstretch>
+                                                        <verstretch>0</verstretch>
+                                                    </sizepolicy>
+                                                </property>
+                                                <property name="text">
+                                                    <string>Heading (HDG)</string>
+                                                </property>
+                                            </widget>
+                                        </item>
+                                        <item row="4" column="1">
+                                            <widget class="QLineEdit" name="lineEdit_SignalK_HDG"/>
+                                        </item>
+                                    </layout>
+                                </widget>
+                            </widget>
+                        </item>
+                    </layout>
+                </widget>
+            </item>
+        </layout>
+    </widget>
+    <pixmapfunction/>
+    <connections/>
+</ui>

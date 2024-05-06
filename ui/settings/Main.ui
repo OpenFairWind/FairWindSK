@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+    <author/>
+    <comment/>
+    <exportmacro/>
+    <class>fairwindsk::ui::settings::Main</class>
+    <widget class="QWidget" name="tab_main">
+        <attribute name="title">
+            <string>Main</string>
+        </attribute>
+        <layout class="QGridLayout" name="gridLayout_Main">
+            <item row="1" column="0">
+                <widget class="QGroupBox" name="groupBox_Units">
+                    <property name="sizePolicy">
+                        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                        </sizepolicy>
+                    </property>
+                    <property name="title">
+                        <string>Units</string>
+                    </property>
+                    <layout class="QGridLayout" name="gridLayout_Units">
+                        <item row="0" column="0">
+                            <widget class="QLabel" name="label_Units_BoatSpeed">
+                                <property name="text">
+                                    <string>Boat Speed</string>
+                                </property>
+                            </widget>
+                        </item>
+                        <item row="1" column="0">
+                            <widget class="QLabel" name="label_Units_WindSpeed">
+                                <property name="text">
+                                    <string>Wind Speed</string>
+                                </property>
+                            </widget>
+                        </item>
+                        <item row="2" column="0">
+                            <widget class="QLabel" name="label_Units_Distance">
+                                <property name="text">
+                                    <string>Distance</string>
+                                </property>
+                            </widget>
+                        </item>
+                        <item row="3" column="0">
+                            <widget class="QLabel" name="label_Units_Depth">
+                                <property name="text">
+                                    <string>Depth</string>
+                                </property>
+                            </widget>
+                        </item>
+                        <item row="4" column="0">
+                            <widget class="QLabel" name="label_Units_AirTemperature">
+                                <property name="text">
+                                    <string>Air Temperature</string>
+                                </property>
+                            </widget>
+                        </item>
+                        <item row="5" column="0">
+                            <widget class="QLabel" name="label_Units_AirPressure">
+                                <property name="text">
+                                    <string>Air Pressure</string>
+                                </property>
+                            </widget>
+                        </item>
+                        <item row="6" column="0">
+                            <widget class="QLabel" name="label_Units_WaterTemperature">
+                                <property name="text">
+                                    <string>Water Temperature</string>
+                                </property>
+                            </widget>
+                        </item>
+                        <item row="0" column="1">
+                            <widget class="QComboBox" name="comboBox_Units_BoatSpeed">
+                                <property name="sizePolicy">
+                                    <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                                        <horstretch>0</horstretch>
+                                        <verstretch>0</verstretch>
+                                    </sizepolicy>
+                                </property>
+                                <item>
+                                    <property name="text">
+                                        <string>Kilometers per hour (Km/h)</string>
+                                    </property>
+                                </item>
+                                <item>
+                                    <property name="text">
+                                        <string>Meters per second (m/s)</string>
+                                    </property>
+                                </item>
+                                <item>
+                                    <property name="text">
+                                        <string>Miles per hpur (mph)</string>
+                                    </property>
+                                </item>
+                                <item>
+                                    <property name="text">
+                                        <string>Knots (kn)</string>
+                                    </property>
+                                </item>
+                            </widget>
+                        </item>
+                        <item row="1" column="1">
+                            <widget class="QComboBox" name="comboBox_Units_WindSpeed">
+                                <item>
+                                    <property name="text">
+                                        <string>Kilometers per hour (Km/h)</string>
+                                    </property>
+                                </item>
+                                <item>
+                                    <property name="text">
+                                        <string>Meters per second (m/s)</string>
+                                    </property>
+                                </item>
+                                <item>
+                                    <property name="text">
+                                        <string>Miles per hpur (mph)</string>
+                                    </property>
+                                </item>
+                                <item>
+                                    <property name="text">
+                                        <string>Knots (kn)</string>
+                                    </property>
+                                </item>
+                            </widget>
+                        </item>
+                        <item row="2" column="1">
+                            <widget class="QComboBox" name="comboBox_Units_Distance">
+                                <item>
+                                    <property name="text">
+                                        <string>Kilometers (Km)</string>
+                                    </property>
+                                </item>
+                                <item>
+                                    <property name="text">
+                                        <string>Meters (m)</string>
+                                    </property>
+                                </item>
+                                <item>
+                                    <property name="text">
+                                        <string>Miles (ml)</string>
+                                    </property>
+                                </item>
+                                <item>
+                                    <property name="text">
+                                        <string>Nautical Miles (nm)</string>
+                                    </property>
+                                </item>
+                            </widget>
+                        </item>
+                        <item row="3" column="1">
+                            <widget class="QComboBox" name="comboBox_Units_Depth">
+                                <item>
+                                    <property name="text">
+                                        <string>Meters (m)</string>
+                                    </property>
+                                </item>
+                                <item>
+                                    <property name="text">
+                                        <string>Fathoms (ftm)</string>
+                                    </property>
+                                </item>
+                                <item>
+                                    <property name="text">
+                                        <string>Feet (ft)</string>
+                                    </property>
+                                </item>
+                            </widget>
+                        </item>
+                        <item row="4" column="1">
+                            <widget class="QComboBox" name="comboBox_Units_AirTemperature">
+                                <item>
+                                    <property name="text">
+                                        <string>Kelvin Degrees (°K)</string>
+                                    </property>
+                                </item>
+                                <item>
+                                    <property name="text">
+                                        <string>Celsius Degrees (°C)</string>
+                                    </property>
+                                </item>
+                                <item>
+                                    <property name="text">
+                                        <string>Fahrenheit Degrees (°F)</string>
+                                    </property>
+                                </item>
+                            </widget>
+                        </item>
+                        <item row="5" column="1">
+                            <widget class="QComboBox" name="comboBox_Units_AirPressure">
+                                <item>
+                                    <property name="text">
+                                        <string>HectoPascal (HPa)</string>
+                                    </property>
+                                </item>
+                                <item>
+                                    <property name="text">
+                                        <string>Millibar (Mb)</string>
+                                    </property>
+                                </item>
+                                <item>
+                                    <property name="text">
+                                        <string>Pounds per Square Inches (PSI)</string>
+                                    </property>
+                                </item>
+                                <item>
+                                    <property name="text">
+                                        <string>Millimeter of Mercury (mmHg)</string>
+                                    </property>
+                                </item>
+                            </widget>
+                        </item>
+                        <item row="6" column="1">
+                            <widget class="QComboBox" name="comboBox_Units_WaterTemperature">
+                                <item>
+                                    <property name="text">
+                                        <string>Kelvin Degrees (°K)</string>
+                                    </property>
+                                </item>
+                                <item>
+                                    <property name="text">
+                                        <string>Celsius Degrees (°C)</string>
+                                    </property>
+                                </item>
+                                <item>
+                                    <property name="text">
+                                        <string>Fahrenheit Degrees (°F)</string>
+                                    </property>
+                                </item>
+                            </widget>
+                        </item>
+                    </layout>
+                </widget>
+            </item>
+            <item row="0" column="0">
+                <widget class="QGroupBox" name="groupBox_Devices">
+                    <property name="sizePolicy">
+                        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                            <horstretch>0</horstretch>
+                            <verstretch>0</verstretch>
+                        </sizepolicy>
+                    </property>
+                    <property name="title">
+                        <string>Devices</string>
+                    </property>
+                    <layout class="QGridLayout" name="gridLayout_Devices">
+                        <item row="0" column="0">
+                            <widget class="QLabel" name="label_virtualkeyboard">
+                                <property name="text">
+                                    <string>Use Virtual Keyboard</string>
+                                </property>
+                            </widget>
+                        </item>
+                        <item row="0" column="1">
+                            <widget class="QCheckBox" name="checkBox_virtualkeboard">
+                                <property name="text">
+                                    <string/>
+                                </property>
+                            </widget>
+                        </item>
+                    </layout>
+                </widget>
+            </item>
+        </layout>
+    </widget>
+    <pixmapfunction/>
+    <connections/>
+</ui>
