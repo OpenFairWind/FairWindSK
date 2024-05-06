@@ -13,7 +13,7 @@
 
 #include <FairWindSK.hpp>
 #include "ui_MainWindow.h"
-#include "Settings.hpp"
+#include "ui/settings/Settings.hpp"
 
 #include <ui/topbar/TopBar.hpp>
 #include <ui/launcher/Launcher.hpp>
@@ -27,6 +27,7 @@ namespace fairwindsk::ui {
     namespace topbar {class TopBar; }
     namespace launcher {class Launcher;}
     namespace bottombar {class BottomBar;}
+    namespace settings {class Settings;}
 
     class MainWindow : public QMainWindow {
         Q_OBJECT
@@ -59,7 +60,7 @@ namespace fairwindsk::ui {
 
 
         void onAboutAccepted(about::About *aboutPage);
-        void onSettingsAccepted(Settings *settingPage);
+        void onSettingsAccepted(settings::Settings *settingPage);
 
 
 

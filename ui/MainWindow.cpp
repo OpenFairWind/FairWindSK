@@ -16,7 +16,7 @@
 
 #include "ui/about/About.hpp"
 #include "ui/web/Web.hpp"
-#include "Settings.hpp"
+#include "ui/settings/Settings.hpp"
 
 
 /*
@@ -158,7 +158,7 @@ void fairwindsk::ui::MainWindow::setForegroundApp(QString hash) {
     } else {
         if (appItem->getName() == "__SETTINGS__") {
 
-            widgetApp = new Settings();
+            widgetApp = new settings::Settings();
 
         } else if (appItem->getName().startsWith("file://")) {
             //https://forum.qt.io/topic/44091/embed-an-application-inside-a-qt-window-solved/16
@@ -282,13 +282,13 @@ void fairwindsk::ui::MainWindow::onAlarms() {
  */
 void fairwindsk::ui::MainWindow::onSettings() {
 
-    auto settingsPage = new Settings(this, ui->stackedWidget_Center->currentWidget());
+    auto settingsPage = new settings::Settings(this, ui->stackedWidget_Center->currentWidget());
     ui->widget_Top->setDisabled(true);
     ui->widget_Bottom->setDisabled(true);
     ui->stackedWidget_Center->addWidget(settingsPage);
     ui->stackedWidget_Center->setCurrentWidget(settingsPage);
 
-    connect(settingsPage,&Settings::accepted,this, &MainWindow::onSettingsAccepted);
+    connect(settingsPage,&settings::Settings::accepted,this, &MainWindow::onSettingsAccepted);
 }
 
 
@@ -316,7 +316,7 @@ void fairwindsk::ui::MainWindow::onAboutAccepted(fairwindsk::ui::about::About *a
     ui->stackedWidget_Center->setCurrentWidget(aboutPage->getCurrentWidget());
 }
 
-void fairwindsk::ui::MainWindow::onSettingsAccepted(Settings *settingsPage) {
+void fairwindsk::ui::MainWindow::onSettingsAccepted(settings::Settings *settingsPage) {
     ui->widget_Top->setDisabled(false);
     ui->widget_Bottom->setDisabled(false);
     ui->stackedWidget_Center->removeWidget(settingsPage);
