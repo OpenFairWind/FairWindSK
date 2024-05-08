@@ -6,6 +6,7 @@
 #define FAIRWINDSK_APPS_HPP
 
 #include <QWidget>
+#include "Settings.hpp"
 
 namespace fairwindsk::ui::settings {
     QT_BEGIN_NAMESPACE
@@ -16,9 +17,10 @@ namespace fairwindsk::ui::settings {
     Q_OBJECT
 
     public:
-        explicit Apps(QWidget *parent = nullptr);
+        explicit Apps(Settings *settings, QWidget *parent = nullptr);
 
         ~Apps() override;
+
 
 
     private slots:
@@ -26,14 +28,18 @@ namespace fairwindsk::ui::settings {
         void onAppsListSelectionChanged();
         void onAppsEditSaveClicked();
         void onAppsDetailsFieldsTextChanged(const QString &text);
+        void onAppsAppIconBrowse();
+        void onAppsNameBrowse();
 
     private:
+        bool eventFilter(QObject *object, QEvent *event) override;
         void setAppsEditMode(bool appsEditMode);
         void saveAppsDetails();
 
     private:
         Ui::Apps *ui;
 
+        Settings *m_settings;
         bool m_appsEditMode;
         bool m_appsEditChanged;
     };

@@ -5,27 +5,30 @@
 // You may need to build the project (run Qt uic code generator) to get "ui_Apps.h" resolved
 
 #include <QMessageBox>
+#include <QFileDialog>
 #include "Apps.hpp"
 #include "ui_Apps.h"
 #include "AppItem.hpp"
 #include "FairWindSK.hpp"
 
+
 namespace fairwindsk::ui::settings {
-    Apps::Apps(QWidget *parent) :
+    Apps::Apps(Settings *settings, QWidget *parent) :
             QWidget(parent), ui(new Ui::Apps) {
         ui->setupUi(this);
 
+        m_settings = settings;
         m_appsEditMode = false;
 
-        auto fairWindSK = FairWindSK::getInstance();
+
 
         // Order by order value
         QMap<int, QPair<AppItem *, QString>> map;
 
         // Populate the inverted list
-        for (auto &hash : fairWindSK->getAppsHashes()) {
+        for (auto &hash : m_settings->getAppsHashes()) {
             // Get the hash value
-            auto app = fairWindSK->getAppItemByHash(hash);
+            auto app = m_settings->getAppItemByHash(hash);
             auto position = app->getOrder();
 
             map[position] = QPair<AppItem *, QString>(app, hash);
@@ -56,9 +59,23 @@ namespace fairwindsk::ui::settings {
         connect(ui->lineEdit_Apps_Description, &QLineEdit::textChanged, this, &Apps::onAppsDetailsFieldsTextChanged);
         connect(ui->lineEdit_Apps_DisplayName, &QLineEdit::textChanged, this, &Apps::onAppsDetailsFieldsTextChanged);
         connect(ui->lineEdit_Apps_AppIcon, &QLineEdit::textChanged, this, &Apps::onAppsDetailsFieldsTextChanged);
+
+        connect(ui->pushButton_Apps_AppIcon_Browse, &QPushButton::clicked,this,&Apps::onAppsAppIconBrowse);
+        connect(ui->pushButton_Apps_Name_Browse, &QPushButton::clicked,this,&Apps::onAppsNameBrowse);
+
+        ui->listWidget_Apps_List->installEventFilter(this);
     }
 
     void Apps::saveAppsDetails() {
+
+
+        auto name = ui->listWidget_Apps_List->currentItem()->data(Qt::UserRole).toString();
+        auto appItem = m_settings->getAppItemByHash(name);
+
+        appItem->setName( ui->lineEdit_Apps_Name->text());
+
+
+
 
         // Reset the apps edit changed flag
         m_appsEditChanged = false;
@@ -101,8 +118,9 @@ namespace fairwindsk::ui::settings {
         ui->lineEdit_Apps_DisplayName->setReadOnly(!m_appsEditMode);
         ui->lineEdit_Apps_AppIcon->setReadOnly(!m_appsEditMode);
 
-        // Enable/disable the app icon browser
+        // Enable/disable the browser buttons
         ui->pushButton_Apps_AppIcon_Browse->setEnabled(m_appsEditMode);
+        ui->pushButton_Apps_Name_Browse->setEnabled(m_appsEditMode);
 
         // Reset the changes flag
         m_appsEditChanged = false;
@@ -118,12 +136,12 @@ namespace fairwindsk::ui::settings {
         }
     }
     void Apps::onAppsListSelectionChanged() {
-        auto fairWindSk = FairWindSK::getInstance();
+
 
         setAppsEditMode(false);
 
         auto name = ui->listWidget_Apps_List->currentItem()->data(Qt::UserRole).toString();
-        auto appItem = fairWindSk->getAppItemByHash(name);
+        auto appItem = m_settings->getAppItemByHash(name);
 
         ui->label_Apps_Url_Text->setText(appItem->getUrl());
         ui->label_Apps_Version_Text->setText(appItem->getVersion());
@@ -153,7 +171,66 @@ namespace fairwindsk::ui::settings {
         m_appsEditChanged = true;
     }
 
+    void Apps::onAppsAppIconBrowse() {
+
+
+        auto appIcon = QFileDialog::getOpenFileName(this,tr("Open Image"), "./icons", tr("Image Files (*.png)"));
+        if (!appIcon.isEmpty()) {
+
+            QPixmap icon;
+
+            icon.load(appIcon);
+
+            appIcon = "file://" + appIcon;
+
+            ui->lineEdit_Apps_AppIcon->setText(appIcon);
+
+
+            // Scale the icon
+            icon = icon.scaled(128, 128);
+
+            ui->label_Apps_Icon->setPixmap(icon);
+
+            m_appsEditChanged = true;
+
+        }
+
+    }
+
+    void Apps::onAppsNameBrowse() {
+        auto name = QFileDialog::getOpenFileName(this,tr("Select executable"));
+        if (!name.isEmpty()) {
+
+            name = "file://" + name;
+
+            ui->lineEdit_Apps_Name->setText(name);
+
+            m_appsEditChanged = true;
+
+        }
+    }
+
     Apps::~Apps() {
         delete ui;
     }
+
+    bool Apps::eventFilter(QObject *object, QEvent *event) {
+
+
+        if ( object == ui->listWidget_Apps_List &&  ( event->type() == QEvent::ChildRemoved )  ) {
+            qDebug() << "+-+.+.+.+-+-+.+.+.+-+-+.+.+.+-";
+            m_appsEditChanged = true;
+            for(int row=0; row < ui->listWidget_Apps_List->count();row++){
+                auto lwi = ui->listWidget_Apps_List->item(row);
+                auto name = lwi->data(Qt::UserRole).toString();
+                m_settings->getAppItemByHash(name)->setOrder(row);
+            }
+        }
+
+        //return false;
+
+        return QObject::eventFilter(object, event);
+    }
+
+
 } // fairwindsk::ui::settings
