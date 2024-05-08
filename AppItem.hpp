@@ -28,13 +28,19 @@ namespace fairwindsk {
             void update(QJsonObject jsonApp);
 
             QString getDisplayName();
+            void setDisplayName(QString displayName);
 
             bool getActive();
             void setActive(bool active);
             int getOrder();
             void setOrder(int order);
+
             QString getName();
+            void setName(QString name);
+
             QString getDescription();
+            void setDescription(QString description);
+
             QString getVersion();
             QString getVendor();
             QString getCopyright();
@@ -44,9 +50,16 @@ namespace fairwindsk {
             QString getUrl();
             QPixmap getIcon();
             QString getAppIcon();
-            QString getSettings(QString pluginUrl);
-            QString getAbout(QString pluginUrl);
-            QString getHelp(QString pluginUrl);
+            void setAppIcon(QString appIcon);
+
+            QString getSettingsUrl(QString pluginUrl);
+            void setSettingsUrl(QString settingsUrl);
+
+            QString getAboutUrl(QString pluginUrl);
+            void setAboutUrl(QString aboutUrl);
+
+            QString getHelpUrl(QString pluginUrl);
+            void setHelpUrl(QString helpUrl);
 
             QStringList getArguments();
 

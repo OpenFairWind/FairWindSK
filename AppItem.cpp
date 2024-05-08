@@ -358,7 +358,37 @@ namespace fairwindsk {
         return result;
     }
 
-    QString AppItem::getSettings(QString pluginUrl) {
+    void AppItem::setName(QString name) {
+        // Set the name value
+        modifyJsonValue(m_jsonApp,"name", name);
+    }
+
+    void AppItem::setDescription(QString description) {
+        // Set the name value
+        modifyJsonValue(m_jsonApp,"description", description);
+    }
+
+    void AppItem::setAppIcon(QString appIcon) {
+        // Set the name value
+        modifyJsonValue(m_jsonApp,"signalk.appIcon", appIcon);
+    }
+
+    void AppItem::setSettingsUrl(QString settingsUrl) {
+        // Set the name value
+        modifyJsonValue(m_jsonApp,"fairwind.settings", settingsUrl);
+    }
+
+    void AppItem::setAboutUrl(QString aboutUrl) {
+        // Set the name value
+        modifyJsonValue(m_jsonApp,"fairwind.about", aboutUrl);
+    }
+
+    void AppItem::setHelpUrl(QString helpUrl) {
+        // Set the name value
+        modifyJsonValue(m_jsonApp,"fairwind.help", helpUrl);
+    }
+
+    QString AppItem::getSettingsUrl(QString pluginUrl) {
         QString result = "";
         if (m_jsonApp.contains("fairwind") && m_jsonApp["fairwind"].isObject()) {
             auto fairwindJsonObject = m_jsonApp["fairwind"].toObject();
@@ -377,7 +407,7 @@ namespace fairwindsk {
         return result;
     }
 
-    QString AppItem::getAbout(QString pluginUrl) {
+    QString AppItem::getAboutUrl(QString pluginUrl) {
         QString result = "";
         if (m_jsonApp.contains("fairwind") && m_jsonApp["fairwind"].isObject()) {
             auto fairwindJsonObject = m_jsonApp["fairwind"].toObject();
@@ -388,7 +418,7 @@ namespace fairwindsk {
         return result;
     }
 
-    QString AppItem::getHelp(QString pluginUrl) {
+    QString AppItem::getHelpUrl(QString pluginUrl) {
         QString result = "";
         if (m_jsonApp.contains("fairwind") && m_jsonApp["fairwind"].isObject()) {
             auto fairwindJsonObject = m_jsonApp["fairwind"].toObject();
@@ -397,5 +427,10 @@ namespace fairwindsk {
             }
         }
         return result;
+    }
+
+    void AppItem::setDisplayName(QString displayName) {
+        // Set the name value
+        modifyJsonValue(m_jsonApp,"signalk.displayName", displayName);
     }
 }
