@@ -22,10 +22,17 @@ namespace fairwindsk::ui::settings {
     Settings::Settings(QWidget *parent, QWidget *currenWidget): QWidget(parent), ui(new Ui::Settings) {
         ui->setupUi(this);
 
-        ui->tabWidget->addTab(new Main(), tr("Main"));
-        ui->tabWidget->addTab(new Connection(), tr("Connection"));
-        ui->tabWidget->addTab(new SignalK(), tr("Signal K"));
-        ui->tabWidget->addTab(new Apps(), tr("Apps"));
+        auto fairWindSk = FairWindSK::getInstance();
+
+        m_configuration = QJsonObject(fairWindSk->getConfiguration());
+        for (const auto& hash: fairWindSk->getAppsHashes()) {
+            m_mapHash2AppItem.insert(hash, fairWindSk->getAppItemByHash(hash));
+        }
+
+        ui->tabWidget->addTab(new Main(this), tr("Main"));
+        ui->tabWidget->addTab(new Connection(this), tr("Connection"));
+        ui->tabWidget->addTab(new SignalK(this), tr("Signal K"));
+        ui->tabWidget->addTab(new Apps(this), tr("Apps"));
 
         m_currentWidget = currenWidget;
         connect(ui->buttonBox,&QDialogButtonBox::accepted,this,&Settings::onAccepted);
@@ -41,6 +48,16 @@ namespace fairwindsk::ui::settings {
 
     Settings::~Settings() {
         delete ui;
+    }
+
+    QList<QString> Settings::getAppsHashes() {
+        return m_mapHash2AppItem.keys();
+    }
+
+
+
+    AppItem *Settings::getAppItemByHash(QString hash) {
+        return m_mapHash2AppItem[hash];
     }
 
 } // fairwindsk::ui

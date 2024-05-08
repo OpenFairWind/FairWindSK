@@ -9,8 +9,11 @@
 #include "FairWindSK.hpp"
 
 namespace fairwindsk::ui::settings {
-    Main::Main(QWidget *parent) :
+    Main::Main(Settings *settings, QWidget *parent) :
             QWidget(parent), ui(new Ui::Main) {
+
+        m_settings = settings;
+
         ui->setupUi(this);
 
         if (fairwindsk::FairWindSK::getVirtualKeyboard()) {

@@ -11,8 +11,11 @@
 #include "FairWindSK.hpp"
 
 namespace fairwindsk::ui::settings {
-    Connection::Connection(QWidget *parent) :
+    Connection::Connection(Settings *settings, QWidget *parent) :
             QWidget(parent), ui(new Ui::Connection) {
+
+        m_settings = settings;
+
         ui->setupUi(this);
 
         // Hide the restart button

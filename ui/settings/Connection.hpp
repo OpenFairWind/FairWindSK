@@ -7,6 +7,7 @@
 
 #include <QWidget>
 #include <QtZeroConf/qzeroconf.h>
+#include "Settings.hpp"
 
 namespace fairwindsk::ui::settings {
     QT_BEGIN_NAMESPACE
@@ -17,7 +18,7 @@ namespace fairwindsk::ui::settings {
     Q_OBJECT
 
     public:
-        explicit Connection(QWidget *parent = nullptr);
+        explicit Connection(Settings *settings, QWidget *parent = nullptr);
 
         ~Connection() override;
 
@@ -36,7 +37,7 @@ namespace fairwindsk::ui::settings {
 
     private:
         Ui::Connection *ui;
-
+        Settings *m_settings;
         bool m_stop;
         QZeroConf m_zeroConf;
 

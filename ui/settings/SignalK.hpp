@@ -6,6 +6,7 @@
 #define FAIRWINDSK_SIGNALK_HPP
 
 #include <QWidget>
+#include "Settings.hpp"
 
 namespace fairwindsk::ui::settings {
     QT_BEGIN_NAMESPACE
@@ -16,12 +17,14 @@ namespace fairwindsk::ui::settings {
     Q_OBJECT
 
     public:
-        explicit SignalK(QWidget *parent = nullptr);
+        explicit SignalK(Settings *settings, QWidget *parent = nullptr);
 
         ~SignalK() override;
 
     private:
         Ui::SignalK *ui;
+
+        Settings *m_settings;
     };
 } // fairwindsk::ui::settings
 

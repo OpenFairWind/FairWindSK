@@ -9,8 +9,11 @@
 #include "FairWindSK.hpp"
 
 namespace fairwindsk::ui::settings {
-    SignalK::SignalK(QWidget *parent) :
+    SignalK::SignalK(Settings *settings, QWidget *parent) :
             QWidget(parent), ui(new Ui::SignalK) {
+
+        m_settings = settings;
+
         ui->setupUi(this);
 
         auto fairWindSK = FairWindSK::getInstance();

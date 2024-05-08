@@ -6,6 +6,7 @@
 #define FAIRWINDSK_MAIN_HPP
 
 #include <QWidget>
+#include "Settings.hpp"
 
 namespace fairwindsk::ui::settings {
     QT_BEGIN_NAMESPACE
@@ -16,17 +17,19 @@ namespace fairwindsk::ui::settings {
     Q_OBJECT
 
     public:
-        explicit Main(QWidget *parent = nullptr);
+        explicit Main(Settings *settings, QWidget *parent = nullptr);
 
         ~Main() override;
 
     private slots:
 
-        void onVirtualKeyboard(int state);
+        static void onVirtualKeyboard(int state);
 
 
     private:
         Ui::Main *ui;
+
+        Settings *m_settings;
     };
 } // fairwindsk::ui::settings
 
