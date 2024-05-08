@@ -265,11 +265,25 @@
                  </layout>
                 </item>
                 <item row="1" column="1">
-                 <widget class="QLineEdit" name="lineEdit_Apps_Name">
-                  <property name="readOnly">
-                   <bool>true</bool>
-                  </property>
-                 </widget>
+                 <layout class="QGridLayout" name="gridLayout_Apps_Details_Fields_AppIcon">
+                  <item row="0" column="0">
+                   <widget class="QLineEdit" name="lineEdit_Apps_Name">
+                    <property name="readOnly">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="1">
+                   <widget class="QPushButton" name="pushButton_Apps_Name_Browse">
+                    <property name="enabled">
+                     <bool>false</bool>
+                    </property>
+                    <property name="text">
+                     <string>Browse...</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
                 </item>
                 <item row="9" column="0">
                  <widget class="QLabel" name="label_Apps_DisplayName">
