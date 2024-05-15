@@ -8,9 +8,13 @@
 #include <QString>
 #include <QList>
 #include <QMap>
-#include <QJsonDocument>
+#include <QString>
+#include <nlohmann/json.hpp>
+#include <QWebEngineProfile>
+
 #include "AppItem.hpp"
 #include "signalk/Client.hpp"
+#include "Configuration.hpp"
 
 namespace fairwindsk {
 
@@ -23,55 +27,33 @@ namespace fairwindsk {
     class FairWindSK: public QObject {
         Q_OBJECT
 
-
-
-
     public:
         static FairWindSK *getInstance();
 
-        QJsonObject getConfiguration();
+        Configuration *getConfiguration();
+        void setConfiguration(Configuration *configuration);
 
-        void loadConfig();
-        void saveConfig();
+
         bool startSignalK();
         bool loadApps();
 
-        AppItem *getAppItemByHash(QString hash);
-        QString getAppHashById(QString appId);
+        AppItem *getAppItemByHash(const QString& hash);
+        QString getAppHashById(const QString& appId);
         QList<QString> getAppsHashes();
 
-        QString getVesselSpeedUnits();
-        QString getWindSpeedUnits();
-        QString getDistanceUnits();
-        QString getDepthUnits();
-
-        bool getVirtualkeyboard();
-
-        QString getSignalKServerUrl();
-        void setSignalKServerUrl(const QString& signalKServerUrl);
-
-        QString getToken();
-        void setToken(const QString& token);
-
-        QString getMyDataApp();
-        QString getMOBApp();
-        QString getAlarmsApp();
-        QString getSettingsApp();
-
-        int getSleep();
-        int getRetry();
+        QWebEngineProfile *getWebEngineProfile();
 
         bool isDebug() const;
 
         signalk::Client *getSignalKClient();
 
-        static void setVirtualKeyboard(bool value);
-        static bool getVirtualKeyboard();
+        void loadConfig();
 
-        void modifyJsonValue(QJsonObject &obj, const QString &path, const QJsonValue &newValue);
-
+        ~FairWindSK();
 
     private:
+
+        QWebEngineProfile *m_profile;
 
         QMap<QString, AppItem *> m_mapHash2AppItem;
         QMap<QString, QString> m_mapAppId2Hash;
@@ -84,22 +66,13 @@ namespace fairwindsk {
 
         signalk::Client m_signalkClient;
 
-        QString m_username;
-        QString m_password;
-        /*
-        QString m_signalKServerUrl;
-        QString m_token;
-
-        int m_mSleep;
-        int m_nRetry;
-         */
 
         bool m_debug;
 
         QString m_configFilename;
-        QJsonObject m_configuration;
+        Configuration m_configuration;
 
-        QString getAppNameByKeyFromConfiguration(const QString& key);
+
     };
 }
 
