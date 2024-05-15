@@ -4,7 +4,7 @@
     <comment/>
     <exportmacro/>
     <class>fairwindsk::ui::settings::Apps</class>
-    <widget class="QWidget" name="tab_apps">
+    <widget class="QWidget" name="Apps">
         <attribute name="title">
          <string>Apps</string>
         </attribute>

@@ -4,7 +4,7 @@
     <comment/>
     <exportmacro/>
     <class>fairwindsk::ui::settings::SignalK</class>
-    <widget class="QWidget" name="tab_signalk">
+    <widget class="QWidget" name="SignalK">
         <attribute name="title">
             <string>Signal K</string>
         </attribute>
