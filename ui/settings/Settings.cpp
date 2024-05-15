@@ -24,7 +24,8 @@ namespace fairwindsk::ui::settings {
 
         auto fairWindSk = FairWindSK::getInstance();
 
-        m_configuration = QJsonObject(fairWindSk->getConfiguration());
+        m_configuration.setRoot(fairWindSk->getConfiguration()->getRoot());
+
         for (const auto& hash: fairWindSk->getAppsHashes()) {
             m_mapHash2AppItem.insert(hash, fairWindSk->getAppItemByHash(hash));
         }
@@ -58,6 +59,10 @@ namespace fairwindsk::ui::settings {
 
     AppItem *Settings::getAppItemByHash(QString hash) {
         return m_mapHash2AppItem[hash];
+    }
+
+    Configuration *Settings::getConfiguration() {
+        return &m_configuration;
     }
 
 } // fairwindsk::ui

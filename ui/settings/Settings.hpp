@@ -9,6 +9,7 @@
 #include <QtZeroConf/qzeroconf.h>
 #include <QtCore/qjsonobject.h>
 #include "AppItem.hpp"
+#include "Configuration.hpp"
 
 //namespace Ui { class Settings; }
 
@@ -32,6 +33,9 @@ namespace fairwindsk::ui::settings {
         AppItem *getAppItemByHash(QString hash);
         QList<QString> getAppsHashes();
 
+        Configuration *getConfiguration();
+
+
     public slots:
         void onAccepted();
 
@@ -41,7 +45,7 @@ namespace fairwindsk::ui::settings {
     private:
         Ui::Settings *ui;
 
-        QJsonObject m_configuration;
+        Configuration m_configuration;
         QMap<QString, AppItem *> m_mapHash2AppItem;
         QWidget *m_currentWidget;
 

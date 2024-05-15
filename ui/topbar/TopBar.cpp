@@ -7,8 +7,9 @@
 
 #include <QAbstractButton>
 #include <QGeoCoordinate>
-#include <QJsonObject>
 #include <QToolButton>
+#include <QString>
+#include <nlohmann/json.hpp>
 
 #include "TopBar.hpp"
 #include "../web/Web.hpp"
@@ -28,6 +29,9 @@ namespace fairwindsk::ui::topbar {
         // Get the FairWind singleton
         auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
+        // Get configuration
+        auto configuration = fairWindSK->getConfiguration();
+
         m_units = Units::getInstance();
 
         ui->toolButton_UL->setIcon(QPixmap::fromImage(QImage(":/resources/images/mainwindow/fairwind_icon.png")));
@@ -40,14 +44,14 @@ namespace fairwindsk::ui::topbar {
         ui->label_unitBTW->setText(m_units->getLabel("deg"));
         ui->label_unitHDG->setText(m_units->getLabel("deg"));
 
-        ui->label_unitSOG->setText(m_units->getLabel(fairWindSK->getVesselSpeedUnits()));
-        ui->label_unitSTW->setText(m_units->getLabel(fairWindSK->getVesselSpeedUnits()));
-        ui->label_unitVMG->setText(m_units->getLabel(fairWindSK->getVesselSpeedUnits()));
+        ui->label_unitSOG->setText(m_units->getLabel(configuration->getVesselSpeedUnits()));
+        ui->label_unitSTW->setText(m_units->getLabel(configuration->getVesselSpeedUnits()));
+        ui->label_unitVMG->setText(m_units->getLabel(configuration->getVesselSpeedUnits()));
 
-        ui->label_unitDPT->setText(m_units->getLabel(fairWindSK->getDepthUnits()));
+        ui->label_unitDPT->setText(m_units->getLabel(configuration->getDepthUnits()));
 
-        ui->label_unitDTG->setText(m_units->getLabel(fairWindSK->getDistanceUnits()));
-        ui->label_unitXTE->setText(m_units->getLabel(fairWindSK->getDistanceUnits()));
+        ui->label_unitDTG->setText(m_units->getLabel(configuration->getDistanceUnits()));
+        ui->label_unitXTE->setText(m_units->getLabel(configuration->getDistanceUnits()));
 
 
         double c=1.15;
@@ -103,31 +107,30 @@ namespace fairwindsk::ui::topbar {
 
         // Get the signalk document from the FairWind singleton
         //auto signalKDocument = fairWindSK->getSignalKDocument();
+        
+        auto confiurationJsonObject = configuration->getRoot();
 
-        // Get the configuration object
-        auto configuration = fairWindSK->getConfiguration();
-
-        if (configuration.contains("signalk") && configuration["signalk"].isObject()) {
-            auto signalkPaths = configuration["signalk"].toObject();
+        if (confiurationJsonObject.contains("signalk") && confiurationJsonObject["signalk"].is_object()) {
+            auto signalkPaths = confiurationJsonObject["signalk"];
 
 
             // Check if the Options object has tHe Position key and if it is a string
-            if (signalkPaths.contains("pos") && signalkPaths["pos"].isString()) {
+            if (signalkPaths.contains("pos") && signalkPaths["pos"].is_string()) {
 
                 // Subscribe and update
                 updatePOS(FairWindSK::getInstance()->getSignalKClient()->subscribe(
-                        signalkPaths["pos"].toString(),
+                        QString::fromStdString(signalkPaths["pos"].get<std::string>()),
                         this,
                         SLOT(fairwindsk::ui::topbar::TopBar::updatePOS)
                         ));
             }
 
             // Check if the Options object has tHe Heading key and if it is a string
-            if (signalkPaths.contains("cog") && signalkPaths["cog"].isString()) {
+            if (signalkPaths.contains("cog") && signalkPaths["cog"].is_string()) {
 
                 // Subscribe and update
                 updateCOG(FairWindSK::getInstance()->getSignalKClient()->subscribe(
-                        signalkPaths["cog"].toString(),
+                        QString::fromStdString(signalkPaths["cog"].get<std::string>()),
                         this,
                         SLOT(fairwindsk::ui::topbar::TopBar::updateCOG)
                 ));
@@ -137,22 +140,22 @@ namespace fairwindsk::ui::topbar {
             }
 
             // Check if the Options object has tHe Speed key and if it is a string
-            if (signalkPaths.contains("sog") && signalkPaths["sog"].isString()) {
+            if (signalkPaths.contains("sog") && signalkPaths["sog"].is_string()) {
 
                 // Subscribe and update
                 updateSOG( FairWindSK::getInstance()->getSignalKClient()->subscribe(
-                        signalkPaths["sog"].toString(),
+                        QString::fromStdString(signalkPaths["sog"].get<std::string>()),
                         this,
                         SLOT(fairwindsk::ui::topbar::TopBar::updateSOG)
                 ));
             }
 
             // Check if the Options object has tHe Heading key and if it is a string
-            if (signalkPaths.contains("hdg") && signalkPaths["hdg"].isString()) {
+            if (signalkPaths.contains("hdg") && signalkPaths["hdg"].is_string()) {
 
                 // Subscribe and update
                 updateHDG( FairWindSK::getInstance()->getSignalKClient()->subscribe(
-                        signalkPaths["hdg"].toString(),
+                        QString::fromStdString(signalkPaths["hdg"].get<std::string>()),
                         this,
                         SLOT(fairwindsk::ui::topbar::TopBar::updateHDG)
                 ));
@@ -161,22 +164,22 @@ namespace fairwindsk::ui::topbar {
             }
 
             // Check if the Options object has tHe Speed key and if it is a string
-            if (signalkPaths.contains("stw") && signalkPaths["stw"].isString()) {
+            if (signalkPaths.contains("stw") && signalkPaths["stw"].is_string()) {
 
                 /// Subscribe and update
                 updateSTW( FairWindSK::getInstance()->getSignalKClient()->subscribe(
-                        signalkPaths["stw"].toString(),
+                        QString::fromStdString(signalkPaths["stw"].get<std::string>()),
                         this,
                         SLOT(fairwindsk::ui::topbar::TopBar::updateSTW)
                 ));
             }
 
             // Check if the Options object has tHe Speed key and if it is a string
-            if (signalkPaths.contains("dpt") && signalkPaths["dpt"].isString()) {
+            if (signalkPaths.contains("dpt") && signalkPaths["dpt"].is_string()) {
 
                 // Subscribe and update
                 updateDPT(FairWindSK::getInstance()->getSignalKClient()->subscribe(
-                        signalkPaths["dpt"].toString(),
+                        QString::fromStdString(signalkPaths["dpt"].get<std::string>()),
                         this,
                         SLOT(fairwindsk::ui::topbar::TopBar::updateDPT)
                 ));
@@ -185,22 +188,22 @@ namespace fairwindsk::ui::topbar {
             }
 
             // Check if the Options object has tHe Speed key and if it is a string
-            if (signalkPaths.contains("wpt") && signalkPaths["wpt"].isString()) {
+            if (signalkPaths.contains("wpt") && signalkPaths["wpt"].is_string()) {
 
                 // Subscribe and update
                 updateWPT( FairWindSK::getInstance()->getSignalKClient()->subscribe(
-                        signalkPaths["wpt"].toString(),
+                        QString::fromStdString(signalkPaths["wpt"].get<std::string>()),
                         this,
                         SLOT(fairwindsk::ui::topbar::TopBar::updateWPT)
                 ));
             }
 
             // Check if the Options object has tHe Speed key and if it is a string
-            if (signalkPaths.contains("btw") && signalkPaths["btw"].isString()) {
+            if (signalkPaths.contains("btw") && signalkPaths["btw"].is_string()) {
 
                 // Subscribe and update
                 updateBTW(FairWindSK::getInstance()->getSignalKClient()->subscribe(
-                        signalkPaths["btw"].toString(),
+                        QString::fromStdString(signalkPaths["btw"].get<std::string>()),
                         this,
                         SLOT(fairwindsk::ui::topbar::TopBar::updateBTW)
                 ));
@@ -209,11 +212,11 @@ namespace fairwindsk::ui::topbar {
             }
 
             // Check if the Options object has tHe Speed key and if it is a string
-            if (signalkPaths.contains("dtg") && signalkPaths["dtg"].isString()) {
+            if (signalkPaths.contains("dtg") && signalkPaths["dtg"].is_string()) {
 
                 // Subscribe and update
                 updateDTG(FairWindSK::getInstance()->getSignalKClient()->subscribe(
-                        signalkPaths["dtg"].toString(),
+                        QString::fromStdString(signalkPaths["dtg"].get<std::string>()),
                         this,
                         SLOT(fairwindsk::ui::topbar::TopBar::updateDTG)
                 ));
@@ -222,11 +225,11 @@ namespace fairwindsk::ui::topbar {
             }
 
             // Check if the Options object has tHe Speed key and if it is a string
-            if (signalkPaths.contains("ttg") && signalkPaths["ttg"].isString()) {
+            if (signalkPaths.contains("ttg") && signalkPaths["ttg"].is_string()) {
 
                 // Subscribe and update
                 updateTTG(FairWindSK::getInstance()->getSignalKClient()->subscribe(
-                        signalkPaths["ttg"].toString(),
+                        QString::fromStdString(signalkPaths["ttg"].get<std::string>()),
                         this,
                         SLOT(fairwindsk::ui::topbar::TopBar::updateTTG)
                 ));
@@ -234,11 +237,11 @@ namespace fairwindsk::ui::topbar {
             }
 
             // Check if the Options object has tHe Speed key and if it is a string
-            if (signalkPaths.contains("eta") && signalkPaths["eta"].isString()) {
+            if (signalkPaths.contains("eta") && signalkPaths["eta"].is_string()) {
 
                 // Subscribe and update
                 updateETA( FairWindSK::getInstance()->getSignalKClient()->subscribe(
-                        signalkPaths["eta"].toString(),
+                        QString::fromStdString(signalkPaths["eta"].get<std::string>()),
                         this,
                         SLOT(fairwindsk::ui::topbar::TopBar::updateETA)
                 ));
@@ -247,22 +250,22 @@ namespace fairwindsk::ui::topbar {
 
 
             // Check if the Options object has tHe Speed key and if it is a string
-            if (signalkPaths.contains("xte") && signalkPaths["xte"].isString()) {
+            if (signalkPaths.contains("xte") && signalkPaths["xte"].is_string()) {
 
                 // Subscribe and update
                 updateXTE(FairWindSK::getInstance()->getSignalKClient()->subscribe(
-                        signalkPaths["xte"].toString(),
+                        QString::fromStdString(signalkPaths["xte"].get<std::string>()),
                         this,
                         SLOT(fairwindsk::ui::topbar::TopBar::updateXTE)
                 ));
             }
 
             // Check if the Options object has tHe Speed key and if it is a string
-            if (signalkPaths.contains("vmg") && signalkPaths["vmg"].isString()) {
+            if (signalkPaths.contains("vmg") && signalkPaths["vmg"].is_string()) {
 
                 // Subscribe and update
                 updateVMG(FairWindSK::getInstance()->getSignalKClient()->subscribe(
-                        signalkPaths["vmg"].toString(),
+                        QString::fromStdString(signalkPaths["vmg"].get<std::string>()),
                         this,
                         SLOT(fairwindsk::ui::topbar::TopBar::updateVMG)
                 ));
@@ -412,10 +415,10 @@ namespace fairwindsk::ui::topbar {
         } else {
 
             // Convert m/s to knots
-            value = m_units->convert("ms-1",FairWindSK::getInstance()->getVesselSpeedUnits(), value);
+            value = m_units->convert("ms-1",FairWindSK::getInstance()->getConfiguration()->getVesselSpeedUnits(), value);
 
             // Build the formatted value
-            text = m_units->format(FairWindSK::getInstance()->getVesselSpeedUnits(), value);
+            text = m_units->format(FairWindSK::getInstance()->getConfiguration()->getVesselSpeedUnits(), value);
 
             // Set the speed over ground label from the UI to the formatted value
             ui->label_SOG->setText(text);
@@ -485,10 +488,10 @@ namespace fairwindsk::ui::topbar {
         } else {
 
             // Convert m/s to knots
-            value = m_units->convert("ms-1",FairWindSK::getInstance()->getVesselSpeedUnits(), value);
+            value = m_units->convert("ms-1",FairWindSK::getInstance()->getConfiguration()->getVesselSpeedUnits(), value);
 
             // Build the formatted value
-            text = m_units->format(FairWindSK::getInstance()->getVesselSpeedUnits(), value);
+            text = m_units->format(FairWindSK::getInstance()->getConfiguration()->getVesselSpeedUnits(), value);
 
             // Set the speed over ground label from the UI to the formatted value
             ui->label_STW->setText(text);
@@ -522,10 +525,10 @@ namespace fairwindsk::ui::topbar {
         } else {
 
             // Convert m/s to knots
-            value = m_units->convert("m",FairWindSK::getInstance()->getDepthUnits(), value);
+            value = m_units->convert("m",FairWindSK::getInstance()->getConfiguration()->getDepthUnits(), value);
 
             // Build the formatted value
-            text = m_units->format(FairWindSK::getInstance()->getDepthUnits(), value);
+            text = m_units->format(FairWindSK::getInstance()->getConfiguration()->getDepthUnits(), value);
 
             // Set the speed over ground label from the UI to the formatted value
             ui->label_DPT->setText(text);

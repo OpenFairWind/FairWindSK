@@ -23,7 +23,7 @@ namespace fairwindsk::ui::settings {
 
     private slots:
 
-        static void onVirtualKeyboard(int state);
+        void onVirtualKeyboard(int state);
 
 
     private:
