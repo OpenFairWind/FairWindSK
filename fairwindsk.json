@@ -1,0 +1,190 @@
+{
+    "main": {
+        "virtualKeyboard": false
+    },
+    "apps": [
+        {
+            "fairwind": {
+                "active": true,
+                "order": 1,
+                "settings": "freeboard-sk"
+            },
+            "name": "@signalk/freeboard-sk",
+            "signalk": {
+                "appIcon": "file://icons/chart_icon.png"
+            }
+        },
+        {
+            "fairwind": {
+                "active": true,
+                "order": 2
+            },
+            "name": "@mxtommy/kip",
+            "signalk": {
+                "appIcon": "file://icons/dashboard_icon.png"
+            }
+        },
+        {
+            "fairwind": {
+                "active": true,
+                "order": 3
+            },
+            "name": "sk-depth-gauge",
+            "signalk": {
+                "appIcon": "file://icons/sonar_icon.png",
+                "displayName": "Depth"
+            }
+        },
+        {
+            "fairwind": {
+                "active": true,
+                "order": 4
+            },
+            "name": "signalk-top3ais",
+            "signalk": {
+                "appIcon": "file://icons/radar_icon.png",
+                "displayName": "AIS"
+            }
+        },
+        {
+            "name": "signalk-multiplex-viewer",
+            "signalk": {
+                "appIcon": "file://icons/signalkmultiplexviewer_icon.png",
+                "displayName": "Signal K Multiplex Viewer"
+            }
+        },
+        {
+            "name": "signalk-browser",
+            "signalk": {
+                "appIcon": "file://icons/signalkbrowser_icon.png",
+                "displayName": "Signal K Browser"
+            }
+        },
+        {
+            "name": "@signalk/sailgauge",
+            "signalk": {
+                "appIcon": "file://icons/sailgauge_icon.png",
+                "displayName": "Sail Gauge"
+            }
+        },
+        {
+            "description": "OpenCPN Open Source Chart Plotter",
+            "fairwind": {
+                "active": true,
+                "arguments": [
+                    "-fullscreen"
+                ]
+            },
+            "name": "file:///Applications/OpenCPN.app/Contents/MacOS/OpenCPN",
+            "signalk": {
+                "appIcon": "file:///Applications/OpenCPN.app/Contents/SharedSupport/opencpn.png",
+                "displayName": "OpenCPN"
+            }
+        },
+        {
+            "fairwind": {
+                "active": true,
+                "settings": "autopilot"
+            },
+            "name": "@signalk/signalk-autopilot"
+        },
+        {
+            "fairwind": {
+                "active": true,
+                "settings": "signalk-node-red"
+            },
+            "name": "@signalk/signalk-node-red"
+        },
+        {
+            "fairwind": {
+                "active": false
+            },
+            "name": "admin"
+        },
+        {
+            "fairwind": {
+                "active": false
+            },
+            "name": "admin/#/appstore/apps"
+        },
+        {
+            "description": "Signal K Server",
+            "fairwind": {
+                "active": true,
+                "order": 1000
+            },
+            "name": "http:///",
+            "signalk": {
+                "appIcon": "file://icons/signalkserver_icon.png",
+                "displayName": "Signal K"
+            }
+        },
+        {
+            "description": "Spotify web application",
+            "fairwind": {
+                "active": true
+            },
+            "name": "http://spotify.com",
+            "signalk": {
+                "appIcon": "file://icons/spotify_icon.png",
+                "displayName": "Spotify"
+            }
+        },
+        {
+            "description": "Netflix web application",
+            "fairwind": {
+                "active": true
+            },
+            "name": "http://netflix.com",
+            "signalk": {
+                "appIcon": "file://icons/netflix_icon.png",
+                "displayName": "Netflix"
+            }
+        },
+        {
+            "description": "Youtube web application",
+            "fairwind": {
+                "active": true
+            },
+            "name": "http://youtube.com",
+            "signalk": {
+                "appIcon": "file://icons/youtube_icon.png",
+                "displayName": "Youtube"
+            }
+        }
+    ],
+    "bottomBarApps": {
+        "alarms": "",
+        "mob": "",
+        "mydata": "",
+        "settings": "admin"
+    },
+    "connection": {
+        "retry": 10,
+        "server": "http://localhost:3000",
+        "sleep": 5
+    },
+    "signalk": {
+        "btw": "navigation.course.calcValues.bearingTrue",
+        "cog": "navigation.courseOverGroundTrue",
+        "dpt": "environment.depth.belowTransducer",
+        "dtg": "navigation.course.calcValues.distance",
+        "eta": "navigation.course.calcValues.estimatedTimeOfArrival",
+        "hdg": "navigation.headingTrue",
+        "pos": "navigation.position",
+        "sog": "navigation.speedOverGround",
+        "stw": "navigation.speedThroughWater",
+        "ttg": "navigation.course.calcValues.timeToGo",
+        "vmg": "performance.velocityMadeGood",
+        "wpt": "navigation.course.nextPoint",
+        "xte": "navigation.course.calcValues.crossTrackError"
+    },
+    "units": {
+        "airPressure": "HPa",
+        "airTemperature": "C",
+        "depth": "m",
+        "distance": "nm",
+        "vesselSpeed": "kn",
+        "windSpeed": "kn"
+    }
+}
