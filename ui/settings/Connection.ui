@@ -1,104 +1,148 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
-    <author/>
-    <comment/>
-    <exportmacro/>
-    <class>fairwindsk::ui::settings::Connection</class>
-    <widget class="QWidget" name="tab_connection">
-        <attribute name="title">
-            <string>Connection</string>
-        </attribute>
-        <layout class="QGridLayout" name="gridLayout_Connection">
-            <item row="2" column="1">
-                <widget class="QPushButton" name="pushButton_connect">
-                    <property name="text">
-                        <string>Connect</string>
-                    </property>
-                </widget>
-            </item>
-            <item row="4" column="1">
-                <widget class="QPushButton" name="pushButton_restart">
-                    <property name="text">
-                        <string>Restart</string>
-                    </property>
-                </widget>
-            </item>
-            <item row="0" column="1">
-                <layout class="QGridLayout" name="gridLayout">
-                    <property name="horizontalSpacing">
-                        <number>-1</number>
-                    </property>
-                    <item row="2" column="2">
-                        <widget class="QLineEdit" name="lineEdit_username">
-                            <property name="text">
-                                <string>admin</string>
-                            </property>
-                        </widget>
-                    </item>
-                    <item row="1" column="2">
-                        <widget class="QComboBox" name="comboBox_signalkserverurl">
-                            <property name="editable">
-                                <bool>true</bool>
-                            </property>
-                            <property name="currentText">
-                                <string notr="true">http://localhost:3000</string>
-                            </property>
-                            <item>
-                                <property name="text">
-                                    <string notr="true">http://localhost:3000</string>
-                                </property>
-                            </item>
-                        </widget>
-                    </item>
-                    <item row="3" column="1">
-                        <widget class="QLabel" name="label_password">
-                            <property name="text">
-                                <string>Password</string>
-                            </property>
-                        </widget>
-                    </item>
-                    <item row="1" column="1">
-                        <widget class="QLabel" name="label_signalkserverurl">
-                            <property name="text">
-                                <string>Signal K Server URL</string>
-                            </property>
-                        </widget>
-                    </item>
-                    <item row="3" column="2">
-                        <widget class="QLineEdit" name="lineEdit_password">
-                            <property name="text">
-                                <string>password</string>
-                            </property>
-                            <property name="echoMode">
-                                <enum>QLineEdit::PasswordEchoOnEdit</enum>
-                            </property>
-                        </widget>
-                    </item>
-                    <item row="2" column="1">
-                        <widget class="QLabel" name="label_username">
-                            <property name="text">
-                                <string>Username</string>
-                            </property>
-                        </widget>
-                    </item>
-                </layout>
-            </item>
-            <item row="1" column="1">
-                <widget class="QTextEdit" name="textEdit_message">
-                    <property name="readOnly">
-                        <bool>true</bool>
-                    </property>
-                </widget>
-            </item>
-            <item row="3" column="1">
-                <widget class="QPushButton" name="pushButton_stop">
-                    <property name="text">
-                        <string>Stop</string>
-                    </property>
-                </widget>
-            </item>
-        </layout>
+ <class>fairwindsk::ui::settings::Connection</class>
+ <widget class="QWidget" name="Connection">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>456</width>
+    <height>419</height>
+   </rect>
+  </property>
+  <layout class="QGridLayout" name="gridLayout_Connection">
+   <item row="4" column="1">
+    <widget class="QTextEdit" name="textEdit_message">
+     <property name="readOnly">
+      <bool>true</bool>
+     </property>
     </widget>
-    <pixmapfunction/>
-    <connections/>
+   </item>
+   <item row="0" column="1">
+    <layout class="QGridLayout" name="gridLayout">
+     <property name="horizontalSpacing">
+      <number>-1</number>
+     </property>
+     <item row="1" column="2">
+      <widget class="QComboBox" name="comboBox_signalkserverurl">
+       <property name="editable">
+        <bool>true</bool>
+       </property>
+       <property name="currentText">
+        <string notr="true"></string>
+       </property>
+       <item>
+        <property name="text">
+         <string notr="true">http://localhost:3000</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QLabel" name="label_signalkserverurl">
+       <property name="text">
+        <string>Signal K Server URL</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="3">
+      <widget class="QPushButton" name="pushButton_requestToken">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Request Token</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QLabel" name="label_state">
+       <property name="text">
+        <string>State</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="2">
+      <widget class="QLabel" name="label_lblState">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="QLabel" name="label_permission">
+       <property name="text">
+        <string>Permission</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="2">
+      <widget class="QLabel" name="label_lblPermission">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1">
+      <widget class="QLabel" name="label_expirationTime">
+       <property name="text">
+        <string>Expiration Time</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="2">
+      <widget class="QLabel" name="label_lblExpirationTime">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="3">
+      <widget class="QPushButton" name="pushButton_cancelRequest">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Cancel Request</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="3">
+      <widget class="QPushButton" name="pushButton_removeToken">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Remove Token</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="3" column="1">
+    <widget class="QWebEngineView" name="webEngineView">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="url">
+      <url>
+       <string>about:blank</string>
+      </url>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QWebEngineView</class>
+   <extends>QWidget</extends>
+   <header location="global">QtWebEngineWidgets/QWebEngineView</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
 </ui>
