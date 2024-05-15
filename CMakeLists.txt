@@ -21,11 +21,22 @@ include_directories(SYSTEM ${EXTERNAL_INSTALL_LOCATION}/include)
 # Add to the libraries
 link_directories(${EXTERNAL_INSTALL_LOCATION}/lib)
 
+#### json https://github.com/nlohmann/json
+
+ExternalProject_Add(json
+        GIT_TAG v3.11.3
+        GIT_REPOSITORY https://github.com/nlohmann/json.git
+        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION} -DBUILD_TESTING=OFF -DJSON_BuildTests=OFF
+        TIMEOUT 360
+)
+
+# QtZeroConf
 ExternalProject_Add(QtZeroConf
         GIT_REPOSITORY https://github.com/jbagg/QtZeroConf.git
         CMAKE_ARGS -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH} -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION} -DBUILD_SHARED_LIBS=ON
         TIMEOUT 360
 )
+
 set(LIBQTZEROCONF ${EXTERNAL_INSTALL_LOCATION}/lib/libQtZeroConf.so)
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     set(LIBQTZEROCONF ${EXTERNAL_INSTALL_LOCATION}/lib/static/libQtZeroConf.lib)
@@ -93,9 +104,12 @@ add_executable(${PROJECT_NAME}
         ui/settings/SignalK.cpp
         ui/settings/SignalK.hpp
         ui/settings/SignalK.ui
+        Configuration.cpp
+        Configuration.hpp
 
 )
 
+add_dependencies(${PROJECT_NAME} json)
 add_dependencies(${PROJECT_NAME} QtZeroConf)
 
 target_link_libraries(${PROJECT_NAME}
@@ -114,3 +128,6 @@ target_link_libraries(${PROJECT_NAME}
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_SOURCE_DIR}/resources/images/icons $<TARGET_FILE_DIR:${PROJECT_NAME}>/icons/)
+
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/fairwindsk.json $<TARGET_FILE_DIR:${PROJECT_NAME}>/fairwindsk.json)
