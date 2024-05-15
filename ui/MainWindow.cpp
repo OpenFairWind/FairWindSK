@@ -25,20 +25,7 @@
  */
 fairwindsk::ui::MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
 
-    // Show the settings view
-    auto fairWindSK = FairWindSK::getInstance();
 
-    auto profileName = QString::fromLatin1("FairWindSK.%1").arg(qWebEngineChromiumVersion());
-
-    m_profile = new QWebEngineProfile(profileName );
-
-
-    auto cookie = QNetworkCookie("JAUTHENTICATION", fairWindSK->getSignalKClient()->getToken().toUtf8());
-    m_profile->cookieStore()->setCookie(cookie,QUrl(fairWindSK->getSignalKServerUrl()));
-
-    if (fairWindSK->isDebug()) {
-        qDebug() << "QWenEngineProfile " << m_profile->isOffTheRecord() << " data store: " << m_profile->persistentStoragePath();
-    }
 
     // Set up the UI
     ui->setupUi(this);
@@ -119,10 +106,6 @@ fairwindsk::ui::MainWindow::~MainWindow() {
         ui = nullptr;
     }
 
-    if (m_profile) {
-        delete m_profile;
-        m_profile = nullptr;
-    }
 }
 
 /*
@@ -187,7 +170,7 @@ void fairwindsk::ui::MainWindow::setForegroundApp(QString hash) {
 
         } else {
             // Create a new web instance
-            auto web = new fairwindsk::ui::web::Web(nullptr, appItem, m_profile);
+            auto web = new fairwindsk::ui::web::Web(nullptr, appItem, fairWindSK->getWebEngineProfile());
 
             // Get the app widget
             widgetApp = web;
@@ -244,7 +227,7 @@ void fairwindsk::ui::MainWindow::onApps() {
  */
 void fairwindsk::ui::MainWindow::onMyData() {
     auto fairWindSK = FairWindSK::getInstance();
-    auto app = fairWindSK->getMyDataApp();
+    auto app = fairWindSK->getConfiguration()->getMyDataApp();
     if (!app.isEmpty() && fairWindSK->getAppsHashes().contains(app)) {
         setForegroundApp(app);
     }
@@ -256,7 +239,7 @@ void fairwindsk::ui::MainWindow::onMyData() {
  */
 void fairwindsk::ui::MainWindow::onMOB() {
     auto fairWindSK = FairWindSK::getInstance();
-    auto app = fairWindSK->getMOBApp();
+    auto app = fairWindSK->getConfiguration()->getMOBApp();
     if (!app.isEmpty() && fairWindSK->getAppsHashes().contains(app)) {
         setForegroundApp(app);
     }
@@ -270,7 +253,7 @@ void fairwindsk::ui::MainWindow::onMOB() {
  */
 void fairwindsk::ui::MainWindow::onAlarms() {
     auto fairWindSK = FairWindSK::getInstance();
-    auto app = fairWindSK->getAlarmsApp();
+    auto app = fairWindSK->getConfiguration()->getAlarmsApp();
     if (!app.isEmpty() && fairWindSK->getAppsHashes().contains(app)) {
         setForegroundApp(app);
     }

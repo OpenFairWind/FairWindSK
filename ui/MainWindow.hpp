@@ -67,7 +67,7 @@ namespace fairwindsk::ui {
     private:
         Ui::MainWindow *ui;
 
-        QWebEngineProfile *m_profile;
+
 
         // This will be populated with the apps launched by the user for quick usage
         QMap<QString, QWidget *> m_mapHash2Widget;
