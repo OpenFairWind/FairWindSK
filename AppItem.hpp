@@ -5,9 +5,11 @@
 #ifndef APPITEM_HPP
 #define APPITEM_HPP
 
+#include <QObject>
 #include <QMap>
-#include <QJsonObject>
 #include <QImage>
+#include <QString>
+#include <nlohmann/json.hpp>
 
 namespace fairwindsk::ui::web { class Web; }
 
@@ -16,19 +18,17 @@ namespace fairwindsk {
     class AppItem: QObject {
         Q_OBJECT
 
-
-
     public:
             AppItem();
 
-            explicit AppItem(QJsonObject jsonApp);
+            explicit AppItem(nlohmann::json jsonApp);
 
             AppItem(const AppItem &app);
 
-            void update(QJsonObject jsonApp);
+            void update(const nlohmann::json&  jsonApp);
 
             QString getDisplayName();
-            void setDisplayName(QString displayName);
+            void setDisplayName(const QString& displayName);
 
             bool getActive();
             void setActive(bool active);
@@ -36,10 +36,10 @@ namespace fairwindsk {
             void setOrder(int order);
 
             QString getName();
-            void setName(QString name);
+            void setName(const QString& name);
 
             QString getDescription();
-            void setDescription(QString description);
+            void setDescription(const QString& description);
 
             QString getVersion();
             QString getVendor();
@@ -50,35 +50,27 @@ namespace fairwindsk {
             QString getUrl();
             QPixmap getIcon();
             QString getAppIcon();
-            void setAppIcon(QString appIcon);
+            void setAppIcon(const QString& appIcon);
 
-            QString getSettingsUrl(QString pluginUrl);
-            void setSettingsUrl(QString settingsUrl);
+            QString getSettingsUrl(const QString& pluginUrl);
+            void setSettingsUrl(const QString& settingsUrl);
 
-            QString getAboutUrl(QString pluginUrl);
-            void setAboutUrl(QString aboutUrl);
+            QString getAboutUrl(const QString& pluginUrl);
+            void setAboutUrl(const QString& aboutUrl);
 
-            QString getHelpUrl(QString pluginUrl);
-            void setHelpUrl(QString helpUrl);
+            QString getHelpUrl(const QString& pluginUrl);
+            void setHelpUrl(const QString& helpUrl);
 
             QStringList getArguments();
-
-            //void setWeb(ui::web::Web *pWeb);
-            //ui::web::Web *getWeb();
 
             void setWidget(QWidget *pWidget);
             QWidget *getWidget();
 
-            void modifyJsonValue(QJsonObject &obj, const QString &path, const QJsonValue &newValue);
-
             bool operator<(const AppItem& o) const;
 
         private:
-            QJsonObject m_jsonApp;
-            //bool m_active;
-            //int m_order;
+            nlohmann::json m_jsonApp;
 
-            //ui::web::Web *m_pWeb;
             QWidget *m_pWidget;
     };
 }

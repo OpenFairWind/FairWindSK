@@ -16,7 +16,7 @@ namespace fairwindsk::ui::settings {
 
         ui->setupUi(this);
 
-        if (fairwindsk::FairWindSK::getVirtualKeyboard()) {
+        if (m_settings->getConfiguration()->getVirtualKeyboard()) {
             ui->checkBox_virtualkeboard->setCheckState(Qt::Checked);
         } else {
             ui->checkBox_virtualkeboard->setCheckState(Qt::Unchecked);
@@ -31,9 +31,9 @@ namespace fairwindsk::ui::settings {
         auto fairWindSK = FairWindSK::getInstance();
 
         if (state == Qt::Checked) {
-            fairwindsk::FairWindSK::setVirtualKeyboard(true);
+            m_settings->getConfiguration()->setVirtualKeyboard(true);
         } else {
-            fairwindsk::FairWindSK::setVirtualKeyboard(false);
+            m_settings->getConfiguration()->setVirtualKeyboard(false);
         }
     }
 

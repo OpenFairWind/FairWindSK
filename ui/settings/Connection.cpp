@@ -5,37 +5,90 @@
 // You may need to build the project (run Qt uic code generator) to get "ui_Connection.h" resolved
 
 #include <QThread>
-
+#include <QNetworkAccessManager>
+#include <QNetworkRequest>
+#include <QNetworkReply>
+#include <QWebEngineSettings>
+#include <QJsonDocument>
+#include <QSettings>
 #include "Connection.hpp"
 #include "ui_Connection.h"
 #include "FairWindSK.hpp"
 
 namespace fairwindsk::ui::settings {
-    Connection::Connection(Settings *settings, QWidget *parent) :
+    Connection::Connection(Settings *settingsWidget, QWidget *parent) :
             QWidget(parent), ui(new Ui::Connection) {
 
-        m_settings = settings;
+        m_settings = settingsWidget;
 
         ui->setupUi(this);
 
-        // Hide the restart button
-        ui->pushButton_restart->setVisible(false);
+        // Set the current server
+        ui->comboBox_signalkserverurl->setCurrentText(m_settings->getConfiguration()->getSignalKServerUrl());
 
-        // Hide the stop button
-        ui->pushButton_stop->setVisible(false);
+        auto page = new QWebEnginePage(FairWindSK::getInstance()->getWebEngineProfile());
+        ui->webEngineView->setPage(page);
 
         // Show the connect button
-        ui->pushButton_connect->setVisible(true);
+        ui->webEngineView->setVisible(false);
+        ui->textEdit_message->setVisible(true);
+
+        // Initialize the QT managed settings
+        QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
+
+        // Get the name of the FairWind++ configuration file
+        auto href = settings.value("href", "").toString();
+
+        // Get the name of the FairWind++ configuration file
+        auto token = settings.value("token", "").toString();
+
+        // Get the name of the FairWind++ configuration file
+        auto expirationTime = settings.value("expirationTime", "").toString();
+
+        qDebug() << "href: " << href << " token: " << token << " expirationTime: " << expirationTime;
+
+
+        if (token.isEmpty()) {
+            ui->pushButton_requestToken->setEnabled(true);
+            ui->pushButton_cancelRequest->setEnabled(false);
+            ui->pushButton_removeToken->setEnabled(false);
+        } else {
+            ui->pushButton_requestToken->setEnabled(false);
+            ui->pushButton_cancelRequest->setEnabled(false);
+            ui->pushButton_removeToken->setEnabled(true);
+        }
+
+        if (!href.isEmpty()) {
+            ui->pushButton_requestToken->setEnabled(false);
+            ui->pushButton_cancelRequest->setEnabled(true);
+            ui->pushButton_removeToken->setEnabled(false);
+
+            m_timer = new QTimer(this);
+            connect(m_timer, SIGNAL(timeout()), this, SLOT(onCheckRequestToken()));
+            m_timer->start(1000);
+
+            ui->webEngineView->setUrl(ui->comboBox_signalkserverurl->currentText());
+            ui->webEngineView->setVisible(true);
+            ui->textEdit_message->setVisible(false);
+        }
+
+        if (!expirationTime.isEmpty()) {
+            ui->pushButton_requestToken->setEnabled(false);
+            ui->pushButton_cancelRequest->setEnabled(false);
+            ui->pushButton_removeToken->setEnabled(true);
+        }
 
         // Show the settings view when the user clicks on the Settings button inside the BottomBar object
-        connect(ui->pushButton_connect, &QPushButton::clicked, this, &Connection::onConnect);
+        connect(ui->pushButton_requestToken, &QPushButton::clicked, this, &Connection::onRequestToken);
 
         // Show the settings view when the user clicks on the Settings button inside the BottomBar object
-        connect(ui->pushButton_stop, &QPushButton::clicked, this, &Connection::onStop);
+        connect(ui->pushButton_cancelRequest, &QPushButton::clicked, this, &Connection::onCancelRequest);
 
         // Show the settings view when the user clicks on the Settings button inside the BottomBar object
-        connect(ui->pushButton_restart, &QPushButton::clicked, this, &Connection::onRestart);
+        connect(ui->pushButton_removeToken, &QPushButton::clicked, this, &Connection::onRemoveToken);
 
+
+        //
         connect(&m_zeroConf, &QZeroConf::serviceAdded, this, &Connection::addService);
 
         m_zeroConf.startBrowser("_http._tcp");
@@ -65,178 +118,264 @@ namespace fairwindsk::ui::settings {
 
     }
 
-    void Connection::onConnect() {
-        auto fairWinSK = FairWindSK::getInstance();
+    void Connection::onRequestToken() {
+        qDebug() << "onRequestToken";
 
         auto signalKServerUrl = ui->comboBox_signalkserverurl->currentText();
-        auto username = ui->lineEdit_username->text();
-        auto password = ui->lineEdit_password->text();
 
-        // ui->textEdit_message->setText("");
+        // Set the URL for the application list
+        QUrl url = QUrl(signalKServerUrl + "/signalk/v1/access/requests");
 
-        ui->comboBox_signalkserverurl->setEnabled(false);
-        ui->lineEdit_username->setEnabled(false);
-        ui->lineEdit_password->setEnabled(false);
+        // Create the network access manager
+        QNetworkAccessManager networkAccessManager;
 
+        auto networkRequest = QNetworkRequest(url);
+        networkRequest.setHeader(QNetworkRequest::ContentTypeHeader," application/json");
 
-        // Define the parameters map
-        QMap<QString, QVariant> params;
+        QByteArray data = R"({"clientId":"1234-45653-343453","description":"FairWindSK"})";
 
-        // Set some defaults
-        params["active"] = true;
+        // Create the event loop component
+        QEventLoop loop;
 
+        // Connect the network manager to the event loop
+        connect(&networkAccessManager, &QNetworkAccessManager::finished, &loop,&QEventLoop::quit);
 
-        // Setup the debug mode
-        params["debug"] = fairWinSK->isDebug();
+        // Create the get request
+        QNetworkReply *reply = networkAccessManager.post(networkRequest,data);
 
+        // Wait until the request is satisfied
+        loop.exec();
 
-        // Check if the Signal K Server URL is empty
-        if (signalKServerUrl.isEmpty()) {
+        // Check if the response has been successful
+        if (reply->attribute( QNetworkRequest::HttpStatusCodeAttribute ) == 202) {
+            auto doc = QJsonDocument::fromJson(reply->readAll());
+            auto jsonObject = doc.object();
+            if (jsonObject.contains("state") && jsonObject["state"].isString()) {
+                auto state = jsonObject["state"].toString();
+                if ( state == "PENDING") {
 
-            // Show a message
-            ui->textEdit_message->setText(ui->textEdit_message->toPlainText()+ tr("The Signal K Server URL is missing\n"));
+                    ui->label_lblState->setText(tr("Requested"));
 
-        } else {
+                    if (jsonObject.contains("href") && jsonObject["href"].isString()) {
+                        auto href = jsonObject["href"].toString();
 
-            // Set the url
-            params["url"] = ui->comboBox_signalkserverurl->currentText() + "/signalk";
-        }
+                        // Initialize the QT managed settings
+                        QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
 
-        // Check if the user name is empty
-        if (username.isEmpty()) {
-
-            // Show a message
-            ui->textEdit_message->setText(ui->textEdit_message->toPlainText()+ tr("Username is missing\n"));
-        } else {
-
-            // Set the username
-            params["username"] = ui->lineEdit_username->text();
-        }
-
-        // Check if the password is empty
-        if (password.isEmpty()) {
-
-            // Show a message
-            ui->textEdit_message->setText(ui->textEdit_message->toPlainText()+ tr("The password is missing\n"));
-
-        } else {
-
-            // Set the url
-            params["password"] = ui->lineEdit_password->text();
-        }
-
-        // Check if the token is defined or if username/password are defined
-        if (params.contains("url") && params.contains("username") && params.contains("password")) {
-
-            // The result
-            bool result = false;
-
-            // Number of connection tentatives
-            int count = 0;
-
-            // Set the stop flag
-            m_stop = false;
-
-            // Hide the connect button
-            ui->pushButton_connect->setVisible(false);
-
-            // Show the stop button
-            ui->pushButton_stop->setVisible(true);
-
-            // Start the connection
-            do {
-
-                auto message = QString(
-                        tr("Trying to connect to the ") + signalKServerUrl + tr(" Signal K server") + "(%1/%2)... \n"
-                ).arg(count+1).arg(fairWinSK->getRetry());
+                        // Store the configuration in the settings
+                        settings.setValue("href", href);
 
 
-                // Show the message
-                ui->textEdit_message->setText(ui->textEdit_message->toPlainText()+ message);
 
-                // Try to connect
-                result = fairWinSK->getSignalKClient()->init(params);
+                        m_timer = new QTimer(this);
+                        connect(m_timer, SIGNAL(timeout()), this, SLOT(onCheckRequestToken()));
+                        m_timer->start(1000);
 
-                // Check if the connection is successful
-                if (result) {
+                        ui->pushButton_requestToken->setEnabled(false);
+                        ui->pushButton_cancelRequest->setEnabled(true);
+                        ui->pushButton_removeToken->setEnabled(false);
+                        ui->webEngineView->setUrl(signalKServerUrl+"/admin/#/security/access/requests");
+                        ui->webEngineView->setVisible(true);
+                        ui->textEdit_message->setVisible(false);
 
-                    // Show a message
-                    ui->textEdit_message->setText(ui->textEdit_message->toPlainText() + tr("\nConnected and authenticated!\n"));
-
-                    // Set the Signal K Server URL
-                    fairWinSK->setSignalKServerUrl(signalKServerUrl);
-
-                    // Set the token
-                    fairWinSK->setToken(fairWinSK->getSignalKClient()->getToken());
-
-                    // Get all the document
-                    auto allSignalK = QJsonDocument(fairWinSK->getSignalKClient()->getAll());
-
-                    // Show the Signal K document
-                    ui->textEdit_message->setText(ui->textEdit_message->toPlainText()+ "\n" + allSignalK.toJson() + "\n");
-
-                    // Hide the stop button
-                    ui->pushButton_stop->setVisible(false);
-
-                    // Show the restart button
-                    ui->pushButton_restart->setVisible(true);
-
-                    // Exit the loop
-                    break;
-                }
-
-                // Process the events
-                QApplication::processEvents();
-
-                // Increase the number of retry
-                count++;
-
-                // Wait for m_mSleep microseconds
-                QThread::msleep(fairWinSK->getSleep());
-
-                // Loop until the number of retry or the stop button is pressed
-            } while (count < fairWinSK->getRetry() && !m_stop);
-
-            // Check if no connection was successful
-            if (!result) {
-
-                // Check if the connection has been stopped
-                if (m_stop) {
-                    // Show a message
-                    ui->textEdit_message->setText(ui->textEdit_message->toPlainText() + tr("\nConnection stopped.\n"));
+                        qDebug() << "Token requested, href: " << href;
+                    }
                 } else {
-                    // Show a message
-                    ui->textEdit_message->setText(ui->textEdit_message->toPlainText() + tr("\nConnection failed!\n"));
+                    ui->label_lblState->setText(state);
                 }
+            }
+        }
+        else if(reply->attribute( QNetworkRequest::HttpStatusCodeAttribute ) == 400) {
+            ui->pushButton_requestToken->setEnabled(true);
+            ui->pushButton_cancelRequest->setEnabled(false);
+            ui->pushButton_removeToken->setEnabled(false);
+            ui->webEngineView->setUrl(signalKServerUrl+"/admin/#/login");
+            ui->webEngineView->setVisible(true);
+            ui->textEdit_message->setVisible(false);
+        } else {
+            ui->webEngineView->setVisible(false);
+            ui->textEdit_message->setVisible(true);
+            ui->textEdit_message->setText(ui->textEdit_message->toPlainText()+ tr("Error connecting the server.\n"));
+        }
+    }
 
-                // Enable the Signal K Server URL widget
-                ui->comboBox_signalkserverurl->setEnabled(true);
+    void Connection::onCheckRequestToken() {
 
-                // Enable the username widget
-                ui->lineEdit_username->setEnabled(true);
+        auto fairWinSK = FairWindSK::getInstance();
 
-                // Enable the password widget
-                ui->lineEdit_password->setEnabled(true);
+        // Initialize the QT managed settings
+        QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
 
-                // Hide the stop button
-                ui->pushButton_stop->setVisible(false);
+        // Get the name of the FairWind++ configuration file
+        auto href = settings.value("href", "").toString();
 
-                // Show the connect button
-                ui->pushButton_connect->setVisible(true);
+        if (!href.isEmpty()) {
+
+            auto signalKServerUrl = ui->comboBox_signalkserverurl->currentText();
+
+            // Set the URL for the application list
+            QUrl url = QUrl(signalKServerUrl + href);
+
+            // Create the network access manager
+            QNetworkAccessManager networkAccessManager;
+
+            auto networkRequest = QNetworkRequest(url);
+            networkRequest.setHeader(QNetworkRequest::ContentTypeHeader, " application/json");
+
+            // Create the event loop component
+            QEventLoop loop;
+
+            // Connect the network manager to the event loop
+            connect(&networkAccessManager, &QNetworkAccessManager::finished, &loop, &QEventLoop::quit);
+
+            // Create the get request
+            QNetworkReply *reply = networkAccessManager.get(networkRequest);
+
+            // Wait until the request is satisfied
+            loop.exec();
+
+            // Check if the response has been successful
+            if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute) == 200) {
+
+                auto doc = QJsonDocument::fromJson(reply->readAll());
+                auto jsonObject = doc.object();
+                if (jsonObject.contains("state") && jsonObject["state"].isString()) {
+                    auto state = jsonObject["state"].toString();
+
+                    if (state == "PENDING") {
+                        ui->label_lblState->setText(tr("Pending..."));
+
+                    } else if (state == "COMPLETED") {
+
+                        ui->label_lblState->setText(tr("Completed"));
+
+                        m_timer->stop();
+                        m_timer->disconnect(this);
+                        delete m_timer;
+                        m_timer = nullptr;
+
+                        ui->webEngineView->setVisible(false);
+                        ui->textEdit_message->setVisible(true);
+
+                        if (jsonObject.contains("statusCode") && jsonObject["statusCode"].isDouble()) {
+
+                            auto statusCode = jsonObject["statusCode"].toInt();
+
+                            if (statusCode != 200) {
+                                if (jsonObject.contains("message") && jsonObject["message"].isString()) {
+                                    auto message = jsonObject["message"].toString();
+
+                                    ui->textEdit_message->setText(ui->textEdit_message->toPlainText()+ tr("Message: ") + message + "\n");
+                                }
+                            }
+                            else {
+                                if (jsonObject.contains("accessRequest") && jsonObject["accessRequest"].isObject()) {
+                                    auto accessRequestJsonObject = jsonObject["accessRequest"].toObject();
+                                    if (accessRequestJsonObject.contains("permission") &&
+                                        accessRequestJsonObject["permission"].isString()) {
+                                        auto permission = accessRequestJsonObject["permission"].toString();
+
+                                        // Store the configuration in the settings
+                                        settings.setValue("href", "");
+
+                                        if (permission == "DENIED") {
+
+                                            ui->label_lblPermission->setText(tr("Denied"));
+
+                                        } else if (permission == "APPROVED") {
+
+                                            ui->label_lblPermission->setText(tr("Approved"));
+
+                                            if (accessRequestJsonObject.contains("expirationTime") &&
+                                                accessRequestJsonObject["expirationTime"].isString()) {
+
+                                                auto expirationTime = accessRequestJsonObject["expirationTime"].toString();
+
+                                                ui->label_lblExpirationTime->setText(expirationTime);
+
+                                                // Store the configuration in the settings
+                                                settings.setValue("expirationTime", expirationTime);
+
+                                            }
+
+                                            if (accessRequestJsonObject.contains("token") &&
+                                                accessRequestJsonObject["token"].isString()) {
+
+                                                auto token = accessRequestJsonObject["token"].toString();
+
+                                                // Store the configuration in the settings
+                                                settings.setValue("token", token);
+                                            }
+
+                                            ui->webEngineView->setVisible(false);
+
+                                        } else {
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                    }
+                }
             }
         }
     }
 
-    void Connection::onStop() {
-        m_stop = true;
+
+
+    void Connection::onCancelRequest() {
+
+        // Initialize the QT managed settings
+        QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
+
+        if (m_timer) {
+            m_timer->stop();
+            m_timer->disconnect(this);
+            delete m_timer;
+        }
+
+        // Store the configuration in the settings
+        settings.setValue("href", "");
+
+        ui->pushButton_requestToken->setEnabled(true);
+        ui->pushButton_cancelRequest->setEnabled(false);
+        ui->pushButton_removeToken->setEnabled(false);
+
+        ui->webEngineView->setVisible(false);
+        ui->textEdit_message->setVisible(true);
+
+        ui->label_lblState->setText(tr("Canceled"));
     }
 
-    void Connection::onRestart() {
-        QApplication::exit(-1);
+    void Connection::onRemoveToken() {
+        // Initialize the QT managed settings
+        QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
+
+        // Store the configuration in the settings
+        settings.setValue("token", "");
+
+        // Store the configuration in the settings
+        settings.setValue("expirationTime", "");
+
+        ui->pushButton_requestToken->setEnabled(true);
+        ui->pushButton_cancelRequest->setEnabled(false);
+        ui->pushButton_removeToken->setEnabled(false);
+
+        ui->webEngineView->setVisible(false);
+        ui->textEdit_message->setVisible(true);
+
+        ui->label_lblExpirationTime->setText(tr("Removed"));
     }
 
     Connection::~Connection() {
         m_zeroConf.stopBrowser();
         delete ui;
+        if (m_timer) {
+            m_timer->stop();
+            m_timer->disconnect(this);
+            delete m_timer;
+        }
     }
+
 } // fairwindsk::ui::settings

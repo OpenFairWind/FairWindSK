@@ -8,6 +8,7 @@
 #include <QEventLoop>
 #include <QtCore/qjsonarray.h>
 #include <QPixmap>
+#include <iostream>
 
 #include "AppItem.hpp"
 
@@ -15,14 +16,15 @@
 
 namespace fairwindsk {
 
-    AppItem::AppItem() {}
+    AppItem::AppItem() = default;
 
 /*
  * Public Constructor
  */
     AppItem::AppItem(const fairwindsk::AppItem &app) {
+
         // Retrieve the app's infos from the provided App instance
-        this->m_jsonApp = app.m_jsonApp;
+        m_jsonApp = app.m_jsonApp;
 
 
     }
@@ -30,7 +32,8 @@ namespace fairwindsk {
 /*
  * Public Constructor
  */
-    AppItem::AppItem(QJsonObject jsonApp) {
+    AppItem::AppItem(nlohmann::json jsonApp) {
+
         // Get the app's infos and store them for future usage
         m_jsonApp = std::move(jsonApp);
 
@@ -43,75 +46,31 @@ namespace fairwindsk {
     void AppItem::setOrder(int order) {
 
         // Set the order value
-        modifyJsonValue(m_jsonApp,"fairwind.order", order);
+        m_jsonApp["fairwind"]["order"] = order;
 
     }
 
-    void AppItem::modifyJsonValue(QJsonObject &obj, const QString &path, const QJsonValue &newValue) {
-        const int indexOfDot = path.indexOf('.');
-        const QString propertyName = path.left(indexOfDot);
-        const QString subPath = indexOfDot > 0 ? path.mid(indexOfDot + 1) : QString();
 
-        QJsonValue subValue = obj[propertyName];
 
-        if (subPath.isEmpty()) {
-            subValue = newValue;
-        } else {
-            QJsonObject obj = subValue.toObject();
-            modifyJsonValue(obj, subPath, newValue);
-            subValue = obj;
-        }
-
-        obj[propertyName] = subValue;
+    void AppItem::update(const nlohmann::json& jsonApp) {
+        m_jsonApp.merge_patch(jsonApp);
     }
 
-    /*
-     {
-            "name": "http://youtube.com",
-            "signalk": {
-                "displayName": "Youtube",
-                "appIcon": "icons/youtube_icon.png"
-            },
-            "fairwind": {
-                "active": true,
-                "order": 0
-            }
-        }
-     */
-    void AppItem::update(QJsonObject jsonApp) {
-
-
-        QJsonObject jsonSignalk(m_jsonApp["signalk"].toObject());
-        auto srcSignalk = jsonApp["signalk"].toObject();
-        for (auto it = srcSignalk.constBegin(); it != srcSignalk.constEnd(); it++) {
-            jsonSignalk.insert(it.key(), it.value());
-        }
-
-        QJsonObject jsonFairwind(m_jsonApp["fairwind"].toObject());
-        auto srcFairwind = jsonApp["fairwind"].toObject();
-        for (auto it = srcFairwind.constBegin(); it != srcFairwind.constEnd(); it++) {
-
-            jsonFairwind.insert(it.key(), it.value());
-        }
-
-        m_jsonApp.insert("signalk",jsonSignalk);
-        m_jsonApp.insert("fairwind",jsonFairwind);
-
-
-    }
 
     /*
      * getOrder
      * Returns the app's order
      */
     int AppItem::getOrder() {
-        if (m_jsonApp.contains("fairwind") && m_jsonApp["fairwind"].isObject()) {
-            auto fairwindJsonObject = m_jsonApp["fairwind"].toObject();
-            if (fairwindJsonObject.contains("order") && fairwindJsonObject["order"].isDouble()) {
-                return fairwindJsonObject["order"].toInt();
+        int result = 0;
+
+        if (m_jsonApp.contains("fairwind") && m_jsonApp["fairwind"].is_object()) {
+            auto fairwindJsonObject = m_jsonApp["fairwind"];
+            if (fairwindJsonObject.contains("order") && fairwindJsonObject["order"].is_number_integer()) {
+                result = fairwindJsonObject["order"].get<int>();
             }
         }
-        return false;
+        return result;
     }
 
     /*
@@ -121,7 +80,7 @@ namespace fairwindsk {
     void AppItem::setActive(bool active) {
 
         // Set the active value
-        modifyJsonValue(m_jsonApp,"fairwind.order", active);
+        m_jsonApp["fairwind"]["active"] = active;
     }
 
     /*
@@ -129,13 +88,14 @@ namespace fairwindsk {
      * Returns the app's active state
      */
     bool AppItem::getActive() {
-        if (m_jsonApp.contains("fairwind") && m_jsonApp["fairwind"].isObject()) {
-            auto fairwindJsonObject = m_jsonApp["fairwind"].toObject();
-            if (fairwindJsonObject.contains("active") && fairwindJsonObject["active"].isBool()) {
-                return fairwindJsonObject["active"].toBool();
+        bool result = false;
+        if (m_jsonApp.contains("fairwind") && m_jsonApp["fairwind"].is_object()) {
+            auto fairwindJsonObject = m_jsonApp["fairwind"];
+            if (fairwindJsonObject.contains("active") && fairwindJsonObject["active"].is_boolean()) {
+                result = fairwindJsonObject["active"].get<bool>();
             }
         }
-        return false;
+        return result;
     }
 
     /*
@@ -143,11 +103,11 @@ namespace fairwindsk {
      * Returns the app's name
      */
     QString AppItem::getName() {
-        QString name;
-        if (m_jsonApp.contains("name") && m_jsonApp.value("name").isString()) {
-            name = m_jsonApp.value("name").toString();
+        std::string name;
+        if (m_jsonApp.contains("name") && m_jsonApp["name"].is_string()) {
+            name = m_jsonApp["name"].get<std::string>();
         }
-        return name;
+        return QString::fromStdString(name);
     }
 
     /*
@@ -155,11 +115,11 @@ namespace fairwindsk {
      * Returns the app's description
      */
     QString AppItem::getDescription() {
-        QString desc;
-        if (m_jsonApp.contains("description") && m_jsonApp.value("description").isString()) {
-            desc = m_jsonApp.value("description").toString();
+        std::string desc;
+        if (m_jsonApp.contains("description") && m_jsonApp["description"].is_string()) {
+            desc = m_jsonApp["description"].get<std::string>();
         }
-        return desc;
+        return QString::fromStdString(desc);
     }
 
     /*
@@ -178,7 +138,7 @@ namespace fairwindsk {
             } else {
                 // Get the icon URL
                 QString url =
-                        FairWindSK::getInstance()->getSignalKServerUrl() + "/" + getName() + "/" + appIcon;
+                        FairWindSK::getInstance()->getConfiguration()->getSignalKServerUrl() + "/" + getName() + "/" + appIcon;
 
                 QNetworkAccessManager nam;
                 QEventLoop loop;
@@ -201,10 +161,10 @@ namespace fairwindsk {
      */
     QString AppItem::getDisplayName() {
         QString displayName = getName();
-        if (m_jsonApp.contains("signalk") &&  m_jsonApp.value("signalk").isObject()) {
-            auto signalkJsonObject = m_jsonApp.value("signalk").toObject();
-            if (signalkJsonObject.contains("displayName") && signalkJsonObject.value("displayName").isString()) {
-                displayName = signalkJsonObject.value("displayName").toString();
+        if (m_jsonApp.contains("signalk") &&  m_jsonApp["signalk"].is_object()) {
+            auto signalkJsonObject = m_jsonApp["signalk"];
+            if (signalkJsonObject.contains("displayName") && signalkJsonObject["displayName"].is_string()) {
+                displayName = QString::fromStdString(signalkJsonObject["displayName"].get<std::string>());
             }
         }
         return displayName;
@@ -215,11 +175,11 @@ namespace fairwindsk {
      * Returns the app's version
      */
     QString AppItem::getVersion() {
-        QString version;
-        if (m_jsonApp.contains("version") && m_jsonApp.value("version").isString()) {
-            version = m_jsonApp.value("version").toString();
+        std::string version;
+        if (m_jsonApp.contains("version") && m_jsonApp["version"].is_string()) {
+            version = m_jsonApp["version"].get<std::string>();
         }
-        return version;
+        return QString::fromStdString(version);
     }
 
     /*
@@ -227,11 +187,11 @@ namespace fairwindsk {
      * Returns the app's author
      */
     QString AppItem::getAuthor() {
-        QString author;
-        if (m_jsonApp.contains("author") && m_jsonApp.value("author").isString()) {
-            author = m_jsonApp.value("author").toString();
+        std::string author;
+        if (m_jsonApp.contains("author") && m_jsonApp["author"].is_string()) {
+            author =  m_jsonApp["author"].get<std::string>();
         }
-        return author;
+        return QString::fromStdString(author);
     }
 
     /*
@@ -240,11 +200,11 @@ namespace fairwindsk {
      */
     QVector<QString> AppItem::getContributors() {
         QVector<QString> contributors;
-        if (m_jsonApp.contains("contributors") && m_jsonApp.value("contributors").isArray()) {
-            QJsonArray contributorsJsonArray = m_jsonApp.value("contributors").toArray();
-            for (auto jsonItem: contributorsJsonArray) {
-                if (jsonItem.isString() && !jsonItem.toString().isEmpty()) {
-                    contributors.append(jsonItem.toString());
+        if (m_jsonApp.contains("contributors") && m_jsonApp["contributors"].is_array()) {
+            auto contributorsJsonArray = m_jsonApp["contributors"];
+            for (const auto& jsonItem: contributorsJsonArray) {
+                if (jsonItem.is_string() && !jsonItem.get<std::string>().empty()) {
+                    contributors.append(QString::fromStdString(jsonItem.get<std::string>()));
                 }
 
             }
@@ -258,8 +218,8 @@ namespace fairwindsk {
      */
     QString AppItem::getCopyright() {
         QString copyright;
-        if (m_jsonApp.contains("copyright") && m_jsonApp.value("copyright").isString()) {
-            copyright = m_jsonApp.value("copyright").toString();
+        if (m_jsonApp.contains("copyright") && m_jsonApp["copyright"].is_string()) {
+            copyright = QString::fromStdString(m_jsonApp["copyright"].get<std::string>());
         }
         return copyright;
     }
@@ -270,8 +230,8 @@ namespace fairwindsk {
      */
     QString AppItem::getVendor() {
         QString vendor;
-        if (m_jsonApp.contains("vendor") && m_jsonApp.value("vendor").isString()) {
-            vendor = m_jsonApp.value("vendor").toString();
+        if (m_jsonApp.contains("vendor") && m_jsonApp["vendor"].is_string()) {
+            vendor = QString::fromStdString(m_jsonApp["vendor"].get<std::string>());
         }
         return vendor;
     }
@@ -282,8 +242,8 @@ namespace fairwindsk {
      */
     QString AppItem::getLicense() {
         QString license;
-        if (m_jsonApp.contains("license") && m_jsonApp.value("license").isString()) {
-            license = m_jsonApp.value("license").toString();
+        if (m_jsonApp.contains("license") && m_jsonApp["license"].is_string()) {
+            license = QString::fromStdString(m_jsonApp["license"].get<std::string>());
         }
         return license;
     }
@@ -300,19 +260,19 @@ namespace fairwindsk {
         if (url.startsWith("http:///")) {
 
             // Create the url string substituting the placeholder with the server url
-            url.replace("http:///", FairWindSK::getInstance()->getSignalKServerUrl());
+            url.replace("http:///", FairWindSK::getInstance()->getConfiguration()->getSignalKServerUrl());
 
         } else if (url.startsWith("https:///")) {
 
             // Create the url string substituting the placeholder with the server url
-            url.replace("https:///", FairWindSK::getInstance()->getSignalKServerUrl());
+            url.replace("https:///", FairWindSK::getInstance()->getConfiguration()->getSignalKServerUrl());
 
         } if (url.startsWith("http://") || url.startsWith("https://")) {
 
 
 
         } else {
-            url = FairWindSK::getInstance()->getSignalKServerUrl() + "/" + url + "/";
+            url = FairWindSK::getInstance()->getConfiguration()->getSignalKServerUrl() + "/" + url + "/";
         }
         return url;
     }
@@ -326,20 +286,20 @@ namespace fairwindsk {
     }
 
     bool AppItem::operator<(const AppItem &o) const {
-        return int(m_jsonApp["fairwind"].toObject()["order"].toDouble()) < int(o.m_jsonApp["fairwind"].toObject()["order"].toDouble());
+        return m_jsonApp["fairwind"]["order"].get<int>() < o.m_jsonApp["fairwind"]["order"].get<int>();
     }
 
     QStringList AppItem::getArguments() {
         QStringList result;
-        if (m_jsonApp.contains("fairwind") && m_jsonApp["fairwind"].isObject()) {
-            auto fairWindJsonObject = m_jsonApp["fairwind"].toObject();
-            qDebug() << fairWindJsonObject.keys();
+        if (m_jsonApp.contains("fairwind") && m_jsonApp["fairwind"].is_object()) {
+            auto fairWindJsonObject = m_jsonApp["fairwind"];
+            qDebug() << fairWindJsonObject.dump();
 
-            if (fairWindJsonObject.contains("arguments") && fairWindJsonObject["arguments"].isArray()) {
-                auto argumentsJsonArray = fairWindJsonObject["arguments"].toArray();
-                for (auto argument: argumentsJsonArray) {
-                    if (argument.isString()) {
-                        result.append(argument.toString());
+            if (fairWindJsonObject.contains("arguments") && fairWindJsonObject["arguments"].is_array()) {
+                auto argumentsJsonArray = fairWindJsonObject["arguments"];
+                for (const auto& argument: argumentsJsonArray) {
+                    if (argument.is_string()) {
+                        result.append(QString::fromStdString(argument.get<std::string>()));
                     }
                 }
             }
@@ -349,51 +309,51 @@ namespace fairwindsk {
 
     QString AppItem::getAppIcon() {
         QString result = "";
-        if (m_jsonApp.contains("signalk") &&  m_jsonApp.value("signalk").isObject()) {
-            auto signalkJsonObject = m_jsonApp.value("signalk").toObject();
-            if (signalkJsonObject.contains("appIcon") && signalkJsonObject.value("appIcon").isString()) {
-                result = signalkJsonObject.value("appIcon").toString();
+        if (m_jsonApp.contains("signalk") &&  m_jsonApp["signalk"].is_object()) {
+            auto signalkJsonObject = m_jsonApp["signalk"];
+            if (signalkJsonObject.contains("appIcon") && signalkJsonObject["appIcon"].is_string()) {
+                result = QString::fromStdString(signalkJsonObject["appIcon"].get<std::string>());
             }
         }
         return result;
     }
 
-    void AppItem::setName(QString name) {
+    void AppItem::setName(const QString& name) {
         // Set the name value
-        modifyJsonValue(m_jsonApp,"name", name);
+        m_jsonApp["name"] = name.toStdString();
     }
 
-    void AppItem::setDescription(QString description) {
+    void AppItem::setDescription(const QString& description) {
         // Set the name value
-        modifyJsonValue(m_jsonApp,"description", description);
+        m_jsonApp["description"] = description.toStdString();
     }
 
-    void AppItem::setAppIcon(QString appIcon) {
+    void AppItem::setAppIcon(const QString& appIcon) {
         // Set the name value
-        modifyJsonValue(m_jsonApp,"signalk.appIcon", appIcon);
+        m_jsonApp["signalk"]["appIcon"] = appIcon.toStdString();
     }
 
-    void AppItem::setSettingsUrl(QString settingsUrl) {
+    void AppItem::setSettingsUrl(const QString& settingsUrl) {
         // Set the name value
-        modifyJsonValue(m_jsonApp,"fairwind.settings", settingsUrl);
+        m_jsonApp["fairwind"]["settings"] = settingsUrl.toStdString();
     }
 
-    void AppItem::setAboutUrl(QString aboutUrl) {
+    void AppItem::setAboutUrl(const QString& aboutUrl) {
         // Set the name value
-        modifyJsonValue(m_jsonApp,"fairwind.about", aboutUrl);
+        m_jsonApp["fairwind"]["about"] = aboutUrl.toStdString();
     }
 
-    void AppItem::setHelpUrl(QString helpUrl) {
+    void AppItem::setHelpUrl(const QString& helpUrl) {
         // Set the name value
-        modifyJsonValue(m_jsonApp,"fairwind.help", helpUrl);
+        m_jsonApp["fairwind"]["help"] = helpUrl.toStdString();
     }
 
-    QString AppItem::getSettingsUrl(QString pluginUrl) {
+    QString AppItem::getSettingsUrl(const QString& pluginUrl) {
         QString result = "";
-        if (m_jsonApp.contains("fairwind") && m_jsonApp["fairwind"].isObject()) {
-            auto fairwindJsonObject = m_jsonApp["fairwind"].toObject();
-            if (fairwindJsonObject.contains("settings") && fairwindJsonObject["settings"].isString()) {
-                result = fairwindJsonObject["settings"].toString();
+        if (m_jsonApp.contains("fairwind") && m_jsonApp["fairwind"].is_object()) {
+            auto fairwindJsonObject = m_jsonApp["fairwind"];
+            if (fairwindJsonObject.contains("settings") && fairwindJsonObject["settings"].is_string()) {
+                result = QString::fromStdString(fairwindJsonObject["settings"].get<std::string>());
             }
         }
         if (result.isEmpty()) {
@@ -407,30 +367,30 @@ namespace fairwindsk {
         return result;
     }
 
-    QString AppItem::getAboutUrl(QString pluginUrl) {
+    QString AppItem::getAboutUrl(const QString& pluginUrl) {
         QString result = "";
-        if (m_jsonApp.contains("fairwind") && m_jsonApp["fairwind"].isObject()) {
-            auto fairwindJsonObject = m_jsonApp["fairwind"].toObject();
-            if (fairwindJsonObject.contains("about") && fairwindJsonObject["about"].isString()) {
-                result = fairwindJsonObject["about"].toString();
+        if (m_jsonApp.contains("fairwind") && m_jsonApp["fairwind"].is_object()) {
+            auto fairwindJsonObject = m_jsonApp["fairwind"];
+            if (fairwindJsonObject.contains("about") && fairwindJsonObject["about"].is_string()) {
+                result = QString::fromStdString(fairwindJsonObject["about"].get<std::string>());
             }
         }
         return result;
     }
 
-    QString AppItem::getHelpUrl(QString pluginUrl) {
+    QString AppItem::getHelpUrl(const QString& pluginUrl) {
         QString result = "";
-        if (m_jsonApp.contains("fairwind") && m_jsonApp["fairwind"].isObject()) {
-            auto fairwindJsonObject = m_jsonApp["fairwind"].toObject();
-            if (fairwindJsonObject.contains("help") && fairwindJsonObject["help"].isString()) {
-                result = fairwindJsonObject["help"].toString();
+        if (m_jsonApp.contains("fairwind") && m_jsonApp["fairwind"].is_object()) {
+            auto fairwindJsonObject = m_jsonApp["fairwind"];
+            if (fairwindJsonObject.contains("help") && fairwindJsonObject["help"].is_string()) {
+                result = QString::fromStdString(fairwindJsonObject["help"].get<std::string>());
             }
         }
         return result;
     }
 
-    void AppItem::setDisplayName(QString displayName) {
+    void AppItem::setDisplayName(const QString& displayName) {
         // Set the name value
-        modifyJsonValue(m_jsonApp,"signalk.displayName", displayName);
+        m_jsonApp["signalk"]["displayName"] = displayName.toStdString();
     }
 }

@@ -18,11 +18,6 @@ int main(int argc, char *argv[]) {
     QTranslator translator;
 
 
-
-    if (fairwindsk::FairWindSK::getVirtualKeyboard()) {
-        qputenv("QT_IM_MODULE", QByteArray("qtvirtualkeyboard"));
-    }
-
     // Set the organization name
     QCoreApplication::setOrganizationName("uniparthenope.it");
 
@@ -56,6 +51,10 @@ int main(int argc, char *argv[]) {
 
     // Load the configuration inside the FairWind singleton itself
     fairWindSK->loadConfig();
+
+    if (fairWindSK->getConfiguration()->getVirtualKeyboard()) {
+        qputenv("QT_IM_MODULE", QByteArray("qtvirtualkeyboard"));
+    }
 
     // Show message
     splash.showMessage(QObject::tr("Connecting to the Signal K Server..."), 500, Qt::white);

@@ -6,6 +6,7 @@
 #define FAIRWINDSK_CONNECTION_HPP
 
 #include <QWidget>
+#include <QTimer>
 #include <QtZeroConf/qzeroconf.h>
 #include "Settings.hpp"
 
@@ -18,18 +19,17 @@ namespace fairwindsk::ui::settings {
     Q_OBJECT
 
     public:
-        explicit Connection(Settings *settings, QWidget *parent = nullptr);
+        explicit Connection(Settings *settingsWidget, QWidget *parent = nullptr);
 
         ~Connection() override;
 
 
     private slots:
 
-
-
-        void onConnect();
-        void onStop();
-        void onRestart();
+        void onCheckRequestToken();
+        void onRequestToken();
+        void onCancelRequest();
+        void onRemoveToken();
 
         void addService(const QZeroConfService& item);
 
@@ -38,8 +38,9 @@ namespace fairwindsk::ui::settings {
     private:
         Ui::Connection *ui;
         Settings *m_settings;
-        bool m_stop;
+
         QZeroConf m_zeroConf;
+        QTimer *m_timer;
 
     };
 } // fairwindsk::ui::settings
