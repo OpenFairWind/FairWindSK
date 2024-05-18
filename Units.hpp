@@ -8,7 +8,7 @@
 #include <QString>
 #include <QMap>
 #include <QObject>
-
+#include <nlohmann/json.hpp>
 
 
 namespace fairwindsk {
@@ -23,6 +23,7 @@ namespace fairwindsk {
         double convert(const QString& srcUnit, const QString& unit, double value);
         QString getLabel(const QString &unit);
         QString format(const QString& unit, double value);
+        nlohmann::json &getUnits();
 
     private:
         Units();
@@ -30,7 +31,9 @@ namespace fairwindsk {
         inline static Units *m_instance = nullptr;
 
         QMap <QString, QMap<QString, std::function<double(double)>>> mConverters;
-        QMap <QString, QString> mLabels;
+
+
+        nlohmann::json m_units;
     };
 }
 

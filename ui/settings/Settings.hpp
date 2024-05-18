@@ -6,6 +6,7 @@
 #define SETTINGS_HPP
 
 #include <QWidget>
+#include <QAbstractButton>
 #include <QtZeroConf/qzeroconf.h>
 #include <QtCore/qjsonobject.h>
 #include "AppItem.hpp"
@@ -30,23 +31,29 @@ namespace fairwindsk::ui::settings {
 
         QWidget *getCurrentWidget();
 
-        AppItem *getAppItemByHash(QString hash);
-        QList<QString> getAppsHashes();
+        //AppItem *getAppItemByHash(QString hash);
+        //QList<QString> getAppsHashes();
 
         Configuration *getConfiguration();
 
 
     public slots:
         void onAccepted();
+        void onRejected();
+        void onClicked(QAbstractButton *button);
 
     signals:
         void accepted(Settings *);
+        void rejected(Settings *);
+
+    private:
+        void initTabs();
 
     private:
         Ui::Settings *ui;
 
         Configuration m_configuration;
-        QMap<QString, AppItem *> m_mapHash2AppItem;
+        //QMap<QString, AppItem *> m_mapHash2AppItem;
         QWidget *m_currentWidget;
 
     };

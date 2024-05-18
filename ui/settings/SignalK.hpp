@@ -8,6 +8,8 @@
 #include <QWidget>
 #include "Settings.hpp"
 
+#include <nlohmann/json.hpp>
+
 namespace fairwindsk::ui::settings {
     QT_BEGIN_NAMESPACE
     namespace Ui { class SignalK; }
@@ -21,10 +23,15 @@ namespace fairwindsk::ui::settings {
 
         ~SignalK() override;
 
+        private slots:
+        void onTextChanged(const QString &text);
+
     private:
         Ui::SignalK *ui;
 
         Settings *m_settings;
+
+        nlohmann::json m_signalk;
     };
 } // fairwindsk::ui::settings
 

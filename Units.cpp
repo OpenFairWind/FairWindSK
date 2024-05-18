@@ -3,13 +3,27 @@
 //
 
 #include <Units.hpp>
-
+#include <fstream>
+#include <QFile>
 
 namespace fairwindsk {
 /*
  * Units - Public Constructor
  */
     Units::Units() {
+
+        QString data;
+        QString fileName(":/resources/json/units.json");
+
+        QFile file(fileName);
+        if(file.open(QIODevice::ReadOnly)) {
+
+            data = file.readAll();
+            m_units= nlohmann::json::parse(data.toStdString());
+        }
+
+        file.close();
+
         mConverters["K"]["F"] = [](double value) { return value * 1.8 - 459.67; };
         mConverters["K"]["C"] = [](double value) { return value - 273.15; };
         mConverters["rad"]["deg"] = [](double value) { return value * 57.2958; };
@@ -23,6 +37,7 @@ namespace fairwindsk {
         mConverters["L"]["gal"] = [](double value) { return value * 0.264172; };
         mConverters["A"]["A"] = [](double value) { return value; };
 
+        /*
         mLabels["F"] = "°F";
         mLabels["C"] = "°C";
         mLabels["deg"] = "°";
@@ -34,6 +49,7 @@ namespace fairwindsk {
         mLabels["v"] = "v";
         mLabels["L"] = "L";
         mLabels["gal"] = "gal";
+         */
     }
 
 /*
@@ -63,10 +79,11 @@ namespace fairwindsk {
  * Returns the unit's label
  */
     QString Units::getLabel(const QString &unit) {
-        if (mLabels.contains(unit)) {
-            return mLabels[unit];
+        QString result = unit;
+        if (m_units["types"].contains(unit.toStdString())) {
+            result = QString::fromStdString(m_units["types"][unit.toStdString()]["label"].get<std::string>());
         }
-        return unit;
+        return result;
     }
 
     QString Units::format(const QString &unit, double value) {
@@ -107,5 +124,9 @@ namespace fairwindsk {
         }
 
         return result;
+    }
+
+    nlohmann::json &Units::getUnits() {
+        return m_units;
     }
 }
