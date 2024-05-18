@@ -22,7 +22,7 @@ namespace fairwindsk::ui::settings {
         ~Main() override;
 
     private slots:
-
+        void onCurrentIndexChanged(int index);
         void onVirtualKeyboard(int state);
 
 

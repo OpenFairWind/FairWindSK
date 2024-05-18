@@ -22,6 +22,8 @@ namespace fairwindsk {
 
         ~Configuration();
 
+        void setDefault();
+
         nlohmann::json &getRoot();
         void setRoot(nlohmann::json &jsonData);
 
@@ -42,9 +44,6 @@ namespace fairwindsk {
         QString getMOBApp();
         QString getAlarmsApp();
         QString getSettingsApp();
-
-        int getSleep();
-        int getRetry();
 
         void setVirtualKeyboard(bool value);
         bool getVirtualKeyboard();

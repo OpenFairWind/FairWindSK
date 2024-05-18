@@ -4,6 +4,7 @@
 
 // You may need to build the project (run Qt uic code generator) to get "ui_Settings.h" resolved
 
+#include <iostream>
 
 #include <QTranslator>
 #include <QMessageBox>
@@ -24,23 +25,71 @@ namespace fairwindsk::ui::settings {
 
         auto fairWindSk = FairWindSK::getInstance();
 
+        m_configuration.setFilename(fairWindSk->getConfiguration()->getFilename());
         m_configuration.setRoot(fairWindSk->getConfiguration()->getRoot());
 
+        /*
         for (const auto& hash: fairWindSk->getAppsHashes()) {
             m_mapHash2AppItem.insert(hash, fairWindSk->getAppItemByHash(hash));
         }
+        */
+        initTabs();
 
+        m_currentWidget = currenWidget;
+
+        connect(ui->buttonBox,&QDialogButtonBox::accepted,this,&Settings::onAccepted);
+        connect(ui->buttonBox,&QDialogButtonBox::rejected,this,&Settings::onRejected);
+        connect(ui->buttonBox,&QDialogButtonBox::clicked,this,&Settings::onClicked);
+    }
+
+    void Settings::onClicked(QAbstractButton *button) {
+        if (ui->buttonBox->button(QDialogButtonBox::Discard) == (QPushButton *)button) {
+
+
+            emit rejected(this);
+        }
+        else if (ui->buttonBox->button(QDialogButtonBox::Reset) == (QPushButton *)button) {
+
+
+            auto fairWindSk = FairWindSK::getInstance();
+
+            m_configuration.setRoot(fairWindSk->getConfiguration()->getRoot());
+
+            initTabs();
+
+
+        }
+        else if (ui->buttonBox->button(QDialogButtonBox::RestoreDefaults) == (QPushButton *)button) {
+
+
+            m_configuration.setDefault();
+
+            initTabs();
+        }
+    }
+
+    void Settings::initTabs() {
+        int currentIndex = ui->tabWidget->currentIndex();
+        ui->tabWidget->clear();
         ui->tabWidget->addTab(new Main(this), tr("Main"));
         ui->tabWidget->addTab(new Connection(this), tr("Connection"));
         ui->tabWidget->addTab(new SignalK(this), tr("Signal K"));
         ui->tabWidget->addTab(new Apps(this), tr("Apps"));
-
-        m_currentWidget = currenWidget;
-        connect(ui->buttonBox,&QDialogButtonBox::accepted,this,&Settings::onAccepted);
+        ui->tabWidget->setCurrentIndex(currentIndex);
     }
 
+
     void Settings::onAccepted() {
+
+        FairWindSK::getInstance()->getConfiguration()->setRoot(m_configuration.getRoot());
+
+        FairWindSK::getInstance()->getConfiguration()->save();
+
         emit accepted(this);
+    }
+
+    void Settings::onRejected() {
+        emit rejected(this);
     }
 
     QWidget *Settings::getCurrentWidget() {
@@ -50,7 +99,7 @@ namespace fairwindsk::ui::settings {
     Settings::~Settings() {
         delete ui;
     }
-
+/*
     QList<QString> Settings::getAppsHashes() {
         return m_mapHash2AppItem.keys();
     }
@@ -60,9 +109,12 @@ namespace fairwindsk::ui::settings {
     AppItem *Settings::getAppItemByHash(QString hash) {
         return m_mapHash2AppItem[hash];
     }
-
+*/
     Configuration *Settings::getConfiguration() {
         return &m_configuration;
     }
+
+
+
 
 } // fairwindsk::ui

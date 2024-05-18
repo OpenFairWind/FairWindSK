@@ -60,7 +60,8 @@ namespace fairwindsk::ui {
 
 
         void onAboutAccepted(about::About *aboutPage);
-        void onSettingsAccepted(settings::Settings *settingPage);
+        void onSettingsAccepted(settings::Settings *settingsPage);
+        void onSettingsRejected(settings::Settings *settingsPage);
 
 
 

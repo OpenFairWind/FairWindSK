@@ -4,31 +4,60 @@
 
 #include "Configuration.hpp"
 
+#include <fstream>
+#include <iostream>
+
 #include <utility>
 #include <QFile>
 #include <QJsonDocument>
 #include <QFileInfo>
-#include <fstream>
 #include <QSettings>
 
 namespace fairwindsk {
-    Configuration::Configuration() = default;
+    Configuration::Configuration() {
+        m_filename = "configuration.json";
+        setDefault();
+    };
 
     Configuration::Configuration(const Configuration &configuration) {
         m_jsonData = configuration.m_jsonData;
+        m_filename = configuration.m_filename;
     }
 
     Configuration::Configuration(const QString& filename) {
-        load(filename);
+        m_filename = filename;
+        load();
     }
 
     Configuration::~Configuration() = default;
+
+    void Configuration::save() {
+        save(m_filename);
+    }
+
+    void Configuration::setDefault() {
+        QString data;
+        QString fileName(":/resources/json/configuration.json");
+
+        QFile file(fileName);
+        if(file.open(QIODevice::ReadOnly)) {
+
+            data = file.readAll();
+            m_jsonData= nlohmann::json::parse(data.toStdString());
+        }
+
+        file.close();
+    }
 
     void Configuration::save(const QString& filename) {
 
         std::ofstream file(filename.toUtf8());
         file << m_jsonData;
 
+    }
+
+    bool Configuration::load() {
+        return load(m_filename);
     }
 
     bool Configuration::load(const QString& filename) {
@@ -115,32 +144,6 @@ namespace fairwindsk {
         settings.setValue("token", token);
     }
 
-    int Configuration::getSleep() {
-        int mSleep = 0;
-
-        if (m_jsonData.contains("connection")) {
-            auto connectionJsonObject = m_jsonData["connection"];
-            if (connectionJsonObject.contains("sleep") & connectionJsonObject["sleep"].is_string()) {
-                mSleep = connectionJsonObject["sleep"].get<int>();
-            }
-        }
-
-        return mSleep;
-    }
-
-    int Configuration::getRetry() {
-        int nRetry = 1;
-
-        if (m_jsonData.contains("connection")) {
-            auto connectionJsonObject = m_jsonData["connection"];
-            if (connectionJsonObject.contains("retry") & connectionJsonObject["retry"].is_string()) {
-                nRetry = connectionJsonObject["retry"].get<int>();
-            }
-        }
-
-        return nRetry;
-    }
-
     void Configuration::setSignalKServerUrl(const QString& signalKServerUrl) {
 
         if (m_jsonData.contains("connection")) {
@@ -172,8 +175,9 @@ namespace fairwindsk {
 
         if (m_jsonData.contains("units")) {
             auto unitsJsonObject = m_jsonData["units"];
-            if (unitsJsonObject.contains("vesselSpeed") & unitsJsonObject["vesselSpeed"].is_string()) {
-                result = unitsJsonObject["vesselSpeed"].get<std::string>();
+            auto unitsKey = units.toStdString();
+            if (unitsJsonObject.contains(unitsKey) & unitsJsonObject[unitsKey].is_string()) {
+                result = unitsJsonObject[unitsKey].get<std::string>();
             }
         }
 
@@ -201,20 +205,13 @@ namespace fairwindsk {
     }
 
     void Configuration::setFilename(QString filename) {
-        m_filename = filename;
+        m_filename = std::move(filename);
     }
 
     QString Configuration::getFilename() {
         return m_filename;
     }
 
-    void Configuration::save() {
-        save(m_filename);
-    }
-
-    bool Configuration::load() {
-        return load(m_filename);
-    }
 
 
 } // fairwindsk

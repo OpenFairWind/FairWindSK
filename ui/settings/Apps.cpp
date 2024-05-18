@@ -20,37 +20,60 @@ namespace fairwindsk::ui::settings {
         m_settings = settings;
         m_appsEditMode = false;
 
+        // Get the app keys
+        auto keys = m_mapHash2AppItem.keys();
+
+        // Remove all app items
+        for (const auto& key: keys) {
+
+            // Remove the item
+            delete m_mapHash2AppItem[key];
+        }
+
+        // Remove the map content
+        m_mapHash2AppItem.empty();
 
 
         // Order by order value
         QMap<int, QPair<AppItem *, QString>> map;
 
-        // Populate the inverted list
-        for (auto &hash : m_settings->getAppsHashes()) {
-            // Get the hash value
-            auto app = m_settings->getAppItemByHash(hash);
-            auto position = app->getOrder();
+        auto jsonData = m_settings->getConfiguration()->getRoot();
+        if (jsonData.contains("apps") && jsonData["apps"].is_array()) {
+            for (const auto& app: jsonData["apps"].items()) {
 
-            map[position] = QPair<AppItem *, QString>(app, hash);
-        }
+                auto jsonApp = app.value();
 
-        // Iterate on the available apps' hash values
-        for (const auto& item: map) {
-            // Get the hash value
-            auto appItem = item.first;
-            auto name = item.second;
-            auto listWidgetItem = new QListWidgetItem(appItem->getDisplayName());
-            listWidgetItem->setIcon(QIcon(appItem->getIcon()));
-            listWidgetItem->setToolTip(appItem->getDescription());
-            listWidgetItem->setData(Qt::UserRole, name);
-            if (appItem->getActive()) {
-                listWidgetItem->setCheckState(Qt::Checked);
-            } else {
-                listWidgetItem->setCheckState(Qt::Unchecked);
+                auto appItem = new AppItem(jsonApp);
+
+                // Add the item to the lookup table
+                m_mapHash2AppItem[appItem->getName()] = appItem;
+
+                auto position = appItem->getOrder();
+
+                map[position] = QPair<AppItem *, QString>(appItem, appItem->getName());
+
+
             }
-            ui->listWidget_Apps_List->addItem(listWidgetItem);
-        }
 
+
+
+            // Iterate on the available apps' hash values
+            for (const auto& item: map) {
+                // Get the hash value
+                auto appItem = item.first;
+                auto name = item.second;
+                auto listWidgetItem = new QListWidgetItem(appItem->getDisplayName());
+                listWidgetItem->setIcon(QIcon(appItem->getIcon()));
+                listWidgetItem->setToolTip(appItem->getDescription());
+                listWidgetItem->setData(Qt::UserRole, name);
+                if (appItem->getActive()) {
+                    listWidgetItem->setCheckState(Qt::Checked);
+                } else {
+                    listWidgetItem->setCheckState(Qt::Unchecked);
+                }
+                ui->listWidget_Apps_List->addItem(listWidgetItem);
+            }
+        }
         connect(ui->listWidget_Apps_List,&QListWidget::itemSelectionChanged, this, &Apps::onAppsListSelectionChanged);
 
         connect(ui->pushButton_Apps_EditSave, &QPushButton::clicked,this,&Apps::onAppsEditSaveClicked);
@@ -70,7 +93,7 @@ namespace fairwindsk::ui::settings {
 
 
         auto name = ui->listWidget_Apps_List->currentItem()->data(Qt::UserRole).toString();
-        auto appItem = m_settings->getAppItemByHash(name);
+        auto appItem = m_mapHash2AppItem[name];
 
         appItem->setName( ui->lineEdit_Apps_Name->text());
 
@@ -141,7 +164,7 @@ namespace fairwindsk::ui::settings {
         setAppsEditMode(false);
 
         auto name = ui->listWidget_Apps_List->currentItem()->data(Qt::UserRole).toString();
-        auto appItem = m_settings->getAppItemByHash(name);
+        auto appItem = m_mapHash2AppItem[name];
 
         ui->label_Apps_Url_Text->setText(appItem->getUrl());
         ui->label_Apps_Version_Text->setText(appItem->getVersion());
@@ -223,7 +246,7 @@ namespace fairwindsk::ui::settings {
             for(int row=0; row < ui->listWidget_Apps_List->count();row++){
                 auto lwi = ui->listWidget_Apps_List->item(row);
                 auto name = lwi->data(Qt::UserRole).toString();
-                m_settings->getAppItemByHash(name)->setOrder(row);
+                m_mapHash2AppItem[name]->setOrder(row);
             }
         }
 

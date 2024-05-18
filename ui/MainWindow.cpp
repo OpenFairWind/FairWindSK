@@ -272,6 +272,7 @@ void fairwindsk::ui::MainWindow::onSettings() {
     ui->stackedWidget_Center->setCurrentWidget(settingsPage);
 
     connect(settingsPage,&settings::Settings::accepted,this, &MainWindow::onSettingsAccepted);
+    connect(settingsPage,&settings::Settings::rejected,this, &MainWindow::onSettingsRejected);
 }
 
 
@@ -297,6 +298,19 @@ void fairwindsk::ui::MainWindow::onAboutAccepted(fairwindsk::ui::about::About *a
     ui->widget_Bottom->setDisabled(false);
     ui->stackedWidget_Center->removeWidget(aboutPage);
     ui->stackedWidget_Center->setCurrentWidget(aboutPage->getCurrentWidget());
+
+    aboutPage->close();
+    delete aboutPage;
+}
+
+void fairwindsk::ui::MainWindow::onSettingsRejected(fairwindsk::ui::settings::Settings *settingsPage) {
+    ui->widget_Top->setDisabled(false);
+    ui->widget_Bottom->setDisabled(false);
+    ui->stackedWidget_Center->removeWidget(settingsPage);
+    ui->stackedWidget_Center->setCurrentWidget(settingsPage->getCurrentWidget());
+
+    settingsPage->close();
+    delete settingsPage;
 }
 
 void fairwindsk::ui::MainWindow::onSettingsAccepted(settings::Settings *settingsPage) {
@@ -304,6 +318,9 @@ void fairwindsk::ui::MainWindow::onSettingsAccepted(settings::Settings *settings
     ui->widget_Bottom->setDisabled(false);
     ui->stackedWidget_Center->removeWidget(settingsPage);
     ui->stackedWidget_Center->setCurrentWidget(settingsPage->getCurrentWidget());
+
+    settingsPage->close();
+    delete settingsPage;
 }
 
 fairwindsk::ui::topbar::TopBar *fairwindsk::ui::MainWindow::getTopBar() {
@@ -331,6 +348,8 @@ void fairwindsk::ui::MainWindow::closeEvent(QCloseEvent *event) {
     else
         event->ignore();
 }
+
+
 
 
 

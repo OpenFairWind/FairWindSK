@@ -1,5 +1,9 @@
 <!DOCTYPE RCC><RCC version="1.0">
     <qresource>
+        <file>resources/json/configuration.json</file>
+        <file>resources/json/units.json</file>
+        <file>resources/json/signalk.json</file>
+
         <file>resources/images/about/rmontella_64x64.png</file>
         <file>resources/images/about/gmellone_64x64.png</file>
         <file>resources/images/about/cgdevita_64x64.png</file>

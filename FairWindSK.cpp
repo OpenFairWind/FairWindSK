@@ -81,9 +81,23 @@ namespace fairwindsk {
         // Store the name of the FairWindSK configuration in the settings
         settings.setValue("config",m_configFilename);
 
-        m_configuration.load(m_configFilename);
+        // Set the configuration file name
+        m_configuration.setFilename(m_configFilename);
 
+        // Check if the file exists
+        if(QFileInfo::exists(m_configFilename)) {
 
+            // Load the configuration
+            m_configuration.load();
+        }
+        else
+        {
+            // Set the default
+            m_configuration.setDefault();
+
+            // Save the configuration file
+            m_configuration.save();
+        }
 
         if (m_debug) {
 
@@ -114,24 +128,15 @@ namespace fairwindsk {
             params["url"] = signalKServerUrl + "/signalk";
 
             QString token = fairwindsk::Configuration::getToken();
-            int nRetry = m_configuration.getRetry();
-            int mSleep = m_configuration.getSleep();
+            int nRetry = 5;
+            int mSleep = 1000;
 
-            // Check if the token is defined or if username/password are defined
-            if (!token.isEmpty() /*|| (!m_username.isEmpty() && !m_password.isEmpty())*/) {
+            // Check if the token is defined
+            if (!token.isEmpty()) {
 
-                // Check if the token is defined
-                if (!token.isEmpty()) {
+                // Set the token
+                params["token"] = token;
 
-                    // Set the token
-                    params["token"] = token;
-                } /*else {
-
-                    // Set username and password
-                    params["username"] = m_username;
-                    params["password"] = m_password;
-                }
-                */
                 // Number of connection tentatives
                 int count = 1;
 

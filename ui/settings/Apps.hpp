@@ -42,6 +42,8 @@ namespace fairwindsk::ui::settings {
         Settings *m_settings;
         bool m_appsEditMode;
         bool m_appsEditChanged;
+
+        QMap<QString, AppItem *> m_mapHash2AppItem;
     };
 } // fairwindsk::ui::settings 
 
