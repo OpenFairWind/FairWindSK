@@ -1,0 +1,17 @@
+{
+  "paths": {
+    "btw": "Bearing to Waypoint (WPT)",
+    "cog": "Course Over Ground (SOG)",
+    "dpt": "Depth (DPT)",
+    "dtg": "Distance to Go (TTG)",
+    "eta": "Estimated Time of Arrival (ETA)",
+    "hdg": "Heading (HDG)",
+    "pos": "Position (POS)",
+    "sog": "Speed Over Ground (SOG)",
+    "stw": "Speed Through Water (STW)",
+    "ttg": "Time To Go (TTG)",
+    "vmg": "Velocity Made Good (VMG)",
+    "wpt": "Waypoint (WPT)",
+    "xte": "Cross Track Error (XTE)"
+  }
+}
