@@ -160,9 +160,7 @@
         "settings": "admin"
     },
     "connection": {
-        "retry": 10,
-        "server": "http://localhost:3000",
-        "sleep": 5
+        "server": "http://localhost:3000"
     },
     "signalk": {
         "btw": "navigation.course.calcValues.bearingTrue",
@@ -180,11 +178,13 @@
         "xte": "navigation.course.calcValues.crossTrackError"
     },
     "units": {
-        "airPressure": "HPa",
+        "airPressure": "hPa",
         "airTemperature": "C",
-        "depth": "m",
+        "waterTemperature": "C",
+        "depth": "mt",
         "distance": "nm",
         "vesselSpeed": "kn",
         "windSpeed": "kn"
     }
 }
+
