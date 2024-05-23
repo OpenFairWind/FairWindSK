@@ -393,4 +393,17 @@ namespace fairwindsk {
         // Set the name value
         m_jsonApp["signalk"]["displayName"] = displayName.toStdString();
     }
+
+    nlohmann::json AppItem::asJson() {
+        nlohmann::json result;
+        result["name"] = m_jsonApp["name"];
+        result["description"] = m_jsonApp["description"];
+
+        result["signalk"]["displayName"] = m_jsonApp["signalk"]["displayName"];
+        result["signalk"]["appIcon"] = m_jsonApp["signalk"]["appIcon"];
+
+        result["fairwind"] = m_jsonApp["fairwind"];
+
+        return result;
+    }
 }

@@ -18,6 +18,8 @@
 #include <QNetworkCookie>
 #include <QWebEngineCookieStore>
 
+
+
 using namespace Qt::StringLiterals;
 
 namespace fairwindsk {
@@ -193,6 +195,16 @@ namespace fairwindsk {
         // Set the result value
         bool result = false;
 
+        // Get the configuration root
+        auto configuration = m_configuration.getRoot();
+
+        // Check if apps is not defined in configuration
+        if (!configuration.contains("apps")) {
+
+            // Add the apps array
+            configuration["apps"] = nlohmann::json::array();
+        }
+
         // Get the app keys
         auto keys = m_mapHash2AppItem.keys();
 
@@ -258,19 +270,16 @@ namespace fairwindsk {
                             // Get the json object
                             auto appJsonObject = appJsonItem;
 
-                            // Create the fairwind element if not present or is not an object
-                            if (!appJsonObject.contains("fairwind")) {
 
-                                nlohmann::json fairwindJsonObject;
-                                fairwindJsonObject["active"] = true;
-                                fairwindJsonObject["order"] = count;
 
-                            }
-
-                            // Check if the app is a signalk-webapp
+                            // Check if keywords key is present and if the value is an array
                             if (appJsonObject.contains("keywords") && appJsonObject["keywords"].is_array()) {
-                                auto keywordsJsonArray = appJsonObject["keywords"];
-                                std::vector<std::string> keywords = keywordsJsonArray;
+
+                                // Get the keyword array
+                                //auto keywordsJsonArray = appJsonObject["keywords"];
+                                std::vector<std::string> keywords = appJsonObject["keywords"]; //keywordsJsonArray;
+
+                                // Load the string vector into a QStringList
                                 QStringList stringListKeywords;
                                 std::transform(
                                         keywords.begin(), keywords.end(),
@@ -279,11 +288,34 @@ namespace fairwindsk {
                                         }
                                         );
 
+                                // Check if it is a web application
                                 if (stringListKeywords.contains("signalk-webapp")) {
+
+                                    // Check if the fairwind element if not present or is not an object
+                                    if (
+                                            !appJsonObject.contains("fairwind") ||
+                                            (
+                                                    appJsonObject.contains("fairwind") &&
+                                                    appJsonObject["fairwind"].is_null())) {
+
+                                        // or even nicer with a raw string literal
+                                        nlohmann::json fairwindJsonObject;
+                                        fairwindJsonObject["active"] = true;
+                                        fairwindJsonObject["order"] = count;
+
+                                        appJsonObject["fairwind"] = fairwindJsonObject;
+
+                                    }
 
 
                                     // Create an app item object
                                     auto appItem = new AppItem(appJsonObject);
+
+
+                                    int idx = m_configuration.findApp(appItem->getName());
+                                    if (idx == -1) {
+                                        m_configuration.getRoot()["apps"].push_back(appItem->asJson());
+                                    }
 
                                     // Add the item to the lookup table
                                     m_mapHash2AppItem[appItem->getName()] = appItem;
@@ -309,31 +341,54 @@ namespace fairwindsk {
             }
         }
 
+        // Get the apps array
+        auto appsJsonArray = configuration["apps"];
 
-        auto configuration = m_configuration.getRoot();
-        if (configuration.contains("apps") && configuration["apps"].is_array()) {
-            auto appsJsonArray = configuration["apps"];
-            for (auto app: appsJsonArray) {
-                if (app.is_object()) {
+        // For each app in the apps array
+        for (auto app: appsJsonArray) {
 
-                    if (app.contains("name") && app["name"].is_string()) {
-                        auto appName = QString::fromStdString(app["name"].get<std::string>());
+            // Check if the app is an object
+            if (app.is_object()) {
 
-                        if (m_mapHash2AppItem.contains(appName)) {
+                // Check if the app has the key name and if the value is a string
+                if (app.contains("name") && app["name"].is_string()) {
 
-                            m_mapHash2AppItem[appName]->update(app);
-                        } else {
-                            auto appItem = new AppItem(app);
-                            if (appItem->getOrder() == 0) {
-                                appItem->setOrder(count);
+                    // Get the app name
+                    auto appName = QString::fromStdString(app["name"].get<std::string>());
+
+                    // Check if the app is one of the ones already added
+                    if (m_mapHash2AppItem.contains(appName)) {
+
+                        // Update the app with the configuration
+                        m_mapHash2AppItem[appName]->update(app);
+                    } else {
+
+                        // Create a new app item with the configuration
+                        auto appItem = new AppItem(app);
+
+                        // Check if the order is 0
+                        if (appItem->getOrder() == 0) {
+
+                            // Update the order
+                            appItem->setOrder(count);
+
+                            // Get the index of the application within the apps array
+                            int idx = m_configuration.findApp(appName);
+
+                            // Check if the app is present
+                            if (idx != -1) {
+
+                                // Update the configuration
+                                m_configuration.getRoot()["apps"].at(idx)["fairwind"]["order"] = count;
+
+                                // Increase the counter
                                 count++;
                             }
-                            m_mapHash2AppItem[appName] = appItem;
-
-
                         }
-                    }
 
+                        // Add the application to the hash map
+                        m_mapHash2AppItem[appName] = appItem;
+                    }
                 }
             }
         }
@@ -348,8 +403,6 @@ namespace fairwindsk {
     QList<QString> FairWindSK::getAppsHashes() {
         return m_mapHash2AppItem.keys();
     }
-
-
 
     AppItem *FairWindSK::getAppItemByHash(const QString& hash) {
         return m_mapHash2AppItem[hash];

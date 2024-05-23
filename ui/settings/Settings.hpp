@@ -25,7 +25,7 @@ namespace fairwindsk::ui::settings {
     Q_OBJECT
 
     public:
-        explicit Settings(QWidget *parent = nullptr, QWidget *currenWidget = nullptr);
+        explicit Settings(QWidget *parent = nullptr, QWidget *currenWidget = nullptr, Configuration *currentConfiguration = nullptr);
 
         ~Settings() override;
 
@@ -53,7 +53,7 @@ namespace fairwindsk::ui::settings {
         Ui::Settings *ui;
 
         Configuration m_configuration;
-        //QMap<QString, AppItem *> m_mapHash2AppItem;
+        Configuration *m_currentConfiguration;
         QWidget *m_currentWidget;
 
     };

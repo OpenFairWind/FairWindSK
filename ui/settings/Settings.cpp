@@ -20,19 +20,16 @@
 
 namespace fairwindsk::ui::settings {
 
-    Settings::Settings(QWidget *parent, QWidget *currenWidget): QWidget(parent), ui(new Ui::Settings) {
+    Settings::Settings(QWidget *parent, QWidget *currenWidget, Configuration *currentConfiguration): QWidget(parent), ui(new Ui::Settings) {
         ui->setupUi(this);
 
-        auto fairWindSk = FairWindSK::getInstance();
-
-        m_configuration.setFilename(fairWindSk->getConfiguration()->getFilename());
-        m_configuration.setRoot(fairWindSk->getConfiguration()->getRoot());
-
-        /*
-        for (const auto& hash: fairWindSk->getAppsHashes()) {
-            m_mapHash2AppItem.insert(hash, fairWindSk->getAppItemByHash(hash));
+        if (currentConfiguration) {
+            m_currentConfiguration = currentConfiguration;
+            m_configuration.setFilename(m_currentConfiguration->getFilename());
+            m_configuration.setRoot(m_currentConfiguration->getRoot());
         }
-        */
+
+
         initTabs();
 
         m_currentWidget = currenWidget;
@@ -53,7 +50,7 @@ namespace fairwindsk::ui::settings {
 
             auto fairWindSk = FairWindSK::getInstance();
 
-            m_configuration.setRoot(fairWindSk->getConfiguration()->getRoot());
+            m_configuration.setRoot(m_currentConfiguration->getRoot());
 
             initTabs();
 
@@ -99,17 +96,7 @@ namespace fairwindsk::ui::settings {
     Settings::~Settings() {
         delete ui;
     }
-/*
-    QList<QString> Settings::getAppsHashes() {
-        return m_mapHash2AppItem.keys();
-    }
 
-
-
-    AppItem *Settings::getAppItemByHash(QString hash) {
-        return m_mapHash2AppItem[hash];
-    }
-*/
     Configuration *Settings::getConfiguration() {
         return &m_configuration;
     }

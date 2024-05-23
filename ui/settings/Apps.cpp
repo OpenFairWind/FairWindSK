@@ -19,6 +19,7 @@ namespace fairwindsk::ui::settings {
 
         m_settings = settings;
         m_appsEditMode = false;
+        m_appsEditChanged = false;
 
         // Get the app keys
         auto keys = m_mapHash2AppItem.keys();
@@ -37,19 +38,28 @@ namespace fairwindsk::ui::settings {
         // Order by order value
         QMap<int, QPair<AppItem *, QString>> map;
 
+        // Get the configuration json data root
         auto jsonData = m_settings->getConfiguration()->getRoot();
+
+        // Check if the configuration has an apps element and if it is an array
         if (jsonData.contains("apps") && jsonData["apps"].is_array()) {
+
+            // For each item of the apps array...
             for (const auto& app: jsonData["apps"].items()) {
 
+                // Get the application data
                 auto jsonApp = app.value();
 
+                // Create an application object
                 auto appItem = new AppItem(jsonApp);
 
                 // Add the item to the lookup table
                 m_mapHash2AppItem[appItem->getName()] = appItem;
 
+                // Get the order and set the position
                 auto position = appItem->getOrder();
 
+                // Map the application in the right application
                 map[position] = QPair<AppItem *, QString>(appItem, appItem->getName());
 
 

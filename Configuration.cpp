@@ -52,7 +52,7 @@ namespace fairwindsk {
     void Configuration::save(const QString& filename) {
 
         std::ofstream file(filename.toUtf8());
-        file << m_jsonData;
+        file << m_jsonData.dump(2);
 
     }
 
@@ -212,6 +212,29 @@ namespace fairwindsk {
         return m_filename;
     }
 
+    int Configuration::findApp(const QString& name) {
+        int result = -1;
+
+        if (m_jsonData.contains("apps") && m_jsonData["apps"].is_array()) {
+            auto appsJsonArray = m_jsonData["apps"];
+
+            int idx=0;
+            for (auto app: appsJsonArray) {
+                if (app.is_object()) {
+
+                    if (app.contains("name") && app["name"].is_string()) {
+                        auto appName = QString::fromStdString(app["name"].get<std::string>());
+                        if (appName == name) {
+                            result = idx;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
 
 
 } // fairwindsk

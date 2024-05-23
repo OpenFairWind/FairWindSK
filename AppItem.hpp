@@ -18,6 +18,8 @@ namespace fairwindsk {
     class AppItem: QObject {
         Q_OBJECT
 
+
+
     public:
             AppItem();
 
@@ -65,6 +67,8 @@ namespace fairwindsk {
 
             void setWidget(QWidget *pWidget);
             QWidget *getWidget();
+
+            nlohmann::json asJson();
 
             bool operator<(const AppItem& o) const;
 

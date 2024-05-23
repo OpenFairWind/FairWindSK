@@ -56,7 +56,7 @@ namespace fairwindsk {
         void save(const QString& filename);
         bool load(const QString& filename);
 
-
+        int findApp(const QString& name);
 
 
     private:
