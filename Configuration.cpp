@@ -229,6 +229,7 @@ namespace fairwindsk {
                             break;
                         }
                     }
+                    idx++;
                 }
             }
         }
