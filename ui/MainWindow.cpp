@@ -70,7 +70,7 @@ fairwindsk::ui::MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), u
                      this,&MainWindow::setForegroundApp);
 
     // Preload a web application
-    setForegroundApp("admin");
+    setForegroundApp("http:///");
 
     // Show the launcher
     onApps();
