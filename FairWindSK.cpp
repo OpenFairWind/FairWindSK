@@ -195,14 +195,14 @@ namespace fairwindsk {
         // Set the result value
         bool result = false;
 
-        // Get the configuration root
-        auto configuration = m_configuration.getRoot();
+        // Get the configuration root JSON object
+        auto configurationJsonObject = m_configuration.getRoot();
 
         // Check if apps is not defined in configuration
-        if (!configuration.contains("apps")) {
+        if (!configurationJsonObject.contains("apps")) {
 
             // Add the apps array
-            configuration["apps"] = nlohmann::json::array();
+            configurationJsonObject["apps"] = nlohmann::json::array();
         }
 
         // Get the app keys
@@ -221,8 +221,10 @@ namespace fairwindsk {
         // Reset the counter
         int count = 100;
 
-
+        // Get the signalk server url from the configuration
         auto signalKServerUrl = m_configuration.getSignalKServerUrl();
+
+        // Check if it not empty
         if (!signalKServerUrl.isEmpty()) {
 
             // Set the URL for the application list
@@ -322,6 +324,8 @@ namespace fairwindsk {
 
                                     // Increase the app counter
                                     count++;
+
+                                    qDebug() << "Added: " << appItem->asJson().dump(2);
                                 }
                             }
                         }
@@ -342,7 +346,7 @@ namespace fairwindsk {
         }
 
         // Get the apps array
-        auto appsJsonArray = configuration["apps"];
+        auto appsJsonArray = configurationJsonObject["apps"];
 
         // For each app in the apps array
         for (auto app: appsJsonArray) {
@@ -363,31 +367,37 @@ namespace fairwindsk {
                         m_mapHash2AppItem[appName]->update(app);
                     } else {
 
-                        // Create a new app item with the configuration
-                        auto appItem = new AppItem(app);
+                        // Check if it is not a signalk app
+                        if (appName.startsWith("http://") || appName.startsWith("https://") || appName.startsWith("file://")) {
 
-                        // Check if the order is 0
-                        if (appItem->getOrder() == 0) {
+                            // Create a new app item with the configuration
+                            auto appItem = new AppItem(app);
 
-                            // Update the order
-                            appItem->setOrder(count);
+                            // Check if the order is 0
+                            if (appItem->getOrder() == 0) {
 
-                            // Get the index of the application within the apps array
-                            int idx = m_configuration.findApp(appName);
+                                // Update the order
+                                appItem->setOrder(count);
 
-                            // Check if the app is present
-                            if (idx != -1) {
+                                // Get the index of the application within the apps array
+                                int idx = m_configuration.findApp(appName);
 
-                                // Update the configuration
-                                m_configuration.getRoot()["apps"].at(idx)["fairwind"]["order"] = count;
+                                // Check if the app is present
+                                if (idx != -1) {
 
-                                // Increase the counter
-                                count++;
+                                    // Update the configuration
+                                    m_configuration.getRoot()["apps"].at(idx)["fairwind"]["order"] = count;
+
+                                    // Increase the counter
+                                    count++;
+                                }
                             }
-                        }
 
-                        // Add the application to the hash map
-                        m_mapHash2AppItem[appName] = appItem;
+                            // Add the application to the hash map
+                            m_mapHash2AppItem[appName] = appItem;
+
+                            qDebug() << "Added: " << appItem->asJson().dump(2);
+                        }
                     }
                 }
             }
