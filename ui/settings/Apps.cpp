@@ -41,6 +41,8 @@ namespace fairwindsk::ui::settings {
         // Get the configuration json data root
         auto jsonData = m_settings->getConfiguration()->getRoot();
 
+        qDebug() << "Apps::Apps";
+
         // Check if the configuration has an apps element and if it is an array
         if (jsonData.contains("apps") && jsonData["apps"].is_array()) {
 
@@ -52,6 +54,8 @@ namespace fairwindsk::ui::settings {
 
                 // Create an application object
                 auto appItem = new AppItem(jsonApp);
+
+                qDebug() << "App: " << appItem->getName() << " active: " << appItem->getActive() << " order: " << appItem->getOrder();
 
                 // Add the item to the lookup table
                 m_mapHash2AppItem[appItem->getName()] = appItem;
