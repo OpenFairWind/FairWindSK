@@ -50,10 +50,10 @@ namespace fairwindsk {
 
     }
 
-
-
     void AppItem::update(const nlohmann::json& jsonApp) {
-        m_jsonApp.merge_patch(jsonApp);
+
+        //m_jsonApp.update(jsonApp);
+        m_jsonApp.update(jsonApp, true);
     }
 
 
