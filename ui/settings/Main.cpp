@@ -62,8 +62,6 @@ namespace fairwindsk::ui::settings {
 
                             comboBox->addItem(QString::fromStdString(typeText), QString::fromStdString(typeItem.key()));
 
-                            qDebug() << QString::fromStdString(currentUnit) + " ... " + QString::fromStdString(typeItem.key());
-
                             if (currentUnit == typeItem.key()) {
                                 currentIndex = idx;
                             }
@@ -94,8 +92,6 @@ namespace fairwindsk::ui::settings {
     void Main::onCurrentIndexChanged(int index) {
         // get sender
         auto comboBox = qobject_cast<QComboBox*>(sender());
-
-        qDebug() << "onCurrentIndexChanged: " << comboBox->objectName() << " --> " << comboBox->currentData().toString();
 
         m_settings->getConfiguration()->getRoot()["units"][comboBox->objectName().toStdString()] = comboBox->currentData().toString().toStdString();
     }
