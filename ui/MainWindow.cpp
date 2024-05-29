@@ -141,7 +141,7 @@ void fairwindsk::ui::MainWindow::setForegroundApp(QString hash) {
     } else {
         if (appItem->getName() == "__SETTINGS__") {
 
-            widgetApp = new settings::Settings();
+            widgetApp = new settings::Settings(nullptr, nullptr,FairWindSK::getInstance()->getConfiguration());
 
         } else if (appItem->getName().startsWith("file://")) {
             //https://forum.qt.io/topic/44091/embed-an-application-inside-a-qt-window-solved/16
@@ -265,7 +265,7 @@ void fairwindsk::ui::MainWindow::onAlarms() {
  */
 void fairwindsk::ui::MainWindow::onSettings() {
 
-    auto settingsPage = new settings::Settings(this, ui->stackedWidget_Center->currentWidget());
+    auto settingsPage = new settings::Settings(this, ui->stackedWidget_Center->currentWidget(),FairWindSK::getInstance()->getConfiguration());
     ui->widget_Top->setDisabled(true);
     ui->widget_Bottom->setDisabled(true);
     ui->stackedWidget_Center->addWidget(settingsPage);
