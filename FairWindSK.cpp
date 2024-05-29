@@ -87,7 +87,7 @@ namespace fairwindsk {
         m_configuration.setFilename(m_configFilename);
 
         // Check if the file exists
-        if(QFileInfo::exists(m_configFilename)) {
+        if (QFileInfo::exists(m_configFilename)) {
 
             // Load the configuration
             m_configuration.load();
@@ -98,7 +98,7 @@ namespace fairwindsk {
             m_configuration.setDefault();
 
             // Save the configuration file
-            m_configuration.save();
+            //m_configuration.save();
         }
 
         if (m_debug) {
@@ -325,7 +325,7 @@ namespace fairwindsk {
                                     // Increase the app counter
                                     count++;
 
-                                    qDebug() << "Added: " << appItem->asJson().dump(2);
+                                    qDebug() << "Added (app from the Signal k server): " << appItem->asJson().dump(2);
                                 }
                             }
                         }
@@ -363,8 +363,29 @@ namespace fairwindsk {
                     // Check if the app is one of the ones already added
                     if (m_mapHash2AppItem.contains(appName)) {
 
-                        // Update the app with the configuration
-                        m_mapHash2AppItem[appName]->update(app);
+                        // Get the app item object
+                        auto appItem = m_mapHash2AppItem[appName];
+
+                        // Get the index of the application within the apps array
+                        int idx = m_configuration.findApp(appName);
+
+                        // Check if the app is present
+                        if (idx != -1) {
+
+                            auto j = appItem->asJson();
+
+                            j.update(app, true);
+                            m_configuration.getRoot()["apps"].at(idx) = j;
+
+                            // Update the app with the configuration
+                            m_mapHash2AppItem[appName]->update(j);
+
+
+                            qDebug() << "Updated (app from the Signal k server updated by the configuration file): " << m_configuration.getRoot()["apps"].at(idx).dump(2);
+
+                        }
+
+
                     } else {
 
                         // Check if it is not a signalk app
@@ -388,6 +409,8 @@ namespace fairwindsk {
                                     // Update the configuration
                                     m_configuration.getRoot()["apps"].at(idx)["fairwind"]["order"] = count;
 
+                                    qDebug() << "Added (app from the configuration file): " << m_configuration.getRoot()["apps"].at(idx).dump(2);
+
                                     // Increase the counter
                                     count++;
                                 }
@@ -396,14 +419,57 @@ namespace fairwindsk {
                             // Add the application to the hash map
                             m_mapHash2AppItem[appName] = appItem;
 
-                            qDebug() << "Added: " << appItem->asJson().dump(2);
+                            //qDebug() << "Added: " << appItem->asJson().dump(2);
+
+                        } else {
+
+                            // Get the index of the application within the apps array
+                            int idx = m_configuration.findApp(appName);
+
+                            // Check if the app is present
+                            if (idx != -1) {
+
+                                // Update the configuration
+                                m_configuration.getRoot()["apps"].at(idx)["fairwind"]["order"] = 10000+count;
+
+                                m_configuration.getRoot()["apps"].at(idx)["fairwind"]["active"] = false;
+
+                                count++;
+
+                                // The app is not present on the Signal K server)
+                                qDebug() << "Deactivated (Signal K application present in the configuration file, but not on the Signal K server): " << m_configuration.getRoot()["apps"].at(idx).dump(2);
+
+                            } else {
+                                qDebug() << "Error!";
+                            }
+
+
                         }
                     }
                 }
             }
         }
 
-        qDebug() << m_mapHash2AppItem.keys();
+        // Get the configuration json data root
+        auto jsonData =m_configuration.getRoot();
+
+        qDebug() << "Resume";
+
+        // Check if the configuration has an apps element and if it is an array
+        if (jsonData.contains("apps") && jsonData["apps"].is_array()) {
+
+            // For each item of the apps array...
+            for (const auto &app: jsonData["apps"].items()) {
+
+                // Get the application data
+                auto jsonApp = app.value();
+
+                // Create an application object
+                auto appItem = new AppItem(jsonApp);
+
+                qDebug() << "App: " << appItem->getName() << " active: " << appItem->getActive() << " order: " << appItem->getOrder();
+            }
+        }
 
 
         // Return the result
