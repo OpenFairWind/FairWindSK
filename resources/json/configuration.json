@@ -96,18 +96,6 @@
             "name": "@signalk/signalk-node-red"
         },
         {
-            "fairwind": {
-                "active": false
-            },
-            "name": "admin"
-        },
-        {
-            "fairwind": {
-                "active": false
-            },
-            "name": "admin/#/appstore/apps"
-        },
-        {
             "description": "Signal K Server",
             "fairwind": {
                 "active": true,
