@@ -332,6 +332,7 @@ namespace fairwindsk::ui::settings {
 
                 // Check if the app is present
                 if (idx != -1) {
+
                     // Update the configuration
                     m_settings->getConfiguration()->getRoot()["apps"].at(idx)["fairwind"]["order"] = 1+row;
 
@@ -353,7 +354,10 @@ namespace fairwindsk::ui::settings {
 
         // Create an application object
         auto appItem = new AppItem();
-        appItem->setName("newapp");
+        appItem->setName("new_app");
+
+        // Add to the configuration
+        m_settings->getConfiguration()->getRoot()["apps"].push_back(appItem->asJson());
 
         auto listWidgetItem = new QListWidgetItem(appItem->getDisplayName());
         listWidgetItem->setIcon(QIcon(appItem->getIcon()));
