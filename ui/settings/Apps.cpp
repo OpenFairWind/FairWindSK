@@ -21,20 +21,6 @@ namespace fairwindsk::ui::settings {
         m_appsEditMode = false;
         m_appsEditChanged = false;
 
-        // Get the app keys
-        auto keys = m_mapHash2AppItem.keys();
-
-        // Remove all app items
-        for (const auto& key: keys) {
-
-            // Remove the item
-            delete m_mapHash2AppItem[key];
-        }
-
-        // Remove the map content
-        m_mapHash2AppItem.empty();
-
-
         // Order by order value
         QMap<int, QPair<AppItem *, QString>> map;
 
@@ -56,9 +42,6 @@ namespace fairwindsk::ui::settings {
                 auto appItem = new AppItem(jsonApp);
 
                 qDebug() << "App: " << appItem->getName() << " active: " << appItem->getActive() << " order: " << appItem->getOrder();
-
-                // Add the item to the lookup table
-                m_mapHash2AppItem[appItem->getName()] = appItem;
 
                 // Get the order and set the position
                 auto position = appItem->getOrder();
@@ -89,6 +72,7 @@ namespace fairwindsk::ui::settings {
             }
         }
         connect(ui->listWidget_Apps_List,&QListWidget::itemSelectionChanged, this, &Apps::onAppsListSelectionChanged);
+        connect( ui->listWidget_Apps_List, &QListWidget::itemChanged, this, &Apps::onAppsListItemChanged);
 
         connect(ui->pushButton_Apps_EditSave, &QPushButton::clicked,this,&Apps::onAppsEditSaveClicked);
 
@@ -98,21 +82,55 @@ namespace fairwindsk::ui::settings {
         connect(ui->lineEdit_Apps_AppIcon, &QLineEdit::textChanged, this, &Apps::onAppsDetailsFieldsTextChanged);
 
         connect(ui->pushButton_Apps_AppIcon_Browse, &QPushButton::clicked,this,&Apps::onAppsAppIconBrowse);
-        connect(ui->pushButton_Apps_Name_Browse, &QPushButton::clicked,this,&Apps::onAppsNameBrowse);
+
+
+        connect(ui->toolButton_Add, &QToolButton::clicked,this,&Apps::onAppsAddClicked);
+        connect(ui->toolButton_Remove, &QToolButton::clicked,this,&Apps::onAppsRemoveClicked);
+        connect(ui->toolButton_Up, &QToolButton::clicked,this,&Apps::onAppsUpClicked);
+        connect(ui->toolButton_Down, &QToolButton::clicked,this,&Apps::onAppsDownClicked);
 
         ui->listWidget_Apps_List->installEventFilter(this);
+        if (ui->listWidget_Apps_List->count()>0) {
+            ui->listWidget_Apps_List->setCurrentRow(0);
+        }
     }
 
     void Apps::saveAppsDetails() {
 
+        // Get the application name
+        auto appName =  ui->listWidget_Apps_List->currentItem()->data(Qt::UserRole).toString();
 
-        auto name = ui->listWidget_Apps_List->currentItem()->data(Qt::UserRole).toString();
-        auto appItem = m_mapHash2AppItem[name];
+        // Get the index of the application within the apps array
+        int idx = m_settings->getConfiguration()->findApp(appName);
 
-        appItem->setName( ui->lineEdit_Apps_Name->text());
+        // Check if the app is present
+        if (idx != -1) {
 
 
+            // Set the current app json object
+            auto appJsonObject = m_settings->getConfiguration()->getRoot()["apps"].at(idx);
 
+            // Update the configuration
+            appJsonObject["name"] = ui->lineEdit_Apps_Name->text().toStdString();
+            appJsonObject["description"] = ui->lineEdit_Apps_Description->text().toStdString();
+            appJsonObject["signalk"]["displayName"] = ui->lineEdit_Apps_DisplayName->text().toStdString();
+            appJsonObject["signalk"]["appIcon"] = ui->lineEdit_Apps_AppIcon->text().toStdString();
+
+            m_settings->getConfiguration()->getRoot()["apps"].at(idx) = appJsonObject;
+
+            auto appItem = new AppItem(appJsonObject);
+
+            auto listWidgetItem =  ui->listWidget_Apps_List->currentItem();
+            listWidgetItem->setText(appItem->getDisplayName());
+            listWidgetItem->setIcon(QIcon(appItem->getIcon()));
+            listWidgetItem->setToolTip(appItem->getDescription());
+            listWidgetItem->setData(Qt::UserRole, appItem->getName());
+
+            delete appItem;
+
+            qDebug() << "Updated (from edits): " << m_settings->getConfiguration()->getRoot()["apps"].at(idx).dump(2);
+
+        }
 
         // Reset the apps edit changed flag
         m_appsEditChanged = false;
@@ -172,35 +190,60 @@ namespace fairwindsk::ui::settings {
             setAppsEditMode(true);
         }
     }
+
     void Apps::onAppsListSelectionChanged() {
 
 
         setAppsEditMode(false);
 
-        auto name = ui->listWidget_Apps_List->currentItem()->data(Qt::UserRole).toString();
-        auto appItem = m_mapHash2AppItem[name];
+        if (ui->listWidget_Apps_List->currentRow()!=-1) {
+            auto appName = ui->listWidget_Apps_List->currentItem()->data(Qt::UserRole).toString();
 
-        ui->label_Apps_Url_Text->setText(appItem->getUrl());
-        ui->label_Apps_Version_Text->setText(appItem->getVersion());
-        ui->label_Apps_Author_Text->setText(appItem->getAuthor());
-        ui->label_Apps_Vendor_Text->setText(appItem->getVendor());
-        ui->label_Apps_Copyright_Text->setText(appItem->getCopyright());
-        ui->label_Apps_License_Text->setText(appItem->getLicense());
+            // Get the index of the application within the apps array
+            int idx = m_settings->getConfiguration()->findApp(appName);
 
-        ui->lineEdit_Apps_Name->setText(name);
-        ui->lineEdit_Apps_Description->setText(appItem->getDescription());
-        ui->lineEdit_Apps_DisplayName->setText(appItem->getDisplayName());
-        ui->lineEdit_Apps_AppIcon->setText(appItem->getAppIcon());
+            // Check if the app is present
+            if (idx != -1) {
+                auto appItem = new AppItem(m_settings->getConfiguration()->getRoot()["apps"].at(idx));
+
+                ui->label_Apps_Url_Text->setText(appItem->getUrl());
+                ui->label_Apps_Version_Text->setText(appItem->getVersion());
+                ui->label_Apps_Author_Text->setText(appItem->getAuthor());
+                ui->label_Apps_Vendor_Text->setText(appItem->getVendor());
+                ui->label_Apps_Copyright_Text->setText(appItem->getCopyright());
+                ui->label_Apps_License_Text->setText(appItem->getLicense());
+
+                ui->lineEdit_Apps_Name->setText(appName);
+                ui->lineEdit_Apps_Description->setText(appItem->getDescription());
+                ui->lineEdit_Apps_DisplayName->setText(appItem->getDisplayName());
+                ui->lineEdit_Apps_AppIcon->setText(appItem->getAppIcon());
 
 
-        auto icon = appItem->getIcon();
+                auto icon = appItem->getIcon();
 
-        // Scale the icon
-        icon = icon.scaled(128, 128);
+                // Scale the icon
+                icon = icon.scaled(128, 128);
 
-        ui->label_Apps_Icon->setPixmap(icon);
+                ui->label_Apps_Icon->setPixmap(icon);
 
+                delete appItem;
+            }
+        } else {
+            ui->label_Apps_Url_Text->setText("");
+            ui->label_Apps_Version_Text->setText("");
+            ui->label_Apps_Author_Text->setText("");
+            ui->label_Apps_Vendor_Text->setText("");
+            ui->label_Apps_Copyright_Text->setText("");
+            ui->label_Apps_License_Text->setText("");
 
+            ui->lineEdit_Apps_Name->setText("");
+            ui->lineEdit_Apps_Description->setText("");
+            ui->lineEdit_Apps_DisplayName->setText("");
+            ui->lineEdit_Apps_AppIcon->setText("");
+
+            QPixmap pixmap = QPixmap::fromImage(QImage(":/resources/images/icons/webapp-256x256.png"));
+            ui->label_Apps_Icon->setPixmap(pixmap);
+        }
 
     }
 
@@ -247,20 +290,54 @@ namespace fairwindsk::ui::settings {
         }
     }
 
-    Apps::~Apps() {
-        delete ui;
+
+
+    void Apps::onAppsListItemChanged(QListWidgetItem* listWidgetItem) {
+
+        // Get the application name
+        auto appName = listWidgetItem->data(Qt::UserRole).toString();
+
+        // Check the state
+        bool active = listWidgetItem->checkState();
+
+        // Get the index of the application within the apps array
+        int idx = m_settings->getConfiguration()->findApp(appName);
+
+        // Check if the app is present
+        if (idx != -1) {
+            // Update the configuration
+            m_settings->getConfiguration()->getRoot()["apps"].at(idx)["fairwind"]["active"] = active;
+
+            qDebug() << "Updated (active): " << m_settings->getConfiguration()->getRoot()["apps"].at(idx).dump(2);
+
+        }
     }
 
     bool Apps::eventFilter(QObject *object, QEvent *event) {
 
 
         if ( object == ui->listWidget_Apps_List &&  ( event->type() == QEvent::ChildRemoved )  ) {
-            qDebug() << "+-+.+.+.+-+-+.+.+.+-+-+.+.+.+-";
+
             m_appsEditChanged = true;
             for(int row=0; row < ui->listWidget_Apps_List->count();row++){
-                auto lwi = ui->listWidget_Apps_List->item(row);
-                auto name = lwi->data(Qt::UserRole).toString();
-                m_mapHash2AppItem[name]->setOrder(row);
+
+                // Get the list widget item
+                auto listWidgetItem = ui->listWidget_Apps_List->item(row);
+
+                // Get the application name
+                auto appName = listWidgetItem->data(Qt::UserRole).toString();
+
+                // Get the index of the application within the apps array
+                int idx = m_settings->getConfiguration()->findApp(appName);
+
+                // Check if the app is present
+                if (idx != -1) {
+                    // Update the configuration
+                    m_settings->getConfiguration()->getRoot()["apps"].at(idx)["fairwind"]["order"] = 1+row;
+
+                    qDebug() << "Updated (order): " << m_settings->getConfiguration()->getRoot()["apps"].at(idx).dump(2);
+
+                }
             }
         }
 
@@ -268,6 +345,90 @@ namespace fairwindsk::ui::settings {
 
         return QObject::eventFilter(object, event);
     }
+
+    void Apps::onAppsAddClicked() {
+        // Get the current item index
+        auto pos = ui->listWidget_Apps_List->currentRow();
+
+
+        // Create an application object
+        auto appItem = new AppItem();
+        appItem->setName("newapp");
+
+        auto listWidgetItem = new QListWidgetItem(appItem->getDisplayName());
+        listWidgetItem->setIcon(QIcon(appItem->getIcon()));
+        listWidgetItem->setToolTip(appItem->getDescription());
+        listWidgetItem->setData(Qt::UserRole, appItem->getName());
+        listWidgetItem->setCheckState(Qt::Unchecked);
+
+        // Check if the index is valid
+        if (pos >= 0) {
+            ui->listWidget_Apps_List->insertItem(pos,listWidgetItem);
+            ui->listWidget_Apps_List->setCurrentRow(pos);
+        } else {
+            ui->listWidget_Apps_List->addItem(listWidgetItem);
+            ui->listWidget_Apps_List->setCurrentRow(0);
+        }
+    }
+
+    void Apps::onAppsRemoveClicked() {
+
+        // Get the current item index
+        auto pos = ui->listWidget_Apps_List->currentRow();
+
+        // Check if the index is valid
+        if (pos >= 0 && pos < ui->listWidget_Apps_List->count()) {
+
+            auto listWidgetItem = ui->listWidget_Apps_List->item(pos);
+
+            // Get the application name
+            auto appName = listWidgetItem->data(Qt::UserRole).toString();
+
+            // Get the index of the application within the apps array
+            int idx = m_settings->getConfiguration()->findApp(appName);
+
+            // Check if the app is present
+            if (idx != -1) {
+
+                // Update the configuration
+                m_settings->getConfiguration()->getRoot()["apps"].erase(idx);
+            }
+
+            // Remove the item from the widget list
+            ui->listWidget_Apps_List->takeItem(pos);
+        }
+    }
+
+    void Apps::onAppsUpClicked() {
+
+        // Get the current item index
+        auto pos = ui->listWidget_Apps_List->currentRow();
+
+        // Check if the index is valid
+        if (pos > 0) {
+            auto listWidgetItem = ui->listWidget_Apps_List->takeItem(pos);
+            ui->listWidget_Apps_List->insertItem(pos-1,listWidgetItem);
+            ui->listWidget_Apps_List->setCurrentRow(pos-1);
+        }
+    }
+
+    void Apps::onAppsDownClicked() {
+        // Get the current item index
+        auto pos = ui->listWidget_Apps_List->currentRow();
+
+        // Check if the index is valid
+        if (pos != -1 && pos < ui->listWidget_Apps_List->count()-1) {
+            auto listWidgetItem = ui->listWidget_Apps_List->takeItem(pos);
+            ui->listWidget_Apps_List->insertItem(pos+1,listWidgetItem);
+            ui->listWidget_Apps_List->setCurrentRow(pos+1);
+        }
+    }
+
+    Apps::~Apps() {
+        delete ui;
+    }
+
+
 
 
 } // fairwindsk::ui::settings

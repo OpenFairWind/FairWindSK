@@ -6,6 +6,7 @@
 #define FAIRWINDSK_APPS_HPP
 
 #include <QWidget>
+#include <QListWidgetItem>
 #include "Settings.hpp"
 
 namespace fairwindsk::ui::settings {
@@ -26,10 +27,15 @@ namespace fairwindsk::ui::settings {
     private slots:
 
         void onAppsListSelectionChanged();
+        void onAppsListItemChanged(QListWidgetItem* listWidgetItem);
         void onAppsEditSaveClicked();
         void onAppsDetailsFieldsTextChanged(const QString &text);
         void onAppsAppIconBrowse();
         void onAppsNameBrowse();
+        void onAppsAddClicked();
+        void onAppsRemoveClicked();
+        void onAppsUpClicked();
+        void onAppsDownClicked();
 
     private:
         bool eventFilter(QObject *object, QEvent *event) override;
@@ -43,7 +49,7 @@ namespace fairwindsk::ui::settings {
         bool m_appsEditMode;
         bool m_appsEditChanged;
 
-        QMap<QString, AppItem *> m_mapHash2AppItem;
+        //QMap<QString, AppItem *> m_mapHash2AppItem;
     };
 } // fairwindsk::ui::settings 
 
