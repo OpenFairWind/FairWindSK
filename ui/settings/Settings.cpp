@@ -78,6 +78,8 @@ namespace fairwindsk::ui::settings {
 
     void Settings::onAccepted() {
 
+
+
         FairWindSK::getInstance()->getConfiguration()->setRoot(m_configuration.getRoot());
 
         FairWindSK::getInstance()->getConfiguration()->save();
