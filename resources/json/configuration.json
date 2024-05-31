@@ -4,98 +4,6 @@
     },
     "apps": [
         {
-            "fairwind": {
-                "active": true,
-                "order": 1,
-                "settings": "freeboard-sk"
-            },
-            "name": "@signalk/freeboard-sk",
-            "signalk": {
-                "appIcon": "file://icons/chart_icon.png"
-            }
-        },
-        {
-            "fairwind": {
-                "active": true,
-                "order": 2
-            },
-            "name": "@mxtommy/kip",
-            "signalk": {
-                "appIcon": "file://icons/dashboard_icon.png"
-            }
-        },
-        {
-            "fairwind": {
-                "active": true,
-                "order": 3
-            },
-            "name": "sk-depth-gauge",
-            "signalk": {
-                "appIcon": "file://icons/sonar_icon.png",
-                "displayName": "Depth"
-            }
-        },
-        {
-            "fairwind": {
-                "active": true,
-                "order": 4
-            },
-            "name": "signalk-top3ais",
-            "signalk": {
-                "appIcon": "file://icons/radar_icon.png",
-                "displayName": "AIS"
-            }
-        },
-        {
-            "name": "signalk-multiplex-viewer",
-            "signalk": {
-                "appIcon": "file://icons/signalkmultiplexviewer_icon.png",
-                "displayName": "Signal K Multiplex Viewer"
-            }
-        },
-        {
-            "name": "signalk-browser",
-            "signalk": {
-                "appIcon": "file://icons/signalkbrowser_icon.png",
-                "displayName": "Signal K Browser"
-            }
-        },
-        {
-            "name": "@signalk/sailgauge",
-            "signalk": {
-                "appIcon": "file://icons/sailgauge_icon.png",
-                "displayName": "Sail Gauge"
-            }
-        },
-        {
-            "description": "OpenCPN Open Source Chart Plotter",
-            "fairwind": {
-                "active": true,
-                "arguments": [
-                    "-fullscreen"
-                ]
-            },
-            "name": "file:///Applications/OpenCPN.app/Contents/MacOS/OpenCPN",
-            "signalk": {
-                "appIcon": "file:///Applications/OpenCPN.app/Contents/SharedSupport/opencpn.png",
-                "displayName": "OpenCPN"
-            }
-        },
-        {
-            "fairwind": {
-                "active": true,
-                "settings": "autopilot"
-            },
-            "name": "@signalk/signalk-autopilot"
-        },
-        {
-            "fairwind": {
-                "active": true,
-                "settings": "signalk-node-red"
-            },
-            "name": "@signalk/signalk-node-red"
-        },
-        {
             "description": "Signal K Server",
             "fairwind": {
                 "active": true,
@@ -139,13 +47,21 @@
                 "appIcon": "file://icons/youtube_icon.png",
                 "displayName": "Youtube"
             }
+        },
+        {
+            "description": "Navionics Web Application",
+            "fairwind": {
+                "active": true
+            },
+            "name": "http://webapp.navionics.com",
+            "signalk": {
+                "appIcon": "file://icons/navionics_icon.png",
+                "displayName": "Navionics"
+            }
         }
     ],
     "bottomBarApps": {
-        "alarms": "",
-        "mob": "",
-        "mydata": "",
-        "settings": "admin"
+        "mydata": ""
     },
     "connection": {
         "server": "http://localhost:3000"
