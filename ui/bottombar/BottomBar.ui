@@ -6,16 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>782</width>
-    <height>84</height>
+    <width>787</width>
+    <height>144</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
-  </property>
-  <property name="styleSheet">
-   <string notr="true">background-color: rgba(26, 26, 26, 191);
-color: rgb(250, 255, 255);</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <property name="leftMargin">
@@ -34,11 +30,174 @@ color: rgb(250, 255, 255);</string>
     <number>0</number>
    </property>
    <item row="0" column="0">
-    <layout class="QHBoxLayout" name="horizontalLayout">
+    <layout class="QHBoxLayout" name="horizontalLayoutAlarms">
+     <item>
+      <widget class="QLabel" name="label_MOB_Icon">
+       <property name="minimumSize">
+        <size>
+         <width>32</width>
+         <height>32</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>32</width>
+         <height>32</height>
+        </size>
+       </property>
+       <property name="baseSize">
+        <size>
+         <width>32</width>
+         <height>32</height>
+        </size>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="pixmap">
+        <pixmap resource="../../resources.qrc">:/resources/images/bottombar/imagebutton_alarms.png</pixmap>
+       </property>
+       <property name="scaledContents">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="toolButton_Alarms_Hide">
+       <property name="text">
+        <string>...</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="1" column="0">
+    <layout class="QHBoxLayout" name="horizontalLayoutMOB">
+     <item>
+      <widget class="QLabel" name="label_Alarms_Icon">
+       <property name="minimumSize">
+        <size>
+         <width>32</width>
+         <height>32</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>32</width>
+         <height>32</height>
+        </size>
+       </property>
+       <property name="baseSize">
+        <size>
+         <width>32</width>
+         <height>32</height>
+        </size>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="pixmap">
+        <pixmap resource="../../resources.qrc">:/resources/images/bottombar/imagebutton_mob.png</pixmap>
+       </property>
+       <property name="scaledContents">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_4">
+       <property name="text">
+        <string>Last Known Position:</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>Bearing:</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_BTW">
+       <property name="font">
+        <font>
+         <pointsize>32</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>175°</string>
+       </property>
+       <property name="scaledContents">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>Range:</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_DTG">
+       <property name="font">
+        <font>
+         <pointsize>32</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>136m</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_3">
+       <property name="text">
+        <string>Elapsed:</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_Elapsed">
+       <property name="font">
+        <font>
+         <pointsize>32</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>00:01:32</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButton_MOB_Cancel">
+       <property name="text">
+        <string>Cancel</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="2" column="0">
+    <layout class="QHBoxLayout" name="horizontalLayoutButtons">
      <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
-        <enum>Qt::Horizontal</enum>
+        <enum>Qt::Orientation::Horizontal</enum>
        </property>
        <property name="sizeHint" stdset="0">
         <size>
@@ -50,9 +209,6 @@ color: rgb(250, 255, 255);</string>
      </item>
      <item>
       <widget class="QToolButton" name="toolButton_MyData">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgba(255, 255, 255, 0);</string>
-       </property>
        <property name="text">
         <string>My Data</string>
        </property>
@@ -67,15 +223,12 @@ color: rgb(250, 255, 255);</string>
         </size>
        </property>
        <property name="toolButtonStyle">
-        <enum>Qt::ToolButtonTextUnderIcon</enum>
+        <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QToolButton" name="toolButton_MOB">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgba(255, 255, 255, 0);</string>
-       </property>
        <property name="text">
         <string>MOB</string>
        </property>
@@ -90,15 +243,12 @@ color: rgb(250, 255, 255);</string>
         </size>
        </property>
        <property name="toolButtonStyle">
-        <enum>Qt::ToolButtonTextUnderIcon</enum>
+        <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QToolButton" name="toolButton_Apps">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgba(255, 255, 255, 0);</string>
-       </property>
        <property name="text">
         <string>Apps</string>
        </property>
@@ -113,15 +263,12 @@ color: rgb(250, 255, 255);</string>
         </size>
        </property>
        <property name="toolButtonStyle">
-        <enum>Qt::ToolButtonTextUnderIcon</enum>
+        <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QToolButton" name="toolButton_Alarms">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgba(255, 255, 255, 0);</string>
-       </property>
        <property name="text">
         <string>Alarms</string>
        </property>
@@ -136,15 +283,12 @@ color: rgb(250, 255, 255);</string>
         </size>
        </property>
        <property name="toolButtonStyle">
-        <enum>Qt::ToolButtonTextUnderIcon</enum>
+        <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
        </property>
       </widget>
      </item>
      <item>
       <widget class="QToolButton" name="toolButton_Settings">
-       <property name="styleSheet">
-        <string notr="true">background-color: rgba(255, 255, 255, 0);</string>
-       </property>
        <property name="text">
         <string>Settings</string>
        </property>
@@ -159,14 +303,14 @@ color: rgb(250, 255, 255);</string>
         </size>
        </property>
        <property name="toolButtonStyle">
-        <enum>Qt::ToolButtonTextUnderIcon</enum>
+        <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
        </property>
       </widget>
      </item>
      <item>
       <spacer name="horizontalSpacer_2">
        <property name="orientation">
-        <enum>Qt::Horizontal</enum>
+        <enum>Qt::Orientation::Horizontal</enum>
        </property>
        <property name="sizeHint" stdset="0">
         <size>

@@ -23,6 +23,10 @@ namespace fairwindsk::ui::bottombar {
     public:
         explicit BottomBar(QWidget *parent = 0);
 
+
+        void showMOB(bool show);
+        void showAlarms(bool show);
+
         ~BottomBar() override;
 
     public
@@ -33,12 +37,13 @@ namespace fairwindsk::ui::bottombar {
         void alarms_clicked();
         void settings_clicked();
 
+        void mob_cancel();
+        void alarms_hide();
+
 
         signals:
         void setMyData();
-        void setMOB();
         void setApps();
-        void setAlarms();
         void setSettings();
 
     private:
