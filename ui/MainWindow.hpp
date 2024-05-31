@@ -53,8 +53,6 @@ namespace fairwindsk::ui {
         void onApps();
 
         void onSettings();
-        void onAlarms();
-        void onMOB();
         void onMyData();
         void onUpperLeft();
 

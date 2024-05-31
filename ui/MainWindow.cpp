@@ -43,14 +43,12 @@ fairwindsk::ui::MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), u
     QObject::connect(m_bottomBar, &bottombar::BottomBar::setMyData, this, &MainWindow::onMyData);
 
 
-    // Show the apps view when the user clicks on the Apps button inside the BottomBar object
-    QObject::connect(m_bottomBar, &bottombar::BottomBar::setMOB, this, &MainWindow::onMOB);
+
 
     // Show the apps view when the user clicks on the Apps button inside the BottomBar object
     QObject::connect(m_bottomBar, &bottombar::BottomBar::setApps, this, &MainWindow::onApps);
 
-    // Show the settings view when the user clicks on the Settings button inside the BottomBar object
-    QObject::connect(m_bottomBar, &bottombar::BottomBar::setAlarms, this, &MainWindow::onAlarms);
+
 
     // Show the settings view when the user clicks on the Settings button inside the BottomBar object
     QObject::connect(m_bottomBar, &bottombar::BottomBar::setSettings, this, &MainWindow::onSettings);
@@ -233,31 +231,11 @@ void fairwindsk::ui::MainWindow::onMyData() {
     }
 }
 
-/*
- * onMOB
- * Method called when the user clicks the Settings button on the BottomBar object
- */
-void fairwindsk::ui::MainWindow::onMOB() {
-    auto fairWindSK = FairWindSK::getInstance();
-    auto app = fairWindSK->getConfiguration()->getMOBApp();
-    if (!app.isEmpty() && fairWindSK->getAppsHashes().contains(app)) {
-        setForegroundApp(app);
-    }
-}
 
 
 
-/*
- * onAlarms
- * Method called when the user clicks the Settings button on the BottomBar object
- */
-void fairwindsk::ui::MainWindow::onAlarms() {
-    auto fairWindSK = FairWindSK::getInstance();
-    auto app = fairWindSK->getConfiguration()->getAlarmsApp();
-    if (!app.isEmpty() && fairWindSK->getAppsHashes().contains(app)) {
-        setForegroundApp(app);
-    }
-}
+
+
 
 /*
  * onSettings
