@@ -41,9 +41,8 @@ namespace fairwindsk {
         static void setToken(const QString& token);
 
         QString getMyDataApp();
-        QString getMOBApp();
-        QString getAlarmsApp();
-        QString getSettingsApp();
+
+
 
         void setVirtualKeyboard(bool value);
         bool getVirtualKeyboard();

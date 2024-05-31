@@ -112,20 +112,6 @@ namespace fairwindsk {
         return getAppNameByKeyFromConfiguration("mydata");
     }
 
-    QString Configuration::getMOBApp() {
-        return getAppNameByKeyFromConfiguration("mob");
-    }
-
-    QString Configuration::getAlarmsApp() {
-        return getAppNameByKeyFromConfiguration("alarms");
-    }
-
-    QString Configuration::getSettingsApp() {
-        return getAppNameByKeyFromConfiguration("settings");
-    }
-
-
-
     QString Configuration::getToken() {
         // Initialize the QT managed settings
         QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
