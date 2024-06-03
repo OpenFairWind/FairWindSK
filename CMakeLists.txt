@@ -106,6 +106,12 @@ add_executable(${PROJECT_NAME}
         ui/settings/SignalK.ui
         Configuration.cpp
         Configuration.hpp
+        ui/bottombar/MOBBar.cpp
+        ui/bottombar/MOBBar.hpp
+        ui/bottombar/MOBBar.ui
+        ui/bottombar/AlarmsBar.cpp
+        ui/bottombar/AlarmsBar.hpp
+        ui/bottombar/AlarmsBar.ui
 
 )
 
