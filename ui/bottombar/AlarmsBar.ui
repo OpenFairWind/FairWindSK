@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>AlarmsBar</class>
+ <widget class="QWidget" name="AlarmsBar">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>269</width>
+    <height>98</height>
+   </rect>
+  </property>
+  <layout class="QHBoxLayout" name="horizontalLayout_Alarms">
+   <item>
+    <widget class="QLabel" name="label_MOB_Icon">
+     <property name="minimumSize">
+      <size>
+       <width>32</width>
+       <height>32</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>32</width>
+       <height>32</height>
+      </size>
+     </property>
+     <property name="baseSize">
+      <size>
+       <width>32</width>
+       <height>32</height>
+      </size>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="pixmap">
+      <pixmap resource="../../resources.qrc">:/resources/images/bottombar/imagebutton_alarms.png</pixmap>
+     </property>
+     <property name="scaledContents">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QGridLayout" name="gridLayout_Alarms">
+     <item row="0" column="1">
+      <widget class="QCheckBox" name="checkBox_Sinking">
+       <property name="text">
+        <string>Sinking</string>
+       </property>
+       <property name="pixmap" stdset="0">
+        <pixmap>:/resources/images/bottombar/alarm_sinking.png</pixmap>
+       </property>
+       <property name="scaledContents" stdset="0">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QCheckBox" name="checkBox_Fire">
+       <property name="text">
+        <string>Fire</string>
+       </property>
+       <property name="pixmap" stdset="0">
+        <pixmap>:/resources/images/bottombar/alarm_fire.png</pixmap>
+       </property>
+       <property name="scaledContents" stdset="0">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0">
+      <widget class="QCheckBox" name="checkBox">
+       <property name="text">
+        <string>M.O.B</string>
+       </property>
+       <property name="icon">
+        <iconset theme="application-x-executable"/>
+       </property>
+       <property name="pixmap" stdset="0">
+        <pixmap>:/resources/images/bottombar/alarm_mob.png</pixmap>
+       </property>
+       <property name="scaledContents" stdset="0">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QCheckBox" name="checkBox_Piracy">
+       <property name="text">
+        <string>Piracy</string>
+       </property>
+       <property name="pixmap" stdset="0">
+        <pixmap>:/resources/images/bottombar/alarm_piracy.png</pixmap>
+       </property>
+       <property name="scaledContents" stdset="0">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QCheckBox" name="checkBox_Abandon">
+       <property name="text">
+        <string>Abandon</string>
+       </property>
+       <property name="pixmap" stdset="0">
+        <pixmap>:/resources/images/bottombar/alarm_abandon.png</pixmap>
+       </property>
+       <property name="scaledContents" stdset="0">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QCheckBox" name="checkBox_Adrift">
+       <property name="text">
+        <string>Adrift</string>
+       </property>
+       <property name="pixmap" stdset="0">
+        <pixmap>:/resources/images/bottombar/alarm_adrift.png</pixmap>
+       </property>
+       <property name="scaledContents" stdset="0">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QVBoxLayout" name="verticalLayout_Alarms_Right">
+     <item>
+      <widget class="QToolButton" name="toolButton_Alarms_Hide">
+       <property name="text">
+        <string>Close</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="verticalSpacer">
+       <property name="orientation">
+        <enum>Qt::Orientation::Vertical</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>40</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="../../resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>
