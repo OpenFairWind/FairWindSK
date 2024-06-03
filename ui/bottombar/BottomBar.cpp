@@ -27,14 +27,20 @@ namespace fairwindsk::ui::bottombar {
         // Get the FairWind singleton
         auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
+        m_AlarmsBar = new AlarmsBar();
+        m_AlarmsBar->setVisible(false);
+        ui->gridLayout->addWidget(m_AlarmsBar,0,0);
+
+        m_MOBBar = new MOBBar();
+        m_MOBBar->setVisible(false);
+        ui->gridLayout->addWidget(m_MOBBar,1,0);
+
         showMOB(false);
         showAlarms(false);
 
-        // emit a signal when the MyData tool button from the UI is clicked
-        connect(ui->pushButton_MOB_Cancel, &QPushButton::clicked, this, &BottomBar::mob_cancel);
 
-        // emit a signal when the MyData tool button from the UI is clicked
-        connect(ui->toolButton_Alarms_Hide, &QPushButton::clicked, this, &BottomBar::alarms_hide);
+
+
 
         // emit a signal when the MyData tool button from the UI is clicked
         connect(ui->toolButton_MyData, &QToolButton::released, this, &BottomBar::myData_clicked);
@@ -68,12 +74,7 @@ namespace fairwindsk::ui::bottombar {
  */
     void BottomBar::mob_clicked() {
         // Emit the signal to tell the MainWindow to update the UI and show the settings screen
-        showMOB(true);
-    }
-
-    void BottomBar::mob_cancel() {
-        // Emit the signal to tell the MainWindow to update the UI and show the settings screen
-        showMOB(false);
+        m_MOBBar->MOB();
     }
 
 /*
@@ -102,12 +103,7 @@ namespace fairwindsk::ui::bottombar {
  */
     void BottomBar::alarms_clicked() {
         // Emit the signal to tell the MainWindow to update the UI and show the settings screen
-        showAlarms(true);
-    }
-
-    void BottomBar::alarms_hide() {
-        // Emit the signal to tell the MainWindow to update the UI and show the settings screen
-        showAlarms(false);
+        m_AlarmsBar->setVisible(true);
     }
 
 /*
@@ -120,6 +116,7 @@ namespace fairwindsk::ui::bottombar {
     }
 
     void BottomBar::showMOB(bool show) {
+        /*
         for (auto widget: IterableLayoutAdapter<>(ui->horizontalLayoutMOB)) {
             if (show) {
                 widget->show();
@@ -128,9 +125,13 @@ namespace fairwindsk::ui::bottombar {
             }
 
         }
+         */
+
+
     }
 
     void BottomBar::showAlarms(bool show) {
+        /*
         for (auto widget: IterableLayoutAdapter<>(ui->horizontalLayoutAlarms)) {
             if (show) {
                 widget->show();
@@ -139,6 +140,7 @@ namespace fairwindsk::ui::bottombar {
             }
 
         }
+         */
     }
 
 
@@ -147,6 +149,8 @@ namespace fairwindsk::ui::bottombar {
  * BottomBar's destructor
  */
     BottomBar::~BottomBar() {
+        delete m_MOBBar;
+        delete m_AlarmsBar;
         delete ui;
     }
 }

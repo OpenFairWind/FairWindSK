@@ -9,14 +9,12 @@
 
 #include <FairWindSK.hpp>
 #include <ui_BottomBar.h>
+#include "MOBBar.hpp"
+#include "AlarmsBar.hpp"
 
 namespace Ui { class BottomBar; }
 
 namespace fairwindsk::ui::bottombar {
-
-
-
-
 
     class BottomBar : public QWidget {
         Q_OBJECT
@@ -37,10 +35,6 @@ namespace fairwindsk::ui::bottombar {
         void alarms_clicked();
         void settings_clicked();
 
-        void mob_cancel();
-        void alarms_hide();
-
-
         signals:
         void setMyData();
         void setApps();
@@ -48,6 +42,9 @@ namespace fairwindsk::ui::bottombar {
 
     private:
         Ui::BottomBar *ui;
+
+        AlarmsBar *m_AlarmsBar;
+        MOBBar *m_MOBBar;
     };
 }
 
