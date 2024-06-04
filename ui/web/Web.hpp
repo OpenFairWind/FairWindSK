@@ -13,6 +13,7 @@
 
 #include "WebView.hpp"
 #include "DownloadManagerWidget.hpp"
+#include "NavigationBar.hpp"
 
 namespace Ui { class Web; }
 
@@ -26,23 +27,18 @@ namespace fairwindsk::ui::web {
     public:
         explicit Web(QWidget *parent = nullptr, fairwindsk::AppItem *appItem = nullptr, QWebEngineProfile *profile= nullptr);
 
-        void goHome();
-
         ~Web() override;
 
-        //void setApp(fairwindsk::AppItem *appItem);
-
-        void showButtons(bool show);
-        void toggleButtons();
+        void toggleNavigationBar();
 
         DownloadManagerWidget &downloadManagerWidget() { return m_downloadManagerWidget; }
 
     public slots:
-        void toolButton_home_clicked();
-        void toolButton_back_clicked();
-        void toolButton_forward_clicked();
-        void toolButton_reload_clicked();
-        void toolButton_settings_clicked();
+        void onHomeClicked();
+        void onBackClicked();
+        void onForwardClicked();
+        void onReloadClicked();
+        void onSettingsClicked();
 
     private slots:
         void handleWebViewLoadProgress(int);
@@ -53,7 +49,7 @@ namespace fairwindsk::ui::web {
         WebView *m_webView = nullptr;
         fairwindsk::AppItem *m_appItem = nullptr;
 
-
+        NavigationBar *m_NavigationBar;
         DownloadManagerWidget m_downloadManagerWidget;
 
 

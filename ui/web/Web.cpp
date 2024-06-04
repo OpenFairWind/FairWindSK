@@ -19,13 +19,15 @@ namespace fairwindsk::ui::web {
 
         ui->setupUi((QWidget *)this);
 
-        showButtons(false);
+        m_NavigationBar = new NavigationBar();
+        m_NavigationBar->setVisible(false);
+        ui->verticalLayout_NavigationBar->addWidget(m_NavigationBar);
 
-        connect(ui->toolButton_Home, &QToolButton::clicked, this, &Web::toolButton_home_clicked);
-        connect(ui->toolButton_Back, &QToolButton::clicked, this, &Web::toolButton_back_clicked);
-        connect(ui->toolButton_Forward, &QToolButton::clicked, this, &Web::toolButton_forward_clicked);
-        connect(ui->toolButton_Reload, &QToolButton::clicked, this, &Web::toolButton_reload_clicked);
-        connect(ui->toolButton_Settings, &QToolButton::clicked, this, &Web::toolButton_settings_clicked);
+        connect(m_NavigationBar, &NavigationBar::home, this, &Web::onHomeClicked);
+        connect(m_NavigationBar, &NavigationBar::back, this, &Web::onBackClicked);
+        connect(m_NavigationBar, &NavigationBar::forward, this, &Web::onForwardClicked);
+        connect(m_NavigationBar, &NavigationBar::reload, this, &Web::onReloadClicked);
+        connect(m_NavigationBar, &NavigationBar::settings, this, &Web::onSettingsClicked);
 
         m_webView = new WebView(profile,(QWidget *)this);
 
@@ -41,29 +43,18 @@ namespace fairwindsk::ui::web {
 
     }
 
-    void Web::toggleButtons() {
-        showButtons(!ui->toolButton_Home->isVisible());
+    void Web::toggleNavigationBar() {
+        auto status = !m_NavigationBar->isVisible();
+        m_NavigationBar->setVisible(status);
     }
-
-    void Web::showButtons(bool show) {
-        for (auto widget : IterableLayoutAdapter<>(ui->verticalLayout_Buttons)) {
-            if (show) {
-                widget->show();
-            } else {
-                widget->hide();
-            }
-
-        }
-    }
-
 
     Web::~Web() {
-        /*
-        if (m_webPage) {
-            delete m_webPage;
-            m_webPage = nullptr;
+
+        if (m_NavigationBar) {
+            delete m_NavigationBar;
+            m_NavigationBar = nullptr;
         }
-        */
+
         if (m_webView) {
             delete m_webView;
             m_webView = nullptr;
@@ -75,27 +66,24 @@ namespace fairwindsk::ui::web {
         }
     }
 
-    void Web::toolButton_home_clicked() {
-        goHome();
-    }
-
-    void Web::goHome() {
+    void Web::onHomeClicked()  {
         m_webView->setUrl(m_appItem->getUrl());
     }
 
-    void Web::toolButton_back_clicked() {
+
+    void Web::onBackClicked() {
         m_webView->back();
     }
 
-    void Web::toolButton_forward_clicked() {
+    void Web::onForwardClicked()  {
         m_webView->forward();
     }
 
-    void Web::toolButton_reload_clicked() {
+    void Web::onReloadClicked()  {
         m_webView->reload();
     }
 
-    void Web::toolButton_settings_clicked() {
+    void Web::onSettingsClicked()  {
         QString settingsUrl = m_appItem->getSettingsUrl(FairWindSK::getInstance()->getConfiguration()->getSignalKServerUrl()+"/admin/#/serverConfiguration/plugins/");
 
         qDebug() << "------------> settingsUrl: " << settingsUrl;
