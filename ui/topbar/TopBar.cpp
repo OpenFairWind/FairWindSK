@@ -313,7 +313,7 @@ namespace fairwindsk::ui::topbar {
  */
     void TopBar::toolbuttonUR_clicked() {
         if (m_currentApp) {
-            ((fairwindsk::ui::web::Web *)(m_currentApp->getWidget()))->toggleButtons();
+            ((fairwindsk::ui::web::Web *)(m_currentApp->getWidget()))->toggleNavigationBar();
         }
     }
 
