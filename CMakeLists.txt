@@ -112,6 +112,9 @@ add_executable(${PROJECT_NAME}
         ui/bottombar/AlarmsBar.cpp
         ui/bottombar/AlarmsBar.hpp
         ui/bottombar/AlarmsBar.ui
+        ui/web/NavigationBar.cpp
+        ui/web/NavigationBar.hpp
+        ui/web/NavigationBar.ui
 
 )
 
