@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MyData</class>
+ <widget class="QWidget" name="MyData">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MyData</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="0" column="0">
+    <widget class="QTabWidget" name="tabWidget_MyData">
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <widget class="QWidget" name="tabWaypoints">
+      <attribute name="title">
+       <string>Waypoints</string>
+      </attribute>
+     </widget>
+     <widget class="QWidget" name="tabTracks">
+      <attribute name="title">
+       <string>Tracks</string>
+      </attribute>
+     </widget>
+     <widget class="QWidget" name="tabRoutes">
+      <attribute name="title">
+       <string>Routes</string>
+      </attribute>
+     </widget>
+     <widget class="QWidget" name="tabFiles">
+      <attribute name="title">
+       <string>Files</string>
+      </attribute>
+     </widget>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::StandardButton::Close</set>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
