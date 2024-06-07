@@ -14,9 +14,6 @@ namespace Ui { class About; }
 
 namespace fairwindsk::ui::about {
 
-
-
-
     class About : public QWidget {
     Q_OBJECT
 
