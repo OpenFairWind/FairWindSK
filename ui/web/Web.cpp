@@ -7,7 +7,7 @@
 #include <QPushButton>
 #include <QWebEngineProfile>
 
-#include <IterableLayoutAdapter.hpp>
+
 #include "Web.hpp"
 #include "WebPage.hpp"
 #include "ui/topbar/TopBar.hpp"
