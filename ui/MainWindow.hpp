@@ -14,11 +14,13 @@
 #include <FairWindSK.hpp>
 #include "ui_MainWindow.h"
 #include "ui/settings/Settings.hpp"
+#include "ui/mydata/MyData.hpp"
 
 #include <ui/topbar/TopBar.hpp>
 #include <ui/launcher/Launcher.hpp>
 #include <ui/bottombar/BottomBar.hpp>
 #include <ui/about/About.hpp>
+#include <ui/autopilot/Autopilot.hpp>
 
 namespace Ui { class MainWindow; }
 
@@ -61,6 +63,8 @@ namespace fairwindsk::ui {
         void onSettingsAccepted(settings::Settings *settingsPage);
         void onSettingsRejected(settings::Settings *settingsPage);
 
+        void onMyDataClosed(mydata::MyData *myDataPage);
+
 
 
     private:
@@ -73,6 +77,8 @@ namespace fairwindsk::ui {
 
         // QWidget containing the loaded apps
         //apps::Apps *m_apps = nullptr;
+
+        autopilot::Autopilot *m_autopilot = nullptr;
 
         // QWidget containing useful infos
         topbar::TopBar *m_topBar = nullptr;
