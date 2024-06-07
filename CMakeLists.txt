@@ -67,7 +67,6 @@ find_package(Qt6 COMPONENTS
 add_executable(${PROJECT_NAME}
         main.cpp
         Units.cpp Units.hpp
-        IterableLayoutAdapter.hpp
         FairWindSK.cpp FairWindSK.hpp
         AppItem.cpp AppItem.hpp
 
@@ -115,6 +114,12 @@ add_executable(${PROJECT_NAME}
         ui/web/NavigationBar.cpp
         ui/web/NavigationBar.hpp
         ui/web/NavigationBar.ui
+        ui/autopilot/Autopilot.cpp
+        ui/autopilot/Autopilot.hpp
+        ui/autopilot/Autopilot.ui
+        ui/mydata/MyData.cpp
+        ui/mydata/MyData.hpp
+        ui/mydata/MyData.ui
 
 )
 

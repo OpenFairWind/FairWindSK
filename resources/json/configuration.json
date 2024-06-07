@@ -60,9 +60,6 @@
             }
         }
     ],
-    "bottomBarApps": {
-        "mydata": ""
-    },
     "connection": {
         "server": "http://localhost:3000"
     },
