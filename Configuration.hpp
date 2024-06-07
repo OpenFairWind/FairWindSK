@@ -40,7 +40,7 @@ namespace fairwindsk {
         static QString getToken();
         static void setToken(const QString& token);
 
-        QString getMyDataApp();
+
 
 
 
@@ -59,7 +59,6 @@ namespace fairwindsk {
 
 
     private:
-        QString getAppNameByKeyFromConfiguration(const QString& key);
         QString getUnits(const QString &units);
 
     private:

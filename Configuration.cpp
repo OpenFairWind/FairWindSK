@@ -92,26 +92,6 @@ namespace fairwindsk {
         return signalKServerUrl;
     }
 
-    QString Configuration::getAppNameByKeyFromConfiguration(const QString& key) {
-        std::string result;
-
-
-        if (m_jsonData.contains("bottomBarApps") && m_jsonData["bottomBarApps"].is_object()) {
-            auto apps = m_jsonData["bottomBarApps"];
-
-            if (apps.contains(key.toStdString()) && apps[key.toStdString()].is_string()) {
-                result = apps[key.toStdString()].get<std::string>();
-            }
-        }
-
-        return QString::fromStdString(result);
-    }
-
-
-    QString Configuration::getMyDataApp() {
-        return getAppNameByKeyFromConfiguration("mydata");
-    }
-
     QString Configuration::getToken() {
         // Initialize the QT managed settings
         QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
