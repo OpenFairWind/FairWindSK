@@ -10,8 +10,6 @@
 #include <QAbstractButton>
 #include "BottomBar.hpp"
 
-#include <IterableLayoutAdapter.hpp>
-
 namespace fairwindsk::ui::bottombar {
 /*
  * BottomBar
