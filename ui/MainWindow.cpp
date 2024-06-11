@@ -31,13 +31,42 @@ namespace fairwindsk::ui {
         // Set up the UI
         ui->setupUi(this);
 
-
+        // Get the singleton
+        auto fairWindSk = fairwindsk::FairWindSK::getInstance();
 
         // Create the TopBar object
         m_topBar = new topbar::TopBar(ui->widget_Top);
 
         // Create the BottomBar object
         m_bottomBar = new bottombar::BottomBar(ui->widget_Bottom);
+
+        // Get the autopilot application
+        auto autopilotApp = fairWindSk->getConfiguration()->getAutopilotApp();
+
+        // Check if the autopilot application is defined
+        if (!autopilotApp.isEmpty()) {
+
+            // Set the Autopilot icon visible only if the autopilot application is defined
+            m_bottomBar->setAutopilotIcon(fairWindSk->getAppsHashes().contains(autopilotApp));
+        } else {
+            // Hide the Autopilot icon
+            m_bottomBar->setAutopilotIcon(false);
+        }
+
+        // Get the anchor application
+        auto anchorApp = fairWindSk->getConfiguration()->getAnchorApp();
+
+        // Check if the autopilot application is defined
+        if (!anchorApp.isEmpty()) {
+
+            // Set the Anchor icon visible only if the anchor alarm application is defined
+            m_bottomBar->setAnchorIcon(fairWindSk->getAppsHashes().contains(anchorApp));
+        } else {
+            // Hide the Anchor icon
+            m_bottomBar->setAnchorIcon(false);
+        }
+
+
 
         // Place the Apps object at the center of the UI
         setCentralWidget(ui->centralwidget);
