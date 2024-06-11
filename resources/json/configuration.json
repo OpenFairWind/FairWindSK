@@ -86,6 +86,10 @@
         "distance": "nm",
         "vesselSpeed": "kn",
         "windSpeed": "kn"
+    },
+    "applications": {
+        "autopilot": "@signalk/signalk-autopilot",
+        "anchor": "signalk-anchoralarm-plugin"
     }
 }
 
