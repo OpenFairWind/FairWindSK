@@ -2,34 +2,10 @@
 <ui version="4.0">
  <class>BottomBar</class>
  <widget class="QWidget" name="BottomBar">
-  <property name="geometry">
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>787</width>
-    <height>178</height>
-   </rect>
-  </property>
-  <property name="windowTitle">
-   <string>Form</string>
-  </property>
+  
   <layout class="QGridLayout" name="gridLayout">
-   <property name="leftMargin">
-    <number>0</number>
-   </property>
-   <property name="topMargin">
-    <number>0</number>
-   </property>
-   <property name="rightMargin">
-    <number>0</number>
-   </property>
-   <property name="bottomMargin">
-    <number>0</number>
-   </property>
-   <property name="spacing">
-    <number>0</number>
-   </property>
-   <item row="2" column="0">
+   
+   <item row="3" column="0">
     <layout class="QHBoxLayout" name="horizontalLayoutButtons">
      <item>
       <spacer name="horizontalSpacer">
@@ -85,6 +61,26 @@
       </widget>
      </item>
      <item>
+      <widget class="QToolButton" name="toolButton_Autopilot">
+       <property name="text">
+        <string>Autopilot</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../../resources.qrc">
+         <normaloff>:/resources/images/bottombar/imagebutton_autopilot.png</normaloff>:/resources/images/bottombar/imagebutton_autopilot.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>32</width>
+         <height>32</height>
+        </size>
+       </property>
+       <property name="toolButtonStyle">
+        <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QToolButton" name="toolButton_Apps">
        <property name="text">
         <string>Apps</string>
@@ -92,6 +88,26 @@
        <property name="icon">
         <iconset resource="../../resources.qrc">
          <normaloff>:/resources/images/bottombar/imagebutton_apps.png</normaloff>:/resources/images/bottombar/imagebutton_apps.png</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>32</width>
+         <height>32</height>
+        </size>
+       </property>
+       <property name="toolButtonStyle">
+        <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="toolButton_Anchor">
+       <property name="text">
+        <string>Anchor</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../../resources.qrc">
+         <normaloff>:/resources/images/bottombar/imagebutton_anchor.png</normaloff>:/resources/images/bottombar/imagebutton_anchor.png</iconset>
        </property>
        <property name="iconSize">
         <size>

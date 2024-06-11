@@ -25,17 +25,22 @@ namespace fairwindsk::ui::bottombar {
         // Get the FairWind singleton
         auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
+        m_AutopilotBar = nullptr;
+        m_AlarmsBar = nullptr;
+        m_MOBBar = nullptr;
+
+
+        m_AutopilotBar = new AutopilotBar();
+        m_AutopilotBar->setVisible(false);
+        ui->gridLayout->addWidget(m_AutopilotBar,0,0);
+
         m_AlarmsBar = new AlarmsBar();
         m_AlarmsBar->setVisible(false);
-        ui->gridLayout->addWidget(m_AlarmsBar,0,0);
+        ui->gridLayout->addWidget(m_AlarmsBar,1,0);
 
         m_MOBBar = new MOBBar();
         m_MOBBar->setVisible(false);
-        ui->gridLayout->addWidget(m_MOBBar,1,0);
-
-        showMOB(false);
-        showAlarms(false);
-
+        ui->gridLayout->addWidget(m_MOBBar,2,0);
 
 
 
@@ -46,8 +51,14 @@ namespace fairwindsk::ui::bottombar {
         // emit a signal when the MOB tool button from the UI is clicked
         connect(ui->toolButton_MOB, &QToolButton::released, this, &BottomBar::mob_clicked);
 
+        // emit a signal when the MOB tool button from the UI is clicked
+        connect(ui->toolButton_Autopilot, &QToolButton::released, this, &BottomBar::autopilot_clicked);
+
         // emit a signal when the Apps tool button from the UI is clicked
         connect(ui->toolButton_Apps, &QToolButton::released, this, &BottomBar::apps_clicked);
+
+        // emit a signal when the MOB tool button from the UI is clicked
+        connect(ui->toolButton_Anchor, &QToolButton::released, this, &BottomBar::anchor_clicked);
 
         // emit a signal when the MyData tool button from the UI is clicked
         connect(ui->toolButton_Alarms, &QToolButton::released, this, &BottomBar::alarms_clicked);
@@ -75,6 +86,13 @@ namespace fairwindsk::ui::bottombar {
         m_MOBBar->MOB();
     }
 
+    void BottomBar::autopilot_clicked() {
+        // Emit the signal to tell the MainWindow to update the UI and show the settings screen
+        if (m_AutopilotBar) {
+            m_AutopilotBar->setVisible(true);
+        }
+    }
+
 /*
  * apps_clicked
  * Method called when the user wants to view the apps screen
@@ -95,6 +113,12 @@ namespace fairwindsk::ui::bottombar {
          */
     }
 
+
+    void BottomBar::anchor_clicked() {
+        // Emit the signal to tell the MainWindow to update the UI and show the settings screen
+
+    }
+
 /*
  * settings_clicked
  * Method called when the user wants to view the alarms screen
@@ -113,33 +137,7 @@ namespace fairwindsk::ui::bottombar {
         emit setSettings();
     }
 
-    void BottomBar::showMOB(bool show) {
-        /*
-        for (auto widget: IterableLayoutAdapter<>(ui->horizontalLayoutMOB)) {
-            if (show) {
-                widget->show();
-            } else {
-                widget->hide();
-            }
 
-        }
-         */
-
-
-    }
-
-    void BottomBar::showAlarms(bool show) {
-        /*
-        for (auto widget: IterableLayoutAdapter<>(ui->horizontalLayoutAlarms)) {
-            if (show) {
-                widget->show();
-            } else {
-                widget->hide();
-            }
-
-        }
-         */
-    }
 
 
 /*
@@ -147,6 +145,7 @@ namespace fairwindsk::ui::bottombar {
  * BottomBar's destructor
  */
     BottomBar::~BottomBar() {
+        delete m_AutopilotBar;
         delete m_MOBBar;
         delete m_AlarmsBar;
         delete ui;

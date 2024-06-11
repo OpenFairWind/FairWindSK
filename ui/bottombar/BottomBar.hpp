@@ -11,6 +11,7 @@
 #include <ui_BottomBar.h>
 #include "MOBBar.hpp"
 #include "AlarmsBar.hpp"
+#include "AutopilotBar.hpp"
 
 namespace Ui { class BottomBar; }
 
@@ -21,17 +22,15 @@ namespace fairwindsk::ui::bottombar {
     public:
         explicit BottomBar(QWidget *parent = 0);
 
-
-        void showMOB(bool show);
-        void showAlarms(bool show);
-
         ~BottomBar() override;
 
     public
         slots:
         void myData_clicked();
         void mob_clicked();
+        void autopilot_clicked();
         void apps_clicked();
+        void anchor_clicked();
         void alarms_clicked();
         void settings_clicked();
 
@@ -45,6 +44,7 @@ namespace fairwindsk::ui::bottombar {
 
         AlarmsBar *m_AlarmsBar;
         MOBBar *m_MOBBar;
+        AutopilotBar *m_AutopilotBar;
     };
 }
 
