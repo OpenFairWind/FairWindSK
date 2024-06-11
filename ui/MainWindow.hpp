@@ -20,7 +20,6 @@
 #include <ui/launcher/Launcher.hpp>
 #include <ui/bottombar/BottomBar.hpp>
 #include <ui/about/About.hpp>
-#include <ui/autopilot/Autopilot.hpp>
 
 namespace Ui { class MainWindow; }
 
@@ -70,15 +69,8 @@ namespace fairwindsk::ui {
     private:
         Ui::MainWindow *ui;
 
-
-
         // This will be populated with the apps launched by the user for quick usage
         QMap<QString, QWidget *> m_mapHash2Widget;
-
-        // QWidget containing the loaded apps
-        //apps::Apps *m_apps = nullptr;
-
-        autopilot::Autopilot *m_autopilot = nullptr;
 
         // QWidget containing useful infos
         topbar::TopBar *m_topBar = nullptr;

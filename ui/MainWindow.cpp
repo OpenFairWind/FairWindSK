@@ -31,8 +31,7 @@ namespace fairwindsk::ui {
         // Set up the UI
         ui->setupUi(this);
 
-        m_autopilot = new autopilot::Autopilot(ui->widget_Left);
-        m_autopilot->setVisible(true);
+
 
         // Create the TopBar object
         m_topBar = new topbar::TopBar(ui->widget_Top);
@@ -47,12 +46,8 @@ namespace fairwindsk::ui {
         QObject::connect(m_bottomBar, &bottombar::BottomBar::setMyData, this, &MainWindow::onMyData);
 
 
-
-
         // Show the apps view when the user clicks on the Apps button inside the BottomBar object
         QObject::connect(m_bottomBar, &bottombar::BottomBar::setApps, this, &MainWindow::onApps);
-
-
 
         // Show the settings view when the user clicks on the Settings button inside the BottomBar object
         QObject::connect(m_bottomBar, &bottombar::BottomBar::setSettings, this, &MainWindow::onSettings);
@@ -81,8 +76,6 @@ namespace fairwindsk::ui {
         // Show the window fullscreen
         QTimer::singleShot(0, this, SLOT(showFullScreen()));
 
-        //ui->webEngineView_Autopilot->setVisible(true);
-
     }
 
 /*
@@ -90,11 +83,6 @@ namespace fairwindsk::ui {
  * MainWindow's destructor
  */
     MainWindow::~MainWindow() {
-
-        if (m_autopilot) {
-            delete m_autopilot;
-            m_autopilot = nullptr;
-        }
 
         if (m_bottomBar) {
             delete m_bottomBar;
@@ -236,6 +224,7 @@ namespace fairwindsk::ui {
  * Method called when the user clicks the Settings button on the BottomBar object
  */
     void MainWindow::onMyData() {
+
         auto fairWindSK = FairWindSK::getInstance();
         auto myDataPage = new mydata::MyData(this, ui->stackedWidget_Center->currentWidget());
         ui->widget_Top->setDisabled(true);
@@ -244,8 +233,6 @@ namespace fairwindsk::ui {
         ui->stackedWidget_Center->setCurrentWidget(myDataPage);
 
         connect(myDataPage, &mydata::MyData::closed, this, &MainWindow::onMyDataClosed);
-
-
     }
 
 
