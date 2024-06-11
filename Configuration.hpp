@@ -40,6 +40,8 @@ namespace fairwindsk {
         static QString getToken();
         static void setToken(const QString& token);
 
+        QString getAutopilotApp();
+        QString getAnchorApp();
 
 
 

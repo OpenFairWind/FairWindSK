@@ -117,6 +117,28 @@ namespace fairwindsk {
         }
     }
 
+    QString Configuration::getAutopilotApp() {
+        QString result = "";
+        if (
+                m_jsonData.contains("applications") &&
+                m_jsonData["applications"].contains("autopilot") &&
+                m_jsonData["applications"]["autopilot"].is_string()) {
+            result = QString::fromStdString(m_jsonData["applications"]["autopilot"].get<std::string>());
+        }
+        return result;
+    }
+
+    QString Configuration::getAnchorApp() {
+        QString result = "";
+        if (
+                m_jsonData.contains("applications") &&
+                m_jsonData["applications"].contains("anchor") &&
+                m_jsonData["applications"]["anchor"].is_string()) {
+            result = QString::fromStdString(m_jsonData["applications"]["anchor"].get<std::string>());
+        }
+        return result;
+    }
+
     void Configuration::setVirtualKeyboard(bool value) {
         if (m_jsonData.contains("main")) {
             m_jsonData["main"]["virtualKeyboard"] = value;
