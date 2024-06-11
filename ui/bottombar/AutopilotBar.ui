@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>790</width>
+    <width>828</width>
     <height>102</height>
    </rect>
   </property>
@@ -24,168 +24,166 @@
     <number>0</number>
    </property>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_Rudder">
-     <item>
-      <widget class="QSlider" name="horizontalSlider_Rudder">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="styleSheet">
-        <string notr="true">background-color: rgb(255, 255, 255);</string>
-       </property>
-       <property name="minimum">
-        <number>-45</number>
-       </property>
-       <property name="maximum">
-        <number>45</number>
-       </property>
-       <property name="orientation">
-        <enum>Qt::Orientation::Horizontal</enum>
-       </property>
-       <property name="tickPosition">
-        <enum>QSlider::TickPosition::TicksAbove</enum>
-       </property>
-       <property name="tickInterval">
-        <number>5</number>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <item>
     <layout class="QHBoxLayout" name="horizontalLayout_Autopilot">
      <item>
-      <widget class="QToolButton" name="toolButton_Autopilot">
-       <property name="icon">
-        <iconset>
-         <normaloff>:/resources/images/bottombar/imagebutton_autopilot.png</normaloff>:/resources/images/bottombar/imagebutton_autopilot.png</iconset>
-       </property>
-       <property name="iconSize">
-        <size>
-         <width>32</width>
-         <height>32</height>
-        </size>
-       </property>
-       <property name="toolButtonStyle">
-        <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
-       </property>
-      </widget>
+      <layout class="QVBoxLayout" name="verticalLayout_SX">
+       <item>
+        <widget class="QToolButton" name="toolButton_Autopilot">
+         <property name="icon">
+          <iconset>
+           <normaloff>:/resources/images/bottombar/imagebutton_autopilot.png</normaloff>:/resources/images/bottombar/imagebutton_autopilot.png</iconset>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>32</width>
+           <height>32</height>
+          </size>
+         </property>
+         <property name="toolButtonStyle">
+          <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
      <item>
-      <widget class="QToolButton" name="toolButton_StandBy">
-       <property name="text">
-        <string>Standby</string>
-       </property>
-      </widget>
+      <layout class="QVBoxLayout" name="verticalLayout_CN">
+       <item>
+        <widget class="QWidget" name="widget_Rudder" native="true">
+         <property name="styleSheet">
+          <string notr="true">background-color: rgb(255, 255, 255);
+color: rgb(0,0,0);</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_Display">
+         <item>
+          <widget class="QToolButton" name="toolButton_StandBy">
+           <property name="text">
+            <string>Standby</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButton_Display">
+           <property name="text">
+            <string>Display</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButton_Wind">
+           <property name="text">
+            <string>Wind</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButton_PTack">
+           <property name="text">
+            <string>Prt Tack</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButton_Minus10">
+           <property name="text">
+            <string>-10</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButton_Minus1">
+           <property name="text">
+            <string>-1</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_Display">
+           <property name="font">
+            <font>
+             <pointsize>32</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>359°</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignmentFlag::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButton_Plus1">
+           <property name="text">
+            <string>+1</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButton_Plus10">
+           <property name="text">
+            <string>+10</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButton_STack">
+           <property name="text">
+            <string>Stb Tack</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButton_Route">
+           <property name="text">
+            <string>Route</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButton_Steer">
+           <property name="text">
+            <string>Steer</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButton_Auto">
+           <property name="text">
+            <string>Auto</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
      </item>
      <item>
-      <widget class="QToolButton" name="toolButton_Display">
-       <property name="text">
-        <string>Display</string>
+      <layout class="QVBoxLayout" name="verticalLayout_DX">
+       <property name="spacing">
+        <number>-1</number>
        </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QToolButton" name="toolButton_Wind">
-       <property name="text">
-        <string>Wind</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QToolButton" name="toolButton_PTack">
-       <property name="text">
-        <string>Prt Tack</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QToolButton" name="toolButton_Minus10">
-       <property name="text">
-        <string>-10</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QToolButton" name="toolButton_Minus1">
-       <property name="text">
-        <string>-1</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="label_Display">
-       <property name="font">
-        <font>
-         <pointsize>32</pointsize>
-        </font>
-       </property>
-       <property name="text">
-        <string>359°</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignmentFlag::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QToolButton" name="toolButton_Plus1">
-       <property name="text">
-        <string>+1</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QToolButton" name="toolButton_Plus10">
-       <property name="text">
-        <string>+10</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QToolButton" name="toolButton_STack">
-       <property name="text">
-        <string>Stb Tack</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QToolButton" name="toolButton_Route">
-       <property name="text">
-        <string>Route</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QToolButton" name="toolButton_Steer">
-       <property name="text">
-        <string>Steer</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QToolButton" name="toolButton_Auto">
-       <property name="text">
-        <string>Auto</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QToolButton" name="toolButton_Hide">
-       <property name="icon">
-        <iconset>
-         <normaloff>:/resources/images/bottombar/icon_hide.png</normaloff>:/resources/images/bottombar/icon_hide.png</iconset>
-       </property>
-       <property name="iconSize">
-        <size>
-         <width>32</width>
-         <height>32</height>
-        </size>
-       </property>
-       <property name="toolButtonStyle">
-        <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
-       </property>
-      </widget>
+       <item>
+        <widget class="QToolButton" name="toolButton_Hide">
+         <property name="icon">
+          <iconset>
+           <normaloff>:/resources/images/bottombar/icon_hide.png</normaloff>:/resources/images/bottombar/icon_hide.png</iconset>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>32</width>
+           <height>32</height>
+          </size>
+         </property>
+         <property name="toolButtonStyle">
+          <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
     </layout>
    </item>
