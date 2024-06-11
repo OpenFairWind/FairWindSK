@@ -67,6 +67,13 @@ namespace fairwindsk::ui::bottombar {
         connect(ui->toolButton_Settings, &QToolButton::released, this, &BottomBar::settings_clicked);
     }
 
+    void BottomBar::setAutopilotIcon(bool value) {
+        ui->toolButton_Autopilot->setEnabled(value);
+
+    }
+    void BottomBar::setAnchorIcon(bool value) {
+        ui->toolButton_Anchor->setEnabled(value);
+    }
 
 /*
  * myData_clicked
@@ -87,9 +94,11 @@ namespace fairwindsk::ui::bottombar {
     }
 
     void BottomBar::autopilot_clicked() {
-        // Emit the signal to tell the MainWindow to update the UI and show the settings screen
+        // Check if the autopilot bar is available
         if (m_AutopilotBar) {
-            m_AutopilotBar->setVisible(true);
+
+            // Toggle the AUtopilot bar
+            m_AutopilotBar->setVisible(!m_AutopilotBar->isVisible());
         }
     }
 
@@ -124,8 +133,13 @@ namespace fairwindsk::ui::bottombar {
  * Method called when the user wants to view the alarms screen
  */
     void BottomBar::alarms_clicked() {
-        // Emit the signal to tell the MainWindow to update the UI and show the settings screen
-        m_AlarmsBar->setVisible(true);
+
+        // Check if the alarms bar is available
+        if (m_AlarmsBar) {
+
+            // Toggle the alarms bar
+            m_AlarmsBar->setVisible(!m_AlarmsBar->isVisible());
+        }
     }
 
 /*
@@ -136,9 +150,6 @@ namespace fairwindsk::ui::bottombar {
         // Emit the signal to tell the MainWindow to update the UI and show the settings screen
         emit setSettings();
     }
-
-
-
 
 /*
  * ~BottomBar

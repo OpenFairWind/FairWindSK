@@ -22,6 +22,9 @@ namespace fairwindsk::ui::bottombar {
     public:
         explicit BottomBar(QWidget *parent = 0);
 
+        void setAutopilotIcon(bool value);
+        void setAnchorIcon(bool value);
+
         ~BottomBar() override;
 
     public
