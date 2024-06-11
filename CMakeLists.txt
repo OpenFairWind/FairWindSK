@@ -114,9 +114,9 @@ add_executable(${PROJECT_NAME}
         ui/web/NavigationBar.cpp
         ui/web/NavigationBar.hpp
         ui/web/NavigationBar.ui
-        ui/autopilot/Autopilot.cpp
-        ui/autopilot/Autopilot.hpp
-        ui/autopilot/Autopilot.ui
+        ui/bottombar/AutopilotBar.cpp
+        ui/bottombar/AutopilotBar.hpp
+        ui/bottombar/AutopilotBar.ui
         ui/mydata/MyData.cpp
         ui/mydata/MyData.hpp
         ui/mydata/MyData.ui

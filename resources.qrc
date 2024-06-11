@@ -21,9 +21,13 @@
         <file>resources/images/launcher/toolbutton_left.png</file>
         <file>resources/images/launcher/toolbutton_right.png</file>
 
+        <file>resources/images/bottombar/icon_hide.png</file>
+
         <file>resources/images/bottombar/imagebutton_mydata.png</file>
         <file>resources/images/bottombar/imagebutton_mob.png</file>
+        <file>resources/images/bottombar/imagebutton_autopilot.png</file>
         <file>resources/images/bottombar/imagebutton_apps.png</file>
+        <file>resources/images/bottombar/imagebutton_anchor.png</file>
         <file>resources/images/bottombar/imagebutton_alarms.png</file>
         <file>resources/images/bottombar/imagebutton_settings.png</file>
 
