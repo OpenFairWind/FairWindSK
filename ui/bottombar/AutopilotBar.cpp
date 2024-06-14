@@ -26,7 +26,9 @@ namespace fairwindsk::ui::bottombar {
         slider->setEnabled(false);
         slider->setTickPosition(QSlider::TicksBelow);
 
+
         auto *layout = new QGridLayout();
+        //layout->setSizeConstraint(QLayout::SizeConstraint::SetFixedSize);
         layout->setContentsMargins(0,0,0,0);
         layout->addWidget(slider, 0, 0, 1, columnSpan);
         int col=0;
@@ -34,10 +36,18 @@ namespace fairwindsk::ui::bottombar {
             auto s = QString::number(i);
             if (i>0) s = "+" + s;
             auto *labelTick = new QLabel( s,  ui->widget_Rudder);
-            //if (i % 2) {
-            //    labelTick->setStyleSheet("background-color:blue");
-            //}
-            labelTick->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+            /*
+            if (i % 2) {
+                labelTick->setStyleSheet("background-color:blue");
+            }
+             */
+            if (i<0) {
+                labelTick->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+            } else if (i>0) {
+                labelTick->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            } else {
+                labelTick->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+            }
             layout->addWidget(labelTick, 1, col, 1, 1);
             col++;
         }

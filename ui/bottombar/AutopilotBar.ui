@@ -189,6 +189,8 @@ color: rgb(0,0,0);</string>
    </item>
   </layout>
  </widget>
+ <customwidgets>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>
