@@ -15,8 +15,8 @@ namespace fairwindsk::ui::bottombar {
         ui->setupUi(this);
 
 
-        int rudderMin = -45;
-        int rudderMax = 45;
+        int rudderMin = -30;
+        int rudderMax = 30;
         int rudderStep = 5;
         int columnSpan = 1+(abs(rudderMin) + abs(rudderMax))/rudderStep;
 
@@ -28,7 +28,7 @@ namespace fairwindsk::ui::bottombar {
 
 
         auto *layout = new QGridLayout();
-        //layout->setSizeConstraint(QLayout::SizeConstraint::SetFixedSize);
+        layout->setSizeConstraint(QLayout::SizeConstraint::SetFixedSize);
         layout->setContentsMargins(0,0,0,0);
         layout->addWidget(slider, 0, 0, 1, columnSpan);
         int col=0;
