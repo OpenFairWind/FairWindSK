@@ -3,7 +3,7 @@
  <class>About</class>
  <widget class="QWidget" name="About">
   <property name="windowModality">
-   <enum>Qt::ApplicationModal</enum>
+   <enum>Qt::WindowModality::ApplicationModal</enum>
   </property>
   <property name="geometry">
    <rect>
@@ -51,7 +51,7 @@ color: rgb(250, 255, 255);</string>
             <pixmap resource="../../resources.qrc">:/resources/images/other/splash_logo.png</pixmap>
            </property>
            <property name="alignment">
-            <set>Qt::AlignCenter</set>
+            <set>Qt::AlignmentFlag::AlignCenter</set>
            </property>
           </widget>
          </item>
@@ -70,7 +70,7 @@ color: rgb(250, 255, 255);</string>
             <string>Signal K Version 0.01</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignCenter</set>
+            <set>Qt::AlignmentFlag::AlignCenter</set>
            </property>
           </widget>
          </item>
@@ -83,7 +83,7 @@ color: rgb(250, 255, 255);</string>
             <string>Copyright 2024</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignCenter</set>
+            <set>Qt::AlignmentFlag::AlignCenter</set>
            </property>
           </widget>
          </item>
@@ -113,7 +113,7 @@ color: rgb(65, 107, 195);</string>
             <string>http://fairwind.uniparthenope.it</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignCenter</set>
+            <set>Qt::AlignmentFlag::AlignCenter</set>
            </property>
           </widget>
          </item>
@@ -139,7 +139,7 @@ color: rgb(65, 107, 195);</string>
             <string>FairWindSK</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignCenter</set>
+            <set>Qt::AlignmentFlag::AlignCenter</set>
            </property>
           </widget>
          </item>
@@ -152,7 +152,7 @@ color: rgb(65, 107, 195);</string>
             <string>Integrated multifunctional navigation system based on open technologies.</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignCenter</set>
+            <set>Qt::AlignmentFlag::AlignCenter</set>
            </property>
           </widget>
          </item>
@@ -170,7 +170,7 @@ color: rgb(65, 107, 195);</string>
               <x>0</x>
               <y>0</y>
               <width>456</width>
-              <height>476</height>
+              <height>471</height>
              </rect>
             </property>
             <layout class="QGridLayout" name="gridLayout_2">
@@ -421,11 +421,18 @@ color: rgb(65, 107, 195);</string>
      </item>
      <item>
       <widget class="QDialogButtonBox" name="buttonBox">
+       <property name="styleSheet">
+        <string notr="true">background-color: rgb(82, 82, 83);
+border-top-color: rgb(159, 157, 160);
+border-left-color: rgb(159, 157, 160);
+border-right-color: rgb(83, 83, 84);
+border-bottom-color: rgb(83, 83, 84);</string>
+       </property>
        <property name="orientation">
-        <enum>Qt::Horizontal</enum>
+        <enum>Qt::Orientation::Horizontal</enum>
        </property>
        <property name="standardButtons">
-        <set>QDialogButtonBox::Ok</set>
+        <set>QDialogButtonBox::StandardButton::Ok</set>
        </property>
        <property name="centerButtons">
         <bool>true</bool>
