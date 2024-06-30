@@ -24,10 +24,12 @@ namespace fairwindsk::ui::bottombar {
     public
         slots:
         void onCancelClicked();
+        void onHideClicked();
 
 
     signals:
         void cancelMOB();
+        void hide();
 
     private:
         Ui::MOBBar *ui;

@@ -14,6 +14,9 @@ namespace fairwindsk::ui::bottombar {
 
         // emit a signal when the MyData tool button from the UI is clicked
         connect(ui->pushButton_MOB_Cancel, &QPushButton::clicked, this, &MOBBar::onCancelClicked);
+
+        // emit a signal when the MyData tool button from the UI is clicked
+        connect(ui->toolButton_Hide, &QToolButton::clicked, this, &MOBBar::onHideClicked);
     }
 
     void MOBBar::MOB() {
@@ -23,6 +26,11 @@ namespace fairwindsk::ui::bottombar {
     void MOBBar::onCancelClicked() {
         setVisible(false);
         emit cancelMOB();
+    }
+
+    void MOBBar::onHideClicked() {
+        setVisible(false);
+        emit hide();
     }
 
     MOBBar::~MOBBar() {
