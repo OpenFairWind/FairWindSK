@@ -103,7 +103,4 @@ namespace fairwindsk::ui::settings {
         return &m_configuration;
     }
 
-
-
-
 } // fairwindsk::ui

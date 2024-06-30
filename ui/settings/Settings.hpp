@@ -12,14 +12,10 @@
 #include "AppItem.hpp"
 #include "Configuration.hpp"
 
-//namespace Ui { class Settings; }
-
 namespace fairwindsk::ui::settings {
-
     QT_BEGIN_NAMESPACE
     namespace Ui { class Settings; }
     QT_END_NAMESPACE
-
 
     class Settings : public QWidget {
     Q_OBJECT

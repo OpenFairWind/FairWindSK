@@ -3,7 +3,7 @@
  <class>fairwindsk::ui::settings::Settings</class>
  <widget class="QWidget" name="Settings">
   <property name="windowModality">
-   <enum>Qt::ApplicationModal</enum>
+   <enum>Qt::WindowModality::ApplicationModal</enum>
   </property>
   <property name="geometry">
    <rect>
@@ -25,7 +25,7 @@
      <item>
       <widget class="QTabWidget" name="tabWidget">
        <property name="currentIndex">
-        <number>0</number>
+        <number>-1</number>
        </property>
       </widget>
      </item>
@@ -33,11 +33,18 @@
    </item>
    <item row="1" column="0">
     <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="styleSheet">
+      <string notr="true">background-color: rgb(82, 82, 83);
+border-top-color: rgb(159, 157, 160);
+border-left-color: rgb(159, 157, 160);
+border-right-color: rgb(83, 83, 84);
+border-bottom-color: rgb(83, 83, 84);</string>
+     </property>
      <property name="standardButtons">
-      <set>QDialogButtonBox::Discard|QDialogButtonBox::Reset|QDialogButtonBox::RestoreDefaults|QDialogButtonBox::Save</set>
+      <set>QDialogButtonBox::StandardButton::Cancel|QDialogButtonBox::StandardButton::Reset|QDialogButtonBox::StandardButton::RestoreDefaults|QDialogButtonBox::StandardButton::Save</set>
      </property>
      <property name="centerButtons">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
     </widget>
    </item>
