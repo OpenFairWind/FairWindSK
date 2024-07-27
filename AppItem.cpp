@@ -293,7 +293,7 @@ namespace fairwindsk {
         QStringList result;
         if (m_jsonApp.contains("fairwind") && m_jsonApp["fairwind"].is_object()) {
             auto fairWindJsonObject = m_jsonApp["fairwind"];
-            qDebug() << fairWindJsonObject.dump();
+            qDebug() << QString::fromStdString(fairWindJsonObject.dump());
 
             if (fairWindJsonObject.contains("arguments") && fairWindJsonObject["arguments"].is_array()) {
                 auto argumentsJsonArray = fairWindJsonObject["arguments"];
