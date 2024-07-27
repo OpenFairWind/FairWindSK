@@ -75,5 +75,5 @@ cp icons $HOME/
 # Run in production
 
 ```
-FairwindSK
+FairWindSK
 ```
