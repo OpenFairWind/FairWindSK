@@ -128,7 +128,7 @@ namespace fairwindsk::ui::settings {
 
             delete appItem;
 
-            qDebug() << "Updated (from edits): " << m_settings->getConfiguration()->getRoot()["apps"].at(idx).dump(2);
+            qDebug() << "Updated (from edits): " << QString::fromStdString(m_settings->getConfiguration()->getRoot()["apps"].at(idx).dump(2));
 
         }
 
@@ -308,7 +308,7 @@ namespace fairwindsk::ui::settings {
             // Update the configuration
             m_settings->getConfiguration()->getRoot()["apps"].at(idx)["fairwind"]["active"] = active;
 
-            qDebug() << "Updated (active): " << m_settings->getConfiguration()->getRoot()["apps"].at(idx).dump(2);
+            qDebug() << "Updated (active): " << QString::fromStdString(m_settings->getConfiguration()->getRoot()["apps"].at(idx).dump(2));
 
         }
     }
@@ -336,7 +336,7 @@ namespace fairwindsk::ui::settings {
                     // Update the configuration
                     m_settings->getConfiguration()->getRoot()["apps"].at(idx)["fairwind"]["order"] = 1+row;
 
-                    qDebug() << "Updated (order): " << m_settings->getConfiguration()->getRoot()["apps"].at(idx).dump(2);
+                    qDebug() << "Updated (order): " << QString::fromStdString(m_settings->getConfiguration()->getRoot()["apps"].at(idx).dump(2));
 
                 }
             }
