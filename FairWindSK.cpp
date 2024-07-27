@@ -255,7 +255,7 @@ namespace fairwindsk {
                 if (m_debug) {
 
                     // Show the document
-                    qDebug() << doc.dump(2);
+                    qDebug() << QString::fromStdString(doc.dump(2));
                 }
 
                 if (doc.is_array()) {
@@ -325,7 +325,7 @@ namespace fairwindsk {
                                     // Increase the app counter
                                     count++;
 
-                                    qDebug() << "Added (app from the Signal k server): " << appItem->asJson().dump(2);
+                                    qDebug() << "Added (app from the Signal k server): " << QString::fromStdString(appItem->asJson().dump(2));
                                 }
                             }
                         }
@@ -381,7 +381,7 @@ namespace fairwindsk {
                             m_mapHash2AppItem[appName]->update(j);
 
 
-                            qDebug() << "Updated (app from the Signal k server updated by the configuration file): " << m_configuration.getRoot()["apps"].at(idx).dump(2);
+                            qDebug() << "Updated (app from the Signal k server updated by the configuration file): " << QString::fromStdString(m_configuration.getRoot()["apps"].at(idx).dump(2));
 
                         }
 
@@ -409,7 +409,7 @@ namespace fairwindsk {
                                     // Update the configuration
                                     m_configuration.getRoot()["apps"].at(idx)["fairwind"]["order"] = count;
 
-                                    qDebug() << "Added (app from the configuration file): " << m_configuration.getRoot()["apps"].at(idx).dump(2);
+                                    qDebug() << "Added (app from the configuration file): " << QString::fromStdString(m_configuration.getRoot()["apps"].at(idx).dump(2));
 
                                     // Increase the counter
                                     count++;
@@ -437,7 +437,7 @@ namespace fairwindsk {
                                 count++;
 
                                 // The app is not present on the Signal K server)
-                                qDebug() << "Deactivated (Signal K application present in the configuration file, but not on the Signal K server): " << m_configuration.getRoot()["apps"].at(idx).dump(2);
+                                qDebug() << "Deactivated (Signal K application present in the configuration file, but not on the Signal K server): " << QString::fromStdString(m_configuration.getRoot()["apps"].at(idx).dump(2));
 
                             } else {
                                 qDebug() << "Error!";
