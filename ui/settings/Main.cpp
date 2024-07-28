@@ -18,6 +18,12 @@ namespace fairwindsk::ui::settings {
 
         ui->setupUi(this);
 
+
+        connect(ui->toolButton_Update,&QToolButton::clicked,this, &Main::onClickedUpdate);
+        connect(ui->toolButton_Restart,&QToolButton::clicked,this, &Main::onClickedRestart);
+        connect(ui->toolButton_Quit,&QToolButton::clicked,this, &Main::onClickedQuit);
+
+
         if (m_settings->getConfiguration()->getVirtualKeyboard()) {
             ui->checkBox_virtualkeboard->setCheckState(Qt::Checked);
         } else {
@@ -94,5 +100,17 @@ namespace fairwindsk::ui::settings {
         auto comboBox = qobject_cast<QComboBox*>(sender());
 
         m_settings->getConfiguration()->getRoot()["units"][comboBox->objectName().toStdString()] = comboBox->currentData().toString().toStdString();
+    }
+
+    void Main::onClickedUpdate() {
+
+    }
+
+    void Main::onClickedRestart() {
+        QApplication::exit(1);
+    }
+
+    void Main::onClickedQuit() {
+        QApplication::exit(EXIT_SUCCESS);
     }
 } // fairwindsk::ui::settings
