@@ -1,6 +1,18 @@
 # FairWindSK
 A QT based browser designed to be a companion of the Signal K server
 
+# Introduction
+FairWindSK is under its IFT1 (cit.). I deployed a production setup and I’m using it under an OpenPlotter install. I updated the (very bad) README.md on https://github.com/openfairwind/FairWindSK 
+
+Just as recap: FairWindSK is part of DYNAMO research projects (now supported by the DataX4Sea project, a research grant from NEC Laboratory of America to test its DataX framework in data crowdsourcing for coastal environmental protection). The final goal of all the DYNAMO projects is data crowdsourcing for coastal environment protection and weather/ocean forecasting (numerical) and prediction (AI) models. All results of projects funded by public institutions are open source and open data.
+
+Now the cool things for sailors and boaters:
+
+FairWindSK is a browser with steroids designed to host SK applications. It is written in C++ 17 and QT6. It runs on Mac, Linux, and raspberry Pi OS. Probably it works on Windows too, but I never built under this OS. I’d like to port it under Android and iOS QT Apps with same source approach, but for now I’m focused on stabilizing it on the already supported platforms.
+What is working: the desktop (of course a far remembrance of other similar user interface), the execution environments, the setup and the configuration of units, QT virtual keyboard, signal K paths, Applications.
+What is implemented as user interface but the business logic is still missing: autopilot bar, MOB bar, alarms bar. Those bars will relay on SK web apps invoking their APIs or will access directly to the Signal K APIs. 
+What need to be fixed: on raspberry Pi (not on MacOS), tapping on Cancel or Save in the Settings it is rises a segmentation fault (actually it saves the settings, but then it crashes). The same it happens sometimes hitting Quit or Restart from the bottom of the Main settings page.
+Last words about apps: Applications are SK Web Apps hosted by the SK server, but also can be other web applications manually configured providing the url. Applications can be also local (as OpenCPN) characterized by a local path url with the schema file://. A mechanism to be back on the FairWindSK desktop after launched, for example, OpenCPN, is not available for now.
 
 # Compile on Raspberry Pi
 
