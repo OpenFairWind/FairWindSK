@@ -36,20 +36,10 @@ namespace fairwindsk {
         mConverters["L"]["L"] = [](double value) { return value; };
         mConverters["L"]["gal"] = [](double value) { return value * 0.264172; };
         mConverters["A"]["A"] = [](double value) { return value; };
+	mConverters["mt"]["mt"] = [](double value) { return value; };
+        mConverters["mt"]["ftm"] = [](double value) { return value * 0.547; };
+        mConverters["mt"]["ft"] = [](double value) { return value * 0.546807; };
 
-        /*
-        mLabels["F"] = "°F";
-        mLabels["C"] = "°C";
-        mLabels["deg"] = "°";
-        mLabels["kn"] = "kn";
-        mLabels["km"] = "km";
-        mLabels["ft"] = "ft";
-        mLabels["m"] = "m";
-        mLabels["A"] = "A";
-        mLabels["v"] = "v";
-        mLabels["L"] = "L";
-        mLabels["gal"] = "gal";
-         */
     }
 
 /*
@@ -111,7 +101,7 @@ namespace fairwindsk {
                 result = QString{"%1"}.arg(value, 4, 'f', 0 );
             }
         }
-        else if (unit == "m") {
+        else if (unit == "mt") {
             if (value >= 0.0 and value <=10.0) {
                 result = QString{"%1"}.arg(value, 4, 'f', 2 );
             }
@@ -122,6 +112,7 @@ namespace fairwindsk {
                 result = QString{"%1"}.arg(value, 4, 'f', 0 );
             }
         }
+	
 
         return result;
     }
