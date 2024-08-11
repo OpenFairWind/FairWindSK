@@ -19,9 +19,14 @@ namespace fairwindsk::ui::settings {
     Connection::Connection(Settings *settingsWidget, QWidget *parent) :
             QWidget(parent), ui(new Ui::Connection) {
 
+	// Set the settings widge
         m_settings = settingsWidget;
 
+	// Setup the UI
         ui->setupUi(this);
+
+	// Set the timer pointer
+	m_timer = nullptr;
 
         // Set the current server
         ui->comboBox_signalkserverurl->setCurrentText(m_settings->getConfiguration()->getSignalKServerUrl());
@@ -220,7 +225,7 @@ namespace fairwindsk::ui::settings {
             QNetworkAccessManager networkAccessManager;
 
             auto networkRequest = QNetworkRequest(url);
-            networkRequest.setHeader(QNetworkRequest::ContentTypeHeader, " application/json");
+            networkRequest.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
             // Create the event loop component
             QEventLoop loop;
@@ -369,13 +374,28 @@ namespace fairwindsk::ui::settings {
     }
 
     Connection::~Connection() {
+
+	// Stop the zeroconf browser
         m_zeroConf.stopBrowser();
-        delete ui;
+
+	// Check if the timer is instanced
         if (m_timer) {
+
+	    // Stop the timer
             m_timer->stop();
+
+	    // Disconnect the timer 
             m_timer->disconnect(this);
+
+	    // Delete the timer
             delete m_timer;
+
+	    // Ser the timer to null
+	    m_timer = nullptr;
         }
+
+	// Delete the UI
+	delete ui;
     }
 
 } // fairwindsk::ui::settings
