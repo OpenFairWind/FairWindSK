@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <sstream>
 
+#include <QApplication>
 #include <QMutableListIterator>
 #include <QNetworkReply>
 #include <QCoreApplication>
@@ -409,6 +410,7 @@ namespace fairwindsk::signalk {
     void Client::onDisconnected() {
         if (mDebug)
             qDebug() << "WebSocket disconnected";
+	QApplication::exit(1);
     }
 //! [onDisconnected]
 
