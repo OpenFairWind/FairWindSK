@@ -325,7 +325,7 @@ namespace fairwindsk::ui {
         ui->stackedWidget_Center->setCurrentWidget(settingsPage->getCurrentWidget());
 	
         settingsPage->close();
-	//settingsPage->deleteLater();
+	delete settingsPage;
     }
 
     void MainWindow::onSettingsAccepted(settings::Settings *settingsPage) {
@@ -335,7 +335,9 @@ namespace fairwindsk::ui {
         ui->stackedWidget_Center->setCurrentWidget(settingsPage->getCurrentWidget());
 
         settingsPage->close();
-	//settingsPage->deleteLater();
+	delete settingsPage;
+
+	QApplication::exit(1);
     }
 
     topbar::TopBar *MainWindow::getTopBar() {
