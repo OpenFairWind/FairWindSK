@@ -524,16 +524,19 @@ namespace fairwindsk::ui::topbar {
             ui->widget_DPT->setVisible(false);
         } else {
 
-            // Convert m/s to knots
-            value = m_units->convert("m",FairWindSK::getInstance()->getConfiguration()->getDepthUnits(), value);
+            // Convert m to depth units
+            value = m_units->convert("mt",FairWindSK::getInstance()->getConfiguration()->getDepthUnits(), value);
 
             // Build the formatted value
             text = m_units->format(FairWindSK::getInstance()->getConfiguration()->getDepthUnits(), value);
 
-            // Set the speed over ground label from the UI to the formatted value
+            // Set the the formatted value
             ui->label_DPT->setText(text);
 
+	    // Check if the widget is visible
             if (!ui->widget_DPT->isVisible()) {
+
+		// Set the widget visible
                 ui->widget_DPT->setVisible(true);
             }
         }
