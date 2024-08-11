@@ -323,9 +323,9 @@ namespace fairwindsk::ui {
         ui->widget_Bottom->setDisabled(false);
         ui->stackedWidget_Center->removeWidget(settingsPage);
         ui->stackedWidget_Center->setCurrentWidget(settingsPage->getCurrentWidget());
-
+	
         settingsPage->close();
-        delete settingsPage;
+	//settingsPage->deleteLater();
     }
 
     void MainWindow::onSettingsAccepted(settings::Settings *settingsPage) {
@@ -335,7 +335,7 @@ namespace fairwindsk::ui {
         ui->stackedWidget_Center->setCurrentWidget(settingsPage->getCurrentWidget());
 
         settingsPage->close();
-        delete settingsPage;
+	//settingsPage->deleteLater();
     }
 
     topbar::TopBar *MainWindow::getTopBar() {
