@@ -1,7 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=FairWindSK
-Comment=FairWindSK
-NoDisplay=false
-Exec=/home/pi/fairwindsk/FairWindSK.sh
-NotShowIn=GNOME;KDE;XFCE;
