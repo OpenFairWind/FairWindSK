@@ -11,10 +11,12 @@
 #include "Settings.hpp"
 
 #include "FairWindSK.hpp"
+
 #include "Main.hpp"
 #include "Connection.hpp"
 #include "SignalK.hpp"
 #include "Apps.hpp"
+
 
 #include "ui_Settings.h"
 
@@ -33,6 +35,10 @@ namespace fairwindsk::ui::settings {
         initTabs();
 
         m_currentWidget = currenWidget;
+
+	m_pushButtonQuit = new QPushButton("Quit");
+
+	ui->buttonBox->addButton(m_pushButtonQuit,QDialogButtonBox::ActionRole);
 
         connect(ui->buttonBox,&QDialogButtonBox::accepted,this,&Settings::onAccepted);
         connect(ui->buttonBox,&QDialogButtonBox::rejected,this,&Settings::onRejected);
@@ -62,17 +68,23 @@ namespace fairwindsk::ui::settings {
             m_configuration.setDefault();
 
             initTabs();
-        }
+        } else if ((QPushButton *)button == m_pushButtonQuit) {
+		QApplication::exit(0);
+	}	
     }
 
     void Settings::initTabs() {
-        int currentIndex = ui->tabWidget->currentIndex();
-        ui->tabWidget->clear();
+        while (ui->tabWidget->count() > 0) {
+	    auto tab = ui->tabWidget->widget(0);
+	    ui->tabWidget->removeTab(0);
+	    delete tab;
+	} 
+        
         ui->tabWidget->addTab(new Main(this), tr("Main"));
         ui->tabWidget->addTab(new Connection(this), tr("Connection"));
         ui->tabWidget->addTab(new SignalK(this), tr("Signal K"));
         ui->tabWidget->addTab(new Apps(this), tr("Apps"));
-        ui->tabWidget->setCurrentIndex(currentIndex);
+        ui->tabWidget->setCurrentIndex(0);
     }
 
 
@@ -96,6 +108,18 @@ namespace fairwindsk::ui::settings {
     }
 
     Settings::~Settings() {
+        while (ui->tabWidget->count() > 0) {
+            auto tab = ui->tabWidget->widget(0);
+            ui->tabWidget->removeTab(0);
+            delete tab;
+        }
+
+	if (m_pushButtonQuit) {
+		delete m_pushButtonQuit;
+
+		m_pushButtonQuit = nullptr;
+	}
+
         delete ui;
     }
 
