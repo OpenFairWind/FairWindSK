@@ -28,7 +28,6 @@ namespace fairwindsk::ui::settings {
         void onClickedRestart();
         void onClickedQuit();
 
-
     private:
         Ui::Main *ui;
 
