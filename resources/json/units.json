@@ -68,7 +68,7 @@
     "m":{
       "text":"Meters",
       "label":"m",
-      "type":"distance"
+      "type":"distance/depth"
     },
     "ml":{
       "text":"Miles",
@@ -90,10 +90,10 @@
       "label":"ft",
       "type":"depth"
     },
-    "mt":{
-      "text":"Meters",
-      "label":"m",
-      "type":"depth"
+    "mt": {
+      "text": "Meters",
+      "label": "m",
+      "type": "depth"
     }
   },
   "measures":{
