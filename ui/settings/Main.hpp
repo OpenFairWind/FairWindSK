@@ -24,9 +24,6 @@ namespace fairwindsk::ui::settings {
     private slots:
         void onCurrentIndexChanged(int index);
         void onVirtualKeyboard(int state);
-        void onClickedUpdate();
-        void onClickedRestart();
-        void onClickedQuit();
 
     private:
         Ui::Main *ui;
