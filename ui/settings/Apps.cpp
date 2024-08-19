@@ -82,7 +82,7 @@ namespace fairwindsk::ui::settings {
         connect(ui->lineEdit_Apps_AppIcon, &QLineEdit::textChanged, this, &Apps::onAppsDetailsFieldsTextChanged);
 
         connect(ui->pushButton_Apps_AppIcon_Browse, &QPushButton::clicked,this,&Apps::onAppsAppIconBrowse);
-
+	connect(ui->pushButton_Apps_Name_Browse, &QPushButton::clicked,this,&Apps::onAppsNameBrowse);
 
         connect(ui->toolButton_Add, &QToolButton::clicked,this,&Apps::onAppsAddClicked);
         connect(ui->toolButton_Remove, &QToolButton::clicked,this,&Apps::onAppsRemoveClicked);
