@@ -21,7 +21,46 @@ Install Homebrew
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
+Install the dependencies
+```
+brew install qt@6 cmake
+```
 
+Clone the repository
+
+```
+git clone https://github.com/OpenFairWind/FairWindSK.git
+```
+
+Enter in the repository directory.
+
+```
+cd FairWindSK
+```
+
+Create the build directory.
+
+```
+mkdir build
+```
+
+Enter the build directory.
+
+```
+cd build
+```
+
+Configure the building environment.
+
+```
+cmake ..
+```
+
+Make FairWindSK
+
+```
+make
+```
 # Compile on Raspberry Pi
 
 Install the compiling environment.
@@ -30,7 +69,7 @@ Install the compiling environment.
 sudo apt install qml6-module-qt-labs-folderlistmodel qml6-module-qtquick-window qml6-module-qtquick-layouts qml6-module-qtqml-workerscript libnss-mdns avahi-utils libavahi-compat-libdnssd-dev libxkbcommon-dev qt6-base-dev qt6-base-dev-tools qt6-webengine-dev qt6-webengine-dev-tools qt6-websockets-dev qt6-virtualkeyboard-dev libqt6virtualkeyboard6 qt6-virtualkeyboard-plugin qmake6 qmake6-bin build-essential cmake
 ```
 
-Fix a file missing issue
+Fix a file missing issue.
 
 ```
 sudo touch /usr/lib/aarch64-linux-gnu/cmake/Qt6VirtualKeyboard/Qt6VirtualKeyboardConfigVersionImpl.cmake
@@ -42,25 +81,25 @@ Clone the repository
 git clone https://github.com/OpenFairWind/FairWindSK.git
 ```
 
-Enter in the repository directory
+Enter in the repository directory.
 
 ```
 cd FairWindSK
 ```
 
-Create the build directory
+Create the build directory.
 
 ```
 mkdir build
 ```
 
-Enter the build directory
+Enter the build directory.
 
 ```
 cd build
 ```
 
-Configure the building environment
+Configure the building environment.
 
 ```
 cmake ..
