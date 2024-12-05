@@ -98,6 +98,12 @@ namespace fairwindsk {
         // The configuration object
         Configuration m_configuration;
 
+        // Number of trys in Web Socket connection
+        int m_nRetry = 5;
+
+        // Time between trys
+        int m_mSleep = 1000;
+
     };
 }
 
