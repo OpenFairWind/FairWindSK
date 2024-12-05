@@ -47,17 +47,6 @@
                 "appIcon": "file://icons/youtube_icon.png",
                 "displayName": "Youtube"
             }
-        },
-        {
-            "description": "Navionics Web Application",
-            "fairwind": {
-                "active": true
-            },
-            "name": "http://webapp.navionics.com",
-            "signalk": {
-                "appIcon": "file://icons/navionics_icon.png",
-                "displayName": "Navionics"
-            }
         }
     ],
     "connection": {
