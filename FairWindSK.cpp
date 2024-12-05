@@ -29,24 +29,31 @@ namespace fairwindsk {
  * the singleton design pattern
  */
     FairWindSK::FairWindSK() {
-        qDebug() << "FairWindSK constructor";
 
+        // Set the debug active
         m_debug = true;
 
+        // Se the default configuration file name
         m_configFilename = "fairwindsk.json";
 
+        // Create the WebEngine profile file name
         auto profileName = QString::fromLatin1("FairWindSK.%1").arg(qWebEngineChromiumVersion());
 
-        m_profile = new QWebEngineProfile(profileName );
+        // Create the WebEngine profile
+        m_profile = new QWebEngineProfile(profileName);
 
+        // Create an authentication cookie from the configuration
+        auto authenticationCookie = QNetworkCookie("JAUTHENTICATION", fairwindsk::Configuration::getToken().toUtf8());
 
-        auto cookie = QNetworkCookie("JAUTHENTICATION", fairwindsk::Configuration::getToken().toUtf8());
-        m_profile->cookieStore()->setCookie(cookie,QUrl(m_configuration.getSignalKServerUrl()));
+        // Set the cookie
+        m_profile->cookieStore()->setCookie(authenticationCookie,QUrl(m_configuration.getSignalKServerUrl()));
 
+        // Check if the debug is active
         if (isDebug()) {
+
+            // Write a message
             qDebug() << "QWenEngineProfile " << m_profile->isOffTheRecord() << " data store: " << m_profile->persistentStoragePath();
         }
-
     }
 
 
@@ -56,12 +63,22 @@ namespace fairwindsk {
  * Either returns the available instance or creates a new one
  */
     FairWindSK *FairWindSK::getInstance() {
+
+        // Check if there is no previous instance
         if (m_instance == nullptr) {
+
+            // Create the instance
             m_instance = new FairWindSK();
         }
+
+        // Return the instance
         return m_instance;
     }
 
+    /*
+     * loadConfig()
+     * Load the configuration from the json file
+     */
     void FairWindSK::loadConfig() {
 
         // Initialize the QT managed settings
@@ -73,7 +90,10 @@ namespace fairwindsk {
         // Store the configuration in the settings
         settings.setValue("debug", m_debug);
 
-        if (m_debug) {
+        // Check if the debug is active
+        if (isDebug()) {
+
+            // Write a message
             qDebug() << "Loading configuration from ini file...";
         }
 
@@ -92,8 +112,7 @@ namespace fairwindsk {
             // Load the configuration
             m_configuration.load();
         }
-        else
-        {
+        else {
             // Set the default
             m_configuration.setDefault();
 
@@ -101,27 +120,38 @@ namespace fairwindsk {
             //m_configuration.save();
         }
 
-        if (m_debug) {
+        // Check if the debug is active
+        if (isDebug()) {
 
-            QLoggingCategory::setFilterRules(u"qt.webenginecontext.debug=true"_s);
-
+            // Write a message
             qDebug() << "Configuration from ini file loaded.";
+
+            // Set the QT logging
+            QLoggingCategory::setFilterRules(u"qt.webenginecontext.debug=true"_s);
         }
 
     }
 
+    /*
+     * startSignalK()
+     * Starts the Signal K client
+     */
     bool FairWindSK::startSignalK() {
+
+        // Set the result as false
         bool result = false;
 
+        // Get the Signal K server URL
         auto signalKServerUrl = m_configuration.getSignalKServerUrl();
 
+        // Check if the Signal K URL is not empty
         if (!signalKServerUrl.isEmpty()) {
+
             // Define the parameters map
             QMap<QString, QVariant> params;
 
             // Set some defaults
             params["active"] = true;
-
 
             // Setup the debug mode
             params["debug"] = m_debug;
@@ -129,9 +159,8 @@ namespace fairwindsk {
             // Set the url
             params["url"] = signalKServerUrl + "/signalk";
 
+            // Get the token
             QString token = fairwindsk::Configuration::getToken();
-            int nRetry = 5;
-            int mSleep = 1000;
 
             // Check if the token is defined
             if (!token.isEmpty()) {
@@ -145,10 +174,13 @@ namespace fairwindsk {
                 // Start the connection
                 do {
 
-                    if (m_debug) {
+                    // Check if the debug is active
+                    if (isDebug()) {
+
+                        // Write a message
                         qDebug() << "Trying to connect to the " << signalKServerUrl << " Signal K server ("
                                  << count
-                                 << "/" << nRetry << ")...";
+                                 << "/" << m_nRetry << ")...";
                     }
 
                     // Try to connect
@@ -171,15 +203,22 @@ namespace fairwindsk {
                     count++;
 
                     // Wait for m_mSleep microseconds
-                    QThread::msleep(mSleep);
+                    QThread::msleep(m_mSleep);
 
                     // Loop until the number of retry
-                } while (count < nRetry);
+                } while (count < m_nRetry);
 
-                if (m_debug) {
+                // Check if the debug is active
+                if (isDebug()) {
+
+                    // Check if the client is connected
                     if (result) {
+
+                        // Write a message
                         qDebug() << "Connected to " << signalKServerUrl;
                     } else {
+
+                        // Write a message
                         qDebug() << "No response from the " << signalKServerUrl << " Signal K server!";
                     }
                 }
@@ -190,6 +229,10 @@ namespace fairwindsk {
         return result;
     }
 
+    /*
+     * loadApps()
+     * Load the applications
+     */
     bool FairWindSK::loadApps() {
 
         // Set the result value
@@ -228,7 +271,7 @@ namespace fairwindsk {
         if (!signalKServerUrl.isEmpty()) {
 
             // Set the URL for the application list
-            QUrl url = QUrl(signalKServerUrl + "/skServer/webapps");
+            const auto url = QUrl(signalKServerUrl + "/skServer/webapps");
 
             // Create the network access manager
             QNetworkAccessManager networkAccessManager;
@@ -252,12 +295,13 @@ namespace fairwindsk {
                 nlohmann::json doc = nlohmann::json::parse(reply->readAll());
 
                 // Check if the debug is active
-                if (m_debug) {
+                if (isDebug()) {
 
-                    // Show the document
+                    // Write a message
                     qDebug() << QString::fromStdString(doc.dump(2));
                 }
 
+                // Check if the json document is an array
                 if (doc.is_array()) {
 
                     // Get the application array
@@ -271,8 +315,6 @@ namespace fairwindsk {
 
                             // Get the json object
                             auto appJsonObject = appJsonItem;
-
-
 
                             // Check if keywords key is present and if the value is an array
                             if (appJsonObject.contains("keywords") && appJsonObject["keywords"].is_array()) {
@@ -300,22 +342,30 @@ namespace fairwindsk {
                                                     appJsonObject.contains("fairwind") &&
                                                     appJsonObject["fairwind"].is_null())) {
 
-                                        // or even nicer with a raw string literal
+                                        // Define the fairwind json object
                                         nlohmann::json fairwindJsonObject;
+
+                                        // Set the object active
                                         fairwindJsonObject["active"] = true;
+
+                                        // Use the ordinal as order number
                                         fairwindJsonObject["order"] = count;
 
+                                        // Assign the fairwind json object to the lement
                                         appJsonObject["fairwind"] = fairwindJsonObject;
 
                                     }
 
-
                                     // Create an app item object
                                     auto appItem = new AppItem(appJsonObject);
 
-
+                                    // Find the app in the configuration object
                                     int idx = m_configuration.findApp(appItem->getName());
+
+                                    // Check the app was been found
                                     if (idx == -1) {
+
+                                        /// Add the app to the configuration
                                         m_configuration.getRoot()["apps"].push_back(appItem->asJson());
                                     }
 
@@ -325,7 +375,12 @@ namespace fairwindsk {
                                     // Increase the app counter
                                     count++;
 
-                                    qDebug() << "Added (app from the Signal k server): " << QString::fromStdString(appItem->asJson().dump(2));
+                                    // Check if the debug is active
+                                    if (isDebug())
+                                    {
+                                        // Write a message
+                                        qDebug() << "Added (app from the Signal k server): " << QString::fromStdString(appItem->asJson().dump(2));
+                                    }
                                 }
                             }
                         }
@@ -339,8 +394,7 @@ namespace fairwindsk {
 
             // Check if the debug is active
             if (m_debug) {
-
-                // Show a debug message
+                // Show a message
                 qDebug() << "Troubles on getting apps from " << signalKServerUrl;
             }
         }
@@ -372,23 +426,28 @@ namespace fairwindsk {
                         // Check if the app is present
                         if (idx != -1) {
 
+                            // Get the item as a json
                             auto j = appItem->asJson();
 
+                            // Update the item with app data
                             j.update(app, true);
+
+                            // Assign the item to the configuration
                             m_configuration.getRoot()["apps"].at(idx) = j;
 
                             // Update the app with the configuration
                             m_mapHash2AppItem[appName]->update(j);
 
-
-                            qDebug() << "Updated (app from the Signal k server updated by the configuration file): " << QString::fromStdString(m_configuration.getRoot()["apps"].at(idx).dump(2));
-
+                            // Check if the debug is active
+                            if (isDebug())
+                            {
+                                // Write a message
+                                qDebug() << "Updated (app from the Signal k server updated by the configuration file): " << QString::fromStdString(m_configuration.getRoot()["apps"].at(idx).dump(2));
+                            }
                         }
-
-
                     } else {
 
-                        // Check if it is not a signalk app
+                        // Check if it is not a Signal K app
                         if (appName.startsWith("http://") || appName.startsWith("https://") || appName.startsWith("file://")) {
 
                             // Create a new app item with the configuration
@@ -409,7 +468,12 @@ namespace fairwindsk {
                                     // Update the configuration
                                     m_configuration.getRoot()["apps"].at(idx)["fairwind"]["order"] = count;
 
-                                    qDebug() << "Added (app from the configuration file): " << QString::fromStdString(m_configuration.getRoot()["apps"].at(idx).dump(2));
+                                    // Check if the debug is active
+                                    if (isDebug()) {
+
+                                        // Write a message
+                                        qDebug() << "Added (app from the configuration file): " << QString::fromStdString(m_configuration.getRoot()["apps"].at(idx).dump(2));
+                                    }
 
                                     // Increase the counter
                                     count++;
@@ -419,8 +483,12 @@ namespace fairwindsk {
                             // Add the application to the hash map
                             m_mapHash2AppItem[appName] = appItem;
 
-                            //qDebug() << "Added: " << appItem->asJson().dump(2);
+                            // Check if the debug is active
+                            if (isDebug()) {
 
+                                // Write a message
+                                qDebug() << "Added: " << appItem->asJson().dump(2);
+                            }
                         } else {
 
                             // Get the index of the application within the apps array
@@ -432,18 +500,23 @@ namespace fairwindsk {
                                 // Update the configuration
                                 m_configuration.getRoot()["apps"].at(idx)["fairwind"]["order"] = 10000+count;
 
+                                // Set the application as inactive by default
                                 m_configuration.getRoot()["apps"].at(idx)["fairwind"]["active"] = false;
 
+                                // Increase the caunter
                                 count++;
 
                                 // The app is not present on the Signal K server)
                                 qDebug() << "Deactivated (Signal K application present in the configuration file, but not on the Signal K server): " << QString::fromStdString(m_configuration.getRoot()["apps"].at(idx).dump(2));
 
                             } else {
-                                qDebug() << "Error!";
+                                // Check if the debug is active
+                                if (isDebug()) {
+
+                                    // Write a message
+                                    qDebug() << "Error!";
+                                }
                             }
-
-
                         }
                     }
                 }
@@ -453,7 +526,12 @@ namespace fairwindsk {
         // Get the configuration json data root
         auto jsonData =m_configuration.getRoot();
 
-        qDebug() << "Resume";
+        // Check if the debug is active
+        if (isDebug()) {
+
+            // Write a message
+            qDebug() << "Resume";
+        }
 
         // Check if the configuration has an apps element and if it is an array
         if (jsonData.contains("apps") && jsonData["apps"].is_array()) {
@@ -467,10 +545,14 @@ namespace fairwindsk {
                 // Create an application object
                 auto appItem = new AppItem(jsonApp);
 
-                qDebug() << "App: " << appItem->getName() << " active: " << appItem->getActive() << " order: " << appItem->getOrder();
+                // Check if the debug is active
+                if (isDebug())
+                {
+                    // Write a message
+                    qDebug() << "App: " << appItem->getName() << " active: " << appItem->getActive() << " order: " << appItem->getOrder();
+                }
             }
         }
-
 
         // Return the result
         return result;
@@ -517,10 +599,17 @@ namespace fairwindsk {
     }
 
     FairWindSK::~FairWindSK() {
+
+        // Check if the profile is allocated
         if (m_profile) {
+
+            // Delete the profile
             delete m_profile;
+
+            // Set the profile pointer to null
             m_profile = nullptr;
         }
+
     }
 
 
