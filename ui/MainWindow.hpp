@@ -34,40 +34,64 @@ namespace fairwindsk::ui {
         Q_OBJECT
 
     public:
+
+        // Explicit constructor
         explicit MainWindow(QWidget *parent = nullptr);
 
+        // Destructor
         ~MainWindow() override;
 
+        // Get the pointer to UI
         Ui::MainWindow *getUi();
 
+        // Get the pointer to the top bar
         topbar::TopBar *getTopBar();
+
+        // Get the pointer to the launcher
         launcher::Launcher *getLauncher();
+
+        // Get the pointer to the bottom bar
         bottombar::BottomBar *getBottomBar();
 
     private:
+
+        // Close Event handler
         void closeEvent(QCloseEvent *bar) override;
 
     public
         slots:
-                void setForegroundApp(QString hash);
+            // Set foreground application by hash
+            void setForegroundApp(QString hash);
 
-        void onApps();
+            // Invoked when the bottom bar button Apps (Home) is clicked
+            void onApps();
 
-        void onSettings();
-        void onMyData();
-        void onUpperLeft();
+            // Invoked when the bottom bar button Settings is clicked
+            void onSettings();
 
+            // Invoked when the bottom bar button MyData is clicked
+            void onMyData();
 
-        void onAboutAccepted(about::About *aboutPage);
-        void onSettingsAccepted(settings::Settings *settingsPage);
-        void onSettingsRejected(settings::Settings *settingsPage);
+            // Invoked when the top bar upper left button is clicked
+            void onUpperLeft();
 
-        void onMyDataClosed(mydata::MyData *myDataPage);
+            // Invoked when the Ok button of the About widget is clicked
+            void onAboutAccepted(fairwindsk::ui::about::About *aboutPage);
+
+            // Invoked when the Save button of the Settings widget is clicked
+            void onSettingsAccepted(fairwindsk::ui::settings::Settings *settingsPage) const;
+
+            // Invoked when the Cancel button of the Settings widget is clicked
+            void onSettingsRejected(fairwindsk::ui::settings::Settings *settingsPage);
+
+            // Invoked when the Close button of the MyData widget is clicked
+            void onMyDataClosed(fairwindsk::ui::mydata::MyData *myDataPage);
 
 
 
     private:
-        Ui::MainWindow *ui;
+        // The UI pointer
+        Ui::MainWindow *ui = nullptr;
 
         // This will be populated with the apps launched by the user for quick usage
         QMap<QString, QWidget *> m_mapHash2Widget;
@@ -83,7 +107,6 @@ namespace fairwindsk::ui {
 
         // The pointer to the foreground app
         fairwindsk::AppItem *m_currentApp = nullptr;
-
 
     };
 }
