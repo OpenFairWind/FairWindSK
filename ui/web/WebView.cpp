@@ -21,22 +21,30 @@
 using namespace Qt::StringLiterals;
 
 namespace fairwindsk::ui::web {
-
-    WebView::WebView(QWebEngineProfile *profile, QWidget *parent)
-            : QWebEngineView(parent)
+    /*
+     * WebView
+     * Constructor
+     */
+    WebView::WebView(QWebEngineProfile *profile, QWidget *parent): QWebEngineView(parent)
     {
+        // Set the load progress to 0 when load started
         connect(this, &QWebEngineView::loadStarted, [this]() {
             m_loadProgress = 0;
         });
+
+        // Set load progress to the parameter
         connect(this, &QWebEngineView::loadProgress, [this](int progress) {
             m_loadProgress = progress;
         });
+
+        // Check when the load process ended
         connect(this, &QWebEngineView::loadFinished, [this](bool success) {
             m_loadProgress = success ? 100 : -1;
         });
 
 
 
+        // Handle the rendering termination
         connect(this, &QWebEngineView::renderProcessTerminated,
                 [this](QWebEnginePage::RenderProcessTerminationStatus termStatus, int statusCode) {
                     QString status;
@@ -61,12 +69,14 @@ namespace fairwindsk::ui::web {
                         QTimer::singleShot(0, this, &WebView::reload);
                 });
 
+        // Create the web page
         m_webPage = new WebPage(profile);
+
+        // Set the web page
         setPage(m_webPage);
     }
 
-    inline QString questionForFeature(QWebEnginePage::Feature feature)
-    {
+    inline QString questionForFeature(QWebEnginePage::Feature feature) {
         switch (feature) {
             case QWebEnginePage::Geolocation:
                 return QObject::tr("Allow %1 to access your location information?");
@@ -123,14 +133,12 @@ namespace fairwindsk::ui::web {
 #endif
     }
 
-    int WebView::loadProgress() const
-    {
+    int WebView::loadProgress() const {
         return m_loadProgress;
     }
 
 
-    void WebView::handleCertificateError(QWebEngineCertificateError error)
-    {
+    void WebView::handleCertificateError(QWebEngineCertificateError error) {
         QDialog dialog(window());
         dialog.setModal(true);
         dialog.setWindowFlags(dialog.windowFlags() & ~Qt::WindowContextHelpButtonHint);
@@ -149,8 +157,7 @@ namespace fairwindsk::ui::web {
             error.rejectCertificate();
     }
 
-    void WebView::handleAuthenticationRequired(const QUrl &requestUrl, QAuthenticator *auth)
-    {
+    void WebView::handleAuthenticationRequired(const QUrl &requestUrl, QAuthenticator *auth) {
         QDialog dialog(window());
         dialog.setModal(true);
         dialog.setWindowFlags(dialog.windowFlags() & ~Qt::WindowContextHelpButtonHint);
@@ -177,9 +184,7 @@ namespace fairwindsk::ui::web {
         }
     }
 
-    void WebView::handleFeaturePermissionRequested(const QUrl &securityOrigin,
-                                                   QWebEnginePage::Feature feature)
-    {
+    void WebView::handleFeaturePermissionRequested(const QUrl &securityOrigin, QWebEnginePage::Feature feature) {
         QString title = tr("Permission Request");
         QString question = questionForFeature(feature).arg(securityOrigin.host());
         if (!question.isEmpty() && QMessageBox::question(window(), title, question) == QMessageBox::Yes)
@@ -190,9 +195,7 @@ namespace fairwindsk::ui::web {
                                          QWebEnginePage::PermissionDeniedByUser);
     }
 
-    void WebView::handleProxyAuthenticationRequired(const QUrl &, QAuthenticator *auth,
-                                                    const QString &proxyHost)
-    {
+    void WebView::handleProxyAuthenticationRequired(const QUrl &, QAuthenticator *auth, const QString &proxyHost) {
         QDialog dialog(window());
         dialog.setModal(true);
         dialog.setWindowFlags(dialog.windowFlags() & ~Qt::WindowContextHelpButtonHint);
@@ -219,9 +222,7 @@ namespace fairwindsk::ui::web {
     }
 
 //! [registerProtocolHandlerRequested]
-    void WebView::handleRegisterProtocolHandlerRequested(
-            QWebEngineRegisterProtocolHandlerRequest request)
-    {
+    void WebView::handleRegisterProtocolHandlerRequested(QWebEngineRegisterProtocolHandlerRequest request) {
         auto answer = QMessageBox::question(window(), tr("Permission Request"),
                                             tr("Allow %1 to open all %2 links?")
                                                     .arg(request.origin().host())
@@ -234,8 +235,7 @@ namespace fairwindsk::ui::web {
 //! [registerProtocolHandlerRequested]
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
-    void WebView::handleFileSystemAccessRequested(QWebEngineFileSystemAccessRequest request)
-    {
+    void WebView::handleFileSystemAccessRequested(QWebEngineFileSystemAccessRequest request) {
         QString accessType;
         switch (request.accessFlags()) {
             case QWebEngineFileSystemAccessRequest::Read:
@@ -262,7 +262,17 @@ namespace fairwindsk::ui::web {
             request.reject();
     }
 
-    WebView::~WebView() = default;
+    WebView::~WebView() {
+        // Check the web page is allocated
+        if (m_webPage)
+        {
+            // Delete the web page
+            delete m_webPage;
+
+            // Set the web page pointer to null
+            m_webPage = nullptr;
+        }
+    }
 
 #endif // QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
 }
