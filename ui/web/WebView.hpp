@@ -22,21 +22,21 @@
 
 namespace fairwindsk::ui::web {
 
-
-
     class WebView : public QWebEngineView {
     Q_OBJECT
 
     public:
+        // Constructor
         explicit WebView(QWebEngineProfile *profile, QWidget *parent = nullptr);
 
+        // Set the web page pointer
         void setPage(WebPage *page);
 
+        // Get the load progress
         int loadProgress() const;
 
+        // Destructor
         ~WebView() override;
-
-
 
     protected:
 
@@ -47,20 +47,24 @@ namespace fairwindsk::ui::web {
 
     private slots:
 
+        // Certificate error handler
         void handleCertificateError(QWebEngineCertificateError error);
 
+        // Authentication required handler
         void handleAuthenticationRequired(const QUrl &requestUrl, QAuthenticator *auth);
 
-        void handleFeaturePermissionRequested(const QUrl &securityOrigin,
-                                              QWebEnginePage::Feature feature);
+        // Feature Permission Requested handler
+        void handleFeaturePermissionRequested(const QUrl &securityOrigin, QWebEnginePage::Feature feature);
 
-        void handleProxyAuthenticationRequired(const QUrl &requestUrl, QAuthenticator *auth,
-                                               const QString &proxyHost);
+        // Proxy Authentication Required handler
+        void handleProxyAuthenticationRequired(const QUrl &requestUrl, QAuthenticator *auth, const QString &proxyHost);
 
+        // Register Protocol Handler Requested handler
         void handleRegisterProtocolHandlerRequested(QWebEngineRegisterProtocolHandlerRequest request);
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
 
+        // File System Access Requested handler
         void handleFileSystemAccessRequested(QWebEngineFileSystemAccessRequest request);
 
 #endif
@@ -68,7 +72,10 @@ namespace fairwindsk::ui::web {
     private:
 
     private:
+        // Load progress (0-100)
         int m_loadProgress = 100;
+
+        // Web page pointer
         WebPage *m_webPage = nullptr;
     };
 }
