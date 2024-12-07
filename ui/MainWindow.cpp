@@ -20,13 +20,11 @@
 #include "ui/mydata/MyData.hpp"
 
 namespace fairwindsk::ui {
-/*
- * MainWindow
- * Public constructor - This presents FairWind's UI
- */
+    /*
+     * MainWindow
+     * Public constructor - This presents FairWind's UI
+     */
     MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
-
-
 
         // Set up the UI
         ui->setupUi(this);
@@ -91,9 +89,8 @@ namespace fairwindsk::ui {
         // Add the launcher to the stacked widget
         ui->stackedWidget_Center->addWidget(m_launcher);
 
-        // Connect the foreground app changed signa to the setForegroundApp method
-        QObject::connect(m_launcher, &launcher::Launcher::foregroundAppChanged,
-                         this, &MainWindow::setForegroundApp);
+        // Connect the foreground app changed signal to the setForegroundApp method
+        QObject::connect(m_launcher, &launcher::Launcher::foregroundAppChanged,this, &MainWindow::setForegroundApp);
 
         // Preload a web application
         setForegroundApp("http:///");
@@ -101,54 +98,81 @@ namespace fairwindsk::ui {
         // Show the launcher
         onApps();
 
-
         // Show the window fullscreen
         QTimer::singleShot(0, this, SLOT(showFullScreen()));
-
     }
 
-/*
- * ~MainWindow
- * MainWindow's destructor
- */
+    /*
+     * ~MainWindow
+     * MainWindow's destructor
+     */
     MainWindow::~MainWindow() {
 
+        // Check if the bottom bar is allocated
         if (m_bottomBar) {
+
+            // Delete the bottom bar
             delete m_bottomBar;
+
+            // Set the bottom bar pointer to null
             m_bottomBar = nullptr;
         }
 
+        // Check uf the launcher is allocated
         if (m_launcher) {
+
+            // Delete the launcher
             delete m_launcher;
+
+            // Set the launcher pointer to null
             m_launcher = nullptr;
         }
 
+        // Check if the top bar is allocated
         if (m_topBar) {
+
+            // Delete the top bar
             delete m_topBar;
+
+            // Set the top bar pointer to null
             m_topBar = nullptr;
         }
 
+        // Check if the UI is allocated
         if (ui) {
+
+            // Delete the UI
             delete ui;
+
+            // Set the UI pointer to null
             ui = nullptr;
         }
 
     }
 
-/*
- * getUi
- * Returns the widget's UI
- */
+    /*
+     * getUi
+     * Returns the widget's UI
+     */
     Ui::MainWindow *MainWindow::getUi() {
         return ui;
     }
 
-/*
- * setForegroundApp
- * Method called when the user clicks on the Apps widget: show a new foreground app with the provided hash value
- */
-    void MainWindow::setForegroundApp(QString hash) {
-        qDebug() << "MainWindow hash:" << hash;
+    /*
+     * setForegroundApp
+     * Method called when the user clicks on the Apps widget: show a new foreground app with the provided hash value
+     */
+    void MainWindow::setForegroundApp(const QString& hash) {
+
+        // Get the singleton
+        auto fairWindSk = fairwindsk::FairWindSK::getInstance();
+
+        // Check if the debug is active
+        if (fairWindSk->isDebug()) {
+
+            // Write a message
+            qDebug() << "MainWindow hash:" << hash;
+        }
 
         // Get the FairWind singleton
         auto fairWindSK = fairwindsk::FairWindSK::getInstance();
@@ -166,38 +190,63 @@ namespace fairwindsk::ui {
             // If yes, get its widget from mapWidgets
             widgetApp = m_mapHash2Widget[hash];
         } else {
+
+            // Check if it ia thw Settings app
             if (appItem->getName() == "__SETTINGS__") {
 
+                // Create the Settings add widget
                 widgetApp = new settings::Settings(nullptr, nullptr, FairWindSK::getInstance()->getConfiguration());
 
+                // Check if the app is an executable
             } else if (appItem->getName().startsWith("file://")) {
                 //https://forum.qt.io/topic/44091/embed-an-application-inside-a-qt-window-solved/16
                 //https://forum.qt.io/topic/101510/calling-a-process-in-the-main-app-and-return-the-process-s-window-id
-                qDebug() << appItem->getName() << " is a native app!";
 
+                // Get the path to the executable
+                const auto executable = appItem->getName().replace("file://", "");
 
+                // Get the executable arguments
+                const auto arguments = appItem->getArguments();
+
+                // Check if the debug is active
+                if (fairWindSk->isDebug())
+                {
+                    // Write a message
+                    qDebug() << appItem->getName() << " Native APP:  " << executable << " " << arguments;
+                }
+
+                // Create a process
                 auto process = new QProcess(this);
-                QString program = appItem->getName().replace("file://", "");
-                auto arguments = appItem->getArguments();
-                process->setProgram(program);
-                WId winid = this->winId();
 
-                //arguments << "-wid" << QString::number(winid);
-                qDebug() << arguments;
+                // Set th executable
+                process->setProgram(executable);
+
+                // Set the parameters
                 process->setArguments(arguments);
+
+                // Start the process
                 process->start();
 
+                // Get the process id
+                const auto pId = process->processId();
 
-                /*
-                QWindow *window = QWindow::fromWinId(1130);
-                window->setFlags(Qt::FramelessWindowHint);
-    
-                widgetApp = QWidget::createWindowContainer(window);
-                 */
+                // Check if the window id is available
+                if (const auto winId = getWIdByPId(pId); winId != 0)
+                {
+                    // Create the container window
+                    QWindow *window = QWindow::fromWinId(winId);
+
+                    // Set the window as frameless
+                    window->setFlags(Qt::FramelessWindowHint);
+
+                    // Create a widget
+                    widgetApp = QWidget::createWindowContainer(window);
+                }
+
 
             } else {
                 // Create a new web instance
-                auto web = new web::Web(nullptr, appItem, fairWindSK->getWebEngineProfile());
+                const auto web = new web::Web(nullptr, appItem, fairWindSK->getWebEngineProfile());
 
                 // Get the app widget
                 widgetApp = web;
@@ -214,7 +263,6 @@ namespace fairwindsk::ui {
 
                 // Store it in mapWidgets for future usage
                 m_mapHash2Widget.insert(hash, widgetApp);
-
 
             }
         }
@@ -328,7 +376,8 @@ namespace fairwindsk::ui {
 	delete settingsPage;
     }
 
-    void MainWindow::onSettingsAccepted(settings::Settings *settingsPage) {
+    void MainWindow::onSettingsAccepted(settings::Settings *settingsPage) const
+    {
         ui->widget_Top->setDisabled(false);
         ui->widget_Bottom->setDisabled(false);
         ui->stackedWidget_Center->removeWidget(settingsPage);
@@ -353,16 +402,32 @@ namespace fairwindsk::ui {
     }
 
     void MainWindow::closeEvent(QCloseEvent *event) {
-
-        QMessageBox::StandardButton reply;
-        reply = QMessageBox::question(this, "Quit FairWindSK", "Are you sure you want to exit theFairWindSK?",
-                                      QMessageBox::Yes | QMessageBox::No);
+        QMessageBox::StandardButton reply = QMessageBox::question(this, "Quit FairWindSK",
+                                                                  "Are you sure you want to exit theFairWindSK?",
+                                                                  QMessageBox::Yes | QMessageBox::No);
         if (reply == QMessageBox::Yes) {
+
+            // Accept the event
             event->accept();
 
+            // Quit the application
             QApplication::quit();
         } else
             event->ignore();
+    }
+
+    /*
+     * getWIdByPId
+     * Return the window id given a process id.
+     * This method is API dependant.
+     * Actually now it is just a placeholder
+     */
+    WId MainWindow::getWIdByPId(qint64 pid) {
+        WId result = 0;
+
+        // ToDo: Implement the actual code
+
+        return result;
     }
 }
 
