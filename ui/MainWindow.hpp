@@ -58,10 +58,14 @@ namespace fairwindsk::ui {
         // Close Event handler
         void closeEvent(QCloseEvent *bar) override;
 
+        // Get Window Id using the Process Id
+        static WId getWIdByPId(qint64 pId);
+
     public
         slots:
+
             // Set foreground application by hash
-            void setForegroundApp(QString hash);
+            void setForegroundApp(const QString& hash);
 
             // Invoked when the bottom bar button Apps (Home) is clicked
             void onApps();
