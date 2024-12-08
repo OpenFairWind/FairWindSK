@@ -120,6 +120,9 @@ add_executable(${PROJECT_NAME}
         ui/mydata/MyData.cpp
         ui/mydata/MyData.hpp
         ui/mydata/MyData.ui
+        ui/bottombar/AnchorBar.cpp
+        ui/bottombar/AnchorBar.hpp
+        ui/bottombar/AnchorBar.ui
 
 )
 
