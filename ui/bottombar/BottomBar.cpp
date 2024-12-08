@@ -22,57 +22,93 @@ namespace fairwindsk::ui::bottombar {
         // Setup the UI
         ui->setupUi(parent);
 
-        // Get the FairWind singleton
-        auto fairWindSK = fairwindsk::FairWindSK::getInstance();
-
-        m_AutopilotBar = nullptr;
-        m_AlarmsBar = nullptr;
-        m_MOBBar = nullptr;
-
-
+        // Create the autopilot bar
         m_AutopilotBar = new AutopilotBar();
+
+        // Hide the autopilot bar
         m_AutopilotBar->setVisible(false);
+
+        // Add the autopilot bar to the layout
         ui->gridLayout->addWidget(m_AutopilotBar,0,0);
 
+        // Create the alarms bar
         m_AlarmsBar = new AlarmsBar();
+
+        // Hide the alarms bar
         m_AlarmsBar->setVisible(false);
+
+        // Add the alarms bar to the layout
         ui->gridLayout->addWidget(m_AlarmsBar,1,0);
 
+        // Create the MOB bar
         m_MOBBar = new MOBBar();
+
+        // Hide the MOB bar
         m_MOBBar->setVisible(false);
+
+        // Add the MOB bar to the layout
         ui->gridLayout->addWidget(m_MOBBar,2,0);
 
+        // Create the Anchor bar
+        m_AnchorBar = new AnchorBar();
+
+        // Hide the Anchor bar
+        m_AnchorBar->setVisible(false);
+
+        // Add the MOB bar to the layout
+        ui->gridLayout->addWidget(m_AnchorBar,3,0);
 
 
-
-        // emit a signal when the MyData tool button from the UI is clicked
+        // Emit a signal when the MyData tool button from the UI is clicked
         connect(ui->toolButton_MyData, &QToolButton::released, this, &BottomBar::myData_clicked);
 
-        // emit a signal when the MOB tool button from the UI is clicked
+        // Emit a signal when the MOB tool button from the UI is clicked
         connect(ui->toolButton_MOB, &QToolButton::released, this, &BottomBar::mob_clicked);
 
-        // emit a signal when the MOB tool button from the UI is clicked
+        // Emit a signal when the MOB tool button from the UI is clicked
         connect(ui->toolButton_Autopilot, &QToolButton::released, this, &BottomBar::autopilot_clicked);
 
-        // emit a signal when the Apps tool button from the UI is clicked
+        // Emit a signal when the Apps tool button from the UI is clicked
         connect(ui->toolButton_Apps, &QToolButton::released, this, &BottomBar::apps_clicked);
 
-        // emit a signal when the MOB tool button from the UI is clicked
+        // Emit a signal when the MOB tool button from the UI is clicked
         connect(ui->toolButton_Anchor, &QToolButton::released, this, &BottomBar::anchor_clicked);
 
-        // emit a signal when the MyData tool button from the UI is clicked
+        // Emit a signal when the MyData tool button from the UI is clicked
         connect(ui->toolButton_Alarms, &QToolButton::released, this, &BottomBar::alarms_clicked);
 
-        // emit a signal when the Settings tool button from the UI is clicked
+        // Emit a signal when the Settings tool button from the UI is clicked
         connect(ui->toolButton_Settings, &QToolButton::released, this, &BottomBar::settings_clicked);
     }
 
+    /*
+     * setAutopilotIcon
+     * Set Autopilot icon visibility
+     */
     void BottomBar::setAutopilotIcon(bool value) {
-        ui->toolButton_Autopilot->setEnabled(value);
 
+        // Set button icon visibility
+        ui->toolButton_Autopilot->setEnabled(value);
     }
+
+    /*
+     * setAnchorIcon
+     * Set Anchor icon visibility
+     */
     void BottomBar::setAnchorIcon(bool value) {
+
+        // Set button icon visibility
         ui->toolButton_Anchor->setEnabled(value);
+    }
+
+    /*
+     * setMOBIcon
+     * Set MOB icon visibility
+     */
+    void BottomBar::setMOBIcon(bool value) {
+
+        // Set button icon visibility
+        ui->toolButton_MOB->setEnabled(value);
     }
 
 /*
@@ -97,7 +133,7 @@ namespace fairwindsk::ui::bottombar {
         // Check if the autopilot bar is available
         if (m_AutopilotBar) {
 
-            // Toggle the AUtopilot bar
+            // Toggle the Autopilot bar
             m_AutopilotBar->setVisible(!m_AutopilotBar->isVisible());
         }
     }
@@ -107,24 +143,19 @@ namespace fairwindsk::ui::bottombar {
  * Method called when the user wants to view the apps screen
  */
     void BottomBar::apps_clicked() {
+
         // Emit the signal to tell the MainWindow to update the UI and show the apps screen
         emit setApps();
-        /*
-        auto fairWind = fairwind::FairWind::getInstance();
-        auto signalKDocument = fairWind->getSignalKDocument();
-
-        signalk::Note note1("Note1", "This is my note1", QGeoCoordinate(40,14));
-        signalk::Note note2("Note2", "This is my note2", QGeoCoordinate(40.56,14.28));
-
-        signalKDocument->set("resources.notes", note1);
-        signalKDocument->set("resources.notes", note2);
-        signalKDocument->save("signalkmodel.json");
-         */
     }
 
 
     void BottomBar::anchor_clicked() {
-        // Emit the signal to tell the MainWindow to update the UI and show the settings screen
+        // Check if the autopilot bar is available
+        if (m_AnchorBar) {
+
+            // Toggle the Anchor bar
+            m_AnchorBar->setVisible(!m_AnchorBar->isVisible());
+        }
 
     }
 
@@ -147,6 +178,7 @@ namespace fairwindsk::ui::bottombar {
  * Method called when the user wants to view the settings screen
  */
     void BottomBar::settings_clicked() {
+
         // Emit the signal to tell the MainWindow to update the UI and show the settings screen
         emit setSettings();
     }
@@ -156,9 +188,51 @@ namespace fairwindsk::ui::bottombar {
  * BottomBar's destructor
  */
     BottomBar::~BottomBar() {
-        delete m_AutopilotBar;
-        delete m_MOBBar;
-        delete m_AlarmsBar;
-        delete ui;
+
+        // Check if the autopilot bar is instanced
+        if (m_AutopilotBar) {
+            // Delete the autopilot bar
+            delete m_AutopilotBar;
+
+            // Set the autopilot bar pointer to null
+            m_AutopilotBar = nullptr;
+        }
+
+        // Check if the alarms bar is instanced
+        if (m_AlarmsBar) {
+            // Delete the alarms bar
+            delete m_AlarmsBar;
+
+            // Set the alarms bar pointer to null
+            m_AlarmsBar = nullptr;
+        }
+
+        // Check if the MOB bar is instanced
+        if (m_MOBBar) {
+            // Delete the MOB bar
+            delete m_MOBBar;
+
+            // Set the MOB bar pointer to null
+            m_MOBBar = nullptr;
+        }
+
+        // Check if the anchor bar is instanced
+        if (m_AnchorBar) {
+            // Delete the anchor bar
+            delete m_AnchorBar;
+
+            // Set the anchor bar pointer to null
+            m_AnchorBar = nullptr;
+        }
+
+        // Check if the UI is instanced
+        if (ui) {
+
+            // Delete the UI
+            delete ui;
+
+            // Set the UI pointer to null
+            ui = nullptr;
+        }
     }
 }
