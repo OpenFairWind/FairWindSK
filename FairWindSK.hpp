@@ -57,7 +57,7 @@ namespace fairwindsk {
         QWebEngineProfile *getWebEngineProfile();
 
         // Return true if the debug is set in the fairwindsk.ini file
-        bool isDebug() const;
+        [[nodiscard]] bool isDebug() const;
 
         // Get the Signal K client
         signalk::Client *getSignalKClient();
@@ -72,7 +72,6 @@ namespace fairwindsk {
 
         // The private constructor
         FairWindSK();
-
 
         // Pointer to the WebEngine profile
         QWebEngineProfile *m_profile;
@@ -89,9 +88,6 @@ namespace fairwindsk {
         // The Signal K client
         signalk::Client m_signalkClient;
 
-        // The debug flag
-        bool m_debug;
-
         // The configuration file name
         QString m_configFilename;
 
@@ -103,6 +99,9 @@ namespace fairwindsk {
 
         // Time between trys
         int m_mSleep = 1000;
+
+        // The debug flag
+        bool m_debug = false;
 
     };
 }

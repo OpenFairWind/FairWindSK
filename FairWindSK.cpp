@@ -30,8 +30,7 @@ namespace fairwindsk {
  */
     FairWindSK::FairWindSK() {
 
-        // Set the debug active
-        m_debug = true;
+
 
         // Se the default configuration file name
         m_configFilename = "fairwindsk.json";
@@ -47,13 +46,6 @@ namespace fairwindsk {
 
         // Set the cookie
         m_profile->cookieStore()->setCookie(authenticationCookie,QUrl(m_configuration.getSignalKServerUrl()));
-
-        // Check if the debug is active
-        if (isDebug()) {
-
-            // Write a message
-            qDebug() << "QWenEngineProfile " << m_profile->isOffTheRecord() << " data store: " << m_profile->persistentStoragePath();
-        }
     }
 
 
@@ -92,6 +84,10 @@ namespace fairwindsk {
 
         // Check if the debug is active
         if (isDebug()) {
+
+            // Write a message
+            qDebug() << "QWebEngineProfile " << m_profile->isOffTheRecord() << " data store: " << m_profile->persistentStoragePath();
+
 
             // Write a message
             qDebug() << "Loading configuration from ini file...";
@@ -259,7 +255,7 @@ namespace fairwindsk {
         }
 
         // Remove the map content
-        m_mapHash2AppItem.empty();
+        m_mapHash2AppItem.clear();
 
         // Reset the counter
         int count = 100;
@@ -540,7 +536,7 @@ namespace fairwindsk {
             for (const auto &app: jsonData["apps"].items()) {
 
                 // Get the application data
-                auto jsonApp = app.value();
+                const auto& jsonApp = app.value();
 
                 // Create an application object
                 auto appItem = new AppItem(jsonApp);
