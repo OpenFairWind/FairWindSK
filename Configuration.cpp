@@ -139,6 +139,8 @@ namespace fairwindsk {
         return result;
     }
 
+
+
     void Configuration::setVirtualKeyboard(bool value) {
         if (m_jsonData.contains("main")) {
             m_jsonData["main"]["virtualKeyboard"] = value;

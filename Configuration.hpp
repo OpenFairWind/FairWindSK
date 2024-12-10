@@ -43,9 +43,6 @@ namespace fairwindsk {
         QString getAutopilotApp();
         QString getAnchorApp();
 
-
-
-
         void setVirtualKeyboard(bool value);
         bool getVirtualKeyboard();
 
