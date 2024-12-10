@@ -38,40 +38,17 @@ namespace fairwindsk::ui {
         // Create the BottomBar object
         m_bottomBar = new bottombar::BottomBar(ui->widget_Bottom);
 
-        // Get the autopilot application
-        auto autopilotApp = fairWindSk->getConfiguration()->getAutopilotApp();
+        // Set the Autopilot icon visible only if the autopilot application is defined
+        m_bottomBar->setAutopilotIcon(fairWindSk->checkAutopilotApp());
 
-        // Check if the autopilot application is defined
-        if (!autopilotApp.isEmpty()) {
-
-            // Set the Autopilot icon visible only if the autopilot application is defined
-            m_bottomBar->setAutopilotIcon(fairWindSk->getAppsHashes().contains(autopilotApp));
-        } else {
-            // Hide the Autopilot icon
-            m_bottomBar->setAutopilotIcon(false);
-        }
-
-        // Get the anchor application
-        auto anchorApp = fairWindSk->getConfiguration()->getAnchorApp();
-
-        // Check if the autopilot application is defined
-        if (!anchorApp.isEmpty()) {
-
-            // Set the Anchor icon visible only if the anchor alarm application is defined
-            m_bottomBar->setAnchorIcon(fairWindSk->getAppsHashes().contains(anchorApp));
-        } else {
-            // Hide the Anchor icon
-            m_bottomBar->setAnchorIcon(false);
-        }
-
-
+        // Set the Anchor icon visible only if the anchor alarm application is defined
+        m_bottomBar->setAnchorIcon(fairWindSk->checkAnchorApp());
 
         // Place the Apps object at the center of the UI
         setCentralWidget(ui->centralwidget);
 
         // Show the apps view when the user clicks on the Apps button inside the BottomBar object
         QObject::connect(m_bottomBar, &bottombar::BottomBar::setMyData, this, &MainWindow::onMyData);
-
 
         // Show the apps view when the user clicks on the Apps button inside the BottomBar object
         QObject::connect(m_bottomBar, &bottombar::BottomBar::setApps, this, &MainWindow::onApps);
