@@ -12,6 +12,8 @@
 #include <QCoreApplication>
 #include <QJsonDocument>
 #include <QJsonArray>
+#include <QJsonObject>
+#include <QUUid>
 
 #include "Client.hpp"
 #include "FairWindSK.hpp"
@@ -505,6 +507,37 @@ namespace fairwindsk::signalk {
         }
     }
 
+    QString Client::getStringFromUpdateByPath(const QJsonObject &update, const QString& path) {
+
+        QString result = "";
+
+        if (update.contains("updates") and update["updates"].isArray()) {
+            auto updatesJsonArray = update["updates"].toArray();
+            for (auto updatesItem: updatesJsonArray) {
+                if (updatesItem.isObject()) {
+                    auto updateJsonObject = updatesItem.toObject();
+                    if (updateJsonObject.contains("values") && updateJsonObject["values"].isArray()) {
+                        auto valuesJsonArray = updateJsonObject["values"].toArray();
+                        for (auto valuesItem: valuesJsonArray) {
+                            if (valuesItem.isObject()) {
+                                auto valueJsonObject = valuesItem.toObject();
+                                if (valueJsonObject.contains("path") && valueJsonObject["path"].isString()) {
+                                    auto valuePath = valueJsonObject["path"].toString();
+                                    if (path.isEmpty() || path == valuePath) {
+                                        if (valueJsonObject.contains("value") && valueJsonObject["value"].isString()) {
+                                            result = valueJsonObject["value"].toString();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
     double Client::getDoubleFromUpdateByPath(const QJsonObject &update, const QString& path) {
 
         double result = std::numeric_limits<double>::quiet_NaN();
@@ -661,6 +694,22 @@ namespace fairwindsk::signalk {
         auto itt = std::chrono::system_clock::to_time_t(now);
         std::ostringstream ss;
         ss << std::put_time(gmtime(&itt), "%FT%TZ");
-        return QString(ss.str().c_str());
+        return {ss.str().c_str()};
+    }
+
+    qint64 Client::sendMessage(QJsonObject message) {
+        if (!message.contains("context")) {
+            message["context"] = getSelf();
+        }
+        if (!message.contains("requestId")) {
+            message["requestId"] =  QUuid::createUuid().toString().replace("{","").replace("}","");
+        }
+        if (!message.contains("token")) {
+            message["token"] = getToken();
+        }
+        const QJsonDocument doc(message);
+        QString text = doc.toJson(QJsonDocument::Compact);
+
+        return mWebSocket.sendTextMessage(text);
     }
 }

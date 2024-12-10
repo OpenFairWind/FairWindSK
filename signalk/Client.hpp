@@ -51,10 +51,11 @@ namespace fairwindsk::signalk {
 
         QString getToken();
 
-
+        qint64 sendMessage(QJsonObject message);
 
         Waypoint getWaypointByHref(const QString &href);
 
+        static QString getStringFromUpdateByPath(const QJsonObject &update, const QString& path = "");
         static double getDoubleFromUpdateByPath(const QJsonObject &update, const QString& path = "");
         static QJsonObject getObjectFromUpdateByPath(const QJsonObject &update, const QString& path = "");
         static QDateTime  getDateTimeFromUpdateByPath(const QJsonObject &update, const QString& path = "");
