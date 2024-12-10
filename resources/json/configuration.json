@@ -65,7 +65,16 @@
         "ttg": "navigation.course.calcValues.timeToGo",
         "vmg": "performance.velocityMadeGood",
         "wpt": "navigation.course.nextPoint",
-        "xte": "navigation.course.calcValues.crossTrackError"
+        "xte": "navigation.course.calcValues.crossTrackError",
+        "rsa": "steering.rudderAngle",
+        "autopilot.state": "steering.autopilot.state",
+        "autopilot.mode": "steering.autopilot.mode",
+        "autopilot.target.heading": "steering.autopilot.target.headingMagnetic",
+        "autopilot.target.windAngle": "steering.autopilot.target.windAngleApparent",
+        "autopilot.actions.adjustHeading": "steering.autopilot.actions.adjustHeading",
+        "autopilot.actions.tack": "steering.autopilot.actions.tack",
+        "autopilot.actions.advanceWaypoint": "steering.autopilot.actions.advanceWaypoint"
+
     },
     "units": {
         "airPressure": "hPa",

@@ -12,6 +12,14 @@
     "ttg": "Time To Go (TTG)",
     "vmg": "Velocity Made Good (VMG)",
     "wpt": "Waypoint (WPT)",
-    "xte": "Cross Track Error (XTE)"
+    "xte": "Cross Track Error (XTE)",
+    "rsa": "Rudder Angle",
+    "autopilot.state": "Autopilot State",
+    "autopilot.mode": "Autopilot Mode",
+    "autopilot.target.heading": "Autopilot Target Heading",
+    "autopilot.target.windAngle": "Autopilot Target Wind Angle",
+    "autopilot.actions.adjustHeading": "Autopilot Adjust Heading Action",
+    "autopilot.actions.tack": "Autopilot Tack Action",
+    "autopilot.actions.advanceWaypoint": "Autopilot Advance Waypoint Action"
   }
 }
