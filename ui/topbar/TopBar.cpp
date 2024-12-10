@@ -32,6 +32,7 @@ namespace fairwindsk::ui::topbar {
         // Get configuration
         auto configuration = fairWindSK->getConfiguration();
 
+        // Get units converter instance
         m_units = Units::getInstance();
 
         ui->toolButton_UL->setIcon(QPixmap::fromImage(QImage(":/resources/images/mainwindow/fairwind_icon.png")));
@@ -103,16 +104,14 @@ namespace fairwindsk::ui::topbar {
         // Start the timer
         timer->start(1000);
 
-
-
-        // Get the signalk document from the FairWind singleton
-        //auto signalKDocument = fairWindSK->getSignalKDocument();
-        
+        // Get the configuration json object
         auto confiurationJsonObject = configuration->getRoot();
 
+        // Check if the configuration object contains the key 'signalk' with an object value
         if (confiurationJsonObject.contains("signalk") && confiurationJsonObject["signalk"].is_object()) {
-            auto signalkPaths = confiurationJsonObject["signalk"];
 
+            // Get the signal k paths object
+            auto signalkPaths = confiurationJsonObject["signalk"];
 
             // Check if the Options object has tHe Position key and if it is a string
             if (signalkPaths.contains("pos") && signalkPaths["pos"].is_string()) {
