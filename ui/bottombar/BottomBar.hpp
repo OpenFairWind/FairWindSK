@@ -25,13 +25,13 @@ namespace fairwindsk::ui::bottombar {
         explicit BottomBar(QWidget *parent = 0);
 
         // Set Autopilot Icon visibility
-        void setAutopilotIcon(bool value);
+        void setAutopilotIcon(bool value) const;
 
         // Set Anchor Icon visibility
-        void setAnchorIcon(bool value);
+        void setAnchorIcon(bool value) const;
 
         // Set MOB Icon visibility
-        void setMOBIcon(bool value);
+        void setMOBIcon(bool value) const;
 
         // Destructor
         ~BottomBar() override;

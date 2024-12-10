@@ -34,30 +34,20 @@ namespace fairwindsk::ui::bottombar {
         // Create the alarms bar
         m_AlarmsBar = new AlarmsBar();
 
-        // Hide the alarms bar
-        m_AlarmsBar->setVisible(false);
-
         // Add the alarms bar to the layout
         ui->gridLayout->addWidget(m_AlarmsBar,1,0);
 
         // Create the MOB bar
         m_MOBBar = new MOBBar();
 
-        // Hide the MOB bar
-        m_MOBBar->setVisible(false);
-
         // Add the MOB bar to the layout
         ui->gridLayout->addWidget(m_MOBBar,2,0);
 
         // Create the Anchor bar
         m_AnchorBar = new AnchorBar();
-
-        // Hide the Anchor bar
-        m_AnchorBar->setVisible(false);
-
+        
         // Add the MOB bar to the layout
         ui->gridLayout->addWidget(m_AnchorBar,3,0);
-
 
         // Emit a signal when the MyData tool button from the UI is clicked
         connect(ui->toolButton_MyData, &QToolButton::released, this, &BottomBar::myData_clicked);
@@ -85,7 +75,8 @@ namespace fairwindsk::ui::bottombar {
      * setAutopilotIcon
      * Set Autopilot icon visibility
      */
-    void BottomBar::setAutopilotIcon(bool value) {
+    void BottomBar::setAutopilotIcon(bool value) const
+    {
 
         // Set button icon visibility
         ui->toolButton_Autopilot->setEnabled(value);
@@ -95,7 +86,8 @@ namespace fairwindsk::ui::bottombar {
      * setAnchorIcon
      * Set Anchor icon visibility
      */
-    void BottomBar::setAnchorIcon(bool value) {
+    void BottomBar::setAnchorIcon(bool value) const
+    {
 
         // Set button icon visibility
         ui->toolButton_Anchor->setEnabled(value);
@@ -105,7 +97,8 @@ namespace fairwindsk::ui::bottombar {
      * setMOBIcon
      * Set MOB icon visibility
      */
-    void BottomBar::setMOBIcon(bool value) {
+    void BottomBar::setMOBIcon(bool value) const
+    {
 
         // Set button icon visibility
         ui->toolButton_MOB->setEnabled(value);
