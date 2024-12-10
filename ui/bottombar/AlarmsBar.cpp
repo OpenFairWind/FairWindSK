@@ -16,6 +16,9 @@ namespace fairwindsk::ui::bottombar {
 
         // emit a signal when the MyData tool button from the UI is clicked
         connect(ui->toolButton_Hide, &QPushButton::clicked, this, &AlarmsBar::onHideClicked);
+
+        // Not visible by default
+        QWidget::setVisible(false);
     }
 
     void AlarmsBar::onHideClicked() {
