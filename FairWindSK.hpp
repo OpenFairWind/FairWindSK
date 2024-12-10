@@ -65,6 +65,12 @@ namespace fairwindsk {
         // Load the configuration from the json file
         void loadConfig();
 
+        // Check if the Autopilot app is installed
+        bool checkAutopilotApp();
+
+        // Check if the anchor app is installed
+        bool checkAnchorApp();
+
         // De destructor
         ~FairWindSK() override;
 

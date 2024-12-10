@@ -608,6 +608,38 @@ namespace fairwindsk {
 
     }
 
+    bool FairWindSK::checkAutopilotApp() {
+
+        // Set by default result as false
+        auto result = false;
+
+        // Check if the anchor application is defined and installed
+        if (!m_configuration.getAutopilotApp().isEmpty() && getAppsHashes().contains(m_configuration.getAutopilotApp())) {
+
+            // Set the result as true
+            result = true;
+        }
+
+        // Return the result
+        return result;
+    }
+
+    bool FairWindSK::checkAnchorApp() {
+
+        // Set by default result as false
+        auto result = false;
+
+        // Check if the anchor application is defined and installed
+        if (!m_configuration.getAnchorApp().isEmpty() && getAppsHashes().contains(m_configuration.getAnchorApp())) {
+
+            // Set the result as true
+            result = true;
+        }
+
+        // Return the result
+        return result;
+    }
+
 
 }
 
