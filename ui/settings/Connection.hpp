@@ -9,6 +9,7 @@
 #include <QTimer>
 #include <QtZeroConf/qzeroconf.h>
 #include "Settings.hpp"
+#include "ui/web/Web.hpp"
 
 namespace fairwindsk::ui::settings {
     QT_BEGIN_NAMESPACE
@@ -36,11 +37,12 @@ namespace fairwindsk::ui::settings {
 
 
     private:
-        Ui::Connection *ui;
-        Settings *m_settings;
+        Ui::Connection *ui = nullptr;
+        Settings *m_settings = nullptr;
 
         QZeroConf m_zeroConf;
-        QTimer *m_timer;
+        QTimer *m_timer = nullptr;
+        QWebEnginePage *m_page = nullptr;
 
     };
 } // fairwindsk::ui::settings

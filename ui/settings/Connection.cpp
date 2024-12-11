@@ -19,20 +19,20 @@ namespace fairwindsk::ui::settings {
     Connection::Connection(Settings *settingsWidget, QWidget *parent) :
             QWidget(parent), ui(new Ui::Connection) {
 
-	// Set the settings widge
+	    // Set the settings widge
         m_settings = settingsWidget;
 
-	// Setup the UI
+	    // Setup the UI
         ui->setupUi(this);
 
-	// Set the timer pointer
-	m_timer = nullptr;
+	    // Set the timer pointer
+	    m_timer = nullptr;
 
         // Set the current server
         ui->comboBox_signalkserverurl->setCurrentText(m_settings->getConfiguration()->getSignalKServerUrl());
 
-        auto page = new QWebEnginePage(FairWindSK::getInstance()->getWebEngineProfile());
-        ui->webEngineView->setPage(page);
+        m_page = new QWebEnginePage(FairWindSK::getInstance()->getWebEngineProfile());
+        ui->webEngineView->setPage(m_page);
 
         // Show the connect button
         ui->webEngineView->setVisible(false);
@@ -137,7 +137,15 @@ namespace fairwindsk::ui::settings {
         auto networkRequest = QNetworkRequest(url);
         networkRequest.setHeader(QNetworkRequest::ContentTypeHeader," application/json");
 
-        QByteArray data = R"({"clientId":"1234-45653-343453","description":"FairWindSK"})";
+        // QByteArray data = R"({"clientId":"1234-45653-343453","description":"FairWindSK"})";
+        auto clientId = QUuid::createUuid().toString().replace("{","").replace("}","");
+
+        auto message = QString("{\n"
+                          "  \"clientId\": \"%1\",\n"
+                          "  \"description\": \"%2\""
+                          "}").arg(clientId, "FairWindSK");
+
+        QByteArray data = message.toUtf8();
 
         // Create the event loop component
         QEventLoop loop;
@@ -375,27 +383,40 @@ namespace fairwindsk::ui::settings {
 
     Connection::~Connection() {
 
-	// Stop the zeroconf browser
+	    // Stop the zeroconf browser
         m_zeroConf.stopBrowser();
 
-	// Check if the timer is instanced
+	    // Check if the timer is instanced
         if (m_timer) {
 
-	    // Stop the timer
+	        // Stop the timer
             m_timer->stop();
 
-	    // Disconnect the timer 
+	        // Disconnect the timer
             m_timer->disconnect(this);
 
-	    // Delete the timer
+	        // Delete the timer
             delete m_timer;
 
-	    // Ser the timer to null
-	    m_timer = nullptr;
+	        // Ser the timer to null
+	        m_timer = nullptr;
         }
 
-	// Delete the UI
-	delete ui;
+        if (m_page)
+        {
+            delete m_page;
+
+            m_page = nullptr;
+        }
+
+        if (ui) {
+            // Delete the UI
+            delete ui;
+
+            ui = nullptr;
+        }
+
+
     }
 
 } // fairwindsk::ui::settings
