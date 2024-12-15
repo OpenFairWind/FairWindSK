@@ -26,10 +26,17 @@ namespace fairwindsk::signalk {
 
         bool checkReceiver(QObject *);
 
+        QString getPath();
+        QString getContext();
+        QRegularExpression getRegex();
+        QObject *getReceiver() const;
+
     private:
-        QRegularExpression regularExpression;
-        QObject *receiver;
-        QString memberName;
+        QRegularExpression m_regularExpression;
+        QObject *m_receiver = nullptr;
+        QString m_memberName;
+        QString m_path;
+        QString m_context;
 
     };
 }
