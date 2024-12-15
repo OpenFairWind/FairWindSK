@@ -89,7 +89,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QLabel" name="label_4">
+            <widget class="QLabel" name="label_Longitude">
              <property name="text">
               <string>000°00.000' E</string>
              </property>
@@ -108,7 +108,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QLabel" name="label_BTW">
+          <widget class="QLabel" name="label_Bearing">
            <property name="font">
             <font>
              <pointsize>32</pointsize>
@@ -133,7 +133,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QLabel" name="label_DTG">
+          <widget class="QLabel" name="label_Distance">
            <property name="font">
             <font>
              <pointsize>32</pointsize>
