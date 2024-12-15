@@ -5,7 +5,11 @@
 #ifndef FAIRWINDSK_MOBBAR_HPP
 #define FAIRWINDSK_MOBBAR_HPP
 
+#include <fstream>
+#include <nlohmann/json.hpp>
 #include <QWidget>
+
+#include "Units.hpp"
 
 namespace Ui { class MOBBar; }
 
@@ -23,6 +27,11 @@ namespace fairwindsk::ui::bottombar {
 
     public
         slots:
+
+        void updateMOB(const QJsonObject& update);
+        void updateBearing(const QJsonObject& update);
+        void updateDistance(const QJsonObject& update);
+
         void onCancelClicked();
         void onHideClicked();
 
@@ -33,6 +42,8 @@ namespace fairwindsk::ui::bottombar {
 
     private:
         Ui::MOBBar *ui;
+        Units *m_units;
+        nlohmann::json m_signalkPaths;
     };
 } // fairwindsk::ui::bottombar
 
