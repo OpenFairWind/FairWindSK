@@ -30,24 +30,27 @@ namespace fairwindsk::signalk {
 
         QJsonObject subscribe(const QString& path, QObject *receiver, const char *member, int period = 1000, const QString& policy = "ideal", int minPeriod = 200);
         QJsonObject subscribe(const QString& context, const QString& path, QObject *receiver, const char *member, int period = 1000, const QString& policy = "ideal", int minPeriod = 200);
+        void removeSubscription(const QString& path, QObject *receiver);
 
         QString getSelf();
 
         QJsonObject getAll();
 
         bool login();
-
-        QUrl http();
-        QUrl ws();
-        QUrl tcp();
+        QUrl url();
+        QUrl http(const QString& version = "v1");
+        QUrl ws(const QString& version = "v1");
+        QUrl tcp(const QString& version = "v1");
 
         QJsonObject signalkGet(const QString& path);
         QJsonObject signalkPost(const QString& path, const QJsonObject& payload);
         QJsonObject signalkPut(const QString& path, const QJsonObject& payload);
+        QJsonObject signalkDelete(const QString& path, const QJsonObject& payload);
 
         QJsonObject signalkGet(const QUrl& url);
         QJsonObject signalkPost(const QUrl& url, const QJsonObject& payload);
         QJsonObject signalkPut(const QUrl& url, const QJsonObject& payload);
+        QJsonObject signalkDelete(const QUrl& url, const QJsonObject& payload);
 
         QString getToken();
 
@@ -94,8 +97,9 @@ namespace fairwindsk::signalk {
         QByteArray httpGet(const QUrl& url);
         QByteArray httpPost(const QUrl& url, const QJsonObject& payload);
         QByteArray httpPut(const QUrl& url, const QJsonObject& payload);
+        QByteArray httpDelete(const QUrl& url, const QJsonObject& payload);
 
-        QUrl getEndpointByProtocol(const QString &protocol);
+        QUrl getEndpointByProtocol(const QString &protocol, const QString& version = "v1");
 
         QJsonObject mServer;
 
