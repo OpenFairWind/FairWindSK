@@ -5,6 +5,8 @@
 #ifndef FAIRWINDSK_AUTOPILOTBAR_HPP
 #define FAIRWINDSK_AUTOPILOTBAR_HPP
 
+#include <fstream>
+#include <nlohmann/json.hpp>
 #include <QWidget>
 #include <QSlider>
 #include "Units.hpp"
