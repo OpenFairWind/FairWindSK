@@ -71,7 +71,6 @@ namespace fairwindsk::ui::bottombar {
 
         // emit a signal when the MyData tool button from the UI is clicked
         connect(ui->toolButton_StandBy, &QToolButton::clicked, this, &AutopilotBar::onStandByClicked);
-        connect(ui->toolButton_Auto, &QToolButton::clicked, this, &AutopilotBar::onAutoClicked);
         connect(ui->toolButton_Route, &QToolButton::clicked, this, &AutopilotBar::onRouteClicked);
         connect(ui->toolButton_Wind, &QToolButton::clicked, this, &AutopilotBar::onWindClicked);
         connect(ui->toolButton_PTack, &QToolButton::clicked, this, &AutopilotBar::onPortTackClicked);
@@ -82,6 +81,7 @@ namespace fairwindsk::ui::bottombar {
         connect(ui->toolButton_Minus10, &QToolButton::clicked, this, &AutopilotBar::onMinus10Clicked);
         connect(ui->toolButton_NextWPT, &QToolButton::clicked, this, &AutopilotBar::onNextWPTClicked);
         connect(ui->toolButton_Steer, &QToolButton::clicked, this, &AutopilotBar::onSteerClicked);
+        connect(ui->toolButton_Auto, &QToolButton::clicked, this, &AutopilotBar::onAutoClicked);
 
         // Not visible by default
         QWidget::setVisible(false);
@@ -121,21 +121,10 @@ namespace fairwindsk::ui::bottombar {
             if (m_signalkPaths.contains("autopilot.state") && m_signalkPaths["autopilot.state"].is_string()) {
 
                 // Subscribe and update
-                updateTargetHeading(FairWindSK::getInstance()->getSignalKClient()->subscribe(
+                updateState(FairWindSK::getInstance()->getSignalKClient()->subscribe(
                         QString::fromStdString(m_signalkPaths["autopilot.state"].get<std::string>()),
                         this,
                         SLOT(fairwindsk::ui::bottombar::AutopilotBar::updateState())
-                        ));
-            }
-
-            // Check if the Options object has the target mode key and if it is a string
-            if (m_signalkPaths.contains("autopilot.mode") && m_signalkPaths["autopilot.mode"].is_string()) {
-
-                // Subscribe and update
-                updateTargetHeading(FairWindSK::getInstance()->getSignalKClient()->subscribe(
-                        QString::fromStdString(m_signalkPaths["autopilot.mode"].get<std::string>()),
-                        this,
-                        SLOT(fairwindsk::ui::bottombar::AutopilotBar::updateMode())
                         ));
             }
         }
@@ -148,33 +137,35 @@ namespace fairwindsk::ui::bottombar {
     void AutopilotBar::updateRSA(const QJsonObject &update) {
 
         // Check if for any reason the update is empty
-        if (update.isEmpty()) {
-            return;
-        }
+        if (!update.isEmpty()) {
+            // Get the value
+            auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
 
-        // Get the value
-        auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
+            if (!std::isnan(value)) {
 
-        if (std::isnan(value)) {
-            ui->widget_Rudder->setVisible(false);
-        } else {
+                // Convert rad to deg
+                value = m_units->convert("rad","deg", value);
 
-            // Convert rad to deg
-            value = m_units->convert("rad","deg", value);
+                // Set the slider value
+                m_slider->setValue(static_cast<int>(value));
 
-            // Set the slider value
-            m_slider->setValue(static_cast<int>(value));
+                // Build the formatted value
+                //QString text = m_units->format("deg", value);
 
-            // Build the formatted value
-            //QString text = m_units->format("deg", value);
+                // Set the course over ground label from the UI to the formatted value
+                //ui->label_RudderAngle->setText(text);
 
-            // Set the course over ground label from the UI to the formatted value
-            //ui->label_RudderAngle->setText(text);
+                if (!ui->widget_Rudder->isVisible()) {
+                    ui->widget_Rudder->setVisible(true);
+                }
 
-            if (!ui->widget_Rudder->isVisible()) {
-                ui->widget_Rudder->setVisible(true);
+                // Return from the method
+                return;
             }
         }
+
+        // Set the widget not visible
+        ui->widget_Rudder->setVisible(false);
     }
 
     /*
@@ -184,63 +175,23 @@ namespace fairwindsk::ui::bottombar {
     void AutopilotBar::updateState(const QJsonObject &update) {
 
         // Check if for any reason the update is empty
-        if (update.isEmpty()) {
-            return;
-        }
+        if (!update.isEmpty()) {
 
-        // Get the value
-        auto value = fairwindsk::signalk::Client::getStringFromUpdateByPath(update);
+            // Get the value
+            auto value = fairwindsk::signalk::Client::getStringFromUpdateByPath(update);
 
-        if (value.isEmpty()) {
-            ui->label_State->setVisible(false);
-        } else {
-            // Convert rad to deg
-            //value = m_units->convert("rad","deg", value);
+            if (!value.isEmpty()) {
+                // Build the formatted value
+                const QString& text = value;
 
-            // Build the formatted value
-            const QString& text = value; // m_units->format("deg", value);
+                // Set the course over ground label from the UI to the formatted value
+                ui->label_State->setText(text);
 
-            // Set the course over ground label from the UI to the formatted value
-            ui->label_State->setText(text);
-
-            if (!ui->label_State->isVisible()) {
-                ui->label_State->setVisible(true);
+                // Return the method
+                return;
             }
         }
-
-    }
-
-    /*
- * updateState
- * Method called in accordance to signalk to update the autopilot mode
- */
-    void AutopilotBar::updateMode(const QJsonObject &update) {
-
-        // Check if for any reason the update is empty
-        if (update.isEmpty()) {
-            return;
-        }
-
-        // Get the value
-        auto value = fairwindsk::signalk::Client::getStringFromUpdateByPath(update);
-
-        if (value.isEmpty()) {
-            ui->label_Mode->setVisible(false);
-        } else {
-            // Convert rad to deg
-            //value = m_units->convert("rad","deg", value);
-
-            // Build the formatted value
-            const QString& text = value; // m_units->format("deg", value);
-
-            // Set the course over ground label from the UI to the formatted value
-            ui->label_Mode->setText(text);
-
-            if (!ui->label_Mode->isVisible()) {
-                ui->label_Mode->setVisible(true);
-            }
-        }
-
+        ui->label_State->setText("NO PILOT");
     }
 
     /*
@@ -250,29 +201,30 @@ namespace fairwindsk::ui::bottombar {
     void AutopilotBar::updateTargetHeading(const QJsonObject &update) {
 
         // Check if for any reason the update is empty
-        if (update.isEmpty()) {
-            return;
-        }
+        if (!update.isEmpty()) {
 
-        // Get the value
-        auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
+            // Get the value
+            auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
 
-        if (std::isnan(value)) {
-            ui->label_TargetHeading->setVisible(false);
-        } else {
-            // Convert rad to deg
-            value = m_units->convert("rad","deg", value);
+            if (!std::isnan(value))
+            {
+                // Convert rad to deg
+                value = m_units->convert("rad","deg", value);
 
-            // Build the formatted value
-            const QString text = m_units->format("deg", value);
+                // Build the formatted value
+                const QString text = m_units->format("deg", value);
 
-            // Set the course over ground label from the UI to the formatted value
-            ui->label_TargetHeading->setText(text);
+                // Set the course over ground label from the UI to the formatted value
+                ui->label_TargetHeading->setText(text);
 
-            if (!ui->label_TargetHeading->isVisible()) {
-                ui->label_TargetHeading->setVisible(true);
+                if (!ui->label_TargetHeading->isVisible()) {
+                    ui->label_TargetHeading->setVisible(true);
+                }
+
+                return;
             }
         }
+        ui->label_TargetHeading->setVisible(false);
     }
 
     void AutopilotBar::onStandByClicked() {
@@ -344,23 +296,6 @@ namespace fairwindsk::ui::bottombar {
 
         // Set the payload strig
         auto payload = R"({ "value": ")" + state + R"(" })";
-
-        // Perform the PUT request
-        auto result = client->signalkPut(  path, payload);
-
-        // Return the value
-        return result;
-    }
-
-    QJsonObject AutopilotBar::setMode(const QString& mode) {
-        // Get the Signal K client
-        auto client = FairWindSK::getInstance()->getSignalKClient();
-
-        // Get the path
-        auto path = "vessels.self." + QString::fromStdString(m_signalkPaths["autopilot.mode"].get<std::string>());
-
-        // Set the payload strig
-        auto payload = R"({ "value": ")" + mode + R"(" })";
 
         // Perform the PUT request
         auto result = client->signalkPut(  path, payload);

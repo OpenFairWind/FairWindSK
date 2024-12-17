@@ -154,6 +154,8 @@ border-bottom-color: rgb(83, 83, 84);</string>
           </spacer>
          </item>
          <item>
+          <layout class="QVBoxLayout" name="verticalLayout_Display">
+            <item>
           <widget class="QLabel" name="label_State">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
@@ -169,7 +171,7 @@ border-bottom-color: rgb(83, 83, 84);</string>
            </property>
           </widget>
          </item>
-         <item>
+            <item>
           <widget class="QLabel" name="label_TargetHeading">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
@@ -190,22 +192,10 @@ border-bottom-color: rgb(83, 83, 84);</string>
            </property>
           </widget>
          </item>
-         <item>
-          <widget class="QLabel" name="label_Mode">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string>Regular</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignmentFlag::AlignCenter</set>
-           </property>
-          </widget>
+          </layout>
          </item>
+         
+         
          <item>
           <spacer name="horizontalSpacer_2">
            <property name="orientation">
@@ -304,19 +294,6 @@ border-bottom-color: rgb(83, 83, 84);</string>
           </widget>
          </item>
         </layout>
-       </item>
-       <item>
-        <widget class="QLabel" name="label_Rudder">
-         <property name="styleSheet">
-          <string notr="true"/>
-         </property>
-         <property name="text">
-          <string>Rudder</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignmentFlag::AlignCenter</set>
-         </property>
-        </widget>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_Rudder">

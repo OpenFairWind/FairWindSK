@@ -29,7 +29,6 @@ namespace fairwindsk::ui::bottombar {
 
         void updateRSA(const QJsonObject& update);
         void updateState(const QJsonObject& update);
-        void updateMode(const QJsonObject& update);
         void updateTargetHeading(const QJsonObject& update);
 
         void onStandByClicked();
@@ -51,7 +50,6 @@ namespace fairwindsk::ui::bottombar {
 
     private:
         QJsonObject setState(const QString& state);
-        QJsonObject setMode(const QString& mode);
         QJsonObject setTargetHeading(int value);
         QJsonObject setTargetWindAngle(float value);
         QJsonObject adjustHeading(int value);
