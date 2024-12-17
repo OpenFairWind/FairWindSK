@@ -43,14 +43,20 @@ namespace fairwindsk::signalk {
         QUrl tcp(const QString& version = "v1");
 
         QJsonObject signalkGet(const QString& path);
-        QJsonObject signalkPost(const QString& path, const QJsonObject& payload);
-        QJsonObject signalkPut(const QString& path, const QJsonObject& payload);
-        QJsonObject signalkDelete(const QString& path, const QJsonObject& payload);
+        QJsonObject signalkPost(const QString& path,  QString& payload);
+        QJsonObject signalkPut(const QString& path,  QString& payload);
+        QJsonObject signalkDelete(const QString& path,  QString& payload);
+        QJsonObject signalkPost(const QString& path,  QJsonObject& payload);
+        QJsonObject signalkPut(const QString& path,  QJsonObject& payload);
+        QJsonObject signalkDelete(const QString& path,  QJsonObject& payload);
 
         QJsonObject signalkGet(const QUrl& url);
-        QJsonObject signalkPost(const QUrl& url, const QJsonObject& payload);
-        QJsonObject signalkPut(const QUrl& url, const QJsonObject& payload);
-        QJsonObject signalkDelete(const QUrl& url, const QJsonObject& payload);
+        QJsonObject signalkPost(const QUrl& url,  QString& payload);
+        QJsonObject signalkPut(const QUrl& url,  QString& payload);
+        QJsonObject signalkDelete(const QUrl& url,  QString& payload);
+        QJsonObject signalkPost(const QUrl& url,  QJsonObject& payload);
+        QJsonObject signalkPut(const QUrl& url,  QJsonObject& payload);
+        QJsonObject signalkDelete(const QUrl& url,  QJsonObject& payload);
 
         QString getToken();
 
@@ -78,21 +84,21 @@ namespace fairwindsk::signalk {
 
 
     private:
-        QString mUsername;
-        QString mPassword;
-        QString mToken;
-        QString mCookie;
+        QString m_Username;
+        QString m_Password;
+        QString m_Token;
+        QString m_Cookie;
 
 
 
-        QWebSocket mWebSocket;
+        QWebSocket m_WebSocket;
 
-        QNetworkAccessManager manager;
-        QUrl mUrl;
+        QNetworkAccessManager m_NetworkAccessManager;
+        QUrl m_Url;
 
-        bool mDebug;
-        bool mActive;
-        QString mLabel;
+        bool m_Debug;
+        bool m_Active;
+        QString m_Label;
 
         QByteArray httpGet(const QUrl& url);
         QByteArray httpPost(const QUrl& url, const QJsonObject& payload);
@@ -101,9 +107,9 @@ namespace fairwindsk::signalk {
 
         QUrl getEndpointByProtocol(const QString &protocol, const QString& version = "v1");
 
-        QJsonObject mServer;
+        QJsonObject m_Server;
 
-        QList<Subscription> subscriptions;
+        QList<Subscription> m_subscriptions;
     };
 }
 

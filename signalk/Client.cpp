@@ -26,15 +26,15 @@ namespace fairwindsk::signalk {
     Client::Client(QObject *parent) :
             QObject(parent) {
 
-        mUrl = "";
+        m_Url = "";
 
-        mActive = false;
-        mDebug = false;
+        m_Active = false;
+        m_Debug = false;
 
-        mLabel = "Signal K Connection";
-        mUsername = "";
-        mPassword = "";
-        mToken = "";
+        m_Label = "Signal K Connection";
+        m_Username = "";
+        m_Password = "";
+        m_Token = "";
     }
 
 /*
@@ -55,98 +55,98 @@ namespace fairwindsk::signalk {
 
 
         // Connect the on connected event
-        connect(&mWebSocket, &QWebSocket::connected, this, &Client::onConnected);
+        connect(&m_WebSocket, &QWebSocket::connected, this, &Client::onConnected);
 
         // Connect the on disconnected event
-        connect(&mWebSocket, &QWebSocket::disconnected, this, &Client::onDisconnected);
+        connect(&m_WebSocket, &QWebSocket::disconnected, this, &Client::onDisconnected);
 
         // Check if the url is present in parameters
         if (params.contains("url")) {
 
             // Set the url
-            mUrl = params["url"].toString();
+            m_Url = params["url"].toString();
         }
 
         // Check if the label is present in parameters
         if (params.contains("label")) {
 
             // Set the label
-            mLabel = params["label"].toString();
+            m_Label = params["label"].toString();
         }
 
         // Check if the active is present in parameters
         if (params.contains("active")) {
 
             // Set the active
-            mActive = params["active"].toBool();
+            m_Active = params["active"].toBool();
         }
 
         // Check if the debug is present in parameters
         if (params.contains("debug")) {
 
             // Set the debug
-            mDebug = params["debug"].toBool();
+            m_Debug = params["debug"].toBool();
         }
 
         // Check if the token is present in parameters
         if (params.contains("token")) {
 
             // Set the token
-            mToken = params["token"].toString();
+            m_Token = params["token"].toString();
         }
 
         // Check if the username is present in parameters
         if (params.contains("username")) {
 
             // Set the username
-            mUsername = params["username"].toString();
+            m_Username = params["username"].toString();
         }
 
         // Check if the password is present in parameters
         if (params.contains("password")) {
 
             // Set the password
-            mPassword = params["password"].toString();
+            m_Password = params["password"].toString();
         }
 
-        if (mDebug)
+        if (m_Debug)
             qDebug() << "SignalKAPIClient::onInit(" << params << ")";
 
-        if (mActive) {
+        if (m_Active) {
 
-            mServer = signalkGet(mUrl);
+            m_Server = signalkGet(m_Url);
 
-            if (mDebug) {
-                qDebug() << "Server: " << mServer;
+            if (m_Debug) {
+                qDebug() << "Server: " << m_Server;
             }
 
-            if (!mServer.isEmpty()) {
+            if (!m_Server.isEmpty()) {
 
                 // Check if the token is empty
-                if (mToken.isEmpty()) {
+                if (m_Token.isEmpty()) {
 
                     // Perform the login
                     login();
                 }
 
                 // Check if the token is not empty
-                if (!mToken.isEmpty()) {
+                if (!m_Token.isEmpty()) {
 
-                    mCookie = "JAUTHENTICATION=" + mToken + "; Path=/; HttpOnly";
+                    m_Cookie = "JAUTHENTICATION=" + m_Token + "; Path=/; HttpOnly";
 
-                    mWebSocket.open(QUrl(ws().toString() + "?subscribe=none"));
+                    m_WebSocket.open(QUrl(ws().toString() + "?subscribe=none"));
 
                     result = true;
                 } else {
-                    if (mDebug)
+                    if (m_Debug)
                         qDebug() << "Login failed.";
                 }
             } else {
-                if (mDebug)
-                    qDebug() << "Server: " << mUrl << " not available!";
+                if (m_Debug)
+                    qDebug() << "Server: " << m_Url << " not available!";
             }
         }  else {
-            if (mDebug)
+            if (m_Debug)
                     qDebug() << "Data connection not active!";
 
         }
@@ -162,14 +162,14 @@ namespace fairwindsk::signalk {
     QString Client::getSelf() {
         auto result = httpGet(QUrl(http().toString()+"self"));
 
-        if (mDebug)
+        if (m_Debug)
             qDebug() << "SignalKClient::getSelf :" << result;
 
         return result.replace("\"","");
     }
 
     QJsonObject Client::getAll() {
-        if (mDebug) {
+        if (m_Debug) {
             qDebug() << http();
         }
 
@@ -187,7 +187,12 @@ namespace fairwindsk::signalk {
         return signalkGet(url);
     }
 
-    QJsonObject Client::signalkPost(const QString& path, const QJsonObject& payload) {
+    QJsonObject Client::signalkPost(const QString& path,  QString& payload) {
+        QJsonObject jsonObject = QJsonDocument::fromJson(payload.toUtf8()).object();
+        return signalkPost(path, jsonObject);
+    }
+
+    QJsonObject Client::signalkPost(const QString& path,  QJsonObject& payload) {
         QString processedPath = path;
         processedPath = processedPath.replace(".","/");
         auto url = QUrl(http().toString()+processedPath);
@@ -195,15 +200,25 @@ namespace fairwindsk::signalk {
         return signalkPost(url,payload);
     }
 
-    QJsonObject Client::signalkPut(const QString& path, const QJsonObject& payload) {
+    QJsonObject Client::signalkPut(const QString& path,  QString& payload) {
+        QJsonObject jsonObject = QJsonDocument::fromJson(payload.toUtf8()).object();
+        return signalkPut(path, jsonObject);
+    }
+
+    QJsonObject Client::signalkPut(const QString& path,  QJsonObject& payload) {
         QString processedPath = path;
         processedPath = processedPath.replace(".","/");
         auto url = QUrl(http().toString()+processedPath);
-        //qDebug() << "signalkPut " << path << " --> " << url;
-        return signalkPut(url,payload);
+        qDebug() << "signalkPut " << path << " --> " << url;
+        return signalkPut(url, payload);
     }
 
-    QJsonObject Client::signalkDelete(const QString& path, const QJsonObject& payload) {
+    QJsonObject Client::signalkDelete(const QString& path,  QString& payload) {
+        QJsonObject jsonObject = QJsonDocument::fromJson(payload.toUtf8()).object();
+        return signalkDelete(path, jsonObject);
+    }
+
+    QJsonObject Client::signalkDelete(const QString& path,  QJsonObject& payload) {
         QString processedPath = path;
         processedPath = processedPath.replace(".","/");
         auto url = QUrl(http().toString()+processedPath);
@@ -216,41 +231,58 @@ namespace fairwindsk::signalk {
         return QJsonDocument::fromJson(data).object();
     }
 
-    QJsonObject Client::signalkPut(const QUrl& url, const QJsonObject& payload) {
-        if (!mToken.isEmpty()) {
-            payload["token"] = mToken;
+    QJsonObject Client::signalkPost(const QUrl& url,  QString& payload) {
+        QJsonObject jsonObject = QJsonDocument::fromJson(payload.toUtf8()).object();
+        return signalkPost(url, jsonObject);
+    }
+
+    QJsonObject Client::signalkPost(const QUrl& url,  QJsonObject& payload) {
+        if (!m_Token.isEmpty()) {
+            payload["token"] = m_Token;
         }
 
-        if (mDebug)
-            qDebug() << "SignalKClient::signalkPut payload: " << payload;
+        if (m_Debug)
+            qDebug() << "SignalKClient::signalkPost payload: " << payload;
+
+        auto data = httpPost(url, payload);
+        return QJsonDocument::fromJson(data).object();
+    }
+
+
+    QJsonObject Client::signalkPut(const QUrl& url,  QString& payload) {
+        QJsonObject jsonObject = QJsonDocument::fromJson(payload.toUtf8()).object();
+        return signalkPut(url, jsonObject);
+    }
+
+    QJsonObject Client::signalkPut(const QUrl& url,  QJsonObject& payload) {
+        if (!m_Token.isEmpty()) {
+            payload["token"] = m_Token;
+        }
+
+       if (m_Debug)
+            qDebug() << "SignalKClient::signalkPut payload: " << m_Token << " " << payload;
 
         auto data = httpPut(url,payload);
         return QJsonDocument::fromJson(data).object();
     }
 
-    QJsonObject Client::signalkDelete(const QUrl& url, const QJsonObject& payload) {
-        if (!mToken.isEmpty()) {
-            payload["token"] = mToken;
+    QJsonObject Client::signalkDelete(const QUrl& url,  QString& payload) {
+        QJsonObject jsonObject = QJsonDocument::fromJson(payload.toUtf8()).object();
+        return signalkDelete(url, jsonObject);
+    }
+
+    QJsonObject Client::signalkDelete(const QUrl& url,  QJsonObject& payload) {
+        if (!m_Token.isEmpty()) {
+            payload["token"] = m_Token;
         }
 
-        if (mDebug)
+        if (m_Debug)
             qDebug() << "SignalKClient::signalkDelete payload: " << payload;
 
         auto data = httpDelete(url, payload);
         return QJsonDocument::fromJson(data).object();
     }
 
-    QJsonObject Client::signalkPost(const QUrl& url, const QJsonObject& payload) {
-        if (!mToken.isEmpty()) {
-            payload["token"] = mToken;
-        }
-
-        if (mDebug)
-            qDebug() << "SignalKClient::signalkPost payload: " << payload;
-
-        auto data = httpPost(url, payload);
-        return QJsonDocument::fromJson(data).object();
-    }
 
     /*
  * httpGet
@@ -261,11 +293,11 @@ namespace fairwindsk::signalk {
         req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
         req.setRawHeader("Accept", "application/json");
 
-        if (!mCookie.isEmpty()) {
-            req.setRawHeader("Cookie", mCookie.toLatin1());
+        if (!m_Cookie.isEmpty()) {
+            req.setRawHeader("Cookie", m_Cookie.toLatin1());
         }
 
-        QScopedPointer<QNetworkReply> reply(manager.get(req));
+        QScopedPointer<QNetworkReply> reply(m_NetworkAccessManager.get(req));
 
         QTime timeout = QTime::currentTime().addSecs(10);
         while (QTime::currentTime() < timeout && !reply->isFinished()) {
@@ -274,7 +306,7 @@ namespace fairwindsk::signalk {
 
         if (reply->error() != QNetworkReply::NoError) {
 
-            if (mDebug)
+            if (m_Debug)
                 qDebug() << "Failure" << reply->errorString();
         }
         QByteArray data = reply->readAll();
@@ -287,7 +319,7 @@ namespace fairwindsk::signalk {
  */
     QByteArray Client::httpPost(const QUrl& url, const QJsonObject& payload) {
 
-        if (mDebug)
+        if (m_Debug)
             qDebug() << "SignalKClient::httpPost url: " << url << " payload: " << payload;
 
         QJsonDocument jsonDocument;
@@ -297,14 +329,14 @@ namespace fairwindsk::signalk {
         req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
         req.setRawHeader("Accept", "application/json");
 
-        if (!mCookie.isEmpty()) {
-            req.setRawHeader("Cookie", mCookie.toLatin1());
+        if (!m_Cookie.isEmpty()) {
+            req.setRawHeader("Cookie", m_Cookie.toLatin1());
 
-            if (mDebug)
-                qDebug() << "SignalKClient::httpPost cookie: " << mCookie.toLatin1();
+            if (m_Debug)
+                qDebug() << "SignalKClient::httpPost cookie: " << m_Cookie.toLatin1();
         }
 
-        QScopedPointer<QNetworkReply> reply(manager.post(req, jsonDocument.toJson()));
+        QScopedPointer<QNetworkReply> reply(m_NetworkAccessManager.post(req, jsonDocument.toJson()));
 
         QTime timeout = QTime::currentTime().addSecs(10);
         while (QTime::currentTime() < timeout && !reply->isFinished()) {
@@ -312,20 +344,20 @@ namespace fairwindsk::signalk {
         }
 
         if (reply->error() != QNetworkReply::NoError) {
-            if (mDebug)
+            if (m_Debug)
                 qDebug() << "Failure" << reply->errorString();
         }
         QByteArray data = reply->readAll();
 
         auto cookie = reply->rawHeader("Set-Cookie");
         if (cookie!= nullptr && cookie.size()>0) {
-            mCookie = cookie;
+            m_Cookie = cookie;
 
-            if (mDebug)
-                qDebug() << "mCookie: " <<mCookie;
+            if (m_Debug)
+                qDebug() << "m_Cookie: " <<m_Cookie;
         }
 
-        if (mDebug) {
+        if (m_Debug) {
             QList<QByteArray> headerList = reply->rawHeaderList();
                     foreach(QByteArray head, headerList) {
                     qDebug() << head << ":" << reply->rawHeader(head);
@@ -348,11 +380,11 @@ namespace fairwindsk::signalk {
         req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
         req.setRawHeader("Accept", "application/json");
 
-        if (!mCookie.isEmpty()) {
-            req.setRawHeader("Cookie", mCookie.toLatin1());
+        if (!m_Cookie.isEmpty()) {
+            req.setRawHeader("Cookie", m_Cookie.toLatin1());
         }
 
-        QScopedPointer<QNetworkReply> reply(manager.put(req, jsonDocument.toJson()));
+        QScopedPointer<QNetworkReply> reply(m_NetworkAccessManager.put(req, jsonDocument.toJson()));
 
         QTime timeout = QTime::currentTime().addSecs(10);
         while (QTime::currentTime() < timeout && !reply->isFinished()) {
@@ -378,11 +410,11 @@ namespace fairwindsk::signalk {
         req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
         req.setRawHeader("Accept", "application/json");
 
-        if (!mCookie.isEmpty()) {
-            req.setRawHeader("Cookie", mCookie.toLatin1());
+        if (!m_Cookie.isEmpty()) {
+            req.setRawHeader("Cookie", m_Cookie.toLatin1());
         }
 
-        QScopedPointer<QNetworkReply> reply(manager.sendCustomRequest(req, "DELETE", jsonDocument.toJson()));
+        QScopedPointer<QNetworkReply> reply(m_NetworkAccessManager.sendCustomRequest(req, "DELETE", jsonDocument.toJson()));
 
         QTime timeout = QTime::currentTime().addSecs(10);
         while (QTime::currentTime() < timeout && !reply->isFinished()) {
@@ -399,23 +431,23 @@ namespace fairwindsk::signalk {
     bool Client::login() {
         bool result = false;
         QJsonObject payload;
-        payload["username"] = mUsername;
-        payload["password"] = mPassword;
-        QJsonObject data = signalkPost( QUrl(mUrl.toString() + "/v1/auth/login"), payload);
+        payload["username"] = m_Username;
+        payload["password"] = m_Password;
+        QJsonObject data = signalkPost( QUrl(m_Url.toString() + "/v1/auth/login"), payload);
 
-        if (mDebug)
+        if (m_Debug)
             qDebug() << "SignalKClient::login : " << data;
 
         if (data.contains("token") && data["token"].isString()) {
-            mToken = data["token"].toString();
+            m_Token = data["token"].toString();
 
-            if (mDebug)
-                qDebug() << "SignalKClient::login token: " << mToken;
+            if (m_Debug)
+                qDebug() << "SignalKClient::login token: " << m_Token;
 
             result = true;
         } else if (data.contains("message") && data["message"].isString() ){
 
-            if (mDebug)
+            if (m_Debug)
                 qDebug() << data["message"].toString();
         }
 
@@ -435,8 +467,8 @@ namespace fairwindsk::signalk {
     }
 
     QUrl Client::getEndpointByProtocol(const QString &protocol, const QString& version) {
-        if (mServer.contains("endpoints") & mServer["endpoints"].isObject()) {
-            auto jsonObjectEndponts = mServer["endpoints"].toObject();
+        if (m_Server.contains("endpoints") & m_Server["endpoints"].isObject()) {
+            auto jsonObjectEndponts = m_Server["endpoints"].toObject();
             if (jsonObjectEndponts.contains(version) && jsonObjectEndponts[version].isObject()) {
                 auto jsonObjectVersion = jsonObjectEndponts[version].toObject();
                 if (jsonObjectVersion.contains("signalk-" + protocol) &&
@@ -450,9 +482,9 @@ namespace fairwindsk::signalk {
 
 //! [onConnected]
     void Client::onConnected() {
-        if (mDebug)
+        if (m_Debug)
             qDebug() << "WebSocket connected";
-        connect(&mWebSocket, &QWebSocket::textMessageReceived,
+        connect(&m_WebSocket, &QWebSocket::textMessageReceived,
                 this, &Client::onTextMessageReceived);
 
     }
@@ -460,7 +492,7 @@ namespace fairwindsk::signalk {
 
 //! [onDisconnected]
     void Client::onDisconnected() {
-        if (mDebug)
+        if (m_Debug)
             qDebug() << "WebSocket disconnected";
 	QApplication::exit(1);
     }
@@ -477,7 +509,7 @@ namespace fairwindsk::signalk {
             if (jsonDocument.isObject()) {
                 auto updateObject = jsonDocument.object();
 
-                if (mDebug)
+                if (m_Debug)
                     qDebug() << "Update received:" << message;
 
                 auto context = updateObject["context"].toString();
@@ -488,7 +520,7 @@ namespace fairwindsk::signalk {
                         QString fullPath = context + "." + valueItem.toObject()["path"].toString();
 
 
-                        for (auto subscription: subscriptions) {
+                        for (auto subscription: m_subscriptions) {
                             subscription.match(fullPath, updateObject);
                         }
                     }
@@ -499,12 +531,12 @@ namespace fairwindsk::signalk {
     //! [onTextMessageReceived]
 
     QString Client::getToken() {
-        return mToken;
+        return m_Token;
     }
 
     signalk::Waypoint Client::getWaypointByHref(const QString &href) {
 
-        auto data = httpGet(QUrl(mUrl.toString() + "/v2/api" + href));
+        auto data = httpGet(QUrl(m_Url.toString() + "/v2/api" + href));
         auto jsonDocument = QJsonDocument::fromJson(data);
         auto result = signalk::Waypoint(jsonDocument.object());
         return result;
@@ -533,11 +565,11 @@ namespace fairwindsk::signalk {
                           "  ]\n"
                           "}").arg(contextEx).arg(path).arg(period).arg(policy).arg(minPeriod);
 
-        mWebSocket.sendTextMessage(message);
+        m_WebSocket.sendTextMessage(message);
 
 
         Subscription subscription(contextEx, path, receiver, member);
-        subscriptions.append(subscription);
+        m_subscriptions.append(subscription);
         connect(receiver, &QObject::destroyed, this, &Client::unsubscribe);
 
         auto result = signalkGet(contextEx + "." + path);
@@ -548,7 +580,7 @@ namespace fairwindsk::signalk {
     }
 
     void Client::removeSubscription(const QString& path, QObject *receiver) {
-        QMutableListIterator<Subscription> i(subscriptions);
+        QMutableListIterator<Subscription> i(m_subscriptions);
         while (i.hasNext()) {
             auto subscription = i.next();
             if (subscription.checkReceiver(receiver) && path == subscription.getPath()) {
@@ -558,7 +590,7 @@ namespace fairwindsk::signalk {
     }
 
     void Client::unsubscribe(QObject *receiver) {
-        QMutableListIterator<Subscription> i(subscriptions);
+        QMutableListIterator<Subscription> i(m_subscriptions);
         while (i.hasNext()) {
             auto subscription = i.next();
             if (subscription.checkReceiver(receiver)) {
@@ -770,10 +802,10 @@ namespace fairwindsk::signalk {
         const QJsonDocument doc(message);
         QString text = doc.toJson(QJsonDocument::Compact);
 
-        return mWebSocket.sendTextMessage(text);
+        return m_WebSocket.sendTextMessage(text);
     }
 
     QUrl Client::url() {
-        return mUrl;
+        return m_Url;
     }
 }
