@@ -7,6 +7,8 @@
 #include <QtWidgets/QAbstractButton>
 #include "AutopilotBar.hpp"
 
+#include <QJsonDocument>
+
 #include "FairWindSK.hpp"
 #include "ui_AutopilotBar.h"
 
@@ -196,7 +198,7 @@ namespace fairwindsk::ui::bottombar {
             //value = m_units->convert("rad","deg", value);
 
             // Build the formatted value
-            QString text = value; // m_units->format("deg", value);
+            const QString& text = value; // m_units->format("deg", value);
 
             // Set the course over ground label from the UI to the formatted value
             ui->label_State->setText(text);
@@ -229,7 +231,7 @@ namespace fairwindsk::ui::bottombar {
             //value = m_units->convert("rad","deg", value);
 
             // Build the formatted value
-            QString text = value; // m_units->format("deg", value);
+            const QString& text = value; // m_units->format("deg", value);
 
             // Set the course over ground label from the UI to the formatted value
             ui->label_Mode->setText(text);
@@ -262,7 +264,7 @@ namespace fairwindsk::ui::bottombar {
             value = m_units->convert("rad","deg", value);
 
             // Build the formatted value
-            QString text = m_units->format("deg", value);
+            const QString text = m_units->format("deg", value);
 
             // Set the course over ground label from the UI to the formatted value
             ui->label_TargetHeading->setText(text);
@@ -326,81 +328,135 @@ namespace fairwindsk::ui::bottombar {
         setState("auto");
     }
 
+    /*
+    PUT http://localhost:3000/signalk/v1/api/vessels/self/steering/autopilot/target/headingMagnetic
+{
+  "value": 88,
+}
+     */
     QJsonObject AutopilotBar::setState(const QString& state) {
-        auto path = QString::fromStdString(m_signalkPaths["autopilot.state"].get<std::string>());
-        QJsonObject jsonPut;
-        jsonPut.insert("path",QJsonValue(path));
-        jsonPut.insert("value",QJsonValue(state));
-        QJsonObject jsonUpdate;
-        jsonUpdate.insert("put",jsonPut);
-        FairWindSK::getInstance()->getSignalKClient()->sendMessage(jsonUpdate);
-        return jsonUpdate;
+
+        // Get the Signal K client
+        auto client = FairWindSK::getInstance()->getSignalKClient();
+
+        // Get the path
+        auto path = "vessels.self." + QString::fromStdString(m_signalkPaths["autopilot.state"].get<std::string>());
+
+        // Set the payload strig
+        auto payload = R"({ "value": ")" + state + R"(" })";
+
+        // Perform the PUT request
+        auto result = client->signalkPut(  path, payload);
+
+        // Return the value
+        return result;
     }
 
     QJsonObject AutopilotBar::setMode(const QString& mode) {
-       auto path = QString::fromStdString(m_signalkPaths["autopilot.mode"].get<std::string>());
-        QJsonObject jsonPut;
-        jsonPut.insert("path",QJsonValue(path));
-        jsonPut.insert("value",QJsonValue(mode));
-        QJsonObject jsonUpdate;
-        jsonUpdate.insert("put",jsonPut);
-        FairWindSK::getInstance()->getSignalKClient()->sendMessage(jsonUpdate);
-        return jsonUpdate;
+        // Get the Signal K client
+        auto client = FairWindSK::getInstance()->getSignalKClient();
+
+        // Get the path
+        auto path = "vessels.self." + QString::fromStdString(m_signalkPaths["autopilot.mode"].get<std::string>());
+
+        // Set the payload strig
+        auto payload = R"({ "value": ")" + mode + R"(" })";
+
+        // Perform the PUT request
+        auto result = client->signalkPut(  path, payload);
+
+        // Return the value
+        return result;
     }
 
     QJsonObject AutopilotBar::tack(const QString& value) {
-        auto path = QString::fromStdString(m_signalkPaths["autopilot.actions.tack"].get<std::string>());
-        QJsonObject jsonPut;
-        jsonPut.insert("path",QJsonValue(path));
-        jsonPut.insert("value",QJsonValue(value));
-        QJsonObject jsonUpdate;
-        jsonUpdate.insert("put",jsonPut);
-        FairWindSK::getInstance()->getSignalKClient()->sendMessage(jsonUpdate);
-        return jsonUpdate;
+        // Get the Signal K client
+        auto client = FairWindSK::getInstance()->getSignalKClient();
+
+        // Get the path
+        auto path = "vessels.self." + QString::fromStdString(m_signalkPaths["autopilot.actions.tack"].get<std::string>());
+
+        // Set the payload strig
+        auto payload = R"({ "value": ")" + value + R"(" })";
+
+        // Perform the PUT request
+        auto result = client->signalkPut(  path, payload);
+
+        // Return the value
+        return result;
+
     }
 
     QJsonObject AutopilotBar::advanceWaypoint(int value) {
-        auto path = QString::fromStdString(m_signalkPaths["autopilot.actions.advanceWaypoint"].get<std::string>());
-        QJsonObject jsonPut;
-        jsonPut.insert("path",QJsonValue(path));
-        jsonPut.insert("value",value);
-        QJsonObject jsonUpdate;
-        jsonUpdate.insert("put",jsonPut);
-        FairWindSK::getInstance()->getSignalKClient()->sendMessage(jsonUpdate);
-        return jsonUpdate;
+
+        // Get the Signal K client
+        auto client = FairWindSK::getInstance()->getSignalKClient();
+
+        // Get the path
+        auto path = "vessels.self." + QString::fromStdString(m_signalkPaths["autopilot.actions.advanceWaypoint"].get<std::string>());
+
+        // Set the payload strig
+        auto payload = R"({ "value": )" + QString{"%1"}.arg(value) + R"( })";
+
+        // Perform the PUT request
+        auto result = client->signalkPut(  path, payload);
+
+        // Return the value
+        return result;
     }
 
     QJsonObject AutopilotBar::setTargetHeading(int value) {
-        auto path = QString::fromStdString(m_signalkPaths["autopilot.target.heading"].get<std::string>());
-        QJsonObject jsonPut;
-        jsonPut.insert("path",QJsonValue(path));
-        jsonPut.insert("value",value);
-        QJsonObject jsonUpdate;
-        jsonUpdate.insert("put",jsonPut);
-        FairWindSK::getInstance()->getSignalKClient()->sendMessage(jsonUpdate);
-        return jsonUpdate;
+
+        // Get the Signal K client
+        auto client = FairWindSK::getInstance()->getSignalKClient();
+
+        // Get the path
+        auto path = "vessels.self." + QString::fromStdString(m_signalkPaths["autopilot.target.heading"].get<std::string>());
+
+        // Set the payload strig
+        auto payload = R"({ "value": )" + QString{"%1"}.arg(value) + R"( })";
+
+        // Perform the PUT request
+        auto result = client->signalkPut(  path, payload);
+
+        // Return the value
+        return result;
     }
 
     QJsonObject AutopilotBar::setTargetWindAngle(float value) {
-        auto path = QString::fromStdString(m_signalkPaths["autopilot.target.windAngle"].get<std::string>());
-        QJsonObject jsonPut;
-        jsonPut.insert("path",QJsonValue(path));
-        jsonPut.insert("value",value);
-        QJsonObject jsonUpdate;
-        jsonUpdate.insert("put",jsonPut);
-        FairWindSK::getInstance()->getSignalKClient()->sendMessage(jsonUpdate);
-        return jsonUpdate;
+
+        // Get the Signal K client
+        auto client = FairWindSK::getInstance()->getSignalKClient();
+
+        // Get the path
+        auto path = "vessels.self." + QString::fromStdString(m_signalkPaths["autopilot.target.windAngle"].get<std::string>());
+
+        // Set the payload strig
+        auto payload = R"({ "value": )" + QString{"%1"}.arg(value) + R"( })";
+
+        // Perform the PUT request
+        auto result = client->signalkPut(  path, payload);
+
+        // Return the value
+        return result;
     }
 
     QJsonObject AutopilotBar::adjustHeading(const int value) {
-        auto path = QString::fromStdString(m_signalkPaths["autopilot.actions.adjustHeading"].get<std::string>());
-        QJsonObject jsonPut;
-        jsonPut.insert("path",QJsonValue(path));
-        jsonPut.insert("value",value);
-        QJsonObject jsonUpdate;
-        jsonUpdate.insert("put",jsonPut);
-        FairWindSK::getInstance()->getSignalKClient()->sendMessage(jsonUpdate);
-        return jsonUpdate;
+
+        // Get the Signal K client
+        auto client = FairWindSK::getInstance()->getSignalKClient();
+
+        // Get the path
+        auto path = "vessels.self." + QString::fromStdString(m_signalkPaths["autopilot.actions.adjustHeading"].get<std::string>());
+
+        // Set the payload strig
+        auto payload = R"({ "value": )" + QString{"%1"}.arg(value) + R"( })";
+
+        // Perform the PUT request
+        auto result = client->signalkPut(  path, payload);
+
+        // Return the value
+        return result;
     }
 
     AutopilotBar::~AutopilotBar() {
