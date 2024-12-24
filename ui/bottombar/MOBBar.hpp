@@ -35,6 +35,8 @@ namespace fairwindsk::ui::bottombar {
         void onCancelClicked();
         void onHideClicked();
 
+        void updateElapsed();
+
 
     signals:
         void cancelMOB();
@@ -44,6 +46,7 @@ namespace fairwindsk::ui::bottombar {
         Ui::MOBBar *ui;
         Units *m_units;
         nlohmann::json m_signalkPaths;
+        QTimer *m_timer = nullptr;
     };
 } // fairwindsk::ui::bottombar
 

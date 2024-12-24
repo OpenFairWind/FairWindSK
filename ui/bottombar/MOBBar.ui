@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>942</width>
+    <width>985</width>
     <height>62</height>
    </rect>
   </property>
@@ -115,10 +115,25 @@
             </font>
            </property>
            <property name="text">
-            <string>175°</string>
+            <string>___</string>
            </property>
            <property name="scaledContents">
             <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_unitBearing">
+            <property name="font">
+            <font>
+             <pointsize>32</pointsize>
+            </font>
+           </property>
+           <property name="scaledContents">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>°</string>
            </property>
           </widget>
          </item>
@@ -140,14 +155,29 @@
             </font>
            </property>
            <property name="text">
-            <string>136m</string>
+            <string>___</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_unitDistance">
+            <property name="font">
+            <font>
+             <pointsize>32</pointsize>
+            </font>
+           </property>
+           <property name="scaledContents">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>m</string>
            </property>
           </widget>
          </item>
          <item>
           <widget class="QLabel" name="label_3">
            <property name="text">
-            <string>Elapsed:</string>
+            <string>Elapsed Time:</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>

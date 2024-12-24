@@ -7,6 +7,8 @@
 #include "MOBBar.hpp"
 
 #include <QJsonDocument>
+#include <QTimer>
+#include <QDateTime>
 
 #include "FairWindSK.hpp"
 #include "ui_MOBBar.h"
@@ -24,6 +26,12 @@ namespace fairwindsk::ui::bottombar {
 
         // Get units converter instance
         m_units = Units::getInstance();
+
+        // Create a new timer which will contain the current time
+        m_timer = new QTimer(this);
+
+        // When the timer stops, update the time
+        connect(m_timer, &QTimer::timeout, this, &MOBBar::updateElapsed);
 
         // emit a signal when the MyData tool button from the UI is clicked
         connect(ui->pushButton_MOB_Cancel, &QPushButton::clicked, this, &MOBBar::onCancelClicked);
@@ -100,7 +108,55 @@ namespace fairwindsk::ui::bottombar {
     }
 
     MOBBar::~MOBBar() {
+
+        if (m_timer) {
+            m_timer->stop();
+            delete m_timer;
+            m_timer = nullptr;
+        }
+
         delete ui;
+    }
+
+    /*
+ * updateElapsed
+ * Method called to update the current datetime
+ */
+    void MOBBar::updateElapsed() {
+
+        // Check if the Options object has the rsa key and if it is a string
+        if (m_signalkPaths.contains("mob.startTime") && m_signalkPaths["mob.startTime"].is_string()) {
+
+            // Get the key
+            auto mobStartTime = QString::fromStdString(m_signalkPaths["mob.startTime"].get<std::string>());
+
+            // Get the Signal K client
+            auto signalKClient = FairWindSK::getInstance()->getSignalKClient();
+
+            // Get the url
+            QString url = signalKClient->url().toString()+"/v1/api/vessels/self/" + mobStartTime.replace(".","/");
+
+            // Get the start time invoking the course api
+            auto jsonObjectStartTime = signalKClient->signalkGet(QUrl(url));
+
+            // Get the value as string
+            auto startTimeIso8601 = jsonObjectStartTime["value"].toString();
+
+            // Create a QDateTime from the string
+            auto startDateTimeUTC = QDateTime::fromString(startTimeIso8601, "yyyy-MM-ddThh:mm:ss.zzzZ");
+
+            // Set the start date time as UTC
+            startDateTimeUTC.setOffsetFromUtc(0);
+
+            // Get the current date
+            auto currentDateTimeUTC = QDateTime::currentDateTimeUtc();
+
+            // Get the elapsed seconds
+            auto elapsedSecs = startDateTimeUTC.secsTo(currentDateTimeUTC);
+
+            // Set the time label from the UI to the formatted time
+            ui->label_Elapsed->setText(QDateTime::fromSecsSinceEpoch( elapsedSecs, Qt::UTC ).toString( "hh:mm:ss" ));
+        }
     }
 
     /*
@@ -141,6 +197,9 @@ namespace fairwindsk::ui::bottombar {
                         QString::fromStdString(m_signalkPaths["mob.distance"].get<std::string>()),
                         this);
                 }
+
+                // Stop the timer
+                m_timer->stop();
 
                 // Hide the MOBBar
                 setVisible(false);
@@ -188,6 +247,9 @@ namespace fairwindsk::ui::bottombar {
                             ));
                 }
 
+                // Start the timer
+                m_timer->start(1000);
+
                 // Show the MOBBar
                 setVisible(true);
             }
@@ -203,8 +265,6 @@ namespace fairwindsk::ui::bottombar {
         if (update.isEmpty()) {
             return;
         }
-
-
 
         // Get the value
         auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
@@ -238,10 +298,10 @@ namespace fairwindsk::ui::bottombar {
 
         if (!std::isnan(value)) {
             // Convert m/s to knots
-            value = m_units->convert("ms-1",FairWindSK::getInstance()->getConfiguration()->getVesselSpeedUnits(), value);
+            value = m_units->convert("m",FairWindSK::getInstance()->getConfiguration()->getRangeUnits(), value);
 
             // Build the formatted value
-            auto text = m_units->format(FairWindSK::getInstance()->getConfiguration()->getVesselSpeedUnits(), value);
+            auto text = m_units->format(FairWindSK::getInstance()->getConfiguration()->getRangeUnits(), value);
 
             // Set the speed over ground label from the UI to the formatted value
             ui->label_Distance->setText(text);
