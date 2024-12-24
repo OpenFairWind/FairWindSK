@@ -96,13 +96,13 @@ namespace fairwindsk::ui::topbar {
         connect(ui->toolButton_UR, &QToolButton::released, this, &TopBar::toolbuttonUR_clicked);
 
         // Create a new timer which will contain the current time
-        auto *timer = new QTimer(this);
+        m_timer = new QTimer(this);
 
         // When the timer stops, update the time
-        connect(timer, &QTimer::timeout, this, &TopBar::updateTime);
+        connect(m_timer, &QTimer::timeout, this, &TopBar::updateTime);
 
         // Start the timer
-        timer->start(1000);
+        m_timer->start(1000);
 
         // Get the configuration json object
         auto confiurationJsonObject = configuration->getRoot();
@@ -321,6 +321,13 @@ namespace fairwindsk::ui::topbar {
  * TopBar's destructor
  */
     TopBar::~TopBar() {
+
+        if (m_timer) {
+            m_timer->stop();
+            delete m_timer;
+            m_timer = nullptr;
+        }
+
         delete ui;
     }
 

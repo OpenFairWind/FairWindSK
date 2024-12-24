@@ -55,6 +55,7 @@ namespace fairwindsk::ui::topbar {
         Ui::TopBar *ui;
         AppItem *m_currentApp;
         Units *m_units;
+        QTimer *m_timer;
     };
 }
 
