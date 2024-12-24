@@ -94,6 +94,16 @@
       "text": "Meters",
       "label": "m",
       "type": "depth"
+    },
+    "rft":{
+      "text":"Feet",
+      "label":"ft",
+      "type":"range"
+    },
+    "rm": {
+      "text": "Meters",
+      "label": "m",
+      "type": "range"
     }
   },
   "measures":{
@@ -120,6 +130,10 @@
     "distance":{
       "text":"Distance",
       "type":"distance"
+    },
+    "range":{
+      "text":"Range",
+      "type":"range"
     },
     "depth":{
       "text":"Depth",

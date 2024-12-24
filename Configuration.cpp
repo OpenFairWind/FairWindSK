@@ -190,6 +190,10 @@ namespace fairwindsk {
         return getUnits("distance");
     }
 
+    QString Configuration::getRangeUnits() {
+        return getUnits("range");
+    }
+
     void Configuration::setRoot(nlohmann::json &jsonData) {
         m_jsonData = jsonData;
     }

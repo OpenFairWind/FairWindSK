@@ -39,6 +39,8 @@ namespace fairwindsk {
 	mConverters["mt"]["mt"] = [](double value) { return value; };
         mConverters["mt"]["ftm"] = [](double value) { return value * 0.547; };
         mConverters["mt"]["ft"] = [](double value) { return value * 0.546807; };
+        mConverters["rm"]["rm"] = [](double value) { return value; };
+        mConverters["rm"]["rft"] = [](double value) { return value * 0.546807; };
 
     }
 
@@ -102,6 +104,17 @@ namespace fairwindsk {
             }
         }
         else if (unit == "mt") {
+            if (value >= 0.0 and value <=10.0) {
+                result = QString{"%1"}.arg(value, 4, 'f', 2 );
+            }
+            else if (value >= 10.0 and value <=100.0) {
+                result = QString{"%1"}.arg(value, 4, 'f', 1 );
+            }
+            else {
+                result = QString{"%1"}.arg(value, 4, 'f', 0 );
+            }
+        }
+        else if (unit == "rm") {
             if (value >= 0.0 and value <=10.0) {
                 result = QString{"%1"}.arg(value, 4, 'f', 2 );
             }

@@ -30,6 +30,7 @@ namespace fairwindsk {
         QString getVesselSpeedUnits();
         QString getWindSpeedUnits();
         QString getDistanceUnits();
+        QString getRangeUnits();
         QString getDepthUnits();
 
 
