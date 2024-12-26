@@ -52,8 +52,6 @@ namespace fairwindsk::signalk {
         // Get the FairWindSK instance
         auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
-
-
         // Connect the on connected event
         connect(&m_WebSocket, &QWebSocket::connected, this, &Client::onConnected);
 
@@ -176,8 +174,12 @@ namespace fairwindsk::signalk {
         return signalkGet(http());
     }
 
+    /****************************************************************************
+     * GET methods
+     ***************************************************************************/
 
 
+    /*
 
     QJsonObject Client::signalkGet(const QString& path) {
         QString processedPath = path;
@@ -187,24 +189,262 @@ namespace fairwindsk::signalk {
         return signalkGet(url);
     }
 
-    QJsonObject Client::signalkPost(const QString& path,  QString& payload) {
+
+    QJsonObject Client::signalkGet(const QUrl& url,  QString& payload) {
+        auto data = httpGet(url);
+        return QJsonDocument::fromJson(data).object();
+    }
+
+    */
+
+    /*
+     * signalkGet
+     * Give path as string
+     */
+    QJsonObject Client::signalkGet(const QString& path) {
+
+        // Create a dummy payload
+        QJsonObject jsonObject;
+
+        // Invoke the Signal K method
+        return signalkGet(path, jsonObject);
+    }
+
+    /*
+     * signalkGet
+     * Give path as JSON object
+     */
+    QJsonObject Client::signalkGet(const QUrl& url) {
+
+        // Invoke a dummy payload
+        QJsonObject jsonObject;
+
+        // Invoke the Signal K method
+        return signalkGet(url, jsonObject);
+    }
+
+    /*
+     * signalkGet
+     * Give path as string, payload as string
+     */
+    QJsonObject Client::signalkGet(const QString& path,  QString& payload) {
+
+        // Crete the payload from the string
         QJsonObject jsonObject = QJsonDocument::fromJson(payload.toUtf8()).object();
+
+        // Invoke the Signal K method
+        return signalkGet(path, jsonObject);
+    }
+
+    /*
+     * signalkGet
+     * Give path as string, payload as JSON object
+     */
+    QJsonObject Client::signalkGet(const QString& path,  QJsonObject& payload) {
+
+        // Assign the path to a mutable string
+        QString processedPath = path;
+
+        // Process the path
+        processedPath = processedPath.replace(".","/");
+
+        // Create the url
+        auto url = QUrl(http().toString()+processedPath);
+
+        // Check if the debug is active
+        if (m_Debug) {
+
+            // Print a message
+            qDebug() << "signalkGet: " << path << " --> " << url;
+        }
+
+        // Invoke the Signal K method
+        return signalkGet(url, payload);
+    }
+
+    /*
+     * signalkGet
+     * Give path as URL, payload as string
+     */
+    QJsonObject Client::signalkGet(const QUrl& url,  QString& payload) {
+        // Create a payload form a string
+        QJsonObject jsonObject = QJsonDocument::fromJson(payload.toUtf8()).object();
+
+        // Invoke the Signal K method
+        return signalkGet(url, jsonObject);
+    }
+
+    /*
+     * signalkGet
+     * Give path as URL, payload as JSON object
+     */
+    QJsonObject Client::signalkGet(const QUrl& url,  QJsonObject& payload) {
+
+        // Check if the token is available
+        if (!m_Token.isEmpty()) {
+
+            // Add the token to the payload
+            payload["token"] = m_Token;
+        }
+
+        // Check if the debug is active
+        if (m_Debug) {
+
+            // Show a message
+            qDebug() << "SignalKClient::signalkPost payload: " << payload;
+        }
+
+        // Invoke the http method
+        auto data = httpGet(url, payload);
+
+        // Get the results as JSON object
+        return QJsonDocument::fromJson(data).object();
+    }
+
+
+    /****************************************************************************
+     * POST methods
+     ***************************************************************************/
+
+    /*
+     * signalkPost
+     * Give path as string
+     */
+    QJsonObject Client::signalkPost(const QString& path) {
+
+        // Create a dummy payload
+        QJsonObject jsonObject;
+
+        // Invoke the Signal K method
         return signalkPost(path, jsonObject);
     }
 
+    /*
+     * signalkPost
+     * Give path as JSON object
+     */
+    QJsonObject Client::signalkPost(const QUrl& url) {
+
+        // Invoke a dummy payload
+        QJsonObject jsonObject;
+
+        // Invoke the Signal K method
+        return signalkPost(url, jsonObject);
+    }
+
+    /*
+     * signalkPost
+     * Give path as string, payload as string
+     */
+    QJsonObject Client::signalkPost(const QString& path,  QString& payload) {
+
+        // Crete the payload from the string
+        QJsonObject jsonObject = QJsonDocument::fromJson(payload.toUtf8()).object();
+
+        // Invoke the Signal K method
+        return signalkPost(path, jsonObject);
+    }
+
+    /*
+     * signalkPost
+     * Give path as string, payload as JSON object
+     */
     QJsonObject Client::signalkPost(const QString& path,  QJsonObject& payload) {
+
+        // Assign the path to a mutable string
         QString processedPath = path;
+
+        // Process the path
         processedPath = processedPath.replace(".","/");
+
+        // Create the url
         auto url = QUrl(http().toString()+processedPath);
-        // qDebug() << "signalkPost: " << path << " --> " << url;
+
+        // Check if the debug is active
+        if (m_Debug) {
+
+            // Print a message
+            qDebug() << "signalkPost: " << path << " --> " << url;
+        }
+
+        // Invoke the Signal K method
         return signalkPost(url,payload);
     }
 
+    /*
+     * signalkPost
+     * Give path as URL, payload as string
+     */
+    QJsonObject Client::signalkPost(const QUrl& url,  QString& payload) {
+        // Create a payload form a string
+        QJsonObject jsonObject = QJsonDocument::fromJson(payload.toUtf8()).object();
+
+        // Invoke the Signal K method
+        return signalkPost(url, jsonObject);
+    }
+
+    /*
+     * signalkPost
+     * Give path as URL, payload as JSON object
+     */
+    QJsonObject Client::signalkPost(const QUrl& url,  QJsonObject& payload) {
+
+        // Check if the token is available
+        if (!m_Token.isEmpty()) {
+
+            // Add the token to the payload
+            payload["token"] = m_Token;
+        }
+
+        // Check if the debug is active
+        if (m_Debug) {
+
+            // Show a message
+            qDebug() << "SignalKClient::signalkPost payload: " << payload;
+        }
+
+        // Invoke the http method
+        auto data = httpPost(url, payload);
+
+        // Get the results as JSON object
+        return QJsonDocument::fromJson(data).object();
+    }
+
+    /****************************************************************************
+     * PUT methods
+     ***************************************************************************/
+
+    /*
+     * signalkPut
+     * Give path as string
+     */
+    QJsonObject Client::signalkPut(const QString& path) {
+        QJsonObject jsonObject;
+        return signalkPut(path, jsonObject);
+    }
+
+    /*
+     * signalkPut
+     * Give path as URL, payload as JSON object
+     */
+    QJsonObject Client::signalkPut(const QUrl& url) {
+        QJsonObject jsonObject;
+        return signalkPut(url, jsonObject);
+    }
+
+    /*
+     * signalkPut
+     * Give path as string, payload as string
+     */
     QJsonObject Client::signalkPut(const QString& path,  QString& payload) {
         QJsonObject jsonObject = QJsonDocument::fromJson(payload.toUtf8()).object();
         return signalkPut(path, jsonObject);
     }
 
+    /*
+     * signalkPut
+     * Give path as string, payload as JSON objcte
+     */
     QJsonObject Client::signalkPut(const QString& path,  QJsonObject& payload) {
         QString processedPath = path;
         processedPath = processedPath.replace(".","/");
@@ -213,80 +453,147 @@ namespace fairwindsk::signalk {
         return signalkPut(url, payload);
     }
 
-    QJsonObject Client::signalkDelete(const QString& path,  QString& payload) {
-        QJsonObject jsonObject = QJsonDocument::fromJson(payload.toUtf8()).object();
-        return signalkDelete(path, jsonObject);
-    }
-
-    QJsonObject Client::signalkDelete(const QString& path,  QJsonObject& payload) {
-        QString processedPath = path;
-        processedPath = processedPath.replace(".","/");
-        auto url = QUrl(http().toString()+processedPath);
-        qDebug() << "signalkDelete " << path << " --> " << url;
-        return signalkDelete(url,payload);
-    }
-
-    QJsonObject Client::signalkGet(const QUrl& url) {
-        auto data = httpGet(url);
-        return QJsonDocument::fromJson(data).object();
-    }
-
-    QJsonObject Client::signalkPost(const QUrl& url,  QString& payload) {
-        QJsonObject jsonObject = QJsonDocument::fromJson(payload.toUtf8()).object();
-        return signalkPost(url, jsonObject);
-    }
-
-    QJsonObject Client::signalkPost(const QUrl& url,  QJsonObject& payload) {
-        if (!m_Token.isEmpty()) {
-            payload["token"] = m_Token;
-        }
-
-        if (m_Debug)
-            qDebug() << "SignalKClient::signalkPost payload: " << payload;
-
-        auto data = httpPost(url, payload);
-        return QJsonDocument::fromJson(data).object();
-    }
-
-
+    /*
+     * signalkPut
+     * Give path as URL, payload as string
+     */
     QJsonObject Client::signalkPut(const QUrl& url,  QString& payload) {
         QJsonObject jsonObject = QJsonDocument::fromJson(payload.toUtf8()).object();
         return signalkPut(url, jsonObject);
     }
 
+    /*
+     * signalkPut
+     * Give path as URL, payload as JSON object
+     */
     QJsonObject Client::signalkPut(const QUrl& url,  QJsonObject& payload) {
         if (!m_Token.isEmpty()) {
             payload["token"] = m_Token;
         }
 
-       if (m_Debug)
-            qDebug() << "SignalKClient::signalkPut payload: " << m_Token << " " << payload;
-
+       if (m_Debug) {
+           qDebug() << "SignalKClient::signalkPut payload: " << m_Token << " " << payload;
+       }
         auto data = httpPut(url,payload);
         return QJsonDocument::fromJson(data).object();
     }
 
-    QJsonObject Client::signalkDelete(const QUrl& url,  QString& payload) {
-        QJsonObject jsonObject = QJsonDocument::fromJson(payload.toUtf8()).object();
+    /****************************************************************************
+     * DELETE methods
+     ***************************************************************************/
+
+    /*
+     * signalkDelete
+     * Given Path
+     */
+    QJsonObject Client::signalkDelete(const QString& path) {
+
+        // Define a dummy payload
+        QJsonObject jsonObject;
+
+        // Invoke the delete method
+        return signalkDelete(path, jsonObject);
+    }
+
+    /*
+     * signalkDelete
+     * Given URL
+     */
+    QJsonObject Client::signalkDelete(const QUrl& url) {
+
+        // Define a dummy payload
+        QJsonObject jsonObject;
+
+        // Invoke the delete method
         return signalkDelete(url, jsonObject);
     }
 
+    /*
+     * signalkDelete
+     * Given Path and payload as string
+     */
+    QJsonObject Client::signalkDelete(const QString& path,  QString& payload) {
+
+        // Create  payload from a string
+        QJsonObject jsonObject = QJsonDocument::fromJson(payload.toUtf8()).object();
+
+        // Invoke the delete method
+        return signalkDelete(path, jsonObject);
+    }
+
+    /*
+     * signalkDelete
+     * Given Path and payload as JSON object
+     */
+    QJsonObject Client::signalkDelete(const QString& path,  QJsonObject& payload) {
+
+        // Define the processed path string
+        QString processedPath = path;
+
+        // Create the path (it works only with v1 APIs)
+        processedPath = processedPath.replace(".","/");
+
+        // Create the URL object
+        const auto url = QUrl(http().toString()+processedPath);
+
+        // Check if debug is active
+        if (m_Debug) {
+
+            // Write a message
+            qDebug() << "signalkDelete " << path << " --> " << url;
+        }
+
+        // Invoke the delete method
+        return signalkDelete(url,payload);
+    }
+
+    /*
+     * signalkDelete
+     * Given URL and payload as string
+     */
+    QJsonObject Client::signalkDelete(const QUrl& url,  QString& payload) {
+
+        // Create a payload json object
+        QJsonObject jsonObject = QJsonDocument::fromJson(payload.toUtf8()).object();
+
+        // Invoke the delete method
+        return signalkDelete(url, jsonObject);
+    }
+
+    /*
+     * signalkDelete
+     * Given URL and payload as JSON object
+     */
     QJsonObject Client::signalkDelete(const QUrl& url,  QJsonObject& payload) {
+
+        // Check if the token is available
         if (!m_Token.isEmpty()) {
+
+            // Add the token to the payload
             payload["token"] = m_Token;
         }
 
-        if (m_Debug)
-            qDebug() << "SignalKClient::signalkDelete payload: " << payload;
+        // Check if debug is active
+        if (m_Debug) {
 
+            // Show a message
+            qDebug() << "SignalKClient::signalkDelete payload: " << payload;
+        }
+
+        // Invoke the http method
         auto data = httpDelete(url, payload);
+
+        // Return the result as JSON object
         return QJsonDocument::fromJson(data).object();
     }
 
+    /****************************************************************************
+     * HTTP methods
+     ***************************************************************************/
 
     /*
  * httpGet
- * Executes a http get request
+ * Executes a http get request without payload
  */
     QByteArray Client::httpGet(const QUrl& url) {
         QNetworkRequest req(url);
@@ -308,6 +615,36 @@ namespace fairwindsk::signalk {
 
             if (m_Debug)
                 qDebug() << "Failure" << reply->errorString();
+        }
+        QByteArray data = reply->readAll();
+        return data;
+    }
+
+    /*
+ * httpGet
+ * Executes a http get request with payload
+ */
+    QByteArray Client::httpGet(const QUrl& url, const QJsonObject& payload) {
+        QJsonDocument jsonDocument;
+        jsonDocument.setObject(payload);
+
+        QNetworkRequest req(url);
+        req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+        req.setRawHeader("Accept", "application/json");
+
+        if (!m_Cookie.isEmpty()) {
+            req.setRawHeader("Cookie", m_Cookie.toLatin1());
+        }
+
+        QScopedPointer<QNetworkReply> reply(m_NetworkAccessManager.sendCustomRequest(req, "GET", jsonDocument.toJson()));
+
+        QTime timeout = QTime::currentTime().addSecs(10);
+        while (QTime::currentTime() < timeout && !reply->isFinished()) {
+            QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+        }
+
+        if (reply->error() != QNetworkReply::NoError) {
+            qDebug() << "Failure" << reply->errorString();
         }
         QByteArray data = reply->readAll();
         return data;

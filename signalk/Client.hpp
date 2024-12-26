@@ -43,19 +43,31 @@ namespace fairwindsk::signalk {
         QUrl tcp(const QString& version = "v1");
 
         QJsonObject signalkGet(const QString& path);
-        QJsonObject signalkPost(const QString& path,  QString& payload);
-        QJsonObject signalkPut(const QString& path,  QString& payload);
-        QJsonObject signalkDelete(const QString& path,  QString& payload);
-        QJsonObject signalkPost(const QString& path,  QJsonObject& payload);
-        QJsonObject signalkPut(const QString& path,  QJsonObject& payload);
-        QJsonObject signalkDelete(const QString& path,  QJsonObject& payload);
-
         QJsonObject signalkGet(const QUrl& url);
+        QJsonObject signalkGet(const QString& path,  QString& payload);
+        QJsonObject signalkGet(const QString& path,  QJsonObject& payload);
+        QJsonObject signalkGet(const QUrl& url,  QString& payload);
+        QJsonObject signalkGet(const QUrl& url,  QJsonObject& payload);
+
+        QJsonObject signalkPost(const QString& path);
+        QJsonObject signalkPost(const QUrl& url);
+        QJsonObject signalkPost(const QString& path,  QString& payload);
+        QJsonObject signalkPost(const QString& path,  QJsonObject& payload);
         QJsonObject signalkPost(const QUrl& url,  QString& payload);
-        QJsonObject signalkPut(const QUrl& url,  QString& payload);
-        QJsonObject signalkDelete(const QUrl& url,  QString& payload);
         QJsonObject signalkPost(const QUrl& url,  QJsonObject& payload);
+
+        QJsonObject signalkPut(const QString& path);
+        QJsonObject signalkPut(const QUrl& url);
+        QJsonObject signalkPut(const QString& path,  QString& payload);
+        QJsonObject signalkPut(const QString& path,  QJsonObject& payload);
+        QJsonObject signalkPut(const QUrl& url,  QString& payload);
         QJsonObject signalkPut(const QUrl& url,  QJsonObject& payload);
+
+        QJsonObject signalkDelete(const QString& path);
+        QJsonObject signalkDelete(const QUrl& url);
+        QJsonObject signalkDelete(const QString& path,  QString& payload);
+        QJsonObject signalkDelete(const QString& path,  QJsonObject& payload);
+        QJsonObject signalkDelete(const QUrl& url,  QString& payload);
         QJsonObject signalkDelete(const QUrl& url,  QJsonObject& payload);
 
         QString getToken();
@@ -101,6 +113,7 @@ namespace fairwindsk::signalk {
         QString m_Label;
 
         QByteArray httpGet(const QUrl& url);
+        QByteArray httpGet(const QUrl& url, const QJsonObject& payload);
         QByteArray httpPost(const QUrl& url, const QJsonObject& payload);
         QByteArray httpPut(const QUrl& url, const QJsonObject& payload);
         QByteArray httpDelete(const QUrl& url, const QJsonObject& payload);
