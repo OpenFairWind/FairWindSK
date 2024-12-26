@@ -66,56 +66,120 @@ namespace fairwindsk::ui::bottombar {
         }
     }
 
+    /*
+     * MOB()
+     * Cancel or set MOB emergency
+     */
     void MOBBar::MOB() {
 
-        auto signalKClient = FairWindSK::getInstance()->getSignalKClient();
+        // Get the FairWind singleton
+        auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
-        QString url = signalKClient->url().toString()+"/v1/api/"+signalKClient->getSelf()+"/notifications/mob/value/";
+        // Get configuration
+        auto configuration = fairWindSK->getConfiguration();
 
+        // Get the configuration json object
+        auto configurationJsonObject = configuration->getRoot();
 
-        auto result = signalKClient->signalkGet(QUrl(url.replace(".","/")));
+        // Check if the configuration object contains the key 'signalk' with an object value
+        if (configurationJsonObject.contains("signalk") && configurationJsonObject["signalk"].is_object())
+        {
+            // Get the signal k paths object
+            m_signalkPaths = configurationJsonObject["signalk"];
 
-        if (result.isEmpty() || (
-            result.contains("state") &&
-            result["state"].isString() &&
-            result["state"].toString() == "normal")) {
+            // Check if the Options object has the rsa key and if it is a string
+            if (m_signalkPaths.contains("notifications.mob") && m_signalkPaths["notifications.mob"].is_string())
+            {
+                // Get the Signal K client
+                auto signalKClient = fairWindSK->getSignalKClient();
 
-            url = signalKClient->url().toString()+"/v2/api/alarms/mob";
+                // Get the mob notification value
+                auto notificationObject = signalKClient->signalkGet(
+                    QString::fromStdString("vessels.self." + m_signalkPaths["notifications.mob"].get<std::string>()+".value")
+                    );
 
-            QJsonObject payload;
-            signalKClient->signalkPost(QUrl(url),payload);
-        } else {
-            setVisible(true);
+                // Check if the mob notification value is empty or the state is normal (no mob emergency)
+                if (notificationObject.isEmpty() || (
+                    notificationObject.contains("state") &&
+                    notificationObject["state"].isString() &&
+                    notificationObject["state"].toString() == "normal")) {
+
+                    // Rise the alarm
+                    auto result = signalKClient->signalkPost(QUrl(signalKClient->url().toString()+"/v2/api/alarms/mob"));
+
+                    } else {
+                        // Just set visible the widget
+                        setVisible(true);
+                    }
+            }
         }
     }
 
+    /*
+     * onCancelClicked
+     * Cancel the MOB emergency
+     */
     void MOBBar::onCancelClicked() {
+
+        // Get the Signal K client
         auto signalKClient = FairWindSK::getInstance()->getSignalKClient();
 
+        // Prepare the API URL
+        const QString url = signalKClient->url().toString()+"/v2/api/alarms/mob";
+
+
+
+        // Invoke the Signal K delete
+        signalKClient->signalkDelete(QUrl(url));
+
+        // Hide the widget window
         setVisible(false);
 
-        QString url = signalKClient->url().toString()+"/v2/api/alarms/mob";
-
-        QJsonObject payload;
-        signalKClient->signalkDelete(QUrl(url),payload);
-
+        // Emit the cancel mob signal
         emit cancelMOB();
     }
 
+    /*
+     * onHideClicked
+     * Hides the widget window
+     */
     void MOBBar::onHideClicked() {
+
+        // Hide the widget
         setVisible(false);
+
+        // Emit the hide signal
         emit hide();
     }
 
+    /*
+     * ~MOBBar
+     * Destructor
+     */
     MOBBar::~MOBBar() {
 
+        // Check if the timer is allocated
         if (m_timer) {
+
+            // Stop the timer
             m_timer->stop();
+
+            // Delete the timer
             delete m_timer;
+
+            // Set the pointer to null
             m_timer = nullptr;
         }
 
-        delete ui;
+        // Check if the ui is allocated
+        if (ui) {
+
+            // Delete the ui
+            delete ui;
+
+            // Set the pointer to null
+            ui = nullptr;
+        }
     }
 
     /*
@@ -160,24 +224,32 @@ namespace fairwindsk::ui::bottombar {
     }
 
     /*
- * updateNavigationPosition
+ * updateMOB
  * Method called in accordance to signalk to update the navigation position
  */
     void MOBBar::updateMOB(const QJsonObject &update) {
 
         // Check if for any reason the update is empty
         if (update.isEmpty()) {
+
+            // Exit the method
             return;
         }
 
+        // et the value of the notification object
         auto value = fairwindsk::signalk::Client::getObjectFromUpdateByPath(update,"notifications.mob");
 
+        // Check if value is valid
         if (value.isEmpty()) {
+
+            // Exit the method
             return;
         }
 
-        // There is no mob
+        // Check if there is a state field
         if (value.contains("state") && value["state"].isString()) {
+
+            // Check if the state is "normal" (no MOB emergency)
             if (value["state"].toString() == "normal") {
 
                 // Check if the Options object has the rsa key and if it is a string
@@ -203,25 +275,54 @@ namespace fairwindsk::ui::bottombar {
 
                 // Hide the MOBBar
                 setVisible(false);
-            } else if (value["state"].toString() == "emergency")
-            {
+
+                // Check if the state is "emergency" (MOB emergency)
+            } else if (value["state"].toString() == "emergency") {
+
+                // Check if a data field is available
                 if (value.contains("data") && value["data"].isObject()) {
+
+                    // Get the data object
                     auto data = value["data"].toObject();
+
+                    // Check if data has the position field
                     if (data.contains("position") && data["position"].isObject()) {
+
+                        // Get the position field
                         auto position = data["position"].toObject();
+
+                        // The geographic coordinates object
                         QGeoCoordinate geoCoordinate;
+
+                        // Check the position object contains a latitude field
                         if (position.contains("latitude")) {
+
+                            // Assign the latitude at the geographic coordinates
                             geoCoordinate.setLatitude(position["latitude"].toDouble());
                         }
+
+                        // Check the position object contains a longitude field
                         if (position.contains("longitude")) {
+
+                            // Assign the longitude at the geographic coordinates
                             geoCoordinate.setLongitude(position["longitude"].toDouble());
                         }
+
+                        // Check the position object contains a altitude field
                         if (position.contains("altitude")) {
+
+                            // Assign the altitude at the geographic coordinates
                             geoCoordinate.setAltitude(position["altitude"].toDouble());
                         }
-                        auto text = geoCoordinate.toString(QGeoCoordinate::DegreesMinutesSecondsWithHemisphere).split(",");
-                        ui->label_Latitude->setText(text[0]);
-                        ui->label_Longitude->setText(text[1]);
+
+                        // Get the geographic coordinates as text list
+                        auto texts = geoCoordinate.toString(QGeoCoordinate::DegreesMinutesSecondsWithHemisphere).split(",");
+
+                        // Set the latitude
+                        ui->label_Latitude->setText(texts[0]);
+
+                        // Set the longitude
+                        ui->label_Longitude->setText(texts[1]);
                     }
                 }
 
@@ -261,14 +362,18 @@ namespace fairwindsk::ui::bottombar {
  * Method called in accordance to signalk to update the bearing
  */
     void MOBBar::updateBearing(const QJsonObject &update) {
+
         // Check if for any reason the update is empty
         if (update.isEmpty()) {
+
+            // Exit the method
             return;
         }
 
         // Get the value
         auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
 
+        // Check if value is valid
         if (!std::isnan(value)) {
 
             // Convert rad to deg
@@ -288,15 +393,20 @@ namespace fairwindsk::ui::bottombar {
  * Method called in accordance to signalk to update the distance
  */
     void MOBBar::updateDistance(const QJsonObject &update) {
+
         // Check if for any reason the update is empty
         if (update.isEmpty()) {
+
+            // Exit the method
             return;
         }
 
         // Get the value
         auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
 
+        // Check if value is valid
         if (!std::isnan(value)) {
+
             // Convert m/s to knots
             value = m_units->convert("m",FairWindSK::getInstance()->getConfiguration()->getRangeUnits(), value);
 
