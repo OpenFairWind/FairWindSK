@@ -178,25 +178,6 @@ namespace fairwindsk::signalk {
      * GET methods
      ***************************************************************************/
 
-
-    /*
-
-    QJsonObject Client::signalkGet(const QString& path) {
-        QString processedPath = path;
-        processedPath = processedPath.replace(".","/");
-        auto url = QUrl(http().toString()+processedPath);
-        // qDebug() << "signalkGet: " << path << " --> " << url;
-        return signalkGet(url);
-    }
-
-
-    QJsonObject Client::signalkGet(const QUrl& url,  QString& payload) {
-        auto data = httpGet(url);
-        return QJsonDocument::fromJson(data).object();
-    }
-
-    */
-
     /*
      * signalkGet
      * Give path as string
@@ -449,7 +430,10 @@ namespace fairwindsk::signalk {
         QString processedPath = path;
         processedPath = processedPath.replace(".","/");
         auto url = QUrl(http().toString()+processedPath);
-        qDebug() << "signalkPut " << path << " --> " << url;
+        if (m_Debug)
+        {
+            qDebug() << "signalkPut " << path << " --> " << url;
+        }
         return signalkPut(url, payload);
     }
 
@@ -729,7 +713,9 @@ namespace fairwindsk::signalk {
         }
 
         if (reply->error() != QNetworkReply::NoError) {
-            qDebug() << "Failure" << reply->errorString();
+            if (m_Debug) {
+                qDebug() << "Failure" << reply->errorString();
+            }
         }
         QByteArray data = reply->readAll();
         return data;
@@ -759,7 +745,10 @@ namespace fairwindsk::signalk {
         }
 
         if (reply->error() != QNetworkReply::NoError) {
-            qDebug() << "Failure" << reply->errorString();
+            if (m_Debug)
+            {
+                qDebug() << "Failure" << reply->errorString();
+            }
         }
         QByteArray data = reply->readAll();
         return data;
@@ -911,8 +900,9 @@ namespace fairwindsk::signalk {
 
         auto result = signalkGet(contextEx + "." + path);
 
-        //qDebug() << "subscribe: " << message << " result: " << result;
-
+        if (m_Debug) {
+            qDebug() << "subscribe: " << message << " result: " << result;
+        }
         return result;
     }
 
