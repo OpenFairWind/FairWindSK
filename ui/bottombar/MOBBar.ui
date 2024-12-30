@@ -124,16 +124,16 @@
          </item>
          <item>
           <widget class="QLabel" name="label_unitBearing">
-            <property name="font">
+           <property name="font">
             <font>
              <pointsize>32</pointsize>
             </font>
            </property>
-           <property name="scaledContents">
-            <bool>false</bool>
-           </property>
            <property name="text">
             <string>°</string>
+           </property>
+           <property name="scaledContents">
+            <bool>false</bool>
            </property>
           </widget>
          </item>
@@ -161,16 +161,16 @@
          </item>
          <item>
           <widget class="QLabel" name="label_unitDistance">
-            <property name="font">
+           <property name="font">
             <font>
              <pointsize>32</pointsize>
             </font>
            </property>
-           <property name="scaledContents">
-            <bool>false</bool>
-           </property>
            <property name="text">
             <string>m</string>
+           </property>
+           <property name="scaledContents">
+            <bool>false</bool>
            </property>
           </widget>
          </item>
@@ -192,7 +192,7 @@
             </font>
            </property>
            <property name="text">
-            <string>00:01:32</string>
+            <string>00:00:00</string>
            </property>
           </widget>
          </item>
@@ -206,7 +206,7 @@ border-right-color: rgb(83, 83, 84);
 border-bottom-color: rgb(83, 83, 84);</string>
            </property>
            <property name="text">
-            <string>Cancel</string>
+            <string>Cancel MOB</string>
            </property>
           </widget>
          </item>

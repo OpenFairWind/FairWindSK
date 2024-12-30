@@ -40,7 +40,7 @@ namespace fairwindsk::ui::bottombar {
 
     signals:
         void cancelMOB();
-        void hide();
+        void hidden();
 
     private:
         Ui::MOBBar *ui;

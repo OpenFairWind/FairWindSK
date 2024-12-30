@@ -105,7 +105,7 @@ namespace fairwindsk::ui::bottombar {
                     notificationObject["state"].toString() == "normal")) {
 
                     // Rise the alarm
-                    auto result = signalKClient->signalkPost(QUrl(signalKClient->url().toString()+"/v2/api/alarms/mob"));
+                    signalKClient->signalkPost(QUrl(signalKClient->url().toString()+"/v2/api/alarms/mob"));
 
                     } else {
                         // Just set visible the widget
@@ -149,7 +149,7 @@ namespace fairwindsk::ui::bottombar {
         setVisible(false);
 
         // Emit the hide signal
-        emit hide();
+        emit hidden();
     }
 
     /*
