@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>753</width>
-    <height>140</height>
+    <height>46</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_Alarms">
@@ -34,7 +34,7 @@
         <enum>QLayout::SizeConstraint::SetFixedSize</enum>
        </property>
        <item>
-        <widget class="QToolButton" name="toolButton_Autopilot">
+        <widget class="QToolButton" name="toolButton_Alarms">
          <property name="icon">
           <iconset>
            <normaloff>:/resources/images/bottombar/imagebutton_alarms.png</normaloff>:/resources/images/bottombar/imagebutton_alarms.png</iconset>
@@ -69,13 +69,17 @@
       <layout class="QVBoxLayout" name="verticalLayout_CN">
        <item>
         <layout class="QGridLayout" name="gridLayout_Alarms">
-         <item row="0" column="2">
-          <layout class="QHBoxLayout" name="horizontalLayout_Abandon">
+         <item row="0" column="6">
+          <layout class="QHBoxLayout" name="horizontalLayout_Sinking">
            <item>
-            <widget class="QToolButton" name="toolButton_Abandon">
+            <widget class="QToolButton" name="toolButton_Sinking">
+             <property name="text">
+              <string>Sinking</string>
+             </property>
              <property name="icon">
               <iconset>
-               <normaloff>:/resources/images/bottombar/alarm_abandon.png</normaloff>:/resources/images/bottombar/alarm_abandon.png</iconset>
+               <normaloff>:/resources/images/bottombar/alarm_sinking.png</normaloff>
+               <normalon>:/resources/images/bottombar/alarm_alarm.png</normalon>:/resources/images/bottombar/alarm_sinking.png</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -83,83 +87,27 @@
                <height>32</height>
               </size>
              </property>
-             <property name="toolButtonStyle">
-              <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="label_Abandon">
-             <property name="text">
-              <string>Abandon</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_Abandon">
-             <property name="styleSheet">
-              <string notr="true">background-color: rgb(82, 82, 83);
-border-top-color: rgb(159, 157, 160);
-border-left-color: rgb(159, 157, 160);
-border-right-color: rgb(83, 83, 84);
-border-bottom-color: rgb(83, 83, 84);</string>
-             </property>
-             <property name="text">
-              <string>Raise Alarm</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item row="0" column="0">
-          <layout class="QHBoxLayout" name="horizontalLayout_MOB">
-           <item>
-            <widget class="QToolButton" name="toolButton_MOB">
-             <property name="icon">
-              <iconset>
-               <normaloff>:/resources/images/bottombar/alarm_mob.png</normaloff>:/resources/images/bottombar/alarm_mob.png</iconset>
-             </property>
-             <property name="iconSize">
-              <size>
-               <width>32</width>
-               <height>32</height>
-              </size>
+             <property name="checkable">
+              <bool>true</bool>
              </property>
              <property name="toolButtonStyle">
               <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="label_MOB">
-             <property name="text">
-              <string>MOB</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_MOB">
-             <property name="styleSheet">
-              <string notr="true">background-color: rgb(82, 82, 83);
-border-top-color: rgb(159, 157, 160);
-border-left-color: rgb(159, 157, 160);
-border-right-color: rgb(83, 83, 84);
-border-bottom-color: rgb(83, 83, 84);</string>
-             </property>
-             <property name="text">
-              <string>Raise Alarm</string>
              </property>
             </widget>
            </item>
           </layout>
          </item>
          <item row="0" column="1">
-          <layout class="QHBoxLayout" name="horizontalLayout_Sinking">
+          <layout class="QHBoxLayout" name="horizontalLayout_Abandon">
            <item>
-            <widget class="QToolButton" name="toolButton_Sinking">
+            <widget class="QToolButton" name="toolButton_Abandon">
+             <property name="text">
+              <string>Abandon</string>
+             </property>
              <property name="icon">
               <iconset>
-               <normaloff>:/resources/images/bottombar/alarm_sinking.png</normaloff>:/resources/images/bottombar/alarm_sinking.png</iconset>
+               <normaloff>:/resources/images/bottombar/alarm_abandon.png</normaloff>
+               <normalon>:/resources/images/bottombar/alarm_alarm.png</normalon>:/resources/images/bottombar/alarm_abandon.png</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -167,83 +115,27 @@ border-bottom-color: rgb(83, 83, 84);</string>
                <height>32</height>
               </size>
              </property>
+             <property name="checkable">
+              <bool>true</bool>
+             </property>
              <property name="toolButtonStyle">
               <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
              </property>
             </widget>
            </item>
-           <item>
-            <widget class="QLabel" name="label_Sinking">
-             <property name="text">
-              <string>Sinking</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_Sinking">
-             <property name="styleSheet">
-              <string notr="true">background-color: rgb(82, 82, 83);
-border-top-color: rgb(159, 157, 160);
-border-left-color: rgb(159, 157, 160);
-border-right-color: rgb(83, 83, 84);
-border-bottom-color: rgb(83, 83, 84);</string>
-             </property>
-             <property name="text">
-              <string>Raise Alarm</string>
-             </property>
-            </widget>
-           </item>
           </layout>
          </item>
-         <item row="1" column="0">
+         <item row="0" column="3">
           <layout class="QHBoxLayout" name="horizontalLayout_Fire">
            <item>
             <widget class="QToolButton" name="toolButton_Fire">
-             <property name="icon">
-              <iconset>
-               <normaloff>:/resources/images/bottombar/alarm_fire.png</normaloff>:/resources/images/bottombar/alarm_fire.png</iconset>
-             </property>
-             <property name="iconSize">
-              <size>
-               <width>32</width>
-               <height>32</height>
-              </size>
-             </property>
-             <property name="toolButtonStyle">
-              <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="label_Fire">
              <property name="text">
               <string>Fire</string>
              </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_Fire">
-             <property name="styleSheet">
-              <string notr="true">background-color: rgb(82, 82, 83);
-border-top-color: rgb(159, 157, 160);
-border-left-color: rgb(159, 157, 160);
-border-right-color: rgb(83, 83, 84);
-border-bottom-color: rgb(83, 83, 84);</string>
-             </property>
-             <property name="text">
-              <string>Raise Alarm</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item row="1" column="1">
-          <layout class="QHBoxLayout" name="horizontalLayout_Piracy">
-           <item>
-            <widget class="QToolButton" name="toolButton_Piracy">
              <property name="icon">
               <iconset>
-               <normaloff>:/resources/images/bottombar/alarm_piracy.png</normaloff>:/resources/images/bottombar/alarm_piracy.png</iconset>
+               <normaloff>:/resources/images/bottombar/alarm_fire.png</normaloff>
+               <normalon>:/resources/images/bottombar/alarm_alarm.png</normalon>:/resources/images/bottombar/alarm_fire.png</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -251,41 +143,27 @@ border-bottom-color: rgb(83, 83, 84);</string>
                <height>32</height>
               </size>
              </property>
+             <property name="checkable">
+              <bool>true</bool>
+             </property>
              <property name="toolButtonStyle">
               <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
              </property>
             </widget>
            </item>
-           <item>
-            <widget class="QLabel" name="label_Piracy">
-             <property name="text">
-              <string>Piracy</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_Piracy">
-             <property name="styleSheet">
-              <string notr="true">background-color: rgb(82, 82, 83);
-border-top-color: rgb(159, 157, 160);
-border-left-color: rgb(159, 157, 160);
-border-right-color: rgb(83, 83, 84);
-border-bottom-color: rgb(83, 83, 84);</string>
-             </property>
-             <property name="text">
-              <string>Raise Alarm</string>
-             </property>
-            </widget>
-           </item>
           </layout>
          </item>
-         <item row="1" column="2">
+         <item row="0" column="2">
           <layout class="QHBoxLayout" name="horizontalLayout_Adrift">
            <item>
             <widget class="QToolButton" name="toolButton_Adrift">
+             <property name="text">
+              <string>Adrift</string>
+             </property>
              <property name="icon">
               <iconset>
-               <normaloff>:/resources/images/bottombar/alarm_adrift.png</normaloff>:/resources/images/bottombar/alarm_adrift.png</iconset>
+               <normaloff>:/resources/images/bottombar/alarm_adrift.png</normaloff>
+               <normalon>:/resources/images/bottombar/alarm_alarm.png</normalon>:/resources/images/bottombar/alarm_adrift.png</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -293,29 +171,67 @@ border-bottom-color: rgb(83, 83, 84);</string>
                <height>32</height>
               </size>
              </property>
+             <property name="checkable">
+              <bool>true</bool>
+             </property>
              <property name="toolButtonStyle">
               <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
              </property>
             </widget>
            </item>
+          </layout>
+         </item>
+         <item row="0" column="4">
+          <layout class="QHBoxLayout" name="horizontalLayout_MOB">
            <item>
-            <widget class="QLabel" name="label_Adrift">
+            <widget class="QToolButton" name="toolButton_MOB">
              <property name="text">
-              <string>Adrift</string>
+              <string> MOB</string>
+             </property>
+             <property name="icon">
+              <iconset>
+               <normaloff>:/resources/images/bottombar/alarm_mob.png</normaloff>
+               <normalon>:/resources/images/bottombar/alarm_alarm.png</normalon>:/resources/images/bottombar/alarm_mob.png</iconset>
+             </property>
+             <property name="iconSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="checkable">
+              <bool>true</bool>
+             </property>
+             <property name="toolButtonStyle">
+              <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
              </property>
             </widget>
            </item>
+          </layout>
+         </item>
+         <item row="0" column="5">
+          <layout class="QHBoxLayout" name="horizontalLayout_Piracy">
            <item>
-            <widget class="QPushButton" name="pushButton_Adrift">
-             <property name="styleSheet">
-              <string notr="true">background-color: rgb(82, 82, 83);
-border-top-color: rgb(159, 157, 160);
-border-left-color: rgb(159, 157, 160);
-border-right-color: rgb(83, 83, 84);
-border-bottom-color: rgb(83, 83, 84);</string>
-             </property>
+            <widget class="QToolButton" name="toolButton_Piracy">
              <property name="text">
-              <string>Raise Alarm</string>
+              <string>Piracy</string>
+             </property>
+             <property name="icon">
+              <iconset>
+               <normaloff>:/resources/images/bottombar/alarm_piracy.png</normaloff>
+               <normalon>:/resources/images/bottombar/alarm_alarm.png</normalon>:/resources/images/bottombar/alarm_piracy.png</iconset>
+             </property>
+             <property name="iconSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="checkable">
+              <bool>true</bool>
+             </property>
+             <property name="toolButtonStyle">
+              <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
              </property>
             </widget>
            </item>
@@ -350,7 +266,8 @@ border-bottom-color: rgb(83, 83, 84);</string>
         <widget class="QToolButton" name="toolButton_Hide">
          <property name="icon">
           <iconset>
-           <normaloff>:/resources/images/bottombar/icon_hide.png</normaloff>:/resources/images/bottombar/icon_hide.png</iconset>
+           <normaloff>:/resources/images/bottombar/icon_hide.png</normaloff>
+           <normalon>:/resources/images/bottombar/alarm_alarm.png</normalon>:/resources/images/bottombar/icon_hide.png</iconset>
          </property>
          <property name="iconSize">
           <size>

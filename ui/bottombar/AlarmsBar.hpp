@@ -6,6 +6,8 @@
 #define FAIRWINDSK_ALARMSBAR_HPP
 
 #include <QWidget>
+#include <QToolButton>
+#include <nlohmann/json.hpp>
 
 namespace Ui { class AlarmsBar; }
 
@@ -23,12 +25,25 @@ namespace fairwindsk::ui::bottombar {
         slots:
         void onHideClicked();
 
+        void onMobClicked();
+        void onFireClicked();
+        void onAbandonClicked();
+        void onAdriftClicked();
+        void onPiracyClicked();
+        void onSinkingClicked();
 
     signals:
-        void hide();
+        void hidden();
+        void alarmed(QString alarm, bool status);
+
+    private:
+        void onAlarm(const QString& alarm);
+
 
     private:
         Ui::AlarmsBar *ui;
+        QMap<QString, QToolButton*> m_alarmToolButtons;
+        nlohmann::json m_signalkPaths;
     };
 } // fairwindsk::ui::bottombar
 
