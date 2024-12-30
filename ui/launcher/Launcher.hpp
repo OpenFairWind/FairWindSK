@@ -45,7 +45,7 @@ namespace fairwindsk::ui::launcher {
         int m_cols;
         int m_rows;
         int m_iconSize;
-        QGridLayout *m_layout;
+        QGridLayout *m_layout = nullptr;
         QMap<QString, QToolButton *> m_buttons;
     };
 } // fairwindsk::ui
