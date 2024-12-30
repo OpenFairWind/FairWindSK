@@ -22,32 +22,29 @@ namespace fairwindsk::ui::bottombar {
         // Setup the UI
         ui->setupUi(parent);
 
+        // Create the MOB bar
+        m_MOBBar = new MOBBar();
+
         // Create the autopilot bar
         m_AutopilotBar = new AutopilotBar();
 
-        // Hide the autopilot bar
-        m_AutopilotBar->setVisible(false);
-
-        // Add the autopilot bar to the layout
-        ui->gridLayout->addWidget(m_AutopilotBar,0,0);
+        // Create the Anchor bar
+        m_AnchorBar = new AnchorBar();
 
         // Create the alarms bar
         m_AlarmsBar = new AlarmsBar();
 
+        // Add the MOB bar to the layout
+        ui->gridLayout->addWidget(m_MOBBar,0,0);
+
+        // Add the autopilot bar to the layout
+        ui->gridLayout->addWidget(m_AutopilotBar,1,0);
+
+        // Add the MOB bar to the layout
+        ui->gridLayout->addWidget(m_AnchorBar,2,0);
+
         // Add the alarms bar to the layout
-        ui->gridLayout->addWidget(m_AlarmsBar,1,0);
-
-        // Create the MOB bar
-        m_MOBBar = new MOBBar();
-
-        // Add the MOB bar to the layout
-        ui->gridLayout->addWidget(m_MOBBar,2,0);
-
-        // Create the Anchor bar
-        m_AnchorBar = new AnchorBar();
-        
-        // Add the MOB bar to the layout
-        ui->gridLayout->addWidget(m_AnchorBar,3,0);
+        ui->gridLayout->addWidget(m_AlarmsBar,3,0);
 
         // Emit a signal when the MyData tool button from the UI is clicked
         connect(ui->toolButton_MyData, &QToolButton::released, this, &BottomBar::myData_clicked);
@@ -75,7 +72,7 @@ namespace fairwindsk::ui::bottombar {
      * setAutopilotIcon
      * Set Autopilot icon visibility
      */
-    void BottomBar::setAutopilotIcon(bool value) const
+    void BottomBar::setAutopilotIcon(const bool value) const
     {
 
         // Set button icon visibility
@@ -86,7 +83,7 @@ namespace fairwindsk::ui::bottombar {
      * setAnchorIcon
      * Set Anchor icon visibility
      */
-    void BottomBar::setAnchorIcon(bool value) const
+    void BottomBar::setAnchorIcon(const bool value) const
     {
 
         // Set button icon visibility
@@ -97,7 +94,7 @@ namespace fairwindsk::ui::bottombar {
      * setMOBIcon
      * Set MOB icon visibility
      */
-    void BottomBar::setMOBIcon(bool value) const
+    void BottomBar::setMOBIcon(const bool value) const
     {
 
         // Set button icon visibility
