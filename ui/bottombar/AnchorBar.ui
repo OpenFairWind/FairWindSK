@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>753</width>
-    <height>140</height>
+    <height>74</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_Alarms">
@@ -24,7 +24,7 @@
     <number>0</number>
    </property>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_Alarms">
+    <layout class="QHBoxLayout" name="horizontalLayout_Anchor">
      <property name="sizeConstraint">
       <enum>QLayout::SizeConstraint::SetFixedSize</enum>
      </property>
@@ -34,10 +34,10 @@
         <enum>QLayout::SizeConstraint::SetFixedSize</enum>
        </property>
        <item>
-        <widget class="QToolButton" name="toolButton_Autopilot">
+        <widget class="QToolButton" name="toolButton_Anchor">
          <property name="icon">
           <iconset>
-           <normaloff>:/resources/images/bottombar/imagebutton_alarms.png</normaloff>:/resources/images/bottombar/imagebutton_alarms.png</iconset>
+           <normaloff>:/resources/images/bottombar/imagebutton_anchor.png</normaloff>:/resources/images/bottombar/imagebutton_anchor.png</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -68,14 +68,17 @@
      <item>
       <layout class="QVBoxLayout" name="verticalLayout_CN">
        <item>
-        <layout class="QGridLayout" name="gridLayout_Alarms">
-         <item row="0" column="2">
-          <layout class="QHBoxLayout" name="horizontalLayout_Abandon">
+        <layout class="QGridLayout" name="gridLayout_Anchor">
+         <item row="0" column="9">
+          <layout class="QHBoxLayout" name="horizontalLayout_Release">
            <item>
-            <widget class="QToolButton" name="toolButton_Abandon">
+            <widget class="QToolButton" name="toolButton_Release">
+             <property name="text">
+              <string>Down</string>
+             </property>
              <property name="icon">
               <iconset>
-               <normaloff>:/resources/images/bottombar/alarm_abandon.png</normaloff>:/resources/images/bottombar/alarm_abandon.png</iconset>
+               <normaloff>:/resources/images/bottombar/anchor_down.png</normaloff>:/resources/images/bottombar/anchor_down.png</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -88,36 +91,42 @@
              </property>
             </widget>
            </item>
+          </layout>
+         </item>
+         <item row="0" column="2">
+          <layout class="QHBoxLayout" name="horizontalLayout_Raise">
            <item>
-            <widget class="QLabel" name="label_Abandon">
+            <widget class="QToolButton" name="toolButton_Raise">
              <property name="text">
-              <string>Abandon</string>
+              <string>Raise</string>
              </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_Abandon">
-             <property name="styleSheet">
-              <string notr="true">background-color: rgb(82, 82, 83);
-border-top-color: rgb(159, 157, 160);
-border-left-color: rgb(159, 157, 160);
-border-right-color: rgb(83, 83, 84);
-border-bottom-color: rgb(83, 83, 84);</string>
+             <property name="icon">
+              <iconset>
+               <normaloff>:/resources/images/bottombar/anchor_raise.png</normaloff>:/resources/images/bottombar/anchor_raise.png</iconset>
              </property>
-             <property name="text">
-              <string>Raise Alarm</string>
+             <property name="iconSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="toolButtonStyle">
+              <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
              </property>
             </widget>
            </item>
           </layout>
          </item>
          <item row="0" column="0">
-          <layout class="QHBoxLayout" name="horizontalLayout_MOB">
+          <layout class="QHBoxLayout" name="horizontalLayout_Reset">
            <item>
-            <widget class="QToolButton" name="toolButton_MOB">
+            <widget class="QToolButton" name="toolButton_Reset">
+             <property name="text">
+              <string>Reset</string>
+             </property>
              <property name="icon">
               <iconset>
-               <normaloff>:/resources/images/bottombar/alarm_mob.png</normaloff>:/resources/images/bottombar/alarm_mob.png</iconset>
+               <normaloff>:/resources/images/bottombar/anchor_up.png</normaloff>:/resources/images/bottombar/anchor_up.png</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -127,39 +136,21 @@ border-bottom-color: rgb(83, 83, 84);</string>
              </property>
              <property name="toolButtonStyle">
               <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="label_MOB">
-             <property name="text">
-              <string>MOB</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_MOB">
-             <property name="styleSheet">
-              <string notr="true">background-color: rgb(82, 82, 83);
-border-top-color: rgb(159, 157, 160);
-border-left-color: rgb(159, 157, 160);
-border-right-color: rgb(83, 83, 84);
-border-bottom-color: rgb(83, 83, 84);</string>
-             </property>
-             <property name="text">
-              <string>Raise Alarm</string>
              </property>
             </widget>
            </item>
           </layout>
          </item>
          <item row="0" column="1">
-          <layout class="QHBoxLayout" name="horizontalLayout_Sinking">
+          <layout class="QHBoxLayout" name="horizontalLayout_Up">
            <item>
-            <widget class="QToolButton" name="toolButton_Sinking">
+            <widget class="QToolButton" name="toolButton_Up">
+             <property name="text">
+              <string>Up</string>
+             </property>
              <property name="icon">
               <iconset>
-               <normaloff>:/resources/images/bottombar/alarm_sinking.png</normaloff>:/resources/images/bottombar/alarm_sinking.png</iconset>
+               <normaloff>:/resources/images/bottombar/anchor_up.png</normaloff>:/resources/images/bottombar/anchor_up.png</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -169,39 +160,21 @@ border-bottom-color: rgb(83, 83, 84);</string>
              </property>
              <property name="toolButtonStyle">
               <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="label_Sinking">
-             <property name="text">
-              <string>Sinking</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_Sinking">
-             <property name="styleSheet">
-              <string notr="true">background-color: rgb(82, 82, 83);
-border-top-color: rgb(159, 157, 160);
-border-left-color: rgb(159, 157, 160);
-border-right-color: rgb(83, 83, 84);
-border-bottom-color: rgb(83, 83, 84);</string>
-             </property>
-             <property name="text">
-              <string>Raise Alarm</string>
              </property>
             </widget>
            </item>
           </layout>
          </item>
-         <item row="1" column="0">
-          <layout class="QHBoxLayout" name="horizontalLayout_Fire">
+         <item row="0" column="3">
+          <layout class="QHBoxLayout" name="horizontalLayout_Radius_Dec">
            <item>
-            <widget class="QToolButton" name="toolButton_Fire">
+            <widget class="QToolButton" name="toolButton_RadiusDec">
+             <property name="text">
+              <string>-</string>
+             </property>
              <property name="icon">
               <iconset>
-               <normaloff>:/resources/images/bottombar/alarm_fire.png</normaloff>:/resources/images/bottombar/alarm_fire.png</iconset>
+               <normaloff>:/resources/images/bottombar/radius_dec.png</normaloff>:/resources/images/bottombar/radius_dec.png</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -211,39 +184,50 @@ border-bottom-color: rgb(83, 83, 84);</string>
              </property>
              <property name="toolButtonStyle">
               <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="label_Fire">
-             <property name="text">
-              <string>Fire</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_Fire">
-             <property name="styleSheet">
-              <string notr="true">background-color: rgb(82, 82, 83);
-border-top-color: rgb(159, 157, 160);
-border-left-color: rgb(159, 157, 160);
-border-right-color: rgb(83, 83, 84);
-border-bottom-color: rgb(83, 83, 84);</string>
-             </property>
-             <property name="text">
-              <string>Raise Alarm</string>
              </property>
             </widget>
            </item>
           </layout>
          </item>
-         <item row="1" column="1">
-          <layout class="QHBoxLayout" name="horizontalLayout_Piracy">
+         <item row="0" column="4">
+          <layout class="QHBoxLayout" name="horizontalLayout_Displays">
            <item>
-            <widget class="QToolButton" name="toolButton_Piracy">
+            <layout class="QVBoxLayout" name="verticalLayout_Displays">
+             <item>
+              <widget class="QLabel" name="label_DPT">
+               <property name="text">
+                <string>000</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_Range">
+               <property name="text">
+                <string>000</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_Counter">
+               <property name="text">
+                <string>000</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </item>
+         <item row="0" column="8">
+          <layout class="QHBoxLayout" name="horizontalLayout_Down">
+           <item>
+            <widget class="QToolButton" name="toolButton_Down">
+             <property name="text">
+              <string>Down</string>
+             </property>
              <property name="icon">
               <iconset>
-               <normaloff>:/resources/images/bottombar/alarm_piracy.png</normaloff>:/resources/images/bottombar/alarm_piracy.png</iconset>
+               <normaloff>:/resources/images/bottombar/anchor_down.png</normaloff>:/resources/images/bottombar/anchor_down.png</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -253,39 +237,21 @@ border-bottom-color: rgb(83, 83, 84);</string>
              </property>
              <property name="toolButtonStyle">
               <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="label_Piracy">
-             <property name="text">
-              <string>Piracy</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_Piracy">
-             <property name="styleSheet">
-              <string notr="true">background-color: rgb(82, 82, 83);
-border-top-color: rgb(159, 157, 160);
-border-left-color: rgb(159, 157, 160);
-border-right-color: rgb(83, 83, 84);
-border-bottom-color: rgb(83, 83, 84);</string>
-             </property>
-             <property name="text">
-              <string>Raise Alarm</string>
              </property>
             </widget>
            </item>
           </layout>
          </item>
-         <item row="1" column="2">
-          <layout class="QHBoxLayout" name="horizontalLayout_Adrift">
+         <item row="0" column="7">
+          <layout class="QHBoxLayout" name="horizontalLayout_Drop">
            <item>
-            <widget class="QToolButton" name="toolButton_Adrift">
+            <widget class="QToolButton" name="toolButton_Drop">
+             <property name="text">
+              <string>Drop</string>
+             </property>
              <property name="icon">
               <iconset>
-               <normaloff>:/resources/images/bottombar/alarm_adrift.png</normaloff>:/resources/images/bottombar/alarm_adrift.png</iconset>
+               <normaloff>:/resources/images/bottombar/anchor_drop.png</normaloff>:/resources/images/bottombar/anchor_drop.png</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -298,24 +264,27 @@ border-bottom-color: rgb(83, 83, 84);</string>
              </property>
             </widget>
            </item>
+          </layout>
+         </item>
+         <item row="0" column="6">
+          <layout class="QHBoxLayout" name="horizontalLayout_Radius_Inc">
            <item>
-            <widget class="QLabel" name="label_Adrift">
+            <widget class="QToolButton" name="toolButton_RadiusInc">
              <property name="text">
-              <string>Adrift</string>
+              <string>+</string>
              </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_Adrift">
-             <property name="styleSheet">
-              <string notr="true">background-color: rgb(82, 82, 83);
-border-top-color: rgb(159, 157, 160);
-border-left-color: rgb(159, 157, 160);
-border-right-color: rgb(83, 83, 84);
-border-bottom-color: rgb(83, 83, 84);</string>
+             <property name="icon">
+              <iconset>
+               <normaloff>:/resources/images/bottombar/radius_inc.png</normaloff>:/resources/images/bottombar/radius_inc.png</iconset>
              </property>
-             <property name="text">
-              <string>Raise Alarm</string>
+             <property name="iconSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="toolButtonStyle">
+              <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
              </property>
             </widget>
            </item>

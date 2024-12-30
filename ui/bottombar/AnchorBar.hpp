@@ -23,9 +23,28 @@ namespace fairwindsk::ui::bottombar {
             slots:
             void onHideClicked();
 
+            void onResetClicked();
+            void onUpClicked();
+            void onRaiseClicked();
+            void onRadiusDecClicked();
+            void onRadiusIncClicked();
+            void onDropClicked();
+            void onDownClicked();
+            void onReleaseClicked();
+
 
         signals:
-            void hide();
+            void hidden();
+
+        void resetCounter();
+        void chainUp();
+        void raiseAnchor();
+        void radiusDec();
+        void radiusInc();
+        void dropAnchor();
+        void chainDown();
+        void chainRelease();
+
 
     private:
         Ui::AnchorBar *ui;
