@@ -46,7 +46,7 @@ namespace fairwindsk::ui::bottombar {
         void onSteerClicked();
 
     signals:
-        void hide();
+        void hidden();
 
     private:
         QJsonObject setState(const QString& state);

@@ -17,6 +17,9 @@ namespace fairwindsk::ui::bottombar {
             QWidget(parent), ui(new Ui::AutopilotBar) {
         ui->setupUi(this);
 
+        // Not visible by default
+        QWidget::setVisible(false);
+
         // Get the FairWind singleton
         auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
@@ -83,8 +86,7 @@ namespace fairwindsk::ui::bottombar {
         connect(ui->toolButton_Steer, &QToolButton::clicked, this, &AutopilotBar::onSteerClicked);
         connect(ui->toolButton_Auto, &QToolButton::clicked, this, &AutopilotBar::onAutoClicked);
 
-        // Not visible by default
-        QWidget::setVisible(false);
+
 
         // Get the configuration json object
         auto configurationJsonObject = configuration->getRoot();
@@ -269,7 +271,7 @@ namespace fairwindsk::ui::bottombar {
 
     void AutopilotBar::onHideClicked() {
         setVisible(false);
-        emit hide();
+        emit hidden();
     }
 
     void AutopilotBar::onNextWPTClicked() {
