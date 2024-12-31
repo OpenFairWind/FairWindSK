@@ -6,6 +6,7 @@
 #define ANCHORBAR_H
 
 #include <QWidget>
+#include <nlohmann/json.hpp>
 
 namespace Ui { class AnchorBar; }
 
@@ -48,6 +49,7 @@ namespace fairwindsk::ui::bottombar {
 
     private:
         Ui::AnchorBar *ui;
+        nlohmann::json m_signalkPaths;
     };
 } // fairwindsk::ui::bottombar
 

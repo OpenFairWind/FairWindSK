@@ -8,6 +8,8 @@
 #include <QPushButton>
 
 #include "AnchorBar.hpp"
+
+#include "FairWindSK.hpp"
 #include "ui_AnchorBar.h"
 
 
@@ -15,6 +17,21 @@ namespace fairwindsk::ui::bottombar {
     AnchorBar::AnchorBar(QWidget *parent) :
             QWidget(parent), ui(new Ui::AnchorBar) {
         ui->setupUi(this);
+
+        // Get the FairWind singleton
+        const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+
+        // Get configuration
+        const auto configuration = fairWindSK->getConfiguration();
+
+        // Get the configuration json object
+
+        // Check if the configuration object contains the key 'signalk' with an object value
+        if (auto configurationJsonObject = configuration->getRoot(); configurationJsonObject.contains("signalk") && configurationJsonObject["signalk"].is_object()) {
+
+            // Get the signal k paths object
+            m_signalkPaths = configurationJsonObject["signalk"];
+        }
 
         // Not visible by default
         QWidget::setVisible(false);
@@ -50,7 +67,29 @@ namespace fairwindsk::ui::bottombar {
 
     void AnchorBar::onRaiseClicked() {
 
-        emit raiseAnchor();
+        // Check if the Options object has the rsa key and if it is a string
+        if (m_signalkPaths.contains("anchor.actions.raise") && m_signalkPaths["anchor.actions.raise"].is_string())
+        {
+            // Get the FairWind singleton
+            const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+
+            // Get the Signal K client
+            const auto signalKClient = fairWindSK->getSignalKClient();
+
+            const auto url = signalKClient->server().toString() + "/" +
+                QString::fromStdString(
+                    m_signalkPaths["anchor.actions.raise"].get<std::string>()).replace(".","/"
+                        );
+
+            qDebug() << url;
+
+            // Rise the alarm
+            auto result = signalKClient->signalkPost(QUrl(url));
+
+            qDebug() << result;
+
+            emit raiseAnchor();
+        }
     }
 
     void AnchorBar::onRadiusDecClicked() {
@@ -65,7 +104,29 @@ namespace fairwindsk::ui::bottombar {
 
     void AnchorBar::onDropClicked() {
 
-        emit dropAnchor();
+        // Check if the Options object has the rsa key and if it is a string
+        if (m_signalkPaths.contains("anchor.actions.drop") && m_signalkPaths["anchor.actions.drop"].is_string())
+        {
+            // Get the FairWind singleton
+            const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+
+            // Get the Signal K client
+            const auto signalKClient = fairWindSK->getSignalKClient();
+
+            const auto url = signalKClient->server().toString() + "/" +
+                QString::fromStdString(
+                    m_signalkPaths["anchor.actions.drop"].get<std::string>()).replace(".","/"
+                        );
+
+            qDebug() << url;
+
+            // Rise the alarm
+            auto result = signalKClient->signalkPost(QUrl(url));
+
+            qDebug() << result;
+
+            emit dropAnchor();
+        }
     }
 
     void AnchorBar::onDownClicked() {
