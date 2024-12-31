@@ -7,7 +7,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-set(CMAKE_PREFIX_PATH "/usr/local/opt/qt6/")
+#set(CMAKE_PREFIX_PATH "/usr/local/opt/qt6/")
 
 # Include the support to external projects
 include(ExternalProject)
