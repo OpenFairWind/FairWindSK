@@ -38,6 +38,7 @@ namespace fairwindsk::signalk {
 
         bool login();
         QUrl url();
+        QUrl server() const;
         QUrl http(const QString& version = "v1");
         QUrl ws(const QString& version = "v1");
         QUrl tcp(const QString& version = "v1");

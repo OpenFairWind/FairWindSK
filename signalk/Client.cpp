@@ -272,7 +272,7 @@ namespace fairwindsk::signalk {
         if (m_Debug) {
 
             // Show a message
-            qDebug() << "SignalKClient::signalkPost payload: " << payload;
+            qDebug() << "SignalKClient::signalkGet payload: " << payload;
         }
 
         // Invoke the http method
@@ -378,7 +378,7 @@ namespace fairwindsk::signalk {
         }
 
         // Check if the debug is active
-        if (m_Debug) {
+       if (m_Debug) {
 
             // Show a message
             qDebug() << "SignalKClient::signalkPost payload: " << payload;
@@ -1134,5 +1134,10 @@ namespace fairwindsk::signalk {
 
     QUrl Client::url() {
         return m_Url;
+    }
+
+    QUrl Client::server() const
+    {
+        return QUrl(m_Url.scheme() + "://" + m_Url.host() + ":" + QString::number(m_Url.port()));
     }
 }
