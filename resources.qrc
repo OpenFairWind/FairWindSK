@@ -33,6 +33,10 @@
 
         <file>resources/images/bottombar/anchor_drop.png</file>
         <file>resources/images/bottombar/anchor_raise.png</file>
+        <file>resources/images/bottombar/anchor_up.png</file>
+        <file>resources/images/bottombar/anchor_down.png</file>
+        <file>resources/images/bottombar/anchor_reset.png</file>
+        <file>resources/images/bottombar/anchor_release.png</file>
 
 
         <file>resources/images/bottombar/alarm_alarm.png</file>
