@@ -29,8 +29,8 @@ namespace fairwindsk::ui::bottombar {
             void onUpPressed();
         void onUpReleased();
             void onRaiseClicked();
-            void onRadiusDecClicked();
-            void onRadiusIncClicked();
+        void onSetRadiusClicked();
+            void onCurrentRadiusChanged();
             void onDropClicked();
             void onDownPressed();
         void onDownReleased();
@@ -41,7 +41,6 @@ namespace fairwindsk::ui::bottombar {
         void updateBearing(const QJsonObject& update);
         void updateDistance(const QJsonObject& update);
         void updateRode(const QJsonObject& update);
-        void updateFudge(const QJsonObject& update);
         void updateCurrentRadius(const QJsonObject& update);
         void updateMaxRadius(const QJsonObject& update);
 
@@ -52,8 +51,8 @@ namespace fairwindsk::ui::bottombar {
         void chainUpPressed();
         void chainUpReleased();
         void raiseAnchor();
-        void radiusDec();
-        void radiusInc();
+        void radiusChanged();
+        void radiusSet();
         void dropAnchor();
         void chainDownPressed();
         void chainDownReleased();

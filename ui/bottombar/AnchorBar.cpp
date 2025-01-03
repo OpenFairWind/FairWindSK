@@ -6,6 +6,7 @@
 
 
 #include <QPushButton>
+#include <QSlider>
 
 #include "AnchorBar.hpp"
 
@@ -112,34 +113,24 @@ namespace fairwindsk::ui::bottombar {
                         ));
             }
 
-            // Check if the Options object has the rsa key and if it is a string
-            if (m_signalkPaths.contains("anchor.fudge") && m_signalkPaths["anchor.fudge"].is_string()) {
-
-                // Subscribe and update
-                updateFudge(FairWindSK::getInstance()->getSignalKClient()->subscribe(
-                        QString::fromStdString(m_signalkPaths["anchor.fudge"].get<std::string>()),
-                        this,
-                        SLOT(fairwindsk::ui::bottombar::AnchorBar::updateFudge)
-                        ));
-            }
         }
 
         // Not visible by default
         QWidget::setVisible(false);
 
         // emit a signal when the MyData tool button from the UI is clicked
-        connect(ui->toolButton_Hide, &QPushButton::clicked, this, &AnchorBar::onHideClicked);
+        connect(ui->toolButton_Hide, &QToolButton::clicked, this, &AnchorBar::onHideClicked);
 
-        connect(ui->toolButton_Reset, &QPushButton::clicked, this, &AnchorBar::onResetClicked);
-        connect(ui->toolButton_Up, &QPushButton::pressed, this, &AnchorBar::onUpPressed);
-        connect(ui->toolButton_Up, &QPushButton::released, this, &AnchorBar::onUpReleased);
-        connect(ui->toolButton_Raise, &QPushButton::clicked, this, &AnchorBar::onRaiseClicked);
-        connect(ui->toolButton_RadiusDec, &QPushButton::clicked, this, &AnchorBar::onRadiusDecClicked);
-        connect(ui->toolButton_RadiusInc, &QPushButton::clicked, this, &AnchorBar::onRadiusIncClicked);
-        connect(ui->toolButton_Drop, &QPushButton::clicked, this, &AnchorBar::onDropClicked);
-        connect(ui->toolButton_Down, &QPushButton::pressed, this, &AnchorBar::onDownPressed);
-        connect(ui->toolButton_Down, &QPushButton::released, this, &AnchorBar::onDownReleased);
-        connect(ui->toolButton_Release, &QPushButton::clicked, this, &AnchorBar::onReleaseClicked);
+        connect(ui->toolButton_Reset, &QToolButton::clicked, this, &AnchorBar::onResetClicked);
+        connect(ui->toolButton_Up, &QToolButton::pressed, this, &AnchorBar::onUpPressed);
+        connect(ui->toolButton_Up, &QToolButton::released, this, &AnchorBar::onUpReleased);
+        connect(ui->toolButton_Raise, &QToolButton::clicked, this, &AnchorBar::onRaiseClicked);
+        connect(ui->pushButton_SetRadius, &QPushButton::clicked, this, &AnchorBar::onSetRadiusClicked);
+        connect(ui->horizontalSlider_CurrentRadius, &QSlider::valueChanged, this, &AnchorBar::onCurrentRadiusChanged);
+        connect(ui->toolButton_Drop, &QToolButton::clicked, this, &AnchorBar::onDropClicked);
+        connect(ui->toolButton_Down, &QToolButton::pressed, this, &AnchorBar::onDownPressed);
+        connect(ui->toolButton_Down, &QToolButton::released, this, &AnchorBar::onDownReleased);
+        connect(ui->toolButton_Release, &QToolButton::clicked, this, &AnchorBar::onReleaseClicked);
 
     }
 
@@ -150,7 +141,25 @@ namespace fairwindsk::ui::bottombar {
 
     void AnchorBar::onResetClicked() {
 
-        emit resetCounter();
+        // Check if the Options object has the rsa key and if it is a string
+        if (m_signalkPaths.contains("anchor.actions.reset") && m_signalkPaths["anchor.actions.reset"].is_string())
+        {
+            // Get the FairWind singleton
+            const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+
+            // Get the Signal K client
+            const auto signalKClient = fairWindSK->getSignalKClient();
+
+            const auto url = signalKClient->server().toString() + "/" +
+                QString::fromStdString(
+                    m_signalkPaths["anchor.actions.reset"].get<std::string>()).replace(".","/"
+                        );
+
+            // Rise the alarm
+            auto result = signalKClient->signalkPost(QUrl(url));
+
+            emit resetCounter();
+        }
     }
 
     void AnchorBar::onUpPressed() {
@@ -169,12 +178,8 @@ namespace fairwindsk::ui::bottombar {
                     m_signalkPaths["anchor.actions.up"].get<std::string>()).replace(".","/"
                         );
 
-            qDebug() << url;
-
             // Rise the alarm
             auto result = signalKClient->signalkPost(QUrl(url));
-
-            qDebug() << result;
 
             emit chainUpPressed();
         }
@@ -198,12 +203,8 @@ namespace fairwindsk::ui::bottombar {
                     m_signalkPaths["anchor.actions.up"].get<std::string>()).replace(".","/"
                         );
 
-            qDebug() << url;
-
             // Rise the alarm
             auto result = signalKClient->signalkDelete(QUrl(url));
-
-            qDebug() << result;
 
             emit chainUpReleased();
         }
@@ -225,25 +226,44 @@ namespace fairwindsk::ui::bottombar {
                     m_signalkPaths["anchor.actions.raise"].get<std::string>()).replace(".","/"
                         );
 
-            qDebug() << url;
-
             // Rise the alarm
             auto result = signalKClient->signalkPost(QUrl(url));
-
-            qDebug() << result;
 
             emit raiseAnchor();
         }
     }
 
-    void AnchorBar::onRadiusDecClicked() {
+    void AnchorBar::onCurrentRadiusChanged() {
 
-        emit radiusDec();
-    }
+        // Check if the Options object has the rsa key and if it is a string
+        if (m_signalkPaths.contains("anchor.actions.radius") && m_signalkPaths["anchor.actions.radius"].is_string()) {
 
-    void AnchorBar::onRadiusIncClicked() {
+            // Convert m/s to knots
+            auto value = m_units->convert(
+                FairWindSK::getInstance()->getConfiguration()->getDepthUnits(),"m",
+                ui->horizontalSlider_CurrentRadius->value());
 
-        emit radiusInc();
+            // Get the FairWind singleton
+            const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+
+            // Get the Signal K client
+            const auto signalKClient = fairWindSK->getSignalKClient();
+
+            auto payload = QJsonObject();
+            payload["radius"] = value;
+
+            const auto url = signalKClient->server().toString() + "/" +
+                QString::fromStdString(
+                    m_signalkPaths["anchor.actions.radius"].get<std::string>()).replace(".","/"
+                        );
+
+            // Rise the alarm
+            auto result = signalKClient->signalkPost(QUrl(url), payload);
+
+            emit radiusChanged();
+        }
+
+
     }
 
     void AnchorBar::onDropClicked() {
@@ -262,14 +282,33 @@ namespace fairwindsk::ui::bottombar {
                     m_signalkPaths["anchor.actions.drop"].get<std::string>()).replace(".","/"
                         );
 
-            qDebug() << url;
+            // Rise the alarm
+            auto result = signalKClient->signalkPost(QUrl(url));
+
+            emit dropAnchor();
+        }
+    }
+
+    void AnchorBar::onSetRadiusClicked() {
+
+        // Check if the Options object has the rsa key and if it is a string
+        if (m_signalkPaths.contains("anchor.actions.radius") && m_signalkPaths["anchor.actions.radius"].is_string())
+        {
+            // Get the FairWind singleton
+            const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+
+            // Get the Signal K client
+            const auto signalKClient = fairWindSK->getSignalKClient();
+
+            const auto url = signalKClient->server().toString() + "/" +
+                QString::fromStdString(
+                    m_signalkPaths["anchor.actions.radius"].get<std::string>()).replace(".","/"
+                        );
 
             // Rise the alarm
             auto result = signalKClient->signalkPost(QUrl(url));
 
-            qDebug() << result;
-
-            emit dropAnchor();
+            emit radiusSet();
         }
     }
 
@@ -289,12 +328,8 @@ namespace fairwindsk::ui::bottombar {
                     m_signalkPaths["anchor.actions.down"].get<std::string>()).replace(".","/"
                         );
 
-            qDebug() << url;
-
             // Rise the alarm
             auto result = signalKClient->signalkPost(QUrl(url));
-
-            qDebug() << result;
 
             emit chainDownPressed();
         }
@@ -315,12 +350,8 @@ namespace fairwindsk::ui::bottombar {
                     m_signalkPaths["anchor.actions.down"].get<std::string>()).replace(".","/"
                         );
 
-            qDebug() << url;
-
             // Rise the alarm
             auto result = signalKClient->signalkDelete(QUrl(url));
-
-            qDebug() << result;
 
             emit chainDownReleased();
         }
@@ -328,7 +359,26 @@ namespace fairwindsk::ui::bottombar {
 
     void AnchorBar::onReleaseClicked() {
 
-        emit chainRelease();
+        // Check if the Options object has the rsa key and if it is a string
+        if (m_signalkPaths.contains("anchor.actions.release") && m_signalkPaths["anchor.actions.release"].is_string())
+        {
+            // Get the FairWind singleton
+            const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+
+            // Get the Signal K client
+            const auto signalKClient = fairWindSK->getSignalKClient();
+
+            const auto url = signalKClient->server().toString() + "/" +
+                QString::fromStdString(
+                    m_signalkPaths["anchor.actions.release"].get<std::string>()).replace(".","/"
+                        );
+
+            // Rise the alarm
+            auto result = signalKClient->signalkPost(QUrl(url));
+
+            emit chainRelease();
+        }
+
     }
 
     /*
@@ -535,6 +585,9 @@ namespace fairwindsk::ui::bottombar {
             // Convert m/s to knots
             value = m_units->convert("m",FairWindSK::getInstance()->getConfiguration()->getRangeUnits(), value);
 
+            // Set the slider value
+            ui->horizontalSlider_CurrentRadius->setValue(static_cast<int>(value));
+
             // Build the formatted value
             auto text = m_units->format(FairWindSK::getInstance()->getConfiguration()->getRangeUnits(), value);
 
@@ -571,6 +624,10 @@ namespace fairwindsk::ui::bottombar {
             // Convert m/s to knots
             value = m_units->convert("m",FairWindSK::getInstance()->getConfiguration()->getRangeUnits(), value);
 
+
+            // Set the maximum value on the slider
+            ui->horizontalSlider_CurrentRadius->setMaximum(static_cast<int>(value));
+
             // Build the formatted value
             auto text = m_units->format(FairWindSK::getInstance()->getConfiguration()->getRangeUnits(), value);
 
@@ -583,41 +640,13 @@ namespace fairwindsk::ui::bottombar {
         }
     }
 
-    /*
- * updateDistance
- * Method called in accordance to signalk to update the distance
- */
-    void AnchorBar::updateFudge(const QJsonObject &update) {
 
-        // Check if for any reason the update is empty
-        if (update.isEmpty()) {
-
-            // Exit the method
-            return;
-        }
-
-        // Get the value
-        auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
-
-        // Check if value is valid
-        if (std::isnan(value)) {
-            ui->widget_Fudge->setVisible(false);
-        } else {
-
-
-            // Build the formatted value
-            auto text = m_units->format(FairWindSK::getInstance()->getConfiguration()->getRangeUnits(), value);
-
-            // Set the speed over ground label from the UI to the formatted value
-            ui->label_Fudge->setText(text);
-
-            if (!ui->widget_Fudge->isVisible()) {
-                ui->widget_Fudge->setVisible(true);
-            }
-        }
-    }
 
     AnchorBar::~AnchorBar() {
-        delete ui;
+        if (ui) {
+            delete ui;
+            ui = nullptr;
+        }
+
     }
 } // fairwindsk::ui::bottombar
