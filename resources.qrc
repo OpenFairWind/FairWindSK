@@ -31,9 +31,15 @@
         <file>resources/images/bottombar/imagebutton_alarms.png</file>
         <file>resources/images/bottombar/imagebutton_settings.png</file>
 
+        <file>resources/images/bottombar/anchor_drop.png</file>
+        <file>resources/images/bottombar/anchor_raise.png</file>
+
+
         <file>resources/images/bottombar/alarm_alarm.png</file>
+
         <file>resources/images/bottombar/alarm_abandon.png</file>
         <file>resources/images/bottombar/alarm_adrift.png</file>
+        <file>resources/images/bottombar/alarm_anchor.png</file>
         <file>resources/images/bottombar/alarm_fire.png</file>
         <file>resources/images/bottombar/alarm_mob.png</file>
         <file>resources/images/bottombar/alarm_piracy.png</file>
