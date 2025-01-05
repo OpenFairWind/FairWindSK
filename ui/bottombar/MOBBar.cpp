@@ -236,7 +236,7 @@ namespace fairwindsk::ui::bottombar {
             return;
         }
 
-        // et the value of the notification object
+        // get the value of the notification object
         auto value = fairwindsk::signalk::Client::getObjectFromUpdateByPath(update,"notifications.mob");
 
         // Check if value is valid
