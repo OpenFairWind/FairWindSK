@@ -74,6 +74,7 @@
         "notifications.piracy": "notifications.piracy",
         "notifications.sinking": "notifications.sinking",
         "notifications.anchor": "notifications.anchor",
+        "notifications": "notifications.*",
         "anchor.bearing": "navigation.anchor.bearingTrue",
         "anchor.radius": "navigation.anchor.currentRadius",
         "anchor.distance": "navigation.anchor.distanceFromBow",
