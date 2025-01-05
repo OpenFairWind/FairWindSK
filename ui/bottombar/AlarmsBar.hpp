@@ -32,6 +32,8 @@ namespace fairwindsk::ui::bottombar {
         void onPiracyClicked();
         void onSinkingClicked();
 
+        void updateNotifications(const QJsonObject& update);
+
     signals:
         void hidden();
         void alarmed(QString alarm, bool status);
