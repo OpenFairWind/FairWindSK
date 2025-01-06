@@ -7,6 +7,7 @@
 #include <QtWidgets/QAbstractButton>
 #include "AutopilotBar.hpp"
 
+#include <QJsonArray>
 #include <QJsonDocument>
 
 #include "FairWindSK.hpp"
@@ -83,13 +84,13 @@ namespace fairwindsk::ui::bottombar {
         connect(ui->toolButton_Minus1, &QToolButton::clicked, this, &AutopilotBar::onMinus1Clicked);
         connect(ui->toolButton_Minus10, &QToolButton::clicked, this, &AutopilotBar::onMinus10Clicked);
         connect(ui->toolButton_NextWPT, &QToolButton::clicked, this, &AutopilotBar::onNextWPTClicked);
-        connect(ui->toolButton_Steer, &QToolButton::clicked, this, &AutopilotBar::onSteerClicked);
+        connect(ui->toolButton_Dodge, &QToolButton::clicked, this, &AutopilotBar::onDodgeClicked);
         connect(ui->toolButton_Auto, &QToolButton::clicked, this, &AutopilotBar::onAutoClicked);
 
 
 
         // Get the configuration json object
-        auto configurationJsonObject = configuration->getRoot();
+        const auto configurationJsonObject = configuration->getRoot();
 
         // Check if the configuration object contains the key 'signalk' with an object value
         if (configurationJsonObject.contains("signalk") && configurationJsonObject["signalk"].is_object())
@@ -128,6 +129,54 @@ namespace fairwindsk::ui::bottombar {
                         this,
                         SLOT(fairwindsk::ui::bottombar::AutopilotBar::updateState())
                         ));
+            }
+
+
+            // Check if the default autopilot is set
+            if (!configuration->getAutopilot().isEmpty())
+            {
+                // Get the Signal K client
+                const auto client = fairWindSK->getSignalKClient();
+
+                // Get the path
+                const auto path = client->server().toString()+"/signalk/v2/api/vessels/self/autopilots/"+configuration->getAutopilot()+"/options";
+
+                // Perform the PUT request
+                auto result = client->signalkGet( QUrl(path));
+
+                //if (fairWindSK->isDebug()) {
+                qDebug() << "AutopilotBar::AutopilotBar()";
+                qDebug() << result;
+                //}
+
+                if (result.contains("modes") && result["modes"].isArray()) {
+                    if (!result["modes"].toArray().contains("route")) {
+                        ui->toolButton_Route->setVisible(false);
+                    }
+                    if (!result["modes"].toArray().contains("wind")) {
+                        ui->toolButton_Wind->setVisible(false);
+                    }
+                    if (!result["modes"].toArray().contains("auto")) {
+                        ui->toolButton_Auto->setVisible(false);
+                    }
+                    if (!result["modes"].toArray().contains("dodge")) {
+                        ui->toolButton_Dodge->setVisible(false);
+                    }
+                }
+            } else {
+                // Disable the GUI
+                ui->toolButton_StandBy->setEnabled(false);
+                ui->toolButton_NextWPT->setEnabled(false);
+                ui->toolButton_Wind->setEnabled(false);
+                ui->toolButton_PTack->setEnabled(false);
+                ui->toolButton_Minus10->setEnabled(false);
+                ui->toolButton_Minus1->setEnabled(false);
+                ui->toolButton_Plus1->setEnabled(false);
+                ui->toolButton_Plus10->setEnabled(false);
+                ui->toolButton_STack->setEnabled(false);
+                ui->toolButton_Route->setEnabled(false);
+                ui->toolButton_Dodge->setEnabled(false);
+                ui->toolButton_Auto->setEnabled(false);
             }
         }
     }
@@ -230,19 +279,70 @@ namespace fairwindsk::ui::bottombar {
     }
 
     void AutopilotBar::onStandByClicked() {
-        setState("standby");
+        // Get the FairWind singleton
+        const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+
+        // Get the configuration
+        const auto configuration = fairWindSK->getConfiguration();
+
+        // Check if the default autopilot is set
+        if (!configuration->getAutopilot().isEmpty())
+        {
+            // Get the Signal K client
+            const auto client = fairWindSK->getSignalKClient();
+
+            // Get the path
+            const auto path = client->server().toString()+"/signalk/v2/api/vessels/self/autopilots/"+configuration->getAutopilot()+"/disengage";
+
+            // Perform the PUT request
+            auto result = client->signalkPost( QUrl(path));
+
+            // Check if the debug is on
+            if (fairWindSK->isDebug()) {
+                // Show a message
+                qDebug() << "AutopilotBar::onStandByClicked()";
+                qDebug() << result;
+            }
+
+            checkStateAndUpdateUI(result);
+        }
     }
 
     void AutopilotBar::onAutoClicked() {
-        setState("auto");
+
+        // Get the FairWind singleton
+        const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+
+        // Get the configuration
+        const auto configuration = fairWindSK->getConfiguration();
+
+        // Check if the default autopilot is set
+        if (!configuration->getAutopilot().isEmpty())
+        {
+            // Get the Signal K client
+            const auto client = fairWindSK->getSignalKClient();
+
+            // Get the path
+            const auto path = client->server().toString()+"/signalk/v2/api/vessels/self/autopilots/"+configuration->getAutopilot()+"/engage";
+
+            // Perform the PUT request
+            auto result = client->signalkPost( QUrl(path));
+
+            //if (fairWindSK->isDebug()) {
+                qDebug() << "AutopilotBar::onAutoClicked()";
+                qDebug() << result;
+            //}
+
+            checkStateAndUpdateUI(result);
+        }
     }
 
     void AutopilotBar::onWindClicked() {
-        setState("wind");
+        setMode("wind");
     }
 
     void AutopilotBar::onRouteClicked() {
-        setState("route");
+        setMode("route");
     }
 
     void AutopilotBar::onPortTackClicked() {
@@ -278,50 +378,107 @@ namespace fairwindsk::ui::bottombar {
         advanceWaypoint(1);
     }
 
-    void AutopilotBar::onSteerClicked() {
-        setState("auto");
+    void AutopilotBar::onDodgeClicked() {
+
+        // Get the FairWind singleton
+        const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+
+        // Get the configuration
+        const auto configuration = fairWindSK->getConfiguration();
+
+        // Check if the default autopilot is set
+        if (!configuration->getAutopilot().isEmpty())
+        {
+            // Get the Signal K client
+            const auto client = fairWindSK->getSignalKClient();
+
+            // Get the path
+            const auto path = client->server().toString()+"/signalk/v2/api/vessels/self/autopilots/"+configuration->getAutopilot()+"/dodge";
+
+            // Perform the PUT request
+            auto result = client->signalkPost( QUrl(path));
+
+            //if (fairWindSK->isDebug()) {
+            qDebug() << "AutopilotBar::onDodgeClicked()";
+            qDebug() << result;
+            //}
+
+            checkStateAndUpdateUI(result);
+        }
+
     }
 
-    /*
-    PUT http://localhost:3000/signalk/v1/api/vessels/self/steering/autopilot/target/headingMagnetic
-{
-  "value": 88,
-}
-     */
-    QJsonObject AutopilotBar::setState(const QString& state) {
+    QJsonObject AutopilotBar::setMode(const QString& mode) {
 
-        // Get the Signal K client
-        auto client = FairWindSK::getInstance()->getSignalKClient();
+        // Define the result
+        QJsonObject result;
 
-        // Get the path
-        auto path = "vessels.self." + QString::fromStdString(m_signalkPaths["autopilot.state"].get<std::string>());
+        // Get the FairWind singleton
+        const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
-        // Set the payload strig
-        auto payload = R"({ "value": ")" + state + R"(" })";
+        // Get the configuration
+        const auto configuration = fairWindSK->getConfiguration();
 
-        // Perform the PUT request
-        auto result = client->signalkPut(  path, payload);
+        // Check if the default autopilot is set
+        if (!configuration->getAutopilot().isEmpty()) {
+            // Get the Signal K client
+            const auto client = fairWindSK->getSignalKClient();
+
+            // Get the path
+            const auto path = client->server().toString()+
+                "/signalk/v2/api/vessels/self/autopilots/"+configuration->getAutopilot()+"/mode";
+
+            // Set the payload strig
+            auto payload = R"({ "value": ")" + mode + R"(" })";
+
+            // Perform the PUT request
+            result = client->signalkPut(  QUrl(path), payload);
+
+            //if (fairWindSK->isDebug()) {
+            qDebug() << "AutopilotBar::setMode()";
+            qDebug() << result;
+            //}
+
+            checkStateAndUpdateUI(result);
+        }
 
         // Return the value
         return result;
     }
 
     QJsonObject AutopilotBar::tack(const QString& value) {
-        // Get the Signal K client
-        auto client = FairWindSK::getInstance()->getSignalKClient();
 
-        // Get the path
-        auto path = "vessels.self." + QString::fromStdString(m_signalkPaths["autopilot.actions.tack"].get<std::string>());
+        // Set the result
+        QJsonObject result;
 
-        // Set the payload strig
-        auto payload = R"({ "value": ")" + value + R"(" })";
+        // Get the FairWind singleton
+        const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
-        // Perform the PUT request
-        auto result = client->signalkPut(  path, payload);
+        // Get the configuration
+        const auto configuration = fairWindSK->getConfiguration();
 
-        // Return the value
+        // Check if the default autopilot is set
+        if (!configuration->getAutopilot().isEmpty())
+        {
+            // Get the Signal K client
+            const auto client = fairWindSK->getSignalKClient();
+
+            // Get the path
+            const auto path = client->server().toString()+"/signalk/v2/api/vessels/self/autopilots/"+configuration->getAutopilot()+"/tack/"+value;
+
+            // Perform the PUT request
+            result = client->signalkPost(  QUrl(path));
+
+            //if (fairWindSK->isDebug()) {
+                qDebug() << "AutopilotBar::tack()";
+                qDebug() << result;
+            //}
+
+            checkStateAndUpdateUI(result);
+        }
+
+        // Return the result
         return result;
-
     }
 
     QJsonObject AutopilotBar::advanceWaypoint(int value) {
@@ -342,25 +499,45 @@ namespace fairwindsk::ui::bottombar {
         return result;
     }
 
-    QJsonObject AutopilotBar::setTargetHeading(int value) {
+    QJsonObject AutopilotBar::setTargetHeading(const float value) {
 
-        // Get the Signal K client
-        auto client = FairWindSK::getInstance()->getSignalKClient();
+        // Set the result
+        QJsonObject result;
 
-        // Get the path
-        auto path = "vessels.self." + QString::fromStdString(m_signalkPaths["autopilot.target.heading"].get<std::string>());
+        // Get the FairWind singleton
+        const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
-        // Set the payload strig
-        auto payload = R"({ "value": )" + QString{"%1"}.arg(value) + R"( })";
+        // Get the configuration
+        const auto configuration = fairWindSK->getConfiguration();
 
-        // Perform the PUT request
-        auto result = client->signalkPut(  path, payload);
+        // Check if the default autopilot is set
+        if (!configuration->getAutopilot().isEmpty())
+        {
+            // Get the Signal K client
+            const auto client = fairWindSK->getSignalKClient();
 
-        // Return the value
+            // Get the path
+            const auto path = client->server().toString()+"/signalk/v2/api/vessels/self/autopilots/"+configuration->getAutopilot()+"/target";
+
+            // Set the payload strig
+            auto payload = R"({ "units": "deg", "value": )" + QString{"%1"}.arg(value) + R"( })";
+
+            // Perform the PUT request
+            result = client->signalkPut(  QUrl(path), payload);
+
+            //if (fairWindSK->isDebug()) {
+                qDebug() << "AutopilotBar::setTargetHeading()";
+                qDebug() << result;
+            //}
+
+            checkStateAndUpdateUI(result);
+        }
+
+        // Return the result
         return result;
     }
 
-    QJsonObject AutopilotBar::setTargetWindAngle(float value) {
+    QJsonObject AutopilotBar::setTargetWindAngle(const float value) {
 
         // Get the Signal K client
         auto client = FairWindSK::getInstance()->getSignalKClient();
@@ -378,22 +555,100 @@ namespace fairwindsk::ui::bottombar {
         return result;
     }
 
-    QJsonObject AutopilotBar::adjustHeading(const int value) {
+    QJsonObject AutopilotBar::adjustHeading(const float value) {
 
-        // Get the Signal K client
-        auto client = FairWindSK::getInstance()->getSignalKClient();
+        // Set the result
+        QJsonObject result;
 
-        // Get the path
-        auto path = "vessels.self." + QString::fromStdString(m_signalkPaths["autopilot.actions.adjustHeading"].get<std::string>());
+        // Get the FairWind singleton
+        const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
-        // Set the payload strig
-        auto payload = R"({ "value": )" + QString{"%1"}.arg(value) + R"( })";
+        // Get the configuration
+        const auto configuration = fairWindSK->getConfiguration();
 
-        // Perform the PUT request
-        auto result = client->signalkPut(  path, payload);
+        // Check if the default autopilot is set
+        if (!configuration->getAutopilot().isEmpty())
+        {
+            // Get the Signal K client
+            const auto client = fairWindSK->getSignalKClient();
 
-        // Return the value
+            // Get the path
+            const auto path = client->server().toString()+"/signalk/v2/api/vessels/self/autopilots/"+configuration->getAutopilot()+"/target/adjust";
+
+            // Set the payload strig
+            auto payload = R"({ "units": "deg", "value": )" + QString{"%1"}.arg(value) + R"( })";
+
+            // Perform the PUT request
+            result = client->signalkPut(  QUrl(path), payload);
+
+            //if (fairWindSK->isDebug()) {
+                qDebug() << "AutopilotBar::adjustHeading()";
+                qDebug() << result;
+            //}
+
+            checkStateAndUpdateUI(result);
+        }
+
+        // Return the result
         return result;
+    }
+
+    void AutopilotBar::checkStateAndUpdateUI(QJsonObject result) {
+
+        // Check if the result has the status code
+        if (result.contains("statusCode") && result["statusCode"].isDouble()) {
+
+            // Check if the status code is 200
+            if (result["statusCode"].toInt() == 200) {
+
+                // Get the FairWind singleton
+                const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+
+                // Get the configuration
+                const auto configuration = fairWindSK->getConfiguration();
+
+                // Get the Signal K client
+                const auto client = fairWindSK->getSignalKClient();
+
+                // Set the path for the state request
+                const auto path = client->server().toString()+"/signalk/v2/api/vessels/self/autopilots/"+configuration->getAutopilot()+"/state";
+
+                // Perform the GET request
+                result = client->signalkGet( QUrl(path));
+
+                // Check if a value is returned
+                if (result.contains("value")) {
+
+                    // Check if the state is not defined
+                    if (result["value"].isNull()) {
+
+                        // Update the UI
+                        ui->label_State->setText("N/A");
+
+                    } else {
+
+                        // Check if the value is a string
+                        if (result["value"].isString()) {
+
+                            // Get the string and update the state
+                            ui->label_State->setText(result["value"].toString());
+                        }
+                    }
+                }
+            } else {
+
+                // Check if the result as a message as string
+                if (result.contains("message") && result["message"].isString()) {
+
+                    // Update the UI with the message
+                    ui->label_State->setText(result["message"].toString());
+                } else {
+
+                    // Update the UI with the status code
+                    ui->label_State->setText("Error: "+ QString::number(result["code"].toInt()));
+                }
+            }
+        }
     }
 
     AutopilotBar::~AutopilotBar() {

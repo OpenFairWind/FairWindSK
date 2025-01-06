@@ -43,18 +43,19 @@ namespace fairwindsk::ui::bottombar {
         void onMinus10Clicked();
         void onHideClicked();
         void onNextWPTClicked();
-        void onSteerClicked();
+        void onDodgeClicked();
 
     signals:
         void hidden();
 
     private:
-        QJsonObject setState(const QString& state);
-        QJsonObject setTargetHeading(int value);
+        QJsonObject setMode(const QString& state);
+        QJsonObject setTargetHeading(float value);
         QJsonObject setTargetWindAngle(float value);
-        QJsonObject adjustHeading(int value);
+        QJsonObject adjustHeading(float value);
         QJsonObject tack(const QString& value);
         QJsonObject advanceWaypoint(int value);
+        void checkStateAndUpdateUI(QJsonObject result);
 
         Ui::AutopilotBar *ui = nullptr;
         QSlider *m_slider = nullptr;

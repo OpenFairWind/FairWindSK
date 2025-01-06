@@ -155,47 +155,45 @@ border-bottom-color: rgb(83, 83, 84);</string>
          </item>
          <item>
           <layout class="QVBoxLayout" name="verticalLayout_Display">
-            <item>
-          <widget class="QLabel" name="label_State">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string>Stand by</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignmentFlag::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
-            <item>
-          <widget class="QLabel" name="label_TargetHeading">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="font">
-            <font>
-             <pointsize>32</pointsize>
-            </font>
-           </property>
-           <property name="text">
-            <string>___°</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignmentFlag::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
+           <item>
+            <widget class="QLabel" name="label_State">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>Stand by</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignmentFlag::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_TargetHeading">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="font">
+              <font>
+               <pointsize>32</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>___°</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignmentFlag::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
           </layout>
          </item>
-         
-         
          <item>
           <spacer name="horizontalSpacer_2">
            <property name="orientation">
@@ -266,7 +264,7 @@ border-bottom-color: rgb(83, 83, 84);</string>
           </widget>
          </item>
          <item>
-          <widget class="QToolButton" name="toolButton_Steer">
+          <widget class="QToolButton" name="toolButton_Dodge">
            <property name="styleSheet">
             <string notr="true">background-color: rgb(82, 82, 83);
 border-top-color: rgb(159, 157, 160);
@@ -275,7 +273,7 @@ border-right-color: rgb(83, 83, 84);
 border-bottom-color: rgb(83, 83, 84);</string>
            </property>
            <property name="text">
-            <string>Steer</string>
+            <string>Dodge</string>
            </property>
           </widget>
          </item>
