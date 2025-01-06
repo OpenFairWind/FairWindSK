@@ -29,24 +29,38 @@ namespace fairwindsk::ui::settings {
             m_signalk = nlohmann::json::parse(data.toStdString());
 
             if (m_signalk.contains("paths") && m_signalk["paths"].is_object()) {
+
+                auto signalkPaths =  m_settings->getConfiguration()->getRoot()["signalk"];
+
                 int row = 1;
                 for (const auto &pathItem: m_signalk["paths"].items()) {
 
-                    auto currentPath = m_settings->getConfiguration()->getRoot()["signalk"][pathItem.key()].get<std::string>();
+                    auto key = pathItem.key();
 
-                    auto text = QString::fromStdString(m_signalk["paths"][pathItem.key()].get<std::string>());
 
-                    auto textLabel = new QLabel();
-                    textLabel->setText(text);
-                    auto lineEdit = new QLineEdit();
-                    lineEdit->setObjectName(QString::fromStdString(pathItem.key()));
-                    lineEdit->setText(QString::fromStdString(currentPath));
+                    if (signalkPaths.contains(key) && signalkPaths[key].is_string()) {
 
-                    ui->gridLayout_Paths->addWidget(textLabel, row, 1);
-                    ui->gridLayout_Paths->addWidget(lineEdit, row, 2);
-                    row++;
-                    connect(lineEdit, &QLineEdit::textChanged, this, &SignalK::onTextChanged);
+                        auto currentPath = signalkPaths[key].get<std::string>();
 
+                        if (m_signalk["paths"].contains(key) && m_signalk["paths"][key].is_string()) {
+
+                            auto text = QString::fromStdString(m_signalk["paths"][key].get<std::string>());
+
+                            const auto textLabel = new QLabel();
+                            textLabel->setText(text);
+
+                            const auto lineEdit = new QLineEdit();
+                            lineEdit->setObjectName(QString::fromStdString(key));
+                            lineEdit->setText(QString::fromStdString(currentPath));
+
+                            ui->gridLayout_Paths->addWidget(textLabel, row, 1);
+                            ui->gridLayout_Paths->addWidget(lineEdit, row, 2);
+
+                            row++;
+
+                            connect(lineEdit, &QLineEdit::textChanged, this, &SignalK::onTextChanged);
+                        }
+                    }
                 }
             }
         }
