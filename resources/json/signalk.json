@@ -39,7 +39,7 @@
     "anchor.actions.raise": "Anchor raise",
     "anchor.actions.radius": "Anchor set radius",
     "anchor.actions.rode": "Anchor set rode length",
-    "anchor.actions.params": "Anchor set parameters",
+    "anchor.actions.set": "Anchor set parameters",
     "mob.startTime": "MOB Start time",
     "mob.bearing": "MOB Bearing",
     "mob.distance": "MOB Distance",
@@ -47,8 +47,6 @@
     "autopilot.mode": "Autopilot Mode",
     "autopilot.target.heading": "Autopilot Target Heading",
     "autopilot.target.windAngle": "Autopilot Target Wind Angle",
-    "autopilot.actions.adjustHeading": "Autopilot Adjust Heading Action",
-    "autopilot.actions.tack": "Autopilot Tack Action",
     "autopilot.actions.advanceWaypoint": "Autopilot Advance Waypoint Action"
   }
 }
