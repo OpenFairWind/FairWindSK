@@ -147,6 +147,8 @@ namespace fairwindsk {
         }
     }
 
+
+
     bool Configuration::getVirtualKeyboard() {
         bool result = false;
 
@@ -154,6 +156,25 @@ namespace fairwindsk {
             auto mainJsonObject = m_jsonData["main"];
             if (mainJsonObject.contains("virtualKeyboard") & mainJsonObject["virtualKeyboard"].is_boolean()) {
                 result = mainJsonObject["virtualKeyboard"].get<bool>();
+            }
+        }
+
+        return result;
+    }
+
+    void Configuration::setAutopilot(const QString& value) {
+        if (m_jsonData.contains("main")) {
+            m_jsonData["main"]["autopilot"] = value.toStdString();
+        }
+    }
+
+    QString Configuration::getAutopilot() {
+        QString result;
+
+        if (m_jsonData.contains("main")) {
+            auto mainJsonObject = m_jsonData["main"];
+            if (mainJsonObject.contains("autopilot") & mainJsonObject["autopilot"].is_string()) {
+                result = QString::fromStdString(mainJsonObject["autopilot"].get<std::string>());
             }
         }
 

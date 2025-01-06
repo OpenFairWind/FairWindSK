@@ -47,6 +47,9 @@ namespace fairwindsk {
         void setVirtualKeyboard(bool value);
         bool getVirtualKeyboard();
 
+        QString getAutopilot();
+        void setAutopilot(const QString& autopilot);
+
 
         void setFilename(QString filename);
         QString getFilename();

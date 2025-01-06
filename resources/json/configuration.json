@@ -1,6 +1,7 @@
 {
     "main": {
-        "virtualKeyboard": false
+        "virtualKeyboard": false,
+        "autopilot": ""
     },
     "apps": [
         {
@@ -100,8 +101,6 @@
         "autopilot.mode": "steering.autopilot.mode",
         "autopilot.target.heading": "steering.autopilot.target.headingMagnetic",
         "autopilot.target.windAngle": "steering.autopilot.target.windAngleApparent",
-        "autopilot.actions.adjustHeading": "steering.autopilot.actions.adjustHeading",
-        "autopilot.actions.tack": "steering.autopilot.actions.tack",
         "autopilot.actions.advanceWaypoint": "steering.autopilot.actions.advanceWaypoint"
 
     },
