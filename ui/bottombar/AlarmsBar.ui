@@ -69,91 +69,7 @@
       <layout class="QVBoxLayout" name="verticalLayout_CN">
        <item>
         <layout class="QGridLayout" name="gridLayout_Alarms">
-         <item row="0" column="6">
-          <layout class="QHBoxLayout" name="horizontalLayout_Sinking">
-           <item>
-            <widget class="QToolButton" name="toolButton_Sinking">
-             <property name="text">
-              <string>Sinking</string>
-             </property>
-             <property name="icon">
-              <iconset>
-               <normaloff>:/resources/images/bottombar/alarm_sinking.png</normaloff>
-               <normalon>:/resources/images/bottombar/alarm_alarm.png</normalon>:/resources/images/bottombar/alarm_sinking.png</iconset>
-             </property>
-             <property name="iconSize">
-              <size>
-               <width>32</width>
-               <height>32</height>
-              </size>
-             </property>
-             <property name="checkable">
-              <bool>true</bool>
-             </property>
-             <property name="toolButtonStyle">
-              <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item row="0" column="4">
-          <layout class="QHBoxLayout" name="horizontalLayout_MOB">
-           <item>
-            <widget class="QToolButton" name="toolButton_MOB">
-             <property name="text">
-              <string> MOB</string>
-             </property>
-             <property name="icon">
-              <iconset>
-               <normaloff>:/resources/images/bottombar/alarm_mob.png</normaloff>
-               <normalon>:/resources/images/bottombar/alarm_alarm.png</normalon>:/resources/images/bottombar/alarm_mob.png</iconset>
-             </property>
-             <property name="iconSize">
-              <size>
-               <width>32</width>
-               <height>32</height>
-              </size>
-             </property>
-             <property name="checkable">
-              <bool>true</bool>
-             </property>
-             <property name="toolButtonStyle">
-              <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item row="0" column="3">
-          <layout class="QHBoxLayout" name="horizontalLayout_Fire">
-           <item>
-            <widget class="QToolButton" name="toolButton_Fire">
-             <property name="text">
-              <string>Fire</string>
-             </property>
-             <property name="icon">
-              <iconset>
-               <normaloff>:/resources/images/bottombar/alarm_fire.png</normaloff>
-               <normalon>:/resources/images/bottombar/alarm_alarm.png</normalon>:/resources/images/bottombar/alarm_fire.png</iconset>
-             </property>
-             <property name="iconSize">
-              <size>
-               <width>32</width>
-               <height>32</height>
-              </size>
-             </property>
-             <property name="checkable">
-              <bool>true</bool>
-             </property>
-             <property name="toolButtonStyle">
-              <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item row="0" column="5">
+         <item row="0" column="9">
           <layout class="QHBoxLayout" name="horizontalLayout_Piracy">
            <item>
             <widget class="QToolButton" name="toolButton_Piracy">
@@ -209,7 +125,20 @@
            </item>
           </layout>
          </item>
-         <item row="0" column="2">
+         <item row="0" column="6">
+          <spacer name="horizontalSpacer_5">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="0" column="3">
           <layout class="QHBoxLayout" name="horizontalLayout_Adrift">
            <item>
             <widget class="QToolButton" name="toolButton_Adrift">
@@ -236,6 +165,142 @@
             </widget>
            </item>
           </layout>
+         </item>
+         <item row="0" column="11">
+          <layout class="QHBoxLayout" name="horizontalLayout_Sinking">
+           <item>
+            <widget class="QToolButton" name="toolButton_Sinking">
+             <property name="text">
+              <string>Sinking</string>
+             </property>
+             <property name="icon">
+              <iconset>
+               <normaloff>:/resources/images/bottombar/alarm_sinking.png</normaloff>
+               <normalon>:/resources/images/bottombar/alarm_alarm.png</normalon>:/resources/images/bottombar/alarm_sinking.png</iconset>
+             </property>
+             <property name="iconSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="checkable">
+              <bool>true</bool>
+             </property>
+             <property name="toolButtonStyle">
+              <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item row="0" column="5">
+          <layout class="QHBoxLayout" name="horizontalLayout_Fire">
+           <item>
+            <widget class="QToolButton" name="toolButton_Fire">
+             <property name="text">
+              <string>Fire</string>
+             </property>
+             <property name="icon">
+              <iconset>
+               <normaloff>:/resources/images/bottombar/alarm_fire.png</normaloff>
+               <normalon>:/resources/images/bottombar/alarm_alarm.png</normalon>:/resources/images/bottombar/alarm_fire.png</iconset>
+             </property>
+             <property name="iconSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="checkable">
+              <bool>true</bool>
+             </property>
+             <property name="toolButtonStyle">
+              <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item row="0" column="2">
+          <spacer name="horizontalSpacer_3">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="0" column="4">
+          <spacer name="horizontalSpacer_4">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="0" column="8">
+          <spacer name="horizontalSpacer_6">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="0" column="7">
+          <layout class="QHBoxLayout" name="horizontalLayout_MOB">
+           <item>
+            <widget class="QToolButton" name="toolButton_MOB">
+             <property name="text">
+              <string> MOB</string>
+             </property>
+             <property name="icon">
+              <iconset>
+               <normaloff>:/resources/images/bottombar/alarm_mob.png</normaloff>
+               <normalon>:/resources/images/bottombar/alarm_alarm.png</normalon>:/resources/images/bottombar/alarm_mob.png</iconset>
+             </property>
+             <property name="iconSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="checkable">
+              <bool>true</bool>
+             </property>
+             <property name="toolButtonStyle">
+              <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item row="0" column="10">
+          <spacer name="horizontalSpacer_7">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
          </item>
         </layout>
        </item>
