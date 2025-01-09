@@ -79,6 +79,8 @@ namespace fairwindsk::ui::bottombar {
         connect(ui->toolButton_Wind, &QToolButton::clicked, this, &AutopilotBar::onWindClicked);
         connect(ui->toolButton_PTack, &QToolButton::clicked, this, &AutopilotBar::onPortTackClicked);
         connect(ui->toolButton_STack, &QToolButton::clicked, this, &AutopilotBar::onStarboardTackClicked);
+        connect(ui->toolButton_PGybe, &QToolButton::clicked, this, &AutopilotBar::onPortGybeClicked);
+        connect(ui->toolButton_SGybe, &QToolButton::clicked, this, &AutopilotBar::onStarboardGybeClicked);
         connect(ui->toolButton_Plus1, &QToolButton::clicked, this, &AutopilotBar::onPlus1Clicked);
         connect(ui->toolButton_Plus10, &QToolButton::clicked, this, &AutopilotBar::onPlus10Clicked);
         connect(ui->toolButton_Minus1, &QToolButton::clicked, this, &AutopilotBar::onMinus1Clicked);
@@ -353,6 +355,14 @@ namespace fairwindsk::ui::bottombar {
         tack("starboard");
     }
 
+    void AutopilotBar::onPortGybeClicked() {
+        gybe("port");
+    }
+
+    void AutopilotBar::onStarboardGybeClicked() {
+        gybe("starboard");
+    }
+
     void AutopilotBar::onPlus1Clicked(){
         adjustHeading(1);
     }
@@ -481,21 +491,76 @@ namespace fairwindsk::ui::bottombar {
         return result;
     }
 
+    QJsonObject AutopilotBar::gybe(const QString& value) {
+
+        // Set the result
+        QJsonObject result;
+
+        // Get the FairWind singleton
+        const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+
+        // Get the configuration
+        const auto configuration = fairWindSK->getConfiguration();
+
+        // Check if the default autopilot is set
+        if (!configuration->getAutopilot().isEmpty())
+        {
+            // Get the Signal K client
+            const auto client = fairWindSK->getSignalKClient();
+
+            // Get the path
+            const auto path = client->server().toString()+"/signalk/v2/api/vessels/self/autopilots/"+configuration->getAutopilot()+"/gybe/"+value;
+
+            // Perform the PUT request
+            result = client->signalkPost(  QUrl(path));
+
+            //if (fairWindSK->isDebug()) {
+            qDebug() << "AutopilotBar::gybe()";
+            qDebug() << result;
+            //}
+
+            checkStateAndUpdateUI(result);
+        }
+
+        // Return the result
+        return result;
+    }
+
     QJsonObject AutopilotBar::advanceWaypoint(int value) {
 
-        // Get the Signal K client
-        auto client = FairWindSK::getInstance()->getSignalKClient();
+        // Set the result
+        QJsonObject result;
 
-        // Get the path
-        auto path = "vessels.self." + QString::fromStdString(m_signalkPaths["autopilot.actions.advanceWaypoint"].get<std::string>());
+        // Get the FairWind singleton
+        const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
-        // Set the payload strig
-        auto payload = R"({ "value": )" + QString{"%1"}.arg(value) + R"( })";
+        // Get the configuration
+        const auto configuration = fairWindSK->getConfiguration();
 
-        // Perform the PUT request
-        auto result = client->signalkPut(  path, payload);
+        // Check if the default autopilot is set
+        if (!configuration->getAutopilot().isEmpty())
+        {
+            // Get the Signal K client
+            const auto client = fairWindSK->getSignalKClient();
 
-        // Return the value
+            // Get the path
+            const auto path = client->server().toString()+"/signalk/v2/api/vessels/self/navigation/course/activeRoute/nextPoint";
+
+            // Set the payload strig
+            auto payload =  R"({ "value": )" + QString{"%1"}.arg(value) + R"( })";
+
+            // Perform the PUT request
+            result = client->signalkPut(  QUrl(path), payload);
+
+            //if (fairWindSK->isDebug()) {
+            qDebug() << "AutopilotBar::advanceWaypoint()";
+            qDebug() << result;
+            //}
+
+            checkStateAndUpdateUI(result);
+        }
+
+        // Return the result
         return result;
     }
 

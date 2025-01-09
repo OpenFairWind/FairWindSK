@@ -37,6 +37,8 @@ namespace fairwindsk::ui::bottombar {
         void onRouteClicked();
         void onPortTackClicked();
         void onStarboardTackClicked();
+        void onPortGybeClicked();
+        void onStarboardGybeClicked();
         void onPlus1Clicked();
         void onPlus10Clicked();
         void onMinus1Clicked();
@@ -54,6 +56,7 @@ namespace fairwindsk::ui::bottombar {
         QJsonObject setTargetWindAngle(float value);
         QJsonObject adjustHeading(float value);
         QJsonObject tack(const QString& value);
+        QJsonObject gybe(const QString& value);
         QJsonObject advanceWaypoint(int value);
         void checkStateAndUpdateUI(QJsonObject result);
 

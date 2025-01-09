@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>950</width>
-    <height>102</height>
+    <height>134</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_Autopilot">
@@ -99,46 +99,114 @@ border-bottom-color: rgb(83, 83, 84);</string>
           </widget>
          </item>
          <item>
-          <widget class="QToolButton" name="toolButton_PTack">
-           <property name="styleSheet">
-            <string notr="true">background-color: rgb(82, 82, 83);
-border-top-color: rgb(159, 157, 160);
-border-left-color: rgb(159, 157, 160);
-border-right-color: rgb(83, 83, 84);
-border-bottom-color: rgb(83, 83, 84);</string>
-           </property>
-           <property name="text">
-            <string>Prt Tack</string>
-           </property>
-          </widget>
+          <widget class="QWidget" name="widget_Port" native="true"/>
          </item>
          <item>
-          <widget class="QToolButton" name="toolButton_Minus10">
-           <property name="styleSheet">
-            <string notr="true">background-color: rgb(82, 82, 83);
+          <layout class="QVBoxLayout" name="verticalLayout_Port">
+           <item>
+            <widget class="QLabel" name="label_Port">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>Port</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignmentFlag::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QToolButton" name="toolButton_PTack">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">background-color: rgb(82, 82, 83);
 border-top-color: rgb(159, 157, 160);
 border-left-color: rgb(159, 157, 160);
 border-right-color: rgb(83, 83, 84);
 border-bottom-color: rgb(83, 83, 84);</string>
-           </property>
-           <property name="text">
-            <string>-10</string>
-           </property>
-          </widget>
+             </property>
+             <property name="text">
+              <string>Tack</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QToolButton" name="toolButton_PGybe">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">background-color: rgb(82, 82, 83);
+border-top-color: rgb(159, 157, 160);
+border-left-color: rgb(159, 157, 160);
+border-right-color: rgb(83, 83, 84);
+border-bottom-color: rgb(83, 83, 84);</string>
+             </property>
+             <property name="text">
+              <string>Gybe</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
          <item>
-          <widget class="QToolButton" name="toolButton_Minus1">
-           <property name="styleSheet">
-            <string notr="true">background-color: rgb(82, 82, 83);
+          <layout class="QVBoxLayout" name="verticalLayout_PAjust">
+           <item>
+            <widget class="QToolButton" name="toolButton_Minus1">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">background-color: rgb(82, 82, 83);
 border-top-color: rgb(159, 157, 160);
 border-left-color: rgb(159, 157, 160);
 border-right-color: rgb(83, 83, 84);
 border-bottom-color: rgb(83, 83, 84);</string>
-           </property>
-           <property name="text">
-            <string>-1</string>
-           </property>
-          </widget>
+             </property>
+             <property name="text">
+              <string>-1</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QToolButton" name="toolButton_Minus10">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">background-color: rgb(82, 82, 83);
+border-top-color: rgb(159, 157, 160);
+border-left-color: rgb(159, 157, 160);
+border-right-color: rgb(83, 83, 84);
+border-bottom-color: rgb(83, 83, 84);</string>
+             </property>
+             <property name="text">
+              <string>-10</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="QWidget" name="widget_PAjust" native="true"/>
          </item>
          <item>
           <spacer name="horizontalSpacer">
@@ -208,46 +276,108 @@ border-bottom-color: rgb(83, 83, 84);</string>
           </spacer>
          </item>
          <item>
-          <widget class="QToolButton" name="toolButton_Plus1">
-           <property name="styleSheet">
-            <string notr="true">background-color: rgb(82, 82, 83);
+          <layout class="QVBoxLayout" name="verticalLayout_SAjust">
+           <item>
+            <widget class="QToolButton" name="toolButton_Plus1">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">background-color: rgb(82, 82, 83);
 border-top-color: rgb(159, 157, 160);
 border-left-color: rgb(159, 157, 160);
 border-right-color: rgb(83, 83, 84);
 border-bottom-color: rgb(83, 83, 84);</string>
-           </property>
-           <property name="text">
-            <string>+1</string>
-           </property>
-          </widget>
+             </property>
+             <property name="text">
+              <string>+1</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QToolButton" name="toolButton_Plus10">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">background-color: rgb(82, 82, 83);
+border-top-color: rgb(159, 157, 160);
+border-left-color: rgb(159, 157, 160);
+border-right-color: rgb(83, 83, 84);
+border-bottom-color: rgb(83, 83, 84);</string>
+             </property>
+             <property name="text">
+              <string>+10</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
          <item>
-          <widget class="QToolButton" name="toolButton_Plus10">
-           <property name="styleSheet">
-            <string notr="true">background-color: rgb(82, 82, 83);
-border-top-color: rgb(159, 157, 160);
-border-left-color: rgb(159, 157, 160);
-border-right-color: rgb(83, 83, 84);
-border-bottom-color: rgb(83, 83, 84);</string>
-           </property>
-           <property name="text">
-            <string>+10</string>
-           </property>
-          </widget>
+          <widget class="QWidget" name="widget_SAdjust" native="true"/>
          </item>
          <item>
-          <widget class="QToolButton" name="toolButton_STack">
-           <property name="styleSheet">
-            <string notr="true">background-color: rgb(82, 82, 83);
+          <layout class="QVBoxLayout" name="verticalLayout_Starboard">
+           <item>
+            <widget class="QLabel" name="label_Starboard">
+             <property name="text">
+              <string>Starboard</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignmentFlag::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QToolButton" name="toolButton_STack">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">background-color: rgb(82, 82, 83);
 border-top-color: rgb(159, 157, 160);
 border-left-color: rgb(159, 157, 160);
 border-right-color: rgb(83, 83, 84);
 border-bottom-color: rgb(83, 83, 84);</string>
-           </property>
-           <property name="text">
-            <string>Stb Tack</string>
-           </property>
-          </widget>
+             </property>
+             <property name="text">
+              <string>Tack</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QToolButton" name="toolButton_SGybe">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">background-color: rgb(82, 82, 83);
+border-top-color: rgb(159, 157, 160);
+border-left-color: rgb(159, 157, 160);
+border-right-color: rgb(83, 83, 84);
+border-bottom-color: rgb(83, 83, 84);</string>
+             </property>
+             <property name="text">
+              <string>Gybe</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="QWidget" name="widget_Starboard" native="true"/>
          </item>
          <item>
           <widget class="QToolButton" name="toolButton_Route">
