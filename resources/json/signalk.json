@@ -46,7 +46,6 @@
     "autopilot.state": "Autopilot State",
     "autopilot.mode": "Autopilot Mode",
     "autopilot.target.heading": "Autopilot Target Heading",
-    "autopilot.target.windAngle": "Autopilot Target Wind Angle",
-    "autopilot.actions.advanceWaypoint": "Autopilot Advance Waypoint Action"
+    "autopilot.target.windAngle": "Autopilot Target Wind Angle"
   }
 }

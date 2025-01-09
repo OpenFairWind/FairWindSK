@@ -100,9 +100,7 @@
         "autopilot.state": "steering.autopilot.state",
         "autopilot.mode": "steering.autopilot.mode",
         "autopilot.target.heading": "steering.autopilot.target.headingMagnetic",
-        "autopilot.target.windAngle": "steering.autopilot.target.windAngleApparent",
-        "autopilot.actions.advanceWaypoint": "steering.autopilot.actions.advanceWaypoint"
-
+        "autopilot.target.windAngle": "steering.autopilot.target.windAngleApparent"
     },
     "units": {
         "airPressure": "hPa",
