@@ -11,6 +11,8 @@
 #include <QCloseEvent>
 #include <QWebEngineProfile>
 
+#include <QHotkey>
+
 #include <FairWindSK.hpp>
 #include "ui_MainWindow.h"
 #include "ui/settings/Settings.hpp"
@@ -91,6 +93,11 @@ namespace fairwindsk::ui {
             // Invoked when the Close button of the MyData widget is clicked
             void onMyDataClosed(fairwindsk::ui::mydata::MyData *myDataPage);
 
+        // Invoked when the bottom bar button Settings is clicked
+        void onHotkey();
+
+        // Invoked when a web app have to be removed from the browser
+        void onRemoveApp(const QString& name);
 
 
     private:
@@ -111,6 +118,9 @@ namespace fairwindsk::ui {
 
         // The pointer to the foreground app
         fairwindsk::AppItem *m_currentApp = nullptr;
+
+        // The hotkey
+        QHotkey *m_hotkey = nullptr;
 
     };
 }

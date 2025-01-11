@@ -59,15 +59,18 @@ namespace fairwindsk::ui {
         // Show the settings view when the user clicks on the Settings button inside the BottomBar object
         QObject::connect(m_topBar, &topbar::TopBar::clickedToolbuttonUL, this, &MainWindow::onUpperLeft);
 
-
         // Create the launcher
         m_launcher = new launcher::Launcher();
 
         // Add the launcher to the stacked widget
         ui->stackedWidget_Center->addWidget(m_launcher);
 
-        // Connect the foreground app changed signal to the setForegroundApp method
+        // Connect the foreground app changed signal to the setForegroundApp method (launcher)
         QObject::connect(m_launcher, &launcher::Launcher::foregroundAppChanged,this, &MainWindow::setForegroundApp);
+
+        // Connect the foreground app changed signal to the setForegroundApp method (bottom bar)
+        QObject::connect(m_bottomBar, &bottombar::BottomBar::foregroundAppChanged,this, &MainWindow::setForegroundApp);
+
 
         // Preload a web application
         setForegroundApp("http:///");
@@ -77,6 +80,19 @@ namespace fairwindsk::ui {
 
         // Show the window fullscreen
         QTimer::singleShot(0, this, SLOT(showFullScreen()));
+
+        // Create the hot key to popup this window
+        //m_hotkey = new QHotkey(Qt::Key_Tab, Qt::ShiftModifier, true, this);
+
+        // Connect the hotkey
+        //connect(m_hotkey, &QHotkey::activated, this, &MainWindow::onHotkey);
+    }
+
+    // Hot Key handler
+    void MainWindow::onHotkey(){
+
+        // Show the main window fullscreen
+        showFullScreen();
     }
 
     /*
@@ -84,6 +100,18 @@ namespace fairwindsk::ui {
      * MainWindow's destructor
      */
     MainWindow::~MainWindow() {
+
+
+        // Check if the hotkey is allocated
+        if (m_hotkey)
+        {
+            // Delete the hotkey
+            delete m_hotkey;
+
+            // Set the hotkey pointer to null
+            m_hotkey = nullptr;
+        }
+
 
         // Check if the bottom bar is allocated
         if (m_bottomBar) {
@@ -141,22 +169,18 @@ namespace fairwindsk::ui {
      */
     void MainWindow::setForegroundApp(const QString& hash) {
 
-        // Get the singleton
-        auto fairWindSk = fairwindsk::FairWindSK::getInstance();
+        // Get the FairWind singleton
+        auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
         // Check if the debug is active
-        if (fairWindSk->isDebug()) {
+        if (fairWindSK->isDebug()) {
 
             // Write a message
             qDebug() << "MainWindow hash:" << hash;
         }
 
-        // Get the FairWind singleton
-        auto fairWindSK = fairwindsk::FairWindSK::getInstance();
-
         // Get the map containing all the loaded apps and pick the one that matches the provided hash
         auto appItem = fairWindSK->getAppItemByHash(hash);
-
 
         // The QT widget implementing the app
         QWidget *widgetApp = nullptr;
@@ -186,8 +210,7 @@ namespace fairwindsk::ui {
                 const auto arguments = appItem->getArguments();
 
                 // Check if the debug is active
-                if (fairWindSk->isDebug())
-                {
+                if (fairWindSK->isDebug()) {
                     // Write a message
                     qDebug() << appItem->getName() << " Native APP:  " << executable << " " << arguments;
                 }
@@ -225,6 +248,10 @@ namespace fairwindsk::ui {
                 // Create a new web instance
                 const auto web = new web::Web(nullptr, appItem, fairWindSK->getWebEngineProfile());
 
+                // Show the settings view when the user clicks on the Settings button inside the BottomBar object
+                QObject::connect(web, &web::Web::removeApp, this, &MainWindow::onRemoveApp);
+
+
                 // Get the app widget
                 widgetApp = web;
             }
@@ -240,6 +267,9 @@ namespace fairwindsk::ui {
 
                 // Store it in mapWidgets for future usage
                 m_mapHash2Widget.insert(hash, widgetApp);
+
+                // Add icon to the bottom bar
+                m_bottomBar->addApp(appItem->getName());
 
             }
         }
@@ -258,6 +288,40 @@ namespace fairwindsk::ui {
         }
     }
 
+    /*
+     * onRemoveApp
+     * Close a web app
+     */
+
+    void MainWindow::onRemoveApp(const QString& name) {
+        // Get the FairWind singleton
+        auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+
+        // Check if the debug is active
+        if (fairWindSK->isDebug()) {
+
+            // Write a message
+            qDebug() << "MainWindow::onRemoveApp hash:" << name;
+        }
+
+        // Get the widget
+        const auto widgetApp = m_mapHash2Widget[name];
+
+        // Close the widget
+        widgetApp->close();
+
+        // Delete the widget
+        delete widgetApp;
+
+        // Remove the widget from m_mapHash2Widget
+        m_mapHash2Widget.remove(name);
+
+        // Remove the icon from the bottom bar
+        m_bottomBar->removeApp(name);
+
+        // Set the launcher as current application
+        onApps();
+    }
 /*
  * onApps
  * Method called when the user clicks the Apps button on the BottomBar object
