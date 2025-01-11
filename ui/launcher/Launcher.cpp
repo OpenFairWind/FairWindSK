@@ -124,6 +124,14 @@ namespace fairwindsk::ui::launcher {
     }
 
     Launcher::~Launcher() {
+
+        // Delete the application icons
+        for (const auto button: m_buttons) {
+
+            // Delete the button
+            delete button;
+        }
+
         if (m_layout) {
             delete m_layout;
             m_layout = nullptr;
@@ -140,19 +148,27 @@ namespace fairwindsk::ui::launcher {
  * Method called when the user wants to launch an app
  */
     void Launcher::toolButton_App_released() {
+
         // Get the sender button
         QWidget *buttonWidget = qobject_cast<QWidget *>(sender());
+
         // Check if the sender is valid
         if (!buttonWidget) {
+
+            // The sender is not a widget
             return;
         }
 
         // Get the app's hash value from the button's object name
         QString hash = buttonWidget->objectName().replace("toolbutton_", "");
 
+        // Check if the debug is active
         if (FairWindSK::getInstance()->isDebug()) {
+
+            // Write a message
             qDebug() << "Apps - hash:" << hash;
         }
+
         // Emit the signal to tell the MainWindow to update the UI and show the app with that particular hash value
         emit foregroundAppChanged(hash);
     }
