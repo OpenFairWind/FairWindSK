@@ -33,12 +33,16 @@ namespace fairwindsk::ui::web {
 
         DownloadManagerWidget &downloadManagerWidget() { return m_downloadManagerWidget; }
 
+        signals:
+        void removeApp(QString name);
+
     public slots:
         void onHomeClicked();
         void onBackClicked();
         void onForwardClicked();
         void onReloadClicked();
         void onSettingsClicked();
+        void onCloseClicked();
 
     private slots:
         void handleWebViewLoadProgress(int);

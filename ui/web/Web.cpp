@@ -51,6 +51,9 @@ namespace fairwindsk::ui::web {
         // Connect the settings button handler
         connect(m_NavigationBar, &NavigationBar::settings, this, &Web::onSettingsClicked);
 
+        // Connect the close button handler
+        connect(m_NavigationBar, &NavigationBar::close, this, &Web::onCloseClicked);
+
         // Create the web view widget
         m_webView = new WebView(profile,(QWidget *)this);
 
@@ -169,13 +172,23 @@ namespace fairwindsk::ui::web {
     }
 
     /*
+     * onCloseClicked
+     * Handler of the settings button
+     */
+    void Web::onCloseClicked() {
+
+        // Emit the signal
+        emit removeApp(m_appItem->getName());
+    }
+
+    /*
      * onSettingsClicked
      * Handler of the settings button
      */
     void Web::onSettingsClicked()  {
 
         // Get th settings application URL
-        QString settingsUrl = m_appItem->getSettingsUrl(FairWindSK::getInstance()->getConfiguration()->getSignalKServerUrl()+"/admin/#/serverConfiguration/plugins/");
+        const QString settingsUrl = m_appItem->getSettingsUrl(FairWindSK::getInstance()->getConfiguration()->getSignalKServerUrl()+"/admin/#/serverConfiguration/plugins/");
 
         // Check if the debug is active
         if (FairWindSK::getInstance()->isDebug()) {
