@@ -24,7 +24,8 @@ namespace fairwindsk::ui::web {
         void onBackClicked();
         void onForwardClicked();
         void onReloadClicked();
-        void onSettingsCicked();
+        void onSettingsClicked();
+        void onCloseClicked();
 
     signals:
         void home();
@@ -32,6 +33,7 @@ namespace fairwindsk::ui::web {
         void forward();
         void reload();
         void settings();
+        void close();
 
     private:
         Ui::NavigationBar *ui;

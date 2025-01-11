@@ -18,8 +18,8 @@ namespace fairwindsk::ui::web {
         connect(ui->toolButton_Back, &QToolButton::clicked, this, &NavigationBar::onBackClicked);
         connect(ui->toolButton_Forward, &QToolButton::clicked, this, &NavigationBar::onForwardClicked);
         connect(ui->toolButton_Reload, &QToolButton::clicked, this, &NavigationBar::onReloadClicked);
-        connect(ui->toolButton_Settings, &QToolButton::clicked, this, &NavigationBar::onSettingsCicked);
-
+        connect(ui->toolButton_Settings, &QToolButton::clicked, this, &NavigationBar::onSettingsClicked);
+        connect(ui->toolButton_Close, &QToolButton::clicked, this, &NavigationBar::onCloseClicked);
     }
 
     void NavigationBar::onHomeClicked() {
@@ -34,8 +34,12 @@ namespace fairwindsk::ui::web {
     void NavigationBar::onReloadClicked() {
         emit reload();
     }
-    void NavigationBar::onSettingsCicked() {
+    void NavigationBar::onSettingsClicked() {
         emit settings();
+    }
+
+    void NavigationBar::onCloseClicked() {
+        emit close();
     }
 
     NavigationBar::~NavigationBar() {
