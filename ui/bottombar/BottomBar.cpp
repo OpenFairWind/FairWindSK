@@ -10,6 +10,8 @@
 #include <QAbstractButton>
 #include "BottomBar.hpp"
 
+#include <QtWidgets/QLabel>
+
 namespace fairwindsk::ui::bottombar {
 /*
  * BottomBar
@@ -18,6 +20,8 @@ namespace fairwindsk::ui::bottombar {
     fairwindsk::ui::bottombar::BottomBar::BottomBar(QWidget *parent) :
             QWidget(parent),
             ui(new Ui::BottomBar) {
+
+        m_iconSize = 32;
 
         // Setup the UI
         ui->setupUi(parent);
@@ -173,11 +177,132 @@ namespace fairwindsk::ui::bottombar {
         emit setSettings();
     }
 
+    /*
+ * addApp
+ * Add the application icon in the shortcut area
+ */
+    void BottomBar::addApp(const QString& name) {
+
+        if (name != "http:///") {
+
+            // Get the FairWind singleton
+            auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+
+
+            auto appItem = fairWindSK->getAppItemByHash(name);
+
+            if (appItem) {
+
+                // Create a new button
+                auto *button = new QToolButton();
+
+                // Set the app's hash value as the 's object name
+                button->setObjectName("toolbutton_" + name);
+
+                // Set the app's name as the button's text
+                //button->setText(appItem->getDisplayName());
+
+                // Set the tool tip
+                button->setToolTip(appItem->getDisplayName());
+
+                // Get the application icon
+                QPixmap pixmap = appItem->getIcon();
+
+                // Check if the icon is available
+                if (!pixmap.isNull()) {
+                    // Scale the icon
+                    pixmap = pixmap.scaled(m_iconSize, m_iconSize);
+
+                    // Set the app's icon as the button's icon
+                    button->setIcon(pixmap);
+
+                    // Give the button's icon a fixed square
+                    button->setIconSize(QSize(m_iconSize, m_iconSize));
+                }
+
+                // Set the button's style to have an icon and some text beneath it
+                //button->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+
+                // Launch the app when the button is clicked
+                connect(button, &QToolButton::released, this, &BottomBar::app_clicked);
+
+                // Add the newly created button to the horizontal layout as a widget
+                ui->horizontalLayoutApps->addWidget(button);
+
+                // Store in buttons in a map
+                m_buttons[name] = button;
+
+
+            }
+        }
+    }
+
+    /*
+ * removeApp
+ * Remove the application icon frpm the shortcut area
+ */
+    void BottomBar::removeApp(const QString& name) {
+
+        // Check for the setting application
+        if (name != "http:///") {
+
+            // Get the button
+            const auto button = m_buttons[name];
+
+            // Add the newly created button to the horizontal layout as a widget
+            ui->horizontalLayoutApps->removeWidget(button);
+
+            // Remove the button from the array
+            m_buttons.remove(name);
+
+            // Delete the button
+            delete button;
+
+        }
+    }
+
+    /*
+ * app_clicked
+ * Method called when the user wants to launch an app
+ */
+    void BottomBar::app_clicked() {
+
+        // Get the sender button
+        QWidget *buttonWidget = qobject_cast<QWidget *>(sender());
+
+        // Check if the sender is valid
+        if (!buttonWidget) {
+
+            // The sender is not a widget
+            return;
+        }
+
+        // Get the app's hash value from the button's object name
+        QString hash = buttonWidget->objectName().replace("toolbutton_", "");
+
+        // Check if the debug is active
+        if (FairWindSK::getInstance()->isDebug()) {
+
+            // Write a message
+            qDebug() << "Apps - hash:" << hash;
+        }
+
+        // Emit the signal to tell the MainWindow to update the UI and show the app with that particular hash value
+        emit foregroundAppChanged(hash);
+    }
+
 /*
  * ~BottomBar
  * BottomBar's destructor
  */
     BottomBar::~BottomBar() {
+
+        // Delete the application icons
+        for (const auto button: m_buttons) {
+
+            // Delete the button
+            delete button;
+        }
 
         // Check if the autopilot bar is instanced
         if (m_AutopilotBar) {

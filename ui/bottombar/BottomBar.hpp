@@ -33,6 +33,12 @@ namespace fairwindsk::ui::bottombar {
         // Set MOB Icon visibility
         void setMOBIcon(bool value) const;
 
+        // Add application icon to the shortcut
+        void addApp(const QString& name);
+
+        // Remove application icon to the shortcut
+        void removeApp(const QString& name);
+
         // Destructor
         ~BottomBar() override;
 
@@ -60,6 +66,9 @@ namespace fairwindsk::ui::bottombar {
         // Settings button handler
         void settings_clicked();
 
+        // An app shortcut has been selected
+        void app_clicked();
+
         signals:
 
         // Set MyData Widget
@@ -70,6 +79,9 @@ namespace fairwindsk::ui::bottombar {
 
         // Set the Settings Widget
         void setSettings();
+
+        // Change the app
+        void foregroundAppChanged(QString name);
 
     private:
         // Pointer to UI
@@ -86,6 +98,9 @@ namespace fairwindsk::ui::bottombar {
 
         // Pointer to the anchor bar
         AnchorBar *m_AnchorBar = nullptr;
+
+        int m_iconSize;
+        QMap<QString, QToolButton *> m_buttons;
     };
 }
 
