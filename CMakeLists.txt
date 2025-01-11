@@ -52,6 +52,13 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 endif()
 set(LIBQTZEROCONF ${LIBQTZEROCONF})
 
+ExternalProject_Add(qhotkey
+        GIT_REPOSITORY https://github.com/Skycoder42/QHotkey.git
+        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION} -DQT_DEFAULT_MAJOR_VERSION=6
+        TIMEOUT 360
+)
+set(LIBQHOTKEY ${EXTERNAL_INSTALL_LOCATION}/lib/libqhotkey.a)
+
 find_package(Qt6 COMPONENTS
         Core
         Gui
@@ -128,6 +135,7 @@ add_executable(${PROJECT_NAME}
 
 add_dependencies(${PROJECT_NAME} json)
 add_dependencies(${PROJECT_NAME} QtZeroConf)
+add_dependencies(${PROJECT_NAME} qhotkey)
 
 target_link_libraries(${PROJECT_NAME}
         Qt::Core
@@ -140,6 +148,7 @@ target_link_libraries(${PROJECT_NAME}
         Qt::WebEngineWidgets
         Qt::VirtualKeyboard
         ${LIBQTZEROCONF}
+        ${LIBQHOTKEY}
 )
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
