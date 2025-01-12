@@ -76,7 +76,7 @@ namespace fairwindsk::ui {
         setForegroundApp("http:///");
 
         // Show the launcher
-        onApps();
+        onRemoveApp("http:///");
 
         // Show the window fullscreen
         QTimer::singleShot(0, this, SLOT(showFullScreen()));
