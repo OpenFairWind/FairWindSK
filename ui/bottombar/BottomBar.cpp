@@ -183,7 +183,7 @@ namespace fairwindsk::ui::bottombar {
  */
     void BottomBar::addApp(const QString& name) {
 
-        if (name != "http:///") {
+        //if (name != "http:///") {
 
             // Get the FairWind singleton
             auto fairWindSK = fairwindsk::FairWindSK::getInstance();
@@ -234,7 +234,7 @@ namespace fairwindsk::ui::bottombar {
 
 
             }
-        }
+        //}
     }
 
     /*
@@ -244,7 +244,7 @@ namespace fairwindsk::ui::bottombar {
     void BottomBar::removeApp(const QString& name) {
 
         // Check for the setting application
-        if (name != "http:///") {
+        //if (name != "http:///") {
 
             // Get the button
             const auto button = m_buttons[name];
@@ -258,7 +258,7 @@ namespace fairwindsk::ui::bottombar {
             // Delete the button
             delete button;
 
-        }
+        //}
     }
 
     /*
