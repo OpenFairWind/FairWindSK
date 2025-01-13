@@ -82,10 +82,10 @@ namespace fairwindsk::ui {
         QTimer::singleShot(0, this, SLOT(showFullScreen()));
 
         // Create the hot key to popup this window
-        //m_hotkey = new QHotkey(Qt::Key_Tab, Qt::ShiftModifier, true, this);
+        m_hotkey = new QHotkey(Qt::Key_Tab, Qt::ShiftModifier, true, this);
 
         // Connect the hotkey
-        //connect(m_hotkey, &QHotkey::activated, this, &MainWindow::onHotkey);
+        connect(m_hotkey, &QHotkey::activated, this, &MainWindow::onHotkey);
     }
 
     // Hot Key handler
@@ -216,7 +216,7 @@ namespace fairwindsk::ui {
                 }
 
                 // Create a process
-                auto process = new QProcess(this);
+                const auto process = new QProcess(this);
 
                 // Set th executable
                 process->setProgram(executable);
