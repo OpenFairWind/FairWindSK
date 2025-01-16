@@ -6,6 +6,7 @@
 
 #include <QMessageBox>
 #include <QFileDialog>
+#include <QDomDocument>
 #include "Apps.hpp"
 #include "ui_Apps.h"
 #include "AppItem.hpp"
@@ -280,6 +281,35 @@ namespace fairwindsk::ui::settings {
     void Apps::onAppsNameBrowse() {
         auto name = QFileDialog::getOpenFileName(this,tr("Select executable"));
         if (!name.isEmpty()) {
+
+            qDebug() << name;
+
+            // Check if the application name is a Mac application
+            if (name.endsWith(".app")) {
+
+                // Get the file information
+                const QFileInfo appPath(name);
+
+                // Check if the name is a path
+                if (appPath.isDir()) {
+
+                    // Get the package information file
+                    const QFileInfo infoPlist(name+"/Contents/Info.plist");
+
+                    // Check if the file exists
+                    if (infoPlist.isFile()) {
+                        QDomDocument doc("Info.plist");
+                        QFile file(name+"/Contents/Info.plist");
+                        if (file.open(QIODevice::ReadOnly)) {
+                            doc.setContent(&file);
+
+                            qDebug() << doc.toString();
+
+                            file.close();
+                        }
+                    }
+                }
+            }
 
             name = "file://" + name;
 
