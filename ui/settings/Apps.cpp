@@ -11,6 +11,7 @@
 #include "ui_Apps.h"
 #include "AppItem.hpp"
 #include "FairWindSK.hpp"
+#include "PList.hpp"
 
 
 namespace fairwindsk::ui::settings {
@@ -294,17 +295,18 @@ namespace fairwindsk::ui::settings {
                 if (appPath.isDir()) {
 
                     // Get the package information file
-                    const QFileInfo infoPlist(name+"/Contents/Info.plist");
+                    const QFileInfo fileInfo(name+"/Contents/Info.plist");
 
                     // Check if the file exists
-                    if (infoPlist.isFile()) {
-                        QDomDocument doc("Info.plist");
+                    if (fileInfo.isFile()) {
+
                         QFile file(name+"/Contents/Info.plist");
                         if (file.open(QIODevice::ReadOnly)) {
-                            doc.setContent(&file);
+                            PList infoPlist = PList(&file);
+                            auto element = infoPlist.toMap();
 
-                            qDebug() << doc.toString();
-
+                            qDebug() << element["CFBundleExecutable"];
+                            name = name + "/Contents/Info.plist/MacOS/" + element["CFBundleExecutable"].toString();
                             file.close();
                         }
                     }
