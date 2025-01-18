@@ -134,6 +134,8 @@ add_executable(${PROJECT_NAME}
         ui/bottombar/AnchorBar.cpp
         ui/bottombar/AnchorBar.hpp
         ui/bottombar/AnchorBar.ui
+        PList.cpp
+        PList.hpp
 
 )
 
