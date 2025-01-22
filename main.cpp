@@ -17,7 +17,6 @@ int main(int argc, char *argv[]) {
     // The translator
     QTranslator translator;
 
-
     // Set the organization name
     QCoreApplication::setOrganizationName("uniparthenope.it");
 
@@ -52,7 +51,10 @@ int main(int argc, char *argv[]) {
     // Load the configuration inside the FairWind singleton itself
     fairWindSK->loadConfig();
 
+    // Check if the QT virtual keyboard has to be activated
     if (fairWindSK->getConfiguration()->getVirtualKeyboard()) {
+
+        // Active the QT virtual keyboard
         qputenv("QT_IM_MODULE", QByteArray("qtvirtualkeyboard"));
     }
 
@@ -62,16 +64,13 @@ int main(int argc, char *argv[]) {
     // Connect to the Signal K server...
     fairWindSK->startSignalK();
 
-
-
     // Show message
     splash.showMessage(QObject::tr("Loading applications..."), 500, Qt::white);
 
     // Load the apps inside the FairWind singleton itself
     fairWindSK->loadApps();
 
-
-
+    // Set web profile options
     QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::Accelerated2dCanvasEnabled, true);
     QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
     QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::DnsPrefetchEnabled,true);
@@ -82,7 +81,12 @@ int main(int argc, char *argv[]) {
     // Close the splash screen presenting the MainWindow UI
     splash.finish((QWidget *) &w);
 
-    return QApplication::exec();
+    // Run the application
+    const auto result = QApplication::exec();
 
+    // Delete the FairWindSK singleton
+    delete fairWindSK;
 
+    // Return the result code
+    return result;
 }
