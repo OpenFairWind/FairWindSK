@@ -605,7 +605,6 @@ namespace fairwindsk {
             // Set the profile pointer to null
             m_profile = nullptr;
         }
-
     }
 
     bool FairWindSK::checkAutopilotApp() {
