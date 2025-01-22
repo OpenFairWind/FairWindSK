@@ -302,11 +302,12 @@ namespace fairwindsk::ui::settings {
 
                         QFile file(name+"/Contents/Info.plist");
                         if (file.open(QIODevice::ReadOnly)) {
-                            PList infoPlist = PList(&file);
-                            auto element = infoPlist.toMap();
+                            auto infoPlist = PList(&file);
+                            auto map = infoPlist.toMap();
 
-                            qDebug() << element["CFBundleExecutable"];
-                            name = name + "/Contents/Info.plist/MacOS/" + element["CFBundleExecutable"].toString();
+                            if (map.contains("CFBundleExecutable")) {
+                                name = name + "/Contents/MacOS/" + map["CFBundleExecutable"].toString();
+                            }
                             file.close();
                         }
                     }
