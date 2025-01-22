@@ -285,6 +285,14 @@ namespace fairwindsk {
         return m_pWidget;
     }
 
+    void AppItem::setProcess(QProcess *pProcess) {
+        m_pProcess = pProcess;
+    }
+
+    QProcess *AppItem::getProcess() {
+        return m_pProcess;
+    }
+
     bool AppItem::operator<(const AppItem &o) const {
         return m_jsonApp["fairwind"]["order"].get<int>() < o.m_jsonApp["fairwind"]["order"].get<int>();
     }
