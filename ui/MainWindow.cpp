@@ -101,6 +101,22 @@ namespace fairwindsk::ui {
      */
     MainWindow::~MainWindow() {
 
+        // Get the singleton
+        const auto fairWindSk = fairwindsk::FairWindSK::getInstance();
+
+        // Get the application hashes
+        auto hashes = m_mapHash2Widget.keys();
+
+        // For each hash...
+        for (const auto& hash:hashes) {
+
+            // Delete the widget
+            delete m_mapHash2Widget[hash];
+
+            // Set the widget pinter to null
+            fairWindSk->getAppItemByHash(hash)->setWidget(nullptr);
+        }
+
 
         // Check if the hotkey is allocated
         if (m_hotkey)
@@ -200,6 +216,7 @@ namespace fairwindsk::ui {
 
                 // Check if the app is an executable
             } else if (appItem->getName().startsWith("file://")) {
+
                 //https://forum.qt.io/topic/44091/embed-an-application-inside-a-qt-window-solved/16
                 //https://forum.qt.io/topic/101510/calling-a-process-in-the-main-app-and-return-the-process-s-window-id
 
@@ -210,10 +227,10 @@ namespace fairwindsk::ui {
                 const auto arguments = appItem->getArguments();
 
                 // Check if the debug is active
-                if (fairWindSK->isDebug()) {
+                //if (fairWindSK->isDebug()) {
                     // Write a message
                     qDebug() << appItem->getName() << " Native APP:  " << executable << " " << arguments;
-                }
+                //}
 
                 // Create a process
                 const auto process = new QProcess(this);
@@ -227,22 +244,7 @@ namespace fairwindsk::ui {
                 // Start the process
                 process->start();
 
-                // Get the process id
-                const auto pId = process->processId();
-
-                // Check if the window id is available
-                if (const auto winId = getWIdByPId(pId); winId != 0)
-                {
-                    // Create the container window
-                    QWindow *window = QWindow::fromWinId(winId);
-
-                    // Set the window as frameless
-                    window->setFlags(Qt::FramelessWindowHint);
-
-                    // Create a widget
-                    widgetApp = QWidget::createWindowContainer(window);
-                }
-
+                appItem->setProcess(process);
 
             } else {
                 // Create a new web instance
