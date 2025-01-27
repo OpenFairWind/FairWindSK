@@ -101,23 +101,6 @@ namespace fairwindsk::ui {
      */
     MainWindow::~MainWindow() {
 
-        // Get the singleton
-        const auto fairWindSk = fairwindsk::FairWindSK::getInstance();
-
-        // Get the application hashes
-        auto hashes = m_mapHash2Widget.keys();
-
-        // For each hash...
-        for (const auto& hash:hashes) {
-
-            // Delete the widget
-            delete m_mapHash2Widget[hash];
-
-            // Set the widget pinter to null
-            fairWindSk->getAppItemByHash(hash)->setWidget(nullptr);
-        }
-
-
         // Check if the hotkey is allocated
         if (m_hotkey)
         {
