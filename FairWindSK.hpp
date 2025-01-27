@@ -71,6 +71,9 @@ namespace fairwindsk {
         // Check if the anchor app is installed
         bool checkAnchorApp();
 
+        // Destructor
+        ~FairWindSK() override;
+
     private:
 
         // The private constructor
