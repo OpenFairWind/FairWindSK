@@ -5,7 +5,7 @@
 #ifndef FAIRWINDSK_SIGNALK_WAYPOINT_HPP
 #define FAIRWINDSK_SIGNALK_WAYPOINT_HPP
 
-#include <QObject>
+#include <QJsonObject>
 #include <QGeoCoordinate>
 
 
