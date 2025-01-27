@@ -483,7 +483,7 @@ namespace fairwindsk {
                             if (isDebug()) {
 
                                 // Write a message
-                                qDebug() << "Added: " << appItem->asJson().dump(2);
+                                qDebug() << "Added: " << QString::fromStdString(appItem->asJson().dump(2));
                             }
                         } else {
 
