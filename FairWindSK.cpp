@@ -594,18 +594,6 @@ namespace fairwindsk {
         return m_profile;
     }
 
-    FairWindSK::~FairWindSK() {
-
-        // Check if the profile is allocated
-        if (m_profile) {
-
-            // Delete the profile
-            delete m_profile;
-
-            // Set the profile pointer to null
-            m_profile = nullptr;
-        }
-    }
 
     bool FairWindSK::checkAutopilotApp() {
 
