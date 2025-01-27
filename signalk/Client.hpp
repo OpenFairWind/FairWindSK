@@ -5,11 +5,10 @@
 #ifndef FAIRWINDSK_SIGNALKCLIENT_HPP
 #define FAIRWINDSK_SIGNALKCLIENT_HPP
 
-#include <QJsonObject>
-#include <QNetworkAccessManager>
+
 #include <QtCore/QObject>
 #include <QtWebSockets/QWebSocket>
-#include <QGeoCoordinate>
+#include <QNetworkAccessManager>
 
 #include "Waypoint.hpp"
 #include "Subscription.hpp"

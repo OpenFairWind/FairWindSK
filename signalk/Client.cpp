@@ -7,13 +7,9 @@
 #include <sstream>
 
 #include <QApplication>
-#include <QMutableListIterator>
 #include <QNetworkReply>
-#include <QCoreApplication>
 #include <QJsonDocument>
 #include <QJsonArray>
-#include <QJsonObject>
-#include <QUUid>
 
 #include "Client.hpp"
 #include "FairWindSK.hpp"
