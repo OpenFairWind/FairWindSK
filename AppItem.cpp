@@ -12,6 +12,8 @@
 
 #include "AppItem.hpp"
 
+#include <QWidget>
+
 #include "FairWindSK.hpp"
 
 namespace fairwindsk {
@@ -413,5 +415,12 @@ namespace fairwindsk {
         result["fairwind"] = m_jsonApp["fairwind"];
 
         return result;
+    }
+
+    /*
+     * ~AppItem
+     * AppItem's destructor
+     */
+    AppItem::~AppItem() {
     }
 }

@@ -26,6 +26,9 @@ namespace fairwindsk {
 
             explicit AppItem(nlohmann::json jsonApp);
 
+            // Destructor
+            ~AppItem() override;
+
             AppItem(const AppItem &app);
 
             void update(const nlohmann::json&  jsonApp);
