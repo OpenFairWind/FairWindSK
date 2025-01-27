@@ -82,5 +82,11 @@ int main(int argc, char *argv[]) {
     splash.finish((QWidget *) &w);
 
     // Run the application
-    return QApplication::exec();
+    auto result = QApplication::exec();
+
+    // Delete the FairWindSK singleton
+    delete fairWindSK;
+
+    // Return the result
+    return result;
 }
