@@ -48,16 +48,16 @@ namespace fairwindsk::ui {
         setCentralWidget(ui->centralwidget);
 
         // Show the apps view when the user clicks on the Apps button inside the BottomBar object
-        QObject::connect(m_bottomBar, &bottombar::BottomBar::setMyData, this, &MainWindow::onMyData);
+        connect(m_bottomBar, &bottombar::BottomBar::setMyData, this, &MainWindow::onMyData);
 
         // Show the apps view when the user clicks on the Apps button inside the BottomBar object
-        QObject::connect(m_bottomBar, &bottombar::BottomBar::setApps, this, &MainWindow::onApps);
+        connect(m_bottomBar, &bottombar::BottomBar::setApps, this, &MainWindow::onApps);
 
         // Show the settings view when the user clicks on the Settings button inside the BottomBar object
-        QObject::connect(m_bottomBar, &bottombar::BottomBar::setSettings, this, &MainWindow::onSettings);
+        connect(m_bottomBar, &bottombar::BottomBar::setSettings, this, &MainWindow::onSettings);
 
         // Show the settings view when the user clicks on the Settings button inside the BottomBar object
-        QObject::connect(m_topBar, &topbar::TopBar::clickedToolbuttonUL, this, &MainWindow::onUpperLeft);
+        connect(m_topBar, &topbar::TopBar::clickedToolbuttonUL, this, &MainWindow::onUpperLeft);
 
         // Create the launcher
         m_launcher = new launcher::Launcher();
@@ -66,10 +66,10 @@ namespace fairwindsk::ui {
         ui->stackedWidget_Center->addWidget(m_launcher);
 
         // Connect the foreground app changed signal to the setForegroundApp method (launcher)
-        QObject::connect(m_launcher, &launcher::Launcher::foregroundAppChanged,this, &MainWindow::setForegroundApp);
+        connect(m_launcher, &launcher::Launcher::foregroundAppChanged,this, &MainWindow::setForegroundApp);
 
         // Connect the foreground app changed signal to the setForegroundApp method (bottom bar)
-        QObject::connect(m_bottomBar, &bottombar::BottomBar::foregroundAppChanged,this, &MainWindow::setForegroundApp);
+        connect(m_bottomBar, &bottombar::BottomBar::foregroundAppChanged,this, &MainWindow::setForegroundApp);
 
 
         // Preload a web application
@@ -86,6 +86,13 @@ namespace fairwindsk::ui {
 
         // Connect the hotkey
         connect(m_hotkey, &QHotkey::activated, this, &MainWindow::onHotkey);
+
+        // Check if no signal k server is defined
+        if (fairWindSk->getConfiguration()->getSignalKServerUrl().isEmpty()) {
+
+            // Open the settings window
+            onSettings();
+        };
     }
 
     // Hot Key handler
@@ -95,64 +102,7 @@ namespace fairwindsk::ui {
         showFullScreen();
     }
 
-    /*
-     * ~MainWindow
-     * MainWindow's destructor
-     */
-    MainWindow::~MainWindow() {
 
-        // Check if the hotkey is allocated
-        if (m_hotkey)
-        {
-            // Delete the hotkey
-            delete m_hotkey;
-
-            // Set the hotkey pointer to null
-            m_hotkey = nullptr;
-        }
-
-
-        // Check if the bottom bar is allocated
-        if (m_bottomBar) {
-
-            // Delete the bottom bar
-            delete m_bottomBar;
-
-            // Set the bottom bar pointer to null
-            m_bottomBar = nullptr;
-        }
-
-        // Check uf the launcher is allocated
-        if (m_launcher) {
-
-            // Delete the launcher
-            delete m_launcher;
-
-            // Set the launcher pointer to null
-            m_launcher = nullptr;
-        }
-
-        // Check if the top bar is allocated
-        if (m_topBar) {
-
-            // Delete the top bar
-            delete m_topBar;
-
-            // Set the top bar pointer to null
-            m_topBar = nullptr;
-        }
-
-        // Check if the UI is allocated
-        if (ui) {
-
-            // Delete the UI
-            delete ui;
-
-            // Set the UI pointer to null
-            ui = nullptr;
-        }
-
-    }
 
     /*
      * getUi
@@ -233,8 +183,8 @@ namespace fairwindsk::ui {
                 // Create a new web instance
                 const auto web = new web::Web(nullptr, appItem, fairWindSK->getWebEngineProfile());
 
-                // Show the settings view when the user clicks on the Settings button inside the BottomBar object
-                QObject::connect(web, &web::Web::removeApp, this, &MainWindow::onRemoveApp);
+                // Connect the remove app signal to the onRemoveApp member
+                connect(web, &web::Web::removeApp, this, &MainWindow::onRemoveApp);
 
 
                 // Get the app widget
@@ -399,7 +349,7 @@ namespace fairwindsk::ui {
         ui->stackedWidget_Center->setCurrentWidget(settingsPage->getCurrentWidget());
 	
         settingsPage->close();
-	delete settingsPage;
+	    delete settingsPage;
     }
 
     void MainWindow::onSettingsAccepted(settings::Settings *settingsPage) const
@@ -410,9 +360,9 @@ namespace fairwindsk::ui {
         ui->stackedWidget_Center->setCurrentWidget(settingsPage->getCurrentWidget());
 
         settingsPage->close();
-	delete settingsPage;
+	    delete settingsPage;
 
-	QApplication::exit(1);
+	    QApplication::exit(1);
     }
 
     topbar::TopBar *MainWindow::getTopBar() {
@@ -454,6 +404,65 @@ namespace fairwindsk::ui {
         // ToDo: Implement the actual code
 
         return result;
+    }
+
+    /*
+     * ~MainWindow
+     * MainWindow's destructor
+     */
+    MainWindow::~MainWindow() {
+
+        // Check if the hotkey is allocated
+        if (m_hotkey)
+        {
+            // Delete the hotkey
+            delete m_hotkey;
+
+            // Set the hotkey pointer to null
+            m_hotkey = nullptr;
+        }
+
+
+        // Check if the bottom bar is allocated
+        if (m_bottomBar) {
+
+            // Delete the bottom bar
+            delete m_bottomBar;
+
+            // Set the bottom bar pointer to null
+            m_bottomBar = nullptr;
+        }
+
+        // Check uf the launcher is allocated
+        if (m_launcher) {
+
+            // Delete the launcher
+            delete m_launcher;
+
+            // Set the launcher pointer to null
+            m_launcher = nullptr;
+        }
+
+        // Check if the top bar is allocated
+        if (m_topBar) {
+
+            // Delete the top bar
+            delete m_topBar;
+
+            // Set the top bar pointer to null
+            m_topBar = nullptr;
+        }
+
+        // Check if the UI is allocated
+        if (ui) {
+
+            // Delete the UI
+            delete ui;
+
+            // Set the UI pointer to null
+            ui = nullptr;
+        }
+
     }
 }
 
