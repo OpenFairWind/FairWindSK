@@ -7,7 +7,6 @@
 #include <fstream>
 #include <iostream>
 
-#include <utility>
 #include <QFile>
 #include <QJsonDocument>
 #include <QFileInfo>
@@ -36,13 +35,13 @@ namespace fairwindsk {
     }
 
     void Configuration::setDefault() {
-        QString data;
-        QString fileName(":/resources/json/configuration.json");
+
+        const QString fileName(":/resources/json/configuration.json");
 
         QFile file(fileName);
         if(file.open(QIODevice::ReadOnly)) {
 
-            data = file.readAll();
+            const auto data = file.readAll();
             m_jsonData= nlohmann::json::parse(data.toStdString());
         }
 
@@ -215,7 +214,7 @@ namespace fairwindsk {
         return getUnits("range");
     }
 
-    void Configuration::setRoot(nlohmann::json &jsonData) {
+    void Configuration::setRoot(const nlohmann::json &jsonData) {
         m_jsonData = jsonData;
     }
 

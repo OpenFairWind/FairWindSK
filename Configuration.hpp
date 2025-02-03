@@ -25,7 +25,7 @@ namespace fairwindsk {
         void setDefault();
 
         nlohmann::json &getRoot();
-        void setRoot(nlohmann::json &jsonData);
+        void setRoot(const nlohmann::json &jsonData);
 
         QString getVesselSpeedUnits();
         QString getWindSpeedUnits();
