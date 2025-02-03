@@ -16,13 +16,14 @@
 #include "FairWindSK.hpp"
 
 namespace fairwindsk::ui::settings {
+
     Connection::Connection(Settings *settingsWidget, QWidget *parent) :
             QWidget(parent), ui(new Ui::Connection) {
 
 	    // Set the settings widge
         m_settings = settingsWidget;
 
-	    // Setup the UI
+	    // Set the UI
         ui->setupUi(this);
 
 	    // Set the timer pointer
@@ -42,13 +43,13 @@ namespace fairwindsk::ui::settings {
         QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
 
         // Get the name of the FairWind++ configuration file
-        auto href = settings.value("href", "").toString();
+        const auto href = settings.value("href", "").toString();
 
         // Get the name of the FairWind++ configuration file
-        auto token = settings.value("token", "").toString();
+        const auto token = settings.value("token", "").toString();
 
         // Get the name of the FairWind++ configuration file
-        auto expirationTime = settings.value("expirationTime", "").toString();
+        const auto expirationTime = settings.value("expirationTime", "").toString();
 
         qDebug() << "href: " << href << " token: " << token << " expirationTime: " << expirationTime;
 
@@ -92,7 +93,8 @@ namespace fairwindsk::ui::settings {
         // Show the settings view when the user clicks on the Settings button inside the BottomBar object
         connect(ui->pushButton_removeToken, &QPushButton::clicked, this, &Connection::onRemoveToken);
 
-
+        connect(ui->comboBox_signalkserverurl, &QComboBox::currentIndexChanged, this, &Connection::onUpdateSignalKServerUrl);
+        connect(ui->comboBox_signalkserverurl, &QComboBox::editTextChanged, this, &Connection::onUpdateSignalKServerUrl);
         //
         connect(&m_zeroConf, &QZeroConf::serviceAdded, this, &Connection::addService);
 
@@ -105,6 +107,10 @@ namespace fairwindsk::ui::settings {
             // Show a message
             ui->textEdit_message->setText(ui->textEdit_message->toPlainText()+ tr("Zero configuration not active.\n"));
         }
+    }
+
+    void Connection::onUpdateSignalKServerUrl() {
+        m_settings->getConfiguration()->setSignalKServerUrl(ui->comboBox_signalkserverurl->currentText());
     }
 
     void Connection::addService(const QZeroConfService& zcs)
@@ -126,10 +132,10 @@ namespace fairwindsk::ui::settings {
     void Connection::onRequestToken() {
         qDebug() << "onRequestToken";
 
-        auto signalKServerUrl = ui->comboBox_signalkserverurl->currentText();
+        const auto signalKServerUrl = ui->comboBox_signalkserverurl->currentText();
 
         // Set the URL for the application list
-        QUrl url = QUrl(signalKServerUrl + "/signalk/v1/access/requests");
+        const auto url = QUrl(signalKServerUrl + "/signalk/v1/access/requests");
 
         // Create the network access manager
         QNetworkAccessManager networkAccessManager;
@@ -140,12 +146,12 @@ namespace fairwindsk::ui::settings {
         // QByteArray data = R"({"clientId":"1234-45653-343453","description":"FairWindSK"})";
         auto clientId = QUuid::createUuid().toString().replace("{","").replace("}","");
 
-        auto message = QString("{\n"
+        const auto message = QString("{\n"
                           "  \"clientId\": \"%1\",\n"
                           "  \"description\": \"%2\""
                           "}").arg(clientId, "FairWindSK");
 
-        QByteArray data = message.toUtf8();
+        const QByteArray data = message.toUtf8();
 
         // Create the event loop component
         QEventLoop loop;
@@ -220,14 +226,14 @@ namespace fairwindsk::ui::settings {
         QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
 
         // Get the name of the FairWind++ configuration file
-        auto href = settings.value("href", "").toString();
+        const auto href = settings.value("href", "").toString();
 
         if (!href.isEmpty()) {
 
-            auto signalKServerUrl = ui->comboBox_signalkserverurl->currentText();
+            const auto signalKServerUrl = ui->comboBox_signalkserverurl->currentText();
 
             // Set the URL for the application list
-            QUrl url = QUrl(signalKServerUrl + href);
+            const auto url = QUrl(signalKServerUrl + href);
 
             // Create the network access manager
             QNetworkAccessManager networkAccessManager;
