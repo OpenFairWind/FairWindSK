@@ -594,28 +594,7 @@ namespace fairwindsk {
         return m_profile;
     }
 
-    FairWindSK::~FairWindSK() {
 
-        // Get the application hashes
-        auto hashes = m_mapHash2AppItem.keys();
-
-        // For each hash...
-        for (const auto& hash:hashes) {
-
-            // Delete the application item
-            delete m_mapHash2AppItem[hash];
-        }
-
-        // Check if the profile is allocated
-        if (m_profile) {
-
-            // Delete the profile
-            delete m_profile;
-
-            // Set the profile pointer to null
-            m_profile = nullptr;
-        }
-    }
 
     bool FairWindSK::checkAutopilotApp() {
 
@@ -649,6 +628,19 @@ namespace fairwindsk {
         return result;
     }
 
+    FairWindSK::~FairWindSK() {
+
+        // Get the application hashes
+        auto hashes = m_mapHash2AppItem.keys();
+
+        // For each hash...
+        for (const auto& hash:hashes) {
+
+            // Delete the application item
+            delete m_mapHash2AppItem[hash];
+        }
+
+    }
 
 }
 
