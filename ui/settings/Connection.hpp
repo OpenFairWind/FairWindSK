@@ -32,9 +32,9 @@ namespace fairwindsk::ui::settings {
         void onCancelRequest();
         void onRemoveToken();
 
-        void onUpdateSignalKServerUrl();
+        void onUpdateSignalKServerUrl() const;
 
-        void addService(const QZeroConfService& item);
+        void addService(const QZeroConfService& item) const;
 
 
 
