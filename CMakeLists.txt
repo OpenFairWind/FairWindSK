@@ -70,6 +70,7 @@ find_package(Qt6 COMPONENTS
         Network
         WebSockets
         Xml
+        Svg
         Positioning
         WebEngineWidgets
         VirtualKeyboard
@@ -150,6 +151,7 @@ target_link_libraries(${PROJECT_NAME}
         Qt::Network
         Qt::WebSockets
         Qt::Xml
+        Qt::Svg
         Qt::Positioning
         Qt::WebEngineWidgets
         Qt::VirtualKeyboard
