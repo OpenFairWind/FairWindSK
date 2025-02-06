@@ -15,11 +15,20 @@
 
 
 namespace fairwindsk::ui::settings {
+
+    /*
+     * Apps
+     * Class constructor
+     */
     Apps::Apps(Settings *settings, QWidget *parent) :
             QWidget(parent), ui(new Ui::Apps) {
+
+        // Set up the UI
         ui->setupUi(this);
 
+        // Set the pointer to the main settings
         m_settings = settings;
+
         m_appsEditMode = false;
         m_appsEditChanged = false;
 
@@ -27,9 +36,7 @@ namespace fairwindsk::ui::settings {
         QMap<int, QPair<AppItem *, QString>> map;
 
         // Get the configuration json data root
-        auto jsonData = m_settings->getConfiguration()->getRoot();
-
-        qDebug() << "Apps::Apps";
+        const auto jsonData = m_settings->getConfiguration()->getRoot();
 
         // Check if the configuration has an apps element and if it is an array
         if (jsonData.contains("apps") && jsonData["apps"].is_array()) {
@@ -38,7 +45,7 @@ namespace fairwindsk::ui::settings {
             for (const auto& app: jsonData["apps"].items()) {
 
                 // Get the application data
-                auto jsonApp = app.value();
+                const auto& jsonApp = app.value();
 
                 // Create an application object
                 auto appItem = new AppItem(jsonApp);
@@ -59,9 +66,13 @@ namespace fairwindsk::ui::settings {
             // Iterate on the available apps' hash values
             for (const auto& item: map) {
                 // Get the hash value
-                auto appItem = item.first;
-                auto name = item.second;
-                auto listWidgetItem = new QListWidgetItem(appItem->getDisplayName());
+                const auto appItem = item.first;
+                const auto name = item.second;
+
+                const auto displayName = appItem->getDisplayName();
+
+                const auto listWidgetItem = new QListWidgetItem(displayName);
+
                 listWidgetItem->setIcon(QIcon(appItem->getIcon()));
                 listWidgetItem->setToolTip(appItem->getDescription());
                 listWidgetItem->setData(Qt::UserRole, name);
@@ -84,7 +95,7 @@ namespace fairwindsk::ui::settings {
         connect(ui->lineEdit_Apps_AppIcon, &QLineEdit::textChanged, this, &Apps::onAppsDetailsFieldsTextChanged);
 
         connect(ui->pushButton_Apps_AppIcon_Browse, &QPushButton::clicked,this,&Apps::onAppsAppIconBrowse);
-	connect(ui->pushButton_Apps_Name_Browse, &QPushButton::clicked,this,&Apps::onAppsNameBrowse);
+	    connect(ui->pushButton_Apps_Name_Browse, &QPushButton::clicked,this,&Apps::onAppsNameBrowse);
 
         connect(ui->toolButton_Add, &QToolButton::clicked,this,&Apps::onAppsAddClicked);
         connect(ui->toolButton_Remove, &QToolButton::clicked,this,&Apps::onAppsRemoveClicked);
@@ -375,8 +386,6 @@ namespace fairwindsk::ui::settings {
             }
         }
 
-        //return false;
-
         return QObject::eventFilter(object, event);
     }
 
@@ -392,7 +401,8 @@ namespace fairwindsk::ui::settings {
         // Add to the configuration
         m_settings->getConfiguration()->getRoot()["apps"].push_back(appItem->asJson());
 
-        auto listWidgetItem = new QListWidgetItem(appItem->getDisplayName());
+        const auto displayName=appItem->getDisplayName();
+        const auto listWidgetItem = new QListWidgetItem(displayName);
         listWidgetItem->setIcon(QIcon(appItem->getIcon()));
         listWidgetItem->setToolTip(appItem->getDescription());
         listWidgetItem->setData(Qt::UserRole, appItem->getName());
@@ -461,8 +471,31 @@ namespace fairwindsk::ui::settings {
         }
     }
 
+    /*
+     * ~Apps
+     * Class destructor
+     */
     Apps::~Apps() {
-        delete ui;
+
+        // Check if the ui pointer is valid
+        if (ui) {
+
+            // While there are still items...
+            while (ui->listWidget_Apps_List->count()>0) {
+
+                // Take the item
+                const auto item =  ui->listWidget_Apps_List->takeItem(0);
+
+                // Delete the item
+                delete item;
+            }
+
+            // Delete ui
+            delete ui;
+
+            // Set the ui pointer to null
+            ui = nullptr;
+        }
     }
 
 
