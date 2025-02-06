@@ -435,9 +435,6 @@ namespace fairwindsk::ui::settings {
                         // Stop the timer
                         m_timer->stop();
 
-                        // Disconnect the timer from this member function
-                        m_timer->disconnect(this);
-
                         // Delete the timer
                         delete m_timer;
 
@@ -562,9 +559,6 @@ namespace fairwindsk::ui::settings {
             // Stop the timer
             m_timer->stop();
 
-            // Disconnect the time
-            m_timer->disconnect(this);
-
             // Delete the timer
             delete m_timer;
 
@@ -642,9 +636,6 @@ namespace fairwindsk::ui::settings {
 
 	        // Stop the timer
             m_timer->stop();
-
-	        // Disconnect the timer
-            m_timer->disconnect(this);
 
 	        // Delete the timer
             delete m_timer;
