@@ -37,7 +37,7 @@
         <widget class="QToolButton" name="toolButton_MOB">
          <property name="icon">
           <iconset resource="../../resources.qrc">
-           <normaloff>:/resources/images/bottombar/imagebutton_mob.png</normaloff>:/resources/images/bottombar/imagebutton_mob.png</iconset>
+           <normaloff>:/resources/svg/OpenBridge/alarm-pob.svg</normaloff><normalon>:/resources/svg/OpenBridge/alarm-pob.svg</normalon></iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -238,8 +238,9 @@ border-bottom-color: rgb(83, 83, 84);</string>
        <item>
         <widget class="QToolButton" name="toolButton_Hide">
          <property name="icon">
-          <iconset resource="../../resources.qrc">
-           <normaloff>:/resources/images/bottombar/icon_hide.png</normaloff>:/resources/images/bottombar/icon_hide.png</iconset>
+          <iconset>
+           <normaloff>:/resources/svg/OpenBridge/unfold-less-google.svg</normaloff>
+           <normalon>:/resources/svg/OpenBridge/unfold-less-google.svg</normalon></iconset>
          </property>
          <property name="iconSize">
           <size>

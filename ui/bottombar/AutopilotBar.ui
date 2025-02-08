@@ -37,7 +37,7 @@
         <widget class="QToolButton" name="toolButton_Autopilot">
          <property name="icon">
           <iconset>
-           <normaloff>:/resources/images/bottombar/imagebutton_autopilot.png</normaloff>:/resources/images/bottombar/imagebutton_autopilot.png</iconset>
+           <normaloff>:/resources/svg/OpenBridge/command-autopilot.svg</normaloff>:/resources/svg/OpenBridge/command-autopilot.svg</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -452,7 +452,7 @@ color: rgb(0,0,0);</string>
         <widget class="QToolButton" name="toolButton_Hide">
          <property name="icon">
           <iconset>
-           <normaloff>:/resources/images/bottombar/icon_hide.png</normaloff>:/resources/images/bottombar/icon_hide.png</iconset>
+           <normaloff>:/resources/svg/OpenBridge/unfold-less-google.svg</normaloff>:/resources/svg/OpenBridge/unfold-less-google.svg</iconset>
          </property>
          <property name="iconSize">
           <size>

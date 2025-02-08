@@ -37,7 +37,7 @@
         <widget class="QToolButton" name="toolButton_Alarms">
          <property name="icon">
           <iconset>
-           <normaloff>:/resources/images/bottombar/imagebutton_alarms.png</normaloff>:/resources/images/bottombar/imagebutton_alarms.png</iconset>
+           <normaloff>:/resources/svg/OpenBridge/alarm-general.svg</normaloff>:/resources/svg/OpenBridge/alarm-general.svg</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -331,8 +331,8 @@
         <widget class="QToolButton" name="toolButton_Hide">
          <property name="icon">
           <iconset>
-           <normaloff>:/resources/images/bottombar/icon_hide.png</normaloff>
-           <normalon>:/resources/images/bottombar/alarm_alarm.png</normalon>:/resources/images/bottombar/icon_hide.png</iconset>
+           <normaloff>:/resources/svg/OpenBridge/unfold-less-google.svg</normaloff>
+           <normalon>:/resources/svg/OpenBridge/unfold-less-google.svg</normalon></iconset>
          </property>
          <property name="iconSize">
           <size>
