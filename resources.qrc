@@ -66,6 +66,9 @@
         <file>resources/svg/OpenBridge/home.svg</file>
         <file>resources/svg/OpenBridge/configure.svg</file>
 
+        <file>resources/svg/OpenBridge/chevron-double-left-google.svg</file>
+        <file>resources/svg/OpenBridge/chevron-double-right-google.svg</file>
+
 	
 
     </qresource>
