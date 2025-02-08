@@ -11,25 +11,26 @@
         <file>resources/images/about/aciaramella_64x64.png</file>
         <file>resources/images/about/fizzo_64x64.png</file>
 
-
         <file>resources/images/other/carbon_base.png</file>
         <file>resources/images/other/splash_logo.png</file>
 
-        <file>resources/images/settings/toolbutton_cancel.png</file>
-        <file>resources/images/settings/toolbutton_save.png</file>
-        <file>resources/images/settings/toolbutton_remove.png</file>
-        <file>resources/images/launcher/toolbutton_left.png</file>
-        <file>resources/images/launcher/toolbutton_right.png</file>
+        <file>resources/svg/OpenBridge/unfold-less-google.svg</file>
+        <file>resources/svg/OpenBridge/up-iec.svg</file>
+        <file>resources/svg/OpenBridge/down-iec.svg</file>
+        <file>resources/svg/OpenBridge/delete-google.svg</file>
+        <file>resources/svg/OpenBridge/widget-add-google.svg</file>
+        <file>resources/svg/OpenBridge/arrow-up-google.svg</file>
+        <file>resources/svg/OpenBridge/arrow-down-google.svg</file>
 
-        <file>resources/images/bottombar/icon_hide.png</file>
+        <file>resources/svg/OpenBridge/database.svg</file>
+        <file>resources/svg/OpenBridge/command-autopilot.svg</file>
+        <file>resources/svg/OpenBridge/applications.svg</file>
+        <file>resources/svg/OpenBridge/settings-iec.svg</file>
+        <file>resources/svg/OpenBridge/alarm-general.svg</file>
+        <file>resources/svg/OpenBridge/anchor-iec.svg</file>
+        <file>resources/svg/OpenBridge/alarm-pob.svg</file>
 
-        <file>resources/images/bottombar/imagebutton_mydata.png</file>
-        <file>resources/images/bottombar/imagebutton_mob.png</file>
-        <file>resources/images/bottombar/imagebutton_autopilot.png</file>
-        <file>resources/images/bottombar/imagebutton_apps.png</file>
-        <file>resources/images/bottombar/imagebutton_anchor.png</file>
-        <file>resources/images/bottombar/imagebutton_alarms.png</file>
-        <file>resources/images/bottombar/imagebutton_settings.png</file>
+
 
         <file>resources/images/bottombar/anchor_drop.png</file>
         <file>resources/images/bottombar/anchor_raise.png</file>
@@ -40,6 +41,10 @@
 
 
         <file>resources/images/bottombar/alarm_alarm.png</file>
+
+        <file>resources/svg/OpenBridge/alarm-abandon.svg</file>
+        <file>resources/svg/OpenBridge/alarm-aground.svg</file>
+        <file>resources/svg/OpenBridge/alarm-fire.svg</file>
 
         <file>resources/images/bottombar/alarm_abandon.png</file>
         <file>resources/images/bottombar/alarm_adrift.png</file>
@@ -54,12 +59,12 @@
         <file>resources/images/icons/apps_icon.png</file>
         <file>resources/images/icons/webapp-256x256.png</file>
 
-        <file>resources/images/web/home.png</file>
-        <file>resources/images/web/back.png</file>
-        <file>resources/images/web/forward.png</file>
-        <file>resources/images/web/reload.png</file>
-        <file>resources/images/web/wheel.png</file>
-        <file>resources/images/web/close.png</file>
+        <file>resources/svg/OpenBridge/arrow-left-google.svg</file>
+        <file>resources/svg/OpenBridge/arrow-right-google.svg</file>
+        <file>resources/svg/OpenBridge/close-google.svg</file>
+        <file>resources/svg/OpenBridge/refresh-google.svg</file>
+        <file>resources/svg/OpenBridge/home.svg</file>
+        <file>resources/svg/OpenBridge/configure.svg</file>
 
 	
 
