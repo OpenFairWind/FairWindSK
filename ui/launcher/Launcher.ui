@@ -30,19 +30,16 @@
      </property>
      <item>
       <widget class="QToolButton" name="toolButton_Left">
-       <property name="text">
-        <string>&lt;</string>
-       </property>
        <property name="icon">
-        <iconset>
-         <normaloff>:/resources/images/launcher/toolbutton_left.png</normaloff>:/resources/images/launcher/toolbutton_left.png</iconset>
-       </property>
-       <property name="iconSize">
-        <size>
-         <width>32</width>
-         <height>256</height>
-        </size>
-       </property>
+          <iconset resource="../../resources.qrc">
+           <normaloff>:/resources/svg/OpenBridge/chevron-double-left-google.svg</normaloff><normalon>:/resources/svg/OpenBridge/chevron-double-left-google.svg</normalon></iconset>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>32</width>
+           <height>32</height>
+          </size>
+         </property>
       </widget>
      </item>
      <item>
@@ -82,19 +79,16 @@
        <property name="styleSheet">
         <string notr="true"/>
        </property>
-       <property name="text">
-        <string>&gt;</string>
-       </property>
        <property name="icon">
-        <iconset>
-         <normaloff>:/resources/images/launcher/toolbutton_right.png</normaloff>:/resources/images/launcher/toolbutton_right.png</iconset>
-       </property>
-       <property name="iconSize">
-        <size>
-         <width>32</width>
-         <height>256</height>
-        </size>
-       </property>
+          <iconset resource="../../resources.qrc">
+           <normaloff>:/resources/svg/OpenBridge/chevron-double-right-google.svg</normaloff><normalon>:/resources/svg/OpenBridge/chevron-double-right-google.svg</normalon></iconset>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>32</width>
+           <height>32</height>
+          </size>
+         </property>
       </widget>
      </item>
     </layout>
