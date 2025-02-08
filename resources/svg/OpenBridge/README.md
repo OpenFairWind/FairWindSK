@@ -1,0 +1,1 @@
+[link](https://www.openbridge.no/user-interface/icons)
