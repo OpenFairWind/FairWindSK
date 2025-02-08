@@ -220,9 +220,47 @@ docker run --init --name signalk-server -p 3000:3000 -v $HOME/.signalk:/home/nod
 
 You most probably want to mount `/home/node/.signalk` from the host or as a volume to persist your settings.
 
+# Citing DYNAMO/FairWind in scientific papers
+
+* Montella, Raffaele, Diana Di Luccio, Livia Marcellino, Ardelio Galletti, Sokol Kosta, Giulio Giunta, and Ian Foster.
+"Workflow-based automatic processing for internet of floating things crowdsourced data."
+Future generation computer systems 94 (2019): 103-119.
+[link](https://www.sciencedirect.com/science/article/pii/S0167739X18307672)
+
+
+* Di Luccio, Diana, Sokol Kosta, Aniello Castiglione, Antonio Maratea, and Raffaele Montella.
+"Vessel to shore data movement through the internet of floating things: A microservice platform at the edge."
+Concurrency and Computation: Practice and Experience 33, no. 4 (2021): e5988.
+[link](https://onlinelibrary.wiley.com/doi/abs/10.1002/cpe.5988)
+
+
+* Montella, Raffaele, Sokol Kosta, and Ian Foster.
+"DYNAMO: Distributed leisure yacht-carried sensor-network for atmosphere and marine data crowdsourcing applications."
+In 2018 IEEE International Conference on Cloud Engineering (IC2E), pp. 333-339. IEEE, 2018.
+[link](https://ieeexplore.ieee.org/document/8360350)
+
+
+* Montella, Raffaele, Diana Di Luccio, Sokol Kosta, Giulio Giunta, and Ian Foster.
+"Performance, resilience, and security in moving data from the fog to the cloud: the DYNAMO transfer framework approach."
+In International Conference on Internet and Distributed Computing Systems, pp. 197-208. Cham: Springer International Publishing, 2018.
+[link](https://link.springer.com/chapter/10.1007/978-3-030-02738-4_17)
+
+  
+* Di Luccio, Diana, Angelo Riccio, Ardelio Galletti, Giuliano Laccetti, Marco Lapegna, Livia Marcellino, Sokol Kosta, and Raffaele Montella.
+"Coastal marine data crowdsourcing using the Internet of Floating Things: Improving the results of a water quality model."
+IEEE Access 8 (2020): 101209-101223.
+[link](https://ieeexplore.ieee.org/document/9098885)
+
+
+* Montella, Raffaele, Mario Ruggieri, and Sokol Kosta.
+"A fast, secure, reliable, and resilient data transfer framework for pervasive IoT applications."
+In IEEE INFOCOM 2018-IEEE conference on computer communications workshops (INFOCOM WKSHPS), pp. 710-715. IEEE, 2018.
+[link](https://ieeexplore.ieee.org/document/8406884)
+
+
 # Gallery
 
-The developer team is lead by Prof. Raffaele Montella.
+The developer team is lead by [Prof. Raffaele Montella](https://raffaelemontella.it).
 ![Developers](images/fairwindsk-about.png)
 
 An example of a Signal K web application running wrapped by FairWindSK: The [Freeboard-SK](https://github.com/SignalK/freeboard-sk) chart-plotter application. 
@@ -239,3 +277,9 @@ and the elapsed time.
 
 The application settings: here it is possible to manage the applications shown on the desktop.
 ![The application settings](images/fairwindsk-settings-applications.png)
+
+# Open-Source external projects
+
+* [OpenBridge](https://www.openbridge.no) a collection of tools and approaches to improve implementation, design and approval of maritime workplaces and equipment
+* [QZeroConf](https://github.com/jbagg/QtZeroConf) a Qt wrapper class for ZeroConf libraries across various platforms.
+* [QHotKey](https://github.com/Skycoder42/QHotkey) a global shortcut/hotkey for Desktop Qt-Applications.
