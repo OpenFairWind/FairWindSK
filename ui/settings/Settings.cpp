@@ -89,7 +89,7 @@ namespace fairwindsk::ui::settings {
             // Remove the tab
             ui->tabWidget->removeTab(0);
 
-            // Delete the objecy
+            // Delete the object
             delete tab;
         }
     }
@@ -113,7 +113,7 @@ namespace fairwindsk::ui::settings {
         ui->tabWidget->addTab(new SignalK(this), tr("Signal K"));
 
         // Add the applications tab
-        ui->tabWidget->addTab(new Apps(this), tr("Apps"));
+        ui->tabWidget->addTab(new Apps(this), tr("Applications"));
 
         // Set the current tab index
         ui->tabWidget->setCurrentIndex(currentIndex);
