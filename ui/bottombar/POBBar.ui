@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>MOBBar</class>
- <widget class="QWidget" name="MOBBar">
+ <class>POBBar</class>
+ <widget class="QWidget" name="POBBar">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -10,7 +10,7 @@
     <height>62</height>
    </rect>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_MOB">
+  <layout class="QVBoxLayout" name="verticalLayout_POB">
    <property name="leftMargin">
     <number>0</number>
    </property>
@@ -24,7 +24,7 @@
     <number>0</number>
    </property>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_MOB">
+    <layout class="QHBoxLayout" name="horizontalLayout_POB">
      <property name="sizeConstraint">
       <enum>QLayout::SizeConstraint::SetFixedSize</enum>
      </property>
@@ -34,10 +34,11 @@
         <enum>QLayout::SizeConstraint::SetFixedSize</enum>
        </property>
        <item>
-        <widget class="QToolButton" name="toolButton_MOB">
+        <widget class="QToolButton" name="toolButton_POB">
          <property name="icon">
           <iconset resource="../../resources.qrc">
-           <normaloff>:/resources/svg/OpenBridge/alarm-pob.svg</normaloff><normalon>:/resources/svg/OpenBridge/alarm-pob.svg</normalon></iconset>
+           <normaloff>:/resources/svg/OpenBridge/alarm-pob.svg</normaloff>
+           <normalon>:/resources/svg/OpenBridge/alarm-pob.svg</normalon>:/resources/svg/OpenBridge/alarm-pob.svg</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -197,7 +198,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="pushButton_MOB_Cancel">
+          <widget class="QPushButton" name="pushButton_POB_Cancel">
            <property name="styleSheet">
             <string notr="true">background-color: rgb(82, 82, 83);
 border-top-color: rgb(159, 157, 160);
@@ -206,7 +207,7 @@ border-right-color: rgb(83, 83, 84);
 border-bottom-color: rgb(83, 83, 84);</string>
            </property>
            <property name="text">
-            <string>Cancel MOB</string>
+            <string>Cancel POB</string>
            </property>
           </widget>
          </item>
@@ -238,9 +239,9 @@ border-bottom-color: rgb(83, 83, 84);</string>
        <item>
         <widget class="QToolButton" name="toolButton_Hide">
          <property name="icon">
-          <iconset>
+          <iconset resource="../../resources.qrc">
            <normaloff>:/resources/svg/OpenBridge/unfold-less-google.svg</normaloff>
-           <normalon>:/resources/svg/OpenBridge/unfold-less-google.svg</normalon></iconset>
+           <normalon>:/resources/svg/OpenBridge/unfold-less-google.svg</normalon>:/resources/svg/OpenBridge/unfold-less-google.svg</iconset>
          </property>
          <property name="iconSize">
           <size>

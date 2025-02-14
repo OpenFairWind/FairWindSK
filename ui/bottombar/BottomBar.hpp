@@ -9,7 +9,7 @@
 
 #include <FairWindSK.hpp>
 #include <ui_BottomBar.h>
-#include "MOBBar.hpp"
+#include "POBBar.hpp"
 #include "AlarmsBar.hpp"
 #include "AutopilotBar.hpp"
 #include "AnchorBar.hpp"
@@ -30,8 +30,8 @@ namespace fairwindsk::ui::bottombar {
         // Set Anchor Icon visibility
         void setAnchorIcon(bool value) const;
 
-        // Set MOB Icon visibility
-        void setMOBIcon(bool value) const;
+        // Set POB Icon visibility
+        void setPOBIcon(bool value) const;
 
         // Add application icon to the shortcut
         void addApp(const QString& name);
@@ -48,8 +48,8 @@ namespace fairwindsk::ui::bottombar {
         // MyData button handler
         void myData_clicked();
 
-        // MOB button handler
-        void mob_clicked();
+        // POB button handler
+        void pob_clicked();
 
         // Autopilot button handler
         void autopilot_clicked();
@@ -90,8 +90,8 @@ namespace fairwindsk::ui::bottombar {
         // Pointer to the alarms bar
         AlarmsBar *m_AlarmsBar = nullptr;
 
-        // Pointer to the MOB bar
-        MOBBar *m_MOBBar = nullptr;
+        // Pointer to the POB bar
+        POBBar *m_POBBar = nullptr;
 
         // Pointer to the autopilot bar
         AutopilotBar *m_AutopilotBar = nullptr;

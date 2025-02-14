@@ -74,7 +74,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QToolButton" name="toolButton_MOB">
+      <widget class="QToolButton" name="toolButton_POB">
        <property name="text">
         <string>POB</string>
        </property>

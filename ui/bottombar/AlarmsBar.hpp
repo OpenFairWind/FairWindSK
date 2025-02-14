@@ -25,7 +25,7 @@ namespace fairwindsk::ui::bottombar {
         slots:
         void onHideClicked();
 
-        void onMobClicked();
+        void onPobClicked();
         void onFireClicked();
         void onAbandonClicked();
         void onAdriftClicked();

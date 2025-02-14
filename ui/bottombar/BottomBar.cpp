@@ -23,11 +23,11 @@ namespace fairwindsk::ui::bottombar {
 
         m_iconSize = 32;
 
-        // Setup the UI
+        // Set the UI
         ui->setupUi(parent);
 
-        // Create the MOB bar
-        m_MOBBar = new MOBBar();
+        // Create the POB bar
+        m_POBBar = new POBBar();
 
         // Create the autopilot bar
         m_AutopilotBar = new AutopilotBar();
@@ -38,13 +38,13 @@ namespace fairwindsk::ui::bottombar {
         // Create the alarms bar
         m_AlarmsBar = new AlarmsBar();
 
-        // Add the MOB bar to the layout
-        ui->gridLayout->addWidget(m_MOBBar,0,0);
+        // Add the POB bar to the layout
+        ui->gridLayout->addWidget(m_POBBar,0,0);
 
         // Add the autopilot bar to the layout
         ui->gridLayout->addWidget(m_AutopilotBar,1,0);
 
-        // Add the MOB bar to the layout
+        // Add the POB bar to the layout
         ui->gridLayout->addWidget(m_AnchorBar,2,0);
 
         // Add the alarms bar to the layout
@@ -53,16 +53,16 @@ namespace fairwindsk::ui::bottombar {
         // Emit a signal when the MyData tool button from the UI is clicked
         connect(ui->toolButton_MyData, &QToolButton::released, this, &BottomBar::myData_clicked);
 
-        // Emit a signal when the MOB tool button from the UI is clicked
-        connect(ui->toolButton_MOB, &QToolButton::released, this, &BottomBar::mob_clicked);
+        // Emit a signal when the POB tool button from the UI is clicked
+        connect(ui->toolButton_POB, &QToolButton::released, this, &BottomBar::pob_clicked);
 
-        // Emit a signal when the MOB tool button from the UI is clicked
+        // Emit a signal when the POB tool button from the UI is clicked
         connect(ui->toolButton_Autopilot, &QToolButton::released, this, &BottomBar::autopilot_clicked);
 
         // Emit a signal when the Apps tool button from the UI is clicked
         connect(ui->toolButton_Apps, &QToolButton::released, this, &BottomBar::apps_clicked);
 
-        // Emit a signal when the MOB tool button from the UI is clicked
+        // Emit a signal when the POB tool button from the UI is clicked
         connect(ui->toolButton_Anchor, &QToolButton::released, this, &BottomBar::anchor_clicked);
 
         // Emit a signal when the MyData tool button from the UI is clicked
@@ -95,14 +95,14 @@ namespace fairwindsk::ui::bottombar {
     }
 
     /*
-     * setMOBIcon
-     * Set MOB icon visibility
+     * setPOBIcon
+     * Set POB icon visibility
      */
-    void BottomBar::setMOBIcon(const bool value) const
+    void BottomBar::setPOBIcon(const bool value) const
     {
 
         // Set button icon visibility
-        ui->toolButton_MOB->setEnabled(value);
+        ui->toolButton_POB->setEnabled(value);
     }
 
 /*
@@ -116,11 +116,11 @@ namespace fairwindsk::ui::bottombar {
 
 /*
  * myData_clicked
- * Method called when the user click on Men Over Board (MOB)
+ * Method called when the user click on Men Over Board (POB)
  */
-    void BottomBar::mob_clicked() {
+    void BottomBar::pob_clicked() {
         // Emit the signal to tell the MainWindow to update the UI and show the settings screen
-        m_MOBBar->MOB();
+        m_POBBar->POB();
     }
 
     void BottomBar::autopilot_clicked() {
@@ -322,13 +322,13 @@ namespace fairwindsk::ui::bottombar {
             m_AlarmsBar = nullptr;
         }
 
-        // Check if the MOB bar is instanced
-        if (m_MOBBar) {
-            // Delete the MOB bar
-            delete m_MOBBar;
+        // Check if the POB bar is instanced
+        if (m_POBBar) {
+            // Delete the POB bar
+            delete m_POBBar;
 
-            // Set the MOB bar pointer to null
-            m_MOBBar = nullptr;
+            // Set the POB bar pointer to null
+            m_POBBar = nullptr;
         }
 
         // Check if the anchor bar is instanced

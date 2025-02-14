@@ -262,16 +262,16 @@
           </spacer>
          </item>
          <item row="0" column="7">
-          <layout class="QHBoxLayout" name="horizontalLayout_MOB">
+          <layout class="QHBoxLayout" name="horizontalLayout_POB">
            <item>
-            <widget class="QToolButton" name="toolButton_MOB">
+            <widget class="QToolButton" name="toolButton_POB">
              <property name="text">
-              <string> MOB</string>
+              <string>POB</string>
              </property>
              <property name="icon">
               <iconset>
-               <normaloff>:/resources/images/bottombar/alarm_mob.png</normaloff>
-               <normalon>:/resources/images/bottombar/alarm_alarm.png</normalon>:/resources/images/bottombar/alarm_mob.png</iconset>
+               <normaloff>:/resources/svg/OpenBridge/alarm-pob.svg</normaloff>
+               <normalon>:/resources/images/bottombar/alarm_alarm.png</normalon></iconset>
              </property>
              <property name="iconSize">
               <size>
