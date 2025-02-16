@@ -137,6 +137,34 @@ add_executable(${PROJECT_NAME}
         ui/bottombar/AnchorBar.ui
         PList.cpp
         PList.hpp
+        ui/mydata/Waypoints.cpp
+        ui/mydata/Waypoints.hpp
+        ui/mydata/Waypoints.ui
+        ui/mydata/Waypoint.cpp
+        ui/mydata/Waypoint.hpp
+        ui/mydata/Waypoint.ui
+        ui/mydata/Files.cpp
+        ui/mydata/Files.hpp
+        ui/mydata/Files.ui
+        ui/mydata/FileInfoListModel.cpp
+        ui/mydata/FileInfoListModel.hpp
+        ui/mydata/Navpage.cpp
+        ui/mydata/Navpage.hpp
+        ui/mydata/NavPage.ui
+        ui/mydata/DriveInfo.cpp
+        ui/mydata/DriveInfo.hpp
+        ui/mydata/DriveInfo.ui
+        ui/mydata/DirItemInfo.cpp
+        ui/mydata/DirItemInfo.hpp
+        ui/mydata/DirItemInfo.ui
+        ui/mydata/Utils.cpp
+        ui/mydata/Utils.hpp
+        ui/mydata/SearchPage.cpp
+        ui/mydata/SearchPage.hpp
+        ui/mydata/SearchPage.ui
+        ui/mydata/ImageViewer.cpp
+        ui/mydata/ImageViewer.hpp
+        ui/mydata/ImageViewer.ui
 
 )
 
