@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>MyData</class>
+ <class>fairwindsk::ui::mydata::MyData</class>
  <widget class="QWidget" name="MyData">
   <property name="geometry">
    <rect>
@@ -14,33 +14,18 @@
    <string>MyData</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0">
-    <widget class="QTabWidget" name="tabWidget_MyData">
-     <property name="currentIndex">
-      <number>0</number>
-     </property>
-     <widget class="QWidget" name="tabWaypoints">
-      <attribute name="title">
-       <string>Waypoints</string>
-      </attribute>
-     </widget>
-     <widget class="QWidget" name="tabRoutes">
-      <attribute name="title">
-       <string>Routes</string>
-      </attribute>
-     </widget>
-     <widget class="QWidget" name="tabTracks">
-      <attribute name="title">
-       <string>Tracks</string>
-      </attribute>
-     </widget>
-     <widget class="QWidget" name="tabFiles">
-      <attribute name="title">
-       <string>Files</string>
-      </attribute>
-     </widget>
-    </widget>
-   </item>
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
    <item row="1" column="0">
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="styleSheet">
@@ -53,6 +38,10 @@ border-bottom-color: rgb(83, 83, 84);</string>
      <property name="standardButtons">
       <set>QDialogButtonBox::StandardButton::Close</set>
      </property>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QTabWidget" name="tabWidget">
     </widget>
    </item>
   </layout>

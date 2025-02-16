@@ -7,9 +7,11 @@
 
 #include <QWidget>
 
-namespace Ui { class MyData; }
-
 namespace fairwindsk::ui::mydata {
+
+    QT_BEGIN_NAMESPACE
+    namespace Ui { class MyData; }
+    QT_END_NAMESPACE
 
     class MyData : public QWidget {
     Q_OBJECT
@@ -28,6 +30,9 @@ namespace fairwindsk::ui::mydata {
         void closed(MyData *);
 
     private:
+        void initTabs(int currentIndex);
+        void removeTabs();
+
         Ui::MyData *ui;
         QWidget *m_currentWidget;
     };
