@@ -75,6 +75,7 @@ namespace fairwindsk::signalk {
         qint64 sendMessage(QJsonObject message);
 
         Waypoint getWaypointByHref(const QString &href);
+        QMap<QString, Waypoint> getWaypoints();
 
         static QString getStringFromUpdateByPath(const QJsonObject &update, const QString& path = "");
         static double getDoubleFromUpdateByPath(const QJsonObject &update, const QString& path = "");

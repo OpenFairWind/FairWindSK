@@ -864,6 +864,30 @@ namespace fairwindsk::signalk {
         return result;
     }
 
+    QMap<QString, Waypoint> Client::getWaypoints() {
+        QMap<QString, Waypoint> result;
+
+        const auto data = httpGet(QUrl(m_Url.toString() + "/v2/api/resources/waypoints"));
+        const auto jsonDocument = QJsonDocument::fromJson(data);
+        const auto jsonObject = jsonDocument.object();
+
+
+        for ( const auto& key : jsonObject.keys() ) {
+            if (jsonObject.contains(key) && jsonObject[key].isObject()) {
+                auto value = jsonObject[key].toObject();
+
+                qDebug() << "Waypoint " << key;
+                qDebug() << value;
+
+                auto waypoint = signalk::Waypoint(value);
+                result.insert(key, waypoint);
+            }
+
+        }
+
+        return result;
+    }
+
     QJsonObject Client::subscribe(const QString& path, QObject *receiver, const char *member, int period, const QString& policy, int minPeriod) {
         return(subscribe("vessels.self", path, receiver, member, period, policy, minPeriod));
     }
