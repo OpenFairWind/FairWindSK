@@ -78,7 +78,23 @@
         <file>resources/images/icons/apps_icon.png</file>
         <file>resources/images/icons/webapp-256x256.png</file>
 
-	
+        <!-- Mydata icons -->
+        <file>resources/svg/OpenBridge/edit-google.svg</file>
+        <file>resources/svg/OpenBridge/info.svg</file>
+        <file>resources/svg/OpenBridge/note-edit-proposal.svg</file>
+        <file>resources/svg/OpenBridge/route-export-iec.svg</file>
+        <file>resources/svg/OpenBridge/route-import-iec.svg</file>
+        <file>resources/svg/OpenBridge/search.svg</file>
+        <file>resources/svg/OpenBridge/sort-asc-google.svg</file>
+        <file>resources/svg/OpenBridge/sort-desc-google.svg</file>
+        <file>resources/svg/OpenBridge/file-export-google.svg</file>
+        <file>resources/svg/OpenBridge/file-import-google.svg</file>
+        <file>resources/svg/OpenBridge/navigation-route.svg</file>
+
+        <!-- Cut, copy, and paste -->
+        <file>resources/svg/OpenBridge/content-cut-google.svg</file>
+        <file>resources/svg/OpenBridge/content-copy-google.svg</file>
+        <file>resources/svg/OpenBridge/content-paste-google.svg</file>
 
     </qresource>
 </RCC>
