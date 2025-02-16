@@ -344,14 +344,14 @@ namespace fairwindsk::ui::topbar {
 
 
         // Get the value
-        auto value = fairwindsk::signalk::Client::getGeoCoordinateFromUpdateByPath(update);
+        const auto value = fairwindsk::signalk::Client::getGeoCoordinateFromUpdateByPath(update);
 
         if (!value.isValid()) {
             ui->widget_POS->setVisible(false);
         } else {
 
 
-            auto text = value.toString(QGeoCoordinate::DegreesMinutesSecondsWithHemisphere);
+            const auto text = value.toString(QGeoCoordinate::DegreesMinutesSecondsWithHemisphere);
 
             // Set the course over ground label from the UI to the formatted value
             ui->label_POS->setText(text);
