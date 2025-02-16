@@ -13,10 +13,12 @@ namespace fairwindsk::signalk {
 
     class Waypoint : public QJsonObject {
     public:
+        Waypoint() = default;
+
         Waypoint(const QString &id, const QString &name, const QString &description, const QString &type,
                  const QGeoCoordinate &coordinate);
 
-        Waypoint(const QJsonObject &jsonObject);
+        explicit Waypoint(const QJsonObject &jsonObject);
 
         QString getId();
 
@@ -25,6 +27,8 @@ namespace fairwindsk::signalk {
         QString getDescription();
 
         QString getType();
+
+        QDateTime getTimestamp();
 
         QGeoCoordinate getCoordinates();
 

@@ -7,6 +7,8 @@
 
 #include "Waypoint.hpp"
 
+#include <QJsonArray>
+
 /*
  * {
  *  "name":"Point1",
@@ -65,9 +67,26 @@ namespace fairwindsk::signalk {
         return this->operator[]("type").toString();
     };
 
+    QDateTime Waypoint::getTimestamp() {
+        return QDateTime::fromString(this->operator[]("timestamp").toString(), Qt::ISODate);
+    }
+
     QGeoCoordinate Waypoint::getCoordinates() {
-        auto pos = this->operator[]("position").toObject();
-        return QGeoCoordinate(pos["latitude"].toDouble(), pos["longitude"].toDouble(), pos["altitude"].toDouble());
+
+        QGeoCoordinate result;
+        if (contains("feature") && this->operator[]("feature").isObject()) {
+            const auto geoJson = this->operator[]("feature").toObject();
+            if (geoJson.contains("geometry") && geoJson["geometry"].isObject()) {
+                const auto geometryJson = geoJson["geometry"].toObject();
+                if (geometryJson.contains("coordinates") && geometryJson["coordinates"].isArray()) {
+                    const auto coordinatesJsonArray = geometryJson["coordinates"].toArray();
+                    result.setLongitude(coordinatesJsonArray[0].toDouble());
+                    result.setLatitude(coordinatesJsonArray[1].toDouble());
+                    result.setAltitude(coordinatesJsonArray[2].toDouble());
+                }
+            }
+        }
+        return result;
     }
 
     Waypoint::Waypoint(const QJsonObject &jsonObject) : QJsonObject(jsonObject) {
