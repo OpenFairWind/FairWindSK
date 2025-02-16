@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
+
  <class>fairwindsk::ui::settings::Main</class>
  <widget class="QWidget" name="Main">
   <property name="geometry">
@@ -11,6 +12,18 @@
    </rect>
   </property>
   <layout class="QGridLayout" name="gridLayout_Main">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
    <item row="1" column="0">
     <widget class="QGroupBox" name="groupBox_Units">
      <property name="sizePolicy">
@@ -33,8 +46,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>356</width>
-           <height>151</height>
+           <width>380</width>
+           <height>251</height>
           </rect>
          </property>
          <layout class="QGridLayout" name="gridLayout_Measures"/>

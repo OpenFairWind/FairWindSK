@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>fairwindsk::ui::settings::Settings</class>
+     <class>fairwindsk::ui::settings::Settings</class>
+ 
  <widget class="QWidget" name="Settings">
   <property name="windowModality">
    <enum>Qt::WindowModality::ApplicationModal</enum>
@@ -20,6 +21,18 @@
    <string notr="true"/>
   </property>
   <layout class="QGridLayout" name="gridLayout_Settings">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
    <item row="0" column="0">
     <layout class="QVBoxLayout" name="verticalLayout">
      <item>

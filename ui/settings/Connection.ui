@@ -6,11 +6,23 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>456</width>
+    <width>462</width>
     <height>419</height>
    </rect>
   </property>
   <layout class="QGridLayout" name="gridLayout_Connection">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
    <item row="4" column="1">
     <widget class="QTextEdit" name="textEdit_message">
      <property name="readOnly">
@@ -29,7 +41,7 @@
         <bool>true</bool>
        </property>
        <property name="currentText">
-        <string notr="true"></string>
+        <string notr="true">http://localhost:3000</string>
        </property>
        <item>
         <property name="text">
