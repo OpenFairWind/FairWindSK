@@ -19,8 +19,31 @@ namespace fairwindsk::ui::mydata {
         QWidget(parent), ui(new Ui::ImageViewer) {
         ui->setupUi(this);
 
-
+        connect(ui->toolButton_ZoomIn, &QToolButton::clicked, this, &ImageViewer::onZoomInClicked);
+        connect(ui->toolButton_ZoomOut, &QToolButton::clicked, this, &ImageViewer::onZoomOutClicked);
+        connect(ui->toolButton_One2One, &QToolButton::clicked, this, &ImageViewer::onOne2OneClicked);
+        connect(ui->toolButton_Adapt, &QToolButton::clicked, this, &ImageViewer::onAdaptClicked);
         loadFile(path);
+    }
+
+    void ImageViewer::onZoomOutClicked() {
+        scaleImage(0.8);
+    }
+
+    void ImageViewer::onZoomInClicked() {
+        scaleImage(1.25);
+    }
+
+    void ImageViewer::onAdaptClicked() {
+        const bool fitToWindow = ui->toolButton_Adapt->isChecked();
+        ui->scrollArea->setWidgetResizable(fitToWindow);
+        if (!fitToWindow)
+            onOne2OneClicked();
+    }
+
+    void ImageViewer::onOne2OneClicked() {
+        ui->label_Image->adjustSize();
+        m_scaleFactor = 1.0;
     }
 
     bool ImageViewer::loadFile(const QString &fileName)
@@ -54,12 +77,10 @@ namespace fairwindsk::ui::mydata {
 
         m_scaleFactor = 1.0;
 
+        if (!ui->toolButton_Adapt->isChecked()) {
+            ui->label_Image->adjustSize();
+        }
 
-
-        //fitToWindowAct->setEnabled(true);
-
-        //if (!fitToWindowAct->isChecked())
-        //    m_imageLabel->adjustSize();
     }
 
 
@@ -70,8 +91,8 @@ namespace fairwindsk::ui::mydata {
         adjustScrollBar(ui->scrollArea->horizontalScrollBar(), factor);
         adjustScrollBar(ui->scrollArea->verticalScrollBar(), factor);
 
-        //zoomInAct->setEnabled(m_scaleFactor < 3.0);
-        //zoomOutAct->setEnabled(m_scaleFactor > 0.333);
+        ui->toolButton_ZoomIn->setEnabled(m_scaleFactor < 3.0);
+        ui->toolButton_ZoomOut->setEnabled(m_scaleFactor > 0.333);
     }
 
     void ImageViewer::adjustScrollBar(QScrollBar *scrollBar, const double factor) {

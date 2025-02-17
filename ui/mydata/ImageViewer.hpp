@@ -28,6 +28,12 @@ public:
     void scaleImage(double factor);
     void adjustScrollBar(QScrollBar *scrollBar, double factor);
 
+    public slots:
+        void onZoomInClicked();
+        void onZoomOutClicked();
+        void onOne2OneClicked();
+        void onAdaptClicked();
+
 private:
     Ui::ImageViewer *ui;
 
