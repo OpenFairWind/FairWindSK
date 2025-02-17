@@ -31,7 +31,12 @@
      <item>
       <widget class="QToolButton" name="toolButton_Adapt">
        <property name="text">
-        <string>&lt;&gt;</string>
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset resource="../../resources.qrc">
+         <normaloff>:/resources/svg/zoom-fit-svgrepo-com.svg</normaloff>
+         <normalon>:/resources/svg/zoom-fit-curve-svgrepo-com.svg</normalon>:/resources/svg/zoom-fit-svgrepo-com.svg</iconset>
        </property>
        <property name="checkable">
         <bool>true</bool>
@@ -56,6 +61,10 @@
        <property name="text">
         <string>1:1</string>
        </property>
+       <property name="icon">
+        <iconset resource="../../resources.qrc">
+         <normaloff>:/resources/svg/aspect-ratio-svgrepo-com.svg</normaloff>:/resources/svg/aspect-ratio-svgrepo-com.svg</iconset>
+       </property>
       </widget>
      </item>
      <item>
@@ -63,12 +72,20 @@
        <property name="text">
         <string>+</string>
        </property>
+       <property name="icon">
+        <iconset resource="../../resources.qrc">
+         <normaloff>:/resources/svg/zoom-in-svgrepo-com.svg</normaloff>:/resources/svg/zoom-in-svgrepo-com.svg</iconset>
+       </property>
       </widget>
      </item>
      <item>
       <widget class="QToolButton" name="toolButton_ZoomOut">
        <property name="text">
         <string>-</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../../resources.qrc">
+         <normaloff>:/resources/svg/zoom-out-svgrepo-com.svg</normaloff>:/resources/svg/zoom-out-svgrepo-com.svg</iconset>
        </property>
       </widget>
      </item>
@@ -85,7 +102,7 @@
         <x>0</x>
         <y>0</y>
         <width>398</width>
-        <height>264</height>
+        <height>260</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_Image">
@@ -114,6 +131,8 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../../resources.qrc"/>
+ </resources>
  <connections/>
 </ui>
