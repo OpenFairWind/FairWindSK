@@ -91,6 +91,12 @@
         <file>resources/svg/OpenBridge/file-import-google.svg</file>
         <file>resources/svg/OpenBridge/navigation-route.svg</file>
 
+        <file>resources/svg/aspect-ratio-svgrepo-com.svg</file>
+        <file>resources/svg/zoom-fit-curve-svgrepo-com.svg</file>
+        <file>resources/svg/zoom-fit-svgrepo-com.svg</file>
+        <file>resources/svg/zoom-in-svgrepo-com.svg</file>
+        <file>resources/svg/zoom-out-svgrepo-com.svg</file>
+
         <!-- Cut, copy, and paste -->
         <file>resources/svg/OpenBridge/content-cut-google.svg</file>
         <file>resources/svg/OpenBridge/content-copy-google.svg</file>
