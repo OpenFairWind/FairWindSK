@@ -5,7 +5,7 @@
 // You may need to build the project (run Qt uic code generator) to get "ui_Navpage.h" resolved
 
 #include "NavPage.hpp"
-#include "ui_Navpage.h"
+#include "ui_NavPage.h"
 
 #include <QColumnView>
 #include <QLayout>
