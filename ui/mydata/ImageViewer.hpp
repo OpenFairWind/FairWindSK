@@ -6,8 +6,9 @@
 #define IMAGEVIEWER_H
 
 #include <QWidget>
-#include <QtWidgets/QLabel>
-#include <QScrollBar>
+
+
+#include "ImageViewerWidget.hpp"
 
 
 namespace fairwindsk::ui::mydata {
@@ -19,14 +20,11 @@ class ImageViewer : public QWidget {
 Q_OBJECT
 
 public:
-    explicit ImageViewer(QString path, QWidget *parent = nullptr);
+    explicit ImageViewer(const QString& path, QWidget *parent = nullptr);
     ~ImageViewer() override;
 
     bool loadFile(const QString &path);
     void setImage(const QImage &newImage);
-
-    void scaleImage(double factor);
-    void adjustScrollBar(QScrollBar *scrollBar, double factor);
 
     public slots:
         void onZoomInClicked();
@@ -37,7 +35,7 @@ public:
 private:
     Ui::ImageViewer *ui;
 
-    QImage m_image;
+    ImageViewerWidget *m_imageViewerWidget;
     double m_scaleFactor = 1;
 };
 } // fairwindsk::ui::mydata
