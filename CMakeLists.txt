@@ -148,8 +148,8 @@ add_executable(${PROJECT_NAME}
         ui/mydata/Files.ui
         ui/mydata/FileInfoListModel.cpp
         ui/mydata/FileInfoListModel.hpp
-        ui/mydata/Navpage.cpp
-        ui/mydata/Navpage.hpp
+        ui/mydata/NavPage.cpp
+        ui/mydata/NavPage.hpp
         ui/mydata/NavPage.ui
         ui/mydata/DriveInfo.cpp
         ui/mydata/DriveInfo.hpp
@@ -165,6 +165,8 @@ add_executable(${PROJECT_NAME}
         ui/mydata/ImageViewer.cpp
         ui/mydata/ImageViewer.hpp
         ui/mydata/ImageViewer.ui
+        ui/mydata/ImageViewerWidget.cpp
+        ui/mydata/ImageViewerWidget.hpp
 
 )
 
