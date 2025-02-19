@@ -94,6 +94,7 @@ namespace fairwindsk::ui::web {
                 return QObject::tr("Allow %1 to capture audio and video of your desktop?");
             case QWebEnginePage::Notifications:
                 return QObject::tr("Allow %1 to show notification on your desktop?");
+            default: ;
         }
         return {};
     }
@@ -146,7 +147,7 @@ namespace fairwindsk::ui::web {
         Ui::CertificateErrorDialog certificateDialog;
         certificateDialog.setupUi(&dialog);
         certificateDialog.m_iconLabel->setText(QString());
-        QIcon icon(window()->style()->standardIcon(QStyle::SP_MessageBoxWarning, 0, window()));
+        const QIcon icon(window()->style()->standardIcon(QStyle::SP_MessageBoxWarning, 0, window()));
         certificateDialog.m_iconLabel->setPixmap(icon.pixmap(32, 32));
         certificateDialog.m_errorLabel->setText(error.description());
         dialog.setWindowTitle(tr("Certificate Error"));
@@ -166,7 +167,7 @@ namespace fairwindsk::ui::web {
         passwordDialog.setupUi(&dialog);
 
         passwordDialog.m_iconLabel->setText(QString());
-        QIcon icon(window()->style()->standardIcon(QStyle::SP_MessageBoxQuestion, 0, window()));
+        const QIcon icon(window()->style()->standardIcon(QStyle::SP_MessageBoxQuestion, 0, window()));
         passwordDialog.m_iconLabel->setPixmap(icon.pixmap(32, 32));
 
         QString introMessage(tr("Enter username and password for \"%1\" at %2")
@@ -185,9 +186,8 @@ namespace fairwindsk::ui::web {
     }
 
     void WebView::handleFeaturePermissionRequested(const QUrl &securityOrigin, QWebEnginePage::Feature feature) {
-        QString title = tr("Permission Request");
-        QString question = questionForFeature(feature).arg(securityOrigin.host());
-        if (!question.isEmpty() && QMessageBox::question(window(), title, question) == QMessageBox::Yes)
+        const QString title = tr("Permission Request");
+        if (const QString question = questionForFeature(feature).arg(securityOrigin.host()); !question.isEmpty() && QMessageBox::question(window(), title, question) == QMessageBox::Yes)
             page()->setFeaturePermission(securityOrigin, feature,
                                          QWebEnginePage::PermissionGrantedByUser);
         else
@@ -223,10 +223,9 @@ namespace fairwindsk::ui::web {
 
 //! [registerProtocolHandlerRequested]
     void WebView::handleRegisterProtocolHandlerRequested(QWebEngineRegisterProtocolHandlerRequest request) {
-        auto answer = QMessageBox::question(window(), tr("Permission Request"),
+        const auto answer = QMessageBox::question(window(), tr("Permission Request"),
                                             tr("Allow %1 to open all %2 links?")
-                                                    .arg(request.origin().host())
-                                                    .arg(request.scheme()));
+                                                    .arg(request.origin().host(), request.scheme()));
         if (answer == QMessageBox::Yes)
             request.accept();
         else
@@ -251,11 +250,9 @@ namespace fairwindsk::ui::web {
                 Q_UNREACHABLE();
         }
 
-        auto answer = QMessageBox::question(window(), tr("File system access request"),
+        const auto answer = QMessageBox::question(window(), tr("File system access request"),
                                             tr("Give %1 %2 access to %3?")
-                                                    .arg(request.origin().host())
-                                                    .arg(accessType)
-                                                    .arg(request.filePath().toString()));
+                                                    .arg(request.origin().host(), accessType, request.filePath().toString()));
         if (answer == QMessageBox::Yes)
             request.accept();
         else
