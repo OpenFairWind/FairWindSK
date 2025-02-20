@@ -19,7 +19,7 @@
 
 namespace fairwindsk::ui::mydata {
 
-    class ImageViewerWidget : public QGraphicsView {
+    class ImageWidget : public QGraphicsView {
         Q_OBJECT
 
         QGraphicsScene m_scene;
@@ -29,7 +29,7 @@ namespace fairwindsk::ui::mydata {
         static constexpr inline qreal ZOOM_OUT_SCALE = 0.96;
 
     public:
-        explicit ImageViewerWidget(QWidget *parent = nullptr);
+        explicit ImageWidget(QWidget *parent = nullptr);
         void setPixmap(const QPixmap &pixmap, int desiredWidth, int desiredHeight);
         QPixmap pixmap() const;
         void scale(qreal s);
