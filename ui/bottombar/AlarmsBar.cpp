@@ -107,7 +107,7 @@ namespace fairwindsk::ui::bottombar {
                 ).replace("notifications.","");
 
             // Set the path
-            const auto getPath = "vessels.self." + m_signalkPaths[key.toStdString()].get<std::string>()+".value";
+            const auto getPath = QString::fromStdString("vessels.self." + m_signalkPaths[key.toStdString()].get<std::string>()+".value");
 
             // Check if the debug is on
             if (fairWindSK->isDebug()) {
@@ -122,7 +122,7 @@ namespace fairwindsk::ui::bottombar {
             // Get the mob notification value
 
             // Check if the mob notification value is empty or the state is normal (no mob emergency)
-            if (auto notificationObject = signalKClient->signalkGet( QString::fromStdString(getPath)); notificationObject.isEmpty() || (
+            if (auto notificationObject = signalKClient->signalkGet( getPath); notificationObject.isEmpty() || (
                 notificationObject.contains("state") &&
                 notificationObject["state"].isString() &&
                 notificationObject["state"].toString() == "normal")) {
