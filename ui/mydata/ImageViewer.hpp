@@ -8,7 +8,7 @@
 #include <QWidget>
 
 
-#include "ImageViewerWidget.hpp"
+#include "ImageWidget.hpp"
 
 
 namespace fairwindsk::ui::mydata {
@@ -35,7 +35,7 @@ public:
 private:
     Ui::ImageViewer *ui;
 
-    ImageViewerWidget *m_imageViewerWidget;
+    ImageWidget *m_imageWidget;
     double m_scaleFactor = 1;
 };
 } // fairwindsk::ui::mydata

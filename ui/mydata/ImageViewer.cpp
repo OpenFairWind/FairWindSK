@@ -13,15 +13,18 @@
 
 #include <QImageReader>
 #include <QColorSpace>
+#include <QTimer>
 
 namespace fairwindsk::ui::mydata {
     ImageViewer::ImageViewer(const QString& path, QWidget *parent) :
         QWidget(parent), ui(new Ui::ImageViewer) {
         ui->setupUi(this);
 
-        m_imageViewerWidget = new ImageViewerWidget(this);
+        m_imageWidget = new ImageWidget(this);
+        m_imageWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-        ui->verticalLayout_Image->addWidget(m_imageViewerWidget);
+
+        ui->verticalLayout_Image->addWidget(m_imageWidget);
 
         connect(ui->toolButton_ZoomIn, &QToolButton::clicked, this, &ImageViewer::onZoomInClicked);
         connect(ui->toolButton_ZoomOut, &QToolButton::clicked, this, &ImageViewer::onZoomOutClicked);
@@ -33,18 +36,16 @@ namespace fairwindsk::ui::mydata {
 
     void ImageViewer::onZoomOutClicked() {
 
-        m_imageViewerWidget->zoomOut();
+        m_imageWidget->zoomOut();
     }
 
     void ImageViewer::onZoomInClicked() {
 
-        m_imageViewerWidget->zoomIn();
+        m_imageWidget->zoomIn();
     }
 
     void ImageViewer::onAdaptClicked() {
-        const bool fitToWindow = ui->toolButton_Adapt->isChecked();
-        ui->scrollArea->setWidgetResizable(fitToWindow);
-        if (!fitToWindow)
+        if (const bool fitToWindow = ui->toolButton_Adapt->isChecked(); !fitToWindow)
             onOne2OneClicked();
     }
 
@@ -53,6 +54,8 @@ namespace fairwindsk::ui::mydata {
         ui->label_Image->adjustSize();
         m_scaleFactor = 1.0;
         */
+        m_imageWidget->resize(ui->scrollAreaWidgetContents->width(), ui->scrollAreaWidgetContents->height());
+
 
     }
 
@@ -69,7 +72,12 @@ namespace fairwindsk::ui::mydata {
     }
 
     void ImageViewer::setImage(const QImage &newImage) {
-        m_imageViewerWidget->setPixmap(QPixmap::fromImage(newImage),newImage.width(),newImage.height());
+
+        m_imageWidget->setPixmap(QPixmap::fromImage(newImage),0,0);
+
+        // Show the window fullscreen
+        QTimer::singleShot(0, this, SLOT(onOne2OneClicked()));
+
     }
 
 
@@ -77,7 +85,25 @@ namespace fairwindsk::ui::mydata {
 
 
     ImageViewer::~ImageViewer() {
-        delete m_imageViewerWidget;
-        delete ui;
+
+        // Check if the image widget has been allocated
+        if (m_imageWidget) {
+
+            // Delete the widget
+            delete m_imageWidget;
+
+            // Set the pointer to null
+            m_imageWidget = nullptr;
+        }
+
+        // Check if the UI has been allocated
+        if (ui) {
+            // Delete the ui
+            delete ui;
+
+            // Set the pointer to null
+            ui = nullptr;
+        }
+
     }
 } // fairwindsk::ui::mydata
