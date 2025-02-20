@@ -165,8 +165,8 @@ add_executable(${PROJECT_NAME}
         ui/mydata/ImageViewer.cpp
         ui/mydata/ImageViewer.hpp
         ui/mydata/ImageViewer.ui
-        ui/mydata/ImageViewerWidget.cpp
-        ui/mydata/ImageViewerWidget.hpp
+        ui/mydata/ImageWidget.cpp
+        ui/mydata/ImageWidget.hpp
 
 )
 
