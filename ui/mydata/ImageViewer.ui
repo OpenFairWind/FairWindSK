@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>868</width>
+    <height>418</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -93,6 +93,12 @@
    </item>
    <item>
     <widget class="QScrollArea" name="scrollArea">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <property name="widgetResizable">
       <bool>true</bool>
      </property>
@@ -101,9 +107,15 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>398</width>
-        <height>260</height>
+        <width>866</width>
+        <height>378</height>
        </rect>
+      </property>
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_Image">
        <property name="leftMargin">
