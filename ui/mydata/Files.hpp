@@ -23,25 +23,50 @@ public:
     explicit Files(QWidget *parent = nullptr);
     ~Files() override;
 
-    int addPageToTabWidget(const QString& dir, const QString &label);
+    enum class CDSource { Navbar, Navpage, Navbutton };
 
-    enum class CDSource { Navbar, Navpage, Navtree, Navbutton, Tabchange };
+    bool selectFileSystemItem(const QString &path, CDSource source);
 
-    bool selectFileSystemItem(const QString &path, CDSource source, bool suppress_warning = false);
+
+    QStringList getSelection() const;
+
+    void setCurrentDir(const QString& new_dir);
+    QString getCurrentDir() const;
+
+    /*!
+     * \brief Format the provided number as bytes.
+     * \param bytes
+     * \return a string
+     *
+     * Aims to present the number in a human-friendly format.
+     * Converts bytes to a higher order unit ("KB", "MB", "GB", "TB"), if possible.
+     */
+    static QString format_bytes(qint64 bytes);
+
+    /*!
+         * \brief copyOrMoveDirectorySubtree
+         * \param from
+         * \param to
+         * \param copyAndRemove If `true`, move instead of copy.
+         * \param overWriteExistingFiles If `true`, overwrite existing files at the destination. **Destructive.**
+         *
+         * Copies a folder and all its contents.
+         * Reference: https://forum.qt.io/topic/105993/copy-folder-qt-c/5?_=1675790958476&lang=en-GB
+         */
+    static void copyOrMoveDirectorySubtree(const QString &from,
+                                    const QString &to,
+                                    bool copyAndRemove,
+                                    bool overwriteExistingFiles);
 
     public slots:
 
+        void onItemViewActivated(const QModelIndex &index);
+
+        void onItemViewClicked(const QModelIndex &index) const;
+
         void onHome();
 
-        void onNewTabClicked();
-
-        void onTabWidgetCurrentChanged(int index);
-
-        void onTabWidgetTabCloseRequested(int index);
-
-        void onAddressBarReturnPressed();
-
-        void onTreeViewClicked(const QModelIndex &index);
+        void onPathReturnPressed();
 
         void onBackClicked();
 
@@ -61,8 +86,6 @@ public:
 
         void onCutClicked();
 
-        void onCloseTabClicked();
-
         void onSearchClicked();
 
 private:
@@ -72,10 +95,11 @@ private:
     QFileSystemModel *m_fileSystemModel;
     QStringList m_itemsToCopy;
     QStringList m_itemsToMove;
+    QDir *m_currentDir;
 
 
     void addSearchPage();
-    void locateInTree(const QString &path);
+
     void showWarning(const QString &message);
 };
 } // fairwindsk::ui::mydata

@@ -11,12 +11,13 @@
 #include <QClipboard>
 #include <QInputDialog>
 #include <QMessageBox>
+#include <QDirIterator>
 #include <ui_ImageViewer.h>
 
 #include "ImageViewer.hpp"
-#include "NavPage.hpp"
+
 #include "SearchPage.hpp"
-#include "Utils.hpp"
+
 
 // The base source code is https://github.com/kitswas/File-Manager/
 
@@ -25,33 +26,30 @@ Files::Files(QWidget *parent) :
     QWidget(parent), ui(new Ui::Files) {
 	    ui->setupUi(this);
 
+		m_currentDir = nullptr;
+
 	    m_visitedPaths.clear();
-
-
 
 	    m_fileSystemModel = new QFileSystemModel();
 
-	    m_fileSystemModel->setRootPath(QDir::rootPath());
+	    m_fileSystemModel->setRootPath(QDir::homePath());
 
+		ui->listView_Files->resize(0, 0);
+		ui->listView_Files->adjustSize();
+		ui->listView_Files->setModel(m_fileSystemModel);
 
-	    ui->treeView->setModel(m_fileSystemModel);
+		const auto index = m_fileSystemModel->index(QDir::currentPath());
 
-	    QHeaderView *header = ui->treeView->header();
-	    for (int i = 1; i < header->count(); ++i) {
-	        header->hideSection(i);
-	    }
+		qDebug() << index;
 
-	    ui->treeView->setSelectionMode(QAbstractItemView::SingleSelection);
-	    ui->treeView->setSelectionBehavior(QAbstractItemView::SelectRows);
+		ui->listView_Files->setRootIndex(index);
 
-	    ui->treeView->resizeColumnToContents(0);
+		connect(ui->listView_Files, &QAbstractItemView::activated, this, &Files::onItemViewActivated);
+		connect(ui->listView_Files, &QAbstractItemView::clicked, this, &Files::onItemViewClicked);
 
-	    connect(ui->treeView, &QTreeView::clicked, this, &Files::onTreeViewClicked);
 		connect(ui->toolButton_Back, &QToolButton::clicked, this, &Files::onBackClicked);
 		connect(ui->toolButton_Up, &QToolButton::clicked, this, &Files::onUpClicked);
-		connect(ui->tabWidget, &QTabWidget::currentChanged, this, &Files::onTabWidgetCurrentChanged);
-		connect(ui->tabWidget, &QTabWidget::tabCloseRequested, this, &Files::onTabWidgetTabCloseRequested);
-		connect(ui->addressBar, &QLineEdit::returnPressed, this, &Files::onAddressBarReturnPressed);
+		connect(ui->lineEdit_Path, &QLineEdit::returnPressed, this, &Files::onPathReturnPressed);
 
 		connect(ui->toolButton_Search, &QToolButton::clicked, this, &Files::onSearchClicked);
 
@@ -65,161 +63,110 @@ Files::Files(QWidget *parent) :
 		connect(ui->toolButton_Delete, &QToolButton::clicked, this, &Files::onDeleteClicked);
 		connect(ui->toolButton_Rename, &QToolButton::clicked, this, &Files::onRenameClicked);
 
-		connect(ui->toolButton_NewTab, &QToolButton::clicked, this, &Files::onNewTabClicked);
-		connect(ui->toolButton_CloseTab, &QToolButton::clicked, this, &Files::onCloseTabClicked);
-
 		connect(ui->toolButton_Home, &QToolButton::clicked, this, &Files::onHome);
 
-		onNewTabClicked();
+		setCurrentDir(QDir::homePath());
 	}
 
+	QString Files::getCurrentDir() const {
+		return m_currentDir->absolutePath();
+	}
 
-
-    int Files::addPageToTabWidget(const QString& dir, const QString &label) {
-
-		const QFileInfo fileInfo(dir);
-
-		if (fileInfo.exists()) {
-			if (fileInfo.isDir()) {
-				const auto navPage = new NavPage(m_fileSystemModel, this);
-				navPage->setCurrentDir(dir);
-				ui->tabWidget->addTab(navPage, label);
-				ui->tabWidget->setCurrentWidget(navPage);
-				m_visitedPaths.push_back(dir);
-			} else if (fileInfo.isFile()) {
-				const QMimeDatabase db;
-				const QMimeType mime = db.mimeTypeForFile(dir, QMimeDatabase::MatchContent);
-				qDebug() << mime.name();            // Name of the MIME type ("audio/mpeg").
-				qDebug() << mime.suffixes();        // Known suffixes for this MIME type ("mp3", "mpga").
-				qDebug() << mime.preferredSuffix(); // Preferred suffix for this MIME type ("mp3").
-
-				if (mime.name().indexOf("image/")>=0)
-				{
-					const auto imageViewer = new ImageViewer(dir, this);
-					ui->tabWidget->addTab(imageViewer, label);
-					ui->tabWidget->setCurrentWidget(imageViewer);
-
-				}
-			}
+	void Files::setCurrentDir(const QString& path) {
+		if (m_currentDir) {
+			delete m_currentDir;
+			m_currentDir = nullptr;
 		}
-		return 0;
+
+		m_currentDir = new QDir(path);
+		const auto index = m_fileSystemModel->index(path);
+
+		qDebug() << path << ":" << index;
+
+		ui->listView_Files->setRootIndex(index);
+
+		//return 0;
 	}
+
+
+	void Files::onItemViewActivated(const QModelIndex &index) {
+		qDebug() << index;
+
+		if (const auto path = m_fileSystemModel->filePath(index); selectFileSystemItem(path, Files::CDSource::Navpage))
+			setCurrentDir(path);
+		else {
+			qDebug() << "Should open the file here." << path;
+		}
+	}
+
+	QStringList Files::getSelection() const {
+
+		QModelIndexList list = ui->listView_Files->selectionModel()->selectedIndexes();
+		QStringList path_list;
+		foreach (const QModelIndex &index, list) {
+			path_list.append(m_fileSystemModel->filePath(index));
+		}
+
+		qDebug() << path_list.join(",");
+
+		return path_list;
+}
+
+	void Files::onItemViewClicked(const QModelIndex &index) const {
+		const QFileInfo fileInfo = m_fileSystemModel->fileInfo(index);
+
+
+		qDebug() << "Files::onItemViewClicked";
+	}
+
 
 	void Files::addSearchPage() {
 
 		auto *searchPage = new SearchPage(ui->lineEdit_Search->text(), this);
-		ui->tabWidget->addTab(searchPage, tr("Search"));
-		ui->tabWidget->setCurrentWidget(searchPage);
+
 	}
 
-	bool Files::selectFileSystemItem(const QString &path, const CDSource source, const bool suppress_warning) {
+	bool Files::selectFileSystemItem(const QString &path, const CDSource source) {
+		int result = false;
 		const auto dir = new QDir(path);
 		const QString message = "This is not a folder.";
 		if (dir->exists()) {
 			QDir::setCurrent(path);
 
-			if (source != CDSource::Navtree) {
-				locateInTree(path);
-			}
 			if (source != CDSource::Navbar) {
-				ui->addressBar->setText(dir->absolutePath());
-				ui->addressBar->update();
+				ui->lineEdit_Path->setText(dir->absolutePath());
+				ui->lineEdit_Path->update();
 			}
-			if (source != CDSource::Tabchange) {
-				if (const auto currentPage = ui->tabWidget->currentWidget(); currentPage != nullptr) {
 
-					qDebug() << "selectFileSystemItem " << currentPage->metaObject()->className();
-
-					if (currentPage->metaObject()->className() == QString("fairwindsk::ui::mydata::NavPage") ){
-						const auto navPage = static_cast<NavPage *>(currentPage);
-						navPage->setCurrentDir(dir->absolutePath());
-						ui->tabWidget->setTabText(ui->tabWidget->currentIndex(), dir->dirName());
-						ui->tabWidget->update();
-
-					} else if (currentPage->metaObject()->className() == QString("fairwindsk::ui::mydata::SearchPage") ){
-
-						addPageToTabWidget(dir->absolutePath(), dir->dirName());
-					}
-				}
-			}
 
 			m_visitedPaths.push_back(path);
 
 			delete dir;
-			return true;
-		} else {
-			if (!suppress_warning)
-				showWarning(message);
-			delete dir;
-			return false;
+			result = true;
 		}
+
+		return result;
 	}
 
-	void Files::locateInTree(const QString &path) {
-		QDir dir(path);
-		while (dir.cdUp()) {
-			auto index = m_fileSystemModel->index(dir.path());
-			ui->treeView->expand(index);
-		}
-		const auto index = m_fileSystemModel->index(path);
-		ui->treeView->selectionModel()->select(index, QItemSelectionModel::ClearAndSelect);
-		ui->treeView->update();
-	}
 
-	void Files::onNewTabClicked() {
-		addPageToTabWidget(QDir::homePath(), tr("Home"));
-	}
+
+
 
 	void Files::onHome() {
-		if (const auto currentPage = ui->tabWidget->currentWidget(); currentPage != nullptr) {
+		setCurrentDir(QDir::homePath());
+		ui->lineEdit_Path->setText(m_currentDir->absolutePath());
 
-			qDebug() << currentPage->metaObject()->className();
-
-			if ( currentPage->metaObject()->className() == QString("fairwindsk::ui::mydata::NavPage") ) {
-				const auto navPage = static_cast<NavPage *>(currentPage);
-				navPage->setCurrentDir(QDir::homePath());
-				ui->addressBar->setText(navPage->getCurrentDir());
-				locateInTree(navPage->getCurrentDir());
-				QDir::setCurrent(navPage->getCurrentDir());
-			} else if (currentPage->metaObject()->className() == QString("fairwindsk::ui::mydata::SearchPage")) {
-
-			}
-		}
-	}
-
-	void Files::onTabWidgetCurrentChanged([[maybe_unused]] int index) {
-		if (const auto currentPage = ui->tabWidget->currentWidget(); currentPage != nullptr) {
-
-			qDebug() << currentPage->metaObject()->className();
-
-			if ( currentPage->metaObject()->className() == QString("fairwindsk::ui::mydata::NavPage") ) {
-				const auto navPage = static_cast<NavPage *>(currentPage);
-				ui->addressBar->setText(navPage->getCurrentDir());
-				locateInTree(navPage->getCurrentDir());
-				QDir::setCurrent(navPage->getCurrentDir());
-			} else if (currentPage->metaObject()->className() == QString("fairwindsk::ui::mydata::SearchPage")) {
-
-			}
-		}
+		QDir::setCurrent(m_currentDir->absolutePath());
 
 	}
 
-	void Files::onTabWidgetTabCloseRequested(const int index) {
-		auto currentPage = static_cast<NavPage *>(ui->tabWidget->currentWidget());
-		ui->tabWidget->removeTab(index);
-		delete currentPage;
+	void Files::onPathReturnPressed() {
+		selectFileSystemItem(ui->lineEdit_Path->text(), CDSource::Navbar);
 	}
 
-	void Files::onAddressBarReturnPressed() {
-		selectFileSystemItem(ui->addressBar->text(), CDSource::Navbar);
-	}
-
-	void Files::onTreeViewClicked(const QModelIndex &index) {
-		selectFileSystemItem(m_fileSystemModel->filePath(index), CDSource::Navtree);
-	}
 
 	void Files::showWarning(const QString &message) {
-		auto alert = new QMessageBox();
+		const auto alert = new QMessageBox();
 		alert->setText(message);
 		alert->setIcon(QMessageBox::Warning);
 		alert->setWindowIcon(windowIcon());
@@ -284,8 +231,8 @@ Files::Files(QWidget *parent) :
 
 	void Files::onDeleteClicked()
 	{
-		if (const auto currentPage = static_cast<NavPage *>(ui->tabWidget->currentWidget())) {
-			QStringList paths_to_delete = currentPage->getSelection();
+
+			QStringList paths_to_delete = getSelection();
 			QMessageBox::StandardButton choice
 				= QMessageBox::warning(this,
 			                           "Confirm delete",
@@ -305,12 +252,12 @@ Files::Files(QWidget *parent) :
 					}
 				}
 			}
-		}
+
 	}
 
 	void Files::onRenameClicked() {
-		if (const auto currentPage = static_cast<NavPage *>(ui->tabWidget->currentWidget())) {
-			QStringList selectedItems = currentPage->getSelection();
+
+			QStringList selectedItems =getSelection();
 			foreach (QString selectedItem, selectedItems) {
 				if (!selectedItem.isEmpty()) {
 					bool ok;
@@ -332,27 +279,27 @@ Files::Files(QWidget *parent) :
 					}
 				}
 			}
-		}
+
 	}
 
 	void Files::onCutClicked() {
-		if (auto currentpage = static_cast<NavPage *>(ui->tabWidget->currentWidget())) {
+
 			m_itemsToCopy.clear();
-			m_itemsToMove = currentpage->getSelection();
+			m_itemsToMove = getSelection();
 			qDebug() << "Cut successfully";
-		}
+
 	}
 
 	void Files::onCopyClicked() {
-		if (const auto currentPage = static_cast<NavPage *>(ui->tabWidget->currentWidget())) {
+
 			m_itemsToMove.clear();
-			m_itemsToCopy = currentPage->getSelection();
+			m_itemsToCopy = getSelection();
 			qDebug() << "Copied successfully";
-		}
+
 	}
 
 	void Files::onPasteClicked() {
-		if (const auto currentPage = static_cast<NavPage *>(ui->tabWidget->currentWidget())) {
+
 			foreach (QString path, m_itemsToCopy) {
 				QFileInfo item(path);
 				qDebug() << "Name:" << item.fileName();
@@ -362,7 +309,7 @@ Files::Files(QWidget *parent) :
 					qDebug() << "new path:" << newPath;
 					qDebug() << "Copy result" << QFile::copy(path, newPath);
 				} else {
-					Utils::copyOrMoveDirectorySubtree(path, QDir::currentPath(), false, false);
+					copyOrMoveDirectorySubtree(path, QDir::currentPath(), false, false);
 				}
 			}
 			foreach (QString path, m_itemsToMove) {
@@ -375,22 +322,75 @@ Files::Files(QWidget *parent) :
 					qDebug() << "Copy result" << QFile::copy(path, newPath);
 					qDebug() << "Remove result" << QFile::remove(path);
 				} else {
-					Utils::copyOrMoveDirectorySubtree(path, QDir::currentPath(), true, false);
+					copyOrMoveDirectorySubtree(path, QDir::currentPath(), true, false);
 				}
 			}
-		}
+
 	}
 
-	void Files::onCloseTabClicked() {
-		const auto currentPage = static_cast<NavPage *>(ui->tabWidget->currentWidget());
-		const int current_index = ui->tabWidget->currentIndex();
-		ui->tabWidget->removeTab(current_index);
-		delete currentPage;
-	}
+
 
 	void Files::onSearchClicked() {
 		addSearchPage();
 	}
+
+
+    QString Files::format_bytes(qint64 bytes)
+    {
+        QString result;
+        qint64 higher = bytes;
+        int index = 0;
+        QString units[] = {"B", "KB", "MB", "GB", "TB"};
+        while (higher > 1000) {
+            ++index;
+            higher /= 1000;
+        }
+        result = QString::number(higher) + " " + units[index];
+        return result;
+    }
+
+    void Files::copyOrMoveDirectorySubtree(const QString &from,
+                                    const QString &to,
+                                    bool copyAndRemove,
+                                    bool overwriteExistingFiles)
+    {
+        QDirIterator diritems(from, QDirIterator::Subdirectories);
+        QDir fromDir(from);
+        QDir toDir(to);
+
+        const auto absSourcePathLength = fromDir.absolutePath().length();
+
+        toDir.mkdir(fromDir.dirName());
+        toDir.cd(fromDir.dirName());
+
+        while (diritems.hasNext()) {
+            const QFileInfo fileInfo = diritems.nextFileInfo();
+
+            if (fileInfo.fileName().compare(".") == 0
+                || fileInfo.fileName().compare("..") == 0) //filters dot and dotdot
+                    continue;
+            const QString subPathStructure = fileInfo.absoluteFilePath().mid(absSourcePathLength);
+            qDebug() << "subPathStructure: " << subPathStructure;
+            const QString constructedAbsolutePath = toDir.canonicalPath() + subPathStructure;
+            qDebug() << "constructedAbsolutePath: " << constructedAbsolutePath;
+
+            if (fileInfo.isDir()) {
+                //Create directory in target folder
+                toDir.mkpath(constructedAbsolutePath);
+            } else if (fileInfo.isFile()) {
+                //Copy File to target directory
+
+                if (overwriteExistingFiles) {
+                    //Remove file at target location, if it exists, or QFile::copy will fail
+                    QFile::remove(constructedAbsolutePath);
+                }
+                QFile::copy(fileInfo.absoluteFilePath(), constructedAbsolutePath);
+            }
+        }
+
+        if (copyAndRemove)
+            fromDir.removeRecursively();
+    }
 
 	Files::~Files() {
 	    delete ui;

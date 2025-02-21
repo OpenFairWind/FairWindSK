@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>590</width>
-    <height>300</height>
+    <width>997</width>
+    <height>316</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -30,7 +30,7 @@
     <number>0</number>
    </property>
    <item>
-    <widget class="QWidget" name="groupNav" native="true">
+    <widget class="QWidget" name="group_ToolBar" native="true">
      <layout class="QHBoxLayout" name="horizontalLayout">
       <property name="leftMargin">
        <number>0</number>
@@ -78,7 +78,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="addressBar">
+       <widget class="QLineEdit" name="lineEdit_Path">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>3</horstretch>
@@ -239,13 +239,6 @@
        </spacer>
       </item>
       <item>
-       <widget class="QToolButton" name="toolButton_NewTab">
-        <property name="text">
-         <string>...</string>
-        </property>
-       </widget>
-      </item>
-      <item>
        <widget class="QToolButton" name="toolButton_CloseTab">
         <property name="text">
          <string>...</string>
@@ -260,8 +253,8 @@
     </widget>
    </item>
    <item>
-    <widget class="QWidget" name="groupMain" native="true">
-     <layout class="QHBoxLayout" name="horizontalLayout_2">
+    <widget class="QWidget" name="group_Main" native="true">
+     <layout class="QVBoxLayout" name="verticalLayout_2">
       <property name="leftMargin">
        <number>0</number>
       </property>
@@ -275,33 +268,57 @@
        <number>0</number>
       </property>
       <item>
-       <widget class="QTreeView" name="treeView">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-          <horstretch>1</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="uniformRowHeights">
-         <bool>true</bool>
-        </property>
-        <property name="headerHidden">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QTabWidget" name="tabWidget">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Expanding">
-          <horstretch>3</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="tabsClosable">
-         <bool>true</bool>
-        </property>
-       </widget>
+       <layout class="QVBoxLayout" name="verticalLayout_Main">
+        <item>
+         <widget class="QListView" name="listView_Files">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="acceptDrops">
+           <bool>true</bool>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>32</width>
+            <height>32</height>
+           </size>
+          </property>
+          <property name="movement">
+           <enum>QListView::Movement::Static</enum>
+          </property>
+          <property name="resizeMode">
+           <enum>QListView::ResizeMode::Adjust</enum>
+          </property>
+          <property name="layoutMode">
+           <enum>QListView::LayoutMode::Batched</enum>
+          </property>
+          <property name="gridSize">
+           <size>
+            <width>128</width>
+            <height>48</height>
+           </size>
+          </property>
+          <property name="viewMode">
+           <enum>QListView::ViewMode::ListMode</enum>
+          </property>
+          <property name="modelColumn">
+           <number>0</number>
+          </property>
+          <property name="uniformItemSizes">
+           <bool>true</bool>
+          </property>
+          <property name="batchSize">
+           <number>10</number>
+          </property>
+          <property name="wordWrap">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
      </layout>
     </widget>
