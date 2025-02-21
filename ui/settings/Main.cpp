@@ -25,8 +25,24 @@ namespace fairwindsk::ui::settings {
             ui->checkBox_virtualkeboard->setCheckState(Qt::Unchecked);
         }
 
-        auto units = Units::getInstance()->getUnits();
-        if (units.contains("measures") && units["measures"].is_object()) {
+        connect(ui->checkBox_virtualkeboard,&QCheckBox::stateChanged,this, &Main::onVirtualKeyboardStateChanged);
+
+        if (m_settings->getConfiguration()->getFullScreen()) {
+            ui->checkBox_fullscreen->setCheckState(Qt::Checked);
+            ui->lineEdit_width->setEnabled(false);
+            ui->lineEdit_height->setEnabled(false);
+        } else {
+            ui->checkBox_fullscreen->setCheckState(Qt::Unchecked);
+            ui->lineEdit_width->setEnabled(true);
+            ui->lineEdit_height->setEnabled(true);
+        }
+
+        connect(ui->checkBox_fullscreen,&QCheckBox::stateChanged,this, &Main::onFullScreenStateChanged);
+
+        connect(ui->lineEdit_width,&QLineEdit::textChanged,this, &Main::onWindowWidthTextChanged);
+        connect(ui->lineEdit_height,&QLineEdit::textChanged,this, &Main::onWindowHeightTextChanged);
+
+        if (auto units = Units::getInstance()->getUnits(); units.contains("measures") && units["measures"].is_object()) {
             int row = 1;
             for (const auto& measureItem: units["measures"].items()) {
 
@@ -43,6 +59,7 @@ namespace fairwindsk::ui::settings {
                 ui->gridLayout_Measures->addWidget(textLabel, row, 1);
                 ui->gridLayout_Measures->addWidget(comboBox, row, 2);
                 row ++;
+
                 connect(comboBox,&QComboBox::currentIndexChanged,this, &Main::onCurrentIndexChanged);
 
 
@@ -75,26 +92,50 @@ namespace fairwindsk::ui::settings {
         }
     }
 
-    void Main::onVirtualKeyboard(int state) {
+    void Main::onVirtualKeyboardStateChanged(const int state) {
 
-        auto fairWindSK = FairWindSK::getInstance();
+        auto value = false;
 
         if (state == Qt::Checked) {
-            m_settings->getConfiguration()->setVirtualKeyboard(true);
-        } else {
-            m_settings->getConfiguration()->setVirtualKeyboard(false);
+            value = true;
         }
+
+        m_settings->getConfiguration()->setVirtualKeyboard(value);
+    }
+
+    void Main::onFullScreenStateChanged(const int state) {
+
+        auto value = false;
+
+        if (state == Qt::Checked) {
+            value = true;
+        }
+
+        m_settings->getConfiguration()->setFullScreen(value);
+
+        ui->lineEdit_width->setEnabled(!value);
+        ui->lineEdit_height->setEnabled(!value);
+    }
+
+    void Main::onWindowWidthTextChanged() {
+        m_settings->getConfiguration()->getRoot()["main"]["windowWidth"] = ui->lineEdit_width->text().toInt();
+    }
+
+    void Main::onWindowHeightTextChanged() {
+        m_settings->getConfiguration()->getRoot()["main"]["windowHeight"] = ui->lineEdit_height->text().toInt();
+    }
+
+
+
+    void Main::onCurrentIndexChanged(int index) {
+        // get sender
+        const auto comboBox = qobject_cast<QComboBox*>(sender());
+
+        m_settings->getConfiguration()->getRoot()["units"][comboBox->objectName().toStdString()] = comboBox->currentData().toString().toStdString();
     }
 
     Main::~Main() {
         delete ui;
-    }
-
-    void Main::onCurrentIndexChanged(int index) {
-        // get sender
-        auto comboBox = qobject_cast<QComboBox*>(sender());
-
-        m_settings->getConfiguration()->getRoot()["units"][comboBox->objectName().toStdString()] = comboBox->currentData().toString().toStdString();
     }
 
 } // fairwindsk::ui::settings
