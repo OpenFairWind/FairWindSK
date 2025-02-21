@@ -47,6 +47,13 @@ namespace fairwindsk {
         void setVirtualKeyboard(bool value);
         bool getVirtualKeyboard();
 
+        void setFullScreen(bool value);
+        bool getFullScreen();
+        void setWindowWidth(int value);
+        int getWindowWidth();
+        void setWindowHeight(int value);
+        int getWindowHeight();
+
         QString getAutopilot();
         void setAutopilot(const QString& autopilot);
 

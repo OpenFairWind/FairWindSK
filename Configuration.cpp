@@ -28,7 +28,7 @@ namespace fairwindsk {
         load();
     }
 
-    Configuration::~Configuration() = default;
+
 
     void Configuration::save() {
         save(m_filename);
@@ -152,14 +152,71 @@ namespace fairwindsk {
         bool result = false;
 
         if (m_jsonData.contains("main")) {
-            auto mainJsonObject = m_jsonData["main"];
-            if (mainJsonObject.contains("virtualKeyboard") & mainJsonObject["virtualKeyboard"].is_boolean()) {
+            if (auto mainJsonObject = m_jsonData["main"]; mainJsonObject.contains("virtualKeyboard") & mainJsonObject["virtualKeyboard"].is_boolean()) {
                 result = mainJsonObject["virtualKeyboard"].get<bool>();
             }
         }
 
         return result;
     }
+
+    void Configuration::setFullScreen(bool value) {
+        if (m_jsonData.contains("main")) {
+            m_jsonData["main"]["fullScreen"] = value;
+        }
+    }
+
+    bool Configuration::getFullScreen() {
+        bool result = false;
+
+        if (m_jsonData.contains("main")) {
+            if (auto mainJsonObject = m_jsonData["main"]; mainJsonObject.contains("fullScreen") & mainJsonObject["fullScreen"].is_boolean()) {
+                result = mainJsonObject["fullScreen"].get<bool>();
+            }
+        }
+
+        return result;
+    }
+
+    int Configuration::getWindowWidth() {
+        int result = 0;
+
+        if (m_jsonData.contains("main")) {
+            if (auto mainJsonObject = m_jsonData["main"]; mainJsonObject.contains("windowWidth") & mainJsonObject["windowWidth"].is_number_integer()) {
+                result = mainJsonObject["windowWidth"].get<int>();
+            }
+        }
+
+        return result;
+    }
+
+    void Configuration::setWindowWidth(int value) {
+        if (m_jsonData.contains("main")) {
+            m_jsonData["main"]["windowWidth"] = value;
+        }
+    }
+
+    int Configuration::getWindowHeight() {
+        int result = 0;
+
+        if (m_jsonData.contains("main")) {
+            if (auto mainJsonObject = m_jsonData["main"]; mainJsonObject.contains("windowHeight") & mainJsonObject["windowHeight"].is_number_integer()) {
+                result = mainJsonObject["windowHeight"].get<int>();
+            }
+        }
+
+        return result;
+    }
+
+    void Configuration::setWindowHeight(int value) {
+        if (m_jsonData.contains("main")) {
+            m_jsonData["main"]["windowHeight"] = value;
+        }
+    }
+
+
+
+
 
     void Configuration::setAutopilot(const QString& value) {
         if (m_jsonData.contains("main")) {
@@ -251,5 +308,5 @@ namespace fairwindsk {
         return result;
     }
 
-
+    Configuration::~Configuration() = default;
 } // fairwindsk
