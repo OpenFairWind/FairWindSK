@@ -78,8 +78,21 @@ namespace fairwindsk::ui {
         // Show the launcher
         onRemoveApp("http:///");
 
-        // Show the window fullscreen
-        QTimer::singleShot(0, this, SLOT(showFullScreen()));
+        if (fairWindSk->getConfiguration()->getFullScreen()) {
+
+            // Show the window fullscreen
+            QTimer::singleShot(0, this, SLOT(showFullScreen()));
+        } else {
+            const auto width = fairWindSk->getConfiguration()->getWindowWidth();
+            const auto height = fairWindSk->getConfiguration()->getWindowHeight();
+
+            resize(width, height);
+
+            // Show windowed
+            show();
+
+            qDebug() << "Resized " << width << " " << height;
+        }
 
         // Create the hot key to popup this window
         m_hotkey = new QHotkey(Qt::Key_Tab, Qt::ShiftModifier, true, this);
