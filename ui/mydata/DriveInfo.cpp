@@ -7,7 +7,7 @@
 #include "DriveInfo.hpp"
 #include "ui_DriveInfo.h"
 
-#include "Utils.hpp"
+
 
 namespace fairwindsk::ui::mydata {
     DriveInfo::DriveInfo(QWidget *parent)
@@ -31,7 +31,7 @@ namespace fairwindsk::ui::mydata {
         info = new QStorageInfo(path);
         ui->name->setText(info->displayName());
         ui->filesys->setText(info->fileSystemType());
-        ui->free_space->setText(Utils::format_bytes(info->bytesFree()));
-        ui->size->setText(Utils::format_bytes(info->bytesTotal()));
+        //ui->free_space->setText(Utils::format_bytes(info->bytesFree()));
+        //ui->size->setText(Utils::format_bytes(info->bytesTotal()));
     }
 } // fairwindsk::ui::mydata

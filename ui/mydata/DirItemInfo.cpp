@@ -7,7 +7,7 @@
 #include "DirItemInfo.hpp"
 #include "ui_DirItemInfo.h"
 
-#include "Utils.hpp"
+
 
 #include <QMimeDatabase>
 
@@ -54,7 +54,7 @@ namespace fairwindsk::ui::mydata {
         if (isNTFS)
             qt_ntfs_permission_lookup--; // turn it off again, Windows only
         ui->permissions->setText(permissions.trimmed());
-        ui->size->setText(Utils::format_bytes(info->size()));
+        //ui->size->setText(Utils::format_bytes(info->size()));
 
         QMimeDatabase mimedb;
         ui->mimetype->setText(mimedb.mimeTypeForFile(*info).comment());
