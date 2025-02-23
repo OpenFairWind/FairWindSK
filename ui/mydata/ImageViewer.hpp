@@ -24,18 +24,21 @@ public:
     ~ImageViewer() override;
 
     bool loadFile(const QString &path);
-    void setImage(const QImage &newImage);
+    void setImage(const QImage &newImage) ;
+
+    signals:
+        void askedToBeClosed();
 
     public slots:
         void onZoomInClicked();
         void onZoomOutClicked();
-        void onOne2OneClicked();
-        void onAdaptClicked();
+        void onOne2OneClicked() ;
+        void onCloseClicked();
 
 private:
     Ui::ImageViewer *ui;
 
-    ImageWidget *m_imageWidget;
+    ImageWidget *m_imageWidget = nullptr;
     double m_scaleFactor = 1;
 };
 } // fairwindsk::ui::mydata

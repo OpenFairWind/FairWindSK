@@ -8,7 +8,7 @@
 
 #include <QMessageBox>
 
-#include "DirItemInfo.hpp"
+
 #include "ui_ImageViewer.h"
 
 #include <QImageReader>
@@ -29,7 +29,7 @@ namespace fairwindsk::ui::mydata {
         connect(ui->toolButton_ZoomIn, &QToolButton::clicked, this, &ImageViewer::onZoomInClicked);
         connect(ui->toolButton_ZoomOut, &QToolButton::clicked, this, &ImageViewer::onZoomOutClicked);
         connect(ui->toolButton_One2One, &QToolButton::clicked, this, &ImageViewer::onOne2OneClicked);
-        connect(ui->toolButton_Adapt, &QToolButton::clicked, this, &ImageViewer::onAdaptClicked);
+        connect(ui->toolButton_Close, &QToolButton::clicked, this, &ImageViewer::onCloseClicked);
 
         loadFile(path);
     }
@@ -44,16 +44,12 @@ namespace fairwindsk::ui::mydata {
         m_imageWidget->zoomIn();
     }
 
-    void ImageViewer::onAdaptClicked() {
-        if (const bool fitToWindow = ui->toolButton_Adapt->isChecked(); !fitToWindow)
-            onOne2OneClicked();
+    void ImageViewer::onCloseClicked() {
+        emit askedToBeClosed();
     }
 
     void ImageViewer::onOne2OneClicked() {
-        /*
-        ui->label_Image->adjustSize();
-        m_scaleFactor = 1.0;
-        */
+
         m_imageWidget->resize(ui->scrollAreaWidgetContents->width(), ui->scrollAreaWidgetContents->height());
 
 
@@ -62,8 +58,7 @@ namespace fairwindsk::ui::mydata {
     bool ImageViewer::loadFile(const QString &path) {
         QImageReader reader(path);
         reader.setAutoTransform(true);
-        if (const QImage newImage = reader.read(); !newImage.isNull())
-        {
+        if (const QImage newImage = reader.read(); !newImage.isNull()) {
             setImage(newImage);
 
             return true;
@@ -71,9 +66,9 @@ namespace fairwindsk::ui::mydata {
         return false;
     }
 
-    void ImageViewer::setImage(const QImage &newImage) {
+    void ImageViewer::setImage(const QImage &newImage)  {
 
-        m_imageWidget->setPixmap(QPixmap::fromImage(newImage),0,0);
+        m_imageWidget->setPixmap(QPixmap::fromImage(newImage),ui->scrollAreaWidgetContents->width(),ui->scrollAreaWidgetContents->height());
 
         // Show the window fullscreen
         QTimer::singleShot(0, this, SLOT(onOne2OneClicked()));
