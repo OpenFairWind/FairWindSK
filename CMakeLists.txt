@@ -148,12 +148,6 @@ add_executable(${PROJECT_NAME}
         ui/mydata/Files.ui
         ui/mydata/FileInfoListModel.cpp
         ui/mydata/FileInfoListModel.hpp
-        ui/mydata/DriveInfo.cpp
-        ui/mydata/DriveInfo.hpp
-        ui/mydata/DriveInfo.ui
-        ui/mydata/DirItemInfo.cpp
-        ui/mydata/DirItemInfo.hpp
-        ui/mydata/DirItemInfo.ui
         ui/mydata/SearchPage.cpp
         ui/mydata/SearchPage.hpp
         ui/mydata/SearchPage.ui
