@@ -12,6 +12,8 @@
 #include <QInputDialog>
 #include <QMessageBox>
 #include <QDirIterator>
+#include <QMimeDatabase>
+#include <QStorageInfo>
 #include <ui_ImageViewer.h>
 
 #include "ImageViewer.hpp"
@@ -19,12 +21,19 @@
 #include "SearchPage.hpp"
 
 
-// The base source code is https://github.com/kitswas/File-Manager/
+#ifdef Q_OS_WIN
+	// See https://doc.qt.io/qt-6/qfileinfo.html#details
+	extern Q_CORE_EXPORT int qt_ntfs_permission_lookup;
+#else
+int qt_ntfs_permission_lookup = 0; //dummy
+#endif
 
 namespace fairwindsk::ui::mydata {
 Files::Files(QWidget *parent) :
     QWidget(parent), ui(new Ui::Files) {
 	    ui->setupUi(this);
+
+		ui->groupBox_ItemInfo->hide();
 
 		m_currentDir = nullptr;
 
@@ -65,7 +74,9 @@ Files::Files(QWidget *parent) :
 
 		connect(ui->toolButton_Home, &QToolButton::clicked, this, &Files::onHome);
 
-		setCurrentDir(QDir::homePath());
+
+
+		onHome();
 	}
 
 	QString Files::getCurrentDir() const {
@@ -85,10 +96,19 @@ Files::Files(QWidget *parent) :
 
 		ui->listView_Files->setRootIndex(index);
 
-		//return 0;
+		ui->groupBox_ItemInfo->hide();
 	}
 
+	void Files::onImageViewerCloseClicked() {
+		if (m_imageViewer) {
+			m_imageViewer->close();
+			delete m_imageViewer;
+			m_imageViewer = nullptr;
 
+			ui->group_ToolBar->show();
+			ui->group_Main->show();
+		}
+	}
 	void Files::onItemViewActivated(const QModelIndex &index) {
 		qDebug() << index;
 
@@ -96,6 +116,13 @@ Files::Files(QWidget *parent) :
 			setCurrentDir(path);
 		else {
 			qDebug() << "Should open the file here." << path;
+			ui->group_ToolBar->hide();
+			ui->group_Main->hide();
+			m_imageViewer = new ImageViewer(path);
+			connect(m_imageViewer, &ImageViewer::askedToBeClosed, this, &Files::onImageViewerCloseClicked);
+			ui->group_Content->layout()->addWidget(m_imageViewer);
+
+
 		}
 	}
 
@@ -115,6 +142,32 @@ Files::Files(QWidget *parent) :
 	void Files::onItemViewClicked(const QModelIndex &index) const {
 		const QFileInfo fileInfo = m_fileSystemModel->fileInfo(index);
 
+		if (fileInfo.isFile())
+		{
+			ui->groupBox_ItemInfo->setTitle(fileInfo.fileName());
+
+			QString permissions = "";
+
+			const bool isNTFS = (new QStorageInfo(QDir::current()))->fileSystemType().compare("NTFS") == 0;
+			if (isNTFS)
+				qt_ntfs_permission_lookup++; // turn checking on, Windows only
+			if (fileInfo.isReadable())
+				permissions += tr("Read ");
+			if (fileInfo.isWritable())
+				permissions += tr("Write ");
+			if (fileInfo.isExecutable())
+				permissions += tr("Execute ");
+			if (isNTFS)
+				qt_ntfs_permission_lookup--; // turn it off again, Windows only
+			ui->label_Permissions->setText(permissions.trimmed());
+			ui->label_Size->setText(format_bytes(fileInfo.size()));
+
+			const QMimeDatabase mimedb;
+			ui->label_Type->setText(mimedb.mimeTypeForFile(fileInfo).comment());
+			ui->groupBox_ItemInfo->show();
+		} else {
+			ui->groupBox_ItemInfo->hide();
+		}
 
 		qDebug() << "Files::onItemViewClicked";
 	}
@@ -129,7 +182,7 @@ Files::Files(QWidget *parent) :
 	bool Files::selectFileSystemItem(const QString &path, const CDSource source) {
 		int result = false;
 		const auto dir = new QDir(path);
-		const QString message = "This is not a folder.";
+
 		if (dir->exists()) {
 			QDir::setCurrent(path);
 
@@ -165,7 +218,7 @@ Files::Files(QWidget *parent) :
 	}
 
 
-	void Files::showWarning(const QString &message) {
+	void Files::showWarning(const QString &message) const {
 		const auto alert = new QMessageBox();
 		alert->setText(message);
 		alert->setIcon(QMessageBox::Warning);
@@ -393,6 +446,10 @@ Files::Files(QWidget *parent) :
     }
 
 	Files::~Files() {
+		if (m_imageViewer) {
+			delete m_imageViewer;
+			m_imageViewer = nullptr;
+		}
 	    delete ui;
 	}
 } // fairwindsk::ui::mydata

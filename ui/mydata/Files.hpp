@@ -7,6 +7,9 @@
 
 #include <QWidget>
 #include <QFileSystemModel>
+#include <ui_ImageViewer.h>
+
+#include "ImageViewer.hpp"
 
 
 // The base source code is https://github.com/kitswas/File-Manager/
@@ -60,6 +63,8 @@ public:
 
     public slots:
 
+        void onImageViewerCloseClicked();
+
         void onItemViewActivated(const QModelIndex &index);
 
         void onItemViewClicked(const QModelIndex &index) const;
@@ -97,10 +102,12 @@ private:
     QStringList m_itemsToMove;
     QDir *m_currentDir;
 
+    ImageViewer *m_imageViewer;
+
 
     void addSearchPage();
 
-    void showWarning(const QString &message);
+    void showWarning(const QString &message) const;
 };
 } // fairwindsk::ui::mydata
 
