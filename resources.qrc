@@ -81,6 +81,7 @@
         <!-- Mydata icons -->
         <file>resources/svg/OpenBridge/edit-google.svg</file>
         <file>resources/svg/OpenBridge/info.svg</file>
+        <file>resources/svg/OpenBridge/filter.svg</file>
         <file>resources/svg/OpenBridge/note-edit-proposal.svg</file>
         <file>resources/svg/OpenBridge/route-export-iec.svg</file>
         <file>resources/svg/OpenBridge/route-import-iec.svg</file>
