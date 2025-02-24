@@ -71,6 +71,8 @@ public:
 
         void onHome();
 
+
+
         void onPathReturnPressed();
 
         void onBackClicked();
@@ -92,12 +94,14 @@ public:
         void onCutClicked();
 
         void onSearchClicked();
+        void onFiltersClicked();
 
 private:
     Ui::Files *ui;
 
     QList<QString> m_visitedPaths;
     QFileSystemModel *m_fileSystemModel;
+    QList<QFileInfo> m_results;
     QStringList m_itemsToCopy;
     QStringList m_itemsToMove;
     QDir *m_currentDir;

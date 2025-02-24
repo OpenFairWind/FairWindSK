@@ -16,9 +16,10 @@
 #include <QStorageInfo>
 #include <ui_ImageViewer.h>
 
+#include "FileInfoListModel.hpp"
 #include "ImageViewer.hpp"
 
-#include "SearchPage.hpp"
+
 
 
 #ifdef Q_OS_WIN
@@ -60,6 +61,7 @@ Files::Files(QWidget *parent) :
 		connect(ui->toolButton_Up, &QToolButton::clicked, this, &Files::onUpClicked);
 		connect(ui->lineEdit_Path, &QLineEdit::returnPressed, this, &Files::onPathReturnPressed);
 
+		connect(ui->toolButton_Filters, &QToolButton::clicked, this, &Files::onFiltersClicked);
 		connect(ui->toolButton_Search, &QToolButton::clicked, this, &Files::onSearchClicked);
 
 		connect(ui->toolButton_Cut, &QToolButton::clicked, this, &Files::onCutClicked);
@@ -172,11 +174,43 @@ Files::Files(QWidget *parent) :
 		qDebug() << "Files::onItemViewClicked";
 	}
 
+	void Files::onFiltersClicked() {
+		ui->lineEdit_Search->clear();
+		setCurrentDir(getCurrentDir());
+	}
 
-	void Files::addSearchPage() {
+	void Files::onSearchClicked() {
+		if (const auto key = ui->lineEdit_Search->text(); key.isEmpty()) {
+			setCurrentDir(getCurrentDir());
+		} else {
+			qDebug() << "Files::onSearchClicked";
 
-		auto *searchPage = new SearchPage(ui->lineEdit_Search->text(), this);
+			//const Qt::CaseSensitivity caseSensitivity = ui->caseSensitive->isChecked() ? Qt::CaseSensitive:Qt::CaseInsensitive;
+			const Qt::CaseSensitivity caseSensitivity = Qt::CaseInsensitive;
+			m_results.clear();
 
+			QDir::Filters filters = QDir::AllEntries | QDir::NoDotAndDotDot;
+
+			//if (ui->searchHidden->isChecked())
+			filters |= QDir::Hidden;
+			//if (ui->searchSystem->isChecked())
+			filters |= QDir::System;
+
+
+			QDirIterator dirItems(QDir::currentPath(), filters, QDirIterator::Subdirectories);
+
+			while (dirItems.hasNext()) {
+				if (const QFileInfo fileInfo = dirItems.nextFileInfo(); fileInfo.fileName().contains(key, caseSensitivity)) {
+					m_results.append(fileInfo);
+					qDebug() << fileInfo;
+				}
+			}
+
+
+
+			//const auto film= dynamic_cast<FileInfoListModel*>(ui->listView_Files->model());
+			//film->setQFileInfoList(m_results);
+		}
 	}
 
 	bool Files::selectFileSystemItem(const QString &path, const CDSource source) {
@@ -381,31 +415,23 @@ Files::Files(QWidget *parent) :
 
 	}
 
-
-
-	void Files::onSearchClicked() {
-		addSearchPage();
-	}
-
-
     QString Files::format_bytes(qint64 bytes)
     {
-        QString result;
-        qint64 higher = bytes;
+	    qint64 higher = bytes;
         int index = 0;
-        QString units[] = {"B", "KB", "MB", "GB", "TB"};
+        const QString units[] = {"B", "KB", "MB", "GB", "TB"};
         while (higher > 1000) {
             ++index;
             higher /= 1000;
         }
-        result = QString::number(higher) + " " + units[index];
+        QString result = QString::number(higher) + " " + units[index];
         return result;
     }
 
     void Files::copyOrMoveDirectorySubtree(const QString &from,
                                     const QString &to,
-                                    bool copyAndRemove,
-                                    bool overwriteExistingFiles)
+                                    const bool copyAndRemove,
+                                    const bool overwriteExistingFiles)
     {
         QDirIterator diritems(from, QDirIterator::Subdirectories);
         QDir fromDir(from);

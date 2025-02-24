@@ -104,6 +104,17 @@
        </spacer>
       </item>
       <item>
+       <widget class="QToolButton" name="toolButton_Filters">
+        <property name="text">
+         <string>...</string>
+        </property>
+        <property name="icon">
+         <iconset resource="../../resources.qrc">
+          <normaloff>:/resources/svg/OpenBridge/filter.svg</normaloff>:/resources/svg/OpenBridge/filter.svg</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QLineEdit" name="lineEdit_Search"/>
       </item>
       <item>
