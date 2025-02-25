@@ -30,9 +30,11 @@ int qt_ntfs_permission_lookup = 0; //dummy
 #endif
 
 namespace fairwindsk::ui::mydata {
-Files::Files(QWidget *parent) :
-    QWidget(parent), ui(new Ui::Files) {
+	Files::Files(QWidget *parent) : QWidget(parent), ui(new Ui::Files) {
 	    ui->setupUi(this);
+
+		ui->tableView_Search->hide();
+		ui->listView_Files->show();
 
 		ui->groupBox_ItemInfo->hide();
 
@@ -76,7 +78,8 @@ Files::Files(QWidget *parent) :
 
 		connect(ui->toolButton_Home, &QToolButton::clicked, this, &Files::onHome);
 
-
+		m_fileListModel = new FileInfoListModel();
+		ui->tableView_Search->setModel(m_fileListModel);
 
 		onHome();
 	}
@@ -176,14 +179,20 @@ Files::Files(QWidget *parent) :
 
 	void Files::onFiltersClicked() {
 		ui->lineEdit_Search->clear();
-		setCurrentDir(getCurrentDir());
+		ui->tableView_Search->hide();
+		ui->listView_Files->show();
 	}
 
 	void Files::onSearchClicked() {
-		if (const auto key = ui->lineEdit_Search->text(); key.isEmpty()) {
-			setCurrentDir(getCurrentDir());
+
+		const auto key = ui->lineEdit_Search->text();
+
+		if (key.isEmpty()) {
+			ui->tableView_Search->hide();
+			ui->listView_Files->show();
 		} else {
-			qDebug() << "Files::onSearchClicked";
+
+			ui->listView_Files->hide();
 
 			//const Qt::CaseSensitivity caseSensitivity = ui->caseSensitive->isChecked() ? Qt::CaseSensitive:Qt::CaseInsensitive;
 			const Qt::CaseSensitivity caseSensitivity = Qt::CaseInsensitive;
@@ -196,8 +205,11 @@ Files::Files(QWidget *parent) :
 			//if (ui->searchSystem->isChecked())
 			filters |= QDir::System;
 
+			auto searchPath = getCurrentDir();
 
-			QDirIterator dirItems(QDir::currentPath(), filters, QDirIterator::Subdirectories);
+			qDebug() << searchPath;
+
+			QDirIterator dirItems(searchPath, filters, QDirIterator::Subdirectories);
 
 			while (dirItems.hasNext()) {
 				if (const QFileInfo fileInfo = dirItems.nextFileInfo(); fileInfo.fileName().contains(key, caseSensitivity)) {
@@ -206,11 +218,15 @@ Files::Files(QWidget *parent) :
 				}
 			}
 
+			dynamic_cast<FileInfoListModel *>(ui->tableView_Search->model())->setQFileInfoList(m_results);
+			ui->tableView_Search->resizeColumnsToContents();
 
+			ui->tableView_Search->show();
 
-			//const auto film= dynamic_cast<FileInfoListModel*>(ui->listView_Files->model());
-			//film->setQFileInfoList(m_results);
 		}
+
+
+
 	}
 
 	bool Files::selectFileSystemItem(const QString &path, const CDSource source) {
@@ -476,6 +492,8 @@ Files::Files(QWidget *parent) :
 			delete m_imageViewer;
 			m_imageViewer = nullptr;
 		}
+		delete m_fileListModel;
+		delete m_fileSystemModel;
 	    delete ui;
 	}
 } // fairwindsk::ui::mydata

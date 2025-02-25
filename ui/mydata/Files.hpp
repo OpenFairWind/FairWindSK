@@ -9,6 +9,7 @@
 #include <QFileSystemModel>
 #include <ui_ImageViewer.h>
 
+#include "FileInfoListModel.hpp"
 #include "ImageViewer.hpp"
 
 
@@ -31,10 +32,10 @@ public:
     bool selectFileSystemItem(const QString &path, CDSource source);
 
 
-    QStringList getSelection() const;
+    [[nodiscard]] QStringList getSelection() const;
 
     void setCurrentDir(const QString& new_dir);
-    QString getCurrentDir() const;
+    [[nodiscard]] QString getCurrentDir() const;
 
     /*!
      * \brief Format the provided number as bytes.
@@ -101,15 +102,13 @@ private:
 
     QList<QString> m_visitedPaths;
     QFileSystemModel *m_fileSystemModel;
+    FileInfoListModel *m_fileListModel;
     QList<QFileInfo> m_results;
     QStringList m_itemsToCopy;
     QStringList m_itemsToMove;
     QDir *m_currentDir;
 
-    ImageViewer *m_imageViewer;
-
-
-    void addSearchPage();
+    ImageViewer *m_imageViewer = nullptr;
 
     void showWarning(const QString &message) const;
 };

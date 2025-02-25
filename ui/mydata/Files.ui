@@ -306,6 +306,16 @@
          </widget>
         </item>
         <item>
+         <widget class="QTableView" name="tableView_Search">
+      <property name="showGrid">
+       <bool>false</bool>
+      </property>
+      <attribute name="horizontalHeaderStretchLastSection">
+       <bool>true</bool>
+      </attribute>
+     </widget>
+        </item>
+        <item>
          <widget class="QGroupBox" name="groupBox_ItemInfo">
           <property name="title">
            <string/>
