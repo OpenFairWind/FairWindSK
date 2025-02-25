@@ -492,8 +492,20 @@ namespace fairwindsk::ui::mydata {
 			delete m_imageViewer;
 			m_imageViewer = nullptr;
 		}
-		delete m_fileListModel;
-		delete m_fileSystemModel;
-	    delete ui;
+
+		if (m_fileListModel) {
+			delete m_fileListModel;
+			m_fileListModel = nullptr;
+		}
+
+		if (m_fileSystemModel) {
+			delete m_fileSystemModel;
+			m_fileSystemModel = nullptr;
+		}
+
+		if (ui) {
+			delete ui;
+			ui = nullptr;
+		}
 	}
 } // fairwindsk::ui::mydata
