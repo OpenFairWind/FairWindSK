@@ -12,25 +12,25 @@
 
 namespace fairwindsk::ui::mydata {
 
-    class FileInfoListModel : public QAbstractTableModel
+    class FileInfoListModel final : public QAbstractTableModel
     {
         Q_OBJECT
 
     public:
         explicit FileInfoListModel(QObject *parent = nullptr);
-        ~FileInfoListModel();
+        ~FileInfoListModel() override;
 
         // Header:
 
-        QVariant headerData(int section,
+        [[nodiscard]] QVariant headerData(int section,
                             Qt::Orientation orientation,
                             int role = Qt::DisplayRole) const override;
 
         // Basic functionality:
 
-        int rowCount(const QModelIndex &parent = QModelIndex()) const override;
-        int columnCount(const QModelIndex &parent) const override;
-        QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+        [[nodiscard]] int rowCount(const QModelIndex &parent = QModelIndex()) const override;
+        [[nodiscard]] int columnCount(const QModelIndex &parent) const override;
+        [[nodiscard]] QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
 
         /*!
          * \brief QFileInfoListModel::setQFileInfoList
@@ -42,8 +42,8 @@ namespace fairwindsk::ui::mydata {
         void setQFileInfoList(const QList<QFileInfo> &fileInfos);
 
     private:
-        QList<QFileInfo> fileInfoList;
-        QStringList header;
+        QList<QFileInfo> m_fileInfoList;
+        QStringList m_header;
     };
 
 
