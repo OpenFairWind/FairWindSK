@@ -35,6 +35,7 @@ namespace fairwindsk::ui::mydata {
 
 		ui->tableView_Search->hide();
 		ui->listView_Files->show();
+		ui->label_Searching->hide();
 
 		ui->groupBox_ItemInfo->hide();
 
@@ -80,6 +81,8 @@ namespace fairwindsk::ui::mydata {
 
 		m_fileListModel = new FileInfoListModel();
 		ui->tableView_Search->setModel(m_fileListModel);
+
+		connect(&m_searchingWatcher, &QFutureWatcher<QList<QFileInfo>>::finished, this, &Files::searchFinished);
 
 		onHome();
 	}
@@ -178,55 +181,78 @@ namespace fairwindsk::ui::mydata {
 	}
 
 	void Files::onFiltersClicked() {
+
+		if (m_searchingWatcher.isRunning()) {
+			m_searchingWatcher.cancel();
+		}
+
 		ui->lineEdit_Search->clear();
 		ui->tableView_Search->hide();
+		ui->label_Searching->hide();
 		ui->listView_Files->show();
 	}
 
 	void Files::onSearchClicked() {
 
-		const auto key = ui->lineEdit_Search->text();
-
-		if (key.isEmpty()) {
+		if (const auto key = ui->lineEdit_Search->text(); key.isEmpty()) {
 			ui->tableView_Search->hide();
 			ui->listView_Files->show();
 		} else {
 
 			ui->listView_Files->hide();
-
-			//const Qt::CaseSensitivity caseSensitivity = ui->caseSensitive->isChecked() ? Qt::CaseSensitive:Qt::CaseInsensitive;
-			const Qt::CaseSensitivity caseSensitivity = Qt::CaseInsensitive;
-			m_results.clear();
-
-			QDir::Filters filters = QDir::AllEntries | QDir::NoDotAndDotDot;
-
-			//if (ui->searchHidden->isChecked())
-			filters |= QDir::Hidden;
-			//if (ui->searchSystem->isChecked())
-			filters |= QDir::System;
+			ui->tableView_Search->hide();
+			ui->label_Searching->setText(tr("Searching..."));
+			ui->label_Searching->show();
 
 			auto searchPath = getCurrentDir();
 
-			qDebug() << searchPath;
+			const Qt::CaseSensitivity caseSensitivity = ui->toolButton_CaseSensitive->isChecked() ? Qt::CaseSensitive:Qt::CaseInsensitive;
 
-			QDirIterator dirItems(searchPath, filters, QDirIterator::Subdirectories);
 
-			while (dirItems.hasNext()) {
-				if (const QFileInfo fileInfo = dirItems.nextFileInfo(); fileInfo.fileName().contains(key, caseSensitivity)) {
-					m_results.append(fileInfo);
-					qDebug() << fileInfo;
-				}
+			QDir::Filters filters = QDir::AllEntries | QDir::NoDotAndDotDot;
+
+			if (ui->toolButton_SearchHidden->isChecked()) {
+				filters |= QDir::Hidden;
 			}
+			if (ui->toolButton_SearchSystem->isChecked())
+				filters |= QDir::System;
 
-			dynamic_cast<FileInfoListModel *>(ui->tableView_Search->model())->setQFileInfoList(m_results);
-			ui->tableView_Search->resizeColumnsToContents();
+			m_searchingWatcher.setFuture(QtConcurrent::run(Files::search,
+															   searchPath,key,caseSensitivity,filters));
 
-			ui->tableView_Search->show();
+
 
 		}
+	}
 
+	QList<QFileInfo> Files::search(const QString &searchPath, const QString &key, const Qt::CaseSensitivity caseSensitivity, const QDir::Filters filters)
+	{
+		QList<QFileInfo> results;
 
+		QDirIterator dirItems(searchPath, filters, QDirIterator::Subdirectories);
 
+		while (dirItems.hasNext()) {
+			if (const QFileInfo fileInfo = dirItems.nextFileInfo(); fileInfo.fileName().contains(key, caseSensitivity)) {
+				results.append(fileInfo);
+			}
+		}
+
+		return results;
+	}
+
+	void Files::searchFinished() {
+
+		const QList<QFileInfo> results = m_searchingWatcher.result();
+
+		if (!results.isEmpty()) {
+
+			dynamic_cast<FileInfoListModel *>(ui->tableView_Search->model())->setQFileInfoList(results);
+			ui->tableView_Search->resizeColumnsToContents();
+			ui->label_Searching->hide();
+			ui->tableView_Search->show();
+		} else {
+			ui->label_Searching->setText(tr("Not found!"));
+		}
 	}
 
 	bool Files::selectFileSystemItem(const QString &path, const CDSource source) {
@@ -487,7 +513,14 @@ namespace fairwindsk::ui::mydata {
             fromDir.removeRecursively();
     }
 
+
+
 	Files::~Files() {
+
+		if (m_searchingWatcher.isRunning()) {
+			m_searchingWatcher.cancel();
+		}
+
 		if (m_imageViewer) {
 			delete m_imageViewer;
 			m_imageViewer = nullptr;

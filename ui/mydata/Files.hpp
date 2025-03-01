@@ -7,6 +7,9 @@
 
 #include <QWidget>
 #include <QFileSystemModel>
+#include <QFutureWatcher>
+#include <QtConcurrent>
+
 #include <ui_ImageViewer.h>
 
 #include "FileInfoListModel.hpp"
@@ -36,6 +39,8 @@ public:
 
     void setCurrentDir(const QString& new_dir);
     [[nodiscard]] QString getCurrentDir() const;
+
+
 
     /*!
      * \brief Format the provided number as bytes.
@@ -111,6 +116,11 @@ private:
     ImageViewer *m_imageViewer = nullptr;
 
     void showWarning(const QString &message) const;
+
+    QFutureWatcher<QList<QFileInfo>> m_searchingWatcher;
+
+    static QList<QFileInfo> search(const QString &searchPath, const QString &key, Qt::CaseSensitivity caseSensitivity, QDir::Filters filters);
+    void searchFinished();
 };
 } // fairwindsk::ui::mydata
 

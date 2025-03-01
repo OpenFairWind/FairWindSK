@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>997</width>
-    <height>316</height>
+    <height>392</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -115,6 +115,45 @@
        </widget>
       </item>
       <item>
+       <widget class="QToolButton" name="toolButton_CaseSensitive">
+        <property name="text">
+         <string>...</string>
+        </property>
+        <property name="icon">
+         <iconset resource="../../resources.qrc">
+          <normaloff>:/resources/svg/case-sensitive-svgrepo-com.svg</normaloff>:/resources/svg/case-sensitive-svgrepo-com.svg</iconset>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="toolButton_SearchHidden">
+        <property name="text">
+         <string>...</string>
+        </property>
+        <property name="icon">
+         <iconset resource="../../resources.qrc">
+          <normaloff>:/resources/svg/gui-view-show-svgrepo-com.svg</normaloff>
+          <normalon>:/resources/svg/gui-view-hide-svgrepo-com.svg</normalon>:/resources/svg/gui-view-show-svgrepo-com.svg</iconset>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="toolButton_SearchSystem">
+        <property name="text">
+         <string>...</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QLineEdit" name="lineEdit_Search"/>
       </item>
       <item>
@@ -192,6 +231,10 @@
         <property name="text">
          <string>...</string>
         </property>
+        <property name="icon">
+         <iconset resource="../../resources.qrc">
+          <normaloff>:/resources/svg/rename-svgrepo-com.svg</normaloff>:/resources/svg/rename-svgrepo-com.svg</iconset>
+        </property>
        </widget>
       </item>
       <item>
@@ -267,6 +310,9 @@
           <property name="acceptDrops">
            <bool>true</bool>
           </property>
+          <property name="selectionBehavior">
+           <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+          </property>
           <property name="iconSize">
            <size>
             <width>64</width>
@@ -307,13 +353,44 @@
         </item>
         <item>
          <widget class="QTableView" name="tableView_Search">
-      <property name="showGrid">
-       <bool>false</bool>
-      </property>
-      <attribute name="horizontalHeaderStretchLastSection">
-       <bool>true</bool>
-      </attribute>
-     </widget>
+          <property name="selectionBehavior">
+           <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>64</width>
+            <height>64</height>
+           </size>
+          </property>
+          <property name="showGrid">
+           <bool>false</bool>
+          </property>
+          <property name="sortingEnabled">
+           <bool>true</bool>
+          </property>
+          <attribute name="horizontalHeaderStretchLastSection">
+           <bool>true</bool>
+          </attribute>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_Searching">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="scaledContents">
+           <bool>true</bool>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignmentFlag::AlignCenter</set>
+          </property>
+         </widget>
         </item>
         <item>
          <widget class="QGroupBox" name="groupBox_ItemInfo">
