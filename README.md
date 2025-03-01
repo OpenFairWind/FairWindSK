@@ -18,18 +18,18 @@ stabilizing it on the already supported platforms.
 ![The FairWindSK desktop](images/fairwindsk-desktop.png)
 
 ### Stable components ###
-* the desktop (of course, a far remembrance of other similar user interfaces);
-* the execution environments;
-* the setup and configuration of units;
-* the QT virtual keyboard;
-* Signal K paths;
-* Signal K Applications;
-* The autopilot bar;
-* POB (Person over board) bar;
-* Anchor bar;
+* The desktop (of course, a far remembrance of other similar user interfaces)
+* The execution environments
+* The setup and configuration of units
+* The QT virtual keyboard
+* Signal K paths
+* Signal K Applications
+* The autopilot bar
+* POB (Person over board) bar
+* Anchor bar
 * Alarm bar
 
-Those bars will relay on SK web apps invoking their APIs or access the Signal K APIs directly. 
+Those bars relay on SK web apps invoking their APIs or access the Signal K APIs directly. 
 
 Applications are SK Web Apps hosted by the SK server, but they can also be other web applications manually configured
 by providing the URL.
@@ -37,6 +37,12 @@ by providing the URL.
 Applications can also be local (as OpenCPN) characterized by a local path URL with the schema file://.
 
 A mechanism to be back on the FairWindSK desktop after being launched in implemented as SHIFT+TAB hot key.
+
+### Components under active development ###
+* MyData - Features:
+  * Waypoints, tracks, and routes management (an interface on Signal K resources). 
+  * File browser
+  * File viewer (Images, Pdf, and text files)
 
 # Compile on MacOS
 
@@ -161,6 +167,12 @@ cp icons $HOME/
 FairWindSK
 ```
 
+# Compile on Raspberry Windows
+FairWindSK should work on Windows too, but, at the time it has never been tested.
+
+# Compile on mobile devices (iOS, Android, ...)
+Compiling FairWindSK for iOS or Android leveraging QT and only one single code base (same source approach) is a challenge.
+
 # Signal K server on Docker
 
 Release process first publishes the server's modules to npm. Docker images are then built using the just published npm packages. Images (including older versions) are available at [Docker Hub](https://hub.docker.com/r/signalk/signalk-server) and starting from v2 at [GitHub Container registry](https://github.com/orgs/SignalK/packages/container/package/signalk-server). Going forward **use the full image name, including the registry cr.signalk.io**. That address will be updated to redirect to the recommended registry where the latest released version can be found.
@@ -277,6 +289,18 @@ and the elapsed time.
 
 The application settings: here it is possible to manage the applications shown on the desktop.
 ![The application settings](images/fairwindsk-settings-applications.png)
+
+My Data: the waypoint management graphical user interface (via Signal K resources)
+![Waypoints](images/fairwindsk-mydata-waypoints.png)
+
+My Data: the file browser
+![Files](images/fairwindsk-mydata-files.png)
+
+My Data: the file searcher
+![File Searcher](images/fairwindsk-mydata-files-search.png)
+
+My Data: the image viewer
+![Image Viewer](images/fairwindsk-mydata-files-imageviewer.png)
 
 # Open-Source external projects
 
