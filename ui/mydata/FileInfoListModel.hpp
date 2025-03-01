@@ -8,12 +8,13 @@
 #include <QAbstractTableModel>
 #include <QFileInfo>
 
+
 // The base source code is https://github.com/kitswas/File-Manager/
 
 namespace fairwindsk::ui::mydata {
 
-    class FileInfoListModel final : public QAbstractTableModel
-    {
+    class FileInfoListModel final : public QAbstractTableModel {
+
         Q_OBJECT
 
     public:
@@ -22,15 +23,17 @@ namespace fairwindsk::ui::mydata {
 
         // Header:
 
-        [[nodiscard]] QVariant headerData(int section,
+        QVariant headerData(int section,
                             Qt::Orientation orientation,
                             int role = Qt::DisplayRole) const override;
 
         // Basic functionality:
 
-        [[nodiscard]] int rowCount(const QModelIndex &parent = QModelIndex()) const override;
-        [[nodiscard]] int columnCount(const QModelIndex &parent) const override;
-        [[nodiscard]] QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+        int rowCount(const QModelIndex &parent = QModelIndex()) const override;
+        int columnCount(const QModelIndex &parent) const override;
+        QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+
+
 
         /*!
          * \brief QFileInfoListModel::setQFileInfoList
@@ -42,8 +45,9 @@ namespace fairwindsk::ui::mydata {
         void setQFileInfoList(const QList<QFileInfo> &fileInfos);
 
     private:
-        QList<QFileInfo> m_fileInfoList;
         QStringList m_header;
+        QList<QFileInfo> m_fileInfoList;
+
     };
 
 

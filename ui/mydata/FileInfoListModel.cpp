@@ -6,6 +6,7 @@
 
 #include "Files.hpp"
 
+
 // The base source code is https://github.com/kitswas/File-Manager/
 
 namespace fairwindsk::ui::mydata {
@@ -21,13 +22,16 @@ namespace fairwindsk::ui::mydata {
 
     FileInfoListModel::~FileInfoListModel() = default;
 
+
+
+
     QVariant FileInfoListModel::headerData(const int section, const Qt::Orientation orientation, const int role) const
     {
-        if (orientation == Qt::Horizontal && role == Qt::DisplayRole && section >= 0
-            && section < m_header.size()) {
-            qDebug() << "header data " << m_header.at(section) << " fetched for section " << section;
+        if (orientation == Qt::Horizontal && role == Qt::DisplayRole && section >= 0 && section < m_header.size()) {
+
             return m_header.at(section);
-            }
+        }
+
         return {};
     }
 
