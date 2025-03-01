@@ -67,6 +67,7 @@ find_package(Qt6 COMPONENTS
         Core
         Gui
         Widgets
+        Concurrent
         Network
         WebSockets
         Xml
@@ -163,6 +164,7 @@ add_dependencies(${PROJECT_NAME} qhotkey)
 target_link_libraries(${PROJECT_NAME}
         Qt::Core
         Qt::Gui
+        Qt::Concurrent
         Qt::Widgets
         Qt::Network
         Qt::WebSockets
