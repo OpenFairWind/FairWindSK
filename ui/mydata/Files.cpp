@@ -53,7 +53,7 @@ namespace fairwindsk::ui::mydata {
 
 		const auto index = m_fileSystemModel->index(QDir::currentPath());
 
-		qDebug() << index;
+
 
 		ui->listView_Files->setRootIndex(index);
 
@@ -106,7 +106,7 @@ namespace fairwindsk::ui::mydata {
 		m_currentDir = new QDir(path);
 		const auto index = m_fileSystemModel->index(path);
 
-		qDebug() << path << ":" << index;
+
 
 		ui->listView_Files->setRootIndex(index);
 
@@ -124,22 +124,22 @@ namespace fairwindsk::ui::mydata {
 		}
 	}
 	void Files::onItemViewActivated(const QModelIndex &index) {
-		qDebug() << index;
+
 
 		if (const auto path = m_fileSystemModel->filePath(index); selectFileSystemItem(path, Files::CDSource::Navpage))
 			setCurrentDir(path);
 		else {
-			qDebug() << "Should open the file here." << path;
+
 			viewFile(path);
 		}
 	}
 
 	void Files::onTableView_ItemActivated(const QModelIndex& index) {
-		qDebug() << index;
 
-		const auto path = m_fileSystemModel->filePath(index);
 
-		qDebug() << "Should open the file here." << path;
+		const auto path = m_fileListModel->getAbsolutePath(index);
+
+
 		viewFile(path);
 
 	}
@@ -147,8 +147,8 @@ namespace fairwindsk::ui::mydata {
 	void Files::viewFile(const QString& path) {
 		qDebug() << "Files::viewFile " << path;
 
-		QMimeDatabase db;
-		QMimeType type = db.mimeTypeForFile(path);
+		const QMimeDatabase db;
+		const auto type = db.mimeTypeForFile(path);
 		qDebug() << "Mime type:" << type.name();
 
 		ui->group_ToolBar->hide();
@@ -172,9 +172,7 @@ namespace fairwindsk::ui::mydata {
 }
 
 	void Files::onItemViewClicked(const QModelIndex &index) const {
-		const QFileInfo fileInfo = m_fileSystemModel->fileInfo(index);
-
-		if (fileInfo.isFile())
+		if (const QFileInfo fileInfo = m_fileSystemModel->fileInfo(index); fileInfo.isFile())
 		{
 			ui->groupBox_ItemInfo->setTitle(fileInfo.fileName());
 
@@ -201,7 +199,7 @@ namespace fairwindsk::ui::mydata {
 			ui->groupBox_ItemInfo->hide();
 		}
 
-		qDebug() << "Files::onItemViewClicked";
+
 	}
 
 	void Files::onFiltersClicked() {
