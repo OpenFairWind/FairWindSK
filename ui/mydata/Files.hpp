@@ -72,6 +72,7 @@ public:
         void onImageViewerCloseClicked();
 
         void onItemViewActivated(const QModelIndex &index);
+        void onTableView_ItemActivated(const QModelIndex &index);
 
         void onItemViewClicked(const QModelIndex &index) const;
 
@@ -102,6 +103,10 @@ public:
         void onSearchClicked();
         void onFiltersClicked();
 
+
+    void searchFinished();
+    void searchProgressValueChanged(int progress);
+
 private:
     Ui::Files *ui;
 
@@ -114,14 +119,16 @@ private:
     QDir *m_currentDir;
 
     ImageViewer *m_imageViewer = nullptr;
+    QFutureWatcher<QFileInfo> m_searchingWatcher;
 
+    void viewFile(const QString& path);
     void showWarning(const QString &message) const;
 
-    QFutureWatcher<QList<QFileInfo>> m_searchingWatcher;
 
-    static QList<QFileInfo> search(const QString &searchPath, const QString &key, Qt::CaseSensitivity caseSensitivity, QDir::Filters filters);
-    void searchFinished();
+    static void search(QPromise<QFileInfo> &promise, const QString &searchPath, const QString &key, Qt::CaseSensitivity caseSensitivity, QDir::Filters filters);
+
 };
+
 } // fairwindsk::ui::mydata
 
 #endif //FILES_H

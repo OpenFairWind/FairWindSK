@@ -35,7 +35,7 @@ namespace fairwindsk::ui::mydata {
 
 		ui->tableView_Search->hide();
 		ui->listView_Files->show();
-		ui->label_Searching->hide();
+		ui->widget_Searching->hide();
 
 		ui->groupBox_ItemInfo->hide();
 
@@ -66,6 +66,7 @@ namespace fairwindsk::ui::mydata {
 
 		connect(ui->toolButton_Filters, &QToolButton::clicked, this, &Files::onFiltersClicked);
 		connect(ui->toolButton_Search, &QToolButton::clicked, this, &Files::onSearchClicked);
+		connect(ui->lineEdit_Search,&QLineEdit::returnPressed, this, &Files::onSearchClicked);
 
 		connect(ui->toolButton_Cut, &QToolButton::clicked, this, &Files::onCutClicked);
 		connect(ui->toolButton_Copy, &QToolButton::clicked, this, &Files::onCopyClicked);
@@ -83,9 +84,14 @@ namespace fairwindsk::ui::mydata {
 		ui->tableView_Search->setModel(m_fileListModel);
 
 		connect(&m_searchingWatcher, &QFutureWatcher<QList<QFileInfo>>::finished, this, &Files::searchFinished);
+		connect(&m_searchingWatcher, &QFutureWatcher<QList<QFileInfo>>::progressValueChanged, this, &Files::searchProgressValueChanged);
+		connect(ui->tableView_Search, &QTableView::activated, this, &Files::onTableView_ItemActivated);
+
 
 		onHome();
 	}
+
+
 
 	QString Files::getCurrentDir() const {
 		return m_currentDir->absolutePath();
@@ -124,14 +130,32 @@ namespace fairwindsk::ui::mydata {
 			setCurrentDir(path);
 		else {
 			qDebug() << "Should open the file here." << path;
-			ui->group_ToolBar->hide();
-			ui->group_Main->hide();
-			m_imageViewer = new ImageViewer(path);
-			connect(m_imageViewer, &ImageViewer::askedToBeClosed, this, &Files::onImageViewerCloseClicked);
-			ui->group_Content->layout()->addWidget(m_imageViewer);
-
-
+			viewFile(path);
 		}
+	}
+
+	void Files::onTableView_ItemActivated(const QModelIndex& index) {
+		qDebug() << index;
+
+		const auto path = m_fileSystemModel->filePath(index);
+
+		qDebug() << "Should open the file here." << path;
+		viewFile(path);
+
+	}
+
+	void Files::viewFile(const QString& path) {
+		qDebug() << "Files::viewFile " << path;
+
+		QMimeDatabase db;
+		QMimeType type = db.mimeTypeForFile(path);
+		qDebug() << "Mime type:" << type.name();
+
+		ui->group_ToolBar->hide();
+		ui->group_Main->hide();
+		m_imageViewer = new ImageViewer(path);
+		connect(m_imageViewer, &ImageViewer::askedToBeClosed, this, &Files::onImageViewerCloseClicked);
+		ui->group_Content->layout()->addWidget(m_imageViewer);
 	}
 
 	QStringList Files::getSelection() const {
@@ -184,11 +208,12 @@ namespace fairwindsk::ui::mydata {
 
 		if (m_searchingWatcher.isRunning()) {
 			m_searchingWatcher.cancel();
+			m_searchingWatcher.waitForFinished();
 		}
 
 		ui->lineEdit_Search->clear();
 		ui->tableView_Search->hide();
-		ui->label_Searching->hide();
+		ui->widget_Searching->hide();
 		ui->listView_Files->show();
 	}
 
@@ -202,7 +227,7 @@ namespace fairwindsk::ui::mydata {
 			ui->listView_Files->hide();
 			ui->tableView_Search->hide();
 			ui->label_Searching->setText(tr("Searching..."));
-			ui->label_Searching->show();
+			ui->widget_Searching->show();
 
 			auto searchPath = getCurrentDir();
 
@@ -217,49 +242,61 @@ namespace fairwindsk::ui::mydata {
 			if (ui->toolButton_SearchSystem->isChecked())
 				filters |= QDir::System;
 
-			m_searchingWatcher.setFuture(QtConcurrent::run(Files::search,
-															   searchPath,key,caseSensitivity,filters));
-
-
+			const auto future = QtConcurrent::run(Files::search, searchPath, key, caseSensitivity,filters);
+			m_searchingWatcher.setFuture(future);
 
 		}
 	}
 
-	QList<QFileInfo> Files::search(const QString &searchPath, const QString &key, const Qt::CaseSensitivity caseSensitivity, const QDir::Filters filters)
+	void Files::search(QPromise<QFileInfo> &promise, const QString &searchPath, const QString &key, const Qt::CaseSensitivity caseSensitivity, const QDir::Filters filters)
 	{
-		QList<QFileInfo> results;
+		qDebug() << "Files::search" << searchPath << " " << key;
 
 		QDirIterator dirItems(searchPath, filters, QDirIterator::Subdirectories);
-
+		int count=0;
 		while (dirItems.hasNext()) {
+
+			promise.suspendIfRequested();
+
+			if (promise.isCanceled())
+				return;
+
 			if (const QFileInfo fileInfo = dirItems.nextFileInfo(); fileInfo.fileName().contains(key, caseSensitivity)) {
-				results.append(fileInfo);
+				promise.addResult(fileInfo);
+			}
+
+			count++;
+			if (count % 1000) {
+
+				promise.setProgressValue(count);
 			}
 		}
+	}
 
-		return results;
+	void Files::searchProgressValueChanged(const int progress) {
+		// Update the progress bar
+		ui->progressBar_Searching->setValue(progress % 1000);
 	}
 
 	void Files::searchFinished() {
-
-		const QList<QFileInfo> results = m_searchingWatcher.result();
-
-		if (!results.isEmpty()) {
+		if (const QList<QFileInfo> results = m_searchingWatcher.future().results<QFileInfo>(); !results.isEmpty()) {
 
 			dynamic_cast<FileInfoListModel *>(ui->tableView_Search->model())->setQFileInfoList(results);
 			ui->tableView_Search->resizeColumnsToContents();
-			ui->label_Searching->hide();
+			ui->widget_Searching->hide();
 			ui->tableView_Search->show();
 		} else {
 			ui->label_Searching->setText(tr("Not found!"));
+			ui->progressBar_Searching->setValue(100);
 		}
 	}
 
+
+
 	bool Files::selectFileSystemItem(const QString &path, const CDSource source) {
 		int result = false;
-		const auto dir = new QDir(path);
 
-		if (dir->exists()) {
+		if (const auto dir = new QDir(path); dir->exists()) {
 			QDir::setCurrent(path);
 
 			if (source != CDSource::Navbar) {
@@ -519,6 +556,7 @@ namespace fairwindsk::ui::mydata {
 
 		if (m_searchingWatcher.isRunning()) {
 			m_searchingWatcher.cancel();
+			m_searchingWatcher.waitForFinished();
 		}
 
 		if (m_imageViewer) {
