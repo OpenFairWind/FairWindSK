@@ -33,7 +33,7 @@ namespace fairwindsk::ui::mydata {
         int columnCount(const QModelIndex &parent) const override;
         QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
 
-
+        QString getAbsolutePath(const QModelIndex &index);
 
         /*!
          * \brief QFileInfoListModel::setQFileInfoList

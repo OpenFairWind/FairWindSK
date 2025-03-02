@@ -51,8 +51,10 @@ namespace fairwindsk::ui::mydata {
         return m_fileInfoList.size();
     }
 
-    QVariant FileInfoListModel::data(const QModelIndex &index, const int role) const
-    {
+    QVariant FileInfoListModel::data(const QModelIndex &index, const int role) const {
+
+        qDebug() << index;
+
         QStringList _data;
         _data << m_fileInfoList.at(index.row()).fileName()
         << Files::format_bytes(m_fileInfoList.at(index.row()).size())
@@ -65,10 +67,16 @@ namespace fairwindsk::ui::mydata {
         if (index.row() < 0 || index.row() >= m_fileInfoList.size())
             return {};
 
-        if (role == Qt::DisplayRole || role == Qt::EditRole)
+        if (role == Qt::DisplayRole || role == Qt::EditRole) {
             return _data.at(index.column());
 
+        }
+
         return {};
+    }
+
+    QString FileInfoListModel::getAbsolutePath(const QModelIndex &index) {
+        return m_fileInfoList.at(index.row()).absoluteFilePath();
     }
 
     void FileInfoListModel::setQFileInfoList(const QList<QFileInfo> &fileInfos)
