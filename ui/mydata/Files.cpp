@@ -156,7 +156,7 @@ namespace fairwindsk::ui::mydata {
 			m_imageViewer = new ImageViewer(path);
 			connect(m_imageViewer, &ImageViewer::askedToBeClosed, this, &Files::onImageViewerCloseClicked);
 			ui->group_Content->layout()->addWidget(m_imageViewer);
-		} else if (type.name() == "text/html" || type.name() == "text/plain" || type.name() == "application/json") {
+		} else if (type.name() == "text/html" || type.name() == "text/plain" || type.name() == "application/json" || type.name() == "application/xml") {
 			ui->group_ToolBar->hide();
 			ui->group_Main->hide();
 			m_textViewer = new TextViewer(path);
