@@ -31,8 +31,13 @@ public:
         void onOne2OneClicked() ;
         void onCloseClicked();
 
+
 private:
     Ui::TextViewer *ui;
+
+    qreal m_fontPS;
+
+    QString m_text;
 };
 } // fairwindsk::ui::mydata
 

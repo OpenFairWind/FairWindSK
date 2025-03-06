@@ -96,11 +96,7 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QTextEdit" name="textEdit_Text">
-       <property name="readOnly">
-        <bool>true</bool>
-       </property>
-      </widget>
+      <widget class="QTextBrowser" name="textBrowser_Text"/>
      </item>
     </layout>
    </item>
