@@ -14,6 +14,7 @@
 
 #include "FileInfoListModel.hpp"
 #include "ImageViewer.hpp"
+#include "TextViewer.hpp"
 
 
 // The base source code is https://github.com/kitswas/File-Manager/
@@ -70,6 +71,7 @@ public:
     public slots:
 
         void onImageViewerCloseClicked();
+        void onTextViewerCloseClicked();
 
         void onItemViewActivated(const QModelIndex &index);
         void onTableView_ItemActivated(const QModelIndex &index);
@@ -119,6 +121,8 @@ private:
     QDir *m_currentDir;
 
     ImageViewer *m_imageViewer = nullptr;
+    TextViewer *m_textViewer = nullptr;
+
     QFutureWatcher<QFileInfo> m_searchingWatcher;
 
     void viewFile(const QString& path);

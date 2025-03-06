@@ -15,10 +15,9 @@
 #include <QMimeDatabase>
 #include <QStorageInfo>
 #include <ui_ImageViewer.h>
+#include <ui_TextViewer.h>
 
 #include "FileInfoListModel.hpp"
-#include "ImageViewer.hpp"
-
 
 
 
@@ -151,11 +150,30 @@ namespace fairwindsk::ui::mydata {
 		const auto type = db.mimeTypeForFile(path);
 		qDebug() << "Mime type:" << type.name();
 
-		ui->group_ToolBar->hide();
-		ui->group_Main->hide();
-		m_imageViewer = new ImageViewer(path);
-		connect(m_imageViewer, &ImageViewer::askedToBeClosed, this, &Files::onImageViewerCloseClicked);
-		ui->group_Content->layout()->addWidget(m_imageViewer);
+		if (type.name() == "image/png" || type.name() == "image/jpeg" || type.name() == "image/gif" || type.name() == "image/bitmap") {
+			ui->group_ToolBar->hide();
+			ui->group_Main->hide();
+			m_imageViewer = new ImageViewer(path);
+			connect(m_imageViewer, &ImageViewer::askedToBeClosed, this, &Files::onImageViewerCloseClicked);
+			ui->group_Content->layout()->addWidget(m_imageViewer);
+		} else if (type.name() == "text/html" || type.name() == "text/plain" || type.name() == "application/json") {
+			ui->group_ToolBar->hide();
+			ui->group_Main->hide();
+			m_textViewer = new TextViewer(path);
+			connect(m_textViewer, &TextViewer::askedToBeClosed, this, &Files::onTextViewerCloseClicked);
+			ui->group_Content->layout()->addWidget(m_textViewer);
+		}
+	}
+
+	void Files::onTextViewerCloseClicked() {
+		if (m_textViewer) {
+			m_textViewer->close();
+			delete m_textViewer;
+			m_textViewer = nullptr;
+
+			ui->group_ToolBar->show();
+			ui->group_Main->show();
+		}
 	}
 
 	QStringList Files::getSelection() const {
@@ -273,7 +291,7 @@ namespace fairwindsk::ui::mydata {
 
 	void Files::searchProgressValueChanged(const int progress) {
 		// Update the progress bar
-		ui->progressBar_Searching->setValue(progress % 1000);
+		ui->progressBar_Searching->setValue(progress % 100);
 	}
 
 	void Files::searchFinished() {
@@ -555,6 +573,11 @@ namespace fairwindsk::ui::mydata {
 		if (m_searchingWatcher.isRunning()) {
 			m_searchingWatcher.cancel();
 			m_searchingWatcher.waitForFinished();
+		}
+
+		if (m_textViewer) {
+			delete m_textViewer;
+			m_textViewer = nullptr;
 		}
 
 		if (m_imageViewer) {
