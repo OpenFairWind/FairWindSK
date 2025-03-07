@@ -51,8 +51,6 @@ namespace fairwindsk::ui::mydata {
         qDebug() << m_fontPS;
     }
 
-
-
     void TextViewer::onZoomOutClicked() {
         if (const qreal fontPS = ui->textBrowser_Text->fontPointSize(); fontPS > 8) {
             ui->textBrowser_Text->setFontPointSize(fontPS - 2);
@@ -76,7 +74,6 @@ namespace fairwindsk::ui::mydata {
         ui->textBrowser_Text->setFontPointSize(m_fontPS);
         ui->textBrowser_Text->setPlainText(m_text);
     }
-
 
 
     TextViewer::~TextViewer() {
