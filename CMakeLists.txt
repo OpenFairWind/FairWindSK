@@ -155,7 +155,6 @@ add_executable(${PROJECT_NAME}
         ui/mydata/ImageViewer.ui
         ui/mydata/ImageWidget.cpp
         ui/mydata/ImageWidget.hpp
-        ui/mydata/textviewer.cpp
         ui/mydata/TextViewer.hpp
         ui/mydata/TextViewer.ui
         ui/mydata/JsonTreeItem.cpp
