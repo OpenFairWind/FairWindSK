@@ -34,10 +34,7 @@ namespace fairwindsk::ui::mydata {
             const auto type = db.mimeTypeForFile(path);
             qDebug() << "Mime type:" << type.name();
 
-            if (type.name() == "application/json") {
-                const auto doc = QJsonDocument::fromJson(m_text.toUtf8());
-                m_text = doc.toJson();
-            } else if (type.name() == "application/xml") {
+            if (type.name() == "application/xml") {
                 QDomDocument doc;
                 doc.setContent(m_text);
                 m_text = doc.toString();
