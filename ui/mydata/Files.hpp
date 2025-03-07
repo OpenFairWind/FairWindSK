@@ -14,6 +14,8 @@
 
 #include "FileInfoListModel.hpp"
 #include "ImageViewer.hpp"
+#include "JsonViewer.hpp"
+#include "PdfViewer.hpp"
 #include "TextViewer.hpp"
 
 
@@ -72,6 +74,8 @@ public:
 
         void onImageViewerCloseClicked();
         void onTextViewerCloseClicked();
+        void onJsonViewerCloseClicked();
+        void onPdfViewerCloseClicked();
 
         void onItemViewActivated(const QModelIndex &index);
         void onTableView_ItemActivated(const QModelIndex &index);
@@ -122,6 +126,8 @@ private:
 
     ImageViewer *m_imageViewer = nullptr;
     TextViewer *m_textViewer = nullptr;
+    JsonViewer *m_jsonViewer = nullptr;
+    PdfViewer *m_pdfViewer = nullptr;
 
     QFutureWatcher<QFileInfo> m_searchingWatcher;
 

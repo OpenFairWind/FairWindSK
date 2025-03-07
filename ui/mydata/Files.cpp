@@ -156,12 +156,46 @@ namespace fairwindsk::ui::mydata {
 			m_imageViewer = new ImageViewer(path);
 			connect(m_imageViewer, &ImageViewer::askedToBeClosed, this, &Files::onImageViewerCloseClicked);
 			ui->group_Content->layout()->addWidget(m_imageViewer);
-		} else if (type.name() == "text/html" || type.name() == "text/plain" || type.name() == "application/json" || type.name() == "application/xml") {
+		} else if (type.name() == "application/json") {
+			ui->group_ToolBar->hide();
+			ui->group_Main->hide();
+			m_jsonViewer = new JsonViewer(path);
+			connect(m_jsonViewer, &JsonViewer::askedToBeClosed, this, &Files::onJsonViewerCloseClicked);
+			ui->group_Content->layout()->addWidget(m_jsonViewer);
+		} else if (type.name() == "application/pdf") {
+			ui->group_ToolBar->hide();
+			ui->group_Main->hide();
+			m_pdfViewer = new PdfViewer(path);
+			connect(m_pdfViewer, &PdfViewer::askedToBeClosed, this, &Files::onPdfViewerCloseClicked);
+			ui->group_Content->layout()->addWidget(m_pdfViewer);
+		} else if (type.name() == "text/html" || type.name() == "text/plain" || type.name() == "application/xml") {
 			ui->group_ToolBar->hide();
 			ui->group_Main->hide();
 			m_textViewer = new TextViewer(path);
 			connect(m_textViewer, &TextViewer::askedToBeClosed, this, &Files::onTextViewerCloseClicked);
 			ui->group_Content->layout()->addWidget(m_textViewer);
+		}
+	}
+
+	void Files::onPdfViewerCloseClicked() {
+		if (m_pdfViewer) {
+			m_pdfViewer->close();
+			delete m_pdfViewer;
+			m_pdfViewer = nullptr;
+
+			ui->group_ToolBar->show();
+			ui->group_Main->show();
+		}
+	}
+
+	void Files::onJsonViewerCloseClicked() {
+		if (m_textViewer) {
+			m_textViewer->close();
+			delete m_textViewer;
+			m_textViewer = nullptr;
+
+			ui->group_ToolBar->show();
+			ui->group_Main->show();
 		}
 	}
 
