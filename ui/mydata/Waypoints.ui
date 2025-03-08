@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>fairwindsk::ui::mydata::Waypoints</class>
- <widget class="QWidget" name="Waypoints">
+ <widget class="QWidget" name="fairwindsk::ui::mydata::Waypoints">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -37,6 +37,12 @@
         <iconset resource="../../resources.qrc">
          <normaloff>:/resources/svg/OpenBridge/sort-desc-google.svg</normaloff>:/resources/svg/OpenBridge/sort-desc-google.svg</iconset>
        </property>
+       <property name="iconSize">
+        <size>
+         <width>32</width>
+         <height>32</height>
+        </size>
+       </property>
       </widget>
      </item>
      <item>
@@ -47,6 +53,12 @@
        <property name="icon">
         <iconset resource="../../resources.qrc">
          <normaloff>:/resources/svg/OpenBridge/sort-asc-google.svg</normaloff>:/resources/svg/OpenBridge/sort-asc-google.svg</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>32</width>
+         <height>32</height>
+        </size>
        </property>
       </widget>
      </item>
@@ -61,6 +73,12 @@
        <property name="icon">
         <iconset resource="../../resources.qrc">
          <normaloff>:/resources/svg/OpenBridge/search.svg</normaloff>:/resources/svg/OpenBridge/search.svg</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>32</width>
+         <height>32</height>
+        </size>
        </property>
       </widget>
      </item>
@@ -86,6 +104,12 @@
         <iconset resource="../../resources.qrc">
          <normaloff>:/resources/svg/OpenBridge/widget-add-google.svg</normaloff>:/resources/svg/OpenBridge/widget-add-google.svg</iconset>
        </property>
+       <property name="iconSize">
+        <size>
+         <width>32</width>
+         <height>32</height>
+        </size>
+       </property>
       </widget>
      </item>
      <item>
@@ -96,6 +120,12 @@
        <property name="icon">
         <iconset resource="../../resources.qrc">
          <normaloff>:/resources/svg/OpenBridge/file-import-google.svg</normaloff>:/resources/svg/OpenBridge/file-import-google.svg</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>32</width>
+         <height>32</height>
+        </size>
        </property>
       </widget>
      </item>
@@ -108,6 +138,12 @@
         <iconset resource="../../resources.qrc">
          <normaloff>:/resources/svg/OpenBridge/file-export-google.svg</normaloff>:/resources/svg/OpenBridge/file-export-google.svg</iconset>
        </property>
+       <property name="iconSize">
+        <size>
+         <width>32</width>
+         <height>32</height>
+        </size>
+       </property>
       </widget>
      </item>
      <item>
@@ -118,6 +154,12 @@
        <property name="icon">
         <iconset resource="../../resources.qrc">
          <normaloff>:/resources/svg/OpenBridge/delete-google.svg</normaloff>:/resources/svg/OpenBridge/delete-google.svg</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>32</width>
+         <height>32</height>
+        </size>
        </property>
       </widget>
      </item>
@@ -143,7 +185,7 @@
         <x>0</x>
         <y>0</y>
         <width>398</width>
-        <height>124</height>
+        <height>116</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_Waypoint_Items">
