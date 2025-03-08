@@ -99,7 +99,8 @@ namespace fairwindsk::ui {
         // Invoked when a web app have to be removed from the browser
         void onRemoveApp(const QString& name);
 
-
+        // Set the windows size
+        void setSize();
     private:
         // The UI pointer
         Ui::MainWindow *ui = nullptr;
@@ -123,6 +124,7 @@ namespace fairwindsk::ui {
         QHotkey *m_hotkey = nullptr;
 
     };
+
 }
 
 #endif //MAINWINDOW_HPP

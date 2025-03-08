@@ -78,22 +78,6 @@ namespace fairwindsk::ui {
         // Show the launcher
         onRemoveApp("http:///");
 
-        if (fairWindSK->getConfiguration()->getFullScreen()) {
-
-            // Show the window fullscreen
-            QTimer::singleShot(0, this, SLOT(showFullScreen()));
-        } else {
-            const auto width = fairWindSK->getConfiguration()->getWindowWidth();
-            const auto height = fairWindSK->getConfiguration()->getWindowHeight();
-
-            resize(width, height);
-
-            // Show windowed
-            show();
-
-            qDebug() << "Resized " << width << " " << height;
-        }
-
         // Create the hot key to popup this window
         m_hotkey = new QHotkey(Qt::Key_Tab, Qt::ShiftModifier, true, this);
 
@@ -106,6 +90,9 @@ namespace fairwindsk::ui {
             // Open the settings window
             onSettings();
         };
+
+        // Set the window size
+        setSize();
     }
 
     // Hot Key handler
@@ -153,15 +140,8 @@ namespace fairwindsk::ui {
             // If yes, get its widget from mapWidgets
             widgetApp = m_mapHash2Widget[hash];
         } else {
-            /*
-            // Check if it is the Settings app
-            if (appItem->getName() == "__SETTINGS__") {
-
-                // Create the Settings add widget
-                widgetApp = new settings::Settings(this, ui->stackedWidget_Center->currentWidget());
-
-                // Check if the app is an executable
-            } else*/ if (appItem->getName().startsWith("file://")) {
+            // Check if the app is an executable
+            if (appItem->getName().startsWith("file://")) {
 
                 //https://forum.qt.io/topic/44091/embed-an-application-inside-a-qt-window-solved/16
                 //https://forum.qt.io/topic/101510/calling-a-process-in-the-main-app-and-return-the-process-s-window-id
@@ -234,19 +214,8 @@ namespace fairwindsk::ui {
             // Set the current app in ui components
             m_topBar->setCurrentApp(m_currentApp);
 
-            if (fairWindSK->getConfiguration()->getFullScreen()) {
-
-                // Show the window fullscreen
-                QTimer::singleShot(0, this, SLOT(showFullScreen()));
-            } else {
-                const auto width = fairWindSK->getConfiguration()->getWindowWidth();
-                const auto height = fairWindSK->getConfiguration()->getWindowHeight();
-
-                resize(width, height);
-
-                // Show windowed
-                show();
-            }
+            // Set the window size
+            setSize();
         }
     }
 
@@ -316,19 +285,8 @@ namespace fairwindsk::ui {
 
         connect(myDataPage, &mydata::MyData::closed, this, &MainWindow::onMyDataClosed);
 
-        if (fairWindSK->getConfiguration()->getFullScreen()) {
-
-            // Show the window fullscreen
-            QTimer::singleShot(0, this, SLOT(showFullScreen()));
-        } else {
-            const auto width = fairWindSK->getConfiguration()->getWindowWidth();
-            const auto height = fairWindSK->getConfiguration()->getWindowHeight();
-
-            resize(width, height);
-
-            // Show windowed
-            show();
-        }
+        // Set the window size
+        setSize();
     }
 
 
@@ -337,9 +295,6 @@ namespace fairwindsk::ui {
  * Method called when the user clicks the Settings button on the BottomBar object
  */
     void MainWindow::onSettings() {
-
-        // Get the FairWind singleton
-        const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
         const auto settingsPage = new settings::Settings(this, ui->stackedWidget_Center->currentWidget());
         ui->widget_Top->setDisabled(true);
@@ -350,6 +305,15 @@ namespace fairwindsk::ui {
         connect(settingsPage, &settings::Settings::accepted, this, &MainWindow::onSettingsAccepted);
         connect(settingsPage, &settings::Settings::rejected, this, &MainWindow::onSettingsRejected);
 
+        // Set the window size
+        setSize();
+    }
+
+    void MainWindow::setSize() {
+
+        // Get the FairWind singleton
+        const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+
         if (fairWindSK->getConfiguration()->getFullScreen()) {
 
             // Show the window fullscreen
@@ -364,8 +328,6 @@ namespace fairwindsk::ui {
             show();
         }
     }
-
-
 /*
  * onUpperLeft
  * Method called when the user clicks the upper left icon
