@@ -72,7 +72,6 @@ namespace fairwindsk::ui::mydata {
 		connect(ui->toolButton_Paste, &QToolButton::clicked, this, &Files::onPasteClicked);
 
 		connect(ui->toolButton_NewFolder, &QToolButton::clicked, this, &Files::onNewFolderClicked);
-		connect(ui->toolButton_NewFile, &QToolButton::clicked, this, &Files::onNewFileClicked);
 
 		connect(ui->toolButton_Delete, &QToolButton::clicked, this, &Files::onDeleteClicked);
 		connect(ui->toolButton_Rename, &QToolButton::clicked, this, &Files::onRenameClicked);
@@ -405,24 +404,6 @@ namespace fairwindsk::ui::mydata {
 	void Files::onUpClicked() {
 		if (QDir dir = QDir::current(); dir.cdUp())
 			selectFileSystemItem(dir.absolutePath(), CDSource::Navbutton);
-	}
-
-	void Files::onNewFileClicked() {
-		bool ok;
-		const QString filename = QInputDialog::getText(this,
-		                                         tr("Create a new file"),
-		                                         tr("Enter filename:"),
-		                                         QLineEdit::Normal,
-		                                         tr("New file"),
-		                                         &ok);
-		if (ok && !filename.isEmpty()) {
-			if (QFile file(filename); file.open(QIODeviceBase::NewOnly)) {
-				qDebug() << "File created successfully";
-				file.close();
-			} else {
-				qDebug() << "Unable to create file";
-			}
-		}
 	}
 
 	void Files::onNewFolderClicked() {

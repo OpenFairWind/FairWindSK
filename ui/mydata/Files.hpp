@@ -92,7 +92,7 @@ public:
 
         void onUpClicked();
 
-        void onNewFileClicked();
+
 
         void onNewFolderClicked();
 
