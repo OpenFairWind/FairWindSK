@@ -26,19 +26,19 @@ namespace fairwindsk::ui::settings {
  * Settings
  * The class constructor
  */
-    Settings::Settings(QWidget *parent, QWidget *currenWidget, Configuration *currentConfiguration): QWidget(parent), ui(new Ui::Settings) {
+    Settings::Settings(QWidget *parent, QWidget *currenWidget): QWidget(parent), ui(new Ui::Settings) {
 
         // Set the UI
         ui->setupUi(this);
 
         // Copy the pointer locally
-        m_currentConfiguration = currentConfiguration;
+        m_currentConfiguration = FairWindSK::getInstance()->getConfiguration();
 
         // Set the filename of the local configuration as the file name of FairWindSK configuration
         m_configuration.setFilename(m_currentConfiguration->getFilename());
 
         // Get the current configuration root as a json object
-        auto configurationAsJson = m_currentConfiguration->getRoot();
+        const auto configurationAsJson = m_currentConfiguration->getRoot();
 
         // Set the local configuration with the json object
         m_configuration.setRoot(configurationAsJson);

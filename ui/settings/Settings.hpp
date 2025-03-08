@@ -22,7 +22,7 @@ namespace fairwindsk::ui::settings {
     Q_OBJECT
 
     public:
-        explicit Settings(QWidget *parent = nullptr, QWidget *currenWidget = nullptr, Configuration *currentConfiguration = nullptr);
+        explicit Settings(QWidget *parent = nullptr, QWidget *currenWidget = nullptr);
 
         ~Settings() override;
 
