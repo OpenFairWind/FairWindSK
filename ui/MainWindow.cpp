@@ -30,7 +30,7 @@ namespace fairwindsk::ui {
         ui->setupUi(this);
 
         // Get the singleton
-        auto fairWindSk = fairwindsk::FairWindSK::getInstance();
+        auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
         // Create the TopBar object
         m_topBar = new topbar::TopBar(ui->widget_Top);
@@ -39,10 +39,10 @@ namespace fairwindsk::ui {
         m_bottomBar = new bottombar::BottomBar(ui->widget_Bottom);
 
         // Set the Autopilot icon visible only if the autopilot application is defined
-        m_bottomBar->setAutopilotIcon(fairWindSk->checkAutopilotApp());
+        m_bottomBar->setAutopilotIcon(fairWindSK->checkAutopilotApp());
 
         // Set the Anchor icon visible only if the anchor alarm application is defined
-        m_bottomBar->setAnchorIcon(fairWindSk->checkAnchorApp());
+        m_bottomBar->setAnchorIcon(fairWindSK->checkAnchorApp());
 
         // Place the Apps object at the center of the UI
         setCentralWidget(ui->centralwidget);
@@ -78,13 +78,13 @@ namespace fairwindsk::ui {
         // Show the launcher
         onRemoveApp("http:///");
 
-        if (fairWindSk->getConfiguration()->getFullScreen()) {
+        if (fairWindSK->getConfiguration()->getFullScreen()) {
 
             // Show the window fullscreen
             QTimer::singleShot(0, this, SLOT(showFullScreen()));
         } else {
-            const auto width = fairWindSk->getConfiguration()->getWindowWidth();
-            const auto height = fairWindSk->getConfiguration()->getWindowHeight();
+            const auto width = fairWindSK->getConfiguration()->getWindowWidth();
+            const auto height = fairWindSK->getConfiguration()->getWindowHeight();
 
             resize(width, height);
 
@@ -101,7 +101,7 @@ namespace fairwindsk::ui {
         connect(m_hotkey, &QHotkey::activated, this, &MainWindow::onHotkey);
 
         // Check if no signal k server is defined
-        if (fairWindSk->getConfiguration()->getSignalKServerUrl().isEmpty()) {
+        if (fairWindSK->getConfiguration()->getSignalKServerUrl().isEmpty()) {
 
             // Open the settings window
             onSettings();
@@ -153,7 +153,7 @@ namespace fairwindsk::ui {
             // If yes, get its widget from mapWidgets
             widgetApp = m_mapHash2Widget[hash];
         } else {
-
+            /*
             // Check if it is the Settings app
             if (appItem->getName() == "__SETTINGS__") {
 
@@ -161,7 +161,7 @@ namespace fairwindsk::ui {
                 widgetApp = new settings::Settings(this, ui->stackedWidget_Center->currentWidget());
 
                 // Check if the app is an executable
-            } else if (appItem->getName().startsWith("file://")) {
+            } else*/ if (appItem->getName().startsWith("file://")) {
 
                 //https://forum.qt.io/topic/44091/embed-an-application-inside-a-qt-window-solved/16
                 //https://forum.qt.io/topic/101510/calling-a-process-in-the-main-app-and-return-the-process-s-window-id
@@ -233,6 +233,20 @@ namespace fairwindsk::ui {
 
             // Set the current app in ui components
             m_topBar->setCurrentApp(m_currentApp);
+
+            if (fairWindSK->getConfiguration()->getFullScreen()) {
+
+                // Show the window fullscreen
+                QTimer::singleShot(0, this, SLOT(showFullScreen()));
+            } else {
+                const auto width = fairWindSK->getConfiguration()->getWindowWidth();
+                const auto height = fairWindSK->getConfiguration()->getWindowHeight();
+
+                resize(width, height);
+
+                // Show windowed
+                show();
+            }
         }
     }
 
@@ -291,7 +305,9 @@ namespace fairwindsk::ui {
  */
     void MainWindow::onMyData() {
 
-        auto fairWindSK = FairWindSK::getInstance();
+        // Get the FairWind singleton
+        const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+
         const auto myDataPage = new mydata::MyData(this, ui->stackedWidget_Center->currentWidget());
         ui->widget_Top->setDisabled(true);
         ui->widget_Bottom->setDisabled(true);
@@ -299,6 +315,20 @@ namespace fairwindsk::ui {
         ui->stackedWidget_Center->setCurrentWidget(myDataPage);
 
         connect(myDataPage, &mydata::MyData::closed, this, &MainWindow::onMyDataClosed);
+
+        if (fairWindSK->getConfiguration()->getFullScreen()) {
+
+            // Show the window fullscreen
+            QTimer::singleShot(0, this, SLOT(showFullScreen()));
+        } else {
+            const auto width = fairWindSK->getConfiguration()->getWindowWidth();
+            const auto height = fairWindSK->getConfiguration()->getWindowHeight();
+
+            resize(width, height);
+
+            // Show windowed
+            show();
+        }
     }
 
 
@@ -308,8 +338,10 @@ namespace fairwindsk::ui {
  */
     void MainWindow::onSettings() {
 
-        /*
-        auto settingsPage = new settings::Settings(this, ui->stackedWidget_Center->currentWidget());
+        // Get the FairWind singleton
+        const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+
+        const auto settingsPage = new settings::Settings(this, ui->stackedWidget_Center->currentWidget());
         ui->widget_Top->setDisabled(true);
         ui->widget_Bottom->setDisabled(true);
         ui->stackedWidget_Center->addWidget(settingsPage);
@@ -317,7 +349,20 @@ namespace fairwindsk::ui {
 
         connect(settingsPage, &settings::Settings::accepted, this, &MainWindow::onSettingsAccepted);
         connect(settingsPage, &settings::Settings::rejected, this, &MainWindow::onSettingsRejected);
-        */
+
+        if (fairWindSK->getConfiguration()->getFullScreen()) {
+
+            // Show the window fullscreen
+            QTimer::singleShot(0, this, SLOT(showFullScreen()));
+        } else {
+            const auto width = fairWindSK->getConfiguration()->getWindowWidth();
+            const auto height = fairWindSK->getConfiguration()->getWindowHeight();
+
+            resize(width, height);
+
+            // Show windowed
+            show();
+        }
     }
 
 
