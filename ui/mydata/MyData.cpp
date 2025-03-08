@@ -11,8 +11,7 @@
 #include "Files.hpp"
 
 namespace fairwindsk::ui::mydata {
-    MyData::MyData(QWidget *parent, QWidget *currenWidget) :
-            QWidget(parent), ui(new Ui::MyData) {
+    MyData::MyData(QWidget *parent, QWidget *currenWidget): QWidget(parent), ui(new Ui::MyData) {
 
         ui->setupUi(this);
 
