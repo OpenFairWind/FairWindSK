@@ -132,7 +132,7 @@ namespace fairwindsk::ui {
     void MainWindow::setForegroundApp(const QString& hash) {
 
         // Get the FairWind singleton
-        auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+        const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
         // Check if the debug is active
         if (fairWindSK->isDebug()) {
@@ -142,7 +142,7 @@ namespace fairwindsk::ui {
         }
 
         // Get the map containing all the loaded apps and pick the one that matches the provided hash
-        auto appItem = fairWindSK->getAppItemByHash(hash);
+        const auto appItem = fairWindSK->getAppItemByHash(hash);
 
         // The QT widget implementing the app
         QWidget *widgetApp = nullptr;
@@ -154,11 +154,11 @@ namespace fairwindsk::ui {
             widgetApp = m_mapHash2Widget[hash];
         } else {
 
-            // Check if it ia thw Settings app
+            // Check if it is the Settings app
             if (appItem->getName() == "__SETTINGS__") {
 
                 // Create the Settings add widget
-                widgetApp = new settings::Settings(nullptr, nullptr, FairWindSK::getInstance()->getConfiguration());
+                widgetApp = new settings::Settings(this, ui->stackedWidget_Center->currentWidget());
 
                 // Check if the app is an executable
             } else if (appItem->getName().startsWith("file://")) {
@@ -292,7 +292,7 @@ namespace fairwindsk::ui {
     void MainWindow::onMyData() {
 
         auto fairWindSK = FairWindSK::getInstance();
-        auto myDataPage = new mydata::MyData(this, ui->stackedWidget_Center->currentWidget());
+        const auto myDataPage = new mydata::MyData(this, ui->stackedWidget_Center->currentWidget());
         ui->widget_Top->setDisabled(true);
         ui->widget_Bottom->setDisabled(true);
         ui->stackedWidget_Center->addWidget(myDataPage);
@@ -308,8 +308,8 @@ namespace fairwindsk::ui {
  */
     void MainWindow::onSettings() {
 
-        auto settingsPage = new settings::Settings(this, ui->stackedWidget_Center->currentWidget(),
-                                                   FairWindSK::getInstance()->getConfiguration());
+        /*
+        auto settingsPage = new settings::Settings(this, ui->stackedWidget_Center->currentWidget());
         ui->widget_Top->setDisabled(true);
         ui->widget_Bottom->setDisabled(true);
         ui->stackedWidget_Center->addWidget(settingsPage);
@@ -317,6 +317,7 @@ namespace fairwindsk::ui {
 
         connect(settingsPage, &settings::Settings::accepted, this, &MainWindow::onSettingsAccepted);
         connect(settingsPage, &settings::Settings::rejected, this, &MainWindow::onSettingsRejected);
+        */
     }
 
 

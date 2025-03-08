@@ -21,7 +21,7 @@ namespace fairwindsk::ui::bottombar {
             QWidget(parent),
             ui(new Ui::BottomBar) {
 
-        m_iconSize = 32;
+        m_iconSize = 64;
 
         // Set the UI
         ui->setupUi(parent);
