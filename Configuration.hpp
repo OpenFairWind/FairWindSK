@@ -44,9 +44,6 @@ namespace fairwindsk {
         QString getAutopilotApp();
         QString getAnchorApp();
 
-        void setVirtualKeyboard(bool value);
-        bool getVirtualKeyboard();
-
         void setFullScreen(bool value);
         bool getFullScreen();
         void setWindowWidth(int value);
@@ -69,11 +66,10 @@ namespace fairwindsk {
 
 
     private:
-        QString getUnits(const QString &units);
-
-    private:
         nlohmann::json m_jsonData;
         QString m_filename;
+
+        QString getUnits(const QString &units);
 
     };
 
