@@ -18,15 +18,6 @@ namespace fairwindsk::ui::settings {
 
         ui->setupUi(this);
 
-
-        if (m_settings->getConfiguration()->getVirtualKeyboard()) {
-            ui->checkBox_virtualkeboard->setCheckState(Qt::Checked);
-        } else {
-            ui->checkBox_virtualkeboard->setCheckState(Qt::Unchecked);
-        }
-
-        connect(ui->checkBox_virtualkeboard,&QCheckBox::stateChanged,this, &Main::onVirtualKeyboardStateChanged);
-
         if (m_settings->getConfiguration()->getFullScreen()) {
             ui->checkBox_fullscreen->setCheckState(Qt::Checked);
             ui->lineEdit_width->setEnabled(false);
@@ -90,17 +81,6 @@ namespace fairwindsk::ui::settings {
                 }
             }
         }
-    }
-
-    void Main::onVirtualKeyboardStateChanged(const int state) {
-
-        auto value = false;
-
-        if (state == Qt::Checked) {
-            value = true;
-        }
-
-        m_settings->getConfiguration()->setVirtualKeyboard(value);
     }
 
     void Main::onFullScreenStateChanged(const int state) {

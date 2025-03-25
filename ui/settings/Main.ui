@@ -74,7 +74,7 @@
          <bool>false</bool>
         </property>
         <property name="text">
-         <string>1280</string>
+         <string>1024</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
@@ -97,7 +97,7 @@
          <bool>false</bool>
         </property>
         <property name="text">
-         <string>720</string>
+         <string>600</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
@@ -145,7 +145,7 @@
            <x>0</x>
            <y>0</y>
            <width>404</width>
-           <height>192</height>
+           <height>215</height>
           </rect>
          </property>
          <layout class="QGridLayout" name="gridLayout_Measures"/>
@@ -179,20 +179,6 @@
       <property name="bottomMargin">
        <number>0</number>
       </property>
-      <item row="0" column="0">
-       <widget class="QLabel" name="label_virtualkeyboard">
-        <property name="text">
-         <string>Use Virtual Keyboard</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QCheckBox" name="checkBox_virtualkeboard">
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
      </layout>
     </widget>
    </item>

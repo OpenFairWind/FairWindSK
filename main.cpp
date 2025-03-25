@@ -14,6 +14,7 @@
 using namespace Qt::StringLiterals;
 
 int main(int argc, char *argv[]) {
+
     // The translator
     QTranslator translator;
 
@@ -33,7 +34,7 @@ int main(int argc, char *argv[]) {
     QApplication::setWindowIcon(QIcon(QPixmap::fromImage(QImage(":/resources/images/mainwindow/fairwind_icon.png"))));
 
     // Get the splash screen logo
-    QPixmap pixmap(":/resources/images/other/splash_logo.png");
+    const QPixmap pixmap(":/resources/images/other/splash_logo.png");
 
     // Create a splash screen containing the logo
     QSplashScreen splash(pixmap, Qt::WindowStaysOnTopHint);
@@ -45,18 +46,10 @@ int main(int argc, char *argv[]) {
     splash.showMessage(QObject::tr("Welcome to FairWindSK a GUI for the Signal K server!"), 500, Qt::white);
 
     // Get the FairWind singleton
-    auto fairWindSK = fairwindsk::FairWindSK::getInstance();
-
+    const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
     // Load the configuration inside the FairWind singleton itself
     fairWindSK->loadConfig();
-
-    // Check if the QT virtual keyboard has to be activated
-    if (fairWindSK->getConfiguration()->getVirtualKeyboard()) {
-
-        // Active the QT virtual keyboard
-        qputenv("QT_IM_MODULE", QByteArray("qtvirtualkeyboard"));
-    }
 
     // Show message
     splash.showMessage(QObject::tr("Connecting to the Signal K Server..."), 500, Qt::white);
