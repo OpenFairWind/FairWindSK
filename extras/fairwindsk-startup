@@ -1,15 +1,37 @@
 #!/usr/bin/python3
+
+import os
 import re
 import sys
 import subprocess as sp
 from pathlib import Path
 
+# Check if this script has been launched as main
 if __name__ == '__main__':
+
+    # Set the argv[0]
     sys.argv[0] = re.sub(r'(-script\.pyw?|\.exe)?$', '', sys.argv[0])
+
+    # Set the virtual keyboard (comment this to disable)
+    os.environ["QT_IM_MODULE"]="qtvirtualkeyboard"
+
+    # Set the default return value
     rc = 1
-    while rc == 1: 
+
+    # While the return value is 1
+    while rc == 1:
+
+        # Run the process
         child = sp.Popen("FairWindSK", stdout=sp.PIPE, cwd=Path.home())
+
+        # Get the standard output
         streamdata = child.communicate()[0]
+
+        # Retrieve the return code
         rc = child.returncode
+
+        # Print the return code
         print(rc)
+
+    # Exit the script with the return code
     sys.exit(rc)
