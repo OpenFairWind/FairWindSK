@@ -62,7 +62,7 @@ Clone the repository
 git clone https://github.com/OpenFairWind/FairWindSK.git
 ```
 
-Enter in the repository directory.
+Enter the repository directory.
 
 ```
 cd FairWindSK
@@ -158,7 +158,7 @@ sudo cp FairwindSK /usr/local/bin
 Copy the icons in home
 
 ```
-cp icons $HOME/
+cp -R icons $HOME/
 ```
 
 # Run in production
@@ -166,6 +166,15 @@ cp icons $HOME/
 ```
 FairWindSK
 ```
+
+# Configuring the autostart
+Copy the autostart file and the startup script in the proper location.
+
+```
+cp ../extras/fairwindsk-startup.desktop $HOME/.config/autostart/
+sudo cp ../extras/fairwindsk-startup /usr/bin
+```
+
 
 # Compile on Raspberry Windows
 FairWindSK should work on Windows too, but, at the time it has never been tested.
