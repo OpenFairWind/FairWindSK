@@ -24,32 +24,53 @@ if __name__ == '__main__':
     # While the return value is 1
     while rc == 1:
 
-        # Read the
-        config.read(str(Path.home().absolute()) + os.sep + "fairwindsk.ini")
+        # Get the ini file path
+        iniTextFile = str(Path.home().absolute()) + os.sep + "fairwindsk.ini"
 
-        if "config" in config:
-            configJsonFile = str(config["config"])
-            if configJsonFile[0] != os.sep:
-                configJsonFile = str(Path.home().absolute()) + os.sep + configJsonFile
+        # Read the ini file
+        config.read(iniTextFile)
 
-                # Opening JSON file
-                f = open(configJsonFile)
+        # Get the json file
+        jsonFile = config.get('General','config')
 
-                # returns JSON object as a dictionary
-                configData = json.load(f)
+        # Check if the json file is valid
+        if jsonFile is not None and jsonFile != "":
 
-                if "main" in configData and "virtualKeyboard" in configData["main"]:
-                    useVirtualKeyboard = bool(configData["main"]["virtualKeyboard"])
+            # Check if the json file is a local file path
+            if jsonFile[0] != os.sep:
 
-                    if useVirtualKeyboard:
+                # Update the json file path
+                jsonFile = str(Path.home().absolute()) + os.sep + jsonFile
 
-                        # Set the virtual keyboard (comment this to disable)
-                        os.environ["QT_IM_MODULE"] = "qtvirtualkeyboard"
+            # Opening JSON file
+            f = open(jsonFile)
 
-                    else:
-                        os.environ["QT_IM_MODULE"] = ""
+            # returns JSON object as a dictionary
+            configData = json.load(f)
 
-                f.close()
+            # Checl if main/virtaualKeyboard is in the path
+            if "main" in configData and "virtualKeyboard" in configData["main"]:
+
+                # Get the boolean value for the virtual keyboard
+                useVirtualKeyboard = bool(configData["main"]["virtualKeyboard"])
+
+                # Check if the virtual keuboard must be set
+                if useVirtualKeyboard:
+
+                    # Set the virtual keyboard
+                    os.environ["QT_IM_MODULE"] = "qtvirtualkeyboard"
+
+                else:
+
+                    # Clear the virtual keyboard
+                    os.environ["QT_IM_MODULE"] = ""
+
+
+            # Close the file
+            f.close()
+
+        # Show the virtual keyboard settings
+        print("Virtual Keyboard:", os.environ["QT_IM_MODULE"])
 
         # Run the process
         child = sp.Popen("FairWindSK", stdout=sp.PIPE, cwd=Path.home())
@@ -63,5 +84,5 @@ if __name__ == '__main__':
         # Print the return code
         print(rc)
 
-    # Exit the script with the return code
-    sys.exit(rc)
+        # Exit the script with the return code
+        sys.exit(rc)
