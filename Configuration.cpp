@@ -138,6 +138,26 @@ namespace fairwindsk {
         return result;
     }
 
+    void Configuration::setVirtualKeyboard(bool value) {
+        if (m_jsonData.contains("main")) {
+            m_jsonData["main"]["virtualKeyboard"] = value;
+        }
+    }
+
+
+
+    bool Configuration::getVirtualKeyboard() {
+        bool result = false;
+
+        if (m_jsonData.contains("main")) {
+            if (auto mainJsonObject = m_jsonData["main"]; mainJsonObject.contains("virtualKeyboard") & mainJsonObject["virtualKeyboard"].is_boolean()) {
+                result = mainJsonObject["virtualKeyboard"].get<bool>();
+            }
+        }
+
+        return result;
+    }
+
     void Configuration::setFullScreen(bool value) {
         if (m_jsonData.contains("main")) {
             m_jsonData["main"]["fullScreen"] = value;

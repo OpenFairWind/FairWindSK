@@ -26,6 +26,7 @@ namespace fairwindsk::ui::settings {
         void onFullScreenStateChanged(int state);
         void onWindowWidthTextChanged();
         void onWindowHeightTextChanged();
+        void onVirtualKeyboardStateChanged(int state);
 
     private:
         Ui::Main *ui;

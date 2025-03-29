@@ -33,8 +33,6 @@ namespace fairwindsk {
         QString getRangeUnits();
         QString getDepthUnits();
 
-
-
         QString getSignalKServerUrl();
         void setSignalKServerUrl(const QString& signalKServerUrl);
 
@@ -43,6 +41,9 @@ namespace fairwindsk {
 
         QString getAutopilotApp();
         QString getAnchorApp();
+
+        void setVirtualKeyboard(bool value);
+        bool getVirtualKeyboard();
 
         void setFullScreen(bool value);
         bool getFullScreen();

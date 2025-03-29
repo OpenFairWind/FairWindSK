@@ -1,5 +1,6 @@
 {
     "main": {
+        "virtualKeyboard": false,
         "autopilot": "",
         "fullScreen": true,
         "windowWidth": 1024,
