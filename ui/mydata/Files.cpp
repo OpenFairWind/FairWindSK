@@ -13,6 +13,7 @@
 #include <QMessageBox>
 #include <QDirIterator>
 #include <QMimeDatabase>
+#include <QScroller>
 #include <QStorageInfo>
 #include <ui_ImageViewer.h>
 #include <ui_TextViewer.h>
@@ -49,6 +50,8 @@ namespace fairwindsk::ui::mydata {
 		ui->listView_Files->resize(0, 0);
 		ui->listView_Files->adjustSize();
 		ui->listView_Files->setModel(m_fileSystemModel);
+
+		QScroller::grabGesture(ui->listView_Files, QScroller::LeftMouseButtonGesture);
 
 		const auto index = m_fileSystemModel->index(QDir::currentPath());
 
