@@ -1,25 +1,55 @@
 #!/usr/bin/python3
-
+import json
 import os
 import re
 import sys
 import subprocess as sp
 from pathlib import Path
+import configparser
+
+
 
 # Check if this script has been launched as main
 if __name__ == '__main__':
 
+    # Create the configuration parser
+    config = configparser.ConfigParser()
+
     # Set the argv[0]
     sys.argv[0] = re.sub(r'(-script\.pyw?|\.exe)?$', '', sys.argv[0])
-
-    # Set the virtual keyboard (comment this to disable)
-    os.environ["QT_IM_MODULE"]="qtvirtualkeyboard"
 
     # Set the default return value
     rc = 1
 
     # While the return value is 1
     while rc == 1:
+
+        # Read the
+        config.read(str(Path.home().absolute()) + os.sep + "fairwindsk.ini")
+
+        if "config" in config:
+            configJsonFile = str(config["config"])
+            if configJsonFile[0] != os.sep:
+                configJsonFile = str(Path.home().absolute()) + os.sep + configJsonFile
+
+                # Opening JSON file
+                f = open(configJsonFile)
+
+                # returns JSON object as a dictionary
+                configData = json.load(f)
+
+                if "main" in configData and "virtualKeyboard" in configData["main"]:
+                    useVirtualKeyboard = bool(configData["main"]["virtualKeyboard"])
+
+                    if useVirtualKeyboard:
+
+                        # Set the virtual keyboard (comment this to disable)
+                        os.environ["QT_IM_MODULE"] = "qtvirtualkeyboard"
+
+                    else:
+                        os.environ["QT_IM_MODULE"] = ""
+
+                f.close()
 
         # Run the process
         child = sp.Popen("FairWindSK", stdout=sp.PIPE, cwd=Path.home())
