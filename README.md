@@ -167,14 +167,13 @@ cp -R icons $HOME/
 FairWindSK
 ```
 
-# Configuring the autostart
 Copy the autostart file and the startup script in the proper location.
 
 ```
 cp ../extras/fairwindsk-startup.desktop $HOME/.config/autostart/
 sudo cp ../extras/fairwindsk-startup /usr/bin
 ```
-
+Reboot.
 
 # Compile on Raspberry Windows
 FairWindSK should work on Windows too, but, at the time it has never been tested.
