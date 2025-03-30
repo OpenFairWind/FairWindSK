@@ -4,7 +4,9 @@
         "autopilot": "",
         "fullScreen": true,
         "windowWidth": 1024,
-        "windowHeight": 600
+        "windowHeight": 600,
+        "windowTop": 20,
+        "windowLeft": 0
     },
     "apps": [
         {

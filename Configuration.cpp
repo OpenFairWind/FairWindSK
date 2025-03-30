@@ -212,6 +212,42 @@ namespace fairwindsk {
         }
     }
 
+    int Configuration::getWindowLeft() {
+        int result = 0;
+
+        if (m_jsonData.contains("main")) {
+            if (auto mainJsonObject = m_jsonData["main"]; mainJsonObject.contains("windowLeft") & mainJsonObject["windowLeft"].is_number_integer()) {
+                result = mainJsonObject["windowLeft"].get<int>();
+            }
+        }
+
+        return result;
+    }
+
+    void Configuration::setWindowLeft(int value) {
+        if (m_jsonData.contains("main")) {
+            m_jsonData["main"]["windowLeft"] = value;
+        }
+    }
+
+    int Configuration::getWindowTop() {
+        int result = 0;
+
+        if (m_jsonData.contains("main")) {
+            if (auto mainJsonObject = m_jsonData["main"]; mainJsonObject.contains("windowTop") & mainJsonObject["windowTop"].is_number_integer()) {
+                result = mainJsonObject["windowTop"].get<int>();
+            }
+        }
+
+        return result;
+    }
+
+    void Configuration::setWindowTop(int value) {
+        if (m_jsonData.contains("main")) {
+            m_jsonData["main"]["windowTop"] = value;
+        }
+    }
+
 
 
 

@@ -51,6 +51,10 @@ namespace fairwindsk {
         int getWindowWidth();
         void setWindowHeight(int value);
         int getWindowHeight();
+        void setWindowLeft(int value);
+        int getWindowLeft();
+        void setWindowTop(int value);
+        int getWindowTop();
 
         QString getAutopilot();
         void setAutopilot(const QString& autopilot);

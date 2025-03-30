@@ -29,16 +29,26 @@ namespace fairwindsk::ui::settings {
 
         if (m_settings->getConfiguration()->getFullScreen()) {
             ui->checkBox_fullscreen->setCheckState(Qt::Checked);
+            ui->lineEdit_left->setEnabled(false);
+            ui->lineEdit_top->setEnabled(false);
             ui->lineEdit_width->setEnabled(false);
             ui->lineEdit_height->setEnabled(false);
         } else {
             ui->checkBox_fullscreen->setCheckState(Qt::Unchecked);
+            ui->lineEdit_left->setEnabled(true);
+            ui->lineEdit_top->setEnabled(true);
             ui->lineEdit_width->setEnabled(true);
             ui->lineEdit_height->setEnabled(true);
         }
+        ui->lineEdit_left->setText(QString::number(m_settings->getConfiguration()->getWindowLeft()));
+        ui->lineEdit_top->setText(QString::number(m_settings->getConfiguration()->getWindowTop()));
+        ui->lineEdit_width->setText(QString::number(m_settings->getConfiguration()->getWindowWidth()));
+        ui->lineEdit_height->setText(QString::number(m_settings->getConfiguration()->getWindowHeight()));
 
         connect(ui->checkBox_fullscreen,&QCheckBox::stateChanged,this, &Main::onFullScreenStateChanged);
 
+        connect(ui->lineEdit_left,&QLineEdit::textChanged,this, &Main::onWindowLeftTextChanged);
+        connect(ui->lineEdit_top,&QLineEdit::textChanged,this, &Main::onWindowTopTextChanged);
         connect(ui->lineEdit_width,&QLineEdit::textChanged,this, &Main::onWindowWidthTextChanged);
         connect(ui->lineEdit_height,&QLineEdit::textChanged,this, &Main::onWindowHeightTextChanged);
 
@@ -113,8 +123,18 @@ namespace fairwindsk::ui::settings {
 
         m_settings->getConfiguration()->setFullScreen(value);
 
+        ui->lineEdit_left->setEnabled(!value);
+        ui->lineEdit_top->setEnabled(!value);
         ui->lineEdit_width->setEnabled(!value);
         ui->lineEdit_height->setEnabled(!value);
+    }
+
+    void Main::onWindowLeftTextChanged() {
+        m_settings->getConfiguration()->getRoot()["main"]["windowLeft"] = ui->lineEdit_left->text().toInt();
+    }
+
+    void Main::onWindowTopTextChanged() {
+        m_settings->getConfiguration()->getRoot()["main"]["windowTop"] = ui->lineEdit_top->text().toInt();
     }
 
     void Main::onWindowWidthTextChanged() {
