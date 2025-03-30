@@ -57,8 +57,8 @@ namespace fairwindsk::ui::mydata {
 
 		ui->listView_Files->setRootIndex(index);
 
-		connect(ui->listView_Files, &QAbstractItemView::doubleClicked, this, &Files::onFileViewItemDoubleClicked);
-		//connect(ui->listView_Files, &QAbstractItemView::clicked, this, &Files::onItemViewClicked);
+		connect(ui->listView_Files, &QListView::doubleClicked, this, &Files::onFileViewItemDoubleClicked);
+		connect(ui->listView_Files, &QListView::clicked, this, &Files::onItemViewClicked);
 
 		connect(ui->toolButton_Back, &QToolButton::clicked, this, &Files::onBackClicked);
 		connect(ui->toolButton_Up, &QToolButton::clicked, this, &Files::onUpClicked);
@@ -84,11 +84,13 @@ namespace fairwindsk::ui::mydata {
 
 		connect(&m_searchingWatcher, &QFutureWatcher<QList<QFileInfo>>::finished, this, &Files::searchFinished);
 		connect(&m_searchingWatcher, &QFutureWatcher<QList<QFileInfo>>::progressValueChanged, this, &Files::searchProgressValueChanged);
-		connect(ui->tableView_Search, &QAbstractItemView::doubleClicked, this, &Files::onSearchViewItemDoubleClicked);
+		connect(ui->tableView_Search, &QTableView::doubleClicked, this, &Files::onSearchViewItemDoubleClicked);
 
 		ui->listView_Files->setAttribute(Qt::WA_AcceptTouchEvents,true);
 		QScroller::grabGesture(ui->listView_Files, QScroller::LeftMouseButtonGesture);
 
+		ui->tableView_Search->setAttribute(Qt::WA_AcceptTouchEvents,true);
+		
 		onHome();
 	}
 
