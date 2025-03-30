@@ -55,12 +55,10 @@ namespace fairwindsk::ui::mydata {
 
 		const auto index = m_fileSystemModel->index(QDir::currentPath());
 
-
-
 		ui->listView_Files->setRootIndex(index);
 
-		connect(ui->listView_Files, &QAbstractItemView::doubleClicked, this, &Files::onFileViewItemDoubleClicked);
-		connect(ui->listView_Files, &QAbstractItemView::clicked, this, &Files::onItemViewClicked);
+		connect(ui->listView_Files, &QListView::doubleClicked, this, &Files::onFileViewItemDoubleClicked);
+		connect(ui->listView_Files, &QListView::clicked, this, &Files::onItemViewClicked);
 
 		connect(ui->toolButton_Back, &QToolButton::clicked, this, &Files::onBackClicked);
 		connect(ui->toolButton_Up, &QToolButton::clicked, this, &Files::onUpClicked);
