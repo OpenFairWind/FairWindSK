@@ -88,6 +88,7 @@ namespace fairwindsk::ui::mydata {
 		connect(&m_searchingWatcher, &QFutureWatcher<QList<QFileInfo>>::progressValueChanged, this, &Files::searchProgressValueChanged);
 		connect(ui->tableView_Search, &QAbstractItemView::doubleClicked, this, &Files::onSearchViewItemDoubleClicked);
 
+		ui->listView_Files->setAttribute(Qt::WA_AcceptTouchEvents,true);
 		QScroller::grabGesture(ui->listView_Files, QScroller::LeftMouseButtonGesture);
 
 		onHome();
