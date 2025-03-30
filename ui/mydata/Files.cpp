@@ -51,7 +51,7 @@ namespace fairwindsk::ui::mydata {
 		ui->listView_Files->adjustSize();
 		ui->listView_Files->setModel(m_fileSystemModel);
 
-		QScroller::grabGesture(ui->listView_Files, QScroller::LeftMouseButtonGesture);
+		//QScroller::grabGesture(ui->listView_Files, QScroller::LeftMouseButtonGesture);
 
 		const auto index = m_fileSystemModel->index(QDir::currentPath());
 
@@ -59,7 +59,7 @@ namespace fairwindsk::ui::mydata {
 
 		ui->listView_Files->setRootIndex(index);
 
-		connect(ui->listView_Files, &QAbstractItemView::activated, this, &Files::onItemViewActivated);
+		connect(ui->listView_Files, &QAbstractItemView::doubleClicked, this, &Files::onFileViewItemDoubleClicked);
 		connect(ui->listView_Files, &QAbstractItemView::clicked, this, &Files::onItemViewClicked);
 
 		connect(ui->toolButton_Back, &QToolButton::clicked, this, &Files::onBackClicked);
@@ -86,7 +86,7 @@ namespace fairwindsk::ui::mydata {
 
 		connect(&m_searchingWatcher, &QFutureWatcher<QList<QFileInfo>>::finished, this, &Files::searchFinished);
 		connect(&m_searchingWatcher, &QFutureWatcher<QList<QFileInfo>>::progressValueChanged, this, &Files::searchProgressValueChanged);
-		connect(ui->tableView_Search, &QTableView::activated, this, &Files::onTableView_ItemActivated);
+		connect(ui->tableView_Search, &QTableView::activated, this, &Files::onSearchViewItemDoubleClicked);
 
 
 		onHome();
@@ -124,7 +124,7 @@ namespace fairwindsk::ui::mydata {
 			ui->group_Main->show();
 		}
 	}
-	void Files::onItemViewActivated(const QModelIndex &index) {
+	void Files::onFileViewItemDoubleClicked(const QModelIndex &index) {
 
 
 		if (const auto path = m_fileSystemModel->filePath(index); selectFileSystemItem(path, Files::CDSource::Navpage))
@@ -135,7 +135,7 @@ namespace fairwindsk::ui::mydata {
 		}
 	}
 
-	void Files::onTableView_ItemActivated(const QModelIndex& index) {
+	void Files::onSearchViewItemDoubleClicked(const QModelIndex& index) {
 
 
 		const auto path = m_fileListModel->getAbsolutePath(index);

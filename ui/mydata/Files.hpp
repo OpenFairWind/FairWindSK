@@ -77,8 +77,8 @@ public:
         void onJsonViewerCloseClicked();
         void onPdfViewerCloseClicked();
 
-        void onItemViewActivated(const QModelIndex &index);
-        void onTableView_ItemActivated(const QModelIndex &index);
+        void onFileViewItemDoubleClicked(const QModelIndex &index);
+        void onSearchViewItemDoubleClicked(const QModelIndex &index);
 
         void onItemViewClicked(const QModelIndex &index) const;
 
