@@ -319,13 +319,18 @@ namespace fairwindsk::ui {
             // Show the window fullscreen
             QTimer::singleShot(0, this, SLOT(showFullScreen()));
         } else {
+            const auto left = fairWindSK->getConfiguration()->getWindowLeft();
+            const auto top = fairWindSK->getConfiguration()->getWindowTop();
             const auto width = fairWindSK->getConfiguration()->getWindowWidth();
             const auto height = fairWindSK->getConfiguration()->getWindowHeight();
-
+            move(left,top);
             resize(width, height);
 
             // Show windowed
             show();
+            setWindowState( (windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
+            raise();  // for MacOS
+            activateWindow(); // for Windows
         }
     }
 /*
