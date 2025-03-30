@@ -59,6 +59,12 @@ namespace fairwindsk::ui::settings {
         // Store the current widget pointer
         m_currentWidget = currenWidget;
 
+        // Create a push button labelling it with Restart
+        m_pushButtonRestart = new QPushButton(tr("Restart"));
+
+        // Add the push button to the button box sith ActionRole
+        ui->buttonBox->addButton(m_pushButtonRestart,QDialogButtonBox::ActionRole);
+
         // Create a push button labelling it with Quit
 	    m_pushButtonQuit = new QPushButton(tr("Quit"));
 
@@ -160,10 +166,16 @@ namespace fairwindsk::ui::settings {
             initTabs(currentIndex);
 
         }
+        // Check if the button is Restart
+        else if ( m_pushButtonRestart == dynamic_cast<QPushButton*>(button)) {
+
+            // Quit the application, returning 1 (restart)
+            QApplication::exit(1);
+        }
         // Check if the button is Quit
         else if ( m_pushButtonQuit == dynamic_cast<QPushButton*>(button)) {
 
-            // Quit the application
+            // Quit the application, returning 0 (quit, all ok)
             QApplication::exit(0);
         }
     }

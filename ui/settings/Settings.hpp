@@ -50,7 +50,8 @@ namespace fairwindsk::ui::settings {
     private:
         Ui::Settings *ui;
 
-	QPushButton *m_pushButtonQuit;
+	    QPushButton *m_pushButtonQuit;
+        QPushButton *m_pushButtonRestart;
 
         Configuration m_configuration;
         Configuration *m_currentConfiguration;
