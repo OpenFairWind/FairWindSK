@@ -175,7 +175,7 @@ sudo cp ../extras/fairwindsk-startup /usr/bin
 ```
 Reboot.
 
-# Compile on Raspberry Windows
+# Compile on Windows
 FairWindSK should work on Windows too, but, at the time it has never been tested.
 
 # Compile on mobile devices (iOS, Android, ...)
