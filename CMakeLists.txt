@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 3.8)
 project(FairWindSK)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -32,7 +32,7 @@ ExternalProject_Add(json
 
 # QtZeroConf
 ExternalProject_Add(QtZeroConf
-        GIT_REPOSITORY https://github.com/jbagg/QtZeroConf.git
+        GIT_REPOSITORY https://github.com/OpenFairWind/QtZeroConf.git
         CMAKE_ARGS -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH} -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION} -DBUILD_SHARED_LIBS=ON
         TIMEOUT 360
 )
