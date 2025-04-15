@@ -12,14 +12,6 @@
             </PerProfileState>
           </value>
         </entry>
-        <entry key="Release">
-          <value>
-            <PerProfileState>
-              <option name="myQmlPath" value="/opt/homebrew/share/qt/qml" />
-              <option name="myQtBinPath" value="/opt/homebrew/bin" />
-            </PerProfileState>
-          </value>
-        </entry>
       </map>
     </option>
   </component>
