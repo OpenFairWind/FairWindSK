@@ -5,6 +5,8 @@
 // You may need to build the project (run Qt uic code generator) to get "ui_Main.h" resolved
 
 #include <QtWidgets/QComboBox>
+#include <QScreen>
+
 #include "Main.hpp"
 #include "ui_Main.h"
 #include "FairWindSK.hpp"
@@ -40,6 +42,15 @@ namespace fairwindsk::ui::settings {
             ui->lineEdit_width->setEnabled(true);
             ui->lineEdit_height->setEnabled(true);
         }
+
+        QScreen *screen = QGuiApplication::primaryScreen();
+        auto  screenGeometry = screen->geometry();
+
+        ui->lineEdit_left->setValidator( new QIntValidator(0, screenGeometry.width(), this) );
+        ui->lineEdit_top->setValidator( new QIntValidator(0, screenGeometry.height(), this) );
+        ui->lineEdit_width->setValidator( new QIntValidator(0, screenGeometry.width(), this) );
+        ui->lineEdit_height->setValidator( new QIntValidator(0, screenGeometry.height(), this) );
+
         ui->lineEdit_left->setText(QString::number(m_settings->getConfiguration()->getWindowLeft()));
         ui->lineEdit_top->setText(QString::number(m_settings->getConfiguration()->getWindowTop()));
         ui->lineEdit_width->setText(QString::number(m_settings->getConfiguration()->getWindowWidth()));
