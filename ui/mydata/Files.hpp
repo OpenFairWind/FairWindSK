@@ -9,14 +9,8 @@
 #include <QFileSystemModel>
 #include <QFutureWatcher>
 #include <QtConcurrent>
-
-#include <ui_ImageViewer.h>
-
 #include "FileInfoListModel.hpp"
-#include "ImageViewer.hpp"
-#include "JsonViewer.hpp"
-#include "PdfViewer.hpp"
-#include "TextViewer.hpp"
+#include "FileViewer.hpp"
 
 
 // The base source code is https://github.com/kitswas/File-Manager/
@@ -72,10 +66,7 @@ public:
 
     public slots:
 
-        void onImageViewerCloseClicked();
-        void onTextViewerCloseClicked();
-        void onJsonViewerCloseClicked();
-        void onPdfViewerCloseClicked();
+        void onFileViewerCloseClicked();
 
         void onFileViewItemDoubleClicked(const QModelIndex &index);
         void onSearchViewItemDoubleClicked(const QModelIndex &index);
@@ -124,10 +115,7 @@ private:
     QStringList m_itemsToMove;
     QDir *m_currentDir;
 
-    ImageViewer *m_imageViewer = nullptr;
-    TextViewer *m_textViewer = nullptr;
-    JsonViewer *m_jsonViewer = nullptr;
-    PdfViewer *m_pdfViewer = nullptr;
+    FileViewer *m_fileViewer = nullptr;
 
     QFutureWatcher<QFileInfo> m_searchingWatcher;
 

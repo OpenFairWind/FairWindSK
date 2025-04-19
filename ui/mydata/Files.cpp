@@ -15,8 +15,6 @@
 #include <QMimeDatabase>
 #include <QScroller>
 #include <QStorageInfo>
-#include <ui_ImageViewer.h>
-#include <ui_TextViewer.h>
 
 #include "FileInfoListModel.hpp"
 
@@ -115,16 +113,7 @@ namespace fairwindsk::ui::mydata {
 		ui->groupBox_ItemInfo->hide();
 	}
 
-	void Files::onImageViewerCloseClicked() {
-		if (m_imageViewer) {
-			m_imageViewer->close();
-			delete m_imageViewer;
-			m_imageViewer = nullptr;
 
-			ui->group_ToolBar->show();
-			ui->group_Main->show();
-		}
-	}
 	void Files::onFileViewItemDoubleClicked(const QModelIndex &index) {
 
 		const auto path = m_fileSystemModel->filePath(index);
@@ -158,6 +147,7 @@ namespace fairwindsk::ui::mydata {
 		const auto type = db.mimeTypeForFile(path);
 		qDebug() << "Mime type:" << type.name();
 
+		/*
 		if (type.name() == "image/png" || type.name() == "image/jpeg" || type.name() == "image/gif" || type.name() == "image/bitmap") {
 			ui->group_ToolBar->hide();
 			ui->group_Main->hide();
@@ -167,8 +157,8 @@ namespace fairwindsk::ui::mydata {
 		} else if (type.name() == "application/json") {
 			ui->group_ToolBar->hide();
 			ui->group_Main->hide();
-			m_jsonViewer = new JsonViewer(path);
-			connect(m_jsonViewer, &JsonViewer::askedToBeClosed, this, &Files::onJsonViewerCloseClicked);
+			m_jsonViewer = new FileViewer(path);
+			connect(m_jsonViewer, &FileViewer::askedToBeClosed, this, &Files::onJsonViewerCloseClicked);
 			ui->group_Content->layout()->addWidget(m_jsonViewer);
 		} else if (type.name() == "application/pdf") {
 			ui->group_ToolBar->hide();
@@ -183,40 +173,28 @@ namespace fairwindsk::ui::mydata {
 			connect(m_textViewer, &TextViewer::askedToBeClosed, this, &Files::onTextViewerCloseClicked);
 			ui->group_Content->layout()->addWidget(m_textViewer);
 		}
+		*/
+		ui->group_ToolBar->hide();
+		ui->group_Main->hide();
+		m_fileViewer = new FileViewer(path);
+		connect(m_fileViewer, &FileViewer::askedToBeClosed, this, &Files::onFileViewerCloseClicked);
+		ui->group_Content->layout()->addWidget(m_fileViewer);
 	}
 
-	void Files::onPdfViewerCloseClicked() {
-		if (m_pdfViewer) {
-			m_pdfViewer->close();
-			delete m_pdfViewer;
-			m_pdfViewer = nullptr;
+
+
+	void Files::onFileViewerCloseClicked() {
+		if (m_fileViewer) {
+			m_fileViewer->close();
+			delete m_fileViewer;
+			m_fileViewer = nullptr;
 
 			ui->group_ToolBar->show();
 			ui->group_Main->show();
 		}
 	}
 
-	void Files::onJsonViewerCloseClicked() {
-		if (m_textViewer) {
-			m_textViewer->close();
-			delete m_textViewer;
-			m_textViewer = nullptr;
 
-			ui->group_ToolBar->show();
-			ui->group_Main->show();
-		}
-	}
-
-	void Files::onTextViewerCloseClicked() {
-		if (m_textViewer) {
-			m_textViewer->close();
-			delete m_textViewer;
-			m_textViewer = nullptr;
-
-			ui->group_ToolBar->show();
-			ui->group_Main->show();
-		}
-	}
 
 	QStringList Files::getSelection() const {
 
@@ -599,14 +577,9 @@ namespace fairwindsk::ui::mydata {
 			m_searchingWatcher.waitForFinished();
 		}
 
-		if (m_textViewer) {
-			delete m_textViewer;
-			m_textViewer = nullptr;
-		}
-
-		if (m_imageViewer) {
-			delete m_imageViewer;
-			m_imageViewer = nullptr;
+		if (m_fileViewer) {
+			delete m_fileViewer;
+			m_fileViewer = nullptr;
 		}
 
 		if (m_fileListModel) {
