@@ -67,7 +67,6 @@ find_package(Qt6 COMPONENTS
         Core
         Gui
         Widgets
-        PdfWidgets
         Concurrent
         Network
         WebSockets
@@ -150,24 +149,9 @@ add_executable(${PROJECT_NAME}
         ui/mydata/Files.ui
         ui/mydata/FileInfoListModel.cpp
         ui/mydata/FileInfoListModel.hpp
-        ui/mydata/ImageViewer.cpp
-        ui/mydata/ImageViewer.hpp
-        ui/mydata/ImageViewer.ui
-        ui/mydata/ImageWidget.cpp
-        ui/mydata/ImageWidget.hpp
-        ui/mydata/TextViewer.cpp
-        ui/mydata/TextViewer.hpp
-        ui/mydata/TextViewer.ui
-        ui/mydata/JsonTreeItem.cpp
-        ui/mydata/JsonTreeItem.hpp
-        ui/mydata/JsonItemModel.cpp
-        ui/mydata/JsonItemModel.hpp
-        ui/mydata/JsonViewer.cpp
-        ui/mydata/JsonViewer.hpp
-        ui/mydata/JsonViewer.ui
-        ui/mydata/PdfViewer.cpp
-        ui/mydata/PdfViewer.hpp
-        ui/mydata/PdfViewer.ui
+        ui/mydata/FileViewer.cpp
+        ui/mydata/FileViewer.hpp
+        ui/mydata/FileViewer.ui
 
 )
 
@@ -180,7 +164,6 @@ target_link_libraries(${PROJECT_NAME}
         Qt::Gui
         Qt::Concurrent
         Qt::Widgets
-        Qt::PdfWidgets
         Qt::Network
         Qt::WebSockets
         Qt::Xml
