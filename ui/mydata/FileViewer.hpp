@@ -10,15 +10,15 @@
 namespace fairwindsk::ui::mydata
 {
     QT_BEGIN_NAMESPACE
-    namespace Ui { class JsonViewer; }
+    namespace Ui { class FileViewer; }
     QT_END_NAMESPACE
 
-    class JsonViewer : public QWidget {
+    class FileViewer : public QWidget {
         Q_OBJECT
 
         public:
-        explicit JsonViewer(const QString& path, QWidget *parent = nullptr);
-        ~JsonViewer() override;
+        explicit FileViewer(const QString& path, QWidget *parent = nullptr);
+        ~FileViewer() override;
 
         signals:
         void askedToBeClosed();
@@ -27,7 +27,7 @@ namespace fairwindsk::ui::mydata
             void onCloseClicked();
 
     private:
-        Ui::JsonViewer *ui;
+        Ui::FileViewer *ui;
     };
 }
 
