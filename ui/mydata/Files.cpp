@@ -70,6 +70,8 @@ namespace fairwindsk::ui::mydata {
 		connect(ui->toolButton_Copy, &QToolButton::clicked, this, &Files::onCopyClicked);
 		connect(ui->toolButton_Paste, &QToolButton::clicked, this, &Files::onPasteClicked);
 
+		connect(ui->toolButton_Open, &QToolButton::clicked, this, &Files::onOpenClicked);
+
 		connect(ui->toolButton_NewFolder, &QToolButton::clicked, this, &Files::onNewFolderClicked);
 
 		connect(ui->toolButton_Delete, &QToolButton::clicked, this, &Files::onDeleteClicked);
@@ -114,6 +116,13 @@ namespace fairwindsk::ui::mydata {
 	}
 
 
+	void Files::onOpenClicked() {
+
+		const auto index = ui->listView_Files->currentIndex();
+		onFileViewItemDoubleClicked(index);
+		qDebug() << "Open successfully";
+
+	}
 	void Files::onFileViewItemDoubleClicked(const QModelIndex &index) {
 
 		const auto path = m_fileSystemModel->filePath(index);

@@ -83,7 +83,7 @@ public:
 
         void onUpClicked();
 
-
+        void onOpenClicked();
 
         void onNewFolderClicked();
 
