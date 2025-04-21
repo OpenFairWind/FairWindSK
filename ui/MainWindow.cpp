@@ -317,7 +317,8 @@ namespace fairwindsk::ui {
         if (fairWindSK->getConfiguration()->getFullScreen()) {
 
             // Set the window to kiosk mode
-            setWindowState(Qt::WindowMinimized);
+            //setWindowState(Qt::WindowMinimized);
+            setWindowState( (windowState() & ~Qt::WindowActive) | Qt::WindowMinimized);
 
             // Show the window full screen
             showFullScreen();
