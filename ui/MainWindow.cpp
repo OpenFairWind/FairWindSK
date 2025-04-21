@@ -215,7 +215,7 @@ namespace fairwindsk::ui {
             m_topBar->setCurrentApp(m_currentApp);
 
             // Set the window size
-            setSize();
+            //setSize();
         }
     }
 
@@ -286,7 +286,7 @@ namespace fairwindsk::ui {
         connect(myDataPage, &mydata::MyData::closed, this, &MainWindow::onMyDataClosed);
 
         // Set the window size
-        setSize();
+        //setSize();
     }
 
 
@@ -306,7 +306,7 @@ namespace fairwindsk::ui {
         connect(settingsPage, &settings::Settings::rejected, this, &MainWindow::onSettingsRejected);
 
         // Set the window size
-        setSize();
+        //setSize();
     }
 
     void MainWindow::setSize() {
@@ -315,9 +315,6 @@ namespace fairwindsk::ui {
         const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
         if (fairWindSK->getConfiguration()->getFullScreen()) {
-
-            // Show the window fullscreen
-            //QTimer::singleShot(0, this, SLOT(showFullScreen()));
 
             // Set the window to kiosk mode
             setWindowState(Qt::WindowMinimized);
