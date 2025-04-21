@@ -16,6 +16,7 @@ namespace fairwindsk::ui::mydata {
 
         connect(ui->toolButton_Close, &QToolButton::clicked, this, &FileViewer::onCloseClicked);
 
+        ui->label_filePath->setText(path);
         ui->webEngineView->load(QUrl("file://"+path));
 
     }
