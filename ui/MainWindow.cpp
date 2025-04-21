@@ -98,8 +98,8 @@ namespace fairwindsk::ui {
     // Hot Key handler
     void MainWindow::onHotkey(){
 
-        // Show the main window fullscreen
-        showFullScreen();
+        // Show the FairWindSK window in foreground
+        setSize();
     }
 
 
@@ -317,7 +317,15 @@ namespace fairwindsk::ui {
         if (fairWindSK->getConfiguration()->getFullScreen()) {
 
             // Show the window fullscreen
-            QTimer::singleShot(0, this, SLOT(showFullScreen()));
+            //QTimer::singleShot(0, this, SLOT(showFullScreen()));
+
+            // Set the window to kiosk mode
+            setWindowState(Qt::WindowMinimized);
+            setWindowState(Qt::WindowNoActivate);
+
+            // Show the window full screen
+            showFullScreen();
+
         } else {
             const auto left = fairWindSK->getConfiguration()->getWindowLeft();
             const auto top = fairWindSK->getConfiguration()->getWindowTop();
