@@ -39,7 +39,7 @@ namespace fairwindsk::ui::mydata {
 
 		m_currentDir = nullptr;
 
-	    m_visitedPaths.clear();
+
 
 	    m_fileSystemModel = new QFileSystemModel();
 
@@ -56,9 +56,8 @@ namespace fairwindsk::ui::mydata {
 		ui->listView_Files->setRootIndex(index);
 
 		connect(ui->listView_Files, &QAbstractItemView::doubleClicked, this, &Files::onFileViewItemDoubleClicked);
-		connect(ui->listView_Files, &QAbstractItemView::clicked, this, &Files::onItemViewClicked);
+		connect(ui->listView_Files, &QAbstractItemView::clicked, this, &Files::onFileViewItemClicked);
 
-		connect(ui->toolButton_Back, &QToolButton::clicked, this, &Files::onBackClicked);
 		connect(ui->toolButton_Up, &QToolButton::clicked, this, &Files::onUpClicked);
 		connect(ui->lineEdit_Path, &QLineEdit::returnPressed, this, &Files::onPathReturnPressed);
 
@@ -86,6 +85,7 @@ namespace fairwindsk::ui::mydata {
 		connect(&m_searchingWatcher, &QFutureWatcher<QList<QFileInfo>>::progressValueChanged, this, &Files::searchProgressValueChanged);
 
 		connect(ui->tableView_Search, &QAbstractItemView::doubleClicked, this, &Files::onSearchViewItemDoubleClicked);
+		connect(ui->tableView_Search, &QAbstractItemView::clicked, this, &Files::onSearchViewItemClicked);
 
 		ui->listView_Files->setAttribute(Qt::WA_AcceptTouchEvents,true);
 		ui->tableView_Search->setAttribute(Qt::WA_AcceptTouchEvents,true);
@@ -105,9 +105,15 @@ namespace fairwindsk::ui::mydata {
 			m_currentDir = nullptr;
 		}
 
-		m_currentDir = new QDir(path);
-		const auto index = m_fileSystemModel->index(path);
+		QDir::setCurrent(path);
 
+
+		m_currentDir = new QDir(path);
+
+		ui->lineEdit_Path->setText(m_currentDir->absolutePath());
+		ui->lineEdit_Path->update();
+
+		const auto index = m_fileSystemModel->index(path);
 
 
 		ui->listView_Files->setRootIndex(index);
@@ -116,38 +122,155 @@ namespace fairwindsk::ui::mydata {
 	}
 
 
+
+	/***********************
+	 * Open the selected
+	 ***********************/
 	void Files::onOpenClicked() {
 
-		const auto index = ui->listView_Files->currentIndex();
-		onFileViewItemDoubleClicked(index);
-		qDebug() << "Open successfully";
+		// Check if the selected file is not empty
+		if (!m_currentFilePath.isEmpty()) {
 
-	}
-	void Files::onFileViewItemDoubleClicked(const QModelIndex &index) {
+			const auto fileInfo = QFileInfo(m_currentFilePath);
 
-		const auto path = m_fileSystemModel->filePath(index);
-
-		if ( selectFileSystemItem(path, Files::CDSource::Navpage))
-			setCurrentDir(path);
-		else {
-
-			viewFile(path);
+			if (fileInfo.isFile()) {
+				// View the selected file
+				viewFile(m_currentFilePath);
+			} else {
+				// Select the current path
+				setCurrentDir(m_currentFilePath);
+			}
 		}
 
-		qDebug() << path;
+	}
+
+	bool Files::setCurrentFilePath(const QString& path) {
+
+		// By default, the file path is a directory
+		bool result = false;
+
+		// Get the file info sand check if it is a file
+		if (const auto fileInfo =QFileInfo(path); fileInfo.isFile()) {
+
+			// Set the group box title
+			ui->groupBox_ItemInfo->setTitle(fileInfo.fileName());
+
+			// Initialize the permission string
+			QString permissions = "";
+
+			// Get the NTFS Flag (needed by Windows)
+			const bool isNTFS = (new QStorageInfo(QDir::current()))->fileSystemType().compare("NTFS") == 0;
+
+			// Check if is NTFS
+			if (isNTFS) {
+				// turn checking on, Windows only
+				qt_ntfs_permission_lookup++;
+			}
+
+			// Check if the file is readable
+			if (fileInfo.isReadable())
+				permissions += tr("Read ");
+
+			// Check if the file is Writable
+			if (fileInfo.isWritable())
+				permissions += tr("Write ");
+
+			// Check if the file is executable
+			if (fileInfo.isExecutable())
+				permissions += tr("Execute ");
+
+			// Check if is NTFS
+			if (isNTFS) {
+				// turn it off again, Windows only
+				qt_ntfs_permission_lookup--;
+			}
+
+			// Set the permission label
+			ui->label_Permissions->setText(permissions.trimmed());
+
+			// Set the file size label
+			ui->label_Size->setText(format_bytes(fileInfo.size()));
+
+			// Define the mime type database
+			const QMimeDatabase mimedb;
+
+			// Set the mime type label
+			ui->label_Type->setText(mimedb.mimeTypeForFile(fileInfo).comment());
+
+			// Show the group box
+			ui->groupBox_ItemInfo->show();
+
+			// Return true
+			result = true;
+		} else {
+
+			// Hide the group box
+			ui->groupBox_ItemInfo->hide();
+
+
+		}
+
+		// Set the current file path
+		m_currentFilePath = path;
+
+		// Return the result
+		return result;
+	}
+
+	void Files::onFileViewItemClicked(const QModelIndex &index)  {
+
+		// Get the selected file, set is as current file path if it is a file
+		if (const auto path = m_fileSystemModel->filePath(index); !setCurrentFilePath(path)) {
+
+			// Hide the file group box
+			ui->groupBox_ItemInfo->hide();
+		}
+	}
+
+	void Files::onFileViewItemDoubleClicked(const QModelIndex &index) {
+
+		// Get the selected file, set is as current file path if it is a file
+		if (const auto path = m_fileSystemModel->filePath(index); setCurrentFilePath(path)) {
+
+			// View the file
+			viewFile(path);
+
+		} else {
+
+			// Select the current path
+			setCurrentDir(path);
+
+		}
+
+	}
+
+	void Files::onSearchViewItemClicked(const QModelIndex& index) {
+
+		// Get the selected file, set is as current file path if it is a file
+		if (const auto path =  m_fileListModel->getAbsolutePath(index); !setCurrentFilePath(path)) {
+
+			// Reset the current file path
+			m_currentFilePath = "";
+
+			// Hide the file group box
+			ui->groupBox_ItemInfo->hide();
+		}
+
+
 	}
 
 	void Files::onSearchViewItemDoubleClicked(const QModelIndex& index) {
 
+		// Get the selected file, set is as current file path if it is a file
+		if (const auto path = m_fileListModel->getAbsolutePath(index); setCurrentFilePath(path)) {
 
-		const auto path = m_fileListModel->getAbsolutePath(index);
-
-		qDebug() << path;
-
-
-		viewFile(path);
+			// View the file
+			viewFile(path);
+		}
 
 	}
+
+
 
 	void Files::viewFile(const QString& path) {
 		qDebug() << "Files::viewFile " << path;
@@ -156,33 +279,6 @@ namespace fairwindsk::ui::mydata {
 		const auto type = db.mimeTypeForFile(path);
 		qDebug() << "Mime type:" << type.name();
 
-		/*
-		if (type.name() == "image/png" || type.name() == "image/jpeg" || type.name() == "image/gif" || type.name() == "image/bitmap") {
-			ui->group_ToolBar->hide();
-			ui->group_Main->hide();
-			m_imageViewer = new ImageViewer(path);
-			connect(m_imageViewer, &ImageViewer::askedToBeClosed, this, &Files::onImageViewerCloseClicked);
-			ui->group_Content->layout()->addWidget(m_imageViewer);
-		} else if (type.name() == "application/json") {
-			ui->group_ToolBar->hide();
-			ui->group_Main->hide();
-			m_jsonViewer = new FileViewer(path);
-			connect(m_jsonViewer, &FileViewer::askedToBeClosed, this, &Files::onJsonViewerCloseClicked);
-			ui->group_Content->layout()->addWidget(m_jsonViewer);
-		} else if (type.name() == "application/pdf") {
-			ui->group_ToolBar->hide();
-			ui->group_Main->hide();
-			m_pdfViewer = new PdfViewer(path);
-			connect(m_pdfViewer, &PdfViewer::askedToBeClosed, this, &Files::onPdfViewerCloseClicked);
-			ui->group_Content->layout()->addWidget(m_pdfViewer);
-		} else if (type.name() == "text/html" || type.name() == "text/plain" || type.name() == "application/xml") {
-			ui->group_ToolBar->hide();
-			ui->group_Main->hide();
-			m_textViewer = new TextViewer(path);
-			connect(m_textViewer, &TextViewer::askedToBeClosed, this, &Files::onTextViewerCloseClicked);
-			ui->group_Content->layout()->addWidget(m_textViewer);
-		}
-		*/
 		ui->group_ToolBar->hide();
 		ui->group_Main->hide();
 		m_fileViewer = new FileViewer(path);
@@ -218,36 +314,7 @@ namespace fairwindsk::ui::mydata {
 		return path_list;
 }
 
-	void Files::onItemViewClicked(const QModelIndex &index) const {
-		if (const QFileInfo fileInfo = m_fileSystemModel->fileInfo(index); fileInfo.isFile())
-		{
-			ui->groupBox_ItemInfo->setTitle(fileInfo.fileName());
 
-			QString permissions = "";
-
-			const bool isNTFS = (new QStorageInfo(QDir::current()))->fileSystemType().compare("NTFS") == 0;
-			if (isNTFS)
-				qt_ntfs_permission_lookup++; // turn checking on, Windows only
-			if (fileInfo.isReadable())
-				permissions += tr("Read ");
-			if (fileInfo.isWritable())
-				permissions += tr("Write ");
-			if (fileInfo.isExecutable())
-				permissions += tr("Execute ");
-			if (isNTFS)
-				qt_ntfs_permission_lookup--; // turn it off again, Windows only
-			ui->label_Permissions->setText(permissions.trimmed());
-			ui->label_Size->setText(format_bytes(fileInfo.size()));
-
-			const QMimeDatabase mimedb;
-			ui->label_Type->setText(mimedb.mimeTypeForFile(fileInfo).comment());
-			ui->groupBox_ItemInfo->show();
-		} else {
-			ui->groupBox_ItemInfo->hide();
-		}
-
-
-	}
 
 	void Files::onFiltersClicked() {
 
@@ -338,29 +405,6 @@ namespace fairwindsk::ui::mydata {
 
 
 
-	bool Files::selectFileSystemItem(const QString &path, const CDSource source) {
-		int result = false;
-
-		if (const auto dir = new QDir(path); dir->exists()) {
-			QDir::setCurrent(path);
-
-			if (source != CDSource::Navbar) {
-				ui->lineEdit_Path->setText(dir->absolutePath());
-				ui->lineEdit_Path->update();
-			}
-
-
-			m_visitedPaths.push_back(path);
-
-			delete dir;
-			result = true;
-		}
-
-		return result;
-	}
-
-
-
 
 
 	void Files::onHome() {
@@ -372,7 +416,7 @@ namespace fairwindsk::ui::mydata {
 	}
 
 	void Files::onPathReturnPressed() {
-		selectFileSystemItem(ui->lineEdit_Path->text(), CDSource::Navbar);
+		setCurrentDir(ui->lineEdit_Path->text());
 	}
 
 
@@ -385,21 +429,10 @@ namespace fairwindsk::ui::mydata {
 		delete alert;
 	}
 
-	void Files::onBackClicked() {
-		if (!m_visitedPaths.isEmpty()) {
-			m_visitedPaths.pop_back(); // Remove current path
-		}
-
-		if (!m_visitedPaths.isEmpty()) {
-			const QString prev_path = m_visitedPaths.back();
-			m_visitedPaths.pop_back(); // Remove previous path
-			selectFileSystemItem(prev_path, CDSource::Navbutton);
-		}
-	}
-
 	void Files::onUpClicked() {
-		if (QDir dir = QDir::current(); dir.cdUp())
-			selectFileSystemItem(dir.absolutePath(), CDSource::Navbutton);
+		if (QDir dir = QDir::current(); dir.cdUp()) {
+			setCurrentDir(dir.absolutePath());
+		}
 	}
 
 	void Files::onNewFolderClicked() {

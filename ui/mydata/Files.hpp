@@ -27,11 +27,6 @@ public:
     explicit Files(QWidget *parent = nullptr);
     ~Files() override;
 
-    enum class CDSource { Navbar, Navpage, Navbutton };
-
-    bool selectFileSystemItem(const QString &path, CDSource source);
-
-
     [[nodiscard]] QStringList getSelection() const;
 
     void setCurrentDir(const QString& new_dir);
@@ -68,18 +63,17 @@ public:
 
         void onFileViewerCloseClicked();
 
+        void onFileViewItemClicked(const QModelIndex &index);
         void onFileViewItemDoubleClicked(const QModelIndex &index);
         void onSearchViewItemDoubleClicked(const QModelIndex &index);
+        void onSearchViewItemClicked(const QModelIndex &index);
 
-        void onItemViewClicked(const QModelIndex &index) const;
 
         void onHome();
 
 
 
         void onPathReturnPressed();
-
-        void onBackClicked();
 
         void onUpClicked();
 
@@ -107,13 +101,14 @@ public:
 private:
     Ui::Files *ui;
 
-    QList<QString> m_visitedPaths;
+    //QList<QString> m_visitedPaths;
     QFileSystemModel *m_fileSystemModel;
     FileInfoListModel *m_fileListModel;
     QList<QFileInfo> m_results;
     QStringList m_itemsToCopy;
     QStringList m_itemsToMove;
     QDir *m_currentDir;
+    QString m_currentFilePath = "";
 
     FileViewer *m_fileViewer = nullptr;
 
@@ -121,7 +116,7 @@ private:
 
     void viewFile(const QString& path);
     void showWarning(const QString &message) const;
-
+    bool setCurrentFilePath(const QString &path);
 
     static void search(QPromise<QFileInfo> &promise, const QString &searchPath, const QString &key, Qt::CaseSensitivity caseSensitivity, QDir::Filters filters);
 
