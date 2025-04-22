@@ -31,11 +31,11 @@
      <item>
       <widget class="QToolButton" name="toolButton_SortDesc">
        <property name="text">
-        <string>...</string>
+        <string/>
        </property>
        <property name="icon">
-        <iconset resource="../../resources.qrc">
-         <normaloff>:/resources/svg/OpenBridge/sort-desc-google.svg</normaloff>:/resources/svg/OpenBridge/sort-desc-google.svg</iconset>
+        <iconset>
+         <normaloff>:/resources/svg/sort-alphabet-ascending-svgrepo-com.svg</normaloff>:/resources/svg/sort-alphabet-ascending-svgrepo-com.svg</iconset>
        </property>
        <property name="iconSize">
         <size>
@@ -48,11 +48,11 @@
      <item>
       <widget class="QToolButton" name="toolButton_SortAsc">
        <property name="text">
-        <string>...</string>
+        <string/>
        </property>
        <property name="icon">
-        <iconset resource="../../resources.qrc">
-         <normaloff>:/resources/svg/OpenBridge/sort-asc-google.svg</normaloff>:/resources/svg/OpenBridge/sort-asc-google.svg</iconset>
+        <iconset>
+         <normaloff>:/resources/svg/descending-alphabet-sort-svgrepo-com.svg</normaloff>:/resources/svg/descending-alphabet-sort-svgrepo-com.svg</iconset>
        </property>
        <property name="iconSize">
         <size>
@@ -68,10 +68,10 @@
      <item>
       <widget class="QToolButton" name="toolButton_Search">
        <property name="text">
-        <string>...</string>
+        <string/>
        </property>
        <property name="icon">
-        <iconset resource="../../resources.qrc">
+        <iconset>
          <normaloff>:/resources/svg/OpenBridge/search.svg</normaloff>:/resources/svg/OpenBridge/search.svg</iconset>
        </property>
        <property name="iconSize">
@@ -98,10 +98,10 @@
      <item>
       <widget class="QToolButton" name="toolButton_Add">
        <property name="text">
-        <string>...</string>
+        <string/>
        </property>
        <property name="icon">
-        <iconset resource="../../resources.qrc">
+        <iconset>
          <normaloff>:/resources/svg/OpenBridge/widget-add-google.svg</normaloff>:/resources/svg/OpenBridge/widget-add-google.svg</iconset>
        </property>
        <property name="iconSize">
@@ -115,11 +115,11 @@
      <item>
       <widget class="QToolButton" name="toolButton_Import">
        <property name="text">
-        <string>...</string>
+        <string/>
        </property>
        <property name="icon">
-        <iconset resource="../../resources.qrc">
-         <normaloff>:/resources/svg/OpenBridge/file-import-google.svg</normaloff>:/resources/svg/OpenBridge/file-import-google.svg</iconset>
+        <iconset>
+         <normaloff>:/resources/svg/import-content-svgrepo-com.svg</normaloff>:/resources/svg/import-content-svgrepo-com.svg</iconset>
        </property>
        <property name="iconSize">
         <size>
@@ -132,11 +132,11 @@
      <item>
       <widget class="QToolButton" name="toolButton_Export">
        <property name="text">
-        <string>...</string>
+        <string/>
        </property>
        <property name="icon">
-        <iconset resource="../../resources.qrc">
-         <normaloff>:/resources/svg/OpenBridge/file-export-google.svg</normaloff>:/resources/svg/OpenBridge/file-export-google.svg</iconset>
+        <iconset>
+         <normaloff>:/resources/svg/export-content-svgrepo-com</normaloff>:/resources/svg/export-content-svgrepo-com</iconset>
        </property>
        <property name="iconSize">
         <size>
@@ -149,10 +149,10 @@
      <item>
       <widget class="QToolButton" name="toolButton_DeleteAll">
        <property name="text">
-        <string>...</string>
+        <string/>
        </property>
        <property name="icon">
-        <iconset resource="../../resources.qrc">
+        <iconset>
          <normaloff>:/resources/svg/OpenBridge/delete-google.svg</normaloff>:/resources/svg/OpenBridge/delete-google.svg</iconset>
        </property>
        <property name="iconSize">
