@@ -314,11 +314,12 @@ namespace fairwindsk::ui {
         // Get the FairWind singleton
         const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
-        if (fairWindSK->getConfiguration()->getFullScreen()) {
+        if (fairWindSK->getConfiguration()->getMode()==1) {
 
-            // Set the window to kiosk mode
-            //setWindowState(Qt::WindowMinimized);
-            setWindowState( (windowState() & ~Qt::WindowActive) | Qt::WindowMinimized);
+            // Set the window maximized
+            showMaximized();
+
+        } else if (fairWindSK->getConfiguration()->getMode()==2) {
 
             // Show the window full screen
             showFullScreen();

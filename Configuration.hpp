@@ -45,8 +45,8 @@ namespace fairwindsk {
         void setVirtualKeyboard(bool value);
         bool getVirtualKeyboard();
 
-        void setFullScreen(bool value);
-        bool getFullScreen();
+        void setMode(int value);
+        int getMode();
         void setWindowWidth(int value);
         int getWindowWidth();
         void setWindowHeight(int value);

@@ -158,18 +158,18 @@ namespace fairwindsk {
         return result;
     }
 
-    void Configuration::setFullScreen(bool value) {
+    void Configuration::setMode(int value) {
         if (m_jsonData.contains("main")) {
-            m_jsonData["main"]["fullScreen"] = value;
+            m_jsonData["main"]["mode"] = value;
         }
     }
 
-    bool Configuration::getFullScreen() {
-        bool result = false;
+    int Configuration::getMode() {
+        int result = 0;
 
         if (m_jsonData.contains("main")) {
-            if (auto mainJsonObject = m_jsonData["main"]; mainJsonObject.contains("fullScreen") & mainJsonObject["fullScreen"].is_boolean()) {
-                result = mainJsonObject["fullScreen"].get<bool>();
+            if (auto mainJsonObject = m_jsonData["main"]; mainJsonObject.contains("mode") & mainJsonObject["mode"].is_number_integer()) {
+                result = mainJsonObject["mode"].get<int>();
             }
         }
 

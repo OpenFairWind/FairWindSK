@@ -2,7 +2,7 @@
     "main": {
         "virtualKeyboard": false,
         "autopilot": "",
-        "fullScreen": true,
+        "mode": 0,
         "windowWidth": 1024,
         "windowHeight": 600,
         "windowTop": 20,

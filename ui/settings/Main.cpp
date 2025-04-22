@@ -20,6 +20,11 @@ namespace fairwindsk::ui::settings {
 
         ui->setupUi(this);
 
+        ui->comboBox_windowMode->addItem(tr("Windowed"));
+        ui->comboBox_windowMode->addItem(tr("Maximized"));
+        ui->comboBox_windowMode->addItem(tr("Full Screen"));
+        ui->comboBox_windowMode->setCurrentIndex(m_settings->getConfiguration()->getMode());
+
         if (m_settings->getConfiguration()->getVirtualKeyboard()) {
             ui->checkBox_virtualkeboard->setCheckState(Qt::Checked);
         } else {
@@ -29,14 +34,14 @@ namespace fairwindsk::ui::settings {
         connect(ui->checkBox_virtualkeboard,&QCheckBox::stateChanged,this, &Main::onVirtualKeyboardStateChanged);
 
 
-        if (m_settings->getConfiguration()->getFullScreen()) {
-            ui->checkBox_fullscreen->setCheckState(Qt::Checked);
+        if (m_settings->getConfiguration()->getMode()) {
+
             ui->lineEdit_left->setEnabled(false);
             ui->lineEdit_top->setEnabled(false);
             ui->lineEdit_width->setEnabled(false);
             ui->lineEdit_height->setEnabled(false);
         } else {
-            ui->checkBox_fullscreen->setCheckState(Qt::Unchecked);
+
             ui->lineEdit_left->setEnabled(true);
             ui->lineEdit_top->setEnabled(true);
             ui->lineEdit_width->setEnabled(true);
@@ -56,7 +61,7 @@ namespace fairwindsk::ui::settings {
         ui->lineEdit_width->setText(QString::number(m_settings->getConfiguration()->getWindowWidth()));
         ui->lineEdit_height->setText(QString::number(m_settings->getConfiguration()->getWindowHeight()));
 
-        connect(ui->checkBox_fullscreen,&QCheckBox::stateChanged,this, &Main::onFullScreenStateChanged);
+        connect(ui->comboBox_windowMode,&QComboBox::currentIndexChanged,this, &Main::onWindowModeChanged);
 
         connect(ui->lineEdit_left,&QLineEdit::textChanged,this, &Main::onWindowLeftTextChanged);
         connect(ui->lineEdit_top,&QLineEdit::textChanged,this, &Main::onWindowTopTextChanged);
@@ -124,15 +129,15 @@ namespace fairwindsk::ui::settings {
         m_settings->getConfiguration()->setVirtualKeyboard(value);
     }
 
-    void Main::onFullScreenStateChanged(const int state) {
+    void Main::onWindowModeChanged(const int index) {
 
         auto value = false;
 
-        if (state == Qt::Checked) {
+        if (index == 0) {
             value = true;
         }
 
-        m_settings->getConfiguration()->setFullScreen(value);
+        m_settings->getConfiguration()->setMode(index);
 
         ui->lineEdit_left->setEnabled(!value);
         ui->lineEdit_top->setEnabled(!value);

@@ -23,7 +23,7 @@ namespace fairwindsk::ui::settings {
 
     private slots:
         void onCurrentIndexChanged(int index);
-        void onFullScreenStateChanged(int state);
+        void onWindowModeChanged(int index);
         void onWindowWidthTextChanged();
         void onWindowHeightTextChanged();
         void onWindowLeftTextChanged();
