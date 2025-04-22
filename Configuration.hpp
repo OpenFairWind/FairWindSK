@@ -45,8 +45,8 @@ namespace fairwindsk {
         void setVirtualKeyboard(bool value);
         bool getVirtualKeyboard();
 
-        void setMode(int value);
-        int getMode();
+        void setWindowMode(QString value);
+        QString getWindowMode();
         void setWindowWidth(int value);
         int getWindowWidth();
         void setWindowHeight(int value);

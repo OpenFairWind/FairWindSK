@@ -2,7 +2,7 @@
     "main": {
         "virtualKeyboard": false,
         "autopilot": "",
-        "mode": 0,
+        "windowMode": "windowed",
         "windowWidth": 1024,
         "windowHeight": 600,
         "windowTop": 20,

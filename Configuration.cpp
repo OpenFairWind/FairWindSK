@@ -158,18 +158,18 @@ namespace fairwindsk {
         return result;
     }
 
-    void Configuration::setMode(int value) {
+    void Configuration::setWindowMode(QString value) {
         if (m_jsonData.contains("main")) {
-            m_jsonData["main"]["mode"] = value;
+            m_jsonData["main"]["windowMode"] = value.toStdString();
         }
     }
 
-    int Configuration::getMode() {
-        int result = 0;
+    QString Configuration::getWindowMode() {
+        QString result = "windowed";
 
         if (m_jsonData.contains("main")) {
-            if (auto mainJsonObject = m_jsonData["main"]; mainJsonObject.contains("mode") & mainJsonObject["mode"].is_number_integer()) {
-                result = mainJsonObject["mode"].get<int>();
+            if (auto mainJsonObject = m_jsonData["main"]; mainJsonObject.contains("windowMode") & mainJsonObject["windowMode"].is_string()) {
+                result = QString::fromStdString(mainJsonObject["windowMode"].get<std::string>());
             }
         }
 
