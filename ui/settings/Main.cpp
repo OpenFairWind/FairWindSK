@@ -21,9 +21,24 @@ namespace fairwindsk::ui::settings {
         ui->setupUi(this);
 
         ui->comboBox_windowMode->addItem(tr("Windowed"));
+        ui->comboBox_windowMode->addItem(tr("Centered"));
         ui->comboBox_windowMode->addItem(tr("Maximized"));
         ui->comboBox_windowMode->addItem(tr("Full Screen"));
-        ui->comboBox_windowMode->setCurrentIndex(m_settings->getConfiguration()->getMode());
+
+        int windowModeIndex = 0;
+        const auto windowMode = m_settings->getConfiguration()->getWindowMode();
+
+        if (windowMode == "windowed") {
+            windowModeIndex=0;
+        } else if (windowMode == "centered") {
+            windowModeIndex=1;
+        } else if (windowMode == "maximized") {
+            windowModeIndex=2;
+        } else if (windowMode == "fullscreen") {
+            windowModeIndex=3;
+        }
+
+        ui->comboBox_windowMode->setCurrentIndex(windowModeIndex);
 
         if (m_settings->getConfiguration()->getVirtualKeyboard()) {
             ui->checkBox_virtualkeboard->setCheckState(Qt::Checked);
@@ -34,13 +49,19 @@ namespace fairwindsk::ui::settings {
         connect(ui->checkBox_virtualkeboard,&QCheckBox::stateChanged,this, &Main::onVirtualKeyboardStateChanged);
 
 
-        if (m_settings->getConfiguration()->getMode()) {
+        if (windowMode=="centered") {
+
+            ui->lineEdit_left->setEnabled(false);
+            ui->lineEdit_top->setEnabled(false);
+            ui->lineEdit_width->setEnabled(true);
+            ui->lineEdit_height->setEnabled(true);
+        } else if (windowMode=="maximized" || windowMode=="fullscreen") {
 
             ui->lineEdit_left->setEnabled(false);
             ui->lineEdit_top->setEnabled(false);
             ui->lineEdit_width->setEnabled(false);
             ui->lineEdit_height->setEnabled(false);
-        } else {
+        }else {
 
             ui->lineEdit_left->setEnabled(true);
             ui->lineEdit_top->setEnabled(true);
@@ -131,18 +152,39 @@ namespace fairwindsk::ui::settings {
 
     void Main::onWindowModeChanged(const int index) {
 
-        auto value = false;
-
-        if (index == 0) {
-            value = true;
+        QString windowMode="";
+        switch (index) {
+            case 1:
+                windowMode = "centered";
+                ui->lineEdit_left->setEnabled(false);
+                ui->lineEdit_top->setEnabled(false);
+                ui->lineEdit_width->setEnabled(true);
+                ui->lineEdit_height->setEnabled(true);
+            break;
+            case 2:
+                windowMode = "maximized";
+                ui->lineEdit_left->setEnabled(false);
+                ui->lineEdit_top->setEnabled(false);
+                ui->lineEdit_width->setEnabled(false);
+                ui->lineEdit_height->setEnabled(false);
+                break;
+            case 3:
+                windowMode = "fullscreen";
+                ui->lineEdit_left->setEnabled(false);
+                ui->lineEdit_top->setEnabled(false);
+                ui->lineEdit_width->setEnabled(false);
+                ui->lineEdit_height->setEnabled(false);
+                break;
+            default:
+                windowMode = "windowed";
+                ui->lineEdit_left->setEnabled(true);
+                ui->lineEdit_top->setEnabled(true);
+                ui->lineEdit_width->setEnabled(true);
+                ui->lineEdit_height->setEnabled(true);
         }
+        m_settings->getConfiguration()->setWindowMode(windowMode);
 
-        m_settings->getConfiguration()->setMode(index);
 
-        ui->lineEdit_left->setEnabled(!value);
-        ui->lineEdit_top->setEnabled(!value);
-        ui->lineEdit_width->setEnabled(!value);
-        ui->lineEdit_height->setEnabled(!value);
     }
 
     void Main::onWindowLeftTextChanged() {
