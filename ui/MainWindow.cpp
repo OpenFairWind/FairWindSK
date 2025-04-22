@@ -314,12 +314,32 @@ namespace fairwindsk::ui {
         // Get the FairWind singleton
         const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
-        if (fairWindSK->getConfiguration()->getMode()==1) {
+        if (fairWindSK->getConfiguration()->getWindowMode()=="centered") {
+
+            const auto width = fairWindSK->getConfiguration()->getWindowWidth();
+            const auto height = fairWindSK->getConfiguration()->getWindowHeight();
+
+            const QScreen *screen = QGuiApplication::primaryScreen();
+            const auto  screenGeometry = screen->geometry();
+
+            const auto left = (screenGeometry.width() - width) / 2;
+            const auto top = (screenGeometry.height() - height) / 2;
+
+            move(left,top);
+            resize(width, height);
+
+            // Show windowed
+            show();
+            setWindowState( (windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
+            raise();  // for MacOS
+            activateWindow(); // for Windows
+
+        } else if (fairWindSK->getConfiguration()->getWindowMode()=="maximized") {
 
             // Set the window maximized
             showMaximized();
 
-        } else if (fairWindSK->getConfiguration()->getMode()==2) {
+        } else if (fairWindSK->getConfiguration()->getWindowMode()=="fullscreen") {
 
             // Show the window full screen
             showFullScreen();
