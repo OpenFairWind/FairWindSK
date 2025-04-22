@@ -86,11 +86,14 @@
         <file>resources/svg/OpenBridge/route-export-iec.svg</file>
         <file>resources/svg/OpenBridge/route-import-iec.svg</file>
         <file>resources/svg/OpenBridge/search.svg</file>
-        <file>resources/svg/OpenBridge/sort-asc-google.svg</file>
-        <file>resources/svg/OpenBridge/sort-desc-google.svg</file>
+        <file>resources/svg/OpenBridge/sort-google.svg</file>
         <file>resources/svg/OpenBridge/file-export-google.svg</file>
-        <file>resources/svg/OpenBridge/file-import-google.svg</file>
         <file>resources/svg/OpenBridge/navigation-route.svg</file>
+
+        <file>resources/svg/sort-alphabet-ascending-svgrepo-com.svg</file>
+        <file>resources/svg/descending-alphabet-sort-svgrepo-com.svg</file>
+        <file>resources/svg/export-content-svgrepo-com.svg</file>
+        <file>resources/svg/import-content-svgrepo-com.svg</file>
 
         <file>resources/svg/case-sensitive-svgrepo-com.svg</file>
         <file>resources/svg/gui-view-hide-svgrepo-com.svg</file>
