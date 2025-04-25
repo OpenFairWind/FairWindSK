@@ -141,9 +141,6 @@ add_executable(${PROJECT_NAME}
         ui/mydata/Waypoints.cpp
         ui/mydata/Waypoints.hpp
         ui/mydata/Waypoints.ui
-        ui/mydata/Waypoint.cpp
-        ui/mydata/Waypoint.hpp
-        ui/mydata/Waypoint.ui
         ui/mydata/Files.cpp
         ui/mydata/Files.hpp
         ui/mydata/Files.ui
@@ -152,6 +149,8 @@ add_executable(${PROJECT_NAME}
         ui/mydata/FileViewer.cpp
         ui/mydata/FileViewer.hpp
         ui/mydata/FileViewer.ui
+        ui/mydata/WaypointsModel.cpp
+        ui/mydata/WaypointsModel.hpp
 
 )
 
