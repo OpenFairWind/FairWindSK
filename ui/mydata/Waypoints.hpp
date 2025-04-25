@@ -7,6 +7,7 @@
 
 #include <QWidget>
 #include "MyData.hpp"
+#include "WaypointsModel.hpp"
 
 namespace fairwindsk::ui::mydata {
 QT_BEGIN_NAMESPACE
@@ -24,6 +25,8 @@ private:
     Ui::Waypoints *ui;
 
     MyData *m_myData;
+
+    WaypointsModel *m_waypointsModel;
 };
 } // fairwindsk::ui::mydata
 
