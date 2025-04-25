@@ -29,40 +29,6 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_Tools">
      <item>
-      <widget class="QToolButton" name="toolButton_SortDesc">
-       <property name="text">
-        <string/>
-       </property>
-       <property name="icon">
-        <iconset>
-         <normaloff>:/resources/svg/sort-alphabet-ascending-svgrepo-com.svg</normaloff>:/resources/svg/sort-alphabet-ascending-svgrepo-com.svg</iconset>
-       </property>
-       <property name="iconSize">
-        <size>
-         <width>32</width>
-         <height>32</height>
-        </size>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QToolButton" name="toolButton_SortAsc">
-       <property name="text">
-        <string/>
-       </property>
-       <property name="icon">
-        <iconset>
-         <normaloff>:/resources/svg/descending-alphabet-sort-svgrepo-com.svg</normaloff>:/resources/svg/descending-alphabet-sort-svgrepo-com.svg</iconset>
-       </property>
-       <property name="iconSize">
-        <size>
-         <width>32</width>
-         <height>32</height>
-        </size>
-       </property>
-      </widget>
-     </item>
-     <item>
       <widget class="QLineEdit" name="lineEdit_Search"/>
      </item>
      <item>
@@ -71,7 +37,7 @@
         <string/>
        </property>
        <property name="icon">
-        <iconset>
+        <iconset resource="../../resources.qrc">
          <normaloff>:/resources/svg/OpenBridge/search.svg</normaloff>:/resources/svg/OpenBridge/search.svg</iconset>
        </property>
        <property name="iconSize">
@@ -101,7 +67,7 @@
         <string/>
        </property>
        <property name="icon">
-        <iconset>
+        <iconset resource="../../resources.qrc">
          <normaloff>:/resources/svg/OpenBridge/widget-add-google.svg</normaloff>:/resources/svg/OpenBridge/widget-add-google.svg</iconset>
        </property>
        <property name="iconSize">
@@ -118,7 +84,7 @@
         <string/>
        </property>
        <property name="icon">
-        <iconset>
+        <iconset resource="../../resources.qrc">
          <normaloff>:/resources/svg/import-content-svgrepo-com.svg</normaloff>:/resources/svg/import-content-svgrepo-com.svg</iconset>
        </property>
        <property name="iconSize">
@@ -152,7 +118,7 @@
         <string/>
        </property>
        <property name="icon">
-        <iconset>
+        <iconset resource="../../resources.qrc">
          <normaloff>:/resources/svg/OpenBridge/delete-google.svg</normaloff>:/resources/svg/OpenBridge/delete-google.svg</iconset>
        </property>
        <property name="iconSize">
@@ -166,57 +132,29 @@
     </layout>
    </item>
    <item>
-    <widget class="QScrollArea" name="scrollArea_Waypoints">
+    <widget class="QTableView" name="tableView_Waypoints">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
-     <property name="horizontalScrollBarPolicy">
-      <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
+     <property name="frameShape">
+      <enum>QFrame::Shape::Panel</enum>
      </property>
-     <property name="widgetResizable">
+     <property name="sizeAdjustPolicy">
+      <enum>QAbstractScrollArea::SizeAdjustPolicy::AdjustIgnored</enum>
+     </property>
+     <property name="selectionMode">
+      <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
+     </property>
+     <property name="selectionBehavior">
+      <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+     </property>
+     <property name="sortingEnabled">
       <bool>true</bool>
      </property>
-     <widget class="QWidget" name="scrollAreaWidgetContents">
-      <property name="geometry">
-       <rect>
-        <x>0</x>
-        <y>0</y>
-        <width>398</width>
-        <height>116</height>
-       </rect>
-      </property>
-      <layout class="QGridLayout" name="gridLayout_Waypoint_Items">
-       <property name="leftMargin">
-        <number>0</number>
-       </property>
-       <property name="topMargin">
-        <number>0</number>
-       </property>
-       <property name="rightMargin">
-        <number>0</number>
-       </property>
-       <property name="bottomMargin">
-        <number>0</number>
-       </property>
-      </layout>
-     </widget>
     </widget>
-   </item>
-   <item>
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Orientation::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
    </item>
   </layout>
  </widget>
