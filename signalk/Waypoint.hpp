@@ -32,6 +32,9 @@ namespace fairwindsk::signalk {
 
         QGeoCoordinate getCoordinates();
 
+        void setName(const QString &name);
+        void setDescription(const QString &description);
+
     };
 }
 

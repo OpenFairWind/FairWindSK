@@ -89,6 +89,14 @@ namespace fairwindsk::signalk {
         return result;
     }
 
+    void Waypoint::setName(const QString& name) {
+        this->operator[]("name") = name;
+
+    }
+    void Waypoint::setDescription(const QString& description) {
+        this->operator[]("description") = description;
+    }
+
     Waypoint::Waypoint(const QJsonObject &jsonObject) : QJsonObject(jsonObject) {
     };
 }
