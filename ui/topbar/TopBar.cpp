@@ -317,21 +317,6 @@ namespace fairwindsk::ui::topbar {
     }
 
 /*
- * ~TopBar
- * TopBar's destructor
- */
-    TopBar::~TopBar() {
-
-        if (m_timer) {
-            m_timer->stop();
-            delete m_timer;
-            m_timer = nullptr;
-        }
-
-        delete ui;
-    }
-
-/*
  * updateNavigationPosition
  * Method called in accordance to signalk to update the navigation position
  */
@@ -790,4 +775,18 @@ namespace fairwindsk::ui::topbar {
         }
     }
 
+/*
+ * ~TopBar
+ * TopBar's destructor
+ */
+    TopBar::~TopBar() {
+
+        if (m_timer) {
+            m_timer->stop();
+            delete m_timer;
+            m_timer = nullptr;
+        }
+
+        delete ui;
+    }
 }
