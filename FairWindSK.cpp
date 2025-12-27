@@ -235,7 +235,7 @@ namespace fairwindsk {
         bool result = false;
 
         // Get the configuration root JSON object
-        auto configurationJsonObject = m_configuration.getRoot();
+        auto &configurationJsonObject = m_configuration.getRoot();
 
         // Check if apps is not defined in configuration
         if (!configurationJsonObject.contains("apps")) {
@@ -643,4 +643,3 @@ namespace fairwindsk {
     }
 
 }
-

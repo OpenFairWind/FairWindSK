@@ -84,7 +84,7 @@ namespace fairwindsk {
 
         if (m_jsonData.contains("connection") && m_jsonData["connection"].is_object()) {
             auto connectionJsonObject = m_jsonData["connection"];
-            if (connectionJsonObject.contains("server") & connectionJsonObject["server"].is_string()) {
+            if (connectionJsonObject.contains("server") && connectionJsonObject["server"].is_string()) {
                 signalKServerUrl = QString::fromStdString(connectionJsonObject["server"].get<std::string>());
             }
         }
@@ -150,7 +150,7 @@ namespace fairwindsk {
         bool result = false;
 
         if (m_jsonData.contains("main")) {
-            if (auto mainJsonObject = m_jsonData["main"]; mainJsonObject.contains("virtualKeyboard") & mainJsonObject["virtualKeyboard"].is_boolean()) {
+            if (auto mainJsonObject = m_jsonData["main"]; mainJsonObject.contains("virtualKeyboard") && mainJsonObject["virtualKeyboard"].is_boolean()) {
                 result = mainJsonObject["virtualKeyboard"].get<bool>();
             }
         }
@@ -168,7 +168,7 @@ namespace fairwindsk {
         QString result = "windowed";
 
         if (m_jsonData.contains("main")) {
-            if (auto mainJsonObject = m_jsonData["main"]; mainJsonObject.contains("windowMode") & mainJsonObject["windowMode"].is_string()) {
+            if (auto mainJsonObject = m_jsonData["main"]; mainJsonObject.contains("windowMode") && mainJsonObject["windowMode"].is_string()) {
                 result = QString::fromStdString(mainJsonObject["windowMode"].get<std::string>());
             }
         }
@@ -180,7 +180,7 @@ namespace fairwindsk {
         int result = 0;
 
         if (m_jsonData.contains("main")) {
-            if (auto mainJsonObject = m_jsonData["main"]; mainJsonObject.contains("windowWidth") & mainJsonObject["windowWidth"].is_number_integer()) {
+            if (auto mainJsonObject = m_jsonData["main"]; mainJsonObject.contains("windowWidth") && mainJsonObject["windowWidth"].is_number_integer()) {
                 result = mainJsonObject["windowWidth"].get<int>();
             }
         }
@@ -198,7 +198,7 @@ namespace fairwindsk {
         int result = 0;
 
         if (m_jsonData.contains("main")) {
-            if (auto mainJsonObject = m_jsonData["main"]; mainJsonObject.contains("windowHeight") & mainJsonObject["windowHeight"].is_number_integer()) {
+            if (auto mainJsonObject = m_jsonData["main"]; mainJsonObject.contains("windowHeight") && mainJsonObject["windowHeight"].is_number_integer()) {
                 result = mainJsonObject["windowHeight"].get<int>();
             }
         }
@@ -216,7 +216,7 @@ namespace fairwindsk {
         int result = 0;
 
         if (m_jsonData.contains("main")) {
-            if (auto mainJsonObject = m_jsonData["main"]; mainJsonObject.contains("windowLeft") & mainJsonObject["windowLeft"].is_number_integer()) {
+            if (auto mainJsonObject = m_jsonData["main"]; mainJsonObject.contains("windowLeft") && mainJsonObject["windowLeft"].is_number_integer()) {
                 result = mainJsonObject["windowLeft"].get<int>();
             }
         }
@@ -234,7 +234,7 @@ namespace fairwindsk {
         int result = 0;
 
         if (m_jsonData.contains("main")) {
-            if (auto mainJsonObject = m_jsonData["main"]; mainJsonObject.contains("windowTop") & mainJsonObject["windowTop"].is_number_integer()) {
+            if (auto mainJsonObject = m_jsonData["main"]; mainJsonObject.contains("windowTop") && mainJsonObject["windowTop"].is_number_integer()) {
                 result = mainJsonObject["windowTop"].get<int>();
             }
         }
@@ -263,7 +263,7 @@ namespace fairwindsk {
 
         if (m_jsonData.contains("main")) {
             auto mainJsonObject = m_jsonData["main"];
-            if (mainJsonObject.contains("autopilot") & mainJsonObject["autopilot"].is_string()) {
+            if (mainJsonObject.contains("autopilot") && mainJsonObject["autopilot"].is_string()) {
                 result = QString::fromStdString(mainJsonObject["autopilot"].get<std::string>());
             }
         }
@@ -277,7 +277,7 @@ namespace fairwindsk {
         if (m_jsonData.contains("units")) {
             auto unitsJsonObject = m_jsonData["units"];
             auto unitsKey = units.toStdString();
-            if (unitsJsonObject.contains(unitsKey) & unitsJsonObject[unitsKey].is_string()) {
+            if (unitsJsonObject.contains(unitsKey) && unitsJsonObject[unitsKey].is_string()) {
                 result = unitsJsonObject[unitsKey].get<std::string>();
             }
         }

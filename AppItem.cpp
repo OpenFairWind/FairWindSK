@@ -23,17 +23,6 @@ namespace fairwindsk {
 /*
  * Public Constructor
  */
-    AppItem::AppItem(const fairwindsk::AppItem &app) {
-
-        // Retrieve the app's infos from the provided App instance
-        m_jsonApp = app.m_jsonApp;
-
-
-    }
-
-/*
- * Public Constructor
- */
     AppItem::AppItem(nlohmann::json jsonApp) {
 
         // Get the app's infos and store them for future usage
