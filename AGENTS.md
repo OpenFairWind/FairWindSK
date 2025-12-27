@@ -7,6 +7,7 @@ These instructions apply to the entire repository.
 - Keep header and source files in sync; prefer small, focused changes that respect current patterns.
 - Avoid introducing new third-party dependencies unless absolutely necessary.
 - Do not wrap imports or includes in `try/catch`.
+- Line-by-line pedagogical comments.
 
 ## Build & testing
 - Use the CMake build (`cmake -S . -B build` then `cmake --build build`) when you need to compile locally; Qt6 and QtWebEngine are required.
