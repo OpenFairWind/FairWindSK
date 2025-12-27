@@ -15,6 +15,14 @@ It runs on Mac, Linux, and Raspberry Pi OS. It probably works on Windows, too, b
 I’d like to port it under Android and iOS QT Apps with the same source approach, but for now, I’m focused on
 stabilizing it on the already supported platforms.
 
+## Documentation
+
+* [Getting started](docs/getting_started.md)
+* [Architecture overview](docs/architecture.md)
+* [Configuration guide](docs/configuring.md)
+* [GUI tour](docs/gui.md)
+* [Typical use cases](docs/use_case.md)
+
 ![The FairWindSK desktop](images/fairwindsk-desktop.png)
 
 ### Stable components ###
