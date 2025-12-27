@@ -789,7 +789,7 @@ namespace fairwindsk::signalk {
     }
 
     QUrl Client::getEndpointByProtocol(const QString &protocol, const QString& version) {
-        if (m_Server.contains("endpoints") & m_Server["endpoints"].isObject()) {
+        if (m_Server.contains("endpoints") && m_Server["endpoints"].isObject()) {
             auto jsonObjectEndponts = m_Server["endpoints"].toObject();
             if (jsonObjectEndponts.contains(version) && jsonObjectEndponts[version].isObject()) {
                 auto jsonObjectVersion = jsonObjectEndponts[version].toObject();

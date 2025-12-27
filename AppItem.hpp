@@ -16,7 +16,7 @@ namespace fairwindsk::ui::web { class Web; }
 
 namespace fairwindsk {
 
-    class AppItem: QObject {
+    class AppItem: public QObject {
         Q_OBJECT
 
 
@@ -29,7 +29,8 @@ namespace fairwindsk {
             // Destructor
             ~AppItem() override;
 
-            AppItem(const AppItem &app);
+            AppItem(const AppItem &app) = delete;
+            AppItem &operator=(const AppItem &app) = delete;
 
             void update(const nlohmann::json&  jsonApp);
 
