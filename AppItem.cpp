@@ -6,6 +6,8 @@
 #include <utility>
 #include <QNetworkReply>
 #include <QEventLoop>
+#include <QNetworkRequest>
+#include <QUrl>
 #include <QtCore/qjsonarray.h>
 #include <QPixmap>
 #include <iostream>
@@ -118,31 +120,59 @@ namespace fairwindsk {
      * Returns the app's icon
      */
     QPixmap AppItem::getIcon() {
+        // Use a default pixmap so the UI never shows an empty placeholder.
         QPixmap pixmap = QPixmap::fromImage(QImage(":/resources/images/icons/webapp-256x256.png"));
-        auto appIcon = getAppIcon();
+        // Read the optional app icon path from the application metadata.
+        const auto appIcon = getAppIcon();
 
-        if (!appIcon.isEmpty()) {
-            if (appIcon.startsWith("file://")) {
-                auto iconFilename = appIcon.replace("file://","");
-
-                pixmap.load(iconFilename);
-            } else {
-                // Get the icon URL
-                QString url =
-                        FairWindSK::getInstance()->getConfiguration()->getSignalKServerUrl() + "/" + getName() + "/" + appIcon;
-
-                QNetworkAccessManager nam;
-                QEventLoop loop;
-                QObject::connect(&nam, &QNetworkAccessManager::finished, &loop, &QEventLoop::quit);
-                QNetworkReply *reply = nam.get(QNetworkRequest(url));
-                loop.exec();
-
-                pixmap.loadFromData(reply->readAll());
-
-                delete reply;
-            }
+        // If there is no icon path, return the default without doing any extra work.
+        if (appIcon.isEmpty()) {
+            return pixmap;
         }
 
+        // Handle icons bundled with the plugin and referenced using a file:// URL.
+        if (appIcon.startsWith("file://")) {
+            // Strip the scheme prefix to obtain a regular filesystem path.
+            const auto iconFilename = QString(appIcon).replace("file://", "");
+            // Attempt to load the provided file, keeping the default if loading fails.
+            pixmap.load(iconFilename);
+            return pixmap;
+        }
+
+        // Obtain the base server URL to construct the remote icon endpoint.
+        const auto signalKServerUrl = FairWindSK::getInstance()->getConfiguration()->getSignalKServerUrl();
+        // Avoid issuing a network request if the server URL is not available.
+        if (signalKServerUrl.isEmpty()) {
+            return pixmap;
+        }
+
+        // Combine the server address, app name, and relative icon path into a full URL.
+        const QString url = signalKServerUrl + "/" + getName() + "/" + appIcon;
+        // Prepare a short-lived network access manager for the download.
+        QNetworkAccessManager networkAccessManager;
+        // Create an event loop so the synchronous download does not block the main loop indefinitely.
+        QEventLoop loop;
+        // Quit the loop as soon as the request is finished to keep the UI responsive.
+        QObject::connect(&networkAccessManager, &QNetworkAccessManager::finished, &loop, &QEventLoop::quit);
+        // Submit the GET request to retrieve the remote image.
+        QNetworkReply *reply = networkAccessManager.get(QNetworkRequest(QUrl(url)));
+        // Wait for the network request to complete before attempting to read the data.
+        loop.exec();
+
+        // Ensure the reply exists before dereferencing.
+        if (reply != nullptr) {
+            // Check the HTTP status so we only overwrite the pixmap on success.
+            const auto statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+            // Accept any 2xx status code as a successful fetch.
+            if (statusCode >= 200 && statusCode < 300) {
+                // Replace the default pixmap with the downloaded icon bytes.
+                pixmap.loadFromData(reply->readAll());
+            }
+            // Release the network reply now that we are done with it.
+            delete reply;
+        }
+
+        // Return whichever pixmap we could obtain (downloaded or default).
         return pixmap;
     }
 
