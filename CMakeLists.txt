@@ -73,9 +73,32 @@ find_package(Qt6 COMPONENTS
         Xml
         Svg
         Positioning
+        PrintSupport
         WebEngineWidgets
         VirtualKeyboard
         REQUIRED)
+
+if(APPLE AND TARGET Qt6::PrintSupport)
+    get_target_property(_qt_print_support_libs Qt6::PrintSupport INTERFACE_LINK_LIBRARIES)
+    set(_qt_print_support_resolved "${_qt_print_support_libs}")
+    set(_missing_cups_libraries "")
+    foreach(_lib IN LISTS _qt_print_support_libs)
+        if(_lib MATCHES "libcups\\.(tbd|dylib)$" AND NOT EXISTS "${_lib}")
+            list(APPEND _missing_cups_libraries "${_lib}")
+        endif()
+    endforeach()
+    if(_missing_cups_libraries)
+        find_library(CUPS_LIBRARY NAMES cups)
+        if(CUPS_LIBRARY)
+            list(REMOVE_ITEM _qt_print_support_resolved ${_missing_cups_libraries})
+            list(APPEND _qt_print_support_resolved ${CUPS_LIBRARY})
+            set_target_properties(Qt6::PrintSupport PROPERTIES INTERFACE_LINK_LIBRARIES "${_qt_print_support_resolved}")
+            message(STATUS "Replaced missing Qt6::PrintSupport CUPS link with: ${CUPS_LIBRARY}")
+        else()
+            message(WARNING "Qt6::PrintSupport references missing CUPS library (${_missing_cups_libraries}) and no replacement could be found.")
+        endif()
+    endif()
+endif()
 
 add_executable(${PROJECT_NAME}
         main.cpp
@@ -168,6 +191,7 @@ target_link_libraries(${PROJECT_NAME}
         Qt::Xml
         Qt::Svg
         Qt::Positioning
+        Qt::PrintSupport
         Qt::WebEngineWidgets
         Qt::VirtualKeyboard
         ${LIBQTZEROCONF}
