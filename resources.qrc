@@ -111,5 +111,9 @@
         <file>resources/svg/OpenBridge/content-copy-google.svg</file>
         <file>resources/svg/OpenBridge/content-paste-google.svg</file>
 
+        <file>resources/svg/OpenBridge/chart-aton-iec.svg</file>
+        <file>resources/svg/OpenBridge/whale.svg</file>
+        <file>resources/svg/OpenBridge/waypoint-optional-iec.svg</file>
+
     </qresource>
 </RCC>
