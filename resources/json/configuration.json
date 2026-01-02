@@ -22,30 +22,6 @@
             }
         },
         {
-            "description": "Spotify web application",
-            "fairwind": {
-                "active": true,
-                "order": 990
-            },
-            "name": "https://spotify.com",
-            "signalk": {
-                "appIcon": "file://icons/spotify_icon.png",
-                "displayName": "Spotify"
-            }
-        },
-        {
-            "description": "Netflix web application",
-            "fairwind": {
-                "active": true,
-                "order": 980
-            },
-            "name": "https://netflix.com",
-            "signalk": {
-                "appIcon": "file://icons/netflix_icon.png",
-                "displayName": "Netflix"
-            }
-        },
-        {
             "description": "Youtube web application",
             "fairwind": {
                 "active": true,
@@ -83,7 +59,7 @@
         "notifications.piracy": "notifications.piracy",
         "notifications.sinking": "notifications.sinking",
         "notifications.anchor": "notifications.anchor",
-        "notifications": "notifications.*",
+        "notifications": "notifications",
         "anchor.bearing": "navigation.anchor.bearingTrue",
         "anchor.radius": "navigation.anchor.currentRadius",
         "anchor.distance": "navigation.anchor.distanceFromBow",
