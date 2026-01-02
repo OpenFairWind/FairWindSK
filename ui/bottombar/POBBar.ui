@@ -71,14 +71,21 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_CN">
          <item>
-          <widget class="QLabel" name="label_LastKnwonPosition">
-           <property name="text">
-            <string>Last Known Position:</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
-           </property>
-          </widget>
+          <layout class="QVBoxLayout" name="verticalLayout_currentPOB">
+           <item>
+            <widget class="QLabel" name="label_LastKnwonPosition">
+             <property name="text">
+              <string>Last Known Position:</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="comboBox_currentPOB"/>
+           </item>
+          </layout>
          </item>
          <item>
           <layout class="QVBoxLayout" name="verticalLayout_LastKnownPosition">

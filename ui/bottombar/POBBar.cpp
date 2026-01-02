@@ -16,7 +16,6 @@
 namespace fairwindsk::ui::bottombar {
     POBBar::POBBar(QWidget *parent) :
             QWidget(parent), ui(new Ui::POBBar) {
-        ui->setupUi(this);
 
         // Get the FairWind singleton
         const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
@@ -24,8 +23,18 @@ namespace fairwindsk::ui::bottombar {
         // Get configuration
         const auto configuration = fairWindSK->getConfiguration();
 
+        // Check if the debug is on
+        if (fairWindSK->isDebug()) {
+
+            // Write a message
+            qDebug() << "POBBar::POBBar";
+        }
+
         // Get units converter instance
         m_units = Units::getInstance();
+
+        // Initialize the user interface
+        ui->setupUi(this);
 
         // Create a new timer which will contain the current time
         m_timer = new QTimer(this);
@@ -39,11 +48,14 @@ namespace fairwindsk::ui::bottombar {
         // emit a signal when the MyData tool button from the UI is clicked
         connect(ui->toolButton_Hide, &QToolButton::clicked, this, &POBBar::onHideClicked);
 
+        // When the current POB has changed
+        connect(ui->comboBox_currentPOB,&QComboBox::currentIndexChanged, this, &POBBar::onCurrentIndexChanged);
+
         // Not visible by default
         QWidget::setVisible(false);
 
         // Get the configuration json object
-        auto configurationJsonObject = configuration->getRoot();
+        const auto configurationJsonObject = configuration->getRoot();
 
         // Check if the configuration object contains the key 'signalk' with an object value
         if (configurationJsonObject.contains("signalk") && configurationJsonObject["signalk"].is_object()) {
@@ -54,9 +66,72 @@ namespace fairwindsk::ui::bottombar {
             // Check if the Options object has the rsa key and if it is a string
             if (m_signalkPaths.contains("notifications.pob") && m_signalkPaths["notifications.pob"].is_string()) {
 
+                const auto path = QString::fromStdString(m_signalkPaths["notifications.pob"].get<std::string>());
+
+                // Check if the debug is on
+                if (fairWindSK->isDebug()) {
+
+                    // Write a message
+                    qDebug() << "POBBar::POBBar path: " << path;
+                }
+
+                // Set the next point id as empty
+                QString nextPointId="";
+
+                // Set the url for the navigation course API
+                const auto navigationCourseUrl = QUrl(FairWindSK::getInstance()->getSignalKClient()->server().toString()+"/signalk/v2/api/vessels/self/navigation/course");
+
+                // Get the navigation course object
+                const auto joNavigationCourse = FairWindSK::getInstance()->getSignalKClient()->signalkGet(navigationCourseUrl);
+
+                // Check if the object is consistent
+                if (!joNavigationCourse.isEmpty()) {
+
+                    // Check if the object contains the next point object
+                    if (joNavigationCourse.contains("nextPoint") && joNavigationCourse["nextPoint"].isObject()) {
+
+                        // Get the next point object
+                        const auto joNextPoint = joNavigationCourse["nextPoint"].toObject();
+
+                        // Check if the next point object as the href key
+                        if (joNextPoint.contains("href") && joNextPoint["href"].isString()) {
+
+                            // Get the next point href and make it as just the uuid
+                            nextPointId = joNextPoint["href"].toString().replace("/resources/waypoints/","");
+                        }
+                    }
+                }
+
+
+                // Get all pob objects
+                const auto joPOBs = FairWindSK::getInstance()->getSignalKClient()->signalkGet("vessels.self."+path);
+
+                // For each key (uuid)...
+                for (const auto& key: joPOBs.keys()) {
+
+                    // Get the key object
+                    if (joPOBs[key].isObject()) {
+                        const auto joPOB = joPOBs[key].toObject();
+
+                        if (joPOB.contains("value") && joPOB["value"].isObject()) {
+                            const auto joValue = joPOB["value"].toObject();
+                            if (joValue.contains("state") && joValue["state"].isString() && joValue["state"]=="emergency") {
+                                qDebug() << "----- " << key << " / " << nextPointId;
+                                auto wp=FairWindSK::getInstance()->getSignalKClient()->getWaypointByHref("/resources/waypoints/"+key);
+                                if (!wp.isEmpty()) {
+                                    ui->comboBox_currentPOB->addItem(wp.getName(),key);
+                                    if (wp.getName() == nextPointId) {
+                                        ui->comboBox_currentPOB->setCurrentText(wp.getName());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // Subscribe and update
                 updatePOB(FairWindSK::getInstance()->getSignalKClient()->subscribe(
-                        QString::fromStdString(m_signalkPaths["notifications.pob"].get<std::string>()),
+                        path,
                         this,
                         SLOT(fairwindsk::ui::bottombar::POBBar::updatePOB)
                         ));
@@ -70,6 +145,13 @@ namespace fairwindsk::ui::bottombar {
      */
     void POBBar::POB() {
 
+        // Check if the debug is on
+        //if (fairWindSK->isDebug()) {
+
+        // Write a message
+        qDebug() << "POBBar::POB";
+        //}
+
         // Get the FairWind singleton
         const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
@@ -77,11 +159,13 @@ namespace fairwindsk::ui::bottombar {
         const auto configuration = fairWindSK->getConfiguration();
 
         // Check if the configuration object contains the key 'signalk' with an object value
-        if (auto configurationJsonObject = configuration->getRoot(); configurationJsonObject.contains("signalk") && configurationJsonObject["signalk"].is_object()) {
+        if (auto configurationJsonObject = configuration->getRoot(); configurationJsonObject.contains("signalk")
+            && configurationJsonObject["signalk"].is_object()) {
+
             // Get the signal k paths object
             m_signalkPaths = configurationJsonObject["signalk"];
 
-            // Check if the Options object has the rsa key and if it is a string
+            // Check if the signal k paths has the rsa key and if it is a string
             if (m_signalkPaths.contains("notifications.pob") && m_signalkPaths["notifications.pob"].is_string()) {
 
                 // Get the alarm key
@@ -103,6 +187,7 @@ namespace fairwindsk::ui::bottombar {
                     notificationObject["state"].isString() &&
                     notificationObject["state"].toString() == "normal")) {
 
+                    // Get the path for rising an alarm
                     const auto postPath = signalKClient->url().toString()+"/v2/api/alarms/" + alarmKey;
 
                     // Rise the alarm
@@ -122,6 +207,13 @@ namespace fairwindsk::ui::bottombar {
      */
     void POBBar::onCancelClicked() {
 
+        // Check if the debug is on
+        //if (fairWindSK->isDebug()) {
+
+        // Write a message
+        qDebug() << "POBBar::onCancelClicked";
+        //}
+
         // Get the Signal K client
         const auto signalKClient = FairWindSK::getInstance()->getSignalKClient();
 
@@ -130,8 +222,13 @@ namespace fairwindsk::ui::bottombar {
             m_signalkPaths["notifications.pob"].get<std::string>()
             ).replace("notifications.","");
 
+        // Get the current POB
+        const auto currentPOB = ui->comboBox_currentPOB->currentData();
+
         // Prepare the API URL
-        const QString url = signalKClient->url().toString()+"/v2/api/alarms/"+alarmKey;
+        const auto url = signalKClient->url().toString()+"/v2/api/alarms/"+alarmKey+"/"+currentPOB.toString();
+
+        qDebug() << "POBBar::onCancelClicked url: " << url;
 
         // Invoke the Signal K delete
         signalKClient->signalkDelete(QUrl(url));
@@ -157,34 +254,12 @@ namespace fairwindsk::ui::bottombar {
     }
 
     /*
-     * ~POBBar
-     * Destructor
+     * onCurrentIndexChanged
+     * The current POB as changed
      */
-    POBBar::~POBBar() {
-
-        // Check if the timer is allocated
-        if (m_timer) {
-
-            // Stop the timer
-            m_timer->stop();
-
-            // Delete the timer
-            delete m_timer;
-
-            // Set the pointer to null
-            m_timer = nullptr;
-        }
-
-        // Check if the ui is allocated
-        if (ui) {
-
-            // Delete the ui
-            delete ui;
-
-            // Set the pointer to null
-            ui = nullptr;
-        }
+    void POBBar::onCurrentIndexChanged(int index) {
     }
+
 
     /*
  * updateElapsed
@@ -199,16 +274,16 @@ namespace fairwindsk::ui::bottombar {
             auto pobStartTime = QString::fromStdString(m_signalkPaths["pob.startTime"].get<std::string>());
 
             // Get the Signal K client
-            auto signalKClient = FairWindSK::getInstance()->getSignalKClient();
+            const auto signalKClient = FairWindSK::getInstance()->getSignalKClient();
 
             // Get the url
-            QString url = signalKClient->url().toString()+"/v1/api/vessels/self/" + pobStartTime.replace(".","/");
+            const QString url = signalKClient->url().toString()+"/v1/api/vessels/self/" + pobStartTime.replace(".","/");
 
             // Get the start time invoking the course api
             auto jsonObjectStartTime = signalKClient->signalkGet(QUrl(url));
 
             // Get the value as string
-            auto startTimeIso8601 = jsonObjectStartTime["value"].toString();
+            const auto startTimeIso8601 = jsonObjectStartTime["value"].toString();
 
             // Create a QDateTime from the string
             auto startDateTimeUTC = QDateTime::fromString(startTimeIso8601, "yyyy-MM-ddThh:mm:ss.zzzZ");
@@ -233,6 +308,14 @@ namespace fairwindsk::ui::bottombar {
  */
     void POBBar::updatePOB(const QJsonObject &update) {
 
+        // Check if the debug is on
+        //if (fairWindSK->isDebug()) {
+
+        // Write a message
+        qDebug() << "POBBar::updatePOB";
+        qDebug() << update;
+        //}
+
         // Check if for any reason the update is empty
         if (update.isEmpty()) {
 
@@ -243,11 +326,22 @@ namespace fairwindsk::ui::bottombar {
         // Check if there is a notifications.pob field and it is a string
         if (m_signalkPaths.contains("notifications.pob") && m_signalkPaths["notifications.pob"].is_string()) {
 
+
+
+            const auto path = QString::fromStdString(m_signalkPaths["notifications.pob"].get<std::string>());
+
             // get the value of the notification object
-            auto value = fairwindsk::signalk::Client::getObjectFromUpdateByPath(
-                update,
-                QString::fromStdString(m_signalkPaths["notifications.pob"].get<std::string>())
-                );
+            auto value = fairwindsk::signalk::Client::getObjectFromUpdateByPath( update, path );
+
+            auto pobUUID = value["subPath"].toString();
+
+            // Check if the debug is on
+            //if (fairWindSK->isDebug()) {
+
+            // Write a message
+            qDebug() << "POBBar::updatePOB " << path;
+            qDebug() << value;
+            //}
 
             // Check if value is valid
             if (value.isEmpty()) {
@@ -259,107 +353,142 @@ namespace fairwindsk::ui::bottombar {
             // Check if there is a state field and it is a string
             if (value.contains("state") && value["state"].isString()) {
 
+                // Check if the debug is on
+                //if (fairWindSK->isDebug()) {
+
+                // Write a message
+                qDebug() << "POBBar::updatePOB";
+                qDebug() << value;
+                //}
+
                 // Check if the state is "normal" (no POB emergency)
                 if (value["state"].toString() == "normal") {
 
-                    // Check if the Options object has the rsa key and if it is a string
-                    if (m_signalkPaths.contains("pob.bearing") && m_signalkPaths["pob.bearing"].is_string()) {
+                    // Check if the debug is on
+                    //if (fairWindSK->isDebug()) {
 
-                        // Unsubscribe
-                        FairWindSK::getInstance()->getSignalKClient()->removeSubscription(
-                            QString::fromStdString(m_signalkPaths["pob.bearing"].get<std::string>()),
-                            this);
+                    // Write a message
+                    qDebug() << "POBBar::updatePOB: normal";
+                    //}
+
+                    if (m_pobUUIDs.contains(pobUUID)) {
+
+                        m_pobUUIDs.remove(pobUUID);
+
+                        // Check if no more pob alarms are active
+                        if (m_pobUUIDs.isEmpty())
+                        {
+                            // Check if the Options object has the rsa key and if it is a string
+                            if (m_signalkPaths.contains("pob.bearing") && m_signalkPaths["pob.bearing"].is_string()) {
+
+                                // Unsubscribe
+                                FairWindSK::getInstance()->getSignalKClient()->removeSubscription(
+                                    QString::fromStdString(m_signalkPaths["pob.bearing"].get<std::string>()),
+                                    this);
+                            }
+
+                            // Check if the Options object has the rsa key and if it is a string
+                            if (m_signalkPaths.contains("pob.distance") && m_signalkPaths["pob.distance"].is_string()) {
+
+                                // Unsubscribe
+                                FairWindSK::getInstance()->getSignalKClient()->removeSubscription(
+                                    QString::fromStdString(m_signalkPaths["pob.distance"].get<std::string>()),
+                                    this);
+                            }
+
+                            // Stop the timer
+                            m_timer->stop();
+
+                            // Hide the POBBar
+                            setVisible(false);
+                        }
                     }
-
-                    // Check if the Options object has the rsa key and if it is a string
-                    if (m_signalkPaths.contains("pob.distance") && m_signalkPaths["pob.distance"].is_string()) {
-
-                        // Unsubscribe
-                        FairWindSK::getInstance()->getSignalKClient()->removeSubscription(
-                            QString::fromStdString(m_signalkPaths["pob.distance"].get<std::string>()),
-                            this);
-                    }
-
-                    // Stop the timer
-                    m_timer->stop();
-
-                    // Hide the POBBar
-                    setVisible(false);
 
                     // Check if the state is "emergency" (POB emergency)
                 } else if (value["state"].toString() == "emergency") {
 
-                    // Check if a data field is available
-                    if (value.contains("data") && value["data"].isObject()) {
+                    // Check if the debug is on
+                    //if (fairWindSK->isDebug()) {
 
-                        // Get the data object
-                        auto data = value["data"].toObject();
+                    // Write a message
+                    qDebug() << "POBBar::updatePOB: emergency";
+                    //}
 
-                        // Check if data has the position field
-                        if (data.contains("position") && data["position"].isObject()) {
 
-                            // Get the position field
-                            auto position = data["position"].toObject();
+                    // Check if data has the position field
+                    if (value.contains("position") && value["position"].isObject()) {
 
-                            // The geographic coordinates object
-                            QGeoCoordinate geoCoordinate;
+                        // Get the position field
+                        auto position = value["position"].toObject();
 
-                            // Check the position object contains a latitude field
-                            if (position.contains("latitude")) {
+                        // The geographic coordinates object
+                        QGeoCoordinate geoCoordinate;
 
-                                // Assign the latitude at the geographic coordinates
-                                geoCoordinate.setLatitude(position["latitude"].toDouble());
-                            }
+                        // Check the position object contains a latitude field
+                        if (position.contains("latitude")) {
 
-                            // Check the position object contains a longitude field
-                            if (position.contains("longitude")) {
-
-                                // Assign the longitude at the geographic coordinates
-                                geoCoordinate.setLongitude(position["longitude"].toDouble());
-                            }
-
-                            // Check the position object contains a altitude field
-                            if (position.contains("altitude")) {
-
-                                // Assign the altitude at the geographic coordinates
-                                geoCoordinate.setAltitude(position["altitude"].toDouble());
-                            }
-
-                            // Get the geographic coordinates as text list
-                            auto texts = geoCoordinate.toString(QGeoCoordinate::DegreesMinutesSecondsWithHemisphere).split(",");
-
-                            // Set the latitude
-                            ui->label_Latitude->setText(texts[0]);
-
-                            // Set the longitude
-                            ui->label_Longitude->setText(texts[1]);
+                            // Assign the latitude at the geographic coordinates
+                            geoCoordinate.setLatitude(position["latitude"].toDouble());
                         }
+
+                        // Check the position object contains a longitude field
+                        if (position.contains("longitude")) {
+
+                            // Assign the longitude at the geographic coordinates
+                            geoCoordinate.setLongitude(position["longitude"].toDouble());
+                        }
+
+                        // Check the position object contains a altitude field
+                        if (position.contains("altitude")) {
+
+                            // Assign the altitude at the geographic coordinates
+                            geoCoordinate.setAltitude(position["altitude"].toDouble());
+                        }
+
+                        // Get the geographic coordinates as text list
+                        auto texts = geoCoordinate.toString(QGeoCoordinate::DegreesMinutesSecondsWithHemisphere).split(",");
+
+                        // Set the latitude
+                        ui->label_Latitude->setText(texts[0]);
+
+                        // Set the longitude
+                        ui->label_Longitude->setText(texts[1]);
+
+                        // Check if this is the first pob alarm active
+                        if (m_pobUUIDs.isEmpty()) {
+
+                            // Check if the Options object has the rsa key and if it is a string
+                            if (m_signalkPaths.contains("pob.bearing") && m_signalkPaths["pob.bearing"].is_string()) {
+
+                                // Subscribe and update
+                                updateBearing(FairWindSK::getInstance()->getSignalKClient()->subscribe(
+                                        QString::fromStdString(m_signalkPaths["pob.bearing"].get<std::string>()),
+                                        this,
+                                        SLOT(fairwindsk::ui::bottombar::POBBar::updateBearing)
+                                        ));
+                            }
+
+                            // Check if the Options object has the rsa key and if it is a string
+                            if (m_signalkPaths.contains("pob.distance") && m_signalkPaths["pob.distance"].is_string()) {
+
+                                // Subscribe and update
+                                updateDistance(FairWindSK::getInstance()->getSignalKClient()->subscribe(
+                                        QString::fromStdString(m_signalkPaths["pob.distance"].get<std::string>()),
+                                        this,
+                                        SLOT(fairwindsk::ui::bottombar::POBBar::updateDistance)
+                                        ));
+                            }
+
+                            // Start the timer
+                            m_timer->start(1000);
+                        }
+
+                        m_pobUUIDs.insert(pobUUID);
+
+                        qDebug() << "POBBar::updatePOB: pobUUIDs: " << m_pobUUIDs;
                     }
+                    
 
-                    // Check if the Options object has the rsa key and if it is a string
-                    if (m_signalkPaths.contains("pob.bearing") && m_signalkPaths["pob.bearing"].is_string()) {
-
-                        // Subscribe and update
-                        updateBearing(FairWindSK::getInstance()->getSignalKClient()->subscribe(
-                                QString::fromStdString(m_signalkPaths["pob.bearing"].get<std::string>()),
-                                this,
-                                SLOT(fairwindsk::ui::bottombar::POBBar::updateBearing)
-                                ));
-                    }
-
-                    // Check if the Options object has the rsa key and if it is a string
-                    if (m_signalkPaths.contains("pob.distance") && m_signalkPaths["pob.distance"].is_string()) {
-
-                        // Subscribe and update
-                        updateDistance(FairWindSK::getInstance()->getSignalKClient()->subscribe(
-                                QString::fromStdString(m_signalkPaths["pob.distance"].get<std::string>()),
-                                this,
-                                SLOT(fairwindsk::ui::bottombar::POBBar::updateDistance)
-                                ));
-                    }
-
-                    // Start the timer
-                    m_timer->start(1000);
 
                     // Show the POBBar
                     setVisible(true);
@@ -425,4 +554,33 @@ namespace fairwindsk::ui::bottombar {
         }
     }
 
+    /*
+     * ~POBBar
+     * Destructor
+     */
+    POBBar::~POBBar() {
+
+        // Check if the timer is allocated
+        if (m_timer) {
+
+            // Stop the timer
+            m_timer->stop();
+
+            // Delete the timer
+            delete m_timer;
+
+            // Set the pointer to null
+            m_timer = nullptr;
+        }
+
+        // Check if the ui is allocated
+        if (ui) {
+
+            // Delete the ui
+            delete ui;
+
+            // Set the pointer to null
+            ui = nullptr;
+        }
+    }
 } // fairwindsk::ui::bottombar

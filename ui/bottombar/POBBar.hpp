@@ -7,6 +7,7 @@
 
 #include <fstream>
 #include <nlohmann/json.hpp>
+#include <QSet>
 #include <QWidget>
 
 #include "Units.hpp"
@@ -34,7 +35,7 @@ namespace fairwindsk::ui::bottombar {
 
         void onCancelClicked();
         void onHideClicked();
-
+        void onCurrentIndexChanged(int index);
         void updateElapsed();
 
 
@@ -47,6 +48,7 @@ namespace fairwindsk::ui::bottombar {
         Units *m_units;
         nlohmann::json m_signalkPaths;
         QTimer *m_timer = nullptr;
+        QSet<QString> m_pobUUIDs;
     };
 } // fairwindsk::ui::bottombar
 
