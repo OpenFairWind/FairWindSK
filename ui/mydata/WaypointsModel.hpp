@@ -9,6 +9,7 @@
 
 #include <signalk/Waypoint.hpp>
 
+#include "Files.hpp"
 #include "Units.hpp"
 
 namespace fairwindsk::ui::mydata {
@@ -26,6 +27,9 @@ namespace fairwindsk::ui::mydata {
         QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
         bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
         Qt::ItemFlags flags(const QModelIndex &index) const override;
+        void sort(int column, Qt::SortOrder order) override;
+
+        enum Columns { Type, Name, Description, Latitude, Longitude, Distance, Bearing, Timestamp};
 
     signals:
         void editCompleted(const QString &);

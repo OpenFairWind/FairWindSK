@@ -21,12 +21,25 @@ public:
     explicit Waypoints(MyData *myData, QWidget *parent = nullptr);
     ~Waypoints() override;
 
+public slots:
+    void onSearchClicked();
+
+    void onImportClicked();
+    void onExportClicked();
+
+    void onNavigateToClicked();
+
+    void onAddClicked();
+    void onEditClicked();
+    void onDeleteClicked();
+
 private:
     Ui::Waypoints *ui;
 
     MyData *m_myData;
 
     WaypointsModel *m_waypointsModel;
+
 };
 } // fairwindsk::ui::mydata
 

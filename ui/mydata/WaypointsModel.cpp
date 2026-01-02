@@ -27,7 +27,10 @@ namespace fairwindsk::ui::mydata {
         m_position.setLatitude(jsonObject["latitude"].toDouble());
         m_position.setLongitude(jsonObject["longitude"].toDouble());
 
+    }
 
+    void WaypointsModel::sort(int column, Qt::SortOrder order) {
+        qDebug() << "WaypointsModel::sort";
     }
 
     int WaypointsModel::rowCount(const QModelIndex & /*parent*/) const
@@ -49,21 +52,21 @@ namespace fairwindsk::ui::mydata {
 
         if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
             switch (section) {
-                case 0:
-                    return QString(tr("Name"));
-                case 1:
-                    return QString(tr("Description"));
-                case 2:
+                case WaypointsModel::Columns::Type:
                     return QString(tr("Type"));
-                case 3:
+                case WaypointsModel::Columns::Name:
+                    return QString(tr("Name"));
+                case WaypointsModel::Columns::Description:
+                    return QString(tr("Description"));
+                case WaypointsModel::Columns::Latitude:
                     return QString(tr("Latitude"));
-                case 4:
+                case WaypointsModel::Columns::Longitude:
                     return QString(tr("Longitude"));
-                case 5:
+                case WaypointsModel::Columns::Timestamp:
                     return QString(tr("Timestamp"));
-                case 6:
+                case WaypointsModel::Columns::Distance:
                     return QString(tr("Distance") + " (" + configuration->getDistanceUnits()+")");
-                case 7:
+                case WaypointsModel::Columns::Bearing:
                     return QString(tr("Bearing")  + " (°)");
                 default:
                     return QString("");
@@ -92,65 +95,34 @@ namespace fairwindsk::ui::mydata {
 
         const auto key = m_waypoints.keys()[row];
 
-        if (role == Qt::DisplayRole) {
+        if (role == Qt::DecorationRole) {
+            auto type = m_waypoints[key].getType();
 
-            switch (col) {
-                case 0:
-                    return QString(m_waypoints[key].getName());
-                case 1:
-                    return QString(m_waypoints[key].getDescription());
-                case 2:
-                    return QString(m_waypoints[key].getType());
-                case 3:
-                    return QString(m_waypoints[key].getCoordinates().toString(QGeoCoordinate::DegreesMinutesSecondsWithHemisphere).split(",")[0]);
-                case 4:
-                    return QString(m_waypoints[key].getCoordinates().toString(QGeoCoordinate::DegreesMinutesSecondsWithHemisphere).split(",")[1]);
-                case 5:
-                    return QString(m_waypoints[key].getTimestamp().toString());
-            case 6:
-
-                // Get the distance to the waypoint
-                value = m_position.distanceTo(m_waypoints[key].getCoordinates());
-
-                // Convert m/s to knots
-                value = m_units->convert("m",configuration->getDistanceUnits(), value);
-
-                // Build the formatted value
-                text = m_units->format(configuration->getVesselSpeedUnits(), value);
-
-                // Return the text
-                return text;
-            case 7:
-
-                // Get the bearing to the waypoint
-                value = m_position.azimuthTo(m_waypoints[key].getCoordinates());
-
-                // Build the formatted value
-                text = m_units->format("deg", value);
-
-                // Return the text
-                return text;
-
-                default:
-                    return QString();
+            if (col == WaypointsModel::Columns::Type) {
+                if (type=="pseudoaton") {
+                    return QIcon(":resources/svg/OpenBridge/chart-aton-iec.svg");
+                } else if (type=="whale") {
+                    return QIcon(":resources/svg/OpenBridge/whale.svg");
+                }  else if (type=="alarm-mob") {
+                    return QIcon(":resources/svg/OpenBridge/alarm-pob.svg");
+                }
             }
-
-        } else if (role == Qt::EditRole) {
+            return QIcon("");
+        }
+        else if (role == Qt::DisplayRole) {
 
             switch (col) {
-                case 0:
+                case WaypointsModel::Columns::Name:
                     return QString(m_waypoints[key].getName());
-                case 1:
+                case WaypointsModel::Columns::Description:
                     return QString(m_waypoints[key].getDescription());
-                case 2:
-                    return QString(m_waypoints[key].getType());
-                case 3:
+                case WaypointsModel::Columns::Latitude:
                     return QString(m_waypoints[key].getCoordinates().toString(QGeoCoordinate::DegreesMinutesSecondsWithHemisphere).split(",")[0]);
-                case 4:
+                case WaypointsModel::Columns::Longitude:
                     return QString(m_waypoints[key].getCoordinates().toString(QGeoCoordinate::DegreesMinutesSecondsWithHemisphere).split(",")[1]);
-                case 5:
+                case WaypointsModel::Columns::Timestamp:
                     return QString(m_waypoints[key].getTimestamp().toString());
-                case 6:
+                case WaypointsModel::Columns::Distance:
 
                     // Get the distance to the waypoint
                     value = m_position.distanceTo(m_waypoints[key].getCoordinates());
@@ -163,7 +135,48 @@ namespace fairwindsk::ui::mydata {
 
                     // Return the text
                     return text;
-                case 7:
+                case WaypointsModel::Columns::Bearing:
+
+                    // Get the bearing to the waypoint
+                    value = m_position.azimuthTo(m_waypoints[key].getCoordinates());
+
+                    // Build the formatted value
+                    text = m_units->format("deg", value);
+
+                    // Return the text
+                    return text;
+
+                    default:
+                        return QString();
+            }
+
+        } else if (role == Qt::EditRole) {
+
+            switch (col) {
+                case WaypointsModel::Columns::Name:
+                    return QString(m_waypoints[key].getName());
+                case WaypointsModel::Columns::Description:
+                    return QString(m_waypoints[key].getDescription());
+                case WaypointsModel::Columns::Latitude:
+                    return QString(m_waypoints[key].getCoordinates().toString(QGeoCoordinate::DegreesMinutesSecondsWithHemisphere).split(",")[0]);
+                case WaypointsModel::Columns::Longitude:
+                    return QString(m_waypoints[key].getCoordinates().toString(QGeoCoordinate::DegreesMinutesSecondsWithHemisphere).split(",")[1]);
+                case WaypointsModel::Columns::Timestamp:
+                    return QString(m_waypoints[key].getTimestamp().toString());
+                case WaypointsModel::Columns::Distance:
+
+                    // Get the distance to the waypoint
+                    value = m_position.distanceTo(m_waypoints[key].getCoordinates());
+
+                    // Convert m/s to knots
+                    value = m_units->convert("m",configuration->getDistanceUnits(), value);
+
+                    // Build the formatted value
+                    text = m_units->format(configuration->getVesselSpeedUnits(), value);
+
+                    // Return the text
+                    return text;
+                case WaypointsModel::Columns::Bearing:
 
                     // Get the bearing to the waypoint
                     value = m_position.azimuthTo(m_waypoints[key].getCoordinates());
@@ -180,11 +193,11 @@ namespace fairwindsk::ui::mydata {
         } else if (role == Qt::TextAlignmentRole)
         {
             switch (col) {
-                case 3:
-                case 4:
+                case WaypointsModel::Columns::Latitude:
+                case WaypointsModel::Columns::Longitude:
                     return Qt::AlignRight;
-                case 6:
-                case 7:
+                case WaypointsModel::Columns::Distance:
+                case WaypointsModel::Columns::Bearing:
                     return Qt::AlignCenter;
                 default:
                     return Qt::AlignLeft;
@@ -207,11 +220,11 @@ namespace fairwindsk::ui::mydata {
                 return false;
 
             switch (col) {
-                case 0:
+                case WaypointsModel::Columns::Name:
                     m_waypoints[key].setName(value.toString());
                     break;
 
-                case 1:
+                case WaypointsModel::Columns::Description:
                     m_waypoints[key].setDescription(value.toString());
                     break;
 
@@ -229,7 +242,7 @@ namespace fairwindsk::ui::mydata {
     Qt::ItemFlags WaypointsModel::flags(const QModelIndex &index) const
     {
         const int col = index.column();
-        if (col == 0 || col == 1) {
+        if (col == WaypointsModel::Columns::Name || col == WaypointsModel::Columns::Description) {
             return Qt::ItemIsEditable | QAbstractTableModel::flags(index);
         }
 

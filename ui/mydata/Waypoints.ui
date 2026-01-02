@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>936</width>
+    <height>307</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -62,23 +62,6 @@
       </spacer>
      </item>
      <item>
-      <widget class="QToolButton" name="toolButton_Add">
-       <property name="text">
-        <string/>
-       </property>
-       <property name="icon">
-        <iconset resource="../../resources.qrc">
-         <normaloff>:/resources/svg/OpenBridge/widget-add-google.svg</normaloff>:/resources/svg/OpenBridge/widget-add-google.svg</iconset>
-       </property>
-       <property name="iconSize">
-        <size>
-         <width>32</width>
-         <height>32</height>
-        </size>
-       </property>
-      </widget>
-     </item>
-     <item>
       <widget class="QToolButton" name="toolButton_Import">
        <property name="text">
         <string/>
@@ -113,7 +96,84 @@
       </widget>
      </item>
      <item>
-      <widget class="QToolButton" name="toolButton_DeleteAll">
+      <spacer name="horizontalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QToolButton" name="toolButton_NavigateTo">
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset resource="../../resources.qrc">
+         <normaloff>:/resources/svg/OpenBridge/navigation-route.svg</normaloff>:/resources/svg/OpenBridge/navigation-route.svg</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>32</width>
+         <height>32</height>
+        </size>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_3">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QToolButton" name="toolButton_Add">
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset resource="../../resources.qrc">
+         <normaloff>:/resources/svg/OpenBridge/widget-add-google.svg</normaloff>:/resources/svg/OpenBridge/widget-add-google.svg</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>32</width>
+         <height>32</height>
+        </size>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="toolButton_Edit">
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset resource="../../resources.qrc">
+         <normaloff>:/resources/svg/OpenBridge/edit-google.svg</normaloff>:/resources/svg/OpenBridge/edit-google.svg</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>37</width>
+         <height>32</height>
+        </size>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QToolButton" name="toolButton_Delete">
        <property name="text">
         <string/>
        </property>
@@ -153,6 +213,9 @@
      </property>
      <property name="sortingEnabled">
       <bool>true</bool>
+     </property>
+     <property name="wordWrap">
+      <bool>false</bool>
      </property>
     </widget>
    </item>
