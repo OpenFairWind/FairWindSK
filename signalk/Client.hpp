@@ -65,9 +65,9 @@ namespace fairwindsk::signalk {
 
         QJsonObject signalkDelete(const QString& path);
         QJsonObject signalkDelete(const QUrl& url);
-        QJsonObject signalkDelete(const QString& path,  QString& payload);
+        QJsonObject signalkDelete(const QString& path, const QString& payload);
         QJsonObject signalkDelete(const QString& path,  QJsonObject& payload);
-        QJsonObject signalkDelete(const QUrl& url,  QString& payload);
+        QJsonObject signalkDelete(const QUrl& url, const QString& payload);
         QJsonObject signalkDelete(const QUrl& url,  QJsonObject& payload);
 
         QString getToken();

@@ -226,7 +226,7 @@ namespace fairwindsk::signalk {
         processedPath = processedPath.replace(".","/");
 
         // Create the url
-        auto url = QUrl(http().toString()+processedPath);
+        const auto url = QUrl(http().toString()+processedPath);
 
         // Check if the debug is active
         if (m_Debug) {
@@ -492,7 +492,7 @@ namespace fairwindsk::signalk {
      * signalkDelete
      * Given Path and payload as string
      */
-    QJsonObject Client::signalkDelete(const QString& path,  QString& payload) {
+    QJsonObject Client::signalkDelete(const QString& path, const QString& payload) {
 
         // Create  payload from a string
         QJsonObject jsonObject = QJsonDocument::fromJson(payload.toUtf8()).object();
@@ -531,7 +531,7 @@ namespace fairwindsk::signalk {
      * signalkDelete
      * Given URL and payload as string
      */
-    QJsonObject Client::signalkDelete(const QUrl& url,  QString& payload) {
+    QJsonObject Client::signalkDelete(const QUrl& url, const QString& payload) {
 
         // Create a payload json object
         QJsonObject jsonObject = QJsonDocument::fromJson(payload.toUtf8()).object();
@@ -561,7 +561,7 @@ namespace fairwindsk::signalk {
         }
 
         // Invoke the http method
-        auto data = httpDelete(url, payload);
+        const auto data = httpDelete(url, payload);
 
         // Return the result as JSON object
         return QJsonDocument::fromJson(data).object();
@@ -573,7 +573,7 @@ namespace fairwindsk::signalk {
 
     /*
  * httpGet
- * Executes a http get request without payload
+ * Executes an http get request without payload
  */
     QByteArray Client::httpGet(const QUrl& url) {
         QNetworkRequest req(url);
@@ -584,9 +584,9 @@ namespace fairwindsk::signalk {
             req.setRawHeader("Cookie", m_Cookie.toLatin1());
         }
 
-        QScopedPointer<QNetworkReply> reply(m_NetworkAccessManager.get(req));
+        const QScopedPointer<QNetworkReply> reply(m_NetworkAccessManager.get(req));
 
-        QTime timeout = QTime::currentTime().addSecs(10);
+        const QTime timeout = QTime::currentTime().addSecs(10);
         while (QTime::currentTime() < timeout && !reply->isFinished()) {
             QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
         }
@@ -594,7 +594,7 @@ namespace fairwindsk::signalk {
         if (reply->error() != QNetworkReply::NoError) {
 
             if (m_Debug)
-                qDebug() << "Failure" << reply->errorString();
+                qDebug() << Q_FUNC_INFO << "Failure" << reply->errorString();
         }
         QByteArray data = reply->readAll();
         return data;
@@ -624,7 +624,7 @@ namespace fairwindsk::signalk {
         }
 
         if (reply->error() != QNetworkReply::NoError) {
-            qDebug() << "Failure" << reply->errorString();
+            qDebug() << Q_FUNC_INFO << "Failure" << reply->errorString();
         }
         QByteArray data = reply->readAll();
         return data;
@@ -662,7 +662,7 @@ namespace fairwindsk::signalk {
 
         if (reply->error() != QNetworkReply::NoError) {
             if (m_Debug)
-                qDebug() << "Failure" << reply->errorString();
+                qDebug() << Q_FUNC_INFO << "Failure" << reply->errorString();
         }
         QByteArray data = reply->readAll();
 
@@ -710,7 +710,7 @@ namespace fairwindsk::signalk {
 
         if (reply->error() != QNetworkReply::NoError) {
             if (m_Debug) {
-                qDebug() << "Failure" << reply->errorString();
+                qDebug() << Q_FUNC_INFO << "Failure" << reply->errorString();
             }
         }
         QByteArray data = reply->readAll();
@@ -733,19 +733,20 @@ namespace fairwindsk::signalk {
             req.setRawHeader("Cookie", m_Cookie.toLatin1());
         }
 
-        QScopedPointer<QNetworkReply> reply(m_NetworkAccessManager.sendCustomRequest(req, "DELETE", jsonDocument.toJson()));
+        const QScopedPointer<QNetworkReply> reply(m_NetworkAccessManager.sendCustomRequest(req, "DELETE", jsonDocument.toJson()));
 
-        QTime timeout = QTime::currentTime().addSecs(10);
+        const QTime timeout = QTime::currentTime().addSecs(10);
         while (QTime::currentTime() < timeout && !reply->isFinished()) {
             QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
         }
 
         if (reply->error() != QNetworkReply::NoError) {
-            if (m_Debug)
-            {
-                qDebug() << "Failure" << reply->errorString();
-            }
+            //if (m_Debug) {
+
+                qDebug() << Q_FUNC_INFO << "Failure" << reply->errorString();
+            //}
         }
+        qDebug() << "Error" << reply->error();
         QByteArray data = reply->readAll();
         return data;
     }
@@ -806,6 +807,7 @@ namespace fairwindsk::signalk {
     void Client::onConnected() {
         if (m_Debug)
             qDebug() << "WebSocket connected";
+
         connect(&m_WebSocket, &QWebSocket::textMessageReceived,
                 this, &Client::onTextMessageReceived);
 
@@ -816,7 +818,8 @@ namespace fairwindsk::signalk {
     void Client::onDisconnected() {
         if (m_Debug)
             qDebug() << "WebSocket disconnected";
-	QApplication::exit(1);
+
+	    QApplication::exit(1);
     }
 //! [onDisconnected]
 
@@ -834,7 +837,7 @@ namespace fairwindsk::signalk {
                 if (m_Debug)
                     qDebug() << "Update received:" << message;
 
-                auto context = updateObject["context"].toString();
+                const auto context = updateObject["context"].toString();
                 auto updates = updateObject["updates"].toArray();
                 for (auto updateItem: updates) {
                     auto values = updateItem.toObject()["values"].toArray();
@@ -898,7 +901,7 @@ namespace fairwindsk::signalk {
             contextEx = getSelf();
         }
 
-        auto message = QString("{\n"
+        auto const message = QString("{\n"
                           "  \"context\": \"%1\",\n"
                           "  \"subscribe\": [\n"
                           "    {\n"
@@ -1033,9 +1036,10 @@ namespace fairwindsk::signalk {
                                 auto valueJsonObject = valuesItem.toObject();
                                 if (valueJsonObject.contains("path") && valueJsonObject["path"].isString()) {
                                     auto valuePath = valueJsonObject["path"].toString();
-                                    if (path.isEmpty() || path == valuePath) {
+                                    if (path.isEmpty() || valuePath.startsWith(path)) {
                                         if (valueJsonObject.contains("value") && valueJsonObject["value"].isObject()) {
                                             result = valueJsonObject["value"].toObject();
+                                            result["subPath"] = valuePath.replace(path+".","");
                                         }
                                     }
                                 }
