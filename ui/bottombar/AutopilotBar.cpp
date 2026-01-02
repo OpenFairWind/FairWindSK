@@ -129,7 +129,7 @@ namespace fairwindsk::ui::bottombar {
                 updateState(FairWindSK::getInstance()->getSignalKClient()->subscribe(
                         QString::fromStdString(m_signalkPaths["autopilot.state"].get<std::string>()),
                         this,
-                        SLOT(fairwindsk::ui::bottombar::AutopilotBar::updateState())
+                        SLOT(fairwindsk::ui::bottombar::AutopilotBar::updateState)
                         ));
             }
 
