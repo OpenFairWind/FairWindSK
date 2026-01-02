@@ -359,9 +359,6 @@ namespace fairwindsk::ui::topbar {
             return;
         }
 
-
-        QString text;
-
         // Get the value
         auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
 
@@ -373,7 +370,7 @@ namespace fairwindsk::ui::topbar {
             value = m_units->convert("rad","deg", value);
 
             // Build the formatted value
-            text = m_units->format("deg", value);
+            const auto text = m_units->format("deg", value);
 
             // Set the course over ground label from the UI to the formatted value
             ui->label_COG->setText(text);
@@ -396,8 +393,6 @@ namespace fairwindsk::ui::topbar {
             return;
         }
 
-        QString text;
-
         // Get the value
         auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
 
@@ -409,7 +404,7 @@ namespace fairwindsk::ui::topbar {
             value = m_units->convert("ms-1",FairWindSK::getInstance()->getConfiguration()->getVesselSpeedUnits(), value);
 
             // Build the formatted value
-            text = m_units->format(FairWindSK::getInstance()->getConfiguration()->getVesselSpeedUnits(), value);
+            const auto text = m_units->format(FairWindSK::getInstance()->getConfiguration()->getVesselSpeedUnits(), value);
 
             // Set the speed over ground label from the UI to the formatted value
             ui->label_SOG->setText(text);
@@ -433,8 +428,6 @@ namespace fairwindsk::ui::topbar {
             return;
         }
 
-        QString text;
-
         // Get the value
         auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
 
@@ -446,7 +439,7 @@ namespace fairwindsk::ui::topbar {
             value = m_units->convert("rad","deg", value);
 
             // Build the formatted value
-            text = m_units->format("deg", value);
+            const auto text = m_units->format("deg", value);
 
             // Set the course over ground label from the UI to the formatted value
             ui->label_HDG->setText(text);
@@ -469,8 +462,6 @@ namespace fairwindsk::ui::topbar {
             return;
         }
 
-        QString text;
-
         // Get the value
         auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
 
@@ -482,7 +473,7 @@ namespace fairwindsk::ui::topbar {
             value = m_units->convert("ms-1",FairWindSK::getInstance()->getConfiguration()->getVesselSpeedUnits(), value);
 
             // Build the formatted value
-            text = m_units->format(FairWindSK::getInstance()->getConfiguration()->getVesselSpeedUnits(), value);
+            const auto text = m_units->format(FairWindSK::getInstance()->getConfiguration()->getVesselSpeedUnits(), value);
 
             // Set the speed over ground label from the UI to the formatted value
             ui->label_STW->setText(text);
@@ -506,8 +497,6 @@ namespace fairwindsk::ui::topbar {
             return;
         }
 
-        QString text;
-
         // Get the value
         auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
 
@@ -519,7 +508,7 @@ namespace fairwindsk::ui::topbar {
             value = m_units->convert("mt",FairWindSK::getInstance()->getConfiguration()->getDepthUnits(), value);
 
             // Build the formatted value
-            text = m_units->format(FairWindSK::getInstance()->getConfiguration()->getDepthUnits(), value);
+            const auto text = m_units->format(FairWindSK::getInstance()->getConfiguration()->getDepthUnits(), value);
 
             // Set the the formatted value
             ui->label_DPT->setText(text);
@@ -572,8 +561,6 @@ namespace fairwindsk::ui::topbar {
             return;
         }
 
-        QString text;
-
         // Get the value
         auto value =fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
 
@@ -585,7 +572,7 @@ namespace fairwindsk::ui::topbar {
             value = m_units->convert("rad","deg", value);
 
             // Build the formatted value
-            text = m_units->format("deg", value);
+            const auto text = m_units->format("deg", value);
 
             // Set the course over ground label from the UI to the formatted value
             ui->label_BTW->setText(text);
@@ -604,8 +591,6 @@ namespace fairwindsk::ui::topbar {
             return;
         }
 
-        QString text;
-
         // Get the value
         auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
 
@@ -617,7 +602,7 @@ namespace fairwindsk::ui::topbar {
             value = m_units->convert("m","nm", value);
 
             // Build the formatted value
-            text = m_units->format("nm", value);
+            const auto text = m_units->format("nm", value);
 
             // Set the course over ground label from the UI to the formatted value
             ui->label_DTG->setText(text);
@@ -636,8 +621,6 @@ namespace fairwindsk::ui::topbar {
             return;
         }
 
-        QString text;
-
         // Get the value
         auto value = fairwindsk::signalk::Client::getDateTimeFromUpdateByPath(update);
 
@@ -650,7 +633,7 @@ namespace fairwindsk::ui::topbar {
 
             // Build the formatted value
             //text = m_units->format("nm", value);
-            text = value.toString();
+            const auto text = value.toString();
 
             // Set the course over ground label from the UI to the formatted value
             ui->label_TTG->setText(text);
@@ -669,8 +652,6 @@ namespace fairwindsk::ui::topbar {
             return;
         }
 
-        QString text;
-
         // Get the value
         auto value = fairwindsk::signalk::Client::getDateTimeFromUpdateByPath(update);
 
@@ -683,7 +664,7 @@ namespace fairwindsk::ui::topbar {
 
             // Build the formatted value
             //text = m_units->format("nm", value);
-            text = value.toString();
+            const auto text = value.toString();
 
             // Set the course over ground label from the UI to the formatted value
             ui->label_ETA->setText(text);
@@ -702,8 +683,6 @@ namespace fairwindsk::ui::topbar {
             return;
         }
 
-        QString text;
-
         // Get the value
         auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
 
@@ -715,7 +694,7 @@ namespace fairwindsk::ui::topbar {
             value = m_units->convert("m","nm", value);
 
             // Build the formatted value
-            text = m_units->format("nm", value);
+            const auto text = m_units->format("nm", value);
 
             // Set the course over ground label from the UI to the formatted value
             ui->label_XTE->setText(text);
@@ -734,8 +713,6 @@ namespace fairwindsk::ui::topbar {
             return;
         }
 
-        QString text;
-
         // Get the value
         auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
 
@@ -747,7 +724,7 @@ namespace fairwindsk::ui::topbar {
             value = m_units->convert("ms-1","kn", value);
 
             // Build the formatted value
-            text = m_units->format("kn", value);
+            const auto text = m_units->format("kn", value);
 
             // Set the course over ground label from the UI to the formatted value
             ui->label_VMG->setText(text);
