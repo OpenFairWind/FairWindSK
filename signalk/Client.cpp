@@ -10,12 +10,64 @@
 #include <QNetworkReply>
 #include <QJsonDocument>
 #include <QJsonArray>
+#include <QEventLoop>
+#include <QElapsedTimer>
 
 #include "Client.hpp"
 #include "FairWindSK.hpp"
 #include "Waypoint.hpp"
 
 namespace fairwindsk::signalk {
+    QNetworkRequest Client::createJsonRequest(const QUrl& url) const {
+        QNetworkRequest request(url);
+        request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+        request.setRawHeader("Accept", "application/json");
+
+        if (!m_Cookie.isEmpty()) {
+            request.setRawHeader("Cookie", m_Cookie.toLatin1());
+        }
+
+        return request;
+    }
+
+    QByteArray Client::finishReply(QNetworkReply *reply, const bool updateCookie) const {
+        const QScopedPointer<QNetworkReply> guard(reply);
+        QElapsedTimer timer;
+        timer.start();
+
+        while (!guard->isFinished() && timer.elapsed() < kRequestTimeoutMs) {
+            QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+        }
+
+        if (!guard->isFinished() && m_Debug) {
+            qDebug() << Q_FUNC_INFO << "Timeout waiting for reply from" << guard->request().url();
+        }
+
+        if (guard->error() != QNetworkReply::NoError && m_Debug) {
+            qDebug() << Q_FUNC_INFO << "Failure" << guard->errorString();
+        }
+
+        if (updateCookie) {
+            const QByteArray cookie = guard->rawHeader("Set-Cookie");
+            if (!cookie.isEmpty()) {
+                const_cast<Client *>(this)->m_Cookie = cookie;
+
+                if (m_Debug) {
+                    qDebug() << "m_Cookie: " << m_Cookie;
+                }
+            }
+        }
+
+        if (updateCookie && m_Debug) {
+            const QList<QByteArray> headerList = guard->rawHeaderList();
+            for (const QByteArray &head : headerList) {
+                qDebug() << head << ":" << guard->rawHeader(head);
+            }
+        }
+
+        return guard->readAll();
+    }
+
 /*
  * SignalKAPIClient - Public Constructor
  */
@@ -49,10 +101,10 @@ namespace fairwindsk::signalk {
         auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
         // Connect the on connected event
-        connect(&m_WebSocket, &QWebSocket::connected, this, &Client::onConnected);
+        connect(&m_WebSocket, &QWebSocket::connected, this, &Client::onConnected, Qt::UniqueConnection);
 
         // Connect the on disconnected event
-        connect(&m_WebSocket, &QWebSocket::disconnected, this, &Client::onDisconnected);
+        connect(&m_WebSocket, &QWebSocket::disconnected, this, &Client::onDisconnected, Qt::UniqueConnection);
 
         // Check if the url is present in parameters
         if (params.contains("url")) {
@@ -576,28 +628,7 @@ namespace fairwindsk::signalk {
  * Executes an http get request without payload
  */
     QByteArray Client::httpGet(const QUrl& url) {
-        QNetworkRequest req(url);
-        req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-        req.setRawHeader("Accept", "application/json");
-
-        if (!m_Cookie.isEmpty()) {
-            req.setRawHeader("Cookie", m_Cookie.toLatin1());
-        }
-
-        const QScopedPointer<QNetworkReply> reply(m_NetworkAccessManager.get(req));
-
-        const QTime timeout = QTime::currentTime().addSecs(10);
-        while (QTime::currentTime() < timeout && !reply->isFinished()) {
-            QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
-        }
-
-        if (reply->error() != QNetworkReply::NoError) {
-
-            if (m_Debug)
-                qDebug() << Q_FUNC_INFO << "Failure" << reply->errorString();
-        }
-        QByteArray data = reply->readAll();
-        return data;
+        return finishReply(m_NetworkAccessManager.get(createJsonRequest(url)));
     }
 
     /*
@@ -608,26 +639,7 @@ namespace fairwindsk::signalk {
         QJsonDocument jsonDocument;
         jsonDocument.setObject(payload);
 
-        QNetworkRequest req(url);
-        req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-        req.setRawHeader("Accept", "application/json");
-
-        if (!m_Cookie.isEmpty()) {
-            req.setRawHeader("Cookie", m_Cookie.toLatin1());
-        }
-
-        QScopedPointer<QNetworkReply> reply(m_NetworkAccessManager.sendCustomRequest(req, "GET", jsonDocument.toJson()));
-
-        QTime timeout = QTime::currentTime().addSecs(10);
-        while (QTime::currentTime() < timeout && !reply->isFinished()) {
-            QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
-        }
-
-        if (reply->error() != QNetworkReply::NoError) {
-            qDebug() << Q_FUNC_INFO << "Failure" << reply->errorString();
-        }
-        QByteArray data = reply->readAll();
-        return data;
+        return finishReply(m_NetworkAccessManager.sendCustomRequest(createJsonRequest(url), "GET", jsonDocument.toJson()));
     }
 
     /*
@@ -642,46 +654,11 @@ namespace fairwindsk::signalk {
         QJsonDocument jsonDocument;
         jsonDocument.setObject(payload);
 
-        QNetworkRequest req(url);
-        req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-        req.setRawHeader("Accept", "application/json");
-
-        if (!m_Cookie.isEmpty()) {
-            req.setRawHeader("Cookie", m_Cookie.toLatin1());
-
-            if (m_Debug)
-                qDebug() << "SignalKClient::httpPost cookie: " << m_Cookie.toLatin1();
+        if (!m_Cookie.isEmpty() && m_Debug) {
+            qDebug() << "SignalKClient::httpPost cookie: " << m_Cookie.toLatin1();
         }
 
-        QScopedPointer<QNetworkReply> reply(m_NetworkAccessManager.post(req, jsonDocument.toJson()));
-
-        QTime timeout = QTime::currentTime().addSecs(10);
-        while (QTime::currentTime() < timeout && !reply->isFinished()) {
-            QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
-        }
-
-        if (reply->error() != QNetworkReply::NoError) {
-            if (m_Debug)
-                qDebug() << Q_FUNC_INFO << "Failure" << reply->errorString();
-        }
-        QByteArray data = reply->readAll();
-
-        auto cookie = reply->rawHeader("Set-Cookie");
-        if (cookie!= nullptr && cookie.size()>0) {
-            m_Cookie = cookie;
-
-            if (m_Debug)
-                qDebug() << "m_Cookie: " <<m_Cookie;
-        }
-
-        if (m_Debug) {
-            QList<QByteArray> headerList = reply->rawHeaderList();
-                    foreach(QByteArray head, headerList) {
-                    qDebug() << head << ":" << reply->rawHeader(head);
-                }
-        }
-
-        return data;
+        return finishReply(m_NetworkAccessManager.post(createJsonRequest(url), jsonDocument.toJson()), true);
     }
 
     /*
@@ -693,28 +670,7 @@ namespace fairwindsk::signalk {
         QJsonDocument jsonDocument;
         jsonDocument.setObject(payload);
 
-        QNetworkRequest req(url);
-        req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-        req.setRawHeader("Accept", "application/json");
-
-        if (!m_Cookie.isEmpty()) {
-            req.setRawHeader("Cookie", m_Cookie.toLatin1());
-        }
-
-        QScopedPointer<QNetworkReply> reply(m_NetworkAccessManager.put(req, jsonDocument.toJson()));
-
-        QTime timeout = QTime::currentTime().addSecs(10);
-        while (QTime::currentTime() < timeout && !reply->isFinished()) {
-            QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
-        }
-
-        if (reply->error() != QNetworkReply::NoError) {
-            if (m_Debug) {
-                qDebug() << Q_FUNC_INFO << "Failure" << reply->errorString();
-            }
-        }
-        QByteArray data = reply->readAll();
-        return data;
+        return finishReply(m_NetworkAccessManager.put(createJsonRequest(url), jsonDocument.toJson()));
     }
 
     /*
@@ -725,30 +681,7 @@ namespace fairwindsk::signalk {
         QJsonDocument jsonDocument;
         jsonDocument.setObject(payload);
 
-        QNetworkRequest req(url);
-        req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-        req.setRawHeader("Accept", "application/json");
-
-        if (!m_Cookie.isEmpty()) {
-            req.setRawHeader("Cookie", m_Cookie.toLatin1());
-        }
-
-        const QScopedPointer<QNetworkReply> reply(m_NetworkAccessManager.sendCustomRequest(req, "DELETE", jsonDocument.toJson()));
-
-        const QTime timeout = QTime::currentTime().addSecs(10);
-        while (QTime::currentTime() < timeout && !reply->isFinished()) {
-            QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
-        }
-
-        if (reply->error() != QNetworkReply::NoError) {
-            //if (m_Debug) {
-
-                qDebug() << Q_FUNC_INFO << "Failure" << reply->errorString();
-            //}
-        }
-        qDebug() << "Error" << reply->error();
-        QByteArray data = reply->readAll();
-        return data;
+        return finishReply(m_NetworkAccessManager.sendCustomRequest(createJsonRequest(url), "DELETE", jsonDocument.toJson()));
     }
 
     bool Client::login() {
@@ -809,7 +742,7 @@ namespace fairwindsk::signalk {
             qDebug() << "WebSocket connected";
 
         connect(&m_WebSocket, &QWebSocket::textMessageReceived,
-                this, &Client::onTextMessageReceived);
+                this, &Client::onTextMessageReceived, Qt::UniqueConnection);
 
     }
 //! [onConnected]
@@ -867,6 +800,15 @@ namespace fairwindsk::signalk {
         return result;
     }
 
+    QUrl Client::resourceUrl(const QString &collection, const QString &id) const {
+        const QString basePath = m_Url.toString() + "/v2/api/resources/" + collection;
+        if (id.isEmpty()) {
+            return QUrl(basePath);
+        }
+
+        return QUrl(basePath + "/" + QString::fromLatin1(QUrl::toPercentEncoding(id)));
+    }
+
     QMap<QString, Waypoint> Client::getWaypoints() {
         QMap<QString, Waypoint> result;
 
@@ -878,10 +820,6 @@ namespace fairwindsk::signalk {
         for ( const auto& key : jsonObject.keys() ) {
             if (jsonObject.contains(key) && jsonObject[key].isObject()) {
                 auto value = jsonObject[key].toObject();
-
-                qDebug() << "Waypoint " << key;
-                qDebug() << value;
-
                 auto waypoint = signalk::Waypoint(value);
                 result.insert(key, waypoint);
             }
@@ -889,6 +827,33 @@ namespace fairwindsk::signalk {
         }
 
         return result;
+    }
+
+    QMap<QString, QJsonObject> Client::getResources(const QString &collection) {
+        QMap<QString, QJsonObject> result;
+
+        const auto data = httpGet(resourceUrl(collection));
+        const auto jsonDocument = QJsonDocument::fromJson(data);
+        const auto jsonObject = jsonDocument.object();
+
+        for (const auto &key : jsonObject.keys()) {
+            if (jsonObject.contains(key) && jsonObject[key].isObject()) {
+                result.insert(key, jsonObject[key].toObject());
+            }
+        }
+
+        return result;
+    }
+
+    QJsonObject Client::putResource(const QString &collection, const QString &id, const QJsonObject &payload) {
+        QJsonObject mutablePayload = payload;
+        return signalkPut(resourceUrl(collection, id), mutablePayload);
+    }
+
+    bool Client::deleteResource(const QString &collection, const QString &id) {
+        QJsonObject payload;
+        signalkDelete(resourceUrl(collection, id), payload);
+        return true;
     }
 
     QJsonObject Client::subscribe(const QString& path, QObject *receiver, const char *member, int period, const QString& policy, int minPeriod) {

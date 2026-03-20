@@ -156,14 +156,17 @@ add_executable(${PROJECT_NAME}
         ui/mydata/MyData.cpp
         ui/mydata/MyData.hpp
         ui/mydata/MyData.ui
+        ui/mydata/ResourceDialog.cpp
+        ui/mydata/ResourceDialog.hpp
+        ui/mydata/ResourceModel.cpp
+        ui/mydata/ResourceModel.hpp
+        ui/mydata/ResourceTab.cpp
+        ui/mydata/ResourceTab.hpp
         ui/bottombar/AnchorBar.cpp
         ui/bottombar/AnchorBar.hpp
         ui/bottombar/AnchorBar.ui
         PList.cpp
         PList.hpp
-        ui/mydata/Waypoints.cpp
-        ui/mydata/Waypoints.hpp
-        ui/mydata/Waypoints.ui
         ui/mydata/Files.cpp
         ui/mydata/Files.hpp
         ui/mydata/Files.ui
@@ -172,8 +175,6 @@ add_executable(${PROJECT_NAME}
         ui/mydata/FileViewer.cpp
         ui/mydata/FileViewer.hpp
         ui/mydata/FileViewer.ui
-        ui/mydata/WaypointsModel.cpp
-        ui/mydata/WaypointsModel.hpp
 
 )
 

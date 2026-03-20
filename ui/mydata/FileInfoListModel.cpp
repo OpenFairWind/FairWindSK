@@ -52,23 +52,30 @@ namespace fairwindsk::ui::mydata {
     }
 
     QVariant FileInfoListModel::data(const QModelIndex &index, const int role) const {
-
-        qDebug() << index;
-
-        QStringList _data;
-        _data << m_fileInfoList.at(index.row()).fileName()
-        << Files::format_bytes(m_fileInfoList.at(index.row()).size())
-              << (m_fileInfoList.at(index.row()).isFile() ? "File" : "Folder")
-              << m_fileInfoList.at(index.row()).absoluteFilePath();
-
         if (!index.isValid())
             return {};
 
         if (index.row() < 0 || index.row() >= m_fileInfoList.size())
             return {};
 
+        if (index.column() < 0 || index.column() >= m_header.size())
+            return {};
+
+        const QFileInfo &fileInfo = m_fileInfoList.at(index.row());
+
         if (role == Qt::DisplayRole || role == Qt::EditRole) {
-            return _data.at(index.column());
+            switch (index.column()) {
+                case 0:
+                    return fileInfo.fileName();
+                case 1:
+                    return Files::format_bytes(fileInfo.size());
+                case 2:
+                    return fileInfo.isFile() ? "File" : "Folder";
+                case 3:
+                    return fileInfo.absoluteFilePath();
+                default:
+                    return {};
+            }
 
         }
 
@@ -76,6 +83,10 @@ namespace fairwindsk::ui::mydata {
     }
 
     QString FileInfoListModel::getAbsolutePath(const QModelIndex &index) {
+        if (!index.isValid() || index.row() < 0 || index.row() >= m_fileInfoList.size()) {
+            return {};
+        }
+
         return m_fileInfoList.at(index.row()).absoluteFilePath();
     }
 

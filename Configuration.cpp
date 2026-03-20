@@ -11,6 +11,7 @@
 #include <QJsonDocument>
 #include <QFileInfo>
 #include <QSettings>
+#include <QByteArray>
 
 namespace fairwindsk {
     Configuration::Configuration() {
@@ -60,18 +61,19 @@ namespace fairwindsk {
     }
 
     bool Configuration::load(const QString& filename) {
-        bool result = false;
-
-        std::ifstream fileCheck(filename.toUtf8());
-        if (fileCheck) {
-            if (nlohmann::json::accept(fileCheck)) {
-                std::ifstream file(filename.toUtf8());
-                m_jsonData = nlohmann::json::parse(file);
-                result = true;
-            }
+        QFile file(filename);
+        if (!file.open(QIODevice::ReadOnly)) {
+            return false;
         }
 
-        return result;
+        const QByteArray data = file.readAll();
+
+        try {
+            m_jsonData = nlohmann::json::parse(data.constBegin(), data.constEnd());
+            return true;
+        } catch (const nlohmann::json::parse_error &) {
+            return false;
+        }
     }
 
     nlohmann::json &Configuration::getRoot() {

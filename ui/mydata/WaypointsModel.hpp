@@ -36,6 +36,7 @@ namespace fairwindsk::ui::mydata {
 
     private:
         QMap<QString, signalk::Waypoint> m_waypoints;
+        QStringList m_waypointKeys;
         Units *m_units;
         QGeoCoordinate m_position;
 

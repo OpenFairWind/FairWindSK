@@ -41,7 +41,7 @@ namespace fairwindsk::ui::mydata {
 
 
 
-	    m_fileSystemModel = new QFileSystemModel();
+	    m_fileSystemModel = new QFileSystemModel(this);
 
 	    m_fileSystemModel->setRootPath(QDir::homePath());
 
@@ -78,11 +78,11 @@ namespace fairwindsk::ui::mydata {
 
 		connect(ui->toolButton_Home, &QToolButton::clicked, this, &Files::onHome);
 
-		m_fileListModel = new FileInfoListModel();
+		m_fileListModel = new FileInfoListModel(this);
 		ui->tableView_Search->setModel(m_fileListModel);
 
-		connect(&m_searchingWatcher, &QFutureWatcher<QList<QFileInfo>>::finished, this, &Files::searchFinished);
-		connect(&m_searchingWatcher, &QFutureWatcher<QList<QFileInfo>>::progressValueChanged, this, &Files::searchProgressValueChanged);
+		connect(&m_searchingWatcher, &QFutureWatcher<QFileInfo>::finished, this, &Files::searchFinished);
+		connect(&m_searchingWatcher, &QFutureWatcher<QFileInfo>::progressValueChanged, this, &Files::searchProgressValueChanged);
 
 		connect(ui->tableView_Search, &QAbstractItemView::doubleClicked, this, &Files::onSearchViewItemDoubleClicked);
 		connect(ui->tableView_Search, &QAbstractItemView::clicked, this, &Files::onSearchViewItemClicked);
@@ -96,6 +96,10 @@ namespace fairwindsk::ui::mydata {
 
 
 	QString Files::getCurrentDir() const {
+		if (!m_currentDir) {
+			return {};
+		}
+
 		return m_currentDir->absolutePath();
 	}
 
@@ -159,7 +163,8 @@ namespace fairwindsk::ui::mydata {
 			QString permissions = "";
 
 			// Get the NTFS Flag (needed by Windows)
-			const bool isNTFS = (new QStorageInfo(QDir::current()))->fileSystemType().compare("NTFS") == 0;
+			const QStorageInfo storageInfo(QDir::current());
+			const bool isNTFS = storageInfo.fileSystemType().compare("NTFS") == 0;
 
 			// Check if is NTFS
 			if (isNTFS) {
@@ -273,6 +278,10 @@ namespace fairwindsk::ui::mydata {
 
 
 	void Files::viewFile(const QString& path) {
+		if (m_fileViewer) {
+			onFileViewerCloseClicked();
+		}
+
 		qDebug() << "Files::viewFile " << path;
 
 		const QMimeDatabase db;
@@ -324,21 +333,27 @@ namespace fairwindsk::ui::mydata {
 		}
 
 		ui->lineEdit_Search->clear();
-		ui->tableView_Search->hide();
+		setSearchResultsVisible(false);
 		ui->widget_Searching->hide();
 		ui->listView_Files->show();
 	}
 
 	void Files::onSearchClicked() {
 
+		if (m_searchingWatcher.isRunning()) {
+			m_searchingWatcher.cancel();
+			m_searchingWatcher.waitForFinished();
+		}
+
 		if (const auto key = ui->lineEdit_Search->text(); key.isEmpty()) {
-			ui->tableView_Search->hide();
+			setSearchResultsVisible(false);
 			ui->listView_Files->show();
 		} else {
 
 			ui->listView_Files->hide();
-			ui->tableView_Search->hide();
+			setSearchResultsVisible(false);
 			ui->label_Searching->setText(tr("Searching..."));
+			ui->progressBar_Searching->setValue(0);
 			ui->widget_Searching->show();
 
 			auto searchPath = getCurrentDir();
@@ -378,7 +393,7 @@ namespace fairwindsk::ui::mydata {
 			}
 
 			count++;
-			if (count % 1000) {
+			if (count % 1000 == 0) {
 
 				promise.setProgressValue(count);
 			}
@@ -393,13 +408,21 @@ namespace fairwindsk::ui::mydata {
 	void Files::searchFinished() {
 		if (const QList<QFileInfo> results = m_searchingWatcher.future().results<QFileInfo>(); !results.isEmpty()) {
 
-			dynamic_cast<FileInfoListModel *>(ui->tableView_Search->model())->setQFileInfoList(results);
+			m_fileListModel->setQFileInfoList(results);
 			ui->tableView_Search->resizeColumnsToContents();
 			ui->widget_Searching->hide();
-			ui->tableView_Search->show();
+			setSearchResultsVisible(true);
 		} else {
 			ui->label_Searching->setText(tr("Not found!"));
 			ui->progressBar_Searching->setValue(100);
+			setSearchResultsVisible(false);
+		}
+	}
+
+	void Files::setSearchResultsVisible(const bool visible) {
+		ui->tableView_Search->setVisible(visible);
+		if (!visible) {
+			m_fileListModel->setQFileInfoList({});
 		}
 	}
 
@@ -622,16 +645,6 @@ namespace fairwindsk::ui::mydata {
 		if (m_fileViewer) {
 			delete m_fileViewer;
 			m_fileViewer = nullptr;
-		}
-
-		if (m_fileListModel) {
-			delete m_fileListModel;
-			m_fileListModel = nullptr;
-		}
-
-		if (m_fileSystemModel) {
-			delete m_fileSystemModel;
-			m_fileSystemModel = nullptr;
 		}
 
 		if (ui) {

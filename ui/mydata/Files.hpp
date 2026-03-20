@@ -117,6 +117,7 @@ private:
     void viewFile(const QString& path);
     void showWarning(const QString &message) const;
     bool setCurrentFilePath(const QString &path);
+    void setSearchResultsVisible(bool visible);
 
     static void search(QPromise<QFileInfo> &promise, const QString &searchPath, const QString &key, Qt::CaseSensitivity caseSensitivity, QDir::Filters filters);
 

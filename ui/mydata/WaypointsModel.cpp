@@ -5,6 +5,16 @@
 #include "FairWindSK.hpp"
 #include "WaypointsModel.hpp"
 
+namespace {
+    QString latitudeText(const QGeoCoordinate &coordinate) {
+        return coordinate.toString(QGeoCoordinate::DegreesMinutesSecondsWithHemisphere).split(",").value(0);
+    }
+
+    QString longitudeText(const QGeoCoordinate &coordinate) {
+        return coordinate.toString(QGeoCoordinate::DegreesMinutesSecondsWithHemisphere).split(",").value(1);
+    }
+}
+
 namespace fairwindsk::ui::mydata {
 
     WaypointsModel::WaypointsModel(QObject *parent)
@@ -20,6 +30,7 @@ namespace fairwindsk::ui::mydata {
         m_units = Units::getInstance();
 
         m_waypoints = fairWindSK->getSignalKClient()->getWaypoints();
+        m_waypointKeys = m_waypoints.keys();
 
 
         auto jsonObject = fairWindSK->getSignalKClient()->signalkGet("vessels.self.navigation.position.value");
@@ -35,7 +46,7 @@ namespace fairwindsk::ui::mydata {
 
     int WaypointsModel::rowCount(const QModelIndex & /*parent*/) const
     {
-        return m_waypoints.keys().size();
+        return m_waypointKeys.size();
     }
 
     int WaypointsModel::columnCount(const QModelIndex & /*parent*/) const {
@@ -93,10 +104,16 @@ namespace fairwindsk::ui::mydata {
         const int row = index.row();
         const int col = index.column();
 
-        const auto key = m_waypoints.keys()[row];
+        if (!index.isValid() || row < 0 || row >= m_waypointKeys.size()) {
+            return {};
+        }
+
+        const auto &key = m_waypointKeys.at(row);
+        const auto &waypoint = m_waypoints[key];
+        const auto coordinates = waypoint.getCoordinates();
 
         if (role == Qt::DecorationRole) {
-            auto type = m_waypoints[key].getType();
+            const auto type = waypoint.getType();
 
             if (col == WaypointsModel::Columns::Type) {
                 if (type=="pseudoaton") {
@@ -113,32 +130,32 @@ namespace fairwindsk::ui::mydata {
 
             switch (col) {
                 case WaypointsModel::Columns::Name:
-                    return QString(m_waypoints[key].getName());
+                    return QString(waypoint.getName());
                 case WaypointsModel::Columns::Description:
-                    return QString(m_waypoints[key].getDescription());
+                    return QString(waypoint.getDescription());
                 case WaypointsModel::Columns::Latitude:
-                    return QString(m_waypoints[key].getCoordinates().toString(QGeoCoordinate::DegreesMinutesSecondsWithHemisphere).split(",")[0]);
+                    return latitudeText(coordinates);
                 case WaypointsModel::Columns::Longitude:
-                    return QString(m_waypoints[key].getCoordinates().toString(QGeoCoordinate::DegreesMinutesSecondsWithHemisphere).split(",")[1]);
+                    return longitudeText(coordinates);
                 case WaypointsModel::Columns::Timestamp:
-                    return QString(m_waypoints[key].getTimestamp().toString());
+                    return QString(waypoint.getTimestamp().toString());
                 case WaypointsModel::Columns::Distance:
 
                     // Get the distance to the waypoint
-                    value = m_position.distanceTo(m_waypoints[key].getCoordinates());
+                    value = m_position.distanceTo(coordinates);
 
                     // Convert m/s to knots
                     value = m_units->convert("m",configuration->getDistanceUnits(), value);
 
                     // Build the formatted value
-                    text = m_units->format(configuration->getVesselSpeedUnits(), value);
+                    text = m_units->format(configuration->getDistanceUnits(), value);
 
                     // Return the text
                     return text;
                 case WaypointsModel::Columns::Bearing:
 
                     // Get the bearing to the waypoint
-                    value = m_position.azimuthTo(m_waypoints[key].getCoordinates());
+                    value = m_position.azimuthTo(coordinates);
 
                     // Build the formatted value
                     text = m_units->format("deg", value);
@@ -154,32 +171,32 @@ namespace fairwindsk::ui::mydata {
 
             switch (col) {
                 case WaypointsModel::Columns::Name:
-                    return QString(m_waypoints[key].getName());
+                    return QString(waypoint.getName());
                 case WaypointsModel::Columns::Description:
-                    return QString(m_waypoints[key].getDescription());
+                    return QString(waypoint.getDescription());
                 case WaypointsModel::Columns::Latitude:
-                    return QString(m_waypoints[key].getCoordinates().toString(QGeoCoordinate::DegreesMinutesSecondsWithHemisphere).split(",")[0]);
+                    return latitudeText(coordinates);
                 case WaypointsModel::Columns::Longitude:
-                    return QString(m_waypoints[key].getCoordinates().toString(QGeoCoordinate::DegreesMinutesSecondsWithHemisphere).split(",")[1]);
+                    return longitudeText(coordinates);
                 case WaypointsModel::Columns::Timestamp:
-                    return QString(m_waypoints[key].getTimestamp().toString());
+                    return QString(waypoint.getTimestamp().toString());
                 case WaypointsModel::Columns::Distance:
 
                     // Get the distance to the waypoint
-                    value = m_position.distanceTo(m_waypoints[key].getCoordinates());
+                    value = m_position.distanceTo(coordinates);
 
                     // Convert m/s to knots
                     value = m_units->convert("m",configuration->getDistanceUnits(), value);
 
                     // Build the formatted value
-                    text = m_units->format(configuration->getVesselSpeedUnits(), value);
+                    text = m_units->format(configuration->getDistanceUnits(), value);
 
                     // Return the text
                     return text;
                 case WaypointsModel::Columns::Bearing:
 
                     // Get the bearing to the waypoint
-                    value = m_position.azimuthTo(m_waypoints[key].getCoordinates());
+                    value = m_position.azimuthTo(coordinates);
 
                     // Build the formatted value
                     text = m_units->format("deg", value);
@@ -214,7 +231,11 @@ namespace fairwindsk::ui::mydata {
             const int row = index.row();
             const int col = index.column();
 
-            auto key = m_waypoints.keys()[row];
+            if (row < 0 || row >= m_waypointKeys.size()) {
+                return false;
+            }
+
+            const auto &key = m_waypointKeys.at(row);
 
             if (!checkIndex(index))
                 return false;

@@ -76,6 +76,9 @@ namespace fairwindsk::signalk {
 
         Waypoint getWaypointByHref(const QString &href);
         QMap<QString, Waypoint> getWaypoints();
+        QMap<QString, QJsonObject> getResources(const QString &collection);
+        QJsonObject putResource(const QString &collection, const QString &id, const QJsonObject &payload);
+        bool deleteResource(const QString &collection, const QString &id);
 
         static QString getStringFromUpdateByPath(const QJsonObject &update, const QString& path = "");
         static double getDoubleFromUpdateByPath(const QJsonObject &update, const QString& path = "");
@@ -97,6 +100,8 @@ namespace fairwindsk::signalk {
 
 
     private:
+        static constexpr int kRequestTimeoutMs = 10000;
+
         QString m_Username;
         QString m_Password;
         QString m_Token;
@@ -113,6 +118,8 @@ namespace fairwindsk::signalk {
         bool m_Active;
         QString m_Label;
 
+        QNetworkRequest createJsonRequest(const QUrl& url) const;
+        QByteArray finishReply(QNetworkReply *reply, bool updateCookie = false) const;
         QByteArray httpGet(const QUrl& url);
         QByteArray httpGet(const QUrl& url, const QJsonObject& payload);
         QByteArray httpPost(const QUrl& url, const QJsonObject& payload);
@@ -120,6 +127,7 @@ namespace fairwindsk::signalk {
         QByteArray httpDelete(const QUrl& url, const QJsonObject& payload);
 
         QUrl getEndpointByProtocol(const QString &protocol, const QString& version = "v1");
+        QUrl resourceUrl(const QString &collection, const QString &id = QString()) const;
 
         QJsonObject m_Server;
 

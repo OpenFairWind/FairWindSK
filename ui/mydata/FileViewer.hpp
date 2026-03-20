@@ -6,6 +6,7 @@
 #define JSONVIEWER_H
 
 #include <QWidget>
+#include <QMimeType>
 
 namespace fairwindsk::ui::mydata
 {
@@ -25,9 +26,17 @@ namespace fairwindsk::ui::mydata
 
         public slots:
             void onCloseClicked();
+            void onSaveClicked();
 
     private:
+        void loadFile();
+        void loadEditableTextFile();
+        void loadPreview();
+        bool isEditableTextFile(const QMimeType &mimeType) const;
+        void showError(const QString &message) const;
+
         Ui::FileViewer *ui;
+        QString m_path;
     };
 }
 

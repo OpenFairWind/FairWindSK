@@ -7,8 +7,8 @@
 #include <QtWidgets/QDialogButtonBox>
 #include "MyData.hpp"
 #include "ui_MyData.h"
-#include "Waypoints.hpp"
 #include "Files.hpp"
+#include "ResourceTab.hpp"
 
 namespace fairwindsk::ui::mydata {
     MyData::MyData(QWidget *parent, QWidget *currenWidget): QWidget(parent), ui(new Ui::MyData) {
@@ -51,18 +51,10 @@ namespace fairwindsk::ui::mydata {
         // Remove tabs if present
         removeTabs();
 
-        // Add the main tab
-        ui->tabWidget->addTab(new Waypoints(this), tr("Waypoints"));
-
-        /*
-        // Add the connection tab
-        ui->tabWidget->addTab(new Routes(this), tr("Routes"));
-
-        // Add the signal k tab
-        ui->tabWidget->addTab(new Tracks(this), tr("Tracks"));
-
-
-        */
+        // Add the resources tabs
+        ui->tabWidget->addTab(new ResourceTab(ResourceKind::Waypoint, this), tr("Waypoints"));
+        ui->tabWidget->addTab(new ResourceTab(ResourceKind::Route, this), tr("Routes"));
+        ui->tabWidget->addTab(new ResourceTab(ResourceKind::Track, this), tr("Tracks"));
 
         // Add the applications tab
         ui->tabWidget->addTab(new Files(this), tr("Files"));
