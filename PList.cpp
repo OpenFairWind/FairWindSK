@@ -16,6 +16,14 @@ static QDomElement textElement(QDomDocument& doc, const char *tagName, QString c
 	return tag;
 }
 
+static int variantTypeId(const QVariant &variant) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+	return variant.typeId();
+#else
+	return variant.type();
+#endif
+}
+
 
 PList::PList(QIODevice *device) {
 	QVariantMap result;
@@ -120,22 +128,22 @@ QVariantMap PList::parseDictElement(const QDomElement& element) {
 
  QDomElement PList::serializePrimitive(QDomDocument &doc, const QVariant &variant) {
 	QDomElement result;
-	if (variant.typeId() == QMetaType::Type::Bool) {
+	if (variantTypeId(variant) == QMetaType::Type::Bool) {
         result = doc.createElement(variant.toBool() ? QStringLiteral("true") : QStringLiteral("false"));
 	}
-	else if (variant.typeId() == QMetaType::Type::QDate) {
+	else if (variantTypeId(variant) == QMetaType::Type::QDate) {
 		result = textElement(doc, "date", variant.toDate().toString(Qt::ISODate));
 	}
-	else if (variant.typeId() == QMetaType::Type::QDateTime) {
+	else if (variantTypeId(variant) == QMetaType::Type::QDateTime) {
 		result = textElement(doc, "date", variant.toDateTime().toString(Qt::ISODate));
 	}
-	else if (variant.typeId() == QMetaType::Type::QByteArray) {
+	else if (variantTypeId(variant) == QMetaType::Type::QByteArray) {
 		result = textElement(doc, "data", QString::fromLatin1(variant.toByteArray().toBase64()));
 	}
-	else if (variant.typeId() == QMetaType::Type::QString) {
+	else if (variantTypeId(variant) == QMetaType::Type::QString) {
 		result = textElement(doc, "string", variant.toString());
 	}
-	else if (variant.typeId() == QMetaType::Type::Int) {
+	else if (variantTypeId(variant) == QMetaType::Type::Int) {
 		result = textElement(doc, "integer", QString::number(variant.toInt()));
 	}
 	else if (variant.canConvert<double>()) {
@@ -147,10 +155,10 @@ QVariantMap PList::parseDictElement(const QDomElement& element) {
 }
 
 QDomElement PList::serializeElement(QDomDocument &doc, const QVariant &variant) {
-	if (variant.typeId() == QMetaType::Type::QVariantMap) {
+	if (variantTypeId(variant) == QMetaType::Type::QVariantMap) {
 		return serializeMap(doc, variant.toMap());
 	}
-	else if (variant.typeId() == QMetaType::Type::QVariantList) {
+	else if (variantTypeId(variant) == QMetaType::Type::QVariantList) {
 		 return serializeList(doc, variant.toList());
 	}
 	else {
