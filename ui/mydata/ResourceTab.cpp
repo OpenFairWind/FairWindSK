@@ -25,6 +25,8 @@
 #include <QDoubleSpinBox>
 #include <QUuid>
 
+#include "GeoJsonPreviewWidget.hpp"
+#include "GeoJsonUtils.hpp"
 #include "signalk/Client.hpp"
 
 namespace {
@@ -78,6 +80,7 @@ namespace fairwindsk::ui::mydata {
           m_coordinatesEdit(new QPlainTextEdit(this)),
           m_geometryEdit(new QPlainTextEdit(this)),
           m_propertiesEdit(new QPlainTextEdit(this)),
+          m_previewWidget(new GeoJsonPreviewWidget(this)),
           m_hrefEdit(new QLineEdit(this)),
           m_mimeTypeEdit(new QLineEdit(this)),
           m_notePositionCheckBox(new QCheckBox(tr("Include position"), this)),
@@ -233,6 +236,7 @@ namespace fairwindsk::ui::mydata {
         }
 
         formLayout->addRow(tr("Timestamp"), m_timestampValueLabel);
+        detailsLayout->addWidget(m_previewWidget, 1);
 
         m_stackedWidget->addWidget(m_listPage);
         m_stackedWidget->addWidget(m_detailsPage);
@@ -450,6 +454,7 @@ namespace fairwindsk::ui::mydata {
         }
 
         m_titleLabel->setText(detailsTitleForCurrentState());
+        updatePreview(resource);
     }
 
     QJsonObject ResourceTab::parseJsonObject(const QPlainTextEdit *edit) const {
@@ -674,6 +679,14 @@ namespace fairwindsk::ui::mydata {
         }
 
         m_titleLabel->setText(detailsTitleForCurrentState());
+        updatePreview(resourceFromEditor());
+    }
+
+    void ResourceTab::updatePreview(const QJsonObject &resource) {
+        QList<QPair<QString, QJsonObject>> resources;
+        resources.append({m_currentResourceId, resource});
+        m_previewWidget->setGeoJson(exportResourcesAsGeoJson(m_kind, resources),
+                                    tr("%1 GeoJSON Preview").arg(resourceKindToSingularTitle(m_kind)));
     }
 
     void ResourceTab::onAddClicked() {
@@ -736,7 +749,7 @@ namespace fairwindsk::ui::mydata {
             this,
             tr("Import %1").arg(resourceKindToTitle(m_kind)),
             QString(),
-            tr("JSON files (*.json);;All files (*)"));
+            tr("GeoJSON files (*.geojson *.json);;All files (*)"));
         if (fileName.isEmpty()) {
             return;
         }
@@ -747,15 +760,43 @@ namespace fairwindsk::ui::mydata {
             return;
         }
 
-        const auto document = QJsonDocument::fromJson(file.readAll());
+        QList<QPair<QString, QJsonObject>> resources;
         QString message;
-        int count = 0;
-        if (!m_model->importDocument(document, &message, &count)) {
+        if (!importResourcesFromGeoJson(m_kind, QJsonDocument::fromJson(file.readAll()), &resources, &message)) {
             showError(message);
             return;
         }
 
-        QMessageBox::information(this, resourceKindToTitle(m_kind), message);
+        int importedCount = 0;
+        for (const auto &entry : resources) {
+            bool updated = false;
+            if (!entry.first.isEmpty()) {
+                for (int row = 0; row < m_model->rowCount(); ++row) {
+                    if (m_model->resourceIdAtRow(row) == entry.first) {
+                        updated = m_model->updateResource(entry.first, entry.second);
+                        break;
+                    }
+                }
+            }
+            if (!updated && !m_model->createResource(entry.second).isEmpty()) {
+                updated = true;
+            }
+            if (updated) {
+                ++importedCount;
+            }
+        }
+
+        if (importedCount == 0) {
+            showError(tr("No %1 could be imported from the selected GeoJSON file.")
+                              .arg(resourceKindToTitle(m_kind).toLower()));
+            return;
+        }
+
+        QMessageBox::information(this,
+                                 resourceKindToTitle(m_kind),
+                                 tr("Imported %1 %2 GeoJSON feature(s).")
+                                         .arg(importedCount)
+                                         .arg(resourceKindToTitle(m_kind).toLower()));
     }
 
     void ResourceTab::onExportClicked() {
@@ -772,8 +813,8 @@ namespace fairwindsk::ui::mydata {
         const QString fileName = QFileDialog::getSaveFileName(
             this,
             tr("Export %1").arg(resourceKindToTitle(m_kind)),
-            QString("%1.json").arg(resourceKindToCollection(m_kind)),
-            tr("JSON files (*.json);;All files (*)"));
+            QString("%1.geojson").arg(resourceKindToCollection(m_kind)),
+            tr("GeoJSON files (*.geojson *.json);;All files (*)"));
         if (fileName.isEmpty()) {
             return;
         }
@@ -784,7 +825,23 @@ namespace fairwindsk::ui::mydata {
             return;
         }
 
-        file.write(m_model->exportDocument(ids).toJson(QJsonDocument::Indented));
+        QList<QPair<QString, QJsonObject>> resources;
+        if (ids.isEmpty()) {
+            for (int row = 0; row < m_model->rowCount(); ++row) {
+                resources.append({m_model->resourceIdAtRow(row), m_model->resourceAtRow(row)});
+            }
+        } else {
+            for (const auto &id : ids) {
+                for (int row = 0; row < m_model->rowCount(); ++row) {
+                    if (m_model->resourceIdAtRow(row) == id) {
+                        resources.append({id, m_model->resourceAtRow(row)});
+                        break;
+                    }
+                }
+            }
+        }
+
+        file.write(exportResourcesAsGeoJson(m_kind, resources).toJson(QJsonDocument::Indented));
     }
 
     void ResourceTab::onRefreshClicked() {

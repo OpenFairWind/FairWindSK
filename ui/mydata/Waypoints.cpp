@@ -25,6 +25,8 @@
 #include <QUuid>
 
 #include "FairWindSK.hpp"
+#include "GeoJsonPreviewWidget.hpp"
+#include "GeoJsonUtils.hpp"
 
 namespace {
     QJsonObject featureObject(const QJsonObject &resource) {
@@ -130,6 +132,7 @@ namespace fairwindsk::ui::mydata {
           m_longitudeSpinBox(new QDoubleSpinBox(this)),
           m_altitudeSpinBox(new QDoubleSpinBox(this)),
           m_propertiesEdit(new QPlainTextEdit(this)),
+          m_previewWidget(new GeoJsonPreviewWidget(this)),
           m_idValueLabel(new QLabel(this)),
           m_timestampValueLabel(new QLabel(this)) {
         auto *rootLayout = new QVBoxLayout(this);
@@ -240,6 +243,7 @@ namespace fairwindsk::ui::mydata {
         formLayout->addRow(tr("Altitude"), m_altitudeSpinBox);
         formLayout->addRow(tr("Feature properties (JSON)"), m_propertiesEdit);
         formLayout->addRow(tr("Timestamp"), m_timestampValueLabel);
+        detailsLayout->addWidget(m_previewWidget, 1);
 
         m_stackedWidget->addWidget(m_listPage);
         m_stackedWidget->addWidget(m_detailsPage);
@@ -332,6 +336,7 @@ namespace fairwindsk::ui::mydata {
         const auto properties = featurePropertiesObject(resource);
         m_propertiesEdit->setPlainText(QString::fromUtf8(QJsonDocument(properties).toJson(QJsonDocument::Indented)));
         m_timestampValueLabel->setText(resource["timestamp"].toString());
+        updatePreview(resource);
     }
 
     QJsonObject Waypoints::waypointFromEditor() const {
@@ -476,6 +481,13 @@ namespace fairwindsk::ui::mydata {
         m_altitudeSpinBox->setValue(0.0);
         m_propertiesEdit->clear();
         m_timestampValueLabel->setText({});
+        updatePreview(waypointFromEditor());
+    }
+
+    void Waypoints::updatePreview(const QJsonObject &resource) {
+        QList<QPair<QString, QJsonObject>> resources;
+        resources.append({m_currentWaypointId, resource});
+        m_previewWidget->setGeoJson(exportResourcesAsGeoJson(ResourceKind::Waypoint, resources), tr("Waypoint GeoJSON Preview"));
     }
 
     QString Waypoints::waypointHref(const QString &id) const {
@@ -499,7 +511,7 @@ namespace fairwindsk::ui::mydata {
             this,
             tr("Import Waypoints"),
             QString(),
-            tr("JSON files (*.json);;All files (*)"));
+            tr("GeoJSON files (*.geojson *.json);;All files (*)"));
         if (fileName.isEmpty()) {
             return;
         }
@@ -510,13 +522,38 @@ namespace fairwindsk::ui::mydata {
             return;
         }
 
+        QList<QPair<QString, QJsonObject>> resources;
         QString message;
-        if (!m_model->importDocument(QJsonDocument::fromJson(file.readAll()), &message)) {
+        if (!importResourcesFromGeoJson(ResourceKind::Waypoint, QJsonDocument::fromJson(file.readAll()), &resources, &message)) {
             showError(message);
             return;
         }
 
-        QMessageBox::information(this, tr("Waypoints"), message);
+        int importedCount = 0;
+        for (const auto &entry : resources) {
+            bool updated = false;
+            if (!entry.first.isEmpty()) {
+                for (int row = 0; row < m_model->rowCount(); ++row) {
+                    if (m_model->resourceIdAtRow(row) == entry.first) {
+                        updated = m_model->updateResource(entry.first, entry.second);
+                        break;
+                    }
+                }
+            }
+            if (!updated && !m_model->createResource(entry.second).isEmpty()) {
+                updated = true;
+            }
+            if (updated) {
+                ++importedCount;
+            }
+        }
+
+        if (importedCount == 0) {
+            showError(tr("No waypoint could be imported from the selected GeoJSON file."));
+            return;
+        }
+
+        QMessageBox::information(this, tr("Waypoints"), tr("Imported %1 waypoint feature(s).").arg(importedCount));
     }
 
     void Waypoints::onExportClicked() {
@@ -529,8 +566,8 @@ namespace fairwindsk::ui::mydata {
         const QString fileName = QFileDialog::getSaveFileName(
             this,
             tr("Export Waypoints"),
-            QStringLiteral("waypoints.json"),
-            tr("JSON files (*.json);;All files (*)"));
+            QStringLiteral("waypoints.geojson"),
+            tr("GeoJSON files (*.geojson *.json);;All files (*)"));
         if (fileName.isEmpty()) {
             return;
         }
@@ -541,7 +578,23 @@ namespace fairwindsk::ui::mydata {
             return;
         }
 
-        file.write(m_model->exportDocument(ids).toJson(QJsonDocument::Indented));
+        QList<QPair<QString, QJsonObject>> resources;
+        if (ids.isEmpty()) {
+            for (int row = 0; row < m_model->rowCount(); ++row) {
+                resources.append({m_model->resourceIdAtRow(row), m_model->resourceAtRow(row)});
+            }
+        } else {
+            for (const auto &id : ids) {
+                for (int row = 0; row < m_model->rowCount(); ++row) {
+                    if (m_model->resourceIdAtRow(row) == id) {
+                        resources.append({id, m_model->resourceAtRow(row)});
+                        break;
+                    }
+                }
+            }
+        }
+
+        file.write(exportResourcesAsGeoJson(ResourceKind::Waypoint, resources).toJson(QJsonDocument::Indented));
     }
 
     void Waypoints::onRefreshClicked() {

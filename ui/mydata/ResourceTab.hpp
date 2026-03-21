@@ -24,6 +24,8 @@ class QToolButton;
 
 namespace fairwindsk::ui::mydata {
 
+    class GeoJsonPreviewWidget;
+
     class ResourceTab final : public QWidget {
         Q_OBJECT
 
@@ -58,6 +60,7 @@ namespace fairwindsk::ui::mydata {
         QJsonObject parseJsonObject(const QPlainTextEdit *edit) const;
         QJsonArray coordinatesJson() const;
         void clearEditor();
+        void updatePreview(const QJsonObject &resource);
         QString resourceDisplayName(const QJsonObject &resource) const;
         QString resourceDescription(const QJsonObject &resource) const;
         QString detailsTitleForCurrentState() const;
@@ -92,6 +95,7 @@ namespace fairwindsk::ui::mydata {
         QPlainTextEdit *m_coordinatesEdit;
         QPlainTextEdit *m_geometryEdit;
         QPlainTextEdit *m_propertiesEdit;
+        GeoJsonPreviewWidget *m_previewWidget;
         QLineEdit *m_hrefEdit;
         QLineEdit *m_mimeTypeEdit;
         QCheckBox *m_notePositionCheckBox;

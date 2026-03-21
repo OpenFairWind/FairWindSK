@@ -18,7 +18,9 @@ class QTimer;
 
 namespace fairwindsk::ui::mydata {
 
+    class GeoJsonPreviewWidget;
     class HistoryTrackModel;
+    struct HistoryTrackPoint;
 
     class HistoryTrackTab final : public QWidget {
         Q_OBJECT
@@ -47,6 +49,8 @@ namespace fairwindsk::ui::mydata {
         void clearEditor();
         int currentRow() const;
         void updateStatusLabel();
+        QList<HistoryTrackPoint> allPoints() const;
+        void updatePreview();
 
         QString currentDuration() const;
         QString currentResolution() const;
@@ -74,6 +78,7 @@ namespace fairwindsk::ui::mydata {
         QDoubleSpinBox *m_latitudeSpinBox = nullptr;
         QDoubleSpinBox *m_longitudeSpinBox = nullptr;
         QDoubleSpinBox *m_altitudeSpinBox = nullptr;
+        GeoJsonPreviewWidget *m_previewWidget = nullptr;
         QTimer *m_refreshTimer = nullptr;
         int m_currentRow = -1;
         bool m_isEditing = false;

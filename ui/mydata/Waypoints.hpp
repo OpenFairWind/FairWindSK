@@ -21,6 +21,7 @@ class QDoubleSpinBox;
 
 namespace fairwindsk::ui::mydata {
 
+    class GeoJsonPreviewWidget;
     class WaypointTableProxyModel;
 
     class Waypoints final : public QWidget {
@@ -62,6 +63,7 @@ namespace fairwindsk::ui::mydata {
         void deleteWaypoint(const QString &id, const QString &name);
         void showError(const QString &message) const;
         void clearEditor();
+        void updatePreview(const QJsonObject &resource);
         QString waypointHref(const QString &id) const;
 
         ResourceModel *m_model = nullptr;
@@ -90,6 +92,7 @@ namespace fairwindsk::ui::mydata {
         QDoubleSpinBox *m_longitudeSpinBox = nullptr;
         QDoubleSpinBox *m_altitudeSpinBox = nullptr;
         QPlainTextEdit *m_propertiesEdit = nullptr;
+        GeoJsonPreviewWidget *m_previewWidget = nullptr;
         QLabel *m_idValueLabel = nullptr;
         QLabel *m_timestampValueLabel = nullptr;
         QString m_currentWaypointId;

@@ -21,6 +21,8 @@
 #include <QVBoxLayout>
 #include <QComboBox>
 
+#include "GeoJsonPreviewWidget.hpp"
+#include "GeoJsonUtils.hpp"
 #include "HistoryTrackModel.hpp"
 
 namespace fairwindsk::ui::mydata {
@@ -48,6 +50,7 @@ namespace fairwindsk::ui::mydata {
           m_latitudeSpinBox(new QDoubleSpinBox(this)),
           m_longitudeSpinBox(new QDoubleSpinBox(this)),
           m_altitudeSpinBox(new QDoubleSpinBox(this)),
+          m_previewWidget(new GeoJsonPreviewWidget(this)),
           m_refreshTimer(new QTimer(this)) {
         auto *rootLayout = new QVBoxLayout(this);
         rootLayout->setContentsMargins(0, 0, 0, 0);
@@ -150,6 +153,7 @@ namespace fairwindsk::ui::mydata {
         formLayout->addRow(tr("Latitude"), m_latitudeSpinBox);
         formLayout->addRow(tr("Longitude"), m_longitudeSpinBox);
         formLayout->addRow(tr("Altitude"), m_altitudeSpinBox);
+        detailsLayout->addWidget(m_previewWidget, 1);
 
         m_stackedWidget->addWidget(m_listPage);
         m_stackedWidget->addWidget(m_detailsPage);
@@ -189,6 +193,23 @@ namespace fairwindsk::ui::mydata {
                              : tr("No track samples are available from the History API."));
     }
 
+    QList<HistoryTrackPoint> HistoryTrackTab::allPoints() const {
+        QList<HistoryTrackPoint> points;
+        for (int row = 0; row < m_model->rowCount(); ++row) {
+            points.append(m_model->pointAtRow(row));
+        }
+        return points;
+    }
+
+    void HistoryTrackTab::updatePreview() {
+        const auto points = allPoints();
+        if (points.isEmpty()) {
+            m_previewWidget->setMessage(tr("No track samples are available for preview."), tr("Track GeoJSON Preview"));
+            return;
+        }
+        m_previewWidget->setGeoJson(exportTrackPointsAsGeoJson(points), tr("Track GeoJSON Preview"));
+    }
+
     void HistoryTrackTab::showListPage() {
         m_stackedWidget->setCurrentWidget(m_listPage);
         m_currentRow = -1;
@@ -207,6 +228,7 @@ namespace fairwindsk::ui::mydata {
         setEditMode(editMode);
         m_stackedWidget->setCurrentWidget(m_detailsPage);
         m_refreshTimer->stop();
+        updatePreview();
     }
 
     void HistoryTrackTab::setEditMode(const bool editMode) {
@@ -236,6 +258,7 @@ namespace fairwindsk::ui::mydata {
         m_latitudeSpinBox->setValue(point.coordinate.latitude());
         m_longitudeSpinBox->setValue(point.coordinate.longitude());
         m_altitudeSpinBox->setValue(point.coordinate.altitude());
+        updatePreview();
     }
 
     void HistoryTrackTab::clearEditor() {
@@ -246,6 +269,7 @@ namespace fairwindsk::ui::mydata {
         m_latitudeSpinBox->setValue(0.0);
         m_longitudeSpinBox->setValue(0.0);
         m_altitudeSpinBox->setValue(0.0);
+        updatePreview();
     }
 
     int HistoryTrackTab::currentRow() const {
@@ -257,6 +281,9 @@ namespace fairwindsk::ui::mydata {
         QString message;
         m_model->reload(currentDuration(), currentResolution(), &message);
         updateStatus(message);
+        if (m_stackedWidget->currentWidget() == m_detailsPage) {
+            updatePreview();
+        }
     }
 
     void HistoryTrackTab::onDurationChanged() {
@@ -268,7 +295,7 @@ namespace fairwindsk::ui::mydata {
                 this,
                 tr("Import Tracks"),
                 QString(),
-                tr("JSON files (*.json);;All files (*)"));
+                tr("GeoJSON files (*.geojson *.json);;All files (*)"));
         if (fileName.isEmpty()) {
             return;
         }
@@ -279,21 +306,30 @@ namespace fairwindsk::ui::mydata {
             return;
         }
 
+        QList<HistoryTrackPoint> points;
         QString message;
-        if (!m_model->importDocument(QJsonDocument::fromJson(file.readAll()), &message)) {
+        if (!importTrackPointsFromGeoJson(QJsonDocument::fromJson(file.readAll()), &points, &message)) {
             QMessageBox::warning(this, tr("Tracks"), message);
             return;
         }
 
+        while (m_model->rowCount() > 0) {
+            m_model->removePointAtRow(m_model->rowCount() - 1);
+        }
+        for (const auto &point : points) {
+            m_model->appendPoint(point);
+        }
+
         updateStatus(message);
+        updatePreview();
     }
 
     void HistoryTrackTab::onExportClicked() {
         const QString fileName = QFileDialog::getSaveFileName(
                 this,
                 tr("Export Tracks"),
-                QString("tracks-history.json"),
-                tr("JSON files (*.json);;All files (*)"));
+                QString("tracks-history.geojson"),
+                tr("GeoJSON files (*.geojson *.json);;All files (*)"));
         if (fileName.isEmpty()) {
             return;
         }
@@ -304,7 +340,7 @@ namespace fairwindsk::ui::mydata {
             return;
         }
 
-        file.write(m_model->exportDocument().toJson(QJsonDocument::Indented));
+        file.write(exportTrackPointsAsGeoJson(allPoints()).toJson(QJsonDocument::Indented));
     }
 
     void HistoryTrackTab::onTableDoubleClicked(const QModelIndex &index) {
@@ -351,6 +387,7 @@ namespace fairwindsk::ui::mydata {
         }
 
         updateStatusLabel();
+        updatePreview();
         showListPage();
     }
 
@@ -375,6 +412,7 @@ namespace fairwindsk::ui::mydata {
         }
 
         updateStatusLabel();
+        updatePreview();
         showListPage();
     }
 }
