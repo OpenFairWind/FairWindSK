@@ -39,11 +39,15 @@ namespace fairwindsk::ui::settings {
 
         ui->pushButton_requestToken->setEnabled(!hasPendingRequest && !hasToken);
         ui->pushButton_cancelRequest->setEnabled(hasPendingRequest);
+        ui->pushButton_readOnly->setEnabled(!hasPendingRequest);
         ui->pushButton_removeToken->setEnabled(!hasPendingRequest && hasToken);
 
         if (hasToken) {
             ui->label_lblPermission->setText(tr("Approved"));
             ui->label_lblExpirationTime->setText(expirationTime);
+        } else if (!hasPendingRequest) {
+            ui->label_lblPermission->clear();
+            ui->label_lblExpirationTime->clear();
         }
     }
 
@@ -66,6 +70,10 @@ namespace fairwindsk::ui::settings {
 
         // Set the current signal k server url
         ui->comboBox_signalkserverurl->setCurrentText(m_settings->getConfiguration()->getSignalKServerUrl());
+
+        if (ui->comboBox_signalkserverurl->findText("https://demo.signalk.org") == -1) {
+            ui->comboBox_signalkserverurl->addItem("https://demo.signalk.org");
+        }
 
         // Get the web engine profile
         const auto profile = FairWindSK::getInstance()->getWebEngineProfile();
@@ -135,6 +143,9 @@ namespace fairwindsk::ui::settings {
 
         // Show the settings view when the user clicks on the Settings button inside the BottomBar object
         connect(ui->pushButton_cancelRequest, &QPushButton::clicked, this, &Connection::onCancelRequest);
+
+        // Set the current Signal K server URL in read-only mode
+        connect(ui->pushButton_readOnly, &QPushButton::clicked, this, &Connection::onReadOnly);
 
         // Show the settings view when the user clicks on the Settings button inside the BottomBar object
         connect(ui->pushButton_removeToken, &QPushButton::clicked, this, &Connection::onRemoveToken);
@@ -565,6 +576,38 @@ namespace fairwindsk::ui::settings {
     }
 
     /*
+    * onReadOnly
+    * Invoked when the read only button has hit
+    */
+    void Connection::onReadOnly() {
+
+        const QString signalKServerUrl = ui->comboBox_signalkserverurl->currentText().trimmed();
+
+        if (signalKServerUrl.isEmpty()) {
+            appendMessage(tr("Please provide a Signal K server URL."));
+            return;
+        }
+
+        m_settings->getConfiguration()->setSignalKServerUrl(signalKServerUrl);
+
+        QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
+        settings.remove("href");
+        settings.remove("token");
+        settings.remove("expirationTime");
+
+        stopTokenTimer();
+        syncTokenUiState();
+
+        ui->webEngineView->setVisible(false);
+        ui->textEdit_message->setVisible(true);
+        ui->label_lblState->setText(tr("Read only"));
+        ui->label_lblPermission->setText(tr("No token"));
+        ui->label_lblExpirationTime->clear();
+
+        appendMessage(tr("Configured %1 in read-only mode.").arg(signalKServerUrl));
+    }
+
+    /*
     * onRemoveToken
     * Invoked when the remove token button has hit
     */
@@ -602,7 +645,9 @@ namespace fairwindsk::ui::settings {
     Connection::~Connection() {
 
 	    // Stop the zeroconf browser
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         m_zeroConf.stopBrowser();
+#endif
 
         stopTokenTimer();
 

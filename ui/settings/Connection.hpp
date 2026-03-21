@@ -32,6 +32,7 @@ namespace fairwindsk::ui::settings {
         void onCheckRequestToken();
         void onRequestToken();
         void onCancelRequest();
+        void onReadOnly();
         void onRemoveToken();
 
         void onUpdateSignalKServerUrl() const;

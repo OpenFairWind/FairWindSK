@@ -48,6 +48,11 @@
          <string notr="true">http://localhost:3000</string>
         </property>
        </item>
+       <item>
+        <property name="text">
+         <string notr="true">https://demo.signalk.org</string>
+        </property>
+       </item>
       </widget>
      </item>
      <item row="1" column="1">
@@ -106,6 +111,13 @@
       <widget class="QLabel" name="label_lblExpirationTime">
        <property name="text">
         <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="3">
+      <widget class="QPushButton" name="pushButton_readOnly">
+       <property name="text">
+        <string>Read Only</string>
        </property>
       </widget>
      </item>
