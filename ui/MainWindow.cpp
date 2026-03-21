@@ -9,6 +9,7 @@
 #include <QMessageBox>
 #include <QProcess>
 #include <QWindow>
+#include <QVBoxLayout>
 
 #include "MainWindow.hpp"
 #include "ui/topbar/TopBar.hpp"
@@ -37,6 +38,16 @@ namespace fairwindsk::ui {
 
         // Create the BottomBar object
         m_bottomBar = new bottombar::BottomBar(ui->widget_Bottom);
+
+        auto *topLayout = new QVBoxLayout(ui->widget_Top);
+        topLayout->setContentsMargins(0, 0, 0, 0);
+        topLayout->setSpacing(0);
+        topLayout->addWidget(m_topBar);
+
+        auto *bottomLayout = new QVBoxLayout(ui->widget_Bottom);
+        bottomLayout->setContentsMargins(0, 0, 0, 0);
+        bottomLayout->setSpacing(0);
+        bottomLayout->addWidget(m_bottomBar);
 
         // Set the Autopilot icon visible only if the autopilot application is defined
         m_bottomBar->setAutopilotIcon(fairWindSK->checkAutopilotApp());
