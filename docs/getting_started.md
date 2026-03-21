@@ -1,27 +1,25 @@
 # Getting started with FairWindSK
 
-FairWindSK is a Qt6-based desktop that launches and supervises Signal K web applications, plus a handful of native bars (autopilot, anchor, person overboard, alarms, and status overlays). The application is written in C++17, uses Qt WebEngine for rendering, and connects directly to a running Signal K server to discover installed web apps.
+FairWindSK is a Qt6-based shell that launches and supervises Signal K web applications, plus a handful of native bars (autopilot, anchor, person overboard, alarms, and status overlays). The application is written in C++17, uses Qt WebEngine for rendering, and connects directly to a running Signal K server to discover installed web apps.
 
 ## Prerequisites
 
 - A running Signal K server reachable on the network. The client expects the standard API to be exposed at `<server>/signalk` and the web application catalog at `<server>/skServer/webapps`.
-- Qt 6 with WebEngine, WebSockets, SVG, and VirtualKeyboard modules (see the package list in the root README for Linux and macOS examples). A C++17 compiler and CMake are required for builds from source.
-- Optional: desktop environments that support global hotkeys if you rely on the SHIFT+TAB shortcut to return to the FairWindSK desktop after launching a web app.
+- Qt 6 with the modules listed in [building.md](./building.md). A C++17 compiler and CMake are required for builds from source.
+- Optional on desktop targets: an environment that supports global hotkeys if you rely on the `SHIFT+TAB` shortcut to return to the FairWindSK desktop after launching a web app.
 
 ## Building from source
 
-The project uses a conventional CMake workflow. The steps below mirror the platform instructions in the root README and work across macOS, Linux, and Raspberry Pi OS.
+The project uses a conventional CMake workflow across all targets:
 
-1. Install Qt6 and the build toolchain (CMake, a C++17 compiler, and the Qt6 WebEngine, WebSockets, SVG, and VirtualKeyboard components).
-2. Clone the repository and create a build directory:
-   ```bash
-   git clone https://github.com/OpenFairWind/FairWindSK.git
-   cd FairWindSK
-   cmake -S . -B build
-   cmake --build build
-   ```
-3. On Raspberry Pi OS you may need to create `/usr/lib/aarch64-linux-gnu/cmake/Qt6VirtualKeyboard/Qt6VirtualKeyboardConfigVersionImpl.cmake` before configuring, matching the workaround in the main README.
-4. The resulting executable is `build/FairWindSK` (or `FairWindSK.exe` on Windows builds).
+```bash
+git clone https://github.com/OpenFairWind/FairWindSK.git
+cd FairWindSK
+cmake -S . -B build
+cmake --build build --parallel
+```
+
+Platform-specific dependencies, Qt kit selection, Windows deployment, Raspberry Pi notes, and Android/iOS caveats are documented in [building.md](./building.md).
 
 ## First run and configuration bootstrap
 
@@ -29,13 +27,13 @@ The project uses a conventional CMake workflow. The steps below mirror the platf
 2. If the JSON configuration file does not exist, the application seeds its settings from the bundled `resources/json/configuration.json`, preserving defaults such as UI sizing, unit choices, and a starter app list.
 3. Point the client at your Signal K server by editing the `connection.server` field in `fairwindsk.json` or by letting a platform integration layer provide the file.
 4. FairWindSK connects to the server, negotiates a token if available, and persists the token in `fairwindsk.ini` for subsequent launches.
-5. Discovered Signal K web applications are merged into the local configuration, preserving local overrides (ordering, activation state, and custom icons). Web apps and locally defined URLs (including `file://` entries for native tools such as OpenCPN) appear on the desktop.
+5. Discovered Signal K web applications are merged into the local configuration, preserving local overrides (ordering, activation state, and custom icons). Web apps appear on all targets; `file://` desktop-native app entries are desktop-only.
 
 ## Running the desktop
 
 - Start the application normally from the build output folder or after installing it into your system path. On Raspberry Pi OS the project includes a sample autostart entry in `extras/fairwindsk-startup.desktop` and a helper script in `extras/fairwindsk-startup`.
 - The splash screen shows connection progress while the Signal K client initializes and downloads the web app catalog.
-- Once the main window appears, use the desktop tiles to launch apps. SHIFT+TAB brings you back to the FairWindSK desktop when a web app takes full focus.
+- Once the main window appears, use the tiles to launch apps. On desktop targets, `SHIFT+TAB` brings you back to the FairWindSK desktop when a web app takes full focus.
 - The bottom bars expose quick controls for alarms, person overboard, anchor, and autopilot features. Availability depends on the configured Signal K data paths and installed plugins.
 
 ## Troubleshooting

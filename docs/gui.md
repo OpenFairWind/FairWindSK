@@ -5,7 +5,7 @@ FairWindSK presents a desktop-style grid of applications backed by Qt6 widgets a
 ## Desktop and navigation
 
 - **Application grid**: Tiles correspond to `AppItem` entries discovered from the Signal K server or defined locally. Icons and labels come from the `signalk` metadata block (e.g., `displayName`, `appIcon`).
-- **Focus management**: When a web app takes over the view, press `SHIFT+TAB` to return to the FairWindSK desktop.
+- **Focus management**: On desktop targets, when a web app takes over the view, press `SHIFT+TAB` to return to the FairWindSK desktop.
 - **Icons and resources**: Icons can reference Qt resources (`:/resources/...`) or filesystem paths (`file://icons/...`). Ensure any new assets are registered in `resources.qrc` if bundled.
 
 ## Top and bottom bars
@@ -26,9 +26,9 @@ Availability of these bars depends on the configured plugin identifiers (`applic
 
 ## Splash and status messages
 
-- On startup, a splash screen shows progress as the application loads configuration, connects to Signal K, and fetches the web app catalog. Messages mirror the lifecycle in `main.cpp`.
+- On desktop targets, a splash screen shows progress as the application loads configuration, connects to Signal K, and fetches the web app catalog. Messages mirror the lifecycle in `main.cpp`.
 
 ## Accessibility and input
 
 - **Virtual keyboard**: If `main.virtualKeyboard` is true and the Qt VirtualKeyboard module is available, the on-screen keyboard becomes available for touch-only deployments.
-- **Keyboard shortcuts**: Use `SHIFT+TAB` to exit an active web app session and return to the desktop; other shortcuts may be provided by individual web apps.
+- **Keyboard shortcuts**: On desktop targets, use `SHIFT+TAB` to exit an active web app session and return to the desktop; other shortcuts may be provided by individual web apps.

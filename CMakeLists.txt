@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 project(FairWindSK VERSION 0.1.0 LANGUAGES CXX)
 
+include(GNUInstallDirs)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
@@ -45,6 +47,8 @@ set(FAIRWINDSK_LINK_LIBRARIES
         Qt::VirtualKeyboard
 )
 
+set(FAIRWINDSK_POST_BUILD_COMMANDS)
+
 set(FAIRWINDSK_EXTERNAL_DEPENDENCIES json)
 
 include(ExternalProject)
@@ -66,18 +70,11 @@ if(NOT FAIRWINDSK_MOBILE)
             TIMEOUT 360
     )
 
-    set(LIBQTZEROCONF ${EXTERNAL_INSTALL_LOCATION}/lib/libQtZeroConf.so)
-    if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-        set(LIBQTZEROCONF ${EXTERNAL_INSTALL_LOCATION}/lib/static/libQtZeroConf.lib)
-        add_custom_command(
-                TARGET QtZeroConf
-                POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy
-                ${EXTERNAL_INSTALL_LOCATION}/bin/libQtZeroConf.dll
-                ${CMAKE_BINARY_DIR}
-        )
-    elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-        set(LIBQTZEROCONF ${EXTERNAL_INSTALL_LOCATION}/lib/libQtZeroConf.dylib)
+    if(WIN32)
+        set(LIBQTZEROCONF ${EXTERNAL_INSTALL_LOCATION}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_IMPORT_LIBRARY_PREFIX}QtZeroConf${CMAKE_IMPORT_LIBRARY_SUFFIX})
+        set(RUNTIMEQTZEROCONF ${EXTERNAL_INSTALL_LOCATION}/${CMAKE_INSTALL_BINDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}QtZeroConf${CMAKE_SHARED_LIBRARY_SUFFIX})
+    else()
+        set(LIBQTZEROCONF ${EXTERNAL_INSTALL_LOCATION}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}QtZeroConf${CMAKE_SHARED_LIBRARY_SUFFIX})
     endif()
 
     ExternalProject_Add(qhotkey
@@ -86,13 +83,21 @@ if(NOT FAIRWINDSK_MOBILE)
             TIMEOUT 360
     )
 
-    set(LIBQHOTKEY ${EXTERNAL_INSTALL_LOCATION}/lib/libqhotkey.so)
-    if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-        set(LIBQHOTKEY ${EXTERNAL_INSTALL_LOCATION}/lib/libqhotkey.dylib)
+    if(WIN32)
+        set(LIBQHOTKEY ${EXTERNAL_INSTALL_LOCATION}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_IMPORT_LIBRARY_PREFIX}qhotkey${CMAKE_IMPORT_LIBRARY_SUFFIX})
+        set(RUNTIMEQHOTKEY ${EXTERNAL_INSTALL_LOCATION}/${CMAKE_INSTALL_BINDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}qhotkey${CMAKE_SHARED_LIBRARY_SUFFIX})
+    else()
+        set(LIBQHOTKEY ${EXTERNAL_INSTALL_LOCATION}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}qhotkey${CMAKE_SHARED_LIBRARY_SUFFIX})
     endif()
 
     list(APPEND FAIRWINDSK_EXTERNAL_DEPENDENCIES QtZeroConf qhotkey)
     list(APPEND FAIRWINDSK_LINK_LIBRARIES ${LIBQTZEROCONF} ${LIBQHOTKEY})
+
+    if(WIN32)
+        list(APPEND FAIRWINDSK_POST_BUILD_COMMANDS
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different ${RUNTIMEQTZEROCONF} $<TARGET_FILE_DIR:${PROJECT_NAME}>
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different ${RUNTIMEQHOTKEY} $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+    endif()
 
     if(APPLE AND TARGET Qt6::PrintSupport)
         get_target_property(_qt_print_support_libs Qt6::PrintSupport INTERFACE_LINK_LIBRARIES)
@@ -186,7 +191,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE ${FAIRWINDSK_LINK_LIBRARIES})
 if(NOT FAIRWINDSK_MOBILE)
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_SOURCE_DIR}/resources/images/icons $<TARGET_FILE_DIR:${PROJECT_NAME}>/icons/)
+            ${CMAKE_SOURCE_DIR}/resources/images/icons $<TARGET_FILE_DIR:${PROJECT_NAME}>/icons/
+            ${FAIRWINDSK_POST_BUILD_COMMANDS})
 endif()
 
 qt_finalize_executable(${PROJECT_NAME})

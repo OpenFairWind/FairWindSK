@@ -11,13 +11,13 @@ open-source and open-data.
 
 FairWindSK is a browser with steroids designed to host SK applications.
 It is written in C++ 17 and QT6.
-It runs on Mac, Linux, and Raspberry Pi OS. It probably works on Windows, too, but I never built it under this OS.
-I’d like to port it under Android and iOS QT Apps with the same source approach, but for now, I’m focused on
-stabilizing it on the already supported platforms.
+It now has a single CMake-based build path for macOS, Linux, Raspberry Pi OS, Windows, Android, and iOS.
+Desktop targets expose the full feature set. Mobile targets compile with mobile-safe fallbacks for desktop-only features.
 
 ## Documentation
 
 * [Getting started](docs/getting_started.md)
+* [Building FairWindSK](docs/building.md)
 * [Architecture overview](docs/architecture.md)
 * [Configuration guide](docs/configuring.md)
 * [GUI tour](docs/gui.md)
@@ -42,9 +42,9 @@ Those bars relay on SK web apps invoking their APIs or access the Signal K APIs 
 Applications are SK Web Apps hosted by the SK server, but they can also be other web applications manually configured
 by providing the URL.
 
-Applications can also be local (as OpenCPN) characterized by a local path URL with the schema file://.
+Applications can also be local desktop applications (as OpenCPN) characterized by a local path URL with the schema file://.
 
-A mechanism to be back on the FairWindSK desktop after being launched in implemented as SHIFT+TAB hot key.
+A mechanism to be back on the FairWindSK desktop after being launched is implemented as a SHIFT+TAB hot key on desktop builds.
 
 ### Components under active development ###
 * MyData - Features:
@@ -52,142 +52,26 @@ A mechanism to be back on the FairWindSK desktop after being launched in impleme
   * File browser
   * File viewer (Images, Pdf, and text files)
 
-# Compile on MacOS
+# Building
 
-Install Homebrew
-```
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-```
+The full platform guide now lives in [docs/building.md](docs/building.md).
 
-Install the dependencies
-```
-brew install qt@6 cmake
-```
+Quick summary:
 
-Clone the repository
+- macOS, Linux, Raspberry Pi OS, and Windows are desktop targets.
+- Android and iOS use the same source tree with desktop-only integrations disabled automatically.
+- Desktop targets download `nlohmann/json`, `QtZeroConf`, and `QHotkey` during the first clean build.
 
-```
+Generic workflow:
+
+```bash
 git clone https://github.com/OpenFairWind/FairWindSK.git
-```
-
-Enter the repository directory.
-
-```
 cd FairWindSK
+cmake -S . -B build
+cmake --build build --parallel
 ```
 
-Create the build directory.
-
-```
-mkdir build
-```
-
-Enter the build directory.
-
-```
-cd build
-```
-
-Configure the building environment.
-
-```
-cmake ..
-```
-
-Make FairWindSK
-
-```
-make
-```
-# Compile on Raspberry Pi
-
-Install the compiling environment.
-
-```
-sudo apt install qml6-module-qt-labs-folderlistmodel qml6-module-qtquick-window qml6-module-qtquick-layouts qml6-module-qtqml-workerscript libnss-mdns avahi-utils libavahi-compat-libdnssd-dev libxkbcommon-dev qt6-base-dev qt6-base-dev-tools qt6-webengine-dev qt6-webengine-dev-tools qt6-websockets-dev libqt6svg6-dev qt6-virtualkeyboard-dev libqt6virtualkeyboard6 qt6-virtualkeyboard-plugin qmake6 qmake6-bin build-essential cmake
-```
-
-Fix a file missing issue.
-
-```
-sudo touch /usr/lib/aarch64-linux-gnu/cmake/Qt6VirtualKeyboard/Qt6VirtualKeyboardConfigVersionImpl.cmake
-```
-
-Clone the repository
-
-```
-git clone https://github.com/OpenFairWind/FairWindSK.git
-```
-
-Enter in the repository directory.
-
-```
-cd FairWindSK
-```
-
-Create the build directory.
-
-```
-mkdir build
-```
-
-Enter the build directory.
-
-```
-cd build
-```
-
-Configure the building environment.
-
-```
-cmake ..
-```
-
-Make FairWindSK
-
-```
-make
-```
-
-# Run on Raspberry Pi
-
-```
-sudo apt install qml6-module-qt-labs-folderlistmodel qml6-module-qtquick-window qml6-module-qtquick-layouts qml6-module-qtqml-workerscript libnss-mdns avahi-utils libavahi-compat-libdnssd libqt6websockets6 libqt6webenginewidgets6 libqt6webenginecore6 libqt6positioningquick6 libqt6widgets6 libqt6network6 libqt6gui6 libqt6core6 libqt6quickwidgets6 libqt6quickwidgets6 libqt6webchannel6 libqt6qml6 libqt6dbus6 libqt6qmlmodels6 libqt6opengl6 libqt6virtualkeyboard6 qt6-virtualkeyboard-plugin
-```
-
-# Setup for production
-
-Copy the executable
-
-```
-sudo cp FairwindSK /usr/local/bin
-```
-
-Copy the icons in home
-
-```
-cp -R icons $HOME/
-```
-
-# Run in production
-
-```
-FairWindSK
-```
-
-Copy the autostart file and the startup script in the proper location.
-
-```
-cp ../extras/fairwindsk-startup.desktop $HOME/.config/autostart/
-sudo cp ../extras/fairwindsk-startup /usr/bin
-```
-Reboot.
-
-# Compile on Windows
-FairWindSK should work on Windows too, but, at the time it has never been tested.
-
-# Compile on mobile devices (iOS, Android, ...)
-Compiling FairWindSK for iOS or Android leveraging QT and only one single code base (same source approach) is a challenge.
+For platform-specific package lists, Qt kit selection, Windows deployment, Raspberry Pi notes, and mobile caveats, see [docs/building.md](docs/building.md).
 
 # Signal K server on Docker
 

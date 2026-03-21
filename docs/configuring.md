@@ -47,7 +47,7 @@ Applications live under the `apps` array. Each entry represents a web or local a
 - `fairwind.order`: Ordering on the desktop (lower numbers appear first).
 - `signalk.*`: Presentation metadata used by the UI. Icon paths support Qt resource prefixes (`:/resources/...`) or filesystem URLs.
 
-Apps discovered from the Signal K server (`signalk-webapp` entries) are merged with this list during startup. Local overrides for ordering and activation are preserved.
+Apps discovered from the Signal K server (`signalk-webapp` entries) are merged with this list during startup. Local overrides for ordering and activation are preserved. `file://` entries are a desktop-only integration; Android and iOS builds keep the metadata but do not launch native local apps.
 
 ## Units and data paths
 

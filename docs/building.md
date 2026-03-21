@@ -1,0 +1,186 @@
+# Building FairWindSK
+
+FairWindSK uses a single CMake-based codebase for desktop and mobile targets. The desktop builds keep the full feature set, while mobile builds compile out desktop-only integrations such as the global hotkey, ZeroConf discovery, and launching external `file://` native applications.
+
+## Support matrix
+
+| Platform | Build target status | Notes |
+| --- | --- | --- |
+| macOS | Desktop build supported | Full desktop feature set. |
+| Linux | Desktop build supported | Full desktop feature set. |
+| Raspberry Pi OS | Desktop build supported | Same desktop feature set, plus kiosk/autostart helpers in `extras/`. |
+| Windows | Desktop build supported | Use a Qt desktop kit and run `windeployqt` after building. |
+| Android | Mobile build path available | Desktop-only features are disabled; final packaging depends on the installed Qt mobile kit. |
+| iOS | Mobile build path available | Desktop-only features are disabled; final packaging depends on the installed Qt mobile kit. |
+
+## Common requirements
+
+- CMake 3.16 or newer
+- A C++17 compiler supported by the selected Qt kit
+- Git
+- Qt 6 with these modules available in the selected kit:
+  - `Core`
+  - `Gui`
+  - `Widgets`
+  - `Concurrent`
+  - `Network`
+  - `WebSockets`
+  - `Xml`
+  - `Svg`
+  - `Positioning`
+  - `WebEngineWidgets`
+  - `VirtualKeyboard`
+- Internet access during the first build, because CMake downloads `nlohmann/json`, `QtZeroConf`, and `QHotkey` for desktop targets
+
+## Generic CMake workflow
+
+```bash
+git clone https://github.com/OpenFairWind/FairWindSK.git
+cd FairWindSK
+cmake -S . -B build
+cmake --build build --parallel
+```
+
+For kits installed outside the default search path, pass `-DCMAKE_PREFIX_PATH=...` to the configure step.
+
+## macOS
+
+Recommended toolchain:
+
+- Xcode command line tools
+- Homebrew Qt 6 or the Qt online installer
+- Ninja or the default CMake generator
+
+Example:
+
+```bash
+brew install qt cmake ninja
+cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH="$(brew --prefix qt)"
+cmake --build build --parallel
+```
+
+The resulting app bundle is generated under `build/`.
+
+## Linux
+
+On Debian or Ubuntu-like systems, install a Qt 6 desktop stack plus the build tools. Example package set:
+
+```bash
+sudo apt update
+sudo apt install build-essential cmake ninja-build git \
+  qt6-base-dev qt6-base-dev-tools qt6-webengine-dev qt6-webengine-dev-tools \
+  qt6-websockets-dev qt6-positioning-dev libqt6svg6-dev qt6-virtualkeyboard-dev \
+  libavahi-compat-libdnssd-dev libnss-mdns avahi-utils
+```
+
+Then build:
+
+```bash
+cmake -S . -B build -G Ninja
+cmake --build build --parallel
+```
+
+## Raspberry Pi OS
+
+Raspberry Pi OS follows the Linux desktop path, but it often needs a slightly broader Qt package set:
+
+```bash
+sudo apt update
+sudo apt install build-essential cmake ninja-build git \
+  qml6-module-qt-labs-folderlistmodel qml6-module-qtquick-window \
+  qml6-module-qtquick-layouts qml6-module-qtqml-workerscript \
+  libnss-mdns avahi-utils libavahi-compat-libdnssd-dev libxkbcommon-dev \
+  qt6-base-dev qt6-base-dev-tools qt6-webengine-dev qt6-webengine-dev-tools \
+  qt6-websockets-dev qt6-positioning-dev libqt6svg6-dev \
+  qt6-virtualkeyboard-dev libqt6virtualkeyboard6 qt6-virtualkeyboard-plugin
+```
+
+If your Qt package misses `Qt6VirtualKeyboardConfigVersionImpl.cmake`, the existing workaround still applies:
+
+```bash
+sudo touch /usr/lib/aarch64-linux-gnu/cmake/Qt6VirtualKeyboard/Qt6VirtualKeyboardConfigVersionImpl.cmake
+```
+
+Then configure and build:
+
+```bash
+cmake -S . -B build -G Ninja
+cmake --build build --parallel
+```
+
+For kiosk deployments, see `extras/fairwindsk-startup.desktop` and `extras/fairwindsk-startup`.
+
+## Windows
+
+Recommended toolchain:
+
+- Qt 6 desktop kit for `msvc2019_64`, `msvc2022_64`, or another matching desktop compiler kit
+- Visual Studio Build Tools or Visual Studio Community
+- CMake and Ninja
+- Git
+
+Suggested command-line flow from a developer prompt where the compiler environment is already loaded:
+
+```powershell
+git clone https://github.com/OpenFairWind/FairWindSK.git
+cd FairWindSK
+cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH="C:\Qt\6.x.x\msvc2022_64"
+cmake --build build --parallel
+```
+
+Deploy the Qt runtime after a successful build:
+
+```powershell
+windeployqt build\FairWindSK.exe
+```
+
+Notes:
+
+- The desktop-only dependencies `QtZeroConf` and `QHotkey` are now handled in a Windows-aware way in CMake.
+- Local external applications referenced with `file://` remain a desktop-only feature and are supported on Windows builds.
+
+## Android
+
+Use a Qt for Android kit in Qt Creator or provide the Android toolchain information explicitly to CMake. The project now disables desktop-only integrations automatically for mobile builds.
+
+Typical requirements:
+
+- Qt for Android
+- Android SDK
+- Android NDK
+- JDK
+
+Typical workflow:
+
+1. Open the project in Qt Creator.
+2. Select an Android kit.
+3. Configure and build the app through Qt Creator, or use the Android toolchain variables generated by that kit from the command line.
+
+Current mobile behavior:
+
+- ZeroConf discovery is disabled.
+- The global `SHIFT+TAB` hotkey is disabled.
+- Desktop-style `file://` native app launching is disabled.
+
+## iOS
+
+Use Qt for iOS together with a supported Xcode toolchain. As with Android, the project now disables desktop-only integrations automatically for mobile builds.
+
+Typical workflow:
+
+1. Open the project in Qt Creator on macOS.
+2. Select an iOS kit.
+3. Build and deploy through Qt Creator or Xcode integration.
+
+Current mobile behavior:
+
+- ZeroConf discovery is disabled.
+- The global `SHIFT+TAB` hotkey is disabled.
+- Desktop-style `file://` native app launching is disabled.
+
+## Runtime and deployment notes
+
+- Desktop builds copy the bundled icon directory to the target output folder after the build.
+- Windows builds should be deployed with `windeployqt`.
+- Mobile builds rely on the selected Qt kit for packaging and signing.
+- The first desktop build of a clean tree requires internet access for third-party dependencies.
