@@ -52,10 +52,14 @@ namespace fairwindsk::ui::topbar {
         void clickedToolbuttonUR();
 
     private:
+        void updateDistanceLabels() const;
+        void updateSpeedLabels() const;
+        void resetCurrentAppPresentation() const;
+
         Ui::TopBar *ui;
-        AppItem *m_currentApp;
-        Units *m_units;
-        QTimer *m_timer;
+        AppItem *m_currentApp = nullptr;
+        Units *m_units = nullptr;
+        QTimer *m_timer = nullptr;
     };
 }
 

@@ -152,11 +152,8 @@ namespace fairwindsk::ui::bottombar {
             // Get the Signal K client
             const auto signalKClient = fairWindSK->getSignalKClient();
 
-            // Get the mob notification value
-            qDebug() << "getPath: " << getPath;
-
             // Gt the notification object
-            auto notificationObject = signalKClient->signalkGet( getPath);
+            const auto notificationObject = signalKClient->signalkGet(getPath);
 
             // Check if the alarm notification value is empty or the state is normal (no more emergency)
             if (notificationObject.isEmpty() || (
@@ -202,8 +199,6 @@ namespace fairwindsk::ui::bottombar {
  */
     void AlarmsBar::updateNotifications(const QJsonObject &update)
     {
-        qDebug() << "AlarmsBar::updateNotifications --->";
-
         // Check if for any reason the update is empty
         if (!update.isEmpty()) {
 
@@ -212,9 +207,6 @@ namespace fairwindsk::ui::bottombar {
 
                 // Get the keys of the alarm tool buttons
                 const auto keys = m_alarmToolButtons.keys();
-
-                qDebug() << "AlarmsBar::updateNotifications: updates **";
-                qDebug() << update["updates"];
 
                 // For each update...
                 for (const auto& updateItem : update["updates"].toArray()) {
@@ -249,13 +241,8 @@ namespace fairwindsk::ui::bottombar {
                                         // Remove the first element (is always "notifications")
                                         pathParts.removeFirst();
 
-                                        qDebug() << "AlarmsBar::updateNotifications: pathParts";
-                                        qDebug() << pathParts;
-
                                         // Check if one of the keys is the first element of the path
-                                        if (pathParts.size() == 1 && keys.contains(pathParts[0])) {
-
-                                            qDebug() << "AlarmsBar::updateNotifications: " << keys << " contain " << pathParts[0];
+                                        if (!pathParts.isEmpty() && keys.contains(pathParts[0])) {
 
                                             // By default, set emergency as false (no icon to be shown)
                                             bool emergency = false;
@@ -281,8 +268,6 @@ namespace fairwindsk::ui::bottombar {
                                                 }
                                             }
 
-                                            qDebug() << "AlarmsBar::updateNotifications: " << pathParts[0] << " -> " << emergency;
-
                                             // Set regular icon
                                             m_alarmToolButtons[pathParts[0]]->setChecked(emergency);
 
@@ -297,11 +282,7 @@ namespace fairwindsk::ui::bottombar {
                     }
                 }
             }
-        } else
-        {
-            qDebug() << "AlarmsBar::updateNotifications: Update is empty";
         }
-        qDebug() << "<--- AlarmsBar::updateNotifications: updates";
     }
 
     AlarmsBar::~AlarmsBar() {

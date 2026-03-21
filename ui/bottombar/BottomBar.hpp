@@ -84,6 +84,9 @@ namespace fairwindsk::ui::bottombar {
         void foregroundAppChanged(QString name);
 
     private:
+        void setPanelVisibility(QWidget *panel, bool visible) const;
+        void hideTransientPanels(QWidget *except = nullptr) const;
+
         // Pointer to UI
         Ui::BottomBar *ui = nullptr;
 

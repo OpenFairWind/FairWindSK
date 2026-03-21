@@ -3,8 +3,6 @@
 //
 
 #include <QTimer>
-
-
 #include <QAbstractButton>
 #include <QGeoCoordinate>
 #include <QToolButton>
@@ -24,7 +22,7 @@ namespace fairwindsk::ui::topbar {
             QWidget(parent),
             ui(new Ui::TopBar) {
         // Setup the UI
-        ui->setupUi(parent);
+        ui->setupUi(this);
 
         // Get the FairWind singleton
         auto fairWindSK = fairwindsk::FairWindSK::getInstance();
@@ -45,14 +43,9 @@ namespace fairwindsk::ui::topbar {
         ui->label_unitBTW->setText(m_units->getLabel("deg"));
         ui->label_unitHDG->setText(m_units->getLabel("deg"));
 
-        ui->label_unitSOG->setText(m_units->getLabel(configuration->getVesselSpeedUnits()));
-        ui->label_unitSTW->setText(m_units->getLabel(configuration->getVesselSpeedUnits()));
-        ui->label_unitVMG->setText(m_units->getLabel(configuration->getVesselSpeedUnits()));
-
         ui->label_unitDPT->setText(m_units->getLabel(configuration->getDepthUnits()));
-
-        ui->label_unitDTG->setText(m_units->getLabel(configuration->getDistanceUnits()));
-        ui->label_unitXTE->setText(m_units->getLabel(configuration->getDistanceUnits()));
+        updateSpeedLabels();
+        updateDistanceLabels();
 
 
         double c=1.15;
@@ -103,6 +96,8 @@ namespace fairwindsk::ui::topbar {
 
         // Start the timer
         m_timer->start(1000);
+        updateTime();
+        resetCurrentAppPresentation();
 
         // Get the configuration json object
         auto confiurationJsonObject = configuration->getRoot();
@@ -311,8 +306,12 @@ namespace fairwindsk::ui::topbar {
  * Method called when the user wants to view the apps screen
  */
     void TopBar::toolbuttonUR_clicked() {
-        if (m_currentApp) {
-            ((fairwindsk::ui::web::Web *)(m_currentApp->getWidget()))->toggleNavigationBar();
+        if (!m_currentApp) {
+            return;
+        }
+
+        if (auto *webView = qobject_cast<fairwindsk::ui::web::Web *>(m_currentApp->getWidget())) {
+            webView->toggleNavigationBar();
         }
     }
 
@@ -400,11 +399,11 @@ namespace fairwindsk::ui::topbar {
             ui->widget_SOG->setVisible(false);
         } else {
 
-            // Convert m/s to knots
-            value = m_units->convert("ms-1",FairWindSK::getInstance()->getConfiguration()->getVesselSpeedUnits(), value);
+            const auto vesselSpeedUnits = FairWindSK::getInstance()->getConfiguration()->getVesselSpeedUnits();
+            value = m_units->convert("ms-1", vesselSpeedUnits, value);
 
             // Build the formatted value
-            const auto text = m_units->format(FairWindSK::getInstance()->getConfiguration()->getVesselSpeedUnits(), value);
+            const auto text = m_units->format(vesselSpeedUnits, value);
 
             // Set the speed over ground label from the UI to the formatted value
             ui->label_SOG->setText(text);
@@ -469,11 +468,11 @@ namespace fairwindsk::ui::topbar {
             ui->widget_STW->setVisible(false);
         } else {
 
-            // Convert m/s to knots
-            value = m_units->convert("ms-1",FairWindSK::getInstance()->getConfiguration()->getVesselSpeedUnits(), value);
+            const auto vesselSpeedUnits = FairWindSK::getInstance()->getConfiguration()->getVesselSpeedUnits();
+            value = m_units->convert("ms-1", vesselSpeedUnits, value);
 
             // Build the formatted value
-            const auto text = m_units->format(FairWindSK::getInstance()->getConfiguration()->getVesselSpeedUnits(), value);
+            const auto text = m_units->format(vesselSpeedUnits, value);
 
             // Set the speed over ground label from the UI to the formatted value
             ui->label_STW->setText(text);
@@ -598,11 +597,11 @@ namespace fairwindsk::ui::topbar {
             ui->widget_DTG->setVisible(false);
         } else {
 
-            // Convert meters to nautical miles
-            value = m_units->convert("m","nm", value);
+            const auto distanceUnits = FairWindSK::getInstance()->getConfiguration()->getDistanceUnits();
+            value = m_units->convert("m", distanceUnits, value);
 
             // Build the formatted value
-            const auto text = m_units->format("nm", value);
+            const auto text = m_units->format(distanceUnits, value);
 
             // Set the course over ground label from the UI to the formatted value
             ui->label_DTG->setText(text);
@@ -633,7 +632,7 @@ namespace fairwindsk::ui::topbar {
 
             // Build the formatted value
             //text = m_units->format("nm", value);
-            const auto text = value.toString();
+            const auto text = value.toLocalTime().toString("hh:mm");
 
             // Set the course over ground label from the UI to the formatted value
             ui->label_TTG->setText(text);
@@ -664,7 +663,7 @@ namespace fairwindsk::ui::topbar {
 
             // Build the formatted value
             //text = m_units->format("nm", value);
-            const auto text = value.toString();
+            const auto text = value.toLocalTime().toString("dd-MM-yyyy hh:mm");
 
             // Set the course over ground label from the UI to the formatted value
             ui->label_ETA->setText(text);
@@ -690,11 +689,11 @@ namespace fairwindsk::ui::topbar {
             ui->widget_XTE->setVisible(false);
         } else {
 
-            // Convert meters to nautical miles
-            value = m_units->convert("m","nm", value);
+            const auto distanceUnits = FairWindSK::getInstance()->getConfiguration()->getDistanceUnits();
+            value = m_units->convert("m", distanceUnits, value);
 
             // Build the formatted value
-            const auto text = m_units->format("nm", value);
+            const auto text = m_units->format(distanceUnits, value);
 
             // Set the course over ground label from the UI to the formatted value
             ui->label_XTE->setText(text);
@@ -720,11 +719,11 @@ namespace fairwindsk::ui::topbar {
             ui->widget_VMG->setVisible(false);
         } else {
 
-            // Convert m/s to knots
-            value = m_units->convert("ms-1","kn", value);
+            const auto vesselSpeedUnits = FairWindSK::getInstance()->getConfiguration()->getVesselSpeedUnits();
+            value = m_units->convert("ms-1", vesselSpeedUnits, value);
 
             // Build the formatted value
-            const auto text = m_units->format("kn", value);
+            const auto text = m_units->format(vesselSpeedUnits, value);
 
             // Set the course over ground label from the UI to the formatted value
             ui->label_VMG->setText(text);
@@ -744,12 +743,31 @@ namespace fairwindsk::ui::topbar {
             ui->toolButton_UR->setIconSize(QSize(32, 32));
             ui->label_ApplicationName->setText(m_currentApp->getDisplayName());
             ui->label_ApplicationName->setToolTip(m_currentApp->getDescription());
+            ui->toolButton_UR->setEnabled(qobject_cast<fairwindsk::ui::web::Web *>(m_currentApp->getWidget()) != nullptr);
         } else {
-            ui->toolButton_UR->setIcon(QPixmap::fromImage(QImage(":resources/images/icons/apps_icon.png")));
-            ui->toolButton_UR->setIconSize(QSize(32, 32));
-            ui->label_ApplicationName->setText("");
-            ui->label_ApplicationName->setToolTip("");
+            resetCurrentAppPresentation();
         }
+    }
+
+    void TopBar::updateDistanceLabels() const {
+        const auto distanceUnits = FairWindSK::getInstance()->getConfiguration()->getDistanceUnits();
+        ui->label_unitDTG->setText(m_units->getLabel(distanceUnits));
+        ui->label_unitXTE->setText(m_units->getLabel(distanceUnits));
+    }
+
+    void TopBar::updateSpeedLabels() const {
+        const auto vesselSpeedUnits = FairWindSK::getInstance()->getConfiguration()->getVesselSpeedUnits();
+        ui->label_unitSOG->setText(m_units->getLabel(vesselSpeedUnits));
+        ui->label_unitSTW->setText(m_units->getLabel(vesselSpeedUnits));
+        ui->label_unitVMG->setText(m_units->getLabel(vesselSpeedUnits));
+    }
+
+    void TopBar::resetCurrentAppPresentation() const {
+        ui->toolButton_UR->setIcon(QPixmap::fromImage(QImage(":/resources/images/icons/apps_icon.png")));
+        ui->toolButton_UR->setIconSize(QSize(32, 32));
+        ui->toolButton_UR->setEnabled(false);
+        ui->label_ApplicationName->setText("");
+        ui->label_ApplicationName->setToolTip("");
     }
 
 /*

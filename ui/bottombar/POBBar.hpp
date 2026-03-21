@@ -44,6 +44,9 @@ namespace fairwindsk::ui::bottombar {
         void hidden();
 
     private:
+        void addOrSelectPOB(const QString& uuid);
+        void removePOB(const QString& uuid);
+
         Ui::POBBar *ui;
         Units *m_units;
         nlohmann::json m_signalkPaths;

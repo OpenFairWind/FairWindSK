@@ -24,19 +24,19 @@ namespace fairwindsk::ui::bottombar {
         m_iconSize = 64;
 
         // Set the UI
-        ui->setupUi(parent);
+        ui->setupUi(this);
 
         // Create the POB bar
-        m_POBBar = new POBBar();
+        m_POBBar = new POBBar(this);
 
         // Create the autopilot bar
-        m_AutopilotBar = new AutopilotBar();
+        m_AutopilotBar = new AutopilotBar(this);
 
         // Create the Anchor bar
-        m_AnchorBar = new AnchorBar();
+        m_AnchorBar = new AnchorBar(this);
 
         // Create the alarms bar
-        m_AlarmsBar = new AlarmsBar();
+        m_AlarmsBar = new AlarmsBar(this);
 
         // Add the POB bar to the layout
         ui->gridLayout->addWidget(m_POBBar,0,0);
@@ -70,6 +70,11 @@ namespace fairwindsk::ui::bottombar {
 
         // Emit a signal when the Settings tool button from the UI is clicked
         connect(ui->toolButton_Settings, &QToolButton::released, this, &BottomBar::settings_clicked);
+
+        connect(m_POBBar, &POBBar::hidden, this, [this]() { setPanelVisibility(m_POBBar, false); });
+        connect(m_AutopilotBar, &AutopilotBar::hidden, this, [this]() { setPanelVisibility(m_AutopilotBar, false); });
+        connect(m_AnchorBar, &AnchorBar::hidden, this, [this]() { setPanelVisibility(m_AnchorBar, false); });
+        connect(m_AlarmsBar, &AlarmsBar::hidden, this, [this]() { setPanelVisibility(m_AlarmsBar, false); });
     }
 
     /*
@@ -78,9 +83,10 @@ namespace fairwindsk::ui::bottombar {
      */
     void BottomBar::setAutopilotIcon(const bool value) const
     {
-
-        // Set button icon visibility
         ui->toolButton_Autopilot->setEnabled(value);
+        if (!value) {
+            setPanelVisibility(m_AutopilotBar, false);
+        }
     }
 
     /*
@@ -89,9 +95,10 @@ namespace fairwindsk::ui::bottombar {
      */
     void BottomBar::setAnchorIcon(const bool value) const
     {
-
-        // Set button icon visibility
         ui->toolButton_Anchor->setEnabled(value);
+        if (!value) {
+            setPanelVisibility(m_AnchorBar, false);
+        }
     }
 
     /*
@@ -100,9 +107,10 @@ namespace fairwindsk::ui::bottombar {
      */
     void BottomBar::setPOBIcon(const bool value) const
     {
-
-        // Set button icon visibility
         ui->toolButton_POB->setEnabled(value);
+        if (!value) {
+            setPanelVisibility(m_POBBar, false);
+        }
     }
 
 /*
@@ -110,6 +118,7 @@ namespace fairwindsk::ui::bottombar {
  * Method called when the user wants to view the stored data
  */
     void BottomBar::myData_clicked() {
+        hideTransientPanels();
         // Emit the signal to tell the MainWindow to update the UI and show the settings screen
         emit setMyData();
     }
@@ -119,6 +128,7 @@ namespace fairwindsk::ui::bottombar {
  * Method called when the user click on Men Over Board (POB)
  */
     void BottomBar::pob_clicked() {
+        hideTransientPanels(m_POBBar);
         // Emit the signal to tell the MainWindow to update the UI and show the settings screen
         m_POBBar->POB();
     }
@@ -126,9 +136,8 @@ namespace fairwindsk::ui::bottombar {
     void BottomBar::autopilot_clicked() {
         // Check if the autopilot bar is available
         if (m_AutopilotBar) {
-
-            // Toggle the Autopilot bar
-            m_AutopilotBar->setVisible(!m_AutopilotBar->isVisible());
+            const bool shouldShow = !m_AutopilotBar->isVisible();
+            setPanelVisibility(m_AutopilotBar, shouldShow);
         }
     }
 
@@ -137,6 +146,7 @@ namespace fairwindsk::ui::bottombar {
  * Method called when the user wants to view the apps screen
  */
     void BottomBar::apps_clicked() {
+        hideTransientPanels();
 
         // Emit the signal to tell the MainWindow to update the UI and show the apps screen
         emit setApps();
@@ -146,9 +156,8 @@ namespace fairwindsk::ui::bottombar {
     void BottomBar::anchor_clicked() {
         // Check if the autopilot bar is available
         if (m_AnchorBar) {
-
-            // Toggle the Anchor bar
-            m_AnchorBar->setVisible(!m_AnchorBar->isVisible());
+            const bool shouldShow = !m_AnchorBar->isVisible();
+            setPanelVisibility(m_AnchorBar, shouldShow);
         }
 
     }
@@ -161,9 +170,8 @@ namespace fairwindsk::ui::bottombar {
 
         // Check if the alarms bar is available
         if (m_AlarmsBar) {
-
-            // Toggle the alarms bar
-            m_AlarmsBar->setVisible(!m_AlarmsBar->isVisible());
+            const bool shouldShow = !m_AlarmsBar->isVisible();
+            setPanelVisibility(m_AlarmsBar, shouldShow);
         }
     }
 
@@ -172,6 +180,7 @@ namespace fairwindsk::ui::bottombar {
  * Method called when the user wants to view the settings screen
  */
     void BottomBar::settings_clicked() {
+        hideTransientPanels();
 
         // Emit the signal to tell the MainWindow to update the UI and show the settings screen
         emit setSettings();
@@ -182,6 +191,9 @@ namespace fairwindsk::ui::bottombar {
  * Add the application icon in the shortcut area
  */
     void BottomBar::addApp(const QString& name) {
+            if (m_buttons.contains(name)) {
+                return;
+            }
 
         //if (name != "http:///") {
 
@@ -194,7 +206,7 @@ namespace fairwindsk::ui::bottombar {
             if (appItem) {
 
                 // Create a new button
-                auto *button = new QToolButton();
+                auto *button = new QToolButton(this);
 
                 // Set the app's hash value as the 's object name
                 button->setObjectName("toolbutton_" + name);
@@ -204,6 +216,7 @@ namespace fairwindsk::ui::bottombar {
 
                 // Set the tool tip
                 button->setToolTip(appItem->getDisplayName());
+                button->setAutoRaise(true);
 
                 // Get the application icon
                 QPixmap pixmap = appItem->getIcon();
@@ -242,6 +255,9 @@ namespace fairwindsk::ui::bottombar {
  * Remove the application icon frpm the shortcut area
  */
     void BottomBar::removeApp(const QString& name) {
+            if (!m_buttons.contains(name)) {
+                return;
+            }
 
         // Check for the setting application
         //if (name != "http:///") {
@@ -256,7 +272,7 @@ namespace fairwindsk::ui::bottombar {
             m_buttons.remove(name);
 
             // Delete the button
-            delete button;
+            button->deleteLater();
 
         //}
     }
@@ -268,7 +284,7 @@ namespace fairwindsk::ui::bottombar {
     void BottomBar::app_clicked() {
 
         // Get the sender button
-        QWidget *buttonWidget = qobject_cast<QWidget *>(sender());
+        auto *buttonWidget = qobject_cast<QToolButton *>(sender());
 
         // Check if the sender is valid
         if (!buttonWidget) {
@@ -278,7 +294,11 @@ namespace fairwindsk::ui::bottombar {
         }
 
         // Get the app's hash value from the button's object name
-        QString hash = buttonWidget->objectName().replace("toolbutton_", "");
+        const QString hash = buttonWidget->objectName().mid(QStringLiteral("toolbutton_").size());
+
+        if (hash.isEmpty()) {
+            return;
+        }
 
         // Check if the debug is active
         if (FairWindSK::getInstance()->isDebug()) {
@@ -289,6 +309,27 @@ namespace fairwindsk::ui::bottombar {
 
         // Emit the signal to tell the MainWindow to update the UI and show the app with that particular hash value
         emit foregroundAppChanged(hash);
+    }
+
+    void BottomBar::setPanelVisibility(QWidget *panel, const bool visible) const {
+        if (!panel) {
+            return;
+        }
+
+        if (visible) {
+            hideTransientPanels(panel);
+        }
+
+        panel->setVisible(visible);
+    }
+
+    void BottomBar::hideTransientPanels(QWidget *except) const {
+        const QList<QWidget *> panels = {m_POBBar, m_AutopilotBar, m_AnchorBar, m_AlarmsBar};
+        for (auto *panel : panels) {
+            if (panel && panel != except) {
+                panel->setVisible(false);
+            }
+        }
     }
 
 /*

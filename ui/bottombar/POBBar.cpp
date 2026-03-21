@@ -49,7 +49,7 @@ namespace fairwindsk::ui::bottombar {
         connect(ui->toolButton_Hide, &QToolButton::clicked, this, &POBBar::onHideClicked);
 
         // When the current POB has changed
-        connect(ui->comboBox_currentPOB,&QComboBox::currentIndexChanged, this, &POBBar::onCurrentIndexChanged);
+        connect(ui->comboBox_currentPOB, qOverload<int>(&QComboBox::currentIndexChanged), this, &POBBar::onCurrentIndexChanged);
 
         // Not visible by default
         QWidget::setVisible(false);
@@ -116,18 +116,19 @@ namespace fairwindsk::ui::bottombar {
                         if (joPOB.contains("value") && joPOB["value"].isObject()) {
                             const auto joValue = joPOB["value"].toObject();
                             if (joValue.contains("state") && joValue["state"].isString() && joValue["state"]=="emergency") {
-                                qDebug() << "----- " << key << " / " << nextPointId;
                                 auto wp=FairWindSK::getInstance()->getSignalKClient()->getWaypointByHref("/resources/waypoints/"+key);
                                 if (!wp.isEmpty()) {
-                                    ui->comboBox_currentPOB->addItem(wp.getName(),key);
-                                    if (wp.getName() == nextPointId) {
-                                        ui->comboBox_currentPOB->setCurrentText(wp.getName());
+                                    ui->comboBox_currentPOB->addItem(wp.getName(), key);
+                                    if (key == nextPointId) {
+                                        ui->comboBox_currentPOB->setCurrentIndex(ui->comboBox_currentPOB->count() - 1);
                                     }
                                 }
                             }
                         }
                     }
                 }
+
+                ui->pushButton_POB_Cancel->setEnabled(ui->comboBox_currentPOB->currentIndex() >= 0);
 
                 // Subscribe and update
                 updatePOB(FairWindSK::getInstance()->getSignalKClient()->subscribe(
@@ -149,9 +150,6 @@ namespace fairwindsk::ui::bottombar {
         //if (fairWindSK->isDebug()) {
 
         // Write a message
-        qDebug() << "POBBar::POB";
-        //}
-
         // Get the FairWind singleton
         const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
@@ -211,9 +209,6 @@ namespace fairwindsk::ui::bottombar {
         //if (fairWindSK->isDebug()) {
 
         // Write a message
-        qDebug() << "POBBar::onCancelClicked";
-        //}
-
         // Get the Signal K client
         const auto signalKClient = FairWindSK::getInstance()->getSignalKClient();
 
@@ -225,10 +220,12 @@ namespace fairwindsk::ui::bottombar {
         // Get the current POB
         const auto currentPOB = ui->comboBox_currentPOB->currentData();
 
+        if (!currentPOB.isValid() || currentPOB.toString().isEmpty()) {
+            return;
+        }
+
         // Prepare the API URL
         const auto url = signalKClient->url().toString()+"/v2/api/alarms/"+alarmKey+"/"+currentPOB.toString();
-
-        qDebug() << "POBBar::onCancelClicked url: " << url;
 
         // Invoke the Signal K delete
         signalKClient->signalkDelete(QUrl(url));
@@ -258,6 +255,8 @@ namespace fairwindsk::ui::bottombar {
      * The current POB as changed
      */
     void POBBar::onCurrentIndexChanged(int index) {
+        Q_UNUSED(index);
+        ui->pushButton_POB_Cancel->setEnabled(ui->comboBox_currentPOB->currentIndex() >= 0);
     }
 
 
@@ -312,10 +311,6 @@ namespace fairwindsk::ui::bottombar {
         //if (fairWindSK->isDebug()) {
 
         // Write a message
-        qDebug() << "POBBar::updatePOB";
-        qDebug() << update;
-        //}
-
         // Check if for any reason the update is empty
         if (update.isEmpty()) {
 
@@ -339,10 +334,6 @@ namespace fairwindsk::ui::bottombar {
             //if (fairWindSK->isDebug()) {
 
             // Write a message
-            qDebug() << "POBBar::updatePOB " << path;
-            qDebug() << value;
-            //}
-
             // Check if value is valid
             if (value.isEmpty()) {
 
@@ -357,10 +348,6 @@ namespace fairwindsk::ui::bottombar {
                 //if (fairWindSK->isDebug()) {
 
                 // Write a message
-                qDebug() << "POBBar::updatePOB";
-                qDebug() << value;
-                //}
-
                 // Check if the state is "normal" (no POB emergency)
                 if (value["state"].toString() == "normal") {
 
@@ -368,12 +355,10 @@ namespace fairwindsk::ui::bottombar {
                     //if (fairWindSK->isDebug()) {
 
                     // Write a message
-                    qDebug() << "POBBar::updatePOB: normal";
-                    //}
-
                     if (m_pobUUIDs.contains(pobUUID)) {
 
                         m_pobUUIDs.remove(pobUUID);
+                        removePOB(pobUUID);
 
                         // Check if no more pob alarms are active
                         if (m_pobUUIDs.isEmpty())
@@ -411,10 +396,6 @@ namespace fairwindsk::ui::bottombar {
                     //if (fairWindSK->isDebug()) {
 
                     // Write a message
-                    qDebug() << "POBBar::updatePOB: emergency";
-                    //}
-
-
                     // Check if data has the position field
                     if (value.contains("position") && value["position"].isObject()) {
 
@@ -484,8 +465,8 @@ namespace fairwindsk::ui::bottombar {
                         }
 
                         m_pobUUIDs.insert(pobUUID);
+                        addOrSelectPOB(pobUUID);
 
-                        qDebug() << "POBBar::updatePOB: pobUUIDs: " << m_pobUUIDs;
                     }
                     
 
@@ -582,5 +563,31 @@ namespace fairwindsk::ui::bottombar {
             // Set the pointer to null
             ui = nullptr;
         }
+    }
+
+    void POBBar::addOrSelectPOB(const QString& uuid) {
+        if (uuid.isEmpty()) {
+            return;
+        }
+
+        const int existingIndex = ui->comboBox_currentPOB->findData(uuid);
+        if (existingIndex >= 0) {
+            ui->comboBox_currentPOB->setCurrentIndex(existingIndex);
+            return;
+        }
+
+        const auto waypoint = FairWindSK::getInstance()->getSignalKClient()->getWaypointByHref("/resources/waypoints/" + uuid);
+        const QString label = waypoint.isEmpty() ? uuid : waypoint.getName();
+        ui->comboBox_currentPOB->addItem(label, uuid);
+        ui->comboBox_currentPOB->setCurrentIndex(ui->comboBox_currentPOB->count() - 1);
+    }
+
+    void POBBar::removePOB(const QString& uuid) {
+        const int index = ui->comboBox_currentPOB->findData(uuid);
+        if (index >= 0) {
+            ui->comboBox_currentPOB->removeItem(index);
+        }
+
+        ui->pushButton_POB_Cancel->setEnabled(ui->comboBox_currentPOB->currentIndex() >= 0);
     }
 } // fairwindsk::ui::bottombar
