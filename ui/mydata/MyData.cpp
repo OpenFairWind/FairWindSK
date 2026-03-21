@@ -4,7 +4,6 @@
 
 // You may need to build the project (run Qt uic code generator) to get "ui_MyData.h" resolved
 
-#include <QtWidgets/QDialogButtonBox>
 #include "MyData.hpp"
 #include "ui_MyData.h"
 #include "Files.hpp"
@@ -21,7 +20,6 @@ namespace fairwindsk::ui::mydata {
 
         m_currentWidget = currenWidget;
 
-        connect(ui->buttonBox,&QDialogButtonBox::clicked,this,&MyData::onClose);
     }
 
     /*

@@ -5,9 +5,12 @@
 #ifndef FAIRWINDSK_POBBAR_HPP
 #define FAIRWINDSK_POBBAR_HPP
 
-#include <fstream>
 #include <nlohmann/json.hpp>
+#include <QJsonObject>
+#include <QDateTime>
+#include <QHash>
 #include <QSet>
+#include <QTimer>
 #include <QWidget>
 
 #include "Units.hpp"
@@ -44,6 +47,16 @@ namespace fairwindsk::ui::bottombar {
         void hidden();
 
     private:
+        QString configuredPath(const char *key) const;
+        QString pobNotificationPath() const;
+        QString pobNotificationApiKey() const;
+        void loadExistingPobs();
+        void setMetricSubscriptionsActive(bool active);
+        void refreshCurrentPobUi();
+        void refreshCancelButton();
+        void clearDisplayedPob();
+        void updateDisplayedPosition(const QJsonObject& position);
+        void updateStartTime();
         void addOrSelectPOB(const QString& uuid);
         void removePOB(const QString& uuid);
 
@@ -52,6 +65,10 @@ namespace fairwindsk::ui::bottombar {
         nlohmann::json m_signalkPaths;
         QTimer *m_timer = nullptr;
         QSet<QString> m_pobUUIDs;
+        QHash<QString, QJsonObject> m_pobValues;
+        QHash<QString, QString> m_pobLabels;
+        QDateTime m_currentStartTimeUtc;
+        bool m_metricSubscriptionsActive = false;
     };
 } // fairwindsk::ui::bottombar
 
