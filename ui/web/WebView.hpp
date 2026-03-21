@@ -8,6 +8,9 @@
 #include <QIcon>
 #include <QWebEngineView>
 #include <QWebEngineCertificateError>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+#include <QWebEnginePermission>
+#endif
 #if QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
 #include <QWebEngineFileSystemAccessRequest>
 #endif
@@ -55,6 +58,11 @@ namespace fairwindsk::ui::web {
 
         // Feature Permission Requested handler
         void handleFeaturePermissionRequested(const QUrl &securityOrigin, QWebEnginePage::Feature feature);
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+        // Permission Requested handler
+        void handlePermissionRequested(QWebEnginePermission permission);
+#endif
 
         // Proxy Authentication Required handler
         void handleProxyAuthenticationRequired(const QUrl &requestUrl, QAuthenticator *auth, const QString &proxyHost);

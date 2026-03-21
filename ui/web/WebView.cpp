@@ -99,6 +99,36 @@ namespace fairwindsk::ui::web {
         return {};
     }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+    inline QString questionForPermission(QWebEnginePermission::PermissionType permissionType) {
+        switch (permissionType) {
+            case QWebEnginePermission::PermissionType::Geolocation:
+                return QObject::tr("Allow %1 to access your location information?");
+            case QWebEnginePermission::PermissionType::MediaAudioCapture:
+                return QObject::tr("Allow %1 to access your microphone?");
+            case QWebEnginePermission::PermissionType::MediaVideoCapture:
+                return QObject::tr("Allow %1 to access your webcam?");
+            case QWebEnginePermission::PermissionType::MediaAudioVideoCapture:
+                return QObject::tr("Allow %1 to access your microphone and webcam?");
+            case QWebEnginePermission::PermissionType::MouseLock:
+                return QObject::tr("Allow %1 to lock your mouse cursor?");
+            case QWebEnginePermission::PermissionType::DesktopVideoCapture:
+                return QObject::tr("Allow %1 to capture video of your desktop?");
+            case QWebEnginePermission::PermissionType::DesktopAudioVideoCapture:
+                return QObject::tr("Allow %1 to capture audio and video of your desktop?");
+            case QWebEnginePermission::PermissionType::Notifications:
+                return QObject::tr("Allow %1 to show notification on your desktop?");
+            case QWebEnginePermission::PermissionType::ClipboardReadWrite:
+                return QObject::tr("Allow %1 to read and write your clipboard?");
+            case QWebEnginePermission::PermissionType::LocalFontsAccess:
+                return QObject::tr("Allow %1 to access your local fonts?");
+            case QWebEnginePermission::PermissionType::Unsupported:
+                break;
+        }
+        return {};
+    }
+#endif
+
     void WebView::setPage(WebPage *page)
     {
         if (auto oldPage = qobject_cast<WebPage *>(QWebEngineView::page())) {
@@ -106,8 +136,13 @@ namespace fairwindsk::ui::web {
                        &WebView::handleCertificateError);
             disconnect(oldPage, &QWebEnginePage::authenticationRequired, this,
                        &WebView::handleAuthenticationRequired);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+            disconnect(oldPage, &QWebEnginePage::permissionRequested, this,
+                       &WebView::handlePermissionRequested);
+#else
             disconnect(oldPage, &QWebEnginePage::featurePermissionRequested, this,
                        &WebView::handleFeaturePermissionRequested);
+#endif
             disconnect(oldPage, &QWebEnginePage::proxyAuthenticationRequired, this,
                        &WebView::handleProxyAuthenticationRequired);
             disconnect(oldPage, &QWebEnginePage::registerProtocolHandlerRequested, this,
@@ -122,8 +157,13 @@ namespace fairwindsk::ui::web {
         connect(page, &WebPage::createCertificateErrorDialog, this, &WebView::handleCertificateError);
         connect(page, &QWebEnginePage::authenticationRequired, this,
                 &WebView::handleAuthenticationRequired);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+        connect(page, &QWebEnginePage::permissionRequested, this,
+                &WebView::handlePermissionRequested);
+#else
         connect(page, &QWebEnginePage::featurePermissionRequested, this,
                 &WebView::handleFeaturePermissionRequested);
+#endif
         connect(page, &QWebEnginePage::proxyAuthenticationRequired, this,
                 &WebView::handleProxyAuthenticationRequired);
         connect(page, &QWebEnginePage::registerProtocolHandlerRequested, this,
@@ -194,6 +234,22 @@ namespace fairwindsk::ui::web {
             page()->setFeaturePermission(securityOrigin, feature,
                                          QWebEnginePage::PermissionDeniedByUser);
     }
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+    void WebView::handlePermissionRequested(QWebEnginePermission permission) {
+        if (!permission.isValid()) {
+            return;
+        }
+
+        const QString title = tr("Permission Request");
+        const QString question = questionForPermission(permission.permissionType()).arg(permission.origin().host());
+        if (!question.isEmpty() && QMessageBox::question(window(), title, question) == QMessageBox::Yes) {
+            permission.grant();
+        } else {
+            permission.deny();
+        }
+    }
+#endif
 
     void WebView::handleProxyAuthenticationRequired(const QUrl &, QAuthenticator *auth, const QString &proxyHost) {
         QDialog dialog(window());

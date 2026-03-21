@@ -20,15 +20,12 @@ static QDomElement textElement(QDomDocument& doc, const char *tagName, QString c
 PList::PList(QIODevice *device) {
 	QVariantMap result;
 	QDomDocument doc;
-	QString errorMessage;
-	int errorLine;
-	int errorColumn;
-	bool success = doc.setContent(device, false, &errorMessage, &errorLine, &errorColumn);
-	if (!success) {
+	const auto parseResult = doc.setContent(device, QDomDocument::ParseOption::Default);
+	if (!parseResult) {
 		qDebug() << "PListParser Warning: Could not parse PList file!";
-		qDebug() << "Error message: " << errorMessage;
-		qDebug() << "Error line: " << errorLine;
-		qDebug() << "Error column: " << errorColumn;
+		qDebug() << "Error message: " << parseResult.errorMessage;
+		qDebug() << "Error line: " << parseResult.errorLine;
+		qDebug() << "Error column: " << parseResult.errorColumn;
 
 	}
 
