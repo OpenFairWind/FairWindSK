@@ -9,6 +9,7 @@
 #include <QJsonDocument>
 #include <QTimer>
 #include <QDateTime>
+#include <QTimeZone>
 
 #include "FairWindSK.hpp"
 #include "ui_POBBar.h"
@@ -285,10 +286,8 @@ namespace fairwindsk::ui::bottombar {
             const auto startTimeIso8601 = jsonObjectStartTime["value"].toString();
 
             // Create a QDateTime from the string
-            auto startDateTimeUTC = QDateTime::fromString(startTimeIso8601, "yyyy-MM-ddThh:mm:ss.zzzZ");
-
-            // Set the start date time as UTC
-            startDateTimeUTC.setOffsetFromUtc(0);
+            auto startDateTimeUTC = QDateTime::fromString(startTimeIso8601, Qt::ISODateWithMs);
+            startDateTimeUTC.setTimeZone(QTimeZone::UTC);
 
             // Get the current date
             const auto currentDateTimeUTC = QDateTime::currentDateTimeUtc();
@@ -297,7 +296,7 @@ namespace fairwindsk::ui::bottombar {
             const auto elapsedSecs = startDateTimeUTC.secsTo(currentDateTimeUTC);
 
             // Set the time label from the UI to the formatted time
-            ui->label_Elapsed->setText(QDateTime::fromSecsSinceEpoch( elapsedSecs, Qt::UTC ).toString( "hh:mm:ss" ));
+            ui->label_Elapsed->setText(QDateTime::fromSecsSinceEpoch(elapsedSecs, QTimeZone::UTC).toString("hh:mm:ss"));
         }
     }
 
@@ -576,7 +575,7 @@ namespace fairwindsk::ui::bottombar {
             return;
         }
 
-        const auto waypoint = FairWindSK::getInstance()->getSignalKClient()->getWaypointByHref("/resources/waypoints/" + uuid);
+        auto waypoint = FairWindSK::getInstance()->getSignalKClient()->getWaypointByHref("/resources/waypoints/" + uuid);
         const QString label = waypoint.isEmpty() ? uuid : waypoint.getName();
         ui->comboBox_currentPOB->addItem(label, uuid);
         ui->comboBox_currentPOB->setCurrentIndex(ui->comboBox_currentPOB->count() - 1);
