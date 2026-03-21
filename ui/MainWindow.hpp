@@ -68,35 +68,34 @@ namespace fairwindsk::ui {
         // Get Window Id using the Process Id
         static WId getWIdByPId(qint64 pId);
 
-    public
-        slots:
+    public slots:
 
-            // Set foreground application by hash
-            void setForegroundApp(const QString& hash);
+        // Set foreground application by hash
+        void setForegroundApp(const QString& hash);
 
-            // Invoked when the bottom bar button Apps (Home) is clicked
-            void onApps();
+        // Invoked when the bottom bar button Apps (Home) is clicked
+        void onApps();
 
-            // Invoked when the bottom bar button Settings is clicked
-            void onSettings();
+        // Invoked when the bottom bar button Settings is clicked
+        void onSettings();
 
-            // Invoked when the bottom bar button MyData is clicked
-            void onMyData();
+        // Invoked when the bottom bar button MyData is clicked
+        void onMyData();
 
-            // Invoked when the top bar upper left button is clicked
-            void onUpperLeft();
+        // Invoked when the top bar upper left button is clicked
+        void onUpperLeft();
 
-            // Invoked when the Ok button of the About widget is clicked
-            void onAboutAccepted(fairwindsk::ui::about::About *aboutPage);
+        // Invoked when the Ok button of the About widget is clicked
+        void onAboutAccepted(fairwindsk::ui::about::About *aboutPage);
 
-            // Invoked when the Save button of the Settings widget is clicked
-            void onSettingsAccepted(fairwindsk::ui::settings::Settings *settingsPage) const;
+        // Invoked when the Save button of the Settings widget is clicked
+        void onSettingsAccepted(fairwindsk::ui::settings::Settings *settingsPage) const;
 
-            // Invoked when the Cancel button of the Settings widget is clicked
-            void onSettingsRejected(fairwindsk::ui::settings::Settings *settingsPage);
+        // Invoked when the Cancel button of the Settings widget is clicked
+        void onSettingsRejected(fairwindsk::ui::settings::Settings *settingsPage);
 
-            // Invoked when the Close button of the MyData widget is clicked
-            void onMyDataClosed(fairwindsk::ui::mydata::MyData *myDataPage);
+        // Invoked when the Close button of the MyData widget is clicked
+        void onMyDataClosed(fairwindsk::ui::mydata::MyData *myDataPage);
 
         // Invoked when the bottom bar button Settings is clicked
         void onHotkey();
