@@ -49,8 +49,8 @@ namespace fairwindsk::ui {
         bottomLayout->setSpacing(0);
         bottomLayout->addWidget(m_bottomBar);
 
-        // Set the Autopilot icon visible only if the autopilot application is defined
-        m_bottomBar->setAutopilotIcon(fairWindSK->checkAutopilotApp());
+        // The Autopilot panel is wired directly to the Signal K autopilot APIs.
+        m_bottomBar->setAutopilotIcon(true);
 
         // Set the Anchor icon visible only if the anchor alarm application is defined
         m_bottomBar->setAnchorIcon(fairWindSK->checkAnchorApp());
@@ -370,16 +370,13 @@ namespace fairwindsk::ui {
  * Method called when the user clicks the Settings button on the BottomBar object
  */
     void MainWindow::onMyData() {
-        if (isOverlayOpen()) {
-            return;
+        if (!m_myDataPage) {
+            m_myDataPage = new mydata::MyData(this, ui->stackedWidget_Center->currentWidget());
+            ui->stackedWidget_Center->addWidget(m_myDataPage);
+            connect(m_myDataPage, &mydata::MyData::closed, this, &MainWindow::onMyDataClosed);
         }
-        const auto myDataPage = new mydata::MyData(this, ui->stackedWidget_Center->currentWidget());
-        showOverlay(myDataPage);
 
-        connect(myDataPage, &mydata::MyData::closed, this, &MainWindow::onMyDataClosed);
-
-        // Set the window size
-        //setSize();
+        ui->stackedWidget_Center->setCurrentWidget(m_myDataPage);
     }
 
 
@@ -467,7 +464,25 @@ namespace fairwindsk::ui {
     }
 
     void MainWindow::onMyDataClosed(mydata::MyData *myDataPage) {
-        closeOverlay(myDataPage, myDataPage ? myDataPage->getCurrentWidget() : nullptr);
+        if (!myDataPage) {
+            showLauncher();
+            return;
+        }
+
+        QWidget *fallbackWidget = myDataPage->getCurrentWidget();
+        ui->stackedWidget_Center->removeWidget(myDataPage);
+        myDataPage->close();
+        delete myDataPage;
+
+        if (m_myDataPage == myDataPage) {
+            m_myDataPage = nullptr;
+        }
+
+        if (fallbackWidget && ui->stackedWidget_Center->indexOf(fallbackWidget) >= 0) {
+            ui->stackedWidget_Center->setCurrentWidget(fallbackWidget);
+        } else {
+            showLauncher();
+        }
     }
 
     void MainWindow::onAboutAccepted(about::About *aboutPage) {

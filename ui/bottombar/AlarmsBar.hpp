@@ -7,7 +7,6 @@
 
 #include <QWidget>
 #include <QToolButton>
-#include <nlohmann/json.hpp>
 
 namespace Ui { class AlarmsBar; }
 
@@ -40,12 +39,14 @@ namespace fairwindsk::ui::bottombar {
 
     private:
         void onAlarm(const QString& alarm);
+        QString alarmApiKey(const QString &alarm) const;
+        QString alarmUiKey(const QString &apiKey) const;
+        void setAlarmState(const QString &apiKey, bool active);
 
 
     private:
-        Ui::AlarmsBar *ui;
+        Ui::AlarmsBar *ui = nullptr;
         QMap<QString, QToolButton*> m_alarmToolButtons;
-        nlohmann::json m_signalkPaths;
     };
 } // fairwindsk::ui::bottombar
 

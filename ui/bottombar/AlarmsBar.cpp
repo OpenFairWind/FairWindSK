@@ -2,8 +2,6 @@
 // Created by Raffaele Montella on 03/06/24.
 //
 
-// You may need to build the project (run Qt uic code generator) to get "ui_AlarrmsBar.h" resolved
-
 #include <QPushButton>
 #include <QJsonObject>
 #include <QJsonArray>
@@ -17,90 +15,51 @@ namespace fairwindsk::ui::bottombar {
 
     AlarmsBar::AlarmsBar(QWidget *parent) : QWidget(parent), ui(new Ui::AlarmsBar) {
 
-        // Set the UI
         ui->setupUi(this);
 
-        // Prepare a lookup table for key/UI
         m_alarmToolButtons["abandon"] = ui->toolButton_Abandon;
         m_alarmToolButtons["adrift"] = ui->toolButton_Adrift;
         m_alarmToolButtons["fire"] = ui->toolButton_Fire;
-        m_alarmToolButtons["pob"] = ui->toolButton_POB;
+        m_alarmToolButtons["mob"] = ui->toolButton_POB;
         m_alarmToolButtons["piracy"] = ui->toolButton_Piracy;
         m_alarmToolButtons["sinking"] = ui->toolButton_Sinking;
 
-        // Get the FairWind singleton
-        const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+        const auto client = FairWindSK::getInstance()->getSignalKClient();
+        updateNotifications(client->subscribe("notifications.*", this,
+                                              SLOT(fairwindsk::ui::bottombar::AlarmsBar::updateNotifications)));
 
-        // Get configuration
-        const auto configuration = fairWindSK->getConfiguration();
-
-        // Get the configuration JSON object
-        auto configurationJsonObject = configuration->getRoot();
-
-        // Check if the configuration object contains the key 'signalk' with an object value
-        if ( configurationJsonObject.contains("signalk") && configurationJsonObject["signalk"].is_object()) {
-
-            // Get the signal k paths object
-            m_signalkPaths = configurationJsonObject["signalk"];
-
-            /*
-            // Check if the Options object has the rsa key and if it is a string
-            if (m_signalkPaths.contains("notifications") && m_signalkPaths["notifications"].is_string()) {
-
-                // Subscribe and update
-                updateNotifications(FairWindSK::getInstance()->getSignalKClient()->subscribe(
-                        QString::fromStdString(m_signalkPaths["notifications"].get<std::string>()),
-                        this,
-                        SLOT(fairwindsk::ui::bottombar::AnchorBar::updateNotifications)
-                        ));
-            }
-            */
-
-            // Check if the Options object has the rsa key and if it is a string
-            if (m_signalkPaths.contains("notifications") && m_signalkPaths["notifications"].is_string()) {
-
-                // Get the notification signal k parth
-                const auto notifications = QString::fromStdString(m_signalkPaths["notifications"].get<std::string>());
-
-                // Get the alarm keys
-                auto keys = m_alarmToolButtons.keys();
-
-                // For each alarm key, register the notifications
-                for (const auto& key: keys)
-                {
-                    auto notificationKey = (notifications + "." + key).toStdString();
-                    if (m_signalkPaths.contains(notificationKey) && m_signalkPaths[notificationKey].is_string()) {
-
-                        // Get the notification path
-                        const auto path = QString::fromStdString(m_signalkPaths[notificationKey].get<std::string>()+".*");
-
-                        // Subscribe and update
-                        updateNotifications(FairWindSK::getInstance()->getSignalKClient()->subscribe(
-                                path,
-                                this,
-                                SLOT(fairwindsk::ui::bottombar::AlarmsBar::updateNotifications)
-                                ));
-                    }
-                }
-            }
-        }
-
-
-        // emit a signal when MOB alarm is raised
         connect(ui->toolButton_POB, &QPushButton::clicked, this, &AlarmsBar::onPobClicked);
         connect(ui->toolButton_Sinking, &QPushButton::clicked, this, &AlarmsBar::onSinkingClicked);
         connect(ui->toolButton_Fire, &QPushButton::clicked, this, &AlarmsBar::onFireClicked);
         connect(ui->toolButton_Piracy, &QPushButton::clicked, this, &AlarmsBar::onPiracyClicked);
         connect(ui->toolButton_Abandon, &QPushButton::clicked, this, &AlarmsBar::onAbandonClicked);
         connect(ui->toolButton_Adrift, &QPushButton::clicked, this, &AlarmsBar::onAdriftClicked);
-
-        // emit a signal when the MyData tool button from the UI is clicked
         connect(ui->toolButton_Hide, &QPushButton::clicked, this, &AlarmsBar::onHideClicked);
 
-
-
-        // Not visible by default
         QWidget::setVisible(false);
+    }
+
+    QString AlarmsBar::alarmApiKey(const QString &alarm) const {
+        if (alarm == "pob") {
+            return "mob";
+        }
+        return alarm;
+    }
+
+    QString AlarmsBar::alarmUiKey(const QString &apiKey) const {
+        if (apiKey == "mob") {
+            return "pob";
+        }
+        return apiKey;
+    }
+
+    void AlarmsBar::setAlarmState(const QString &apiKey, const bool active) {
+        if (!m_alarmToolButtons.contains(apiKey)) {
+            return;
+        }
+
+        m_alarmToolButtons[apiKey]->setChecked(active);
+        emit alarmed(alarmUiKey(apiKey), active);
     }
 
     void AlarmsBar::onHideClicked() {
@@ -115,181 +74,74 @@ namespace fairwindsk::ui::bottombar {
     void AlarmsBar::onPiracyClicked() { onAlarm("piracy"); }
     void AlarmsBar::onSinkingClicked() { onAlarm("sinking"); }
 
-
     void AlarmsBar::onAlarm(const QString& alarm) {
+        const QString apiKey = alarmApiKey(alarm);
+        const auto client = FairWindSK::getInstance()->getSignalKClient();
+        const auto notificationUrl = QUrl(client->server().toString() + "/signalk/v2/api/notifications/" + apiKey);
 
-        // Get the FairWind singleton
-        const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
-
-        // Create the key
-        const QString key = "notifications." + alarm;
-
-        // Check if the debug is on
-        if (fairWindSK->isDebug()) {
-
-            // Write a message
-            qDebug() << "AlarmsBar::onAlarm(" << alarm << ") --> " << key;
+        if (m_alarmToolButtons.value(apiKey)->isChecked()) {
+            client->signalkDelete(notificationUrl);
+            setAlarmState(apiKey, false);
+            return;
         }
 
-        // Check if the Options object has the rsa key and if it is a string
-        if (m_signalkPaths.contains(key.toStdString()) && m_signalkPaths[key.toStdString()].is_string()) {
-
-            // Get the alarm key
-            const auto alarmKey = QString::fromStdString(
-                m_signalkPaths[key.toStdString()].get<std::string>()
-                ).replace("notifications.","");
-
-            // Set the path
-            const auto getPath = QString::fromStdString("vessels.self." + m_signalkPaths[key.toStdString()].get<std::string>()+".value");
-
-            // Check if the debug is on
-            if (fairWindSK->isDebug()) {
-
-                // Write a message
-                qDebug() << "getPath: " << getPath;
-            }
-
-            // Get the Signal K client
-            const auto signalKClient = fairWindSK->getSignalKClient();
-
-            // Gt the notification object
-            const auto notificationObject = signalKClient->signalkGet(getPath);
-
-            // Check if the alarm notification value is empty or the state is normal (no more emergency)
-            if (notificationObject.isEmpty() || (
-                notificationObject.contains("state") &&
-                notificationObject["state"].isString() &&
-                notificationObject["state"].toString() == "normal")) {
-
-                // Get the alarm path
-                const auto postPath = signalKClient->url().toString()+"/v2/api/alarms/" + alarmKey;
-
-                // Check if the debug is on
-                if (fairWindSK->isDebug()) {
-                    // Write a message
-                    qDebug() << "postPath: " << postPath;
-                }
-
-                // Rise the alarm
-                signalKClient->signalkPost(QUrl(postPath));
-
-                // Set activated icon
-                m_alarmToolButtons[alarm]->setChecked(true);
-
-                // Emit the signal
-                emit alarmed(alarm, true);
-
-            } else {
-                // Delete the alarm
-                signalKClient->signalkDelete(QUrl(signalKClient->url().toString()+"/v2/api/alarms/"+alarmKey));
-
-                // Set regular icon
-                m_alarmToolButtons[alarm]->setChecked(false);
-
-                // Emit the signal
-                emit alarmed(alarm, false);
-            }
-        }
+        QString payload = QString(R"({"message":"%1"})").arg(alarm.toUpper());
+        client->signalkPut(notificationUrl, payload);
+        setAlarmState(apiKey, true);
     }
 
+    void AlarmsBar::updateNotifications(const QJsonObject &update) {
+        if (update.isEmpty() || !update.contains("updates") || !update["updates"].isArray()) {
+            return;
+        }
 
-    /*
- * updateNotifications
- * Method called in accordance to signalk to update the notification
- */
-    void AlarmsBar::updateNotifications(const QJsonObject &update)
-    {
-        // Check if for any reason the update is empty
-        if (!update.isEmpty()) {
+        for (const auto &updateItem : update["updates"].toArray()) {
+            if (!updateItem.isObject()) {
+                continue;
+            }
+            const auto updateItemObject = updateItem.toObject();
+            if (!updateItemObject.contains("values") || !updateItemObject["values"].isArray()) {
+                continue;
+            }
 
-            // Check if the update has at list one update
-            if (update.contains("updates") && update["updates"].isArray() ) {
+            for (const auto &value : updateItemObject["values"].toArray()) {
+                if (!value.isObject()) {
+                    continue;
+                }
 
-                // Get the keys of the alarm tool buttons
-                const auto keys = m_alarmToolButtons.keys();
+                const auto valueObject = value.toObject();
+                const QString path = valueObject["path"].toString();
+                if (!path.startsWith("notifications.")) {
+                    continue;
+                }
 
-                // For each update...
-                for (const auto& updateItem : update["updates"].toArray()) {
+                const QStringList pathParts = path.split('.');
+                if (pathParts.size() < 2) {
+                    continue;
+                }
 
-                    // Check if the update item is an object
-                    if (updateItem.isObject()) {
+                const QString apiKey = pathParts.at(1);
+                if (!m_alarmToolButtons.contains(apiKey)) {
+                    continue;
+                }
 
-                        // Get the update item as object
-                        auto updateItemObject = updateItem.toObject();
-
-                        // Check if the update item contains values as array
-                        if (updateItemObject.contains("values") && updateItemObject["values"].isArray()) {
-
-                            // For each value of the array
-                            for (const auto& value : updateItemObject["values"].toArray()) {
-
-                                // Check if the value is an object
-                                if (value.isObject()) {
-
-                                    // Get the value as an object
-                                    auto valueObject = value.toObject();
-
-                                    // Check the value contains path as string
-                                    if (valueObject.contains("path") && valueObject["path"].isString()) {
-
-                                        // Get the path as string
-                                        auto path = valueObject["path"].toString();
-
-                                        // Separate the path elements
-                                        auto pathParts = path.split('.');
-
-                                        // Remove the first element (is always "notifications")
-                                        pathParts.removeFirst();
-
-                                        // Check if one of the keys is the first element of the path
-                                        if (!pathParts.isEmpty() && keys.contains(pathParts[0])) {
-
-                                            // By default, set emergency as false (no icon to be shown)
-                                            bool emergency = false;
-
-                                            // Check the value object contains a notification value that have to be an object
-                                            if (valueObject.contains("value") && valueObject["value"].isObject()) {
-
-                                                // Get the notification value as object
-                                                auto notificationValue = valueObject["value"].toObject();
-
-                                                // Check if the notification value contains state as string
-                                                if (notificationValue.contains("state") && notificationValue["state"].isString()) {
-
-                                                    // Get the state as string
-                                                    auto state = notificationValue["state"].toString();
-
-                                                    // Check if the string is emergency
-                                                    if (state == "emergency") {
-
-                                                        // Set the emergency flag to true
-                                                        emergency = true;
-                                                    }
-                                                }
-                                            }
-
-                                            // Set regular icon
-                                            m_alarmToolButtons[pathParts[0]]->setChecked(emergency);
-
-                                            // Emit the signal
-                                            emit alarmed(pathParts[0], emergency);
-
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                bool emergency = false;
+                if (valueObject.contains("value") && valueObject["value"].isObject()) {
+                    const auto notificationValue = valueObject["value"].toObject();
+                    if (notificationValue.contains("state") && notificationValue["state"].isString()) {
+                        const QString state = notificationValue["state"].toString();
+                        emergency = (state == "emergency" || state == "alarm");
                     }
                 }
+
+                setAlarmState(apiKey, emergency);
             }
         }
     }
 
     AlarmsBar::~AlarmsBar() {
         if (ui) {
-
             delete ui;
-
             ui = nullptr;
         }
     }

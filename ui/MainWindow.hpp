@@ -115,6 +115,7 @@ namespace fairwindsk::ui {
         QMap<QString, QWidget *> m_mapHash2Widget;
 
         QWidget *m_activeOverlay = nullptr;
+        fairwindsk::ui::mydata::MyData *m_myDataPage = nullptr;
 
         // QWidget containing useful infos
         topbar::TopBar *m_topBar = nullptr;

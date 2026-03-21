@@ -51,6 +51,10 @@ namespace fairwindsk::ui::bottombar {
         void hidden();
 
     private:
+        QString autopilotBasePath() const;
+        QUrl autopilotUrl(const QString &suffix = QString()) const;
+        void refreshAutopilotOptions();
+        void setAutopilotControlsEnabled(bool enabled);
         QJsonObject setMode(const QString& state);
         QJsonObject setTargetHeading(float value);
         QJsonObject setTargetWindAngle(float value);
@@ -64,6 +68,7 @@ namespace fairwindsk::ui::bottombar {
         QSlider *m_slider = nullptr;
         Units *m_units = nullptr;
         nlohmann::json m_signalkPaths;
+        bool m_autopilotAvailable = false;
 
         //QGamepad *m_gamepad;
     };
