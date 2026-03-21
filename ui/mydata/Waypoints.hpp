@@ -38,7 +38,8 @@ namespace fairwindsk::ui::mydata {
         void onRefreshClicked();
         void onTableDoubleClicked(const QModelIndex &index);
         void onNavigateRowClicked();
-        void onShowDetailsRowClicked();
+        void onEditRowClicked();
+        void onRemoveRowClicked();
         void onBackClicked();
         void onNavigateCurrentClicked();
         void onEditClicked();

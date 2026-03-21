@@ -95,8 +95,12 @@ namespace fairwindsk::ui::mydata {
         m_tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
         m_tableView->setSelectionMode(QAbstractItemView::SingleSelection);
         m_tableView->setSortingEnabled(false);
-        m_tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-        m_tableView->horizontalHeader()->setStretchLastSection(true);
+        auto *trackHeader = m_tableView->horizontalHeader();
+        trackHeader->setSectionResizeMode(QHeaderView::ResizeToContents);
+        if (m_model->columnCount() > 0) {
+            trackHeader->setSectionResizeMode(m_model->columnCount() - 1, QHeaderView::Stretch);
+        }
+        trackHeader->setStretchLastSection(false);
         connect(m_tableView, &QTableView::doubleClicked, this, &HistoryTrackTab::onTableDoubleClicked);
         listLayout->addWidget(m_tableView);
 
@@ -216,10 +220,10 @@ namespace fairwindsk::ui::mydata {
     void HistoryTrackTab::updatePreview() {
         const auto points = allPoints();
         if (points.isEmpty()) {
-            m_previewWidget->setMessage(tr("No track samples are available for preview."), tr("Track GeoJSON Preview"));
+            m_previewWidget->setMessage(tr("No track samples are available for preview."));
             return;
         }
-        m_previewWidget->setGeoJson(exportTrackPointsAsGeoJson(points), tr("Track GeoJSON Preview"));
+        m_previewWidget->setGeoJson(exportTrackPointsAsGeoJson(points));
     }
 
     void HistoryTrackTab::showListPage() {

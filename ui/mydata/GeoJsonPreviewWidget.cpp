@@ -6,22 +6,32 @@
 
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QPlainTextEdit>
+#include <QTabWidget>
 #include <QVBoxLayout>
 #include <QWebEngineView>
 
 namespace fairwindsk::ui::mydata {
     GeoJsonPreviewWidget::GeoJsonPreviewWidget(QWidget *parent)
         : QWidget(parent),
-          m_view(new QWebEngineView(this)) {
+          m_tabWidget(new QTabWidget(this)),
+          m_view(new QWebEngineView(this)),
+          m_textView(new QPlainTextEdit(this)) {
         auto *layout = new QVBoxLayout(this);
         layout->setContentsMargins(0, 0, 0, 0);
-        layout->addWidget(m_view);
+        layout->addWidget(m_tabWidget);
+        m_tabWidget->addTab(m_view, tr("Preview"));
+        m_textView->setReadOnly(true);
+        m_textView->setLineWrapMode(QPlainTextEdit::NoWrap);
+        m_textView->setStyleSheet("QPlainTextEdit { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
+        m_tabWidget->addTab(m_textView, tr("GeoJSON"));
         setMinimumSize(320, 240);
-        setMessage(tr("GeoJSON preview will appear here."), tr("GeoJSON Preview"));
+        setMessage(tr("GeoJSON preview will appear here."));
     }
 
-    void GeoJsonPreviewWidget::setGeoJson(const QJsonDocument &document, const QString &title) {
+    void GeoJsonPreviewWidget::setGeoJson(const QJsonDocument &document, const QString &) {
         const QString json = QString::fromUtf8(document.toJson(QJsonDocument::Compact));
+        m_textView->setPlainText(QString::fromUtf8(document.toJson(QJsonDocument::Indented)));
         const QString script = QStringLiteral(R"(
 const data = %1;
 const svg = document.getElementById('preview');
@@ -169,20 +179,20 @@ if (!allPoints.length) {
 )")
                 .arg(json);
 
-        m_view->setHtml(htmlForContent(title.isEmpty() ? tr("GeoJSON Preview") : title, script));
+        m_view->setHtml(htmlForContent(script));
     }
 
-    void GeoJsonPreviewWidget::setMessage(const QString &message, const QString &title) {
+    void GeoJsonPreviewWidget::setMessage(const QString &message, const QString &) {
         const QString safeMessage = QString::fromUtf8(QJsonDocument(QJsonArray{message}).toJson(QJsonDocument::Compact));
+        m_textView->setPlainText(message);
         const QString script = QStringLiteral(R"(
 const info = document.getElementById('info');
 info.textContent = %1[0];
 )").arg(safeMessage.trimmed());
-        m_view->setHtml(htmlForContent(title.isEmpty() ? tr("GeoJSON Preview") : title, script));
+        m_view->setHtml(htmlForContent(script));
     }
 
-    QString GeoJsonPreviewWidget::htmlForContent(const QString &title, const QString &bodyScript) {
-        const QString safeTitle = QString::fromUtf8(QJsonDocument(QJsonArray{title}).toJson(QJsonDocument::Compact)).trimmed();
+    QString GeoJsonPreviewWidget::htmlForContent(const QString &bodyScript) {
         return QStringLiteral(R"(
 <!DOCTYPE html>
 <html lang="en">
@@ -201,16 +211,9 @@ info.textContent = %1[0];
       height: 100vh;
       background: linear-gradient(180deg, #0b1724 0%%, #132739 100%%);
     }
-    .header {
-      padding: 14px 18px;
-      border-bottom: 1px solid rgba(229, 237, 247, 0.12);
-      font-size: 18px;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-    }
     .map {
       flex: 1;
-      padding: 18px;
+      padding: 14px;
     }
     svg {
       width: 100%%;
@@ -233,18 +236,16 @@ info.textContent = %1[0];
 </head>
 <body>
   <div class="shell">
-    <div class="header" id="title"></div>
     <div class="map">
       <svg id="preview" viewBox="0 0 960 540" preserveAspectRatio="xMidYMid meet"></svg>
     </div>
     <div class="footer" id="info"></div>
   </div>
   <script>
-    document.getElementById('title').textContent = %1[0];
-    %2
+    %1
   </script>
 </body>
 </html>)")
-            .arg(safeTitle, bodyScript);
+            .arg(bodyScript);
     }
 }

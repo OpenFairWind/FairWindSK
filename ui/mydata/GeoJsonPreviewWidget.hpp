@@ -8,6 +8,8 @@
 #include <QJsonDocument>
 #include <QWidget>
 
+class QPlainTextEdit;
+class QTabWidget;
 class QWebEngineView;
 
 namespace fairwindsk::ui::mydata {
@@ -22,9 +24,11 @@ namespace fairwindsk::ui::mydata {
         void setMessage(const QString &message, const QString &title = QString());
 
     private:
-        static QString htmlForContent(const QString &title, const QString &bodyScript);
+        static QString htmlForContent(const QString &bodyScript);
 
+        QTabWidget *m_tabWidget = nullptr;
         QWebEngineView *m_view = nullptr;
+        QPlainTextEdit *m_textView = nullptr;
     };
 }
 

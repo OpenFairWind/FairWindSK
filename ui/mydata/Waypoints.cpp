@@ -77,7 +77,7 @@ namespace fairwindsk::ui::mydata {
 
         int columnCount(const QModelIndex &parent = QModelIndex()) const override {
             const int baseCount = QSortFilterProxyModel::columnCount(parent);
-            return parent.isValid() ? 0 : baseCount + 2;
+            return parent.isValid() ? 0 : baseCount + 1;
         }
 
         QVariant data(const QModelIndex &index, const int role = Qt::DisplayRole) const override {
@@ -91,7 +91,7 @@ namespace fairwindsk::ui::mydata {
         QVariant headerData(const int section, const Qt::Orientation orientation, const int role) const override {
             const int baseCount = QSortFilterProxyModel::columnCount();
             if (orientation == Qt::Horizontal && role == Qt::DisplayRole && section >= baseCount) {
-                return section == baseCount ? QObject::tr("Navigate") : QObject::tr("Details");
+                return QObject::tr("Actions");
             }
             return QSortFilterProxyModel::headerData(section, orientation, role);
         }
@@ -176,8 +176,11 @@ namespace fairwindsk::ui::mydata {
         m_tableView->setSelectionMode(QAbstractItemView::SingleSelection);
         m_tableView->setSortingEnabled(true);
         m_tableView->sortByColumn(0, Qt::AscendingOrder);
-        m_tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-        m_tableView->horizontalHeader()->setStretchLastSection(false);
+        auto *waypointHeader = m_tableView->horizontalHeader();
+        waypointHeader->setSectionResizeMode(QHeaderView::ResizeToContents);
+        waypointHeader->setSectionResizeMode(1, QHeaderView::Stretch);
+        waypointHeader->setSectionResizeMode(m_model->columnCount(), QHeaderView::Fixed);
+        waypointHeader->setStretchLastSection(false);
         connect(m_tableView, &QTableView::doubleClicked, this, &Waypoints::onTableDoubleClicked);
         listLayout->addWidget(m_tableView);
 
@@ -278,11 +281,8 @@ namespace fairwindsk::ui::mydata {
     }
 
     void Waypoints::updateActionButtons() {
-        const int navigateColumn = m_model->columnCount();
-        const int detailsColumn = navigateColumn + 1;
-
-        m_tableView->setColumnWidth(navigateColumn, 56);
-        m_tableView->setColumnWidth(detailsColumn, 56);
+        const int actionsColumn = m_model->columnCount();
+        m_tableView->setColumnWidth(actionsColumn, 152);
 
         for (int row = 0; row < m_proxyModel->rowCount(); ++row) {
             const auto sourceIndex = sourceIndexForProxyRow(row);
@@ -292,21 +292,37 @@ namespace fairwindsk::ui::mydata {
 
             const QString id = m_model->resourceIdAtRow(sourceIndex.row());
 
+            auto *actionsWidget = new QWidget(m_tableView);
+            auto *actionsLayout = new QHBoxLayout(actionsWidget);
+            actionsLayout->setContentsMargins(4, 0, 4, 0);
+            actionsLayout->setSpacing(2);
+
             auto *navigateButton = new QToolButton(m_tableView);
             navigateButton->setAutoRaise(true);
             navigateButton->setIcon(QIcon(":/resources/svg/OpenBridge/navigation-route.svg"));
             navigateButton->setToolTip(tr("Navigate to waypoint"));
             navigateButton->setProperty("waypointId", id);
             connect(navigateButton, &QToolButton::clicked, this, &Waypoints::onNavigateRowClicked);
-            m_tableView->setIndexWidget(m_proxyModel->index(row, navigateColumn), navigateButton);
+            actionsLayout->addWidget(navigateButton);
 
-            auto *detailsButton = new QToolButton(m_tableView);
-            detailsButton->setAutoRaise(true);
-            detailsButton->setIcon(QIcon(":/resources/svg/gui-view-show-svgrepo-com.svg"));
-            detailsButton->setToolTip(tr("Show details"));
-            detailsButton->setProperty("waypointId", id);
-            connect(detailsButton, &QToolButton::clicked, this, &Waypoints::onShowDetailsRowClicked);
-            m_tableView->setIndexWidget(m_proxyModel->index(row, detailsColumn), detailsButton);
+            auto *editButton = new QToolButton(m_tableView);
+            editButton->setAutoRaise(true);
+            editButton->setIcon(QIcon(":/resources/svg/OpenBridge/edit-google.svg"));
+            editButton->setToolTip(tr("Edit waypoint"));
+            editButton->setProperty("waypointId", id);
+            connect(editButton, &QToolButton::clicked, this, &Waypoints::onEditRowClicked);
+            actionsLayout->addWidget(editButton);
+
+            auto *removeButton = new QToolButton(m_tableView);
+            removeButton->setAutoRaise(true);
+            removeButton->setIcon(QIcon(":/resources/svg/OpenBridge/delete-google.svg"));
+            removeButton->setToolTip(tr("Remove waypoint"));
+            removeButton->setProperty("waypointId", id);
+            connect(removeButton, &QToolButton::clicked, this, &Waypoints::onRemoveRowClicked);
+            actionsLayout->addWidget(removeButton);
+
+            actionsLayout->addStretch(1);
+            m_tableView->setIndexWidget(m_proxyModel->index(row, actionsColumn), actionsWidget);
         }
     }
 
@@ -491,7 +507,7 @@ namespace fairwindsk::ui::mydata {
     void Waypoints::updatePreview(const QJsonObject &resource) {
         QList<QPair<QString, QJsonObject>> resources;
         resources.append({m_currentWaypointId, resource});
-        m_previewWidget->setGeoJson(exportResourcesAsGeoJson(ResourceKind::Waypoint, resources), tr("Waypoint GeoJSON Preview"));
+        m_previewWidget->setGeoJson(exportResourcesAsGeoJson(ResourceKind::Waypoint, resources));
     }
 
     QString Waypoints::waypointHref(const QString &id) const {
@@ -630,7 +646,7 @@ namespace fairwindsk::ui::mydata {
         }
     }
 
-    void Waypoints::onShowDetailsRowClicked() {
+    void Waypoints::onEditRowClicked() {
         const auto *button = qobject_cast<QToolButton *>(sender());
         if (!button) {
             return;
@@ -639,7 +655,22 @@ namespace fairwindsk::ui::mydata {
         const QString id = button->property("waypointId").toString();
         for (int row = 0; row < m_model->rowCount(); ++row) {
             if (m_model->resourceIdAtRow(row) == id) {
-                showDetailsPage(id, m_model->resourceAtRow(row), false);
+                showDetailsPage(id, m_model->resourceAtRow(row), true);
+                return;
+            }
+        }
+    }
+
+    void Waypoints::onRemoveRowClicked() {
+        const auto *button = qobject_cast<QToolButton *>(sender());
+        if (!button) {
+            return;
+        }
+
+        const QString id = button->property("waypointId").toString();
+        for (int row = 0; row < m_model->rowCount(); ++row) {
+            if (m_model->resourceIdAtRow(row) == id) {
+                deleteWaypoint(id, displayNameForWaypoint(m_model->resourceAtRow(row)));
                 return;
             }
         }

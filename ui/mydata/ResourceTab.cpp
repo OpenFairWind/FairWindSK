@@ -134,8 +134,10 @@ namespace fairwindsk::ui::mydata {
         m_tableView->setSelectionMode(QAbstractItemView::SingleSelection);
         m_tableView->setSortingEnabled(true);
         m_tableView->sortByColumn(0, Qt::AscendingOrder);
-        m_tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-        m_tableView->horizontalHeader()->setStretchLastSection(true);
+        auto *resourceHeader = m_tableView->horizontalHeader();
+        resourceHeader->setSectionResizeMode(QHeaderView::ResizeToContents);
+        resourceHeader->setSectionResizeMode(1, QHeaderView::Stretch);
+        resourceHeader->setStretchLastSection(false);
         connect(m_tableView, &QTableView::doubleClicked, this, &ResourceTab::onTableDoubleClicked);
         listLayout->addWidget(m_tableView);
 
@@ -704,8 +706,7 @@ namespace fairwindsk::ui::mydata {
     void ResourceTab::updatePreview(const QJsonObject &resource) {
         QList<QPair<QString, QJsonObject>> resources;
         resources.append({m_currentResourceId, resource});
-        m_previewWidget->setGeoJson(exportResourcesAsGeoJson(m_kind, resources),
-                                    tr("%1 GeoJSON Preview").arg(resourceKindToSingularTitle(m_kind)));
+        m_previewWidget->setGeoJson(exportResourcesAsGeoJson(m_kind, resources));
     }
 
     void ResourceTab::onAddClicked() {
