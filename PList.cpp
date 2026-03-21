@@ -20,14 +20,26 @@ static QDomElement textElement(QDomDocument& doc, const char *tagName, QString c
 PList::PList(QIODevice *device) {
 	QVariantMap result;
 	QDomDocument doc;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
 	const auto parseResult = doc.setContent(device, QDomDocument::ParseOption::Default);
 	if (!parseResult) {
 		qDebug() << "PListParser Warning: Could not parse PList file!";
 		qDebug() << "Error message: " << parseResult.errorMessage;
 		qDebug() << "Error line: " << parseResult.errorLine;
 		qDebug() << "Error column: " << parseResult.errorColumn;
-
 	}
+#else
+	QString errorMessage;
+	int errorLine = 0;
+	int errorColumn = 0;
+	const bool parseResult = doc.setContent(device, false, &errorMessage, &errorLine, &errorColumn);
+	if (!parseResult) {
+		qDebug() << "PListParser Warning: Could not parse PList file!";
+		qDebug() << "Error message: " << errorMessage;
+		qDebug() << "Error line: " << errorLine;
+		qDebug() << "Error column: " << errorColumn;
+	}
+#endif
 
 	QDomElement root = doc.documentElement();
 	if (root.attribute(QStringLiteral("version"), QStringLiteral("1.0")) != QLatin1String("1.0")) {
