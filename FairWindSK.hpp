@@ -75,12 +75,13 @@ namespace fairwindsk {
         ~FairWindSK() override;
 
     private:
+        void updateWebProfileCookie();
 
         // The private constructor
         FairWindSK();
 
         // Pointer to the WebEngine profile
-        QWebEngineProfile *m_profile;
+        QWebEngineProfile *m_profile = nullptr;
 
         // The hash/item map
         QMap<QString, AppItem *> m_mapHash2AppItem;

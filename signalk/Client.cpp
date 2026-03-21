@@ -32,6 +32,9 @@ namespace fairwindsk::signalk {
 
     QByteArray Client::finishReply(QNetworkReply *reply, const bool updateCookie) const {
         const QScopedPointer<QNetworkReply> guard(reply);
+        if (!guard) {
+            return {};
+        }
         QElapsedTimer timer;
         timer.start();
 
@@ -39,8 +42,11 @@ namespace fairwindsk::signalk {
             QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
         }
 
-        if (!guard->isFinished() && m_Debug) {
-            qDebug() << Q_FUNC_INFO << "Timeout waiting for reply from" << guard->request().url();
+        if (!guard->isFinished()) {
+            if (m_Debug) {
+                qDebug() << Q_FUNC_INFO << "Timeout waiting for reply from" << guard->request().url();
+            }
+            guard->abort();
         }
 
         if (guard->error() != QNetworkReply::NoError && m_Debug) {
@@ -751,8 +757,6 @@ namespace fairwindsk::signalk {
     void Client::onDisconnected() {
         if (m_Debug)
             qDebug() << "WebSocket disconnected";
-
-	    QApplication::exit(1);
     }
 //! [onDisconnected]
 
@@ -1020,8 +1024,6 @@ namespace fairwindsk::signalk {
     QDateTime Client::getDateTimeFromUpdateByPath(const QJsonObject &update, const QString &path) {
         QDateTime result;
 
-        //qDebug() << update;
-
         if (update.contains("updates") and update["updates"].isArray()) {
             auto updatesJsonArray = update["updates"].toArray();
             for (auto updatesItem: updatesJsonArray) {
@@ -1035,10 +1037,18 @@ namespace fairwindsk::signalk {
                                 if (valueJsonObject.contains("path") && valueJsonObject["path"].isString()) {
                                     auto valuePath = valueJsonObject["path"].toString();
                                     if (path.isEmpty() || path == valuePath) {
-                                        if (valueJsonObject.contains("value") && valueJsonObject["value"].isObject()) {
+                                        if (valueJsonObject.contains("value") && valueJsonObject["value"].isString()) {
+                                            result = QDateTime::fromString(valueJsonObject["value"].toString(), Qt::ISODateWithMs);
+                                            if (!result.isValid()) {
+                                                result = QDateTime::fromString(valueJsonObject["value"].toString(), Qt::ISODate);
+                                            }
+                                        } else if (valueJsonObject.contains("value") && valueJsonObject["value"].isObject()) {
                                             auto valueValueJsonObject = valueJsonObject["value"].toObject();
-                                            if (valueValueJsonObject.contains("value") && valueValueJsonObject["value"].isObject()) {
-                                                //result = valueValueJsonObject["value"].toObject();
+                                            if (valueValueJsonObject.contains("value") && valueValueJsonObject["value"].isString()) {
+                                                result = QDateTime::fromString(valueValueJsonObject["value"].toString(), Qt::ISODateWithMs);
+                                                if (!result.isValid()) {
+                                                    result = QDateTime::fromString(valueValueJsonObject["value"].toString(), Qt::ISODate);
+                                                }
                                             }
                                         }
                                     }
@@ -1049,7 +1059,6 @@ namespace fairwindsk::signalk {
                 }
             }
         }
-        //qDebug() << result;
         return result;
     }
 

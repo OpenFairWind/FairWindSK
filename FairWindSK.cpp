@@ -39,13 +39,9 @@ namespace fairwindsk {
         auto profileName = QString::fromLatin1("FairWindSK.%1").arg(qWebEngineChromiumVersion());
 
         // Create the WebEngine profile
-        m_profile = new QWebEngineProfile(profileName);
+        m_profile = new QWebEngineProfile(profileName, this);
 
-        // Create an authentication cookie from the configuration
-        auto authenticationCookie = QNetworkCookie("JAUTHENTICATION", fairwindsk::Configuration::getToken().toUtf8());
-
-        // Set the cookie
-        m_profile->cookieStore()->setCookie(authenticationCookie,QUrl(m_configuration.getSignalKServerUrl()));
+        updateWebProfileCookie();
     }
 
 
@@ -126,6 +122,24 @@ namespace fairwindsk {
             QLoggingCategory::setFilterRules(u"qt.webenginecontext.debug=true"_s);
         }
 
+        updateWebProfileCookie();
+
+    }
+
+    void FairWindSK::updateWebProfileCookie() {
+        if (!m_profile) {
+            return;
+        }
+
+        const auto serverUrl = m_configuration.getSignalKServerUrl();
+        const auto token = fairwindsk::Configuration::getToken();
+        if (serverUrl.isEmpty() || token.isEmpty()) {
+            return;
+        }
+
+        auto authenticationCookie = QNetworkCookie("JAUTHENTICATION", token.toUtf8());
+        authenticationCookie.setPath("/");
+        m_profile->cookieStore()->setCookie(authenticationCookie, QUrl(serverUrl));
     }
 
     /*
@@ -163,60 +177,61 @@ namespace fairwindsk {
 
                 // Set the token
                 params["token"] = token;
+            }
 
-                // Number of connection tentatives
-                int count = 1;
+            // Number of connection tentatives
+            int count = 1;
 
-                // Start the connection
-                do {
-
-                    // Check if the debug is active
-                    if (isDebug()) {
-
-                        // Write a message
-                        qDebug() << "Trying to connect to the " << signalKServerUrl << " Signal K server ("
-                                 << count
-                                 << "/" << m_nRetry << ")...";
-                    }
-
-                    // Try to connect
-                    result = m_signalkClient.init(params);
-
-                    // Check if the connection is successful
-                    if (result) {
-
-                        // Set the token
-                        fairwindsk::Configuration::setToken(m_signalkClient.getToken());
-
-                        // Exit the loop
-                        break;
-                    }
-
-                    // Process the events
-                    QApplication::processEvents();
-
-                    // Increase the number of retry
-                    count++;
-
-                    // Wait for m_mSleep microseconds
-                    QThread::msleep(m_mSleep);
-
-                    // Loop until the number of retry
-                } while (count < m_nRetry);
+            // Start the connection
+            do {
 
                 // Check if the debug is active
                 if (isDebug()) {
 
-                    // Check if the client is connected
-                    if (result) {
+                    // Write a message
+                    qDebug() << "Trying to connect to the " << signalKServerUrl << " Signal K server ("
+                             << count
+                             << "/" << m_nRetry << ")...";
+                }
 
-                        // Write a message
-                        qDebug() << "Connected to " << signalKServerUrl;
-                    } else {
+                // Try to connect
+                result = m_signalkClient.init(params);
 
-                        // Write a message
-                        qDebug() << "No response from the " << signalKServerUrl << " Signal K server!";
-                    }
+                // Check if the connection is successful
+                if (result) {
+
+                    // Set the token
+                    fairwindsk::Configuration::setToken(m_signalkClient.getToken());
+                    updateWebProfileCookie();
+
+                    // Exit the loop
+                    break;
+                }
+
+                // Process the events
+                QApplication::processEvents();
+
+                // Increase the number of retry
+                count++;
+
+                // Wait for m_mSleep microseconds
+                QThread::msleep(m_mSleep);
+
+                // Loop until the number of retry
+            } while (count < m_nRetry);
+
+            // Check if the debug is active
+            if (isDebug()) {
+
+                // Check if the client is connected
+                if (result) {
+
+                    // Write a message
+                    qDebug() << "Connected to " << signalKServerUrl;
+                } else {
+
+                    // Write a message
+                    qDebug() << "No response from the " << signalKServerUrl << " Signal K server!";
                 }
             }
         }
@@ -256,6 +271,7 @@ namespace fairwindsk {
 
         // Remove the map content
         m_mapHash2AppItem.clear();
+        m_mapAppId2Hash.clear();
 
         // Reset the counter
         int count = 100;
@@ -285,7 +301,7 @@ namespace fairwindsk {
             loop.exec();
 
             // Check if the response has been successful
-            if (reply->attribute( QNetworkRequest::HttpStatusCodeAttribute ) == 200) {
+            if (reply && reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 200) {
 
                 // Create a json document with the request response
                 nlohmann::json doc = nlohmann::json::parse(reply->readAll());
@@ -367,6 +383,7 @@ namespace fairwindsk {
 
                                     // Add the item to the lookup table
                                     m_mapHash2AppItem[appItem->getName()] = appItem;
+                                    m_mapAppId2Hash[appItem->getName()] = appItem->getName();
 
                                     // Increase the app counter
                                     count++;
@@ -382,10 +399,11 @@ namespace fairwindsk {
                         }
                     }
                 }
+                // Set the result as successful
+                result = true;
             }
 
-            // Set the result as successful
-            result = true;
+            delete reply;
         } else {
 
             // Check if the debug is active
@@ -478,6 +496,7 @@ namespace fairwindsk {
 
                             // Add the application to the hash map
                             m_mapHash2AppItem[appName] = appItem;
+                            m_mapAppId2Hash[appName] = appName;
 
                             // Check if the debug is active
                             if (isDebug()) {
@@ -539,13 +558,13 @@ namespace fairwindsk {
                 const auto& jsonApp = app.value();
 
                 // Create an application object
-                auto appItem = new AppItem(jsonApp);
+                AppItem appItem(jsonApp);
 
                 // Check if the debug is active
                 if (isDebug())
                 {
                     // Write a message
-                    qDebug() << "App: " << appItem->getName() << " active: " << appItem->getActive() << " order: " << appItem->getOrder();
+                    qDebug() << "App: " << appItem.getName() << " active: " << appItem.getActive() << " order: " << appItem.getOrder();
                 }
             }
         }
@@ -559,11 +578,14 @@ namespace fairwindsk {
     }
 
     AppItem *FairWindSK::getAppItemByHash(const QString& hash) {
-        return m_mapHash2AppItem[hash];
+        return m_mapHash2AppItem.value(hash, nullptr);
     }
 
     QString FairWindSK::getAppHashById(const QString& appId) {
-        return m_mapAppId2Hash[appId];
+        if (m_mapHash2AppItem.contains(appId)) {
+            return appId;
+        }
+        return m_mapAppId2Hash.value(appId);
     }
 
 
