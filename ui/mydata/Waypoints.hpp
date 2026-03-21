@@ -12,7 +12,6 @@
 
 class QLabel;
 class QLineEdit;
-class QPlainTextEdit;
 class QSortFilterProxyModel;
 class QStackedWidget;
 class QTableView;
@@ -22,6 +21,7 @@ class QDoubleSpinBox;
 namespace fairwindsk::ui::mydata {
 
     class GeoJsonPreviewWidget;
+    class JsonObjectEditorWidget;
     class WaypointTableProxyModel;
 
     class Waypoints final : public QWidget {
@@ -91,7 +91,7 @@ namespace fairwindsk::ui::mydata {
         QDoubleSpinBox *m_latitudeSpinBox = nullptr;
         QDoubleSpinBox *m_longitudeSpinBox = nullptr;
         QDoubleSpinBox *m_altitudeSpinBox = nullptr;
-        QPlainTextEdit *m_propertiesEdit = nullptr;
+        JsonObjectEditorWidget *m_propertiesEditor = nullptr;
         GeoJsonPreviewWidget *m_previewWidget = nullptr;
         QLabel *m_idValueLabel = nullptr;
         QLabel *m_timestampValueLabel = nullptr;

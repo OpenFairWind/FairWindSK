@@ -28,6 +28,7 @@
 
 #include "GeoJsonPreviewWidget.hpp"
 #include "GeoJsonUtils.hpp"
+#include "JsonObjectEditorWidget.hpp"
 #include "signalk/Client.hpp"
 
 namespace {
@@ -80,7 +81,7 @@ namespace fairwindsk::ui::mydata {
           m_altitudeSpinBox(new QDoubleSpinBox(this)),
           m_coordinatesEdit(new QPlainTextEdit(this)),
           m_geometryEdit(new QPlainTextEdit(this)),
-          m_propertiesEdit(new QPlainTextEdit(this)),
+          m_propertiesEditor(new JsonObjectEditorWidget(this)),
           m_previewWidget(new GeoJsonPreviewWidget(this)),
           m_hrefEdit(new QLineEdit(this)),
           m_mimeTypeEdit(new QLineEdit(this)),
@@ -196,11 +197,15 @@ namespace fairwindsk::ui::mydata {
         m_chartScaleSpinBox->setRange(0.0, 1000000000.0);
         m_chartScaleSpinBox->setDecimals(0);
 
-        m_propertiesEdit->setPlaceholderText("{\n  \"color\": \"red\"\n}");
+        m_propertiesEditor->setLabels(tr("Properties Tree"), tr("Properties JSON"));
         m_coordinatesEdit->setPlaceholderText(tr("41.9028, 12.4964\n41.9031, 12.4970"));
         m_geometryEdit->setPlaceholderText("{\n  \"type\": \"Polygon\",\n  \"coordinates\": [[[12.4, 41.9], [12.5, 41.9], [12.5, 42.0], [12.4, 41.9]]]\n}");
         m_chartLayersEdit->setPlaceholderText("base,depth");
         m_chartBoundsEdit->setPlaceholderText("[[12.0, 41.0], [13.0, 42.0]]");
+        const QString textEditorStyle = "QPlainTextEdit { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }";
+        m_coordinatesEdit->setStyleSheet(textEditorStyle);
+        m_geometryEdit->setStyleSheet(textEditorStyle);
+        m_chartBoundsEdit->setStyleSheet(textEditorStyle);
 
         formLayout->addRow(tr("Id"), m_idValueLabel);
         formLayout->addRow(m_kind == ResourceKind::Note ? tr("Title") : tr("Name"), m_nameEdit);
@@ -210,11 +215,11 @@ namespace fairwindsk::ui::mydata {
             case ResourceKind::Route:
                 formLayout->addRow(tr("Type"), m_typeEdit);
                 formLayout->addRow(tr("Coordinates"), m_coordinatesEdit);
-                formLayout->addRow(tr("Feature properties (JSON)"), m_propertiesEdit);
+                formLayout->addRow(tr("Feature properties"), m_propertiesEditor);
                 break;
             case ResourceKind::Region:
                 formLayout->addRow(tr("Geometry (JSON)"), m_geometryEdit);
-                formLayout->addRow(tr("Feature properties (JSON)"), m_propertiesEdit);
+                formLayout->addRow(tr("Feature properties"), m_propertiesEditor);
                 break;
             case ResourceKind::Note:
                 formLayout->addRow(tr("Href"), m_hrefEdit);
@@ -223,7 +228,7 @@ namespace fairwindsk::ui::mydata {
                 formLayout->addRow(tr("Latitude"), m_latitudeSpinBox);
                 formLayout->addRow(tr("Longitude"), m_longitudeSpinBox);
                 formLayout->addRow(tr("Altitude"), m_altitudeSpinBox);
-                formLayout->addRow(tr("Properties (JSON)"), m_propertiesEdit);
+                formLayout->addRow(tr("Feature properties"), m_propertiesEditor);
                 break;
             case ResourceKind::Chart:
                 formLayout->addRow(tr("Identifier"), m_identifierEdit);
@@ -240,7 +245,7 @@ namespace fairwindsk::ui::mydata {
                 formLayout->addRow(tr("Latitude"), m_latitudeSpinBox);
                 formLayout->addRow(tr("Longitude"), m_longitudeSpinBox);
                 formLayout->addRow(tr("Altitude"), m_altitudeSpinBox);
-                formLayout->addRow(tr("Feature properties (JSON)"), m_propertiesEdit);
+                formLayout->addRow(tr("Feature properties"), m_propertiesEditor);
                 break;
         }
 
@@ -303,7 +308,7 @@ namespace fairwindsk::ui::mydata {
         m_altitudeSpinBox->setEnabled(editMode);
         m_coordinatesEdit->setReadOnly(readOnly);
         m_geometryEdit->setReadOnly(readOnly);
-        m_propertiesEdit->setReadOnly(readOnly);
+        m_propertiesEditor->setEditMode(editMode);
         m_hrefEdit->setReadOnly(readOnly);
         m_mimeTypeEdit->setReadOnly(readOnly);
         m_notePositionCheckBox->setEnabled(editMode);
@@ -394,7 +399,7 @@ namespace fairwindsk::ui::mydata {
         m_timestampValueLabel->setText(resource["timestamp"].toString());
 
         const auto properties = featurePropertiesObject(resource);
-        m_propertiesEdit->setPlainText(QString::fromUtf8(QJsonDocument(properties).toJson(QJsonDocument::Indented)));
+        m_propertiesEditor->setJsonObject(properties);
 
         switch (m_kind) {
             case ResourceKind::Route: {
@@ -502,6 +507,12 @@ namespace fairwindsk::ui::mydata {
             return false;
         }
 
+        bool propertiesOk = false;
+        m_propertiesEditor->jsonObject(&propertiesOk, message);
+        if (!propertiesOk) {
+            return false;
+        }
+
         switch (m_kind) {
             case ResourceKind::Route:
                 if (coordinatesJson().size() < 2) {
@@ -537,7 +548,7 @@ namespace fairwindsk::ui::mydata {
 
     QJsonObject ResourceTab::resourceFromEditor() const {
         const QString id = m_currentResourceId.isEmpty() ? QUuid::createUuid().toString(QUuid::WithoutBraces) : m_currentResourceId;
-        const auto properties = parseJsonObject(m_propertiesEdit);
+        const auto properties = m_propertiesEditor->jsonObject();
 
         QJsonObject resource;
         resource["timestamp"] = fairwindsk::signalk::Client::currentISO8601TimeUTC();
@@ -665,7 +676,7 @@ namespace fairwindsk::ui::mydata {
         m_altitudeSpinBox->setValue(0.0);
         m_coordinatesEdit->clear();
         m_geometryEdit->clear();
-        m_propertiesEdit->clear();
+        m_propertiesEditor->setJsonObject(QJsonObject{});
         m_hrefEdit->clear();
         m_mimeTypeEdit->clear();
         m_notePositionCheckBox->setChecked(false);

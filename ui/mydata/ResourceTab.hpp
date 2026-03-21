@@ -25,6 +25,7 @@ class QToolButton;
 namespace fairwindsk::ui::mydata {
 
     class GeoJsonPreviewWidget;
+    class JsonObjectEditorWidget;
 
     class ResourceTab final : public QWidget {
         Q_OBJECT
@@ -94,7 +95,7 @@ namespace fairwindsk::ui::mydata {
         QDoubleSpinBox *m_altitudeSpinBox;
         QPlainTextEdit *m_coordinatesEdit;
         QPlainTextEdit *m_geometryEdit;
-        QPlainTextEdit *m_propertiesEdit;
+        JsonObjectEditorWidget *m_propertiesEditor;
         GeoJsonPreviewWidget *m_previewWidget;
         QLineEdit *m_hrefEdit;
         QLineEdit *m_mimeTypeEdit;

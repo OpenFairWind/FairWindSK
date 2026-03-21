@@ -25,6 +25,7 @@
 #include "GeoJsonPreviewWidget.hpp"
 #include "GeoJsonUtils.hpp"
 #include "HistoryTrackModel.hpp"
+#include "JsonObjectEditorWidget.hpp"
 
 namespace fairwindsk::ui::mydata {
     HistoryTrackTab::HistoryTrackTab(QWidget *parent)
@@ -51,6 +52,7 @@ namespace fairwindsk::ui::mydata {
           m_latitudeSpinBox(new QDoubleSpinBox(this)),
           m_longitudeSpinBox(new QDoubleSpinBox(this)),
           m_altitudeSpinBox(new QDoubleSpinBox(this)),
+          m_propertiesEditor(new JsonObjectEditorWidget(this)),
           m_previewWidget(new GeoJsonPreviewWidget(this)),
           m_refreshTimer(new QTimer(this)) {
         auto *rootLayout = new QVBoxLayout(this);
@@ -156,12 +158,14 @@ namespace fairwindsk::ui::mydata {
         m_longitudeSpinBox->setDecimals(8);
         m_altitudeSpinBox->setRange(-100000.0, 100000.0);
         m_altitudeSpinBox->setDecimals(2);
+        m_propertiesEditor->setLabels(tr("Properties Tree"), tr("Properties JSON"));
 
         formLayout->addRow(tr("Sample"), m_indexValueLabel);
         formLayout->addRow(tr("Timestamp"), m_timestampEdit);
         formLayout->addRow(tr("Latitude"), m_latitudeSpinBox);
         formLayout->addRow(tr("Longitude"), m_longitudeSpinBox);
         formLayout->addRow(tr("Altitude"), m_altitudeSpinBox);
+        formLayout->addRow(tr("Feature properties"), m_propertiesEditor);
 
         m_stackedWidget->addWidget(m_listPage);
         m_stackedWidget->addWidget(m_detailsPage);
@@ -247,6 +251,7 @@ namespace fairwindsk::ui::mydata {
         m_latitudeSpinBox->setEnabled(editMode);
         m_longitudeSpinBox->setEnabled(editMode);
         m_altitudeSpinBox->setEnabled(editMode);
+        m_propertiesEditor->setEditMode(editMode);
 
         m_backButton->setVisible(!editMode);
         m_editButton->setVisible(!editMode && !m_isCreating && m_currentRow >= 0);
@@ -266,6 +271,13 @@ namespace fairwindsk::ui::mydata {
         m_latitudeSpinBox->setValue(point.coordinate.latitude());
         m_longitudeSpinBox->setValue(point.coordinate.longitude());
         m_altitudeSpinBox->setValue(point.coordinate.altitude());
+        QJsonObject properties;
+        properties["sampleIndex"] = row + 1;
+        properties["timestamp"] = point.timestamp.toUTC().toString(Qt::ISODateWithMs);
+        properties["latitude"] = point.coordinate.latitude();
+        properties["longitude"] = point.coordinate.longitude();
+        properties["altitude"] = point.coordinate.altitude();
+        m_propertiesEditor->setJsonObject(properties);
         updatePreview();
     }
 
@@ -277,6 +289,13 @@ namespace fairwindsk::ui::mydata {
         m_latitudeSpinBox->setValue(0.0);
         m_longitudeSpinBox->setValue(0.0);
         m_altitudeSpinBox->setValue(0.0);
+        QJsonObject properties;
+        properties["sampleIndex"] = 0;
+        properties["timestamp"] = QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs);
+        properties["latitude"] = 0.0;
+        properties["longitude"] = 0.0;
+        properties["altitude"] = 0.0;
+        m_propertiesEditor->setJsonObject(properties);
         updatePreview();
     }
 
@@ -376,11 +395,22 @@ namespace fairwindsk::ui::mydata {
     }
 
     void HistoryTrackTab::onSaveClicked() {
+        bool propertiesOk = false;
+        QString message;
+        const auto properties = m_propertiesEditor->jsonObject(&propertiesOk, &message);
+        if (!propertiesOk) {
+            QMessageBox::warning(this, tr("Tracks"), message);
+            return;
+        }
+
         HistoryTrackPoint point;
-        point.timestamp = m_timestampEdit->dateTime().toUTC();
-        point.coordinate.setLatitude(m_latitudeSpinBox->value());
-        point.coordinate.setLongitude(m_longitudeSpinBox->value());
-        point.coordinate.setAltitude(m_altitudeSpinBox->value());
+        point.timestamp = QDateTime::fromString(properties["timestamp"].toString(), Qt::ISODateWithMs);
+        if (!point.timestamp.isValid()) {
+            point.timestamp = m_timestampEdit->dateTime().toUTC();
+        }
+        point.coordinate.setLatitude(properties.contains("latitude") ? properties["latitude"].toDouble() : m_latitudeSpinBox->value());
+        point.coordinate.setLongitude(properties.contains("longitude") ? properties["longitude"].toDouble() : m_longitudeSpinBox->value());
+        point.coordinate.setAltitude(properties.contains("altitude") ? properties["altitude"].toDouble() : m_altitudeSpinBox->value());
 
         if (!point.timestamp.isValid() || !point.coordinate.isValid()) {
             QMessageBox::warning(this, tr("Tracks"), tr("Please enter a valid timestamp and coordinates."));

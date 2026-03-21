@@ -13,7 +13,6 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QMessageBox>
-#include <QPlainTextEdit>
 #include <QPushButton>
 #include <QRegularExpression>
 #include <QSortFilterProxyModel>
@@ -28,6 +27,7 @@
 #include "FairWindSK.hpp"
 #include "GeoJsonPreviewWidget.hpp"
 #include "GeoJsonUtils.hpp"
+#include "JsonObjectEditorWidget.hpp"
 
 namespace {
     QJsonObject featureObject(const QJsonObject &resource) {
@@ -132,7 +132,7 @@ namespace fairwindsk::ui::mydata {
           m_latitudeSpinBox(new QDoubleSpinBox(this)),
           m_longitudeSpinBox(new QDoubleSpinBox(this)),
           m_altitudeSpinBox(new QDoubleSpinBox(this)),
-          m_propertiesEdit(new QPlainTextEdit(this)),
+          m_propertiesEditor(new JsonObjectEditorWidget(this)),
           m_previewWidget(new GeoJsonPreviewWidget(this)),
           m_idValueLabel(new QLabel(this)),
           m_timestampValueLabel(new QLabel(this)) {
@@ -241,7 +241,7 @@ namespace fairwindsk::ui::mydata {
         m_longitudeSpinBox->setDecimals(8);
         m_altitudeSpinBox->setRange(-100000.0, 100000.0);
         m_altitudeSpinBox->setDecimals(2);
-        m_propertiesEdit->setPlaceholderText("{\n  \"color\": \"red\"\n}");
+        m_propertiesEditor->setLabels(tr("Properties Tree"), tr("Properties JSON"));
 
         formLayout->addRow(tr("Id"), m_idValueLabel);
         formLayout->addRow(tr("Name"), m_nameEdit);
@@ -250,7 +250,7 @@ namespace fairwindsk::ui::mydata {
         formLayout->addRow(tr("Latitude"), m_latitudeSpinBox);
         formLayout->addRow(tr("Longitude"), m_longitudeSpinBox);
         formLayout->addRow(tr("Altitude"), m_altitudeSpinBox);
-        formLayout->addRow(tr("Feature properties (JSON)"), m_propertiesEdit);
+        formLayout->addRow(tr("Feature properties"), m_propertiesEditor);
         formLayout->addRow(tr("Timestamp"), m_timestampValueLabel);
 
         m_stackedWidget->addWidget(m_listPage);
@@ -342,7 +342,7 @@ namespace fairwindsk::ui::mydata {
         m_altitudeSpinBox->setValue(coordinates.size() > 2 ? coordinates.at(2).toDouble() : 0.0);
 
         const auto properties = featurePropertiesObject(resource);
-        m_propertiesEdit->setPlainText(QString::fromUtf8(QJsonDocument(properties).toJson(QJsonDocument::Indented)));
+        m_propertiesEditor->setJsonObject(properties);
         m_timestampValueLabel->setText(resource["timestamp"].toString());
         updatePreview(resource);
     }
@@ -350,8 +350,7 @@ namespace fairwindsk::ui::mydata {
     QJsonObject Waypoints::waypointFromEditor() const {
         const QString id = m_currentWaypointId.isEmpty() ? QUuid::createUuid().toString(QUuid::WithoutBraces) : m_currentWaypointId;
 
-        const auto propertiesDocument = QJsonDocument::fromJson(m_propertiesEdit->toPlainText().trimmed().toUtf8());
-        QJsonObject properties = propertiesDocument.isObject() ? propertiesDocument.object() : QJsonObject{};
+        QJsonObject properties = m_propertiesEditor->jsonObject();
         properties["name"] = m_nameEdit->text().trimmed();
         properties["description"] = m_descriptionEdit->text().trimmed();
 
@@ -385,13 +384,10 @@ namespace fairwindsk::ui::mydata {
             return false;
         }
 
-        const auto propertiesText = m_propertiesEdit->toPlainText().trimmed();
-        if (!propertiesText.isEmpty()) {
-            const auto document = QJsonDocument::fromJson(propertiesText.toUtf8());
-            if (!document.isObject()) {
-                *message = tr("Feature properties must be a valid JSON object.");
-                return false;
-            }
+        bool propertiesOk = false;
+        m_propertiesEditor->jsonObject(&propertiesOk, message);
+        if (!propertiesOk) {
+            return false;
         }
 
         return true;
@@ -406,7 +402,7 @@ namespace fairwindsk::ui::mydata {
         m_latitudeSpinBox->setEnabled(editMode);
         m_longitudeSpinBox->setEnabled(editMode);
         m_altitudeSpinBox->setEnabled(editMode);
-        m_propertiesEdit->setReadOnly(!editMode);
+        m_propertiesEditor->setEditMode(editMode);
 
         if (editMode) {
             setActionButtonsForEdit();
@@ -487,7 +483,7 @@ namespace fairwindsk::ui::mydata {
         m_latitudeSpinBox->setValue(0.0);
         m_longitudeSpinBox->setValue(0.0);
         m_altitudeSpinBox->setValue(0.0);
-        m_propertiesEdit->clear();
+        m_propertiesEditor->setJsonObject(QJsonObject{});
         m_timestampValueLabel->setText({});
         updatePreview(waypointFromEditor());
     }

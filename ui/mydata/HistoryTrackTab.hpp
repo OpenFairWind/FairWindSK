@@ -19,6 +19,7 @@ class QTimer;
 namespace fairwindsk::ui::mydata {
 
     class GeoJsonPreviewWidget;
+    class JsonObjectEditorWidget;
     class HistoryTrackModel;
     struct HistoryTrackPoint;
 
@@ -78,6 +79,7 @@ namespace fairwindsk::ui::mydata {
         QDoubleSpinBox *m_latitudeSpinBox = nullptr;
         QDoubleSpinBox *m_longitudeSpinBox = nullptr;
         QDoubleSpinBox *m_altitudeSpinBox = nullptr;
+        JsonObjectEditorWidget *m_propertiesEditor = nullptr;
         GeoJsonPreviewWidget *m_previewWidget = nullptr;
         QTimer *m_refreshTimer = nullptr;
         int m_currentRow = -1;

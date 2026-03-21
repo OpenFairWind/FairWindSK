@@ -157,6 +157,7 @@ set(FAIRWINDSK_SOURCES
         ui/mydata/Waypoints.cpp ui/mydata/Waypoints.hpp ui/mydata/Waypoints.ui
         ui/mydata/GeoJsonUtils.cpp ui/mydata/GeoJsonUtils.hpp
         ui/mydata/GeoJsonPreviewWidget.cpp ui/mydata/GeoJsonPreviewWidget.hpp
+        ui/mydata/JsonObjectEditorWidget.cpp ui/mydata/JsonObjectEditorWidget.hpp
         ui/mydata/ResourceDialog.cpp ui/mydata/ResourceDialog.hpp
         ui/mydata/ResourceModel.cpp ui/mydata/ResourceModel.hpp
         ui/mydata/ResourceTab.cpp ui/mydata/ResourceTab.hpp
