@@ -90,10 +90,12 @@ namespace fairwindsk::ui {
         onRemoveApp("http:///");
 
         // Create the hot key to popup this window
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         m_hotkey = new QHotkey(Qt::Key_Tab, Qt::ShiftModifier, true, this);
 
         // Connect the hotkey
         connect(m_hotkey, &QHotkey::activated, this, &MainWindow::onHotkey);
+#endif
 
         // Check if no signal k server is defined
         if (fairWindSK->getConfiguration()->getSignalKServerUrl().isEmpty()) {
@@ -214,6 +216,12 @@ namespace fairwindsk::ui {
             // Check if the app is an executable
             if (appItem->getName().startsWith("file://")) {
 
+#if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
+                qWarning() << "Native file:// applications are not supported on mobile builds:" << appItem->getName();
+                showLauncher();
+                return;
+#else
+
                 //https://forum.qt.io/topic/44091/embed-an-application-inside-a-qt-window-solved/16
                 //https://forum.qt.io/topic/101510/calling-a-process-in-the-main-app-and-return-the-process-s-window-id
 
@@ -244,6 +252,7 @@ namespace fairwindsk::ui {
                 appItem->setProcess(process);
                 showLauncher();
                 return;
+#endif
 
             } else {
                 // Create a new web instance
@@ -524,6 +533,7 @@ namespace fairwindsk::ui {
     MainWindow::~MainWindow() {
 
         // Check if the hotkey is allocated
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         if (m_hotkey)
         {
             // Delete the hotkey
@@ -532,6 +542,7 @@ namespace fairwindsk::ui {
             // Set the hotkey pointer to null
             m_hotkey = nullptr;
         }
+#endif
         // Check if the UI is allocated
         if (ui) {
 

@@ -7,7 +7,9 @@
 
 #include <QWidget>
 #include <QTimer>
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
 #include <QtZeroConf/qzeroconf.h>
+#endif
 #include "Settings.hpp"
 #include "ui/web/Web.hpp"
 
@@ -34,7 +36,9 @@ namespace fairwindsk::ui::settings {
 
         void onUpdateSignalKServerUrl() const;
 
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         void addService(const QZeroConfService& item) const;
+#endif
 
 
 
@@ -46,7 +50,9 @@ namespace fairwindsk::ui::settings {
         Ui::Connection *ui = nullptr;
         Settings *m_settings = nullptr;
 
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         QZeroConf m_zeroConf;
+#endif
         QTimer *m_timer = nullptr;
         QWebEnginePage *m_page = nullptr;
 

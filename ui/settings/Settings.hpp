@@ -8,7 +8,6 @@
 #include <QWidget>
 #include <QAbstractButton>
 #include <QPushButton>
-#include <QtZeroConf/qzeroconf.h>
 #include <QtCore/qjsonobject.h>
 #include "AppItem.hpp"
 #include "Configuration.hpp"

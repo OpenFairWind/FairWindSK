@@ -143,7 +143,8 @@ namespace fairwindsk::ui::settings {
         connect(ui->comboBox_signalkserverurl, &QComboBox::currentIndexChanged, this, &Connection::onUpdateSignalKServerUrl);
         connect(ui->comboBox_signalkserverurl, &QComboBox::editTextChanged, this, &Connection::onUpdateSignalKServerUrl);
 
-        // Connect the zero conf serviceAdded siggnal to the addService method
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+        // Connect the zero conf serviceAdded signal to the addService method
         connect(&m_zeroConf, &QZeroConf::serviceAdded, this, &Connection::addService);
 
         // Start the zero conf browser
@@ -151,14 +152,13 @@ namespace fairwindsk::ui::settings {
 
         // Check if the browser exists
         if (m_zeroConf.browserExists()) {
-
-            // Show a message
             appendMessage(tr("Zero configuration active."));
         } else {
-
-            // Show a message
             appendMessage(tr("Zero configuration not active."));
         }
+#else
+        appendMessage(tr("Zero configuration discovery is disabled on mobile builds."));
+#endif
     }
 
     /*
@@ -175,6 +175,7 @@ namespace fairwindsk::ui::settings {
     * addService
     * Invoked when zero conf find a new service
     */
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
     void Connection::addService(const QZeroConfService& item) const {
 
         // Show a message on the console
@@ -201,6 +202,7 @@ namespace fairwindsk::ui::settings {
         }
 
     }
+#endif
 
     /*
     * onRequestToken

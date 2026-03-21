@@ -11,7 +11,9 @@
 #include <QCloseEvent>
 #include <QWebEngineProfile>
 
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
 #include <QHotkey>
+#endif
 
 #include <FairWindSK.hpp>
 #include "ui_MainWindow.h"
@@ -127,7 +129,9 @@ namespace fairwindsk::ui {
         fairwindsk::AppItem *m_currentApp = nullptr;
 
         // The hotkey
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         QHotkey *m_hotkey = nullptr;
+#endif
 
     };
 
