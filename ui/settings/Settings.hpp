@@ -46,6 +46,7 @@ namespace fairwindsk::ui::settings {
     private:
         void initTabs(int currentIndex);
         void removeTabs();
+        void applyConfiguration();
 
     private:
         Ui::Settings *ui;

@@ -31,6 +31,8 @@ namespace fairwindsk::ui::settings {
         void onVirtualKeyboardStateChanged(int state);
 
     private:
+        void setWindowGeometryFieldsEnabled(const QString &windowMode) const;
+
         Ui::Main *ui;
 
         Settings *m_settings;

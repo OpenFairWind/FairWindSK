@@ -16,6 +16,37 @@
 #include "FairWindSK.hpp"
 
 namespace fairwindsk::ui::settings {
+    void Connection::appendMessage(const QString &message) const {
+        ui->textEdit_message->append(message);
+    }
+
+    void Connection::stopTokenTimer() {
+        if (m_timer) {
+            m_timer->stop();
+            delete m_timer;
+            m_timer = nullptr;
+        }
+    }
+
+    void Connection::syncTokenUiState() {
+        const QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
+        const QString href = settings.value("href", "").toString();
+        const QString token = settings.value("token", "").toString();
+        const QString expirationTime = settings.value("expirationTime", "").toString();
+
+        const bool hasPendingRequest = !href.isEmpty();
+        const bool hasToken = !token.isEmpty();
+
+        ui->pushButton_requestToken->setEnabled(!hasPendingRequest && !hasToken);
+        ui->pushButton_cancelRequest->setEnabled(hasPendingRequest);
+        ui->pushButton_removeToken->setEnabled(!hasPendingRequest && hasToken);
+
+        if (hasToken) {
+            ui->label_lblPermission->setText(tr("Approved"));
+            ui->label_lblExpirationTime->setText(expirationTime);
+        }
+    }
+
 
     /*
      * Connection
@@ -65,31 +96,7 @@ namespace fairwindsk::ui::settings {
 
         qDebug() << "href: " << href << " token: " << token << " expirationTime: " << expirationTime;
 
-        // Check if the token is empty
-        if (token.isEmpty()) {
-            // The token is empty
-
-            // Enable the request token button
-            ui->pushButton_requestToken->setEnabled(true);
-
-            // Disable the cancel request button
-            ui->pushButton_cancelRequest->setEnabled(false);
-
-            // Disable the remove token button
-            ui->pushButton_removeToken->setEnabled(false);
-
-        } else {
-            // The token is present
-
-            // Disable the request token button
-            ui->pushButton_requestToken->setEnabled(false);
-
-            // Enable the cancel request button
-            ui->pushButton_cancelRequest->setEnabled(false);
-
-            // Enable the remove token button
-            ui->pushButton_removeToken->setEnabled(true);
-        }
+        syncTokenUiState();
 
         // Check if the href is not empty
         if (!href.isEmpty()) {
@@ -104,17 +111,13 @@ namespace fairwindsk::ui::settings {
             // Disable the remove token button
             ui->pushButton_removeToken->setEnabled(false);
 
-            // Create a timer
+            stopTokenTimer();
             m_timer = new QTimer(this);
-
-            // Connect the timeout to onCheckRequestToken
-            connect(m_timer, SIGNAL(timeout()), this, SLOT(onCheckRequestToken()));
-
-            // Start the timer
+            connect(m_timer, &QTimer::timeout, this, &Connection::onCheckRequestToken);
             m_timer->start(1000);
 
             // Set the url of the web page as the signal k server url
-            ui->webEngineView->setUrl(ui->comboBox_signalkserverurl->currentText());
+            ui->webEngineView->setUrl(QUrl(ui->comboBox_signalkserverurl->currentText()));
 
             // Make the web page visible
             ui->webEngineView->setVisible(true);
@@ -123,18 +126,8 @@ namespace fairwindsk::ui::settings {
             ui->textEdit_message->setVisible(false);
         }
 
-        // Check if th expiration time is not empty
         if (!expirationTime.isEmpty()) {
-            // The expiration time is not empty
-
-            // Disable the request token button
-            ui->pushButton_requestToken->setEnabled(false);
-
-            // Disable the cancel request button
-            ui->pushButton_cancelRequest->setEnabled(false);
-
-            // Enable the remove token button
-            ui->pushButton_removeToken->setEnabled(true);
+            ui->label_lblExpirationTime->setText(expirationTime);
         }
 
         // Show the settings view when the user clicks on the Settings button inside the BottomBar object
@@ -160,11 +153,11 @@ namespace fairwindsk::ui::settings {
         if (m_zeroConf.browserExists()) {
 
             // Show a message
-            ui->textEdit_message->setText(ui->textEdit_message->toPlainText()+ tr("Zero configuration active.\n"));
+            appendMessage(tr("Zero configuration active."));
         } else {
 
             // Show a message
-            ui->textEdit_message->setText(ui->textEdit_message->toPlainText()+ tr("Zero configuration not active.\n"));
+            appendMessage(tr("Zero configuration not active."));
         }
     }
 
@@ -185,13 +178,13 @@ namespace fairwindsk::ui::settings {
     void Connection::addService(const QZeroConfService& item) const {
 
         // Show a message on the console
-        ui->textEdit_message->setText(ui->textEdit_message->toPlainText()+ tr("Added service\n"));
-        ui->textEdit_message->setText(ui->textEdit_message->toPlainText()+ tr("Name: ") + item->name() + "\n");
-        ui->textEdit_message->setText(ui->textEdit_message->toPlainText()+ tr("Domain: ") + item->domain() + "\n");
-        ui->textEdit_message->setText(ui->textEdit_message->toPlainText()+ tr("Host: ") + item->host() + "\n");
-        ui->textEdit_message->setText(ui->textEdit_message->toPlainText()+ tr("Type: ") + item->type() + "\n");
-        ui->textEdit_message->setText(ui->textEdit_message->toPlainText()+ tr("Ip: ") + item->ip().toString() + "\n");
-        ui->textEdit_message->setText(ui->textEdit_message->toPlainText()+ tr("Port: ") + QString("%1").arg(item->port()) + "\n\n");
+        appendMessage(tr("Added service"));
+        appendMessage(tr("Name: %1").arg(item->name()));
+        appendMessage(tr("Domain: %1").arg(item->domain()));
+        appendMessage(tr("Host: %1").arg(item->host()));
+        appendMessage(tr("Type: %1").arg(item->type()));
+        appendMessage(tr("Ip: %1").arg(item->ip().toString()));
+        appendMessage(tr("Port: %1").arg(item->port()));
 
         // Get the type of protocol
         const auto type = item->type().split(".")[0].replace("_","");
@@ -203,7 +196,9 @@ namespace fairwindsk::ui::settings {
         const auto signalKServerUrl = QString("%1://%2:%3").arg(type, host).arg(item->port());
 
         // Add the signal k server url to the combo box
-        ui->comboBox_signalkserverurl->addItem(signalKServerUrl);
+        if (ui->comboBox_signalkserverurl->findText(signalKServerUrl) == -1) {
+            ui->comboBox_signalkserverurl->addItem(signalKServerUrl);
+        }
 
     }
 
@@ -226,7 +221,7 @@ namespace fairwindsk::ui::settings {
         auto networkRequest = QNetworkRequest(url);
 
         // Set the content type header as application/json
-        networkRequest.setHeader(QNetworkRequest::ContentTypeHeader," application/json");
+        networkRequest.setHeader(QNetworkRequest::ContentTypeHeader,"application/json");
 
         // Create the client id string
         auto clientId = QUuid::createUuid().toString().replace("{","").replace("}","");
@@ -286,13 +281,9 @@ namespace fairwindsk::ui::settings {
                         // Store the configuration in the settings
                         settings.setValue("href", href);
 
-                        // Create a timer
+                        stopTokenTimer();
                         m_timer = new QTimer(this);
-
-                        // Connect the timer timeout to the onCheckRequestToken member function
-                        connect(m_timer, SIGNAL(timeout()), this, SLOT(onCheckRequestToken()));
-
-                        // Start the timer (check each second)
+                        connect(m_timer, &QTimer::timeout, this, &Connection::onCheckRequestToken);
                         m_timer->start(1000);
 
                         // Disable the request token button
@@ -305,7 +296,7 @@ namespace fairwindsk::ui::settings {
                         ui->pushButton_removeToken->setEnabled(false);
 
                         // Set the web page url to the signal k server url for requests management
-                        ui->webEngineView->setUrl(signalKServerUrl+"/admin/#/security/access/requests");
+                        ui->webEngineView->setUrl(QUrl(signalKServerUrl+"/admin/#/security/access/requests"));
 
                         // Show the web page
                         ui->webEngineView->setVisible(true);
@@ -339,7 +330,7 @@ namespace fairwindsk::ui::settings {
             ui->pushButton_removeToken->setEnabled(false);
 
             // Set the web page url as the signal k server login url
-            ui->webEngineView->setUrl(signalKServerUrl+"/admin/#/login");
+            ui->webEngineView->setUrl(QUrl(signalKServerUrl+"/admin/#/login"));
 
             // Set the web page visible
             ui->webEngineView->setVisible(true);
@@ -356,8 +347,10 @@ namespace fairwindsk::ui::settings {
             ui->textEdit_message->setVisible(true);
 
             // Write a message
-            ui->textEdit_message->setText(ui->textEdit_message->toPlainText()+ tr("Error connecting the server.\n"));
+            appendMessage(tr("Error connecting the server."));
         }
+
+        reply->deleteLater();
     }
 
     /*
@@ -432,14 +425,7 @@ namespace fairwindsk::ui::settings {
                         // Set the message state as COMPLETED
                         ui->label_lblState->setText(tr("Completed"));
 
-                        // Stop the timer
-                        m_timer->stop();
-
-                        // Delete the timer
-                        delete m_timer;
-
-                        // Set the timer pointer to null
-                        m_timer = nullptr;
+                        stopTokenTimer();
 
                         // Hide the web page
                         ui->webEngineView->setVisible(false);
@@ -463,7 +449,7 @@ namespace fairwindsk::ui::settings {
                                     const auto message = jsonObject["message"].toString();
 
                                     // Set the console message
-                                    ui->textEdit_message->setText(ui->textEdit_message->toPlainText()+ tr("Message: ") + message + "\n");
+                                    appendMessage(tr("Message: %1").arg(message));
                                 }
                             }
                             else {
@@ -490,6 +476,7 @@ namespace fairwindsk::ui::settings {
 
                                             // Set the message in the permission field
                                             ui->label_lblPermission->setText(tr("Denied"));
+                                            ui->label_lblExpirationTime->clear();
 
                                             // Check if the permission is APPROVED
                                         } else if (permission == "APPROVED") {
@@ -540,6 +527,8 @@ namespace fairwindsk::ui::settings {
                     }
                 }
             }
+
+            reply->deleteLater();
         }
     }
 
@@ -553,30 +542,13 @@ namespace fairwindsk::ui::settings {
         // Initialize the QT managed settings
         QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
 
-        // Check if the time has been allocated
-        if (m_timer) {
-
-            // Stop the timer
-            m_timer->stop();
-
-            // Delete the timer
-            delete m_timer;
-
-            // Set the timer pointer to null
-            m_timer = nullptr;
-        }
+        stopTokenTimer();
 
         // Remove href
         settings.remove("href");
+        settings.remove("expirationTime");
 
-        // Enable the request token button
-        ui->pushButton_requestToken->setEnabled(true);
-
-        // Disable the cancel request button
-        ui->pushButton_cancelRequest->setEnabled(false);
-
-        // Disabke the remove token button
-        ui->pushButton_removeToken->setEnabled(false);
+        syncTokenUiState();
 
         // Hide the web page
         ui->webEngineView->setVisible(false);
@@ -586,6 +558,8 @@ namespace fairwindsk::ui::settings {
 
         // Set the state as CANCELED
         ui->label_lblState->setText(tr("Canceled"));
+        ui->label_lblPermission->clear();
+        ui->label_lblExpirationTime->clear();
     }
 
     /*
@@ -602,15 +576,10 @@ namespace fairwindsk::ui::settings {
 
         // Store the configuration in the settings
         settings.setValue("expirationTime", "");
+        settings.remove("href");
 
-        // Enable the request token button
-        ui->pushButton_requestToken->setEnabled(true);
-
-        // Disable the cancel request button
-        ui->pushButton_cancelRequest->setEnabled(false);
-
-        // Disable the remove token button
-        ui->pushButton_removeToken->setEnabled(false);
+        stopTokenTimer();
+        syncTokenUiState();
 
         // Hide the web page
         ui->webEngineView->setVisible(false);
@@ -620,6 +589,8 @@ namespace fairwindsk::ui::settings {
 
         // Set the expiration time as removed
         ui->label_lblExpirationTime->setText(tr("Removed"));
+        ui->label_lblPermission->clear();
+        ui->label_lblState->setText(tr("Removed"));
     }
 
     /*
@@ -631,18 +602,7 @@ namespace fairwindsk::ui::settings {
 	    // Stop the zeroconf browser
         m_zeroConf.stopBrowser();
 
-	    // Check if the timer is instanced
-        if (m_timer) {
-
-	        // Stop the timer
-            m_timer->stop();
-
-	        // Delete the timer
-            delete m_timer;
-
-	        // Ser the timer to null
-	        m_timer = nullptr;
-        }
+        stopTokenTimer();
 
         // Check if the page has been allocated
         if (m_page) {

@@ -41,6 +41,7 @@ namespace fairwindsk::ui::settings {
         bool eventFilter(QObject *object, QEvent *event) override;
         void setAppsEditMode(bool appsEditMode);
         void saveAppsDetails();
+        QString uniqueAppName(const QString &baseName) const;
 
     private:
         Ui::Apps *ui;

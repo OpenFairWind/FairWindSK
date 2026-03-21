@@ -21,6 +21,18 @@
 #include "ui_Settings.h"
 
 namespace fairwindsk::ui::settings {
+    void Settings::applyConfiguration() {
+
+        // Get the configuration root element
+        const auto configurationAsJson = m_configuration.getRoot();
+
+        // Set the new configuration in the FairWindSK singleton instance
+        FairWindSK::getInstance()->getConfiguration()->setRoot(configurationAsJson);
+
+        // Save the configuration permanently
+        FairWindSK::getInstance()->getConfiguration()->save();
+    }
+
 
     /*
  * Settings
@@ -169,11 +181,15 @@ namespace fairwindsk::ui::settings {
         // Check if the button is Restart
         else if ( m_pushButtonRestart == dynamic_cast<QPushButton*>(button)) {
 
+            applyConfiguration();
+
             // Quit the application, returning 1 (restart)
             QApplication::exit(1);
         }
         // Check if the button is Quit
         else if ( m_pushButtonQuit == dynamic_cast<QPushButton*>(button)) {
+
+            applyConfiguration();
 
             // Quit the application, returning 0 (quit, all ok)
             QApplication::exit(0);
@@ -185,15 +201,7 @@ namespace fairwindsk::ui::settings {
      * Invoked when a push button connected with the accepted signal is clicked
      */
     void Settings::onAccepted() {
-
-        // Get the configuration root element
-        const auto configurationAsJson = m_configuration.getRoot();
-
-        // Set the new configuration in the FairWindSK singleton instance
-        FairWindSK::getInstance()->getConfiguration()->setRoot(configurationAsJson);
-
-        // Save the configuration permanently
-        FairWindSK::getInstance()->getConfiguration()->save();
+        applyConfiguration();
 
         // Emit an accepted signal
         emit accepted(this);
@@ -243,6 +251,11 @@ namespace fairwindsk::ui::settings {
 	        // Set the pointer to null
 		    m_pushButtonQuit = nullptr;
 	    }
+
+        if (m_pushButtonRestart) {
+            delete m_pushButtonRestart;
+            m_pushButtonRestart = nullptr;
+        }
 
         // Check if the ui pointer is valid
         if (ui) {

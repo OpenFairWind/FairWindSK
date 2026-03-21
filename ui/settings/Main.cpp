@@ -13,6 +13,16 @@
 #include "Units.hpp"
 
 namespace fairwindsk::ui::settings {
+    void Main::setWindowGeometryFieldsEnabled(const QString &windowMode) const {
+        const bool isWindowed = windowMode == "windowed";
+        const bool isCentered = windowMode == "centered";
+
+        ui->lineEdit_left->setEnabled(isWindowed);
+        ui->lineEdit_top->setEnabled(isWindowed);
+        ui->lineEdit_width->setEnabled(isWindowed || isCentered);
+        ui->lineEdit_height->setEnabled(isWindowed || isCentered);
+    }
+
     Main::Main(Settings *settings, QWidget *parent) :
             QWidget(parent), ui(new Ui::Main) {
 
@@ -48,34 +58,15 @@ namespace fairwindsk::ui::settings {
 
         connect(ui->checkBox_virtualkeboard,&QCheckBox::stateChanged,this, &Main::onVirtualKeyboardStateChanged);
 
-
-        if (windowMode=="centered") {
-
-            ui->lineEdit_left->setEnabled(false);
-            ui->lineEdit_top->setEnabled(false);
-            ui->lineEdit_width->setEnabled(true);
-            ui->lineEdit_height->setEnabled(true);
-        } else if (windowMode=="maximized" || windowMode=="fullscreen") {
-
-            ui->lineEdit_left->setEnabled(false);
-            ui->lineEdit_top->setEnabled(false);
-            ui->lineEdit_width->setEnabled(false);
-            ui->lineEdit_height->setEnabled(false);
-        }else {
-
-            ui->lineEdit_left->setEnabled(true);
-            ui->lineEdit_top->setEnabled(true);
-            ui->lineEdit_width->setEnabled(true);
-            ui->lineEdit_height->setEnabled(true);
-        }
+        setWindowGeometryFieldsEnabled(windowMode);
 
         QScreen *screen = QGuiApplication::primaryScreen();
         auto  screenGeometry = screen->geometry();
 
         ui->lineEdit_left->setValidator( new QIntValidator(0, screenGeometry.width(), this) );
         ui->lineEdit_top->setValidator( new QIntValidator(0, screenGeometry.height(), this) );
-        ui->lineEdit_width->setValidator( new QIntValidator(0, screenGeometry.width(), this) );
-        ui->lineEdit_height->setValidator( new QIntValidator(0, screenGeometry.height(), this) );
+        ui->lineEdit_width->setValidator( new QIntValidator(1, screenGeometry.width(), this) );
+        ui->lineEdit_height->setValidator( new QIntValidator(1, screenGeometry.height(), this) );
 
         ui->lineEdit_left->setText(QString::number(m_settings->getConfiguration()->getWindowLeft()));
         ui->lineEdit_top->setText(QString::number(m_settings->getConfiguration()->getWindowTop()));
@@ -113,7 +104,7 @@ namespace fairwindsk::ui::settings {
 
                 if (units.contains("types") && units["types"].is_object()) {
 
-                    int currentIndex;
+                    int currentIndex = 0;
                     int idx = 0;
                     for (const auto &typeItem: units["types"].items()) {
                         if (units["types"][typeItem.key()]["type"] == type) {
@@ -156,58 +147,47 @@ namespace fairwindsk::ui::settings {
         switch (index) {
             case 1:
                 windowMode = "centered";
-                ui->lineEdit_left->setEnabled(false);
-                ui->lineEdit_top->setEnabled(false);
-                ui->lineEdit_width->setEnabled(true);
-                ui->lineEdit_height->setEnabled(true);
             break;
             case 2:
                 windowMode = "maximized";
-                ui->lineEdit_left->setEnabled(false);
-                ui->lineEdit_top->setEnabled(false);
-                ui->lineEdit_width->setEnabled(false);
-                ui->lineEdit_height->setEnabled(false);
                 break;
             case 3:
                 windowMode = "fullscreen";
-                ui->lineEdit_left->setEnabled(false);
-                ui->lineEdit_top->setEnabled(false);
-                ui->lineEdit_width->setEnabled(false);
-                ui->lineEdit_height->setEnabled(false);
                 break;
             default:
                 windowMode = "windowed";
-                ui->lineEdit_left->setEnabled(true);
-                ui->lineEdit_top->setEnabled(true);
-                ui->lineEdit_width->setEnabled(true);
-                ui->lineEdit_height->setEnabled(true);
         }
+        setWindowGeometryFieldsEnabled(windowMode);
         m_settings->getConfiguration()->setWindowMode(windowMode);
 
 
     }
 
     void Main::onWindowLeftTextChanged() {
-        m_settings->getConfiguration()->getRoot()["main"]["windowLeft"] = ui->lineEdit_left->text().toInt();
+        m_settings->getConfiguration()->setWindowLeft(ui->lineEdit_left->text().toInt());
     }
 
     void Main::onWindowTopTextChanged() {
-        m_settings->getConfiguration()->getRoot()["main"]["windowTop"] = ui->lineEdit_top->text().toInt();
+        m_settings->getConfiguration()->setWindowTop(ui->lineEdit_top->text().toInt());
     }
 
     void Main::onWindowWidthTextChanged() {
-        m_settings->getConfiguration()->getRoot()["main"]["windowWidth"] = ui->lineEdit_width->text().toInt();
+        m_settings->getConfiguration()->setWindowWidth(ui->lineEdit_width->text().toInt());
     }
 
     void Main::onWindowHeightTextChanged() {
-        m_settings->getConfiguration()->getRoot()["main"]["windowHeight"] = ui->lineEdit_height->text().toInt();
+        m_settings->getConfiguration()->setWindowHeight(ui->lineEdit_height->text().toInt());
     }
 
 
 
     void Main::onCurrentIndexChanged(int index) {
+        Q_UNUSED(index);
         // get sender
         const auto comboBox = qobject_cast<QComboBox*>(sender());
+        if (!comboBox) {
+            return;
+        }
 
         m_settings->getConfiguration()->getRoot()["units"][comboBox->objectName().toStdString()] = comboBox->currentData().toString().toStdString();
     }

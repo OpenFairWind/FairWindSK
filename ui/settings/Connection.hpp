@@ -39,6 +39,10 @@ namespace fairwindsk::ui::settings {
 
 
     private:
+        void appendMessage(const QString &message) const;
+        void stopTokenTimer();
+        void syncTokenUiState();
+
         Ui::Connection *ui = nullptr;
         Settings *m_settings = nullptr;
 

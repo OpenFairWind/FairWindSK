@@ -15,6 +15,17 @@
 
 
 namespace fairwindsk::ui::settings {
+    QString Apps::uniqueAppName(const QString &baseName) const {
+        QString candidate = baseName;
+        int suffix = 1;
+
+        while (m_settings->getConfiguration()->findApp(candidate) != -1) {
+            candidate = QString("%1_%2").arg(baseName).arg(suffix++);
+        }
+
+        return candidate;
+    }
+
 
     /*
      * Apps
@@ -109,6 +120,9 @@ namespace fairwindsk::ui::settings {
     }
 
     void Apps::saveAppsDetails() {
+        if (!ui->listWidget_Apps_List->currentItem()) {
+            return;
+        }
 
         // Get the application name
         auto appName =  ui->listWidget_Apps_List->currentItem()->data(Qt::UserRole).toString();
@@ -124,7 +138,16 @@ namespace fairwindsk::ui::settings {
             auto appJsonObject = m_settings->getConfiguration()->getRoot()["apps"].at(idx);
 
             // Update the configuration
-            appJsonObject["name"] = ui->lineEdit_Apps_Name->text().toStdString();
+            QString newName = ui->lineEdit_Apps_Name->text().trimmed();
+            if (newName.isEmpty()) {
+                newName = appName;
+            } else if (newName != appName && m_settings->getConfiguration()->findApp(newName) != -1) {
+                QMessageBox::warning(this, tr("Applications"), tr("An application named \"%1\" already exists.").arg(newName));
+                ui->lineEdit_Apps_Name->setText(appName);
+                return;
+            }
+
+            appJsonObject["name"] = newName.toStdString();
             appJsonObject["description"] = ui->lineEdit_Apps_Description->text().toStdString();
             appJsonObject["signalk"]["displayName"] = ui->lineEdit_Apps_DisplayName->text().toStdString();
             appJsonObject["signalk"]["appIcon"] = ui->lineEdit_Apps_AppIcon->text().toStdString();
@@ -261,7 +284,10 @@ namespace fairwindsk::ui::settings {
     }
 
     void Apps::onAppsDetailsFieldsTextChanged(const QString &text) {
-        m_appsEditChanged = true;
+        Q_UNUSED(text);
+        if (m_appsEditMode) {
+            m_appsEditChanged = true;
+        }
     }
 
     void Apps::onAppsAppIconBrowse() {
@@ -337,12 +363,15 @@ namespace fairwindsk::ui::settings {
 
 
     void Apps::onAppsListItemChanged(QListWidgetItem* listWidgetItem) {
+        if (!listWidgetItem) {
+            return;
+        }
 
         // Get the application name
         auto appName = listWidgetItem->data(Qt::UserRole).toString();
 
         // Check the state
-        bool active = listWidgetItem->checkState();
+        const bool active = listWidgetItem->checkState() == Qt::Checked;
 
         // Get the index of the application within the apps array
         int idx = m_settings->getConfiguration()->findApp(appName);
@@ -396,7 +425,7 @@ namespace fairwindsk::ui::settings {
 
         // Create an application object
         auto appItem = new AppItem();
-        appItem->setName("new_app");
+        appItem->setName(uniqueAppName("new_app"));
 
         // Add to the configuration
         m_settings->getConfiguration()->getRoot()["apps"].push_back(appItem->asJson());
@@ -414,8 +443,12 @@ namespace fairwindsk::ui::settings {
             ui->listWidget_Apps_List->setCurrentRow(pos);
         } else {
             ui->listWidget_Apps_List->addItem(listWidgetItem);
-            ui->listWidget_Apps_List->setCurrentRow(0);
+            ui->listWidget_Apps_List->setCurrentRow(ui->listWidget_Apps_List->count()-1);
         }
+
+        setAppsEditMode(true);
+
+        delete appItem;
     }
 
     void Apps::onAppsRemoveClicked() {
