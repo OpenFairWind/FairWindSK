@@ -56,7 +56,7 @@ namespace fairwindsk::ui::settings {
             ui->checkBox_virtualkeboard->setCheckState(Qt::Unchecked);
         }
 
-        connect(ui->checkBox_virtualkeboard,&QCheckBox::stateChanged,this, &Main::onVirtualKeyboardStateChanged);
+        connect(ui->checkBox_virtualkeboard,&QCheckBox::checkStateChanged,this, &Main::onVirtualKeyboardStateChanged);
 
         setWindowGeometryFieldsEnabled(windowMode);
 

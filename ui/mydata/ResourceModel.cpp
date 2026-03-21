@@ -53,7 +53,7 @@ namespace {
     QString timestampText(const QJsonObject &resource) {
         const QString timestamp = resource["timestamp"].toString();
         const QDateTime dateTime = QDateTime::fromString(timestamp, Qt::ISODate);
-        return dateTime.isValid() ? dateTime.toLocalTime().toString(Qt::DefaultLocaleShortDate) : timestamp;
+        return dateTime.isValid() ? QLocale().toString(dateTime.toLocalTime(), QLocale::ShortFormat) : timestamp;
     }
 }
 
@@ -151,11 +151,11 @@ namespace fairwindsk::ui::mydata {
 
         if (role == Qt::TextAlignmentRole) {
             if (m_kind == ResourceKind::Waypoint && (index.column() == 3 || index.column() == 4)) {
-                return Qt::AlignRight | Qt::AlignVCenter;
+                return QVariant::fromValue(Qt::AlignRight | Qt::AlignVCenter);
             }
 
             if (m_kind != ResourceKind::Waypoint && index.column() == 3) {
-                return Qt::AlignCenter;
+                return QVariant::fromValue(Qt::AlignCenter);
             }
         }
 
