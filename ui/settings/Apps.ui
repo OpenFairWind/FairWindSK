@@ -2,13 +2,22 @@
 <ui version="4.0">
  <class>fairwindsk::ui::settings::Apps</class>
  <widget class="QWidget" name="Apps">
-  <property name="geometry">
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>665</width>
-    <height>378</height>
-   </rect>
+ <property name="geometry">
+  <rect>
+   <x>0</x>
+   <y>0</y>
+   <width>665</width>
+   <height>378</height>
+  </rect>
+ </property>
+  <property name="styleSheet">
+   <string notr="true">QLineEdit, QComboBox, QAbstractItemView {
+    background-color: rgb(245, 245, 245);
+    color: rgb(24, 24, 24);
+    border: 1px solid rgb(120, 120, 120);
+    selection-background-color: rgb(65, 107, 195);
+    selection-color: rgb(255, 255, 255);
+}</string>
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout">
    <property name="leftMargin">

@@ -2,13 +2,22 @@
 <ui version="4.0">
  <class>fairwindsk::ui::settings::SignalK</class>
  <widget class="QWidget" name="SignalK">
-  <property name="geometry">
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>401</width>
-    <height>444</height>
-   </rect>
+ <property name="geometry">
+  <rect>
+   <x>0</x>
+   <y>0</y>
+   <width>401</width>
+   <height>444</height>
+  </rect>
+ </property>
+  <property name="styleSheet">
+   <string notr="true">QLineEdit, QComboBox, QAbstractItemView {
+    background-color: rgb(245, 245, 245);
+    color: rgb(24, 24, 24);
+    border: 1px solid rgb(120, 120, 120);
+    selection-background-color: rgb(65, 107, 195);
+    selection-color: rgb(255, 255, 255);
+}</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_SignalK">
    <property name="leftMargin">
