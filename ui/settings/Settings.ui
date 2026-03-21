@@ -18,7 +18,29 @@
    <string>Settings</string>
   </property>
   <property name="styleSheet">
-   <string notr="true"/>
+   <string notr="true">background-color: rgb(26, 26, 26);
+color: rgb(255, 255, 255);
+QLineEdit, QTextEdit, QPlainTextEdit, QComboBox, QListWidget, QAbstractItemView {
+    background-color: rgb(24, 24, 24);
+    color: rgb(255, 255, 255);
+    border: 1px solid rgb(90, 90, 90);
+    selection-background-color: rgb(65, 107, 195);
+    selection-color: rgb(255, 255, 255);
+}
+QComboBox::drop-down {
+    border: 0px;
+}
+QTabWidget::pane {
+    border: 1px solid rgb(82, 82, 83);
+}
+QTabBar::tab {
+    background-color: rgb(55, 55, 55);
+    color: rgb(255, 255, 255);
+    padding: 6px 10px;
+}
+QTabBar::tab:selected {
+    background-color: rgb(82, 82, 83);
+}</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_Settings">
    <property name="leftMargin">
