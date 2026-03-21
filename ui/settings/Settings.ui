@@ -20,9 +20,16 @@
   <property name="styleSheet">
    <string notr="true">background-color: rgb(26, 26, 26);
 color: rgb(255, 255, 255);
-QLineEdit, QTextEdit, QPlainTextEdit, QComboBox, QListWidget, QAbstractItemView {
+QLineEdit, QComboBox, QListWidget, QAbstractItemView {
     background-color: rgb(24, 24, 24);
     color: rgb(255, 255, 255);
+    border: 1px solid rgb(90, 90, 90);
+    selection-background-color: rgb(65, 107, 195);
+    selection-color: rgb(255, 255, 255);
+}
+QTextEdit, QPlainTextEdit {
+    background-color: rgb(245, 245, 245);
+    color: rgb(24, 24, 24);
     border: 1px solid rgb(90, 90, 90);
     selection-background-color: rgb(65, 107, 195);
     selection-color: rgb(255, 255, 255);
