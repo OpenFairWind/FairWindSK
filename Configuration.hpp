@@ -71,10 +71,16 @@ namespace fairwindsk {
 
 
     private:
+        nlohmann::json &ensureObject(const char *key);
+        QString getString(const char *section, const char *key, const QString &defaultValue = QString()) const;
+        QString getString(const char *section, const QString &key, const QString &defaultValue = QString()) const;
+        int getInt(const char *section, const char *key, int defaultValue = 0) const;
+        bool getBool(const char *section, const char *key, bool defaultValue = false) const;
+
         nlohmann::json m_jsonData;
         QString m_filename;
 
-        QString getUnits(const QString &units);
+        QString getUnits(const QString &units) const;
 
     };
 

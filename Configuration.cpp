@@ -26,7 +26,9 @@ namespace fairwindsk {
 
     Configuration::Configuration(const QString& filename) {
         m_filename = filename;
-        load();
+        if (!load()) {
+            setDefault();
+        }
     }
 
 
@@ -36,24 +38,28 @@ namespace fairwindsk {
     }
 
     void Configuration::setDefault() {
-
         const QString fileName(":/resources/json/configuration.json");
 
         QFile file(fileName);
-        if(file.open(QIODevice::ReadOnly)) {
-
-            const auto data = file.readAll();
-            m_jsonData= nlohmann::json::parse(data.toStdString());
+        if (file.open(QIODevice::ReadOnly)) {
+            try {
+                const auto data = file.readAll();
+                m_jsonData = nlohmann::json::parse(data.constBegin(), data.constEnd());
+            } catch (const nlohmann::json::parse_error &) {
+                m_jsonData = nlohmann::json::object();
+            }
+        } else {
+            m_jsonData = nlohmann::json::object();
         }
 
         file.close();
     }
 
     void Configuration::save(const QString& filename) {
-
         std::ofstream file(filename.toUtf8());
-        file << m_jsonData.dump(2);
-
+        if (file.is_open()) {
+            file << m_jsonData.dump(2);
+        }
     }
 
     bool Configuration::load() {
@@ -67,11 +73,17 @@ namespace fairwindsk {
         }
 
         const QByteArray data = file.readAll();
+        file.close();
 
         try {
             m_jsonData = nlohmann::json::parse(data.constBegin(), data.constEnd());
+            if (!m_jsonData.is_object()) {
+                setDefault();
+                return false;
+            }
             return true;
         } catch (const nlohmann::json::parse_error &) {
+            setDefault();
             return false;
         }
     }
@@ -81,16 +93,7 @@ namespace fairwindsk {
     }
 
     QString Configuration::getSignalKServerUrl(){
-
-        QString signalKServerUrl = "";
-
-        if (m_jsonData.contains("connection") && m_jsonData["connection"].is_object()) {
-            auto connectionJsonObject = m_jsonData["connection"];
-            if (connectionJsonObject.contains("server") && connectionJsonObject["server"].is_string()) {
-                signalKServerUrl = QString::fromStdString(connectionJsonObject["server"].get<std::string>());
-            }
-        }
-        return signalKServerUrl;
+        return getString("connection", "server");
     }
 
     QString Configuration::getToken() {
@@ -112,142 +115,65 @@ namespace fairwindsk {
     }
 
     void Configuration::setSignalKServerUrl(const QString& signalKServerUrl) {
-
-        if (m_jsonData.contains("connection")) {
-            m_jsonData["connection"]["server"] = signalKServerUrl.toStdString();
-        }
+        ensureObject("connection")["server"] = signalKServerUrl.toStdString();
     }
 
     QString Configuration::getAutopilotApp() {
-        QString result = "";
-        if (
-                m_jsonData.contains("applications") &&
-                m_jsonData["applications"].contains("autopilot") &&
-                m_jsonData["applications"]["autopilot"].is_string()) {
-            result = QString::fromStdString(m_jsonData["applications"]["autopilot"].get<std::string>());
-        }
-        return result;
+        return getString("applications", "autopilot");
     }
 
     QString Configuration::getAnchorApp() {
-        QString result = "";
-        if (
-                m_jsonData.contains("applications") &&
-                m_jsonData["applications"].contains("anchor") &&
-                m_jsonData["applications"]["anchor"].is_string()) {
-            result = QString::fromStdString(m_jsonData["applications"]["anchor"].get<std::string>());
-        }
-        return result;
+        return getString("applications", "anchor");
     }
 
     void Configuration::setVirtualKeyboard(bool value) {
-        if (m_jsonData.contains("main")) {
-            m_jsonData["main"]["virtualKeyboard"] = value;
-        }
+        ensureObject("main")["virtualKeyboard"] = value;
     }
 
 
 
     bool Configuration::getVirtualKeyboard() {
-        bool result = false;
-
-        if (m_jsonData.contains("main")) {
-            if (auto mainJsonObject = m_jsonData["main"]; mainJsonObject.contains("virtualKeyboard") && mainJsonObject["virtualKeyboard"].is_boolean()) {
-                result = mainJsonObject["virtualKeyboard"].get<bool>();
-            }
-        }
-
-        return result;
+        return getBool("main", "virtualKeyboard");
     }
 
     void Configuration::setWindowMode(QString value) {
-        if (m_jsonData.contains("main")) {
-            m_jsonData["main"]["windowMode"] = value.toStdString();
-        }
+        ensureObject("main")["windowMode"] = value.toStdString();
     }
 
     QString Configuration::getWindowMode() {
-        QString result = "windowed";
-
-        if (m_jsonData.contains("main")) {
-            if (auto mainJsonObject = m_jsonData["main"]; mainJsonObject.contains("windowMode") && mainJsonObject["windowMode"].is_string()) {
-                result = QString::fromStdString(mainJsonObject["windowMode"].get<std::string>());
-            }
-        }
-
-        return result;
+        return getString("main", "windowMode", "windowed");
     }
 
     int Configuration::getWindowWidth() {
-        int result = 0;
-
-        if (m_jsonData.contains("main")) {
-            if (auto mainJsonObject = m_jsonData["main"]; mainJsonObject.contains("windowWidth") && mainJsonObject["windowWidth"].is_number_integer()) {
-                result = mainJsonObject["windowWidth"].get<int>();
-            }
-        }
-
-        return result;
+        return getInt("main", "windowWidth");
     }
 
     void Configuration::setWindowWidth(int value) {
-        if (m_jsonData.contains("main")) {
-            m_jsonData["main"]["windowWidth"] = value;
-        }
+        ensureObject("main")["windowWidth"] = value;
     }
 
     int Configuration::getWindowHeight() {
-        int result = 0;
-
-        if (m_jsonData.contains("main")) {
-            if (auto mainJsonObject = m_jsonData["main"]; mainJsonObject.contains("windowHeight") && mainJsonObject["windowHeight"].is_number_integer()) {
-                result = mainJsonObject["windowHeight"].get<int>();
-            }
-        }
-
-        return result;
+        return getInt("main", "windowHeight");
     }
 
     void Configuration::setWindowHeight(int value) {
-        if (m_jsonData.contains("main")) {
-            m_jsonData["main"]["windowHeight"] = value;
-        }
+        ensureObject("main")["windowHeight"] = value;
     }
 
     int Configuration::getWindowLeft() {
-        int result = 0;
-
-        if (m_jsonData.contains("main")) {
-            if (auto mainJsonObject = m_jsonData["main"]; mainJsonObject.contains("windowLeft") && mainJsonObject["windowLeft"].is_number_integer()) {
-                result = mainJsonObject["windowLeft"].get<int>();
-            }
-        }
-
-        return result;
+        return getInt("main", "windowLeft");
     }
 
     void Configuration::setWindowLeft(int value) {
-        if (m_jsonData.contains("main")) {
-            m_jsonData["main"]["windowLeft"] = value;
-        }
+        ensureObject("main")["windowLeft"] = value;
     }
 
     int Configuration::getWindowTop() {
-        int result = 0;
-
-        if (m_jsonData.contains("main")) {
-            if (auto mainJsonObject = m_jsonData["main"]; mainJsonObject.contains("windowTop") && mainJsonObject["windowTop"].is_number_integer()) {
-                result = mainJsonObject["windowTop"].get<int>();
-            }
-        }
-
-        return result;
+        return getInt("main", "windowTop");
     }
 
     void Configuration::setWindowTop(int value) {
-        if (m_jsonData.contains("main")) {
-            m_jsonData["main"]["windowTop"] = value;
-        }
+        ensureObject("main")["windowTop"] = value;
     }
 
 
@@ -255,36 +181,15 @@ namespace fairwindsk {
 
 
     void Configuration::setAutopilot(const QString& value) {
-        if (m_jsonData.contains("main")) {
-            m_jsonData["main"]["autopilot"] = value.toStdString();
-        }
+        ensureObject("main")["autopilot"] = value.toStdString();
     }
 
     QString Configuration::getAutopilot() {
-        QString result;
-
-        if (m_jsonData.contains("main")) {
-            auto mainJsonObject = m_jsonData["main"];
-            if (mainJsonObject.contains("autopilot") && mainJsonObject["autopilot"].is_string()) {
-                result = QString::fromStdString(mainJsonObject["autopilot"].get<std::string>());
-            }
-        }
-
-        return result;
+        return getString("main", "autopilot");
     }
 
-    QString Configuration::getUnits(const QString &units) {
-        std::string result;
-
-        if (m_jsonData.contains("units")) {
-            auto unitsJsonObject = m_jsonData["units"];
-            auto unitsKey = units.toStdString();
-            if (unitsJsonObject.contains(unitsKey) && unitsJsonObject[unitsKey].is_string()) {
-                result = unitsJsonObject[unitsKey].get<std::string>();
-            }
-        }
-
-        return QString::fromStdString(result);
+    QString Configuration::getUnits(const QString &units) const {
+        return getString("units", units);
     }
 
     QString Configuration::getVesselSpeedUnits() {
@@ -342,6 +247,50 @@ namespace fairwindsk {
         }
 
         return result;
+    }
+
+    nlohmann::json &Configuration::ensureObject(const char *key) {
+        if (!m_jsonData.is_object()) {
+            m_jsonData = nlohmann::json::object();
+        }
+        if (!m_jsonData.contains(key) || !m_jsonData[key].is_object()) {
+            m_jsonData[key] = nlohmann::json::object();
+        }
+        return m_jsonData[key];
+    }
+
+    QString Configuration::getString(const char *section, const char *key, const QString &defaultValue) const {
+        if (m_jsonData.contains(section) && m_jsonData[section].is_object()) {
+            const auto &jsonSection = m_jsonData[section];
+            if (jsonSection.contains(key) && jsonSection[key].is_string()) {
+                return QString::fromStdString(jsonSection[key].get<std::string>());
+            }
+        }
+        return defaultValue;
+    }
+
+    QString Configuration::getString(const char *section, const QString &key, const QString &defaultValue) const {
+        return getString(section, key.toUtf8().constData(), defaultValue);
+    }
+
+    int Configuration::getInt(const char *section, const char *key, const int defaultValue) const {
+        if (m_jsonData.contains(section) && m_jsonData[section].is_object()) {
+            const auto &jsonSection = m_jsonData[section];
+            if (jsonSection.contains(key) && jsonSection[key].is_number_integer()) {
+                return jsonSection[key].get<int>();
+            }
+        }
+        return defaultValue;
+    }
+
+    bool Configuration::getBool(const char *section, const char *key, const bool defaultValue) const {
+        if (m_jsonData.contains(section) && m_jsonData[section].is_object()) {
+            const auto &jsonSection = m_jsonData[section];
+            if (jsonSection.contains(key) && jsonSection[key].is_boolean()) {
+                return jsonSection[key].get<bool>();
+            }
+        }
+        return defaultValue;
     }
 
     Configuration::~Configuration() = default;
