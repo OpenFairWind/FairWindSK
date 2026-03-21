@@ -26,7 +26,6 @@ namespace fairwindsk::ui::web {
         layout->addWidget(m_urlLineEdit);
         layout->addWidget(m_view);
 
-        m_view->setPage(new WebPage(profile, m_view));
         m_view->setFocus();
 
         m_urlLineEdit->setReadOnly(true);

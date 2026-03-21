@@ -133,7 +133,8 @@ namespace fairwindsk::ui::web {
 
     void WebView::setPage(WebPage *page)
     {
-        if (auto oldPage = qobject_cast<WebPage *>(QWebEngineView::page())) {
+        auto oldPage = qobject_cast<WebPage *>(QWebEngineView::page());
+        if (oldPage) {
             disconnect(oldPage, &WebPage::createCertificateErrorDialog, this,
                        &WebView::handleCertificateError);
             disconnect(oldPage, &QWebEnginePage::authenticationRequired, this,
@@ -156,6 +157,12 @@ namespace fairwindsk::ui::web {
         }
 
         QWebEngineView::setPage(page);
+        m_webPage = page;
+
+        if (oldPage && oldPage != page) {
+            oldPage->deleteLater();
+        }
+
         connect(page, &WebPage::createCertificateErrorDialog, this, &WebView::handleCertificateError);
         connect(page, &QWebEnginePage::authenticationRequired, this,
                 &WebView::handleAuthenticationRequired);
@@ -320,13 +327,8 @@ namespace fairwindsk::ui::web {
     }
 
     WebView::~WebView() {
-        // Check the web page is allocated
-        if (m_webPage)
-        {
-            // Delete the web page
+        if (m_webPage) {
             delete m_webPage;
-
-            // Set the web page pointer to null
             m_webPage = nullptr;
         }
     }

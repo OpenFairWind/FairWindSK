@@ -419,7 +419,7 @@ namespace fairwindsk::ui {
 
             // Show windowed
             show();
-            setWindowState( (windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
+            setWindowState(windowState() & ~Qt::WindowMinimized);
             raise();  // for MacOS
             activateWindow(); // for Windows
 
@@ -443,7 +443,7 @@ namespace fairwindsk::ui {
 
             // Show windowed
             show();
-            setWindowState( (windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
+            setWindowState(windowState() & ~Qt::WindowMinimized);
             raise();  // for MacOS
             activateWindow(); // for Windows
         }
