@@ -18,6 +18,12 @@
 #include "FairWindSK.hpp"
 #include "ui_POBBar.h"
 
+namespace {
+    QTimeZone utcTimeZone() {
+        return QTimeZone(QByteArrayLiteral("UTC"));
+    }
+}
+
 namespace fairwindsk::ui::bottombar {
     POBBar::POBBar(QWidget *parent) :
             QWidget(parent), ui(new Ui::POBBar) {
@@ -191,7 +197,7 @@ namespace fairwindsk::ui::bottombar {
         }
 
         const auto elapsedSecs = std::max<qint64>(0, m_currentStartTimeUtc.secsTo(QDateTime::currentDateTimeUtc()));
-        ui->label_Elapsed->setText(QDateTime::fromSecsSinceEpoch(elapsedSecs, QTimeZone::UTC).toString("hh:mm:ss"));
+        ui->label_Elapsed->setText(QDateTime::fromSecsSinceEpoch(elapsedSecs, utcTimeZone()).toString("hh:mm:ss"));
     }
 
     /*
@@ -528,7 +534,7 @@ namespace fairwindsk::ui::bottombar {
             startDateTimeUtc = QDateTime::fromString(startTimeIso8601, Qt::ISODate);
         }
         if (startDateTimeUtc.isValid()) {
-            startDateTimeUtc.setTimeZone(QTimeZone::UTC);
+            startDateTimeUtc.setTimeZone(utcTimeZone());
             m_currentStartTimeUtc = startDateTimeUtc;
         }
     }
