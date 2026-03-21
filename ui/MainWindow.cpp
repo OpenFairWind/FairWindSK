@@ -95,6 +95,61 @@ namespace fairwindsk::ui {
         setSize();
     }
 
+    bool MainWindow::isOverlayOpen() const {
+        return m_activeOverlay != nullptr;
+    }
+
+    void MainWindow::setChromeEnabled(const bool enabled) const {
+        ui->widget_Top->setEnabled(enabled);
+        ui->widget_Bottom->setEnabled(enabled);
+    }
+
+    void MainWindow::showOverlay(QWidget *page) {
+        if (!page || isOverlayOpen()) {
+            if (page && page != m_activeOverlay) {
+                page->deleteLater();
+            }
+            return;
+        }
+
+        m_activeOverlay = page;
+        setChromeEnabled(false);
+        ui->stackedWidget_Center->addWidget(page);
+        ui->stackedWidget_Center->setCurrentWidget(page);
+    }
+
+    void MainWindow::closeOverlay(QWidget *page, QWidget *fallbackWidget) {
+        if (!page) {
+            return;
+        }
+
+        setChromeEnabled(true);
+        ui->stackedWidget_Center->removeWidget(page);
+
+        if (fallbackWidget && ui->stackedWidget_Center->indexOf(fallbackWidget) >= 0) {
+            ui->stackedWidget_Center->setCurrentWidget(fallbackWidget);
+        } else {
+            showLauncher();
+        }
+
+        if (m_activeOverlay == page) {
+            m_activeOverlay = nullptr;
+        }
+
+        page->close();
+        delete page;
+    }
+
+    void MainWindow::showLauncher() {
+        m_currentApp = nullptr;
+        if (m_launcher && ui->stackedWidget_Center->indexOf(m_launcher) >= 0) {
+            ui->stackedWidget_Center->setCurrentWidget(m_launcher);
+        }
+        if (m_topBar) {
+            m_topBar->setCurrentApp(nullptr);
+        }
+    }
+
     // Hot Key handler
     void MainWindow::onHotkey(){
 
@@ -130,6 +185,11 @@ namespace fairwindsk::ui {
 
         // Get the map containing all the loaded apps and pick the one that matches the provided hash
         const auto appItem = fairWindSK->getAppItemByHash(hash);
+
+        if (!appItem) {
+            showLauncher();
+            return;
+        }
 
         // The QT widget implementing the app
         QWidget *widgetApp = nullptr;
@@ -171,6 +231,8 @@ namespace fairwindsk::ui {
                 process->start();
 
                 appItem->setProcess(process);
+                showLauncher();
+                return;
 
             } else {
                 // Create a new web instance
@@ -197,7 +259,7 @@ namespace fairwindsk::ui {
                 m_mapHash2Widget.insert(hash, widgetApp);
 
                 // Add icon to the bottom bar
-                m_bottomBar->addApp(appItem->getName());
+                m_bottomBar->addApp(hash);
 
             }
         }
@@ -228,15 +290,34 @@ namespace fairwindsk::ui {
         // Get the FairWind singleton
         auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
+        QString hash = name;
+        if (!m_mapHash2Widget.contains(hash)) {
+            const auto candidateHash = fairWindSK->getAppHashById(name);
+            if (!candidateHash.isEmpty()) {
+                hash = candidateHash;
+            }
+        }
+
         // Check if the debug is active
         if (fairWindSK->isDebug()) {
 
             // Write a message
-            qDebug() << "MainWindow::onRemoveApp hash:" << name;
+            qDebug() << "MainWindow::onRemoveApp hash:" << hash;
+        }
+
+        if (!m_mapHash2Widget.contains(hash)) {
+            return;
         }
 
         // Get the widget
-        const auto widgetApp = m_mapHash2Widget[name];
+        const auto widgetApp = m_mapHash2Widget[hash];
+
+        if (m_currentApp == fairWindSK->getAppItemByHash(hash)) {
+            m_currentApp = nullptr;
+            m_topBar->setCurrentApp(nullptr);
+        }
+
+        ui->stackedWidget_Center->removeWidget(widgetApp);
 
         // Close the widget
         widgetApp->close();
@@ -245,27 +326,23 @@ namespace fairwindsk::ui {
         delete widgetApp;
 
         // Remove the widget from m_mapHash2Widget
-        m_mapHash2Widget.remove(name);
+        m_mapHash2Widget.remove(hash);
 
         // Remove the icon from the bottom bar
-        m_bottomBar->removeApp(name);
+        m_bottomBar->removeApp(hash);
 
         // Set the launcher as current application
-        onApps();
+        showLauncher();
     }
 /*
  * onApps
  * Method called when the user clicks the Apps button on the BottomBar object
  */
     void MainWindow::onApps() {
-        // Set the current app
-        m_currentApp = nullptr;
-
-        // Update the UI with the new widget
-        ui->stackedWidget_Center->setCurrentWidget(m_launcher);
-
-        // Set the current app in ui components
-        m_topBar->setCurrentApp(m_currentApp);
+        if (isOverlayOpen()) {
+            return;
+        }
+        showLauncher();
     }
 
 /*
@@ -273,15 +350,11 @@ namespace fairwindsk::ui {
  * Method called when the user clicks the Settings button on the BottomBar object
  */
     void MainWindow::onMyData() {
-
-        // Get the FairWind singleton
-        const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
-
+        if (isOverlayOpen()) {
+            return;
+        }
         const auto myDataPage = new mydata::MyData(this, ui->stackedWidget_Center->currentWidget());
-        ui->widget_Top->setDisabled(true);
-        ui->widget_Bottom->setDisabled(true);
-        ui->stackedWidget_Center->addWidget(myDataPage);
-        ui->stackedWidget_Center->setCurrentWidget(myDataPage);
+        showOverlay(myDataPage);
 
         connect(myDataPage, &mydata::MyData::closed, this, &MainWindow::onMyDataClosed);
 
@@ -295,12 +368,11 @@ namespace fairwindsk::ui {
  * Method called when the user clicks the Settings button on the BottomBar object
  */
     void MainWindow::onSettings() {
-
+        if (isOverlayOpen()) {
+            return;
+        }
         const auto settingsPage = new settings::Settings(this, ui->stackedWidget_Center->currentWidget());
-        ui->widget_Top->setDisabled(true);
-        ui->widget_Bottom->setDisabled(true);
-        ui->stackedWidget_Center->addWidget(settingsPage);
-        ui->stackedWidget_Center->setCurrentWidget(settingsPage);
+        showOverlay(settingsPage);
 
         connect(settingsPage, &settings::Settings::accepted, this, &MainWindow::onSettingsAccepted);
         connect(settingsPage, &settings::Settings::rejected, this, &MainWindow::onSettingsRejected);
@@ -364,74 +436,50 @@ namespace fairwindsk::ui {
  * Method called when the user clicks the upper left icon
  */
     void MainWindow::onUpperLeft() {
+        if (isOverlayOpen()) {
+            return;
+        }
         // Show the settings view
         auto aboutPage = new about::About(this, ui->stackedWidget_Center->currentWidget());
-        ui->widget_Top->setDisabled(true);
-        ui->widget_Bottom->setDisabled(true);
-        ui->stackedWidget_Center->addWidget(aboutPage);
-        ui->stackedWidget_Center->setCurrentWidget(aboutPage);
+        showOverlay(aboutPage);
 
         connect(aboutPage, &about::About::accepted, this, &MainWindow::onAboutAccepted);
     }
 
     void MainWindow::onMyDataClosed(mydata::MyData *myDataPage) {
-        ui->widget_Top->setDisabled(false);
-        ui->widget_Bottom->setDisabled(false);
-        ui->stackedWidget_Center->removeWidget(myDataPage);
-        ui->stackedWidget_Center->setCurrentWidget(myDataPage->getCurrentWidget());
-
-        myDataPage->close();
-        delete myDataPage;
+        closeOverlay(myDataPage, myDataPage ? myDataPage->getCurrentWidget() : nullptr);
     }
 
     void MainWindow::onAboutAccepted(about::About *aboutPage) {
-        ui->widget_Top->setDisabled(false);
-        ui->widget_Bottom->setDisabled(false);
-        ui->stackedWidget_Center->removeWidget(aboutPage);
-        ui->stackedWidget_Center->setCurrentWidget(aboutPage->getCurrentWidget());
-
-        aboutPage->close();
-        delete aboutPage;
+        closeOverlay(aboutPage, aboutPage ? aboutPage->getCurrentWidget() : nullptr);
     }
 
     void MainWindow::onSettingsRejected(settings::Settings *settingsPage) {
-        ui->widget_Top->setDisabled(false);
-        ui->widget_Bottom->setDisabled(false);
-        ui->stackedWidget_Center->removeWidget(settingsPage);
-        ui->stackedWidget_Center->setCurrentWidget(settingsPage->getCurrentWidget());
-	
-        settingsPage->close();
-	    delete settingsPage;
+        closeOverlay(settingsPage, settingsPage ? settingsPage->getCurrentWidget() : nullptr);
     }
 
     void MainWindow::onSettingsAccepted(settings::Settings *settingsPage) const
     {
-        ui->widget_Top->setDisabled(false);
-        ui->widget_Bottom->setDisabled(false);
-        ui->stackedWidget_Center->removeWidget(settingsPage);
-        ui->stackedWidget_Center->setCurrentWidget(settingsPage->getCurrentWidget());
-
-        settingsPage->close();
-	    delete settingsPage;
+        const_cast<MainWindow *>(this)->closeOverlay(settingsPage, settingsPage ? settingsPage->getCurrentWidget() : nullptr);
 
 	    QApplication::exit(1);
     }
 
     topbar::TopBar *MainWindow::getTopBar() {
-        return reinterpret_cast<topbar::TopBar *>(&m_topBar);
+        return m_topBar;
     }
 
     launcher::Launcher *MainWindow::getLauncher() {
-        return reinterpret_cast<launcher::Launcher *>(&m_launcher);;
+        return m_launcher;
     }
 
     bottombar::BottomBar *MainWindow::getBottomBar() {
-        return reinterpret_cast<bottombar::BottomBar *>(&m_bottomBar);
+        return m_bottomBar;
     }
 
     void MainWindow::closeEvent(QCloseEvent *event) {
         QMessageBox::StandardButton reply = QMessageBox::question(this, "Quit FairWindSK",
-                                                                  "Are you sure you want to exit theFairWindSK?",
+                                                                  "Are you sure you want to exit FairWindSK?",
                                                                   QMessageBox::Yes | QMessageBox::No);
         if (reply == QMessageBox::Yes) {
 
@@ -473,38 +521,6 @@ namespace fairwindsk::ui {
             // Set the hotkey pointer to null
             m_hotkey = nullptr;
         }
-
-
-        // Check if the bottom bar is allocated
-        if (m_bottomBar) {
-
-            // Delete the bottom bar
-            delete m_bottomBar;
-
-            // Set the bottom bar pointer to null
-            m_bottomBar = nullptr;
-        }
-
-        // Check uf the launcher is allocated
-        if (m_launcher) {
-
-            // Delete the launcher
-            delete m_launcher;
-
-            // Set the launcher pointer to null
-            m_launcher = nullptr;
-        }
-
-        // Check if the top bar is allocated
-        if (m_topBar) {
-
-            // Delete the top bar
-            delete m_topBar;
-
-            // Set the top bar pointer to null
-            m_topBar = nullptr;
-        }
-
         // Check if the UI is allocated
         if (ui) {
 
@@ -515,9 +531,10 @@ namespace fairwindsk::ui {
             ui = nullptr;
         }
 
+        m_topBar = nullptr;
+        m_bottomBar = nullptr;
+        m_launcher = nullptr;
+        m_activeOverlay = nullptr;
+
     }
 }
-
-
-
-

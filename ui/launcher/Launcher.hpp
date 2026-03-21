@@ -38,13 +38,14 @@ namespace fairwindsk::ui::launcher {
 
     private:
         void resize();
+        void updateScrollButtons() const;
 
     private:
-        Ui::Launcher *ui;
+        Ui::Launcher *ui = nullptr;
 
-        int m_cols;
-        int m_rows;
-        int m_iconSize;
+        int m_cols = 0;
+        int m_rows = 0;
+        int m_iconSize = 0;
         QGridLayout *m_layout = nullptr;
         QMap<QString, QToolButton *> m_buttons;
     };

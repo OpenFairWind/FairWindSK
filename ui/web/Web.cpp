@@ -6,7 +6,7 @@
 
 #include <QPushButton>
 #include <QWebEngineProfile>
-
+#include <QWebEngineHistory>
 
 #include "Web.hpp"
 #include "WebPage.hpp"
@@ -25,10 +25,10 @@ namespace fairwindsk::ui::web {
         m_appItem = appItem;
 
         // Setup the user interface
-        ui->setupUi((QWidget *)this);
+        ui->setupUi(this);
 
         // Create the navigation bar
-        m_NavigationBar = new NavigationBar();
+        m_NavigationBar = new NavigationBar(this);
 
         // Hide the navigation bar
         m_NavigationBar->setVisible(false);
@@ -55,13 +55,27 @@ namespace fairwindsk::ui::web {
         connect(m_NavigationBar, &NavigationBar::close, this, &Web::onCloseClicked);
 
         // Create the web view widget
-        m_webView = new WebView(profile,(QWidget *)this);
+        m_webView = new WebView(profile, this);
 
         // Set the size policy of the web view widget
         m_webView->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
 
         // Add the web view widget to the user interface
         ui->verticalLayout_WebView->addWidget(m_webView);
+
+        m_progressBar = new QProgressBar(this);
+        m_progressBar->setTextVisible(false);
+        m_progressBar->setMaximumHeight(4);
+        m_progressBar->setRange(0, 100);
+        m_progressBar->setVisible(false);
+        ui->verticalLayout_WebView->insertWidget(0, m_progressBar);
+
+        connect(m_webView, &QWebEngineView::loadStarted, this, &Web::handleLoadStarted);
+        connect(m_webView, &QWebEngineView::loadProgress, this, &Web::handleWebViewLoadProgress);
+        connect(m_webView, &QWebEngineView::loadFinished, this, &Web::handleLoadFinished);
+        connect(m_webView, &QWebEngineView::urlChanged, this, [this]() { syncNavigationState(); });
+
+        syncNavigationState();
 
         // Check uf the application item is consistent
         if (m_appItem) {
@@ -74,7 +88,7 @@ namespace fairwindsk::ui::web {
             }
 
             // Set the application home URL
-            m_webView->load(QUrl(m_appItem->getUrl()));
+            m_webView->load(QUrl::fromUserInput(m_appItem->getUrl()));
         }
 
 
@@ -85,6 +99,9 @@ namespace fairwindsk::ui::web {
      * Hide/Show the navigation bar
      */
     void Web::toggleNavigationBar() {
+        if (!m_NavigationBar) {
+            return;
+        }
 
         // Get the status of the navigation bar and negate it
         auto status = !m_NavigationBar->isVisible();
@@ -135,9 +152,12 @@ namespace fairwindsk::ui::web {
      * Handler of the home button
      */
     void Web::onHomeClicked()  {
+        if (!m_webView || !m_appItem) {
+            return;
+        }
 
         // Set the application home page
-        m_webView->setUrl(m_appItem->getUrl());
+        m_webView->setUrl(QUrl::fromUserInput(m_appItem->getUrl()));
     }
 
 
@@ -146,6 +166,9 @@ namespace fairwindsk::ui::web {
      * Handler of the forward button
      */
     void Web::onBackClicked() {
+        if (!m_webView) {
+            return;
+        }
 
         // Back the web page
         m_webView->back();
@@ -156,6 +179,9 @@ namespace fairwindsk::ui::web {
      * Handler of the forward button
      */
     void Web::onForwardClicked()  {
+        if (!m_webView) {
+            return;
+        }
 
         // Forward the web page
         m_webView->forward();
@@ -166,9 +192,15 @@ namespace fairwindsk::ui::web {
      * Handler of the reload button
      */
     void Web::onReloadClicked()  {
+        if (!m_webView) {
+            return;
+        }
 
-        // Reload the web page
-        m_webView->reload();
+        if (m_isLoading) {
+            m_webView->stop();
+        } else {
+            m_webView->reload();
+        }
     }
 
     /*
@@ -176,9 +208,14 @@ namespace fairwindsk::ui::web {
      * Handler of the settings button
      */
     void Web::onCloseClicked() {
+        if (!m_appItem) {
+            return;
+        }
+
+        const auto hash = FairWindSK::getInstance()->getAppHashById(m_appItem->getName());
 
         // Emit the signal
-        emit removeApp(m_appItem->getName());
+        emit removeApp(hash.isEmpty() ? m_appItem->getName() : hash);
     }
 
     /*
@@ -186,6 +223,9 @@ namespace fairwindsk::ui::web {
      * Handler of the settings button
      */
     void Web::onSettingsClicked()  {
+        if (!m_webView || !m_appItem) {
+            return;
+        }
 
         // Get th settings application URL
         const QString settingsUrl = m_appItem->getSettingsUrl(FairWindSK::getInstance()->getConfiguration()->getSignalKServerUrl()+"/admin/#/serverConfiguration/plugins/");
@@ -198,17 +238,58 @@ namespace fairwindsk::ui::web {
         }
 
         // Se the url as the settings URL
-        m_webView->setUrl(settingsUrl);
+        if (!settingsUrl.isEmpty()) {
+            m_webView->setUrl(QUrl::fromUserInput(settingsUrl));
+        }
     }
 
     void Web::handleWebViewLoadProgress(int progress) {
-        //static QIcon stopIcon(u":process-stop.png"_s);
-        //static QIcon reloadIcon(u":view-refresh.png"_s);
+        if (!m_progressBar) {
+            return;
+        }
 
         if (0 < progress && progress < 100) {
+            m_progressBar->setVisible(true);
             m_progressBar->setValue(progress);
         } else {
             m_progressBar->setValue(0);
+            m_progressBar->setVisible(false);
         }
+    }
+
+    void Web::handleLoadStarted() {
+        m_isLoading = true;
+        if (m_progressBar) {
+            m_progressBar->setVisible(true);
+            m_progressBar->setValue(0);
+        }
+        if (m_NavigationBar) {
+            m_NavigationBar->setReloadActive(true);
+        }
+        syncNavigationState();
+    }
+
+    void Web::handleLoadFinished(bool ok) {
+        Q_UNUSED(ok);
+        m_isLoading = false;
+        if (m_progressBar) {
+            m_progressBar->setVisible(false);
+            m_progressBar->setValue(0);
+        }
+        if (m_NavigationBar) {
+            m_NavigationBar->setReloadActive(false);
+        }
+        syncNavigationState();
+    }
+
+    void Web::syncNavigationState() {
+        if (!m_NavigationBar || !m_webView) {
+            return;
+        }
+
+        m_NavigationBar->setBackEnabled(m_webView->history() && m_webView->history()->canGoBack());
+        m_NavigationBar->setForwardEnabled(m_webView->history() && m_webView->history()->canGoForward());
+        m_NavigationBar->setHomeEnabled(m_appItem != nullptr && !m_appItem->getUrl().isEmpty());
+        m_NavigationBar->setSettingsEnabled(m_appItem != nullptr && !m_appItem->getSettingsUrl(FairWindSK::getInstance()->getConfiguration()->getSignalKServerUrl()+"/admin/#/serverConfiguration/plugins/").isEmpty());
     }
 } // fairwindsk::ui::web

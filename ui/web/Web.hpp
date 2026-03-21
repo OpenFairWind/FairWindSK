@@ -46,18 +46,22 @@ namespace fairwindsk::ui::web {
 
     private slots:
         void handleWebViewLoadProgress(int);
+        void handleLoadStarted();
+        void handleLoadFinished(bool ok);
+        void syncNavigationState();
 
     private:
-        Ui::Web *ui;
+        Ui::Web *ui = nullptr;
 
         WebView *m_webView = nullptr;
         fairwindsk::AppItem *m_appItem = nullptr;
 
-        NavigationBar *m_NavigationBar;
+        NavigationBar *m_NavigationBar = nullptr;
         DownloadManagerWidget m_downloadManagerWidget;
 
 
         QProgressBar *m_progressBar = nullptr;
+        bool m_isLoading = false;
 
     };
 } // fairwindsk::ui::web

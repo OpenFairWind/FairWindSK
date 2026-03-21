@@ -19,6 +19,12 @@ namespace fairwindsk::ui::web {
 
         ~NavigationBar() override;
 
+        void setBackEnabled(bool enabled) const;
+        void setForwardEnabled(bool enabled) const;
+        void setHomeEnabled(bool enabled) const;
+        void setSettingsEnabled(bool enabled) const;
+        void setReloadActive(bool loading) const;
+
     public slots:
         void onHomeClicked();
         void onBackClicked();

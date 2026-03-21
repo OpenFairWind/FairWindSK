@@ -56,6 +56,11 @@ namespace fairwindsk::ui {
         bottombar::BottomBar *getBottomBar();
 
     private:
+        bool isOverlayOpen() const;
+        void setChromeEnabled(bool enabled) const;
+        void showOverlay(QWidget *page);
+        void closeOverlay(QWidget *page, QWidget *fallbackWidget);
+        void showLauncher();
 
         // Close Event handler
         void closeEvent(QCloseEvent *bar) override;
@@ -107,6 +112,8 @@ namespace fairwindsk::ui {
 
         // This will be populated with the apps launched by the user for quick usage
         QMap<QString, QWidget *> m_mapHash2Widget;
+
+        QWidget *m_activeOverlay = nullptr;
 
         // QWidget containing useful infos
         topbar::TopBar *m_topBar = nullptr;

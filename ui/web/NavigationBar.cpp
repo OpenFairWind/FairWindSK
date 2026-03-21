@@ -20,6 +20,31 @@ namespace fairwindsk::ui::web {
         connect(ui->toolButton_Reload, &QToolButton::clicked, this, &NavigationBar::onReloadClicked);
         connect(ui->toolButton_Settings, &QToolButton::clicked, this, &NavigationBar::onSettingsClicked);
         connect(ui->toolButton_Close, &QToolButton::clicked, this, &NavigationBar::onCloseClicked);
+
+        setBackEnabled(false);
+        setForwardEnabled(false);
+        setReloadActive(false);
+    }
+
+    void NavigationBar::setBackEnabled(const bool enabled) const {
+        ui->toolButton_Back->setEnabled(enabled);
+    }
+
+    void NavigationBar::setForwardEnabled(const bool enabled) const {
+        ui->toolButton_Forward->setEnabled(enabled);
+    }
+
+    void NavigationBar::setHomeEnabled(const bool enabled) const {
+        ui->toolButton_Home->setEnabled(enabled);
+    }
+
+    void NavigationBar::setSettingsEnabled(const bool enabled) const {
+        ui->toolButton_Settings->setEnabled(enabled);
+    }
+
+    void NavigationBar::setReloadActive(const bool loading) const {
+        ui->toolButton_Reload->setText(loading ? tr("Stop") : tr("Reload"));
+        ui->toolButton_Reload->setToolTip(loading ? tr("Stop loading") : tr("Reload page"));
     }
 
     void NavigationBar::onHomeClicked() {
