@@ -105,6 +105,13 @@ namespace fairwindsk::ui::bottombar {
             notificationObject.contains("state") &&
             notificationObject["state"].isString() &&
             notificationObject["state"].toString() == "normal")) {
+            if (m_pobUUIDs.isEmpty()) {
+                clearDisplayedPob();
+            } else {
+                refreshCurrentPobUi();
+            }
+            setVisible(true);
+
             const auto notificationUrl = QUrl(signalKClient->server().toString() + "/signalk/v2/api/notifications/" + apiKey);
             const auto message = apiKey == "mob" ? QStringLiteral("POB") : apiKey.toUpper();
             auto payload = QString(R"({"message":"%1"})").arg(message);
@@ -112,6 +119,7 @@ namespace fairwindsk::ui::bottombar {
             return;
         }
 
+        refreshCurrentPobUi();
         setVisible(true);
     }
 
