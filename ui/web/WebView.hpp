@@ -56,8 +56,10 @@ namespace fairwindsk::ui::web {
         // Authentication required handler
         void handleAuthenticationRequired(const QUrl &requestUrl, QAuthenticator *auth);
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 8, 0)
         // Feature Permission Requested handler
         void handleFeaturePermissionRequested(const QUrl &securityOrigin, QWebEnginePage::Feature feature);
+#endif
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
         // Permission Requested handler

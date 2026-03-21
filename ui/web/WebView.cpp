@@ -76,6 +76,7 @@ namespace fairwindsk::ui::web {
         setPage(m_webPage);
     }
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 8, 0)
     inline QString questionForFeature(QWebEnginePage::Feature feature) {
         switch (feature) {
             case QWebEnginePage::Geolocation:
@@ -98,6 +99,7 @@ namespace fairwindsk::ui::web {
         }
         return {};
     }
+#endif
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
     inline QString questionForPermission(QWebEnginePermission::PermissionType permissionType) {
@@ -225,6 +227,7 @@ namespace fairwindsk::ui::web {
         }
     }
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 8, 0)
     void WebView::handleFeaturePermissionRequested(const QUrl &securityOrigin, QWebEnginePage::Feature feature) {
         const QString title = tr("Permission Request");
         if (const QString question = questionForFeature(feature).arg(securityOrigin.host()); !question.isEmpty() && QMessageBox::question(window(), title, question) == QMessageBox::Yes)
@@ -234,6 +237,7 @@ namespace fairwindsk::ui::web {
             page()->setFeaturePermission(securityOrigin, feature,
                                          QWebEnginePage::PermissionDeniedByUser);
     }
+#endif
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
     void WebView::handlePermissionRequested(QWebEnginePermission permission) {
