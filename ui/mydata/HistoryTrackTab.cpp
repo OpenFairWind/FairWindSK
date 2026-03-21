@@ -4,13 +4,17 @@
 
 #include "HistoryTrackTab.hpp"
 
+#include <QDateTimeEdit>
+#include <QDoubleSpinBox>
 #include <QFile>
 #include <QFileDialog>
+#include <QFormLayout>
 #include <QHeaderView>
 #include <QHBoxLayout>
 #include <QJsonDocument>
 #include <QLabel>
 #include <QMessageBox>
+#include <QStackedWidget>
 #include <QTableView>
 #include <QTimer>
 #include <QToolButton>
@@ -23,16 +27,35 @@ namespace fairwindsk::ui::mydata {
     HistoryTrackTab::HistoryTrackTab(QWidget *parent)
         : QWidget(parent),
           m_model(new HistoryTrackModel(this)),
+          m_stackedWidget(new QStackedWidget(this)),
+          m_listPage(new QWidget(this)),
+          m_detailsPage(new QWidget(this)),
           m_statusLabel(new QLabel(this)),
+          m_titleLabel(new QLabel(this)),
+          m_indexValueLabel(new QLabel(this)),
           m_durationCombo(new QComboBox(this)),
           m_tableView(new QTableView(this)),
           m_refreshButton(new QToolButton(this)),
           m_importButton(new QToolButton(this)),
           m_exportButton(new QToolButton(this)),
+          m_backButton(new QToolButton(this)),
+          m_newButton(new QToolButton(this)),
+          m_editButton(new QToolButton(this)),
+          m_saveButton(new QToolButton(this)),
+          m_cancelButton(new QToolButton(this)),
+          m_deleteButton(new QToolButton(this)),
+          m_timestampEdit(new QDateTimeEdit(this)),
+          m_latitudeSpinBox(new QDoubleSpinBox(this)),
+          m_longitudeSpinBox(new QDoubleSpinBox(this)),
+          m_altitudeSpinBox(new QDoubleSpinBox(this)),
           m_refreshTimer(new QTimer(this)) {
-        auto *mainLayout = new QVBoxLayout(this);
+        auto *rootLayout = new QVBoxLayout(this);
+        rootLayout->setContentsMargins(0, 0, 0, 0);
+        rootLayout->addWidget(m_stackedWidget);
+
+        auto *listLayout = new QVBoxLayout(m_listPage);
         auto *toolbarLayout = new QHBoxLayout();
-        mainLayout->addLayout(toolbarLayout);
+        listLayout->addLayout(toolbarLayout);
 
         m_durationCombo->addItem(tr("Last hour"), "PT1H");
         m_durationCombo->addItem(tr("Last 6 hours"), "PT6H");
@@ -54,19 +77,87 @@ namespace fairwindsk::ui::mydata {
         connect(m_exportButton, &QToolButton::clicked, this, &HistoryTrackTab::onExportClicked);
         toolbarLayout->addWidget(m_exportButton);
 
+        m_newButton->setIcon(QIcon(":/resources/svg/OpenBridge/widget-add-google.svg"));
+        m_newButton->setToolTip(tr("New sample"));
+        connect(m_newButton, &QToolButton::clicked, this, &HistoryTrackTab::onAddClicked);
+        toolbarLayout->addWidget(m_newButton);
+
         toolbarLayout->addStretch(1);
         toolbarLayout->addWidget(m_statusLabel, 1);
 
         m_tableView->setModel(m_model);
         m_tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
         m_tableView->setSelectionMode(QAbstractItemView::SingleSelection);
+        m_tableView->setSortingEnabled(false);
         m_tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
         m_tableView->horizontalHeader()->setStretchLastSection(true);
-        mainLayout->addWidget(m_tableView);
+        connect(m_tableView, &QTableView::doubleClicked, this, &HistoryTrackTab::onTableDoubleClicked);
+        listLayout->addWidget(m_tableView);
+
+        auto *detailsLayout = new QVBoxLayout(m_detailsPage);
+        auto *detailsToolbar = new QHBoxLayout();
+        detailsLayout->addLayout(detailsToolbar);
+
+        m_backButton->setIcon(QIcon(":/resources/svg/OpenBridge/arrow-left-google.svg"));
+        m_backButton->setToolTip(tr("Back to list"));
+        connect(m_backButton, &QToolButton::clicked, this, &HistoryTrackTab::onBackClicked);
+        detailsToolbar->addWidget(m_backButton);
+
+        auto *detailsNewButton = new QToolButton(this);
+        detailsNewButton->setIcon(QIcon(":/resources/svg/OpenBridge/widget-add-google.svg"));
+        detailsNewButton->setToolTip(tr("New sample"));
+        connect(detailsNewButton, &QToolButton::clicked, this, &HistoryTrackTab::onAddClicked);
+        detailsToolbar->addWidget(detailsNewButton);
+
+        m_editButton->setIcon(QIcon(":/resources/svg/OpenBridge/edit-google.svg"));
+        m_editButton->setToolTip(tr("Edit"));
+        connect(m_editButton, &QToolButton::clicked, this, &HistoryTrackTab::onEditClicked);
+        detailsToolbar->addWidget(m_editButton);
+
+        m_saveButton->setIcon(QIcon(":/resources/svg/OpenBridge/edit-google.svg"));
+        m_saveButton->setText(tr("Save"));
+        connect(m_saveButton, &QToolButton::clicked, this, &HistoryTrackTab::onSaveClicked);
+        detailsToolbar->addWidget(m_saveButton);
+
+        m_cancelButton->setIcon(QIcon(":/resources/svg/OpenBridge/close-google.svg"));
+        m_cancelButton->setText(tr("Cancel"));
+        connect(m_cancelButton, &QToolButton::clicked, this, &HistoryTrackTab::onCancelClicked);
+        detailsToolbar->addWidget(m_cancelButton);
+
+        m_deleteButton->setIcon(QIcon(":/resources/svg/OpenBridge/delete-google.svg"));
+        m_deleteButton->setToolTip(tr("Delete"));
+        connect(m_deleteButton, &QToolButton::clicked, this, &HistoryTrackTab::onDeleteClicked);
+        detailsToolbar->addWidget(m_deleteButton);
+        detailsToolbar->addStretch(1);
+
+        m_titleLabel->setStyleSheet("font-size: 20px; font-weight: bold;");
+        detailsLayout->addWidget(m_titleLabel);
+
+        auto *formLayout = new QFormLayout();
+        detailsLayout->addLayout(formLayout);
+
+        m_timestampEdit->setDisplayFormat("yyyy-MM-dd HH:mm:ss");
+        m_timestampEdit->setCalendarPopup(true);
+        m_latitudeSpinBox->setRange(-90.0, 90.0);
+        m_latitudeSpinBox->setDecimals(8);
+        m_longitudeSpinBox->setRange(-180.0, 180.0);
+        m_longitudeSpinBox->setDecimals(8);
+        m_altitudeSpinBox->setRange(-100000.0, 100000.0);
+        m_altitudeSpinBox->setDecimals(2);
+
+        formLayout->addRow(tr("Sample"), m_indexValueLabel);
+        formLayout->addRow(tr("Timestamp"), m_timestampEdit);
+        formLayout->addRow(tr("Latitude"), m_latitudeSpinBox);
+        formLayout->addRow(tr("Longitude"), m_longitudeSpinBox);
+        formLayout->addRow(tr("Altitude"), m_altitudeSpinBox);
+
+        m_stackedWidget->addWidget(m_listPage);
+        m_stackedWidget->addWidget(m_detailsPage);
 
         connect(m_refreshTimer, &QTimer::timeout, this, &HistoryTrackTab::onRefreshClicked);
         m_refreshTimer->start(5000);
 
+        showListPage();
         onRefreshClicked();
     }
 
@@ -90,6 +181,76 @@ namespace fairwindsk::ui::mydata {
 
     void HistoryTrackTab::updateStatus(const QString &message) {
         m_statusLabel->setText(message);
+    }
+
+    void HistoryTrackTab::updateStatusLabel() {
+        updateStatus(m_model->hasPoints()
+                             ? tr("Loaded %1 track samples.").arg(m_model->rowCount())
+                             : tr("No track samples are available from the History API."));
+    }
+
+    void HistoryTrackTab::showListPage() {
+        m_stackedWidget->setCurrentWidget(m_listPage);
+        m_currentRow = -1;
+        m_isEditing = false;
+        m_isCreating = false;
+        m_refreshTimer->start(5000);
+    }
+
+    void HistoryTrackTab::showDetailsPage(const int row, const bool editMode) {
+        if (row >= 0) {
+            populateEditor(row);
+        } else {
+            clearEditor();
+        }
+
+        setEditMode(editMode);
+        m_stackedWidget->setCurrentWidget(m_detailsPage);
+        m_refreshTimer->stop();
+    }
+
+    void HistoryTrackTab::setEditMode(const bool editMode) {
+        m_isEditing = editMode;
+
+        m_timestampEdit->setReadOnly(!editMode);
+        m_timestampEdit->setButtonSymbols(editMode ? QAbstractSpinBox::UpDownArrows : QAbstractSpinBox::NoButtons);
+        m_latitudeSpinBox->setEnabled(editMode);
+        m_longitudeSpinBox->setEnabled(editMode);
+        m_altitudeSpinBox->setEnabled(editMode);
+
+        m_backButton->setVisible(!editMode);
+        m_editButton->setVisible(!editMode && !m_isCreating && m_currentRow >= 0);
+        m_saveButton->setVisible(editMode);
+        m_cancelButton->setVisible(editMode);
+        m_deleteButton->setVisible(!m_isCreating && m_currentRow >= 0);
+        m_titleLabel->setText(m_isCreating ? tr("New track sample") :
+                              (m_currentRow >= 0 ? tr("Track sample %1").arg(m_currentRow + 1) : tr("Track sample")));
+    }
+
+    void HistoryTrackTab::populateEditor(const int row) {
+        const auto point = m_model->pointAtRow(row);
+        m_currentRow = row;
+        m_isCreating = false;
+        m_indexValueLabel->setText(QString::number(row + 1));
+        m_timestampEdit->setDateTime(point.timestamp.toLocalTime());
+        m_latitudeSpinBox->setValue(point.coordinate.latitude());
+        m_longitudeSpinBox->setValue(point.coordinate.longitude());
+        m_altitudeSpinBox->setValue(point.coordinate.altitude());
+    }
+
+    void HistoryTrackTab::clearEditor() {
+        m_currentRow = -1;
+        m_isCreating = true;
+        m_indexValueLabel->setText(tr("New"));
+        m_timestampEdit->setDateTime(QDateTime::currentDateTime());
+        m_latitudeSpinBox->setValue(0.0);
+        m_longitudeSpinBox->setValue(0.0);
+        m_altitudeSpinBox->setValue(0.0);
+    }
+
+    int HistoryTrackTab::currentRow() const {
+        const QModelIndex currentIndex = m_tableView->currentIndex();
+        return currentIndex.isValid() ? currentIndex.row() : -1;
     }
 
     void HistoryTrackTab::onRefreshClicked() {
@@ -144,5 +305,76 @@ namespace fairwindsk::ui::mydata {
         }
 
         file.write(m_model->exportDocument().toJson(QJsonDocument::Indented));
+    }
+
+    void HistoryTrackTab::onTableDoubleClicked(const QModelIndex &index) {
+        if (!index.isValid()) {
+            return;
+        }
+
+        showDetailsPage(index.row(), false);
+    }
+
+    void HistoryTrackTab::onBackClicked() {
+        showListPage();
+    }
+
+    void HistoryTrackTab::onAddClicked() {
+        showDetailsPage(-1, true);
+    }
+
+    void HistoryTrackTab::onEditClicked() {
+        if (m_currentRow < 0) {
+            return;
+        }
+
+        setEditMode(true);
+    }
+
+    void HistoryTrackTab::onSaveClicked() {
+        HistoryTrackPoint point;
+        point.timestamp = m_timestampEdit->dateTime().toUTC();
+        point.coordinate.setLatitude(m_latitudeSpinBox->value());
+        point.coordinate.setLongitude(m_longitudeSpinBox->value());
+        point.coordinate.setAltitude(m_altitudeSpinBox->value());
+
+        if (!point.timestamp.isValid() || !point.coordinate.isValid()) {
+            QMessageBox::warning(this, tr("Tracks"), tr("Please enter a valid timestamp and coordinates."));
+            return;
+        }
+
+        if (m_isCreating) {
+            m_model->appendPoint(point);
+        } else if (!m_model->updatePointAtRow(m_currentRow, point)) {
+            QMessageBox::warning(this, tr("Tracks"), tr("Unable to update the selected sample."));
+            return;
+        }
+
+        updateStatusLabel();
+        showListPage();
+    }
+
+    void HistoryTrackTab::onCancelClicked() {
+        showListPage();
+    }
+
+    void HistoryTrackTab::onDeleteClicked() {
+        if (m_currentRow < 0) {
+            return;
+        }
+
+        if (QMessageBox::question(this,
+                                  tr("Delete sample"),
+                                  tr("Delete the selected track sample?")) != QMessageBox::Yes) {
+            return;
+        }
+
+        if (!m_model->removePointAtRow(m_currentRow)) {
+            QMessageBox::warning(this, tr("Tracks"), tr("Unable to delete the selected sample."));
+            return;
+        }
+
+        updateStatusLabel();
+        showListPage();
     }
 }

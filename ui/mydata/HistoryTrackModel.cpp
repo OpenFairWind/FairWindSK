@@ -161,6 +161,47 @@ namespace fairwindsk::ui::mydata {
         return !m_points.isEmpty();
     }
 
+    HistoryTrackPoint HistoryTrackModel::pointAtRow(const int row) const {
+        if (row < 0 || row >= m_points.size()) {
+            return {};
+        }
+
+        return m_points.at(row);
+    }
+
+    bool HistoryTrackModel::updatePointAtRow(const int row, const HistoryTrackPoint &point) {
+        if (row < 0 || row >= m_points.size()) {
+            return false;
+        }
+
+        m_points[row] = point;
+        m_sourceDocument = {};
+        const QModelIndex left = index(row, 0);
+        const QModelIndex right = index(row, columnCount() - 1);
+        emit dataChanged(left, right);
+        return true;
+    }
+
+    void HistoryTrackModel::appendPoint(const HistoryTrackPoint &point) {
+        const int row = m_points.size();
+        beginInsertRows(QModelIndex(), row, row);
+        m_points.append(point);
+        m_sourceDocument = {};
+        endInsertRows();
+    }
+
+    bool HistoryTrackModel::removePointAtRow(const int row) {
+        if (row < 0 || row >= m_points.size()) {
+            return false;
+        }
+
+        beginRemoveRows(QModelIndex(), row, row);
+        m_points.removeAt(row);
+        m_sourceDocument = {};
+        endRemoveRows();
+        return true;
+    }
+
     bool HistoryTrackModel::applyHistoryPayload(const QJsonDocument &document, QString *message) {
         QList<HistoryTrackPoint> points;
 

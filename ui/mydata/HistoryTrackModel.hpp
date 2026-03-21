@@ -32,6 +32,10 @@ namespace fairwindsk::ui::mydata {
         bool importDocument(const QJsonDocument &document, QString *message = nullptr);
         QJsonDocument exportDocument() const;
         bool hasPoints() const;
+        HistoryTrackPoint pointAtRow(int row) const;
+        bool updatePointAtRow(int row, const HistoryTrackPoint &point);
+        void appendPoint(const HistoryTrackPoint &point);
+        bool removePointAtRow(int row);
 
     private:
         bool applyHistoryPayload(const QJsonDocument &document, QString *message);
