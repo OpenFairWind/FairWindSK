@@ -9,6 +9,7 @@
 #include "Files.hpp"
 #include "ResourceTab.hpp"
 #include "HistoryTrackTab.hpp"
+#include "Waypoints.hpp"
 
 namespace fairwindsk::ui::mydata {
     MyData::MyData(QWidget *parent, QWidget *currenWidget): QWidget(parent), ui(new Ui::MyData) {
@@ -51,7 +52,7 @@ namespace fairwindsk::ui::mydata {
         removeTabs();
 
         // Add the resources tabs
-        ui->tabWidget->addTab(new ResourceTab(ResourceKind::Waypoint, this), tr("Waypoints"));
+        ui->tabWidget->addTab(new Waypoints(this), tr("Waypoints"));
         ui->tabWidget->addTab(new ResourceTab(ResourceKind::Route, this), tr("Routes"));
         ui->tabWidget->addTab(new ResourceTab(ResourceKind::Region, this), tr("Regions"));
         ui->tabWidget->addTab(new ResourceTab(ResourceKind::Note, this), tr("Notes"));

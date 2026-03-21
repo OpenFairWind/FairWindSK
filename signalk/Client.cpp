@@ -908,6 +908,17 @@ namespace fairwindsk::signalk {
         return true;
     }
 
+    bool Client::navigateToWaypoint(const QString &href) {
+        if (href.trimmed().isEmpty()) {
+            return false;
+        }
+
+        QJsonObject payload;
+        payload["href"] = href;
+        const auto response = signalkPut(QUrl(m_Url.toString() + "/v2/api/vessels/self/navigation/course/destination"), payload);
+        return !response.isEmpty() || !m_Active;
+    }
+
     QJsonArray Client::getHistoryPaths(const QVariantMap &query) {
         const auto jsonDocument = getJsonDocument(historyUrl("paths", query));
         return jsonDocument.isArray() ? jsonDocument.array() : QJsonArray{};

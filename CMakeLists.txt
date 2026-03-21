@@ -154,6 +154,7 @@ set(FAIRWINDSK_SOURCES
         ui/web/NavigationBar.cpp ui/web/NavigationBar.hpp ui/web/NavigationBar.ui
         ui/bottombar/AutopilotBar.cpp ui/bottombar/AutopilotBar.hpp ui/bottombar/AutopilotBar.ui
         ui/mydata/MyData.cpp ui/mydata/MyData.hpp ui/mydata/MyData.ui
+        ui/mydata/Waypoints.cpp ui/mydata/Waypoints.hpp ui/mydata/Waypoints.ui
         ui/mydata/ResourceDialog.cpp ui/mydata/ResourceDialog.hpp
         ui/mydata/ResourceModel.cpp ui/mydata/ResourceModel.hpp
         ui/mydata/ResourceTab.cpp ui/mydata/ResourceTab.hpp

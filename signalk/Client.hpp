@@ -84,6 +84,7 @@ namespace fairwindsk::signalk {
         QJsonObject createResource(const QString &collection, const QJsonObject &payload, const QVariantMap &query = {});
         QJsonObject putResource(const QString &collection, const QString &id, const QJsonObject &payload);
         bool deleteResource(const QString &collection, const QString &id);
+        bool navigateToWaypoint(const QString &href);
         QJsonArray getHistoryPaths(const QVariantMap &query = {});
         QJsonObject getHistoryValues(const QStringList &paths, const QVariantMap &query = {});
 
