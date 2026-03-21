@@ -11,6 +11,8 @@
 
 #include "ResourceModel.hpp"
 
+class QCheckBox;
+class QComboBox;
 class QDoubleSpinBox;
 class QLineEdit;
 class QPlainTextEdit;
@@ -32,20 +34,33 @@ namespace fairwindsk::ui::mydata {
         void accept() override;
 
     private:
-        QString coordinatesText() const;
         QJsonArray coordinatesJson() const;
+        QJsonObject parseJsonObject(const QPlainTextEdit *edit) const;
         bool validate(QString *message) const;
 
         ResourceKind m_kind;
         QString m_id;
-        QLineEdit *m_nameEdit;
-        QLineEdit *m_descriptionEdit;
-        QLineEdit *m_typeEdit;
-        QDoubleSpinBox *m_latitudeSpinBox;
-        QDoubleSpinBox *m_longitudeSpinBox;
-        QDoubleSpinBox *m_altitudeSpinBox;
-        QPlainTextEdit *m_coordinatesEdit;
-        QStackedWidget *m_stackedWidget;
+        QLineEdit *m_nameEdit = nullptr;
+        QLineEdit *m_descriptionEdit = nullptr;
+        QLineEdit *m_typeEdit = nullptr;
+        QDoubleSpinBox *m_latitudeSpinBox = nullptr;
+        QDoubleSpinBox *m_longitudeSpinBox = nullptr;
+        QDoubleSpinBox *m_altitudeSpinBox = nullptr;
+        QPlainTextEdit *m_coordinatesEdit = nullptr;
+        QPlainTextEdit *m_geometryEdit = nullptr;
+        QPlainTextEdit *m_propertiesEdit = nullptr;
+        QLineEdit *m_hrefEdit = nullptr;
+        QLineEdit *m_mimeTypeEdit = nullptr;
+        QCheckBox *m_notePositionCheckBox = nullptr;
+        QLineEdit *m_identifierEdit = nullptr;
+        QLineEdit *m_chartFormatEdit = nullptr;
+        QLineEdit *m_chartUrlEdit = nullptr;
+        QLineEdit *m_tilemapUrlEdit = nullptr;
+        QLineEdit *m_chartRegionEdit = nullptr;
+        QDoubleSpinBox *m_chartScaleSpinBox = nullptr;
+        QLineEdit *m_chartLayersEdit = nullptr;
+        QPlainTextEdit *m_chartBoundsEdit = nullptr;
+        QStackedWidget *m_stackedWidget = nullptr;
     };
 }
 

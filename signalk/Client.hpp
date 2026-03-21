@@ -9,6 +9,9 @@
 #include <QtCore/QObject>
 #include <QtWebSockets/QWebSocket>
 #include <QNetworkAccessManager>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QVariantMap>
 
 #include "Waypoint.hpp"
 #include "Subscription.hpp"
@@ -76,9 +79,13 @@ namespace fairwindsk::signalk {
 
         Waypoint getWaypointByHref(const QString &href);
         QMap<QString, Waypoint> getWaypoints();
-        QMap<QString, QJsonObject> getResources(const QString &collection);
+        QMap<QString, QJsonObject> getResources(const QString &collection, const QVariantMap &query = {});
+        QJsonObject getResource(const QString &collection, const QString &id, const QVariantMap &query = {});
+        QJsonObject createResource(const QString &collection, const QJsonObject &payload, const QVariantMap &query = {});
         QJsonObject putResource(const QString &collection, const QString &id, const QJsonObject &payload);
         bool deleteResource(const QString &collection, const QString &id);
+        QJsonArray getHistoryPaths(const QVariantMap &query = {});
+        QJsonObject getHistoryValues(const QStringList &paths, const QVariantMap &query = {});
 
         static QString getStringFromUpdateByPath(const QJsonObject &update, const QString& path = "");
         static double getDoubleFromUpdateByPath(const QJsonObject &update, const QString& path = "");
@@ -127,7 +134,10 @@ namespace fairwindsk::signalk {
         QByteArray httpDelete(const QUrl& url, const QJsonObject& payload);
 
         QUrl getEndpointByProtocol(const QString &protocol, const QString& version = "v1");
-        QUrl resourceUrl(const QString &collection, const QString &id = QString()) const;
+        QJsonDocument getJsonDocument(const QUrl &url, const QJsonObject &payload = {});
+        QUrl withQuery(const QUrl &url, const QVariantMap &query) const;
+        QUrl resourceUrl(const QString &collection, const QString &id = QString(), const QVariantMap &query = {}) const;
+        QUrl historyUrl(const QString &suffix = QString(), const QVariantMap &query = {}) const;
 
         QJsonObject m_Server;
 

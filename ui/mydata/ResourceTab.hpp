@@ -27,6 +27,8 @@ namespace fairwindsk::ui::mydata {
         void onAddClicked();
         void onEditClicked();
         void onDeleteClicked();
+        void onImportClicked();
+        void onExportClicked();
         void onRefreshClicked();
         void onSearchTextChanged(const QString &text);
 
@@ -43,6 +45,8 @@ namespace fairwindsk::ui::mydata {
         QToolButton *m_addButton;
         QToolButton *m_editButton;
         QToolButton *m_deleteButton;
+        QToolButton *m_importButton;
+        QToolButton *m_exportButton;
         QToolButton *m_refreshButton;
     };
 }

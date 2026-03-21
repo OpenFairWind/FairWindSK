@@ -157,6 +157,8 @@ set(FAIRWINDSK_SOURCES
         ui/mydata/ResourceDialog.cpp ui/mydata/ResourceDialog.hpp
         ui/mydata/ResourceModel.cpp ui/mydata/ResourceModel.hpp
         ui/mydata/ResourceTab.cpp ui/mydata/ResourceTab.hpp
+        ui/mydata/HistoryTrackModel.cpp ui/mydata/HistoryTrackModel.hpp
+        ui/mydata/HistoryTrackTab.cpp ui/mydata/HistoryTrackTab.hpp
         ui/bottombar/AnchorBar.cpp ui/bottombar/AnchorBar.hpp ui/bottombar/AnchorBar.ui
         PList.cpp PList.hpp
         ui/mydata/Files.cpp ui/mydata/Files.hpp ui/mydata/Files.ui

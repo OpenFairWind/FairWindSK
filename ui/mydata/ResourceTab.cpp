@@ -4,8 +4,11 @@
 
 #include "ResourceTab.hpp"
 
+#include <QFile>
+#include <QFileDialog>
 #include <QHeaderView>
 #include <QHBoxLayout>
+#include <QJsonDocument>
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QRegularExpression>
@@ -27,6 +30,8 @@ namespace fairwindsk::ui::mydata {
           m_addButton(new QToolButton(this)),
           m_editButton(new QToolButton(this)),
           m_deleteButton(new QToolButton(this)),
+          m_importButton(new QToolButton(this)),
+          m_exportButton(new QToolButton(this)),
           m_refreshButton(new QToolButton(this)) {
         auto *mainLayout = new QVBoxLayout(this);
         auto *toolbarLayout = new QHBoxLayout();
@@ -40,6 +45,16 @@ namespace fairwindsk::ui::mydata {
         m_refreshButton->setToolTip(tr("Refresh"));
         connect(m_refreshButton, &QToolButton::clicked, this, &ResourceTab::onRefreshClicked);
         toolbarLayout->addWidget(m_refreshButton);
+
+        m_importButton->setText(tr("Import"));
+        m_importButton->setToolTip(tr("Import"));
+        connect(m_importButton, &QToolButton::clicked, this, &ResourceTab::onImportClicked);
+        toolbarLayout->addWidget(m_importButton);
+
+        m_exportButton->setText(tr("Export"));
+        m_exportButton->setToolTip(tr("Export"));
+        connect(m_exportButton, &QToolButton::clicked, this, &ResourceTab::onExportClicked);
+        toolbarLayout->addWidget(m_exportButton);
 
         m_addButton->setIcon(QIcon(":/resources/svg/OpenBridge/widget-add-google.svg"));
         m_addButton->setToolTip(tr("Add"));
@@ -74,11 +89,7 @@ namespace fairwindsk::ui::mydata {
 
     QModelIndex ResourceTab::currentSourceIndex() const {
         const QModelIndex proxyIndex = m_tableView->currentIndex();
-        if (!proxyIndex.isValid()) {
-            return {};
-        }
-
-        return m_proxyModel->mapToSource(proxyIndex);
+        return proxyIndex.isValid() ? m_proxyModel->mapToSource(proxyIndex) : QModelIndex{};
     }
 
     void ResourceTab::selectResource(const QString &id) {
@@ -105,8 +116,8 @@ namespace fairwindsk::ui::mydata {
             return;
         }
 
-        const QString id = dialog.resourceId();
-        if (!m_model->saveResource(id, dialog.resourceObject())) {
+        const QString id = m_model->createResource(dialog.resourceObject());
+        if (id.isEmpty()) {
             showError(tr("Unable to create the selected resource."));
             return;
         }
@@ -117,7 +128,7 @@ namespace fairwindsk::ui::mydata {
     void ResourceTab::onEditClicked() {
         const QModelIndex index = currentSourceIndex();
         if (!index.isValid()) {
-            showError(tr("Select a resource first."));
+            showError(tr("Select a %1 first.").arg(resourceKindToSingularTitle(m_kind).toLower()));
             return;
         }
 
@@ -128,7 +139,7 @@ namespace fairwindsk::ui::mydata {
             return;
         }
 
-        if (!m_model->saveResource(id, dialog.resourceObject())) {
+        if (!m_model->updateResource(id, dialog.resourceObject())) {
             showError(tr("Unable to update the selected resource."));
             return;
         }
@@ -139,17 +150,16 @@ namespace fairwindsk::ui::mydata {
     void ResourceTab::onDeleteClicked() {
         const QModelIndex index = currentSourceIndex();
         if (!index.isValid()) {
-            showError(tr("Select a resource first."));
+            showError(tr("Select a %1 first.").arg(resourceKindToSingularTitle(m_kind).toLower()));
             return;
         }
 
         const QString id = m_model->resourceIdAtRow(index.row());
         const QString name = m_model->resourceAtRow(index.row())["name"].toString();
-        const QString singular = resourceKindToTitle(m_kind).toLower().chopped(1);
         const auto choice = QMessageBox::question(
                 this,
                 resourceKindToTitle(m_kind),
-                tr("Delete %1 \"%2\"?").arg(singular, name));
+                tr("Delete %1 \"%2\"?").arg(resourceKindToSingularTitle(m_kind).toLower(), name));
         if (choice != QMessageBox::Yes) {
             return;
         }
@@ -159,8 +169,60 @@ namespace fairwindsk::ui::mydata {
         }
     }
 
+    void ResourceTab::onImportClicked() {
+        const QString fileName = QFileDialog::getOpenFileName(
+                this,
+                tr("Import %1").arg(resourceKindToTitle(m_kind)),
+                QString(),
+                tr("JSON files (*.json);;All files (*)"));
+        if (fileName.isEmpty()) {
+            return;
+        }
+
+        QFile file(fileName);
+        if (!file.open(QIODevice::ReadOnly)) {
+            showError(tr("Unable to open %1.").arg(fileName));
+            return;
+        }
+
+        const auto document = QJsonDocument::fromJson(file.readAll());
+        QString message;
+        int count = 0;
+        if (!m_model->importDocument(document, &message, &count)) {
+            showError(message);
+            return;
+        }
+
+        QMessageBox::information(this, resourceKindToTitle(m_kind), message);
+    }
+
+    void ResourceTab::onExportClicked() {
+        QStringList ids;
+        const QModelIndex index = currentSourceIndex();
+        if (index.isValid()) {
+            ids.append(m_model->resourceIdAtRow(index.row()));
+        }
+
+        const QString fileName = QFileDialog::getSaveFileName(
+                this,
+                tr("Export %1").arg(resourceKindToTitle(m_kind)),
+                QString("%1.json").arg(resourceKindToCollection(m_kind)),
+                tr("JSON files (*.json);;All files (*)"));
+        if (fileName.isEmpty()) {
+            return;
+        }
+
+        QFile file(fileName);
+        if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+            showError(tr("Unable to write %1.").arg(fileName));
+            return;
+        }
+
+        file.write(m_model->exportDocument(ids).toJson(QJsonDocument::Indented));
+    }
+
     void ResourceTab::onRefreshClicked() {
-        m_model->reload();
+        m_model->reload(true);
     }
 
     void ResourceTab::onSearchTextChanged(const QString &text) {

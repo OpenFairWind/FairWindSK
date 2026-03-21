@@ -12,6 +12,7 @@
 #include <QJsonArray>
 #include <QEventLoop>
 #include <QElapsedTimer>
+#include <QUrlQuery>
 
 #include "Client.hpp"
 #include "FairWindSK.hpp"
@@ -810,13 +811,43 @@ namespace fairwindsk::signalk {
         return result;
     }
 
-    QUrl Client::resourceUrl(const QString &collection, const QString &id) const {
-        const QString basePath = m_Url.toString() + "/v2/api/resources/" + collection;
-        if (id.isEmpty()) {
-            return QUrl(basePath);
+    QJsonDocument Client::getJsonDocument(const QUrl &url, const QJsonObject &payload) {
+        const auto data = payload.isEmpty() ? httpGet(url) : httpGet(url, payload);
+        return QJsonDocument::fromJson(data);
+    }
+
+    QUrl Client::withQuery(const QUrl &url, const QVariantMap &query) const {
+        if (query.isEmpty()) {
+            return url;
         }
 
-        return QUrl(basePath + "/" + QString::fromLatin1(QUrl::toPercentEncoding(id)));
+        QUrl result(url);
+        QUrlQuery urlQuery(result);
+        for (auto it = query.constBegin(); it != query.constEnd(); ++it) {
+            if (!it.value().isValid() || it.value().toString().trimmed().isEmpty()) {
+                continue;
+            }
+            urlQuery.addQueryItem(it.key(), it.value().toString());
+        }
+        result.setQuery(urlQuery);
+        return result;
+    }
+
+    QUrl Client::resourceUrl(const QString &collection, const QString &id, const QVariantMap &query) const {
+        const QString basePath = m_Url.toString() + "/v2/api/resources/" + collection;
+        QUrl url;
+        if (id.isEmpty()) {
+            url = QUrl(basePath);
+        } else {
+            url = QUrl(basePath + "/" + QString::fromLatin1(QUrl::toPercentEncoding(id)));
+        }
+
+        return withQuery(url, query);
+    }
+
+    QUrl Client::historyUrl(const QString &suffix, const QVariantMap &query) const {
+        const QString path = suffix.isEmpty() ? "/v2/api/history" : "/v2/api/history/" + suffix;
+        return withQuery(QUrl(m_Url.toString() + path), query);
     }
 
     QMap<QString, Waypoint> Client::getWaypoints() {
@@ -839,11 +870,10 @@ namespace fairwindsk::signalk {
         return result;
     }
 
-    QMap<QString, QJsonObject> Client::getResources(const QString &collection) {
+    QMap<QString, QJsonObject> Client::getResources(const QString &collection, const QVariantMap &query) {
         QMap<QString, QJsonObject> result;
 
-        const auto data = httpGet(resourceUrl(collection));
-        const auto jsonDocument = QJsonDocument::fromJson(data);
+        const auto jsonDocument = getJsonDocument(resourceUrl(collection, QString(), query));
         const auto jsonObject = jsonDocument.object();
 
         for (const auto &key : jsonObject.keys()) {
@@ -855,6 +885,18 @@ namespace fairwindsk::signalk {
         return result;
     }
 
+    QJsonObject Client::getResource(const QString &collection, const QString &id, const QVariantMap &query) {
+        return getJsonDocument(resourceUrl(collection, id, query)).object();
+    }
+
+    QJsonObject Client::createResource(const QString &collection, const QJsonObject &payload, const QVariantMap &query) {
+        QJsonDocument jsonDocument;
+        jsonDocument.setObject(payload);
+        const auto response = finishReply(m_NetworkAccessManager.post(createJsonRequest(resourceUrl(collection, QString(), query)),
+                                                                      jsonDocument.toJson()));
+        return QJsonDocument::fromJson(response).object();
+    }
+
     QJsonObject Client::putResource(const QString &collection, const QString &id, const QJsonObject &payload) {
         QJsonObject mutablePayload = payload;
         return signalkPut(resourceUrl(collection, id), mutablePayload);
@@ -864,6 +906,20 @@ namespace fairwindsk::signalk {
         QJsonObject payload;
         signalkDelete(resourceUrl(collection, id), payload);
         return true;
+    }
+
+    QJsonArray Client::getHistoryPaths(const QVariantMap &query) {
+        const auto jsonDocument = getJsonDocument(historyUrl("paths", query));
+        return jsonDocument.isArray() ? jsonDocument.array() : QJsonArray{};
+    }
+
+    QJsonObject Client::getHistoryValues(const QStringList &paths, const QVariantMap &query) {
+        QVariantMap effectiveQuery = query;
+        if (!paths.isEmpty()) {
+            effectiveQuery["paths"] = paths.join(",");
+        }
+
+        return getJsonDocument(historyUrl("values", effectiveQuery)).object();
     }
 
     QJsonObject Client::subscribe(const QString& path, QObject *receiver, const char *member, int period, const QString& policy, int minPeriod) {

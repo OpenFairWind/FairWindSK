@@ -8,19 +8,32 @@
 
 #include <QDateTime>
 #include <QJsonArray>
+#include <QLocale>
+#include <QTimer>
+#include <QUuid>
 
 #include "FairWindSK.hpp"
 
 namespace {
-    QString resourceName(const QJsonObject &resource) {
-        if (resource.contains("name") && resource["name"].isString()) {
-            return resource["name"].toString();
+    QString displayNameForResource(const QJsonObject &resource) {
+        static const QStringList directKeys = {"name", "title", "identifier", "href"};
+        for (const auto &key : directKeys) {
+            if (resource.contains(key) && resource[key].isString()) {
+                return resource[key].toString();
+            }
         }
 
-        return resource["feature"].toObject()["properties"].toObject()["name"].toString();
+        const QJsonObject featureProperties = resource["feature"].toObject()["properties"].toObject();
+        for (const auto &key : directKeys) {
+            if (featureProperties.contains(key) && featureProperties[key].isString()) {
+                return featureProperties[key].toString();
+            }
+        }
+
+        return {};
     }
 
-    QString resourceDescription(const QJsonObject &resource) {
+    QString descriptionForResource(const QJsonObject &resource) {
         if (resource.contains("description") && resource["description"].isString()) {
             return resource["description"].toString();
         }
@@ -28,32 +41,142 @@ namespace {
         return resource["feature"].toObject()["properties"].toObject()["description"].toString();
     }
 
-    QString resourceType(const QJsonObject &resource) {
-        if (resource.contains("type") && resource["type"].isString()) {
-            return resource["type"].toString();
+    QString idForResource(const QString &fallbackId, const QJsonObject &resource) {
+        const QJsonObject feature = resource["feature"].toObject();
+        if (feature.contains("id") && feature["id"].isString() && !feature["id"].toString().isEmpty()) {
+            return feature["id"].toString();
         }
 
-        const QJsonObject properties = resource["feature"].toObject()["properties"].toObject();
-        if (properties.contains("type") && properties["type"].isString()) {
-            return properties["type"].toString();
+        if (resource.contains("id") && resource["id"].isString() && !resource["id"].toString().isEmpty()) {
+            return resource["id"].toString();
         }
 
-        return resource["feature"].toObject()["geometry"].toObject()["type"].toString();
+        return fallbackId;
     }
 
-    QJsonArray resourceCoordinates(const QJsonObject &resource) {
+    QString geometryTypeForResource(const QJsonObject &resource) {
+        const QJsonObject geometry = resource["feature"].toObject()["geometry"].toObject();
+        if (geometry.contains("type") && geometry["type"].isString()) {
+            return geometry["type"].toString();
+        }
+
+        return resource["type"].toString();
+    }
+
+    QJsonArray coordinatesForResource(const QJsonObject &resource) {
         return resource["feature"].toObject()["geometry"].toObject()["coordinates"].toArray();
     }
 
-    int pointCount(const fairwindsk::ui::mydata::ResourceKind kind, const QJsonObject &resource) {
-        const QJsonArray coordinates = resourceCoordinates(resource);
-        return kind == fairwindsk::ui::mydata::ResourceKind::Waypoint ? (coordinates.isEmpty() ? 0 : 1) : coordinates.size();
+    int pointCountForGeometry(const QString &geometryType, const QJsonArray &coordinates) {
+        if (geometryType == "Point") {
+            return coordinates.isEmpty() ? 0 : 1;
+        }
+
+        if (geometryType == "LineString" || geometryType == "MultiPoint") {
+            return coordinates.size();
+        }
+
+        if (geometryType == "Polygon" || geometryType == "MultiLineString") {
+            int count = 0;
+            for (const auto &ring : coordinates) {
+                count += ring.toArray().size();
+            }
+            return count;
+        }
+
+        if (geometryType == "MultiPolygon") {
+            int count = 0;
+            for (const auto &polygon : coordinates) {
+                for (const auto &ring : polygon.toArray()) {
+                    count += ring.toArray().size();
+                }
+            }
+            return count;
+        }
+
+        return coordinates.size();
     }
 
-    QString timestampText(const QJsonObject &resource) {
+    QString timestampForDisplay(const QJsonObject &resource) {
         const QString timestamp = resource["timestamp"].toString();
-        const QDateTime dateTime = QDateTime::fromString(timestamp, Qt::ISODate);
+        if (timestamp.isEmpty()) {
+            return {};
+        }
+
+        QDateTime dateTime = QDateTime::fromString(timestamp, Qt::ISODateWithMs);
+        if (!dateTime.isValid()) {
+            dateTime = QDateTime::fromString(timestamp, Qt::ISODate);
+        }
         return dateTime.isValid() ? QLocale().toString(dateTime.toLocalTime(), QLocale::ShortFormat) : timestamp;
+    }
+
+    QString noteHref(const QJsonObject &resource) {
+        return resource["href"].toString();
+    }
+
+    QString chartIdentifier(const QJsonObject &resource) {
+        return resource["identifier"].toString();
+    }
+
+    QString chartFormat(const QJsonObject &resource) {
+        return resource["chartFormat"].toString();
+    }
+
+    QString coordinateLatitudeText(const QJsonObject &resource) {
+        const QJsonArray coordinates = coordinatesForResource(resource);
+        return coordinates.size() > 1 ? QString::number(coordinates.at(1).toDouble(), 'f', 6) : QString();
+    }
+
+    QString coordinateLongitudeText(const QJsonObject &resource) {
+        const QJsonArray coordinates = coordinatesForResource(resource);
+        return coordinates.size() > 0 ? QString::number(coordinates.at(0).toDouble(), 'f', 6) : QString();
+    }
+
+    QString upsertedResourceId(const QJsonObject &response, const QJsonObject &resource, const QString &fallbackId = {}) {
+        if (response.contains("id") && response["id"].isString()) {
+            return response["id"].toString();
+        }
+        if (response.contains("identifier") && response["identifier"].isString()) {
+            return response["identifier"].toString();
+        }
+        if (response.contains("feature") && response["feature"].isObject()) {
+            const auto feature = response["feature"].toObject();
+            if (feature.contains("id") && feature["id"].isString()) {
+                return feature["id"].toString();
+            }
+        }
+        return idForResource(fallbackId, resource);
+    }
+
+    QList<QPair<QString, QJsonObject>> importEntriesFromObject(const QJsonObject &object) {
+        QList<QPair<QString, QJsonObject>> entries;
+
+        if (object.contains("resources") && object["resources"].isArray()) {
+            const auto resources = object["resources"].toArray();
+            for (const auto &item : resources) {
+                if (item.isObject()) {
+                    entries.append({QString(), item.toObject()});
+                }
+            }
+            return entries;
+        }
+
+        bool keyedResourceMap = !object.isEmpty();
+        for (auto it = object.begin(); it != object.end(); ++it) {
+            if (!it.value().isObject()) {
+                keyedResourceMap = false;
+                break;
+            }
+        }
+        if (keyedResourceMap && !object.isEmpty()) {
+            for (auto it = object.begin(); it != object.end(); ++it) {
+                entries.append({it.key(), it.value().toObject()});
+            }
+            return entries;
+        }
+
+        entries.append({QString(), object});
+        return entries;
     }
 }
 
@@ -64,8 +187,12 @@ namespace fairwindsk::ui::mydata {
                 return "waypoints";
             case ResourceKind::Route:
                 return "routes";
-            case ResourceKind::Track:
-                return "tracks";
+            case ResourceKind::Region:
+                return "regions";
+            case ResourceKind::Note:
+                return "notes";
+            case ResourceKind::Chart:
+                return "charts";
         }
 
         return {};
@@ -77,24 +204,46 @@ namespace fairwindsk::ui::mydata {
                 return QObject::tr("Waypoints");
             case ResourceKind::Route:
                 return QObject::tr("Routes");
-            case ResourceKind::Track:
-                return QObject::tr("Tracks");
+            case ResourceKind::Region:
+                return QObject::tr("Regions");
+            case ResourceKind::Note:
+                return QObject::tr("Notes");
+            case ResourceKind::Chart:
+                return QObject::tr("Charts");
+        }
+
+        return {};
+    }
+
+    QString resourceKindToSingularTitle(const ResourceKind kind) {
+        switch (kind) {
+            case ResourceKind::Waypoint:
+                return QObject::tr("Waypoint");
+            case ResourceKind::Route:
+                return QObject::tr("Route");
+            case ResourceKind::Region:
+                return QObject::tr("Region");
+            case ResourceKind::Note:
+                return QObject::tr("Note");
+            case ResourceKind::Chart:
+                return QObject::tr("Chart");
         }
 
         return {};
     }
 
     ResourceModel::ResourceModel(const ResourceKind kind, QObject *parent)
-        : QAbstractTableModel(parent), m_kind(kind) {
-        reload();
+        : QAbstractTableModel(parent),
+          m_kind(kind),
+          m_reloadTimer(new QTimer(this)) {
+        m_reloadTimer->setInterval(5000);
+        connect(m_reloadTimer, &QTimer::timeout, this, [this]() { reload(false); });
+        m_reloadTimer->start();
+        reload(true);
     }
 
     int ResourceModel::rowCount(const QModelIndex &parent) const {
-        if (parent.isValid()) {
-            return 0;
-        }
-
-        return m_ids.size();
+        return parent.isValid() ? 0 : m_ids.size();
     }
 
     int ResourceModel::columnCount(const QModelIndex &parent) const {
@@ -102,7 +251,20 @@ namespace fairwindsk::ui::mydata {
             return 0;
         }
 
-        return m_kind == ResourceKind::Waypoint ? 6 : 5;
+        switch (m_kind) {
+            case ResourceKind::Waypoint:
+                return 6;
+            case ResourceKind::Route:
+                return 5;
+            case ResourceKind::Region:
+                return 4;
+            case ResourceKind::Note:
+                return 5;
+            case ResourceKind::Chart:
+                return 6;
+        }
+
+        return 0;
     }
 
     QVariant ResourceModel::data(const QModelIndex &index, const int role) const {
@@ -111,41 +273,57 @@ namespace fairwindsk::ui::mydata {
         }
 
         const QJsonObject resource = m_resources.value(m_ids.at(index.row()));
+        const QString geometryType = geometryTypeForResource(resource);
+        const QJsonArray coordinates = coordinatesForResource(resource);
 
         if (role == Qt::DisplayRole) {
-            if (m_kind == ResourceKind::Waypoint) {
-                const QJsonArray coordinates = resourceCoordinates(resource);
-                switch (index.column()) {
-                    case 0:
-                        return resourceName(resource);
-                    case 1:
-                        return resourceDescription(resource);
-                    case 2:
-                        return resourceType(resource);
-                    case 3:
-                        return coordinates.size() > 1 ? QString::number(coordinates.at(1).toDouble(), 'f', 6) : QString();
-                    case 4:
-                        return coordinates.size() > 0 ? QString::number(coordinates.at(0).toDouble(), 'f', 6) : QString();
-                    case 5:
-                        return timestampText(resource);
-                    default:
-                        return {};
-                }
-            }
-
-            switch (index.column()) {
-                case 0:
-                    return resourceName(resource);
-                case 1:
-                    return resourceDescription(resource);
-                case 2:
-                    return resourceType(resource);
-                case 3:
-                    return pointCount(m_kind, resource);
-                case 4:
-                    return timestampText(resource);
-                default:
-                    return {};
+            switch (m_kind) {
+                case ResourceKind::Waypoint:
+                    switch (index.column()) {
+                        case 0: return displayNameForResource(resource);
+                        case 1: return descriptionForResource(resource);
+                        case 2: return resource["type"].toString();
+                        case 3: return coordinateLatitudeText(resource);
+                        case 4: return coordinateLongitudeText(resource);
+                        case 5: return timestampForDisplay(resource);
+                        default: return {};
+                    }
+                case ResourceKind::Route:
+                    switch (index.column()) {
+                        case 0: return displayNameForResource(resource);
+                        case 1: return descriptionForResource(resource);
+                        case 2: return geometryType;
+                        case 3: return pointCountForGeometry(geometryType, coordinates);
+                        case 4: return timestampForDisplay(resource);
+                        default: return {};
+                    }
+                case ResourceKind::Region:
+                    switch (index.column()) {
+                        case 0: return displayNameForResource(resource);
+                        case 1: return descriptionForResource(resource);
+                        case 2: return geometryType;
+                        case 3: return timestampForDisplay(resource);
+                        default: return {};
+                    }
+                case ResourceKind::Note:
+                    switch (index.column()) {
+                        case 0: return displayNameForResource(resource);
+                        case 1: return descriptionForResource(resource);
+                        case 2: return noteHref(resource);
+                        case 3: return resource["mimeType"].toString();
+                        case 4: return timestampForDisplay(resource);
+                        default: return {};
+                    }
+                case ResourceKind::Chart:
+                    switch (index.column()) {
+                        case 0: return displayNameForResource(resource);
+                        case 1: return descriptionForResource(resource);
+                        case 2: return chartFormat(resource);
+                        case 3: return chartIdentifier(resource);
+                        case 4: return resource["chartUrl"].toString();
+                        case 5: return timestampForDisplay(resource);
+                        default: return {};
+                    }
             }
         }
 
@@ -153,8 +331,7 @@ namespace fairwindsk::ui::mydata {
             if (m_kind == ResourceKind::Waypoint && (index.column() == 3 || index.column() == 4)) {
                 return QVariant::fromValue(Qt::AlignRight | Qt::AlignVCenter);
             }
-
-            if (m_kind != ResourceKind::Waypoint && index.column() == 3) {
+            if (m_kind == ResourceKind::Route && index.column() == 3) {
                 return QVariant::fromValue(Qt::AlignCenter);
             }
         }
@@ -167,49 +344,70 @@ namespace fairwindsk::ui::mydata {
             return {};
         }
 
-        if (m_kind == ResourceKind::Waypoint) {
-            switch (section) {
-                case 0:
-                    return tr("Name");
-                case 1:
-                    return tr("Description");
-                case 2:
-                    return tr("Type");
-                case 3:
-                    return tr("Latitude");
-                case 4:
-                    return tr("Longitude");
-                case 5:
-                    return tr("Timestamp");
-                default:
-                    return {};
-            }
+        switch (m_kind) {
+            case ResourceKind::Waypoint:
+                switch (section) {
+                    case 0: return tr("Name");
+                    case 1: return tr("Description");
+                    case 2: return tr("Type");
+                    case 3: return tr("Latitude");
+                    case 4: return tr("Longitude");
+                    case 5: return tr("Timestamp");
+                    default: return {};
+                }
+            case ResourceKind::Route:
+                switch (section) {
+                    case 0: return tr("Name");
+                    case 1: return tr("Description");
+                    case 2: return tr("Geometry");
+                    case 3: return tr("Points");
+                    case 4: return tr("Timestamp");
+                    default: return {};
+                }
+            case ResourceKind::Region:
+                switch (section) {
+                    case 0: return tr("Name");
+                    case 1: return tr("Description");
+                    case 2: return tr("Geometry");
+                    case 3: return tr("Timestamp");
+                    default: return {};
+                }
+            case ResourceKind::Note:
+                switch (section) {
+                    case 0: return tr("Title");
+                    case 1: return tr("Description");
+                    case 2: return tr("Href");
+                    case 3: return tr("MIME Type");
+                    case 4: return tr("Timestamp");
+                    default: return {};
+                }
+            case ResourceKind::Chart:
+                switch (section) {
+                    case 0: return tr("Name");
+                    case 1: return tr("Description");
+                    case 2: return tr("Format");
+                    case 3: return tr("Identifier");
+                    case 4: return tr("Chart URL");
+                    case 5: return tr("Timestamp");
+                    default: return {};
+                }
         }
 
-        switch (section) {
-            case 0:
-                return tr("Name");
-            case 1:
-                return tr("Description");
-            case 2:
-                return tr("Geometry");
-            case 3:
-                return tr("Points");
-            case 4:
-                return tr("Timestamp");
-            default:
-                return {};
-        }
+        return {};
     }
 
-    void ResourceModel::reload() {
+    void ResourceModel::reload(const bool force) {
         const auto client = fairwindsk::FairWindSK::getInstance()->getSignalKClient();
-        const auto resources = client->getResources(resourceKindToCollection(m_kind));
+        const auto resources = client->getResources(collection());
         QList<QString> ids = resources.keys();
 
         std::sort(ids.begin(), ids.end(), [&resources](const QString &left, const QString &right) {
-            return resourceName(resources.value(left)).toLower() < resourceName(resources.value(right)).toLower();
+            return displayNameForResource(resources.value(left)).toLower() < displayNameForResource(resources.value(right)).toLower();
         });
+
+        if (!force && ids == m_ids && resources == m_resources) {
+            return;
+        }
 
         beginResetModel();
         m_resources = resources;
@@ -217,18 +415,81 @@ namespace fairwindsk::ui::mydata {
         endResetModel();
     }
 
-    bool ResourceModel::saveResource(const QString &id, const QJsonObject &resource) {
+    QString ResourceModel::createResource(const QJsonObject &resource) {
         const auto client = fairwindsk::FairWindSK::getInstance()->getSignalKClient();
-        client->putResource(resourceKindToCollection(m_kind), id, resource);
-        reload();
+        const QJsonObject response = client->createResource(collection(), resource);
+        reload(true);
+        return upsertedResourceId(response, resource);
+    }
+
+    bool ResourceModel::updateResource(const QString &id, const QJsonObject &resource) {
+        const auto client = fairwindsk::FairWindSK::getInstance()->getSignalKClient();
+        client->putResource(collection(), id, resource);
+        reload(true);
         return m_resources.contains(id);
     }
 
     bool ResourceModel::deleteResource(const QString &id) {
         const auto client = fairwindsk::FairWindSK::getInstance()->getSignalKClient();
-        client->deleteResource(resourceKindToCollection(m_kind), id);
-        reload();
+        client->deleteResource(collection(), id);
+        reload(true);
         return !m_resources.contains(id);
+    }
+
+    bool ResourceModel::importDocument(const QJsonDocument &document, QString *message, int *count) {
+        QList<QPair<QString, QJsonObject>> entries;
+        if (document.isArray()) {
+            for (const auto &value : document.array()) {
+                if (value.isObject()) {
+                    entries.append({QString(), value.toObject()});
+                }
+            }
+        } else if (document.isObject()) {
+            entries = importEntriesFromObject(document.object());
+        }
+
+        if (entries.isEmpty()) {
+            if (message) {
+                *message = tr("The selected file does not contain any importable %1.").arg(resourceKindToTitle(m_kind).toLower());
+            }
+            return false;
+        }
+
+        int imported = 0;
+        for (const auto &entry : entries) {
+            QJsonObject resource = entry.second;
+            QString resourceId = idForResource(entry.first, resource);
+            if (resourceId.isEmpty()) {
+                resourceId = QUuid::createUuid().toString(QUuid::WithoutBraces);
+            }
+
+            if (m_resources.contains(resourceId)) {
+                updateResource(resourceId, resource);
+            } else {
+                createResource(resource);
+            }
+            ++imported;
+        }
+
+        if (count) {
+            *count = imported;
+        }
+        if (message) {
+            *message = tr("Imported %1 %2.").arg(imported).arg(imported == 1 ? resourceKindToSingularTitle(m_kind).toLower() : resourceKindToTitle(m_kind).toLower());
+        }
+        reload(true);
+        return true;
+    }
+
+    QJsonDocument ResourceModel::exportDocument(const QStringList &ids) const {
+        QJsonArray array;
+        const QStringList exportIds = ids.isEmpty() ? m_ids : ids;
+        for (const auto &id : exportIds) {
+            if (m_resources.contains(id)) {
+                array.append(m_resources.value(id));
+            }
+        }
+        return QJsonDocument(array);
     }
 
     QString ResourceModel::resourceIdAtRow(const int row) const {
@@ -246,5 +507,9 @@ namespace fairwindsk::ui::mydata {
 
     ResourceKind ResourceModel::kind() const {
         return m_kind;
+    }
+
+    QString ResourceModel::collection() const {
+        return resourceKindToCollection(m_kind);
     }
 }
