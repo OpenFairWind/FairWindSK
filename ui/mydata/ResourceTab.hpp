@@ -35,6 +35,7 @@ namespace fairwindsk::ui::mydata {
 
     private slots:
         void onAddClicked();
+        void onOpenClicked();
         void onEditClicked();
         void onDeleteClicked();
         void onImportClicked();

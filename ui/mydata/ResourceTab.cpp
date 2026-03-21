@@ -61,15 +61,15 @@ namespace fairwindsk::ui::mydata {
           m_searchEdit(new QLineEdit(this)),
           m_tableView(new QTableView(this)),
           m_addButton(new QToolButton(this)),
-          m_importButton(new QToolButton(this)),
-          m_exportButton(new QToolButton(this)),
-          m_refreshButton(new QToolButton(this)),
           m_backButton(new QToolButton(this)),
           m_newButton(new QToolButton(this)),
           m_editButton(new QToolButton(this)),
           m_saveButton(new QToolButton(this)),
           m_cancelButton(new QToolButton(this)),
           m_deleteButton(new QToolButton(this)),
+          m_importButton(new QToolButton(this)),
+          m_exportButton(new QToolButton(this)),
+          m_refreshButton(new QToolButton(this)),
           m_titleLabel(new QLabel(this)),
           m_idValueLabel(new QLabel(this)),
           m_timestampValueLabel(new QLabel(this)),
@@ -124,6 +124,24 @@ namespace fairwindsk::ui::mydata {
         connect(m_addButton, &QToolButton::clicked, this, &ResourceTab::onAddClicked);
         toolbarLayout->addWidget(m_addButton);
 
+        auto *openButton = new QToolButton(this);
+        openButton->setIcon(QIcon(":/resources/svg/gui-view-show-svgrepo-com.svg"));
+        openButton->setToolTip(tr("Show details"));
+        connect(openButton, &QToolButton::clicked, this, &ResourceTab::onOpenClicked);
+        toolbarLayout->addWidget(openButton);
+
+        auto *editListButton = new QToolButton(this);
+        editListButton->setIcon(QIcon(":/resources/svg/OpenBridge/edit-google.svg"));
+        editListButton->setToolTip(tr("Edit selected resource"));
+        connect(editListButton, &QToolButton::clicked, this, &ResourceTab::onEditClicked);
+        toolbarLayout->addWidget(editListButton);
+
+        auto *deleteListButton = new QToolButton(this);
+        deleteListButton->setIcon(QIcon(":/resources/svg/OpenBridge/delete-google.svg"));
+        deleteListButton->setToolTip(tr("Delete selected resource"));
+        connect(deleteListButton, &QToolButton::clicked, this, &ResourceTab::onDeleteClicked);
+        toolbarLayout->addWidget(deleteListButton);
+
         m_proxyModel->setSourceModel(m_model);
         m_proxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
         m_proxyModel->setFilterKeyColumn(-1);
@@ -139,6 +157,7 @@ namespace fairwindsk::ui::mydata {
         resourceHeader->setSectionResizeMode(1, QHeaderView::Stretch);
         resourceHeader->setStretchLastSection(false);
         connect(m_tableView, &QTableView::doubleClicked, this, &ResourceTab::onTableDoubleClicked);
+        connect(m_tableView, &QTableView::activated, this, &ResourceTab::onTableDoubleClicked);
         listLayout->addWidget(m_tableView);
 
         auto *detailsLayout = new QVBoxLayout(m_detailsPage);
@@ -871,6 +890,17 @@ namespace fairwindsk::ui::mydata {
     void ResourceTab::onSearchTextChanged(const QString &text) {
         const QRegularExpression expression(QRegularExpression::escape(text), QRegularExpression::CaseInsensitiveOption);
         m_proxyModel->setFilterRegularExpression(expression);
+    }
+
+    void ResourceTab::onOpenClicked() {
+        const QModelIndex sourceIndex = currentSourceIndex();
+        if (!sourceIndex.isValid()) {
+            showError(tr("Select a %1 first.").arg(resourceKindToSingularTitle(m_kind).toLower()));
+            return;
+        }
+
+        const QString id = m_model->resourceIdAtRow(sourceIndex.row());
+        showDetailsPage(id, m_model->resourceAtRow(sourceIndex.row()), false);
     }
 
     void ResourceTab::onTableDoubleClicked(const QModelIndex &index) {

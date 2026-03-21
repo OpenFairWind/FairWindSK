@@ -34,6 +34,7 @@ namespace fairwindsk::ui::mydata {
         void onDurationChanged();
         void onImportClicked();
         void onExportClicked();
+        void onOpenClicked();
         void onTableDoubleClicked(const QModelIndex &index);
         void onBackClicked();
         void onAddClicked();

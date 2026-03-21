@@ -88,6 +88,24 @@ namespace fairwindsk::ui::mydata {
         connect(m_newButton, &QToolButton::clicked, this, &HistoryTrackTab::onAddClicked);
         toolbarLayout->addWidget(m_newButton);
 
+        auto *openButton = new QToolButton(this);
+        openButton->setIcon(QIcon(":/resources/svg/gui-view-show-svgrepo-com.svg"));
+        openButton->setToolTip(tr("Show details"));
+        connect(openButton, &QToolButton::clicked, this, &HistoryTrackTab::onOpenClicked);
+        toolbarLayout->addWidget(openButton);
+
+        auto *editListButton = new QToolButton(this);
+        editListButton->setIcon(QIcon(":/resources/svg/OpenBridge/edit-google.svg"));
+        editListButton->setToolTip(tr("Edit selected sample"));
+        connect(editListButton, &QToolButton::clicked, this, &HistoryTrackTab::onEditClicked);
+        toolbarLayout->addWidget(editListButton);
+
+        auto *deleteListButton = new QToolButton(this);
+        deleteListButton->setIcon(QIcon(":/resources/svg/OpenBridge/delete-google.svg"));
+        deleteListButton->setToolTip(tr("Delete selected sample"));
+        connect(deleteListButton, &QToolButton::clicked, this, &HistoryTrackTab::onDeleteClicked);
+        toolbarLayout->addWidget(deleteListButton);
+
         toolbarLayout->addStretch(1);
         toolbarLayout->addWidget(m_statusLabel, 1);
 
@@ -102,6 +120,7 @@ namespace fairwindsk::ui::mydata {
         }
         trackHeader->setStretchLastSection(false);
         connect(m_tableView, &QTableView::doubleClicked, this, &HistoryTrackTab::onTableDoubleClicked);
+        connect(m_tableView, &QTableView::activated, this, &HistoryTrackTab::onTableDoubleClicked);
         listLayout->addWidget(m_tableView);
 
         auto *detailsLayout = new QVBoxLayout(m_detailsPage);
@@ -372,6 +391,16 @@ namespace fairwindsk::ui::mydata {
         }
 
         file.write(exportTrackPointsAsGeoJson(allPoints()).toJson(QJsonDocument::Indented));
+    }
+
+    void HistoryTrackTab::onOpenClicked() {
+        const int row = currentRow();
+        if (row < 0) {
+            QMessageBox::warning(this, tr("Tracks"), tr("Select a track sample first."));
+            return;
+        }
+
+        showDetailsPage(row, false);
     }
 
     void HistoryTrackTab::onTableDoubleClicked(const QModelIndex &index) {
