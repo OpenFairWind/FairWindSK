@@ -18,6 +18,7 @@
 #include <QPlainTextEdit>
 #include <QRegularExpression>
 #include <QSortFilterProxyModel>
+#include <QSplitter>
 #include <QStackedWidget>
 #include <QTableView>
 #include <QToolButton>
@@ -175,8 +176,16 @@ namespace fairwindsk::ui::mydata {
         m_titleLabel->setStyleSheet("font-size: 20px; font-weight: bold;");
         detailsLayout->addWidget(m_titleLabel);
 
-        auto *formLayout = new QFormLayout();
-        detailsLayout->addLayout(formLayout);
+        auto *detailsSplitter = new QSplitter(Qt::Horizontal, m_detailsPage);
+        detailsSplitter->setChildrenCollapsible(false);
+        detailsLayout->addWidget(detailsSplitter, 1);
+
+        auto *formWidget = new QWidget(detailsSplitter);
+        auto *formLayout = new QFormLayout(formWidget);
+        detailsSplitter->addWidget(formWidget);
+        detailsSplitter->addWidget(m_previewWidget);
+        detailsSplitter->setStretchFactor(0, 1);
+        detailsSplitter->setStretchFactor(1, 1);
 
         m_latitudeSpinBox->setRange(-90.0, 90.0);
         m_latitudeSpinBox->setDecimals(8);
@@ -236,7 +245,6 @@ namespace fairwindsk::ui::mydata {
         }
 
         formLayout->addRow(tr("Timestamp"), m_timestampValueLabel);
-        detailsLayout->addWidget(m_previewWidget, 1);
 
         m_stackedWidget->addWidget(m_listPage);
         m_stackedWidget->addWidget(m_detailsPage);

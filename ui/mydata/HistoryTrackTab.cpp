@@ -14,6 +14,7 @@
 #include <QJsonDocument>
 #include <QLabel>
 #include <QMessageBox>
+#include <QSplitter>
 #include <QStackedWidget>
 #include <QTableView>
 #include <QTimer>
@@ -136,8 +137,16 @@ namespace fairwindsk::ui::mydata {
         m_titleLabel->setStyleSheet("font-size: 20px; font-weight: bold;");
         detailsLayout->addWidget(m_titleLabel);
 
-        auto *formLayout = new QFormLayout();
-        detailsLayout->addLayout(formLayout);
+        auto *detailsSplitter = new QSplitter(Qt::Horizontal, m_detailsPage);
+        detailsSplitter->setChildrenCollapsible(false);
+        detailsLayout->addWidget(detailsSplitter, 1);
+
+        auto *formWidget = new QWidget(detailsSplitter);
+        auto *formLayout = new QFormLayout(formWidget);
+        detailsSplitter->addWidget(formWidget);
+        detailsSplitter->addWidget(m_previewWidget);
+        detailsSplitter->setStretchFactor(0, 1);
+        detailsSplitter->setStretchFactor(1, 1);
 
         m_timestampEdit->setDisplayFormat("yyyy-MM-dd HH:mm:ss");
         m_timestampEdit->setCalendarPopup(true);
@@ -153,7 +162,6 @@ namespace fairwindsk::ui::mydata {
         formLayout->addRow(tr("Latitude"), m_latitudeSpinBox);
         formLayout->addRow(tr("Longitude"), m_longitudeSpinBox);
         formLayout->addRow(tr("Altitude"), m_altitudeSpinBox);
-        detailsLayout->addWidget(m_previewWidget, 1);
 
         m_stackedWidget->addWidget(m_listPage);
         m_stackedWidget->addWidget(m_detailsPage);

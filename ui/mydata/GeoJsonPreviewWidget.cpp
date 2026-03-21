@@ -16,6 +16,7 @@ namespace fairwindsk::ui::mydata {
         auto *layout = new QVBoxLayout(this);
         layout->setContentsMargins(0, 0, 0, 0);
         layout->addWidget(m_view);
+        setMinimumSize(320, 240);
         setMessage(tr("GeoJSON preview will appear here."), tr("GeoJSON Preview"));
     }
 
