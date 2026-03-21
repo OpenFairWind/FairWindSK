@@ -177,21 +177,27 @@ namespace fairwindsk::signalk {
                 // Check if the token is empty
                 if (m_Token.isEmpty()) {
 
-                    // Perform the login
+                    // Perform the login if credentials are available. A public/read-only
+                    // Signal K server can still be used without a token.
                     login();
                 }
 
-                // Check if the token is not empty
                 if (!m_Token.isEmpty()) {
-
                     m_Cookie = "JAUTHENTICATION=" + m_Token + "; Path=/; HttpOnly";
-
-                    m_WebSocket.open(QUrl(ws().toString() + "?subscribe=none"));
-
-                    result = true;
                 } else {
-                    if (m_Debug)
-                        qDebug() << "Login failed.";
+                    m_Cookie.clear();
+
+                    if (m_Debug) {
+                        qDebug() << "Proceeding without token in read-only/public mode.";
+                    }
+                }
+
+                const auto webSocketUrl = QUrl(ws().toString() + "?subscribe=none");
+                if (webSocketUrl.isValid() && !webSocketUrl.isEmpty()) {
+                    m_WebSocket.open(webSocketUrl);
+                    result = true;
+                } else if (m_Debug) {
+                    qDebug() << "No valid websocket endpoint available for" << m_Url;
                 }
             } else {
                 if (m_Debug)
