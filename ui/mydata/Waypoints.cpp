@@ -318,7 +318,7 @@ namespace fairwindsk::ui::mydata {
             actionsLayout->addWidget(navigateButton);
 
             auto *detailsButton = new QToolButton(actionsWidget);
-            detailsButton->setIcon(QIcon(":/resources/svg/OpenBridge/info-google.svg"));
+            detailsButton->setIcon(QIcon(":/resources/svg/OpenBridge/info.svg"));
             detailsButton->setToolTip(tr("Waypoint details"));
             detailsButton->setProperty("waypointId", id);
             detailsButton->setStyleSheet(kActionButtonStyle);
