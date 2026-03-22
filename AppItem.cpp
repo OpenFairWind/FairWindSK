@@ -19,6 +19,41 @@
 #include "FairWindSK.hpp"
 
 namespace fairwindsk {
+    namespace {
+        QPixmap loadRemotePixmap(const QList<QUrl> &candidateUrls, const QPixmap &fallback) {
+            for (const auto &iconUrl : candidateUrls) {
+                if (!iconUrl.isValid() || iconUrl.scheme().isEmpty()) {
+                    continue;
+                }
+
+                QNetworkAccessManager networkAccessManager;
+                QEventLoop loop;
+                QObject::connect(&networkAccessManager, &QNetworkAccessManager::finished, &loop, &QEventLoop::quit);
+
+                QNetworkReply *reply = networkAccessManager.get(QNetworkRequest(iconUrl));
+                loop.exec();
+
+                if (reply == nullptr) {
+                    continue;
+                }
+
+                const auto statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+                const auto payload = reply->readAll();
+                delete reply;
+
+                if (statusCode < 200 || statusCode >= 300) {
+                    continue;
+                }
+
+                QPixmap pixmap = fallback;
+                if (pixmap.loadFromData(payload)) {
+                    return pixmap;
+                }
+            }
+
+            return fallback;
+        }
+    }
 
     AppItem::AppItem() = default;
 
@@ -146,37 +181,12 @@ namespace fairwindsk {
             return pixmap;
         }
 
-        // Resolve relative icons against the app base URL when available.
-        const QUrl iconUrl = QUrl(getUrl()).resolved(QUrl(appIcon));
-        if (!iconUrl.isValid()) {
-            return pixmap;
-        }
-        // Prepare a short-lived network access manager for the download.
-        QNetworkAccessManager networkAccessManager;
-        // Create an event loop so the synchronous download does not block the main loop indefinitely.
-        QEventLoop loop;
-        // Quit the loop as soon as the request is finished to keep the UI responsive.
-        QObject::connect(&networkAccessManager, &QNetworkAccessManager::finished, &loop, &QEventLoop::quit);
-        // Submit the GET request to retrieve the remote image.
-        QNetworkReply *reply = networkAccessManager.get(QNetworkRequest(iconUrl));
-        // Wait for the network request to complete before attempting to read the data.
-        loop.exec();
+        QList<QUrl> candidateUrls;
+        candidateUrls.append(QUrl(appIcon));
+        candidateUrls.append(QUrl(getUrl()).resolved(QUrl(appIcon)));
+        candidateUrls.append(QUrl(signalKServerUrl + "/" + getName() + "/" + appIcon));
 
-        // Ensure the reply exists before dereferencing.
-        if (reply != nullptr) {
-            // Check the HTTP status so we only overwrite the pixmap on success.
-            const auto statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-            // Accept any 2xx status code as a successful fetch.
-            if (statusCode >= 200 && statusCode < 300) {
-                // Replace the default pixmap with the downloaded icon bytes.
-                pixmap.loadFromData(reply->readAll());
-            }
-            // Release the network reply now that we are done with it.
-            delete reply;
-        }
-
-        // Return whichever pixmap we could obtain (downloaded or default).
-        return pixmap;
+        return loadRemotePixmap(candidateUrls, pixmap);
     }
 
     /*
@@ -355,6 +365,12 @@ namespace fairwindsk {
             if (signalkJsonObject.contains("appIcon") && signalkJsonObject["appIcon"].is_string()) {
                 result = QString::fromStdString(signalkJsonObject["appIcon"].get<std::string>());
             }
+        }
+        if (result.isEmpty() && m_jsonApp.contains("appIcon") && m_jsonApp["appIcon"].is_string()) {
+            result = QString::fromStdString(m_jsonApp["appIcon"].get<std::string>());
+        }
+        if (result.isEmpty() && m_jsonApp.contains("icon") && m_jsonApp["icon"].is_string()) {
+            result = QString::fromStdString(m_jsonApp["icon"].get<std::string>());
         }
         return result;
     }
