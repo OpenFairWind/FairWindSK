@@ -4,7 +4,7 @@ FairWindSK is a Qt6-based shell that launches and supervises Signal K web applic
 
 ## Prerequisites
 
-- A running Signal K server reachable on the network. The client expects the standard API to be exposed at `<server>/signalk` and the web application catalog at `<server>/skServer/webapps`.
+- A running Signal K server reachable on the network. The client expects the standard API to be exposed at `<server>/signalk` and the web application catalog at `<server>/signalk/v1/apps/list`.
 - Qt 6 with the modules listed in [building.md](./building.md). A C++17 compiler and CMake are required for builds from source.
 - Optional on desktop targets: an environment that supports global hotkeys if you rely on the `SHIFT+TAB` shortcut to return to the FairWindSK desktop after launching a web app.
 
@@ -38,6 +38,6 @@ Platform-specific dependencies, Qt kit selection, Windows deployment, Raspberry 
 
 ## Troubleshooting
 
-- If no applications appear, verify the `connection.server` URL and that the Signal K server exposes `/skServer/webapps`.
+- If no applications appear, verify the `connection.server` URL and that the Signal K server exposes `/signalk/v1/apps/list` or the legacy `/skServer/webapps` endpoint.
 - Enable debug logging by setting `debug=true` in `fairwindsk.ini` before launching. Logs include connection attempts and application discovery details.
 - Check that your platform has Qt WebEngine acceleration enabled; `QWebEngineSettings::Accelerated2dCanvasEnabled` is turned on by default at runtime.

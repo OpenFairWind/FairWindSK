@@ -146,8 +146,11 @@ namespace fairwindsk {
             return pixmap;
         }
 
-        // Combine the server address, app name, and relative icon path into a full URL.
-        const QString url = signalKServerUrl + "/" + getName() + "/" + appIcon;
+        // Resolve relative icons against the app base URL when available.
+        const QUrl iconUrl = QUrl(getUrl()).resolved(QUrl(appIcon));
+        if (!iconUrl.isValid()) {
+            return pixmap;
+        }
         // Prepare a short-lived network access manager for the download.
         QNetworkAccessManager networkAccessManager;
         // Create an event loop so the synchronous download does not block the main loop indefinitely.
@@ -155,7 +158,7 @@ namespace fairwindsk {
         // Quit the loop as soon as the request is finished to keep the UI responsive.
         QObject::connect(&networkAccessManager, &QNetworkAccessManager::finished, &loop, &QEventLoop::quit);
         // Submit the GET request to retrieve the remote image.
-        QNetworkReply *reply = networkAccessManager.get(QNetworkRequest(QUrl(url)));
+        QNetworkReply *reply = networkAccessManager.get(QNetworkRequest(iconUrl));
         // Wait for the network request to complete before attempting to read the data.
         loop.exec();
 
@@ -276,7 +279,15 @@ namespace fairwindsk {
     QString AppItem::getUrl() {
 
 
-        QString url = getName();
+        QString url;
+
+        if (m_jsonApp.contains("location") && m_jsonApp["location"].is_string()) {
+            url = QString::fromStdString(m_jsonApp["location"].get<std::string>());
+        }
+
+        if (url.isEmpty()) {
+            url = getName();
+        }
 
         if (url.startsWith("http:///")) {
 
@@ -293,7 +304,8 @@ namespace fairwindsk {
 
 
         } else {
-            url = FairWindSK::getInstance()->getConfiguration()->getSignalKServerUrl() + "/" + url + "/";
+            const auto serverUrl = FairWindSK::getInstance()->getConfiguration()->getSignalKServerUrl();
+            url = QUrl(serverUrl + "/").resolved(QUrl(url)).toString();
         }
         return url;
     }
@@ -424,16 +436,7 @@ namespace fairwindsk {
     }
 
     nlohmann::json AppItem::asJson() {
-        nlohmann::json result;
-        result["name"] = m_jsonApp["name"];
-        result["description"] = m_jsonApp["description"];
-
-        result["signalk"]["displayName"] = m_jsonApp["signalk"]["displayName"];
-        result["signalk"]["appIcon"] = m_jsonApp["signalk"]["appIcon"];
-
-        result["fairwind"] = m_jsonApp["fairwind"];
-
-        return result;
+        return m_jsonApp;
     }
 
     /*

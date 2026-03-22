@@ -17,12 +17,66 @@
 #include <utility>
 #include <QNetworkCookie>
 #include <QWebEngineCookieStore>
+#include <QUrl>
 
 
 
 using namespace Qt::StringLiterals;
 
 namespace fairwindsk {
+    namespace {
+        nlohmann::json fetchJsonPayload(const QUrl &url, const bool debug) {
+            if (!url.isValid()) {
+                return {};
+            }
+
+            QNetworkAccessManager networkAccessManager;
+            QEventLoop loop;
+            QObject::connect(&networkAccessManager, &QNetworkAccessManager::finished, &loop, &QEventLoop::quit);
+
+            QNetworkReply *reply = networkAccessManager.get(QNetworkRequest(url));
+            loop.exec();
+
+            if (!reply) {
+                return {};
+            }
+
+            const auto statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+            const QByteArray payload = reply->readAll();
+            delete reply;
+
+            if (statusCode < 200 || statusCode >= 300 || payload.isEmpty()) {
+                return {};
+            }
+
+            try {
+                const auto json = nlohmann::json::parse(payload.constData(), payload.constData() + payload.size());
+                if (debug) {
+                    qDebug() << "Apps payload from" << url << ":" << QString::fromStdString(json.dump(2));
+                }
+                return json;
+            } catch (const std::exception &exception) {
+                if (debug) {
+                    qWarning() << "Unable to parse apps payload from" << url << ":" << exception.what();
+                }
+                return {};
+            }
+        }
+
+        void ensureFairwindMetadata(nlohmann::json &appJsonObject, const int order) {
+            if (!appJsonObject.contains("fairwind") || !appJsonObject["fairwind"].is_object()) {
+                appJsonObject["fairwind"] = nlohmann::json::object();
+            }
+
+            auto &fairwindJsonObject = appJsonObject["fairwind"];
+            if (!fairwindJsonObject.contains("active") || !fairwindJsonObject["active"].is_boolean()) {
+                fairwindJsonObject["active"] = true;
+            }
+            if (!fairwindJsonObject.contains("order") || !fairwindJsonObject["order"].is_number_integer()) {
+                fairwindJsonObject["order"] = order;
+            }
+        }
+    }
 /*
  * FairWind
  * Private constructor - called by getInstance in order to ensure
@@ -281,129 +335,53 @@ namespace fairwindsk {
 
         // Check if it not empty
         if (!signalKServerUrl.isEmpty()) {
-
-            // Set the URL for the application list
-            const auto url = QUrl(signalKServerUrl + "/skServer/webapps");
-
-            // Create the network access manager
-            QNetworkAccessManager networkAccessManager;
-
-            // Create the event loop component
-            QEventLoop loop;
-
-            // Connect the network manager to the event loop
-            connect(&networkAccessManager, &QNetworkAccessManager::finished, &loop,&QEventLoop::quit);
-
-            // Create the get request
-            QNetworkReply *reply = networkAccessManager.get(QNetworkRequest(url));
-
-            // Wait until the request is satisfied
-            loop.exec();
-
-            // Check if the response has been successful
-            if (reply && reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 200) {
-
-                // Create a json document with the request response
-                nlohmann::json doc = nlohmann::json::parse(reply->readAll());
-
-                // Check if the debug is active
-                if (isDebug()) {
-
-                    // Write a message
-                    qDebug() << QString::fromStdString(doc.dump(2));
-                }
-
-                // Check if the json document is an array
-                if (doc.is_array()) {
-
-                    // Get the application array
-                    auto appsJsonArray = doc;
-
-                    // For each item of the array...
-                    for (const auto& appJsonItem: appsJsonArray) {
-
-                        // Check if the item is an object
-                        if (appJsonItem.is_object()) {
-
-                            // Get the json object
-                            auto appJsonObject = appJsonItem;
-
-                            // Check if keywords key is present and if the value is an array
-                            if (appJsonObject.contains("keywords") && appJsonObject["keywords"].is_array()) {
-
-                                // Get the keyword array
-                                //auto keywordsJsonArray = appJsonObject["keywords"];
-                                std::vector<std::string> keywords = appJsonObject["keywords"]; //keywordsJsonArray;
-
-                                // Load the string vector into a QStringList
-                                QStringList stringListKeywords;
-                                std::transform(
-                                        keywords.begin(), keywords.end(),
-                                        std::back_inserter(stringListKeywords), [](const std::string &v){
-                                            return QString::fromStdString(v);
-                                        }
-                                        );
-
-                                // Check if it is a web application
-                                if (stringListKeywords.contains("signalk-webapp")) {
-
-                                    // Check if the fairwind element if not present or is not an object
-                                    if (
-                                            !appJsonObject.contains("fairwind") ||
-                                            (
-                                                    appJsonObject.contains("fairwind") &&
-                                                    appJsonObject["fairwind"].is_null())) {
-
-                                        // Define the fairwind json object
-                                        nlohmann::json fairwindJsonObject;
-
-                                        // Set the object active
-                                        fairwindJsonObject["active"] = true;
-
-                                        // Use the ordinal as order number
-                                        fairwindJsonObject["order"] = count;
-
-                                        // Assign the fairwind json object to the lement
-                                        appJsonObject["fairwind"] = fairwindJsonObject;
-
-                                    }
-
-                                    // Create an app item object
-                                    auto appItem = new AppItem(appJsonObject);
-
-                                    // Find the app in the configuration object
-                                    int idx = m_configuration.findApp(appItem->getName());
-
-                                    // Check the app was been found
-                                    if (idx == -1) {
-
-                                        /// Add the app to the configuration
-                                        m_configuration.getRoot()["apps"].push_back(appItem->asJson());
-                                    }
-
-                                    // Add the item to the lookup table
-                                    m_mapHash2AppItem[appItem->getName()] = appItem;
-                                    m_mapAppId2Hash[appItem->getName()] = appItem->getName();
-
-                                    // Increase the app counter
-                                    count++;
-
-                                    // Check if the debug is active
-                                    if (isDebug())
-                                    {
-                                        // Write a message
-                                        qDebug() << "Added (app from the Signal k server): " << QString::fromStdString(appItem->asJson().dump(2));
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                // Set the result as successful
-                result = true;
+            auto appsPayload = fetchJsonPayload(QUrl(signalKServerUrl + "/signalk/v1/apps/list"), isDebug());
+            if (!appsPayload.is_array()) {
+                appsPayload = fetchJsonPayload(QUrl(signalKServerUrl + "/skServer/webapps"), isDebug());
             }
 
-            delete reply;
+            if (appsPayload.is_array()) {
+                for (auto appJsonObject : appsPayload) {
+                    if (!appJsonObject.is_object()) {
+                        continue;
+                    }
+
+                    if (appJsonObject.contains("keywords") && appJsonObject["keywords"].is_array()) {
+                        std::vector<std::string> keywords = appJsonObject["keywords"];
+                        QStringList stringListKeywords;
+                        std::transform(
+                            keywords.begin(), keywords.end(),
+                            std::back_inserter(stringListKeywords), [](const std::string &value) {
+                                return QString::fromStdString(value);
+                            }
+                        );
+                        if (!stringListKeywords.contains("signalk-webapp")) {
+                            continue;
+                        }
+                    }
+
+                    ensureFairwindMetadata(appJsonObject, count);
+
+                    auto *appItem = new AppItem(appJsonObject);
+                    const QString appName = appItem->getName();
+                    const int idx = m_configuration.findApp(appName);
+
+                    if (idx == -1) {
+                        m_configuration.getRoot()["apps"].push_back(appItem->asJson());
+                    }
+
+                    m_mapHash2AppItem[appName] = appItem;
+                    m_mapAppId2Hash[appName] = appName;
+                    count++;
+
+                    if (isDebug()) {
+                        qDebug() << "Added (app from the Signal K Apps API): "
+                                 << QString::fromStdString(appItem->asJson().dump(2));
+                    }
+                }
+
+                result = true;
+            }
         } else {
 
             // Check if the debug is active
