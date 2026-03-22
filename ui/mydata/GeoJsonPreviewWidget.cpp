@@ -8,10 +8,43 @@
 #include <QJsonDocument>
 #include <QPlainTextEdit>
 #include <QTabWidget>
+#include <QUrl>
 #include <QVBoxLayout>
 #include <QWebEngineView>
 
+#include "AppItem.hpp"
+#include "FairWindSK.hpp"
+
 namespace fairwindsk::ui::mydata {
+    QString GeoJsonPreviewWidget::detectFreeboardUrl() {
+        const auto fairWindSk = fairwindsk::FairWindSK::getInstance();
+        if (!fairWindSk) {
+            return {};
+        }
+
+        const auto hashes = fairWindSk->getAppsHashes();
+        for (const auto &hash : hashes) {
+            auto *appItem = fairWindSk->getAppItemByHash(hash);
+            if (!appItem || !appItem->getActive()) {
+                continue;
+            }
+
+            const QStringList candidates = {
+                appItem->getName(),
+                appItem->getDisplayName(),
+                appItem->getUrl()
+            };
+
+            for (const auto &candidate : candidates) {
+                if (candidate.contains("freeboard", Qt::CaseInsensitive)) {
+                    return appItem->getUrl();
+                }
+            }
+        }
+
+        return {};
+    }
+
     GeoJsonPreviewWidget::GeoJsonPreviewWidget(QWidget *parent)
         : QWidget(parent),
           m_tabWidget(new QTabWidget(this)),
@@ -31,13 +64,19 @@ namespace fairwindsk::ui::mydata {
 
     void GeoJsonPreviewWidget::setGeoJson(const QJsonDocument &document, const QString &) {
         const QString json = QString::fromUtf8(document.toJson(QJsonDocument::Compact));
+        const QString freeboardUrl = detectFreeboardUrl();
         m_textView->setPlainText(QString::fromUtf8(document.toJson(QJsonDocument::Indented)));
         const QString script = QStringLiteral(R"(
 const data = %1;
+const freeboardUrl = %2[0];
+const map = document.getElementById('map');
+const tilePane = document.getElementById('tile-pane');
+const overlayPane = document.getElementById('overlay-pane');
 const svg = document.getElementById('preview');
 const info = document.getElementById('info');
-const width = 960;
-const height = 540;
+const fallbackSource = document.getElementById('fallback-source');
+const TILE_SIZE = 256;
+const PADDING = 48;
 
 function flattenCoordinates(geometry, into) {
   if (!geometry || geometry === null) return;
@@ -76,21 +115,91 @@ features.forEach(feature => flattenCoordinates(feature.geometry, allPoints));
 
 if (!allPoints.length) {
   info.textContent = 'No previewable geometry is available for this resource.';
+} else if (freeboardUrl) {
+  map.innerHTML = '';
+  const frame = document.createElement('iframe');
+  frame.src = freeboardUrl;
+  frame.setAttribute('title', 'Freeboard-SK Map Preview');
+  frame.setAttribute('loading', 'lazy');
+  frame.style.width = '100%';
+  frame.style.height = '100%';
+  frame.style.border = '0';
+  frame.style.borderRadius = '14px';
+  frame.style.background = '#07111b';
+  map.appendChild(frame);
+  fallbackSource.textContent = 'Embedded Freeboard-SK chart view';
+  info.textContent = `${features.length} feature(s) available on the connected Signal K server.`;
 } else {
+  function projectMercator(point, zoom) {
+    const sinLat = Math.sin(point[1] * Math.PI / 180);
+    const worldSize = TILE_SIZE * Math.pow(2, zoom);
+    const x = (point[0] + 180) / 360 * worldSize;
+    const y = (0.5 - Math.log((1 + sinLat) / (1 - sinLat)) / (4 * Math.PI)) * worldSize;
+    return [x, y];
+  }
+
   let minLon = allPoints[0][0], maxLon = allPoints[0][0], minLat = allPoints[0][1], maxLat = allPoints[0][1];
   allPoints.forEach(([lon, lat]) => {
     minLon = Math.min(minLon, lon); maxLon = Math.max(maxLon, lon);
     minLat = Math.min(minLat, lat); maxLat = Math.max(maxLat, lat);
   });
 
-  const lonSpan = Math.max(0.0001, maxLon - minLon);
-  const latSpan = Math.max(0.0001, maxLat - minLat);
-  const pad = 28;
+  const viewportWidth = Math.max(320, map.clientWidth || 960);
+  const viewportHeight = Math.max(240, map.clientHeight || 540);
+  let zoom = 16;
+  for (; zoom >= 1; --zoom) {
+    const topLeft = projectMercator([minLon, maxLat], zoom);
+    const bottomRight = projectMercator([maxLon, minLat], zoom);
+    const spanX = Math.max(1, Math.abs(bottomRight[0] - topLeft[0]));
+    const spanY = Math.max(1, Math.abs(bottomRight[1] - topLeft[1]));
+    if (spanX <= viewportWidth - PADDING * 2 && spanY <= viewportHeight - PADDING * 2) {
+      break;
+    }
+  }
+
+  const center = projectMercator([(minLon + maxLon) / 2, (minLat + maxLat) / 2], zoom);
+  const viewportOrigin = [center[0] - viewportWidth / 2, center[1] - viewportHeight / 2];
+  const viewportEnd = [center[0] + viewportWidth / 2, center[1] + viewportHeight / 2];
+  const startTileX = Math.floor(viewportOrigin[0] / TILE_SIZE);
+  const endTileX = Math.floor(viewportEnd[0] / TILE_SIZE);
+  const startTileY = Math.floor(viewportOrigin[1] / TILE_SIZE);
+  const endTileY = Math.floor(viewportEnd[1] / TILE_SIZE);
+  const maxTile = Math.pow(2, zoom) - 1;
+
+  tilePane.innerHTML = '';
+  overlayPane.innerHTML = '';
+  svg.innerHTML = '';
+  svg.setAttribute('viewBox', `0 0 ${viewportWidth} ${viewportHeight}`);
+
+  function normalizedTileX(tileX) {
+    const tileCount = Math.pow(2, zoom);
+    return ((tileX %% tileCount) + tileCount) %% tileCount;
+  }
+
+  function appendTile(src, tileX, tileY, opacity) {
+    if (tileY < 0 || tileY > maxTile) {
+      return;
+    }
+    const tile = document.createElement('img');
+    tile.src = src;
+    tile.loading = 'lazy';
+    tile.style.left = `${tileX * TILE_SIZE - viewportOrigin[0]}px`;
+    tile.style.top = `${tileY * TILE_SIZE - viewportOrigin[1]}px`;
+    tile.style.opacity = opacity;
+    tilePane.appendChild(tile);
+  }
+
+  for (let tileX = startTileX; tileX <= endTileX; ++tileX) {
+    for (let tileY = startTileY; tileY <= endTileY; ++tileY) {
+      const normalizedX = normalizedTileX(tileX);
+      appendTile(`https://tile.openstreetmap.org/${zoom}/${normalizedX}/${tileY}.png`, tileX, tileY, '1');
+      appendTile(`https://tiles.openseamap.org/seamark/${zoom}/${normalizedX}/${tileY}.png`, tileX, tileY, '0.7');
+    }
+  }
 
   function project(point) {
-    const x = pad + ((point[0] - minLon) / lonSpan) * (width - 2 * pad);
-    const y = height - pad - ((point[1] - minLat) / latSpan) * (height - 2 * pad);
-    return [x, y];
+    const worldPoint = projectMercator(point, zoom);
+    return [worldPoint[0] - viewportOrigin[0], worldPoint[1] - viewportOrigin[1]];
   }
 
   function pathForCoordinates(coords, closePath) {
@@ -174,10 +283,12 @@ if (!allPoints.length) {
     }
   });
 
-  info.textContent = `${features.length} feature(s) rendered in the embedded preview.`;
+  fallbackSource.textContent = 'OpenStreetMap + OpenSeaMap fallback';
+  info.textContent = `${features.length} feature(s) rendered over the map preview.`;
 }
 )")
-                .arg(json);
+                .arg(json,
+                     QString::fromUtf8(QJsonDocument(QJsonArray{freeboardUrl}).toJson(QJsonDocument::Compact)).trimmed());
 
         m_view->setHtml(htmlForContent(script));
     }
@@ -215,17 +326,46 @@ info.textContent = %1[0];
       flex: 1;
       padding: 14px;
     }
+    .map-stage {
+      position: relative;
+      width: 100%%;
+      height: 100%%;
+      border-radius: 14px;
+      border: 1px solid rgba(229, 237, 247, 0.12);
+      overflow: hidden;
+      background: #0b1825;
+      box-shadow: inset 0 0 40px rgba(7, 17, 27, 0.35);
+    }
+    .tiles, .overlays, .overlays svg {
+      position: absolute;
+      inset: 0;
+    }
+    .tiles img {
+      position: absolute;
+      width: 256px;
+      height: 256px;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+    .overlay-source {
+      position: absolute;
+      left: 14px;
+      top: 14px;
+      z-index: 2;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(7, 17, 27, 0.72);
+      color: #e5edf7;
+      font-size: 12px;
+      backdrop-filter: blur(8px);
+    }
+    iframe {
+      display: block;
+    }
     svg {
       width: 100%%;
       height: 100%%;
-      background:
-        linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px),
-        linear-gradient(180deg, #0b1825, #102236);
-      background-size: 40px 40px, 40px 40px, 100%% 100%%;
-      border-radius: 14px;
-      border: 1px solid rgba(229, 237, 247, 0.12);
-      box-shadow: inset 0 0 40px rgba(7, 17, 27, 0.35);
+      pointer-events: none;
     }
     .footer {
       padding: 12px 18px 18px;
@@ -237,7 +377,13 @@ info.textContent = %1[0];
 <body>
   <div class="shell">
     <div class="map">
-      <svg id="preview" viewBox="0 0 960 540" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="map-stage" id="map">
+        <div class="tiles" id="tile-pane"></div>
+        <div class="overlay-source" id="fallback-source"></div>
+        <div class="overlays" id="overlay-pane">
+          <svg id="preview" viewBox="0 0 960 540" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+      </div>
     </div>
     <div class="footer" id="info"></div>
   </div>

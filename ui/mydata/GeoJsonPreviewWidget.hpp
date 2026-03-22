@@ -24,6 +24,7 @@ namespace fairwindsk::ui::mydata {
         void setMessage(const QString &message, const QString &title = QString());
 
     private:
+        static QString detectFreeboardUrl();
         static QString htmlForContent(const QString &bodyScript);
 
         QTabWidget *m_tabWidget = nullptr;
