@@ -36,6 +36,7 @@ namespace fairwindsk::ui::mydata {
         void onRefreshClicked();
         void onTableDoubleClicked(int row, int column);
         void onNavigateRowClicked();
+        void onDetailsRowClicked();
         void onEditRowClicked();
         void onRemoveRowClicked();
         void onBackClicked();

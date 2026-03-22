@@ -38,6 +38,10 @@ namespace {
     const QString kTableStyle = QStringLiteral(
         "QTableWidget { background: #f7f7f4; color: #1f2937; gridline-color: #d1d5db; selection-background-color: #c7d2fe; selection-color: #111827; }"
         "QTableCornerButton::section, QHeaderView::section { background: #e5e7eb; color: #111827; border: 1px solid #d1d5db; padding: 4px; }");
+    const QString kActionButtonStyle = QStringLiteral(
+        "QToolButton { background: #f3f4f6; color: #111827; border: 1px solid #d1d5db; border-radius: 4px; padding: 2px; }"
+        "QToolButton:hover { background: #e5e7eb; }"
+        "QToolButton:pressed { background: #d1d5db; }");
 
     QJsonObject featureObject(const QJsonObject &resource) {
         return resource["feature"].toObject();
@@ -306,26 +310,34 @@ namespace fairwindsk::ui::mydata {
             actionsLayout->setSpacing(2);
 
             auto *navigateButton = new QToolButton(actionsWidget);
-            navigateButton->setAutoRaise(true);
             navigateButton->setIcon(QIcon(":/resources/svg/OpenBridge/navigation-route.svg"));
             navigateButton->setToolTip(tr("Navigate to waypoint"));
             navigateButton->setProperty("waypointId", id);
+            navigateButton->setStyleSheet(kActionButtonStyle);
             connect(navigateButton, &QToolButton::clicked, this, &Waypoints::onNavigateRowClicked);
             actionsLayout->addWidget(navigateButton);
 
+            auto *detailsButton = new QToolButton(actionsWidget);
+            detailsButton->setIcon(QIcon(":/resources/svg/OpenBridge/info-google.svg"));
+            detailsButton->setToolTip(tr("Waypoint details"));
+            detailsButton->setProperty("waypointId", id);
+            detailsButton->setStyleSheet(kActionButtonStyle);
+            connect(detailsButton, &QToolButton::clicked, this, &Waypoints::onDetailsRowClicked);
+            actionsLayout->addWidget(detailsButton);
+
             auto *editButton = new QToolButton(actionsWidget);
-            editButton->setAutoRaise(true);
             editButton->setIcon(QIcon(":/resources/svg/OpenBridge/edit-google.svg"));
             editButton->setToolTip(tr("Edit waypoint"));
             editButton->setProperty("waypointId", id);
+            editButton->setStyleSheet(kActionButtonStyle);
             connect(editButton, &QToolButton::clicked, this, &Waypoints::onEditRowClicked);
             actionsLayout->addWidget(editButton);
 
             auto *removeButton = new QToolButton(actionsWidget);
-            removeButton->setAutoRaise(true);
             removeButton->setIcon(QIcon(":/resources/svg/OpenBridge/delete-google.svg"));
             removeButton->setToolTip(tr("Remove waypoint"));
             removeButton->setProperty("waypointId", id);
+            removeButton->setStyleSheet(kActionButtonStyle);
             connect(removeButton, &QToolButton::clicked, this, &Waypoints::onRemoveRowClicked);
             actionsLayout->addWidget(removeButton);
 
@@ -333,7 +345,7 @@ namespace fairwindsk::ui::mydata {
             m_tableWidget->setCellWidget(visibleRow, actionsColumn, actionsWidget);
         }
 
-        m_tableWidget->setColumnWidth(actionsColumn, 152);
+        m_tableWidget->setColumnWidth(actionsColumn, 196);
     }
 
     void Waypoints::showListPage() {
@@ -650,6 +662,21 @@ namespace fairwindsk::ui::mydata {
         for (int row = 0; row < m_model->rowCount(); ++row) {
             if (m_model->resourceIdAtRow(row) == id) {
                 navigateToWaypoint(id, m_model->resourceAtRow(row));
+                return;
+            }
+        }
+    }
+
+    void Waypoints::onDetailsRowClicked() {
+        const auto *button = qobject_cast<QToolButton *>(sender());
+        if (!button) {
+            return;
+        }
+
+        const QString id = button->property("waypointId").toString();
+        for (int row = 0; row < m_model->rowCount(); ++row) {
+            if (m_model->resourceIdAtRow(row) == id) {
+                showDetailsPage(id, m_model->resourceAtRow(row), false);
                 return;
             }
         }
