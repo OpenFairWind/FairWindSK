@@ -10,6 +10,7 @@
 #include <QUrl>
 #include <QtCore/qjsonarray.h>
 #include <QPixmap>
+#include <QHash>
 #include <iostream>
 
 #include "AppItem.hpp"
@@ -20,6 +21,83 @@
 
 namespace fairwindsk {
     namespace {
+        nlohmann::json fetchJsonArray(const QUrl &url) {
+            if (!url.isValid()) {
+                return {};
+            }
+
+            QNetworkAccessManager networkAccessManager;
+            QEventLoop loop;
+            QObject::connect(&networkAccessManager, &QNetworkAccessManager::finished, &loop, &QEventLoop::quit);
+
+            QNetworkReply *reply = networkAccessManager.get(QNetworkRequest(url));
+            loop.exec();
+
+            if (reply == nullptr) {
+                return {};
+            }
+
+            const auto statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+            const QByteArray payload = reply->readAll();
+            delete reply;
+
+            if (statusCode < 200 || statusCode >= 300 || payload.isEmpty()) {
+                return {};
+            }
+
+            try {
+                return nlohmann::json::parse(payload.constData(), payload.constData() + payload.size());
+            } catch (const std::exception &) {
+                return {};
+            }
+        }
+
+        QString iconStringFromJson(const nlohmann::json &jsonApp) {
+            if (jsonApp.contains("signalk") && jsonApp["signalk"].is_object()) {
+                const auto &signalkJsonObject = jsonApp["signalk"];
+                if (signalkJsonObject.contains("appIcon") && signalkJsonObject["appIcon"].is_string()) {
+                    return QString::fromStdString(signalkJsonObject["appIcon"].get<std::string>());
+                }
+            }
+            if (jsonApp.contains("appIcon") && jsonApp["appIcon"].is_string()) {
+                return QString::fromStdString(jsonApp["appIcon"].get<std::string>());
+            }
+            if (jsonApp.contains("icon") && jsonApp["icon"].is_string()) {
+                return QString::fromStdString(jsonApp["icon"].get<std::string>());
+            }
+            return {};
+        }
+
+        QString iconFromLegacyCatalog(const QString &serverUrl, const QString &appName) {
+            static QHash<QString, QHash<QString, QString>> cachedIconsByServer;
+            static QHash<QString, bool> loadedServers;
+
+            if (serverUrl.isEmpty() || appName.isEmpty()) {
+                return {};
+            }
+
+            if (!loadedServers.value(serverUrl, false)) {
+                loadedServers.insert(serverUrl, true);
+                const auto legacyCatalog = fetchJsonArray(QUrl(serverUrl + "/skServer/webapps"));
+                if (legacyCatalog.is_array()) {
+                    QHash<QString, QString> icons;
+                    for (const auto &appJson : legacyCatalog) {
+                        if (!appJson.is_object() || !appJson.contains("name") || !appJson["name"].is_string()) {
+                            continue;
+                        }
+                        const QString legacyName = QString::fromStdString(appJson["name"].get<std::string>());
+                        const QString legacyIcon = iconStringFromJson(appJson);
+                        if (!legacyName.isEmpty() && !legacyIcon.isEmpty()) {
+                            icons.insert(legacyName, legacyIcon);
+                        }
+                    }
+                    cachedIconsByServer.insert(serverUrl, icons);
+                }
+            }
+
+            return cachedIconsByServer.value(serverUrl).value(appName);
+        }
+
         QPixmap loadRemotePixmap(const QList<QUrl> &candidateUrls, const QPixmap &fallback) {
             for (const auto &iconUrl : candidateUrls) {
                 if (!iconUrl.isValid() || iconUrl.scheme().isEmpty()) {
@@ -158,9 +236,20 @@ namespace fairwindsk {
         // Use a default pixmap so the UI never shows an empty placeholder.
         QPixmap pixmap = QPixmap::fromImage(QImage(":/resources/images/icons/webapp-256x256.png"));
         // Read the optional app icon path from the application metadata.
-        const auto appIcon = getAppIcon();
+        QString appIcon = getAppIcon();
 
-        // If there is no icon path, return the default without doing any extra work.
+        // Obtain the base server URL to construct the remote icon endpoint.
+        const auto signalKServerUrl = FairWindSK::getInstance()->getConfiguration()->getSignalKServerUrl();
+        // Avoid issuing a network request if the server URL is not available.
+        if (signalKServerUrl.isEmpty()) {
+            return pixmap;
+        }
+
+        if (appIcon.isEmpty()) {
+            appIcon = iconFromLegacyCatalog(signalKServerUrl, getName());
+        }
+
+        // If there is still no icon path, return the default without doing any extra work.
         if (appIcon.isEmpty()) {
             return pixmap;
         }
@@ -171,13 +260,6 @@ namespace fairwindsk {
             const auto iconFilename = QString(appIcon).replace("file://", "");
             // Attempt to load the provided file, keeping the default if loading fails.
             pixmap.load(iconFilename);
-            return pixmap;
-        }
-
-        // Obtain the base server URL to construct the remote icon endpoint.
-        const auto signalKServerUrl = FairWindSK::getInstance()->getConfiguration()->getSignalKServerUrl();
-        // Avoid issuing a network request if the server URL is not available.
-        if (signalKServerUrl.isEmpty()) {
             return pixmap;
         }
 
@@ -359,20 +441,7 @@ namespace fairwindsk {
     }
 
     QString AppItem::getAppIcon() {
-        QString result = "";
-        if (m_jsonApp.contains("signalk") &&  m_jsonApp["signalk"].is_object()) {
-            auto signalkJsonObject = m_jsonApp["signalk"];
-            if (signalkJsonObject.contains("appIcon") && signalkJsonObject["appIcon"].is_string()) {
-                result = QString::fromStdString(signalkJsonObject["appIcon"].get<std::string>());
-            }
-        }
-        if (result.isEmpty() && m_jsonApp.contains("appIcon") && m_jsonApp["appIcon"].is_string()) {
-            result = QString::fromStdString(m_jsonApp["appIcon"].get<std::string>());
-        }
-        if (result.isEmpty() && m_jsonApp.contains("icon") && m_jsonApp["icon"].is_string()) {
-            result = QString::fromStdString(m_jsonApp["icon"].get<std::string>());
-        }
-        return result;
+        return iconStringFromJson(m_jsonApp);
     }
 
     void AppItem::setName(const QString& name) {
