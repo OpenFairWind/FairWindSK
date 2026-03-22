@@ -12,9 +12,8 @@
 
 class QLabel;
 class QLineEdit;
-class QSortFilterProxyModel;
 class QStackedWidget;
-class QTableView;
+class QTableWidget;
 class QToolButton;
 class QDoubleSpinBox;
 
@@ -22,7 +21,6 @@ namespace fairwindsk::ui::mydata {
 
     class GeoJsonPreviewWidget;
     class JsonObjectEditorWidget;
-    class WaypointTableProxyModel;
 
     class Waypoints final : public QWidget {
         Q_OBJECT
@@ -36,7 +34,7 @@ namespace fairwindsk::ui::mydata {
         void onImportClicked();
         void onExportClicked();
         void onRefreshClicked();
-        void onTableDoubleClicked(const QModelIndex &index);
+        void onTableDoubleClicked(int row, int column);
         void onNavigateRowClicked();
         void onEditRowClicked();
         void onRemoveRowClicked();
@@ -48,10 +46,9 @@ namespace fairwindsk::ui::mydata {
         void onCancelClicked();
 
     private:
-        QModelIndex currentSourceIndex() const;
-        QModelIndex sourceIndexForProxyRow(int proxyRow) const;
-        void clearActionWidgets();
-        void updateActionButtons();
+        QString currentWaypointIdFromSelection() const;
+        void rebuildTable();
+        void styleTable();
         void showListPage();
         void showDetailsPage(const QString &id, const QJsonObject &resource, bool editMode);
         void applyWaypointToEditor(const QString &id, const QJsonObject &resource);
@@ -69,12 +66,11 @@ namespace fairwindsk::ui::mydata {
         QString waypointHref(const QString &id) const;
 
         ResourceModel *m_model = nullptr;
-        WaypointTableProxyModel *m_proxyModel = nullptr;
         QStackedWidget *m_stackedWidget = nullptr;
         QWidget *m_listPage = nullptr;
         QWidget *m_detailsPage = nullptr;
         QLineEdit *m_searchEdit = nullptr;
-        QTableView *m_tableView = nullptr;
+        QTableWidget *m_tableWidget = nullptr;
         QToolButton *m_addButton = nullptr;
         QToolButton *m_importButton = nullptr;
         QToolButton *m_exportButton = nullptr;
@@ -98,6 +94,7 @@ namespace fairwindsk::ui::mydata {
         QLabel *m_idValueLabel = nullptr;
         QLabel *m_timestampValueLabel = nullptr;
         QString m_currentWaypointId;
+        QStringList m_visibleWaypointIds;
         bool m_isEditing = false;
         bool m_isCreating = false;
     };

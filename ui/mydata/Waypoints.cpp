@@ -4,6 +4,8 @@
 
 #include "Waypoints.hpp"
 
+#include <QBrush>
+#include <QColor>
 #include <QFile>
 #include <QFileDialog>
 #include <QFormLayout>
@@ -14,11 +16,10 @@
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QPushButton>
-#include <QRegularExpression>
-#include <QSortFilterProxyModel>
 #include <QSplitter>
 #include <QStackedWidget>
-#include <QTableView>
+#include <QTableWidget>
+#include <QTableWidgetItem>
 #include <QToolButton>
 #include <QVBoxLayout>
 #include <QDoubleSpinBox>
@@ -34,6 +35,9 @@ namespace {
         "QLineEdit { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
     const QString kSpinBoxStyle = QStringLiteral(
         "QAbstractSpinBox { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
+    const QString kTableStyle = QStringLiteral(
+        "QTableWidget { background: #f7f7f4; color: #1f2937; gridline-color: #d1d5db; selection-background-color: #c7d2fe; selection-color: #111827; }"
+        "QTableCornerButton::section, QHeaderView::section { background: #e5e7eb; color: #111827; border: 1px solid #d1d5db; padding: 4px; }");
 
     QJsonObject featureObject(const QJsonObject &resource) {
         return resource["feature"].toObject();
@@ -75,50 +79,14 @@ namespace {
 }
 
 namespace fairwindsk::ui::mydata {
-    class WaypointTableProxyModel final : public QSortFilterProxyModel {
-    public:
-        explicit WaypointTableProxyModel(QObject *parent = nullptr)
-            : QSortFilterProxyModel(parent) {}
-
-        int columnCount(const QModelIndex &parent = QModelIndex()) const override {
-            const int baseCount = QSortFilterProxyModel::columnCount(parent);
-            return parent.isValid() ? 0 : baseCount + 1;
-        }
-
-        QVariant data(const QModelIndex &index, const int role = Qt::DisplayRole) const override {
-            const int baseCount = QSortFilterProxyModel::columnCount();
-            if (index.column() >= baseCount) {
-                return {};
-            }
-            return QSortFilterProxyModel::data(index, role);
-        }
-
-        QVariant headerData(const int section, const Qt::Orientation orientation, const int role) const override {
-            const int baseCount = QSortFilterProxyModel::columnCount();
-            if (orientation == Qt::Horizontal && role == Qt::DisplayRole && section >= baseCount) {
-                return QObject::tr("Actions");
-            }
-            return QSortFilterProxyModel::headerData(section, orientation, role);
-        }
-
-        bool lessThan(const QModelIndex &left, const QModelIndex &right) const override {
-            const int baseCount = QSortFilterProxyModel::columnCount();
-            if (left.column() >= baseCount || right.column() >= baseCount) {
-                return left.row() < right.row();
-            }
-            return QSortFilterProxyModel::lessThan(left, right);
-        }
-    };
-
     Waypoints::Waypoints(QWidget *parent)
         : QWidget(parent),
           m_model(new ResourceModel(ResourceKind::Waypoint, this)),
-          m_proxyModel(new WaypointTableProxyModel(this)),
           m_stackedWidget(new QStackedWidget(this)),
           m_listPage(new QWidget(this)),
           m_detailsPage(new QWidget(this)),
           m_searchEdit(new QLineEdit(this)),
-          m_tableView(new QTableView(this)),
+          m_tableWidget(new QTableWidget(this)),
           m_addButton(new QToolButton(this)),
           m_importButton(new QToolButton(this)),
           m_exportButton(new QToolButton(this)),
@@ -171,23 +139,20 @@ namespace fairwindsk::ui::mydata {
         connect(m_addButton, &QToolButton::clicked, this, &Waypoints::onAddClicked);
         toolbarLayout->addWidget(m_addButton);
 
-        m_proxyModel->setSourceModel(m_model);
-        m_proxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
-        m_proxyModel->setFilterKeyColumn(-1);
-        m_proxyModel->setSortCaseSensitivity(Qt::CaseInsensitive);
-
-        m_tableView->setModel(m_proxyModel);
-        m_tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
-        m_tableView->setSelectionMode(QAbstractItemView::SingleSelection);
-        m_tableView->setSortingEnabled(true);
-        m_tableView->sortByColumn(0, Qt::AscendingOrder);
-        auto *waypointHeader = m_tableView->horizontalHeader();
+        m_tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
+        m_tableWidget->setSelectionMode(QAbstractItemView::SingleSelection);
+        m_tableWidget->setSortingEnabled(false);
+        m_tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
+        m_tableWidget->setColumnCount(m_model->columnCount() + 1);
+        styleTable();
+        auto *waypointHeader = m_tableWidget->horizontalHeader();
         waypointHeader->setSectionResizeMode(QHeaderView::ResizeToContents);
         waypointHeader->setSectionResizeMode(1, QHeaderView::Stretch);
         waypointHeader->setSectionResizeMode(m_model->columnCount(), QHeaderView::Fixed);
         waypointHeader->setStretchLastSection(false);
-        connect(m_tableView, &QTableView::doubleClicked, this, &Waypoints::onTableDoubleClicked);
-        listLayout->addWidget(m_tableView);
+        connect(m_tableWidget, &QTableWidget::cellDoubleClicked, this, &Waypoints::onTableDoubleClicked);
+        connect(m_tableWidget, &QTableWidget::cellActivated, this, &Waypoints::onTableDoubleClicked);
+        listLayout->addWidget(m_tableWidget);
 
         auto *detailsLayout = new QVBoxLayout(m_detailsPage);
         auto *detailsToolbarLayout = new QHBoxLayout();
@@ -272,58 +237,68 @@ namespace fairwindsk::ui::mydata {
         m_stackedWidget->addWidget(m_detailsPage);
         showListPage();
 
-        connect(m_model, &QAbstractItemModel::modelReset, this, &Waypoints::updateActionButtons);
-        connect(m_proxyModel, &QAbstractItemModel::layoutChanged, this, &Waypoints::updateActionButtons);
-        connect(m_proxyModel, &QAbstractItemModel::modelReset, this, &Waypoints::updateActionButtons);
-        connect(m_tableView->horizontalHeader(), &QHeaderView::sortIndicatorChanged, this, &Waypoints::updateActionButtons);
-
-        updateActionButtons();
+        connect(m_model, &QAbstractItemModel::modelReset, this, &Waypoints::rebuildTable);
+        rebuildTable();
     }
 
-    QModelIndex Waypoints::currentSourceIndex() const {
-        return sourceIndexForProxyRow(m_tableView->currentIndex().row());
+    void Waypoints::styleTable() {
+        m_tableWidget->setStyleSheet(kTableStyle);
+        m_tableWidget->verticalHeader()->setVisible(false);
     }
 
-    QModelIndex Waypoints::sourceIndexForProxyRow(const int proxyRow) const {
-        if (proxyRow < 0) {
+    QString Waypoints::currentWaypointIdFromSelection() const {
+        const auto selectedItems = m_tableWidget->selectedItems();
+        if (selectedItems.isEmpty()) {
             return {};
         }
-        const auto proxyIndex = m_proxyModel->index(proxyRow, 0);
-        return proxyIndex.isValid() ? m_proxyModel->mapToSource(proxyIndex) : QModelIndex{};
-    }
 
-    void Waypoints::clearActionWidgets() {
-        const int actionsColumn = m_model->columnCount();
-        const int visibleColumns = m_proxyModel->columnCount();
-        for (int row = 0; row < m_proxyModel->rowCount(); ++row) {
-            for (int column = 0; column < visibleColumns; ++column) {
-                if (column == actionsColumn) {
-                    continue;
-                }
-                if (QWidget *widget = m_tableView->indexWidget(m_proxyModel->index(row, column))) {
-                    m_tableView->setIndexWidget(m_proxyModel->index(row, column), nullptr);
-                    widget->deleteLater();
-                }
-            }
-            if (QWidget *widget = m_tableView->indexWidget(m_proxyModel->index(row, actionsColumn))) {
-                m_tableView->setIndexWidget(m_proxyModel->index(row, actionsColumn), nullptr);
-                widget->deleteLater();
-            }
+        const int row = selectedItems.first()->row();
+        if (row < 0 || row >= m_visibleWaypointIds.size()) {
+            return {};
         }
+        return m_visibleWaypointIds.at(row);
     }
 
-    void Waypoints::updateActionButtons() {
+    void Waypoints::rebuildTable() {
         const int actionsColumn = m_model->columnCount();
-        clearActionWidgets();
-        m_tableView->setColumnWidth(actionsColumn, 152);
+        const QString filter = m_searchEdit->text().trimmed();
+        QStringList headers;
+        for (int column = 0; column < m_model->columnCount(); ++column) {
+            headers.append(m_model->headerData(column, Qt::Horizontal, Qt::DisplayRole).toString());
+        }
+        headers.append(tr("Actions"));
+        m_tableWidget->clearContents();
+        m_tableWidget->setColumnCount(headers.size());
+        m_tableWidget->setHorizontalHeaderLabels(headers);
+        m_tableWidget->setRowCount(0);
+        m_visibleWaypointIds.clear();
 
-        for (int row = 0; row < m_proxyModel->rowCount(); ++row) {
-            const auto sourceIndex = sourceIndexForProxyRow(row);
-            if (!sourceIndex.isValid()) {
+        for (int row = 0; row < m_model->rowCount(); ++row) {
+            const auto resource = m_model->resourceAtRow(row);
+            const QString id = m_model->resourceIdAtRow(row);
+            QString haystack = displayNameForWaypoint(resource) + " " + descriptionForWaypoint(resource);
+            for (int column = 0; column < m_model->columnCount(); ++column) {
+                haystack += " " + m_model->data(m_model->index(row, column), Qt::DisplayRole).toString();
+            }
+            if (!filter.isEmpty() && !haystack.contains(filter, Qt::CaseInsensitive)) {
                 continue;
             }
 
-            const QString id = m_model->resourceIdAtRow(sourceIndex.row());
+            const int visibleRow = m_tableWidget->rowCount();
+            m_tableWidget->insertRow(visibleRow);
+            m_visibleWaypointIds.append(id);
+
+            for (int column = 0; column < m_model->columnCount(); ++column) {
+                auto *item = new QTableWidgetItem(m_model->data(m_model->index(row, column), Qt::DisplayRole).toString());
+                item->setForeground(QBrush(QColor("#1f2937")));
+                item->setBackground(QBrush(QColor("#f7f7f4")));
+                item->setFlags(item->flags() & ~Qt::ItemIsEditable);
+                const auto alignment = m_model->data(m_model->index(row, column), Qt::TextAlignmentRole);
+                if (alignment.isValid()) {
+                    item->setTextAlignment(static_cast<Qt::Alignment>(alignment.toInt()));
+                }
+                m_tableWidget->setItem(visibleRow, column, item);
+            }
 
             auto *actionsWidget = new QWidget();
             auto *actionsLayout = new QHBoxLayout(actionsWidget);
@@ -355,8 +330,10 @@ namespace fairwindsk::ui::mydata {
             actionsLayout->addWidget(removeButton);
 
             actionsLayout->addStretch(1);
-            m_tableView->setIndexWidget(m_proxyModel->index(row, actionsColumn), actionsWidget);
+            m_tableWidget->setCellWidget(visibleRow, actionsColumn, actionsWidget);
         }
+
+        m_tableWidget->setColumnWidth(actionsColumn, 152);
     }
 
     void Waypoints::showListPage() {
@@ -481,14 +458,10 @@ namespace fairwindsk::ui::mydata {
     }
 
     void Waypoints::selectWaypoint(const QString &id) {
-        for (int row = 0; row < m_model->rowCount(); ++row) {
-            if (m_model->resourceIdAtRow(row) == id) {
-                const auto sourceIndex = m_model->index(row, 0);
-                const auto proxyIndex = m_proxyModel->mapFromSource(sourceIndex);
-                if (proxyIndex.isValid()) {
-                    m_tableView->selectRow(proxyIndex.row());
-                    m_tableView->scrollTo(proxyIndex);
-                }
+        for (int row = 0; row < m_visibleWaypointIds.size(); ++row) {
+            if (m_visibleWaypointIds.at(row) == id) {
+                m_tableWidget->selectRow(row);
+                m_tableWidget->scrollToItem(m_tableWidget->item(row, 0));
                 return;
             }
         }
@@ -547,10 +520,8 @@ namespace fairwindsk::ui::mydata {
         return "/resources/waypoints/" + id;
     }
 
-    void Waypoints::onSearchTextChanged(const QString &text) {
-        const QRegularExpression expression(QRegularExpression::escape(text), QRegularExpression::CaseInsensitiveOption);
-        m_proxyModel->setFilterRegularExpression(expression);
-        updateActionButtons();
+    void Waypoints::onSearchTextChanged(const QString &) {
+        rebuildTable();
     }
 
     void Waypoints::onAddClicked() {
@@ -611,9 +582,9 @@ namespace fairwindsk::ui::mydata {
 
     void Waypoints::onExportClicked() {
         QStringList ids;
-        const auto index = currentSourceIndex();
-        if (index.isValid()) {
-            ids.append(m_model->resourceIdAtRow(index.row()));
+        const QString id = currentWaypointIdFromSelection();
+        if (!id.isEmpty()) {
+            ids.append(id);
         }
 
         const QString fileName = QFileDialog::getSaveFileName(
@@ -652,16 +623,21 @@ namespace fairwindsk::ui::mydata {
 
     void Waypoints::onRefreshClicked() {
         m_model->reload(true);
+        rebuildTable();
     }
 
-    void Waypoints::onTableDoubleClicked(const QModelIndex &index) {
-        const auto sourceIndex = sourceIndexForProxyRow(index.row());
-        if (!sourceIndex.isValid()) {
+    void Waypoints::onTableDoubleClicked(const int row, const int) {
+        if (row < 0 || row >= m_visibleWaypointIds.size()) {
             return;
         }
 
-        const auto id = m_model->resourceIdAtRow(sourceIndex.row());
-        showDetailsPage(id, m_model->resourceAtRow(sourceIndex.row()), false);
+        const QString id = m_visibleWaypointIds.at(row);
+        for (int sourceRow = 0; sourceRow < m_model->rowCount(); ++sourceRow) {
+            if (m_model->resourceIdAtRow(sourceRow) == id) {
+                showDetailsPage(id, m_model->resourceAtRow(sourceRow), false);
+                return;
+            }
+        }
     }
 
     void Waypoints::onNavigateRowClicked() {
@@ -759,6 +735,7 @@ namespace fairwindsk::ui::mydata {
 
         showListPage();
         selectWaypoint(id);
+        rebuildTable();
     }
 
     void Waypoints::onCancelClicked() {
