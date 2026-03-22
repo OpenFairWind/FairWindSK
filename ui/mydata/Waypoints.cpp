@@ -310,7 +310,7 @@ namespace fairwindsk::ui::mydata {
             actionsLayout->setSpacing(2);
 
             auto *navigateButton = new QToolButton(actionsWidget);
-            navigateButton->setIcon(QIcon(":/resources/svg/OpenBridge/navigation-route.svg"));
+            navigateButton->setIcon(QIcon(":/resources/svg/mydata/waypoint-navigate-to.svg"));
             navigateButton->setToolTip(tr("Navigate to waypoint"));
             navigateButton->setProperty("waypointId", id);
             navigateButton->setStyleSheet(kActionButtonStyle);
@@ -318,7 +318,7 @@ namespace fairwindsk::ui::mydata {
             actionsLayout->addWidget(navigateButton);
 
             auto *detailsButton = new QToolButton(actionsWidget);
-            detailsButton->setIcon(QIcon(":/resources/svg/OpenBridge/info.svg"));
+            detailsButton->setIcon(QIcon(":/resources/svg/mydata/waypoint-details.svg"));
             detailsButton->setToolTip(tr("Waypoint details"));
             detailsButton->setProperty("waypointId", id);
             detailsButton->setStyleSheet(kActionButtonStyle);
@@ -326,7 +326,7 @@ namespace fairwindsk::ui::mydata {
             actionsLayout->addWidget(detailsButton);
 
             auto *editButton = new QToolButton(actionsWidget);
-            editButton->setIcon(QIcon(":/resources/svg/OpenBridge/edit-google.svg"));
+            editButton->setIcon(QIcon(":/resources/svg/mydata/waypoint-edit.svg"));
             editButton->setToolTip(tr("Edit waypoint"));
             editButton->setProperty("waypointId", id);
             editButton->setStyleSheet(kActionButtonStyle);
@@ -334,7 +334,7 @@ namespace fairwindsk::ui::mydata {
             actionsLayout->addWidget(editButton);
 
             auto *removeButton = new QToolButton(actionsWidget);
-            removeButton->setIcon(QIcon(":/resources/svg/OpenBridge/delete-google.svg"));
+            removeButton->setIcon(QIcon(":/resources/svg/mydata/waypoint-remove.svg"));
             removeButton->setToolTip(tr("Remove waypoint"));
             removeButton->setProperty("waypointId", id);
             removeButton->setStyleSheet(kActionButtonStyle);

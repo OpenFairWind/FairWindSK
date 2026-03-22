@@ -89,6 +89,10 @@
         <file>resources/svg/OpenBridge/sort-google.svg</file>
         <file>resources/svg/OpenBridge/file-export-google.svg</file>
         <file>resources/svg/OpenBridge/navigation-route.svg</file>
+        <file>resources/svg/mydata/waypoint-navigate-to.svg</file>
+        <file>resources/svg/mydata/waypoint-details.svg</file>
+        <file>resources/svg/mydata/waypoint-edit.svg</file>
+        <file>resources/svg/mydata/waypoint-remove.svg</file>
 
         <file>resources/svg/sort-alphabet-ascending-svgrepo-com.svg</file>
         <file>resources/svg/descending-alphabet-sort-svgrepo-com.svg</file>
