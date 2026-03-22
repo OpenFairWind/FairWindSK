@@ -50,6 +50,7 @@ namespace fairwindsk::ui::mydata {
     private:
         QModelIndex currentSourceIndex() const;
         QModelIndex sourceIndexForProxyRow(int proxyRow) const;
+        void clearActionWidgets();
         void updateActionButtons();
         void showListPage();
         void showDetailsPage(const QString &id, const QJsonObject &resource, bool editMode);

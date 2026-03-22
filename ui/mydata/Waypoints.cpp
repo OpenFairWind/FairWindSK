@@ -292,8 +292,29 @@ namespace fairwindsk::ui::mydata {
         return proxyIndex.isValid() ? m_proxyModel->mapToSource(proxyIndex) : QModelIndex{};
     }
 
+    void Waypoints::clearActionWidgets() {
+        const int actionsColumn = m_model->columnCount();
+        const int visibleColumns = m_proxyModel->columnCount();
+        for (int row = 0; row < m_proxyModel->rowCount(); ++row) {
+            for (int column = 0; column < visibleColumns; ++column) {
+                if (column == actionsColumn) {
+                    continue;
+                }
+                if (QWidget *widget = m_tableView->indexWidget(m_proxyModel->index(row, column))) {
+                    m_tableView->setIndexWidget(m_proxyModel->index(row, column), nullptr);
+                    widget->deleteLater();
+                }
+            }
+            if (QWidget *widget = m_tableView->indexWidget(m_proxyModel->index(row, actionsColumn))) {
+                m_tableView->setIndexWidget(m_proxyModel->index(row, actionsColumn), nullptr);
+                widget->deleteLater();
+            }
+        }
+    }
+
     void Waypoints::updateActionButtons() {
         const int actionsColumn = m_model->columnCount();
+        clearActionWidgets();
         m_tableView->setColumnWidth(actionsColumn, 152);
 
         for (int row = 0; row < m_proxyModel->rowCount(); ++row) {
@@ -304,12 +325,12 @@ namespace fairwindsk::ui::mydata {
 
             const QString id = m_model->resourceIdAtRow(sourceIndex.row());
 
-            auto *actionsWidget = new QWidget(m_tableView);
+            auto *actionsWidget = new QWidget();
             auto *actionsLayout = new QHBoxLayout(actionsWidget);
             actionsLayout->setContentsMargins(4, 0, 4, 0);
             actionsLayout->setSpacing(2);
 
-            auto *navigateButton = new QToolButton(m_tableView);
+            auto *navigateButton = new QToolButton(actionsWidget);
             navigateButton->setAutoRaise(true);
             navigateButton->setIcon(QIcon(":/resources/svg/OpenBridge/navigation-route.svg"));
             navigateButton->setToolTip(tr("Navigate to waypoint"));
@@ -317,7 +338,7 @@ namespace fairwindsk::ui::mydata {
             connect(navigateButton, &QToolButton::clicked, this, &Waypoints::onNavigateRowClicked);
             actionsLayout->addWidget(navigateButton);
 
-            auto *editButton = new QToolButton(m_tableView);
+            auto *editButton = new QToolButton(actionsWidget);
             editButton->setAutoRaise(true);
             editButton->setIcon(QIcon(":/resources/svg/OpenBridge/edit-google.svg"));
             editButton->setToolTip(tr("Edit waypoint"));
@@ -325,7 +346,7 @@ namespace fairwindsk::ui::mydata {
             connect(editButton, &QToolButton::clicked, this, &Waypoints::onEditRowClicked);
             actionsLayout->addWidget(editButton);
 
-            auto *removeButton = new QToolButton(m_tableView);
+            auto *removeButton = new QToolButton(actionsWidget);
             removeButton->setAutoRaise(true);
             removeButton->setIcon(QIcon(":/resources/svg/OpenBridge/delete-google.svg"));
             removeButton->setToolTip(tr("Remove waypoint"));
