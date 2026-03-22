@@ -12,7 +12,7 @@ class QLabel;
 class QComboBox;
 class QDoubleSpinBox;
 class QStackedWidget;
-class QTableView;
+class QTableWidget;
 class QToolButton;
 class QTimer;
 
@@ -21,7 +21,6 @@ namespace fairwindsk::ui::mydata {
     class GeoJsonPreviewWidget;
     class JsonObjectEditorWidget;
     class HistoryTrackModel;
-    class HistoryTrackTableProxyModel;
     struct HistoryTrackPoint;
 
     class HistoryTrackTab final : public QWidget {
@@ -36,7 +35,7 @@ namespace fairwindsk::ui::mydata {
         void onImportClicked();
         void onExportClicked();
         void onOpenClicked();
-        void onTableDoubleClicked(const QModelIndex &index);
+        void onTableDoubleClicked(int row, int column);
         void onNavigateRowClicked();
         void onEditRowClicked();
         void onRemoveRowClicked();
@@ -48,9 +47,9 @@ namespace fairwindsk::ui::mydata {
         void onDeleteClicked();
 
     private:
-        QModelIndex proxyIndexForRow(int row, int column = 0) const;
-        void clearActionWidgets();
-        void updateActionButtons();
+        int selectedSourceRow() const;
+        void rebuildTable();
+        void styleTable();
         void showListPage();
         void showDetailsPage(int row, bool editMode);
         void setEditMode(bool editMode);
@@ -66,7 +65,6 @@ namespace fairwindsk::ui::mydata {
         void updateStatus(const QString &message);
 
         HistoryTrackModel *m_model = nullptr;
-        HistoryTrackTableProxyModel *m_proxyModel = nullptr;
         QStackedWidget *m_stackedWidget = nullptr;
         QWidget *m_listPage = nullptr;
         QWidget *m_detailsPage = nullptr;
@@ -74,7 +72,7 @@ namespace fairwindsk::ui::mydata {
         QLabel *m_titleLabel = nullptr;
         QLabel *m_indexValueLabel = nullptr;
         QComboBox *m_durationCombo = nullptr;
-        QTableView *m_tableView = nullptr;
+        QTableWidget *m_tableWidget = nullptr;
         QToolButton *m_refreshButton = nullptr;
         QToolButton *m_importButton = nullptr;
         QToolButton *m_exportButton = nullptr;
@@ -91,6 +89,7 @@ namespace fairwindsk::ui::mydata {
         JsonObjectEditorWidget *m_propertiesEditor = nullptr;
         GeoJsonPreviewWidget *m_previewWidget = nullptr;
         QTimer *m_refreshTimer = nullptr;
+        QList<int> m_visibleRows;
         int m_currentRow = -1;
         bool m_isEditing = false;
         bool m_isCreating = false;

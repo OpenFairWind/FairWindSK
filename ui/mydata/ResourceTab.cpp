@@ -4,24 +4,24 @@
 
 #include "ResourceTab.hpp"
 
+#include <QBrush>
 #include <QCheckBox>
+#include <QColor>
 #include <QFile>
 #include <QFileDialog>
 #include <QFormLayout>
 #include <QHeaderView>
 #include <QHBoxLayout>
-#include <QIdentityProxyModel>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QPlainTextEdit>
-#include <QRegularExpression>
-#include <QSortFilterProxyModel>
 #include <QSplitter>
 #include <QStackedWidget>
-#include <QTableView>
+#include <QTableWidget>
+#include <QTableWidgetItem>
 #include <QToolButton>
 #include <QVBoxLayout>
 #include <QDoubleSpinBox>
@@ -58,54 +58,22 @@ namespace {
     QJsonArray coordinateArray(const QJsonObject &resource) {
         return geometryObject(resource)["coordinates"].toArray();
     }
+    const QString kTableStyle = QStringLiteral(
+        "QTableWidget { background: #f7f7f4; color: #1f2937; gridline-color: #d1d5db; selection-background-color: #c7d2fe; selection-color: #111827; }"
+        "QTableCornerButton::section, QHeaderView::section { background: #e5e7eb; color: #111827; border: 1px solid #d1d5db; padding: 4px; }");
 }
 
 namespace fairwindsk::ui::mydata {
-    class ResourceTableProxyModel final : public QSortFilterProxyModel {
-    public:
-        explicit ResourceTableProxyModel(QObject *parent = nullptr)
-            : QSortFilterProxyModel(parent) {}
-
-        int columnCount(const QModelIndex &parent = QModelIndex()) const override {
-            const int baseCount = QSortFilterProxyModel::columnCount(parent);
-            return parent.isValid() ? 0 : baseCount + 1;
-        }
-
-        QVariant data(const QModelIndex &index, const int role = Qt::DisplayRole) const override {
-            const int baseCount = QSortFilterProxyModel::columnCount();
-            if (index.column() >= baseCount) {
-                return {};
-            }
-            return QSortFilterProxyModel::data(index, role);
-        }
-
-        QVariant headerData(const int section, const Qt::Orientation orientation, const int role) const override {
-            const int baseCount = QSortFilterProxyModel::columnCount();
-            if (orientation == Qt::Horizontal && role == Qt::DisplayRole && section >= baseCount) {
-                return QObject::tr("Actions");
-            }
-            return QSortFilterProxyModel::headerData(section, orientation, role);
-        }
-
-        bool lessThan(const QModelIndex &left, const QModelIndex &right) const override {
-            const int baseCount = QSortFilterProxyModel::columnCount();
-            if (left.column() >= baseCount || right.column() >= baseCount) {
-                return left.row() < right.row();
-            }
-            return QSortFilterProxyModel::lessThan(left, right);
-        }
-    };
 
     ResourceTab::ResourceTab(const ResourceKind kind, QWidget *parent)
         : QWidget(parent),
           m_kind(kind),
           m_model(new ResourceModel(kind, this)),
-          m_proxyModel(new ResourceTableProxyModel(this)),
           m_stackedWidget(new QStackedWidget(this)),
           m_listPage(new QWidget(this)),
           m_detailsPage(new QWidget(this)),
           m_searchEdit(new QLineEdit(this)),
-          m_tableView(new QTableView(this)),
+          m_tableWidget(new QTableWidget(this)),
           m_addButton(new QToolButton(this)),
           m_backButton(new QToolButton(this)),
           m_newButton(new QToolButton(this)),
@@ -170,24 +138,20 @@ namespace fairwindsk::ui::mydata {
         connect(m_addButton, &QToolButton::clicked, this, &ResourceTab::onAddClicked);
         toolbarLayout->addWidget(m_addButton);
 
-        m_proxyModel->setSourceModel(m_model);
-        m_proxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
-        m_proxyModel->setFilterKeyColumn(-1);
-        m_proxyModel->setSortCaseSensitivity(Qt::CaseInsensitive);
-
-        m_tableView->setModel(m_proxyModel);
-        m_tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
-        m_tableView->setSelectionMode(QAbstractItemView::SingleSelection);
-        m_tableView->setSortingEnabled(true);
-        m_tableView->sortByColumn(0, Qt::AscendingOrder);
-        auto *resourceHeader = m_tableView->horizontalHeader();
+        m_tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
+        m_tableWidget->setSelectionMode(QAbstractItemView::SingleSelection);
+        m_tableWidget->setSortingEnabled(false);
+        m_tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
+        m_tableWidget->setColumnCount(m_model->columnCount() + 1);
+        styleTable();
+        auto *resourceHeader = m_tableWidget->horizontalHeader();
         resourceHeader->setSectionResizeMode(QHeaderView::ResizeToContents);
         resourceHeader->setSectionResizeMode(1, QHeaderView::Stretch);
         resourceHeader->setSectionResizeMode(m_model->columnCount(), QHeaderView::Fixed);
         resourceHeader->setStretchLastSection(false);
-        connect(m_tableView, &QTableView::doubleClicked, this, &ResourceTab::onTableDoubleClicked);
-        connect(m_tableView, &QTableView::activated, this, &ResourceTab::onTableDoubleClicked);
-        listLayout->addWidget(m_tableView);
+        connect(m_tableWidget, &QTableWidget::cellDoubleClicked, this, &ResourceTab::onTableDoubleClicked);
+        connect(m_tableWidget, &QTableWidget::cellActivated, this, &ResourceTab::onTableDoubleClicked);
+        listLayout->addWidget(m_tableWidget);
 
         auto *detailsLayout = new QVBoxLayout(m_detailsPage);
         auto *detailsToolbar = new QHBoxLayout();
@@ -320,62 +284,77 @@ namespace fairwindsk::ui::mydata {
         m_stackedWidget->addWidget(m_detailsPage);
         showListPage();
 
-        connect(m_model, &QAbstractItemModel::modelReset, this, &ResourceTab::updateActionButtons);
-        connect(m_proxyModel, &QAbstractItemModel::layoutChanged, this, &ResourceTab::updateActionButtons);
-        connect(m_proxyModel, &QAbstractItemModel::modelReset, this, &ResourceTab::updateActionButtons);
-        connect(m_tableView->horizontalHeader(), &QHeaderView::sortIndicatorChanged, this, &ResourceTab::updateActionButtons);
-        updateActionButtons();
+        connect(m_model, &QAbstractItemModel::modelReset, this, &ResourceTab::rebuildTable);
+        rebuildTable();
     }
 
-    QModelIndex ResourceTab::currentSourceIndex() const {
-        const QModelIndex proxyIndex = m_tableView->currentIndex();
-        return proxyIndex.isValid() ? m_proxyModel->mapToSource(proxyIndex) : QModelIndex{};
+    void ResourceTab::styleTable() {
+        m_tableWidget->setStyleSheet(kTableStyle);
+        m_tableWidget->verticalHeader()->setVisible(false);
     }
 
-    QModelIndex ResourceTab::sourceIndexForProxyRow(const int proxyRow) const {
-        if (proxyRow < 0) {
+    QString ResourceTab::currentResourceIdFromSelection() const {
+        const auto selectedItems = m_tableWidget->selectedItems();
+        if (selectedItems.isEmpty()) {
             return {};
         }
-        const auto proxyIndex = m_proxyModel->index(proxyRow, 0);
-        return proxyIndex.isValid() ? m_proxyModel->mapToSource(proxyIndex) : QModelIndex{};
-    }
 
-    void ResourceTab::clearActionWidgets() {
-        const int actionsColumn = m_model->columnCount();
-        const int visibleColumns = m_proxyModel->columnCount();
-        for (int row = 0; row < m_proxyModel->rowCount(); ++row) {
-            for (int column = 0; column < visibleColumns; ++column) {
-                if (column == actionsColumn) {
-                    continue;
-                }
-                if (QWidget *widget = m_tableView->indexWidget(m_proxyModel->index(row, column))) {
-                    m_tableView->setIndexWidget(m_proxyModel->index(row, column), nullptr);
-                    widget->deleteLater();
-                }
-            }
-            if (QWidget *widget = m_tableView->indexWidget(m_proxyModel->index(row, actionsColumn))) {
-                m_tableView->setIndexWidget(m_proxyModel->index(row, actionsColumn), nullptr);
-                widget->deleteLater();
-            }
+        const int row = selectedItems.first()->row();
+        if (row < 0 || row >= m_visibleResourceIds.size()) {
+            return {};
         }
+        return m_visibleResourceIds.at(row);
     }
 
     bool ResourceTab::canNavigateResource() const {
         return m_kind == ResourceKind::Waypoint;
     }
 
-    void ResourceTab::updateActionButtons() {
+    void ResourceTab::rebuildTable() {
         const int actionsColumn = m_model->columnCount();
-        clearActionWidgets();
-        m_tableView->setColumnWidth(actionsColumn, 152);
+        const QString filter = m_searchEdit->text().trimmed();
+        const QStringList headers = [&]() {
+            QStringList values;
+            for (int column = 0; column < m_model->columnCount(); ++column) {
+                values.append(m_model->headerData(column, Qt::Horizontal, Qt::DisplayRole).toString());
+            }
+            values.append(tr("Actions"));
+            return values;
+        }();
 
-        for (int row = 0; row < m_proxyModel->rowCount(); ++row) {
-            const auto sourceIndex = sourceIndexForProxyRow(row);
-            if (!sourceIndex.isValid()) {
+        m_tableWidget->clearContents();
+        m_tableWidget->setColumnCount(headers.size());
+        m_tableWidget->setHorizontalHeaderLabels(headers);
+        m_tableWidget->setRowCount(0);
+        m_visibleResourceIds.clear();
+
+        for (int row = 0; row < m_model->rowCount(); ++row) {
+            const auto resource = m_model->resourceAtRow(row);
+            const QString id = m_model->resourceIdAtRow(row);
+            QString haystack = resourceDisplayName(resource) + " " + resourceDescription(resource);
+            for (int column = 0; column < m_model->columnCount(); ++column) {
+                haystack += " " + m_model->data(m_model->index(row, column), Qt::DisplayRole).toString();
+            }
+            if (!filter.isEmpty() && !haystack.contains(filter, Qt::CaseInsensitive)) {
                 continue;
             }
 
-            const QString id = m_model->resourceIdAtRow(sourceIndex.row());
+            const int visibleRow = m_tableWidget->rowCount();
+            m_tableWidget->insertRow(visibleRow);
+            m_visibleResourceIds.append(id);
+
+            for (int column = 0; column < m_model->columnCount(); ++column) {
+                auto *item = new QTableWidgetItem(m_model->data(m_model->index(row, column), Qt::DisplayRole).toString());
+                item->setForeground(QBrush(QColor("#1f2937")));
+                item->setBackground(QBrush(QColor("#f7f7f4")));
+                item->setFlags(item->flags() & ~Qt::ItemIsEditable);
+                const auto alignment = m_model->data(m_model->index(row, column), Qt::TextAlignmentRole);
+                if (alignment.isValid()) {
+                    item->setTextAlignment(static_cast<Qt::Alignment>(alignment.toInt()));
+                }
+                m_tableWidget->setItem(visibleRow, column, item);
+            }
+
             auto *actionsWidget = new QWidget();
             auto *actionsLayout = new QHBoxLayout(actionsWidget);
             actionsLayout->setContentsMargins(4, 0, 4, 0);
@@ -409,20 +388,18 @@ namespace fairwindsk::ui::mydata {
             actionsLayout->addWidget(removeButton);
 
             actionsLayout->addStretch(1);
-            m_tableView->setIndexWidget(m_proxyModel->index(row, actionsColumn), actionsWidget);
+            m_tableWidget->setCellWidget(visibleRow, actionsColumn, actionsWidget);
         }
+
+        m_tableWidget->setColumnWidth(actionsColumn, 152);
     }
 
     void ResourceTab::selectResource(const QString &id) {
-        for (int row = 0; row < m_model->rowCount(); ++row) {
-            if (m_model->resourceIdAtRow(row) == id) {
-                const QModelIndex sourceIndex = m_model->index(row, 0);
-                const QModelIndex proxyIndex = m_proxyModel->mapFromSource(sourceIndex);
-                if (proxyIndex.isValid()) {
-                    m_tableView->selectRow(proxyIndex.row());
-                    m_tableView->scrollTo(proxyIndex);
-                }
-                break;
+        for (int row = 0; row < m_visibleResourceIds.size(); ++row) {
+            if (m_visibleResourceIds.at(row) == id) {
+                m_tableWidget->selectRow(row);
+                m_tableWidget->scrollToItem(m_tableWidget->item(row, 0));
+                return;
             }
         }
     }
@@ -867,13 +844,17 @@ namespace fairwindsk::ui::mydata {
 
     void ResourceTab::onEditClicked() {
         if (m_stackedWidget->currentWidget() == m_listPage) {
-            const QModelIndex index = currentSourceIndex();
-            if (!index.isValid()) {
+            const QString id = currentResourceIdFromSelection();
+            if (id.isEmpty()) {
                 showError(tr("Select a %1 first.").arg(resourceKindToSingularTitle(m_kind).toLower()));
                 return;
             }
-            const QString id = m_model->resourceIdAtRow(index.row());
-            showDetailsPage(id, m_model->resourceAtRow(index.row()), true);
+            for (int row = 0; row < m_model->rowCount(); ++row) {
+                if (m_model->resourceIdAtRow(row) == id) {
+                    showDetailsPage(id, m_model->resourceAtRow(row), true);
+                    return;
+                }
+            }
             return;
         }
 
@@ -886,13 +867,17 @@ namespace fairwindsk::ui::mydata {
         QString id;
         QString name;
         if (m_stackedWidget->currentWidget() == m_listPage) {
-            const QModelIndex index = currentSourceIndex();
-            if (!index.isValid()) {
+            id = currentResourceIdFromSelection();
+            if (id.isEmpty()) {
                 showError(tr("Select a %1 first.").arg(resourceKindToSingularTitle(m_kind).toLower()));
                 return;
             }
-            id = m_model->resourceIdAtRow(index.row());
-            name = resourceDisplayName(m_model->resourceAtRow(index.row()));
+            for (int row = 0; row < m_model->rowCount(); ++row) {
+                if (m_model->resourceIdAtRow(row) == id) {
+                    name = resourceDisplayName(m_model->resourceAtRow(row));
+                    break;
+                }
+            }
         } else {
             id = m_currentResourceId;
             name = m_nameEdit->text().trimmed();
@@ -974,9 +959,9 @@ namespace fairwindsk::ui::mydata {
         if (m_stackedWidget->currentWidget() == m_detailsPage && !m_currentResourceId.isEmpty()) {
             ids.append(m_currentResourceId);
         } else {
-            const QModelIndex index = currentSourceIndex();
-            if (index.isValid()) {
-                ids.append(m_model->resourceIdAtRow(index.row()));
+            const QString id = currentResourceIdFromSelection();
+            if (!id.isEmpty()) {
+                ids.append(id);
             }
         }
 
@@ -1016,32 +1001,38 @@ namespace fairwindsk::ui::mydata {
 
     void ResourceTab::onRefreshClicked() {
         m_model->reload(true);
+        rebuildTable();
     }
 
-    void ResourceTab::onSearchTextChanged(const QString &text) {
-        const QRegularExpression expression(QRegularExpression::escape(text), QRegularExpression::CaseInsensitiveOption);
-        m_proxyModel->setFilterRegularExpression(expression);
+    void ResourceTab::onSearchTextChanged(const QString &) {
+        rebuildTable();
     }
 
     void ResourceTab::onOpenClicked() {
-        const QModelIndex sourceIndex = currentSourceIndex();
-        if (!sourceIndex.isValid()) {
+        const QString id = currentResourceIdFromSelection();
+        if (id.isEmpty()) {
             showError(tr("Select a %1 first.").arg(resourceKindToSingularTitle(m_kind).toLower()));
             return;
         }
-
-        const QString id = m_model->resourceIdAtRow(sourceIndex.row());
-        showDetailsPage(id, m_model->resourceAtRow(sourceIndex.row()), false);
+        for (int row = 0; row < m_model->rowCount(); ++row) {
+            if (m_model->resourceIdAtRow(row) == id) {
+                showDetailsPage(id, m_model->resourceAtRow(row), false);
+                return;
+            }
+        }
     }
 
-    void ResourceTab::onTableDoubleClicked(const QModelIndex &index) {
-        const QModelIndex sourceIndex = m_proxyModel->mapToSource(index);
-        if (!sourceIndex.isValid()) {
+    void ResourceTab::onTableDoubleClicked(const int row, const int) {
+        if (row < 0 || row >= m_visibleResourceIds.size()) {
             return;
         }
-
-        const QString id = m_model->resourceIdAtRow(sourceIndex.row());
-        showDetailsPage(id, m_model->resourceAtRow(sourceIndex.row()), false);
+        const QString id = m_visibleResourceIds.at(row);
+        for (int sourceRow = 0; sourceRow < m_model->rowCount(); ++sourceRow) {
+            if (m_model->resourceIdAtRow(sourceRow) == id) {
+                showDetailsPage(id, m_model->resourceAtRow(sourceRow), false);
+                return;
+            }
+        }
     }
 
     void ResourceTab::onNavigateRowClicked() {
@@ -1126,6 +1117,7 @@ namespace fairwindsk::ui::mydata {
 
         showListPage();
         selectResource(id);
+        rebuildTable();
     }
 
     void ResourceTab::onCancelClicked() {

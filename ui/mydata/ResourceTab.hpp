@@ -17,16 +17,14 @@ class QDoubleSpinBox;
 class QLabel;
 class QLineEdit;
 class QPlainTextEdit;
-class QSortFilterProxyModel;
 class QStackedWidget;
-class QTableView;
+class QTableWidget;
 class QToolButton;
 
 namespace fairwindsk::ui::mydata {
 
     class GeoJsonPreviewWidget;
     class JsonObjectEditorWidget;
-    class ResourceTableProxyModel;
 
     class ResourceTab final : public QWidget {
         Q_OBJECT
@@ -43,7 +41,7 @@ namespace fairwindsk::ui::mydata {
         void onExportClicked();
         void onRefreshClicked();
         void onSearchTextChanged(const QString &text);
-        void onTableDoubleClicked(const QModelIndex &index);
+        void onTableDoubleClicked(int row, int column);
         void onNavigateRowClicked();
         void onEditRowClicked();
         void onRemoveRowClicked();
@@ -52,10 +50,9 @@ namespace fairwindsk::ui::mydata {
         void onCancelClicked();
 
     private:
-        QModelIndex currentSourceIndex() const;
-        QModelIndex sourceIndexForProxyRow(int proxyRow) const;
-        void clearActionWidgets();
-        void updateActionButtons();
+        QString currentResourceIdFromSelection() const;
+        void rebuildTable();
+        void styleTable();
         bool canNavigateResource() const;
         void selectResource(const QString &id);
         void showError(const QString &message) const;
@@ -77,12 +74,11 @@ namespace fairwindsk::ui::mydata {
 
         ResourceKind m_kind;
         ResourceModel *m_model;
-        ResourceTableProxyModel *m_proxyModel;
         QStackedWidget *m_stackedWidget;
         QWidget *m_listPage;
         QWidget *m_detailsPage;
         QLineEdit *m_searchEdit;
-        QTableView *m_tableView;
+        QTableWidget *m_tableWidget;
         QToolButton *m_addButton;
         QToolButton *m_importButton;
         QToolButton *m_exportButton;
@@ -118,6 +114,7 @@ namespace fairwindsk::ui::mydata {
         QLineEdit *m_chartLayersEdit;
         QPlainTextEdit *m_chartBoundsEdit;
         QString m_currentResourceId;
+        QStringList m_visibleResourceIds;
         bool m_isEditing = false;
         bool m_isCreating = false;
     };

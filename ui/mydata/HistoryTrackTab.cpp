@@ -4,6 +4,8 @@
 
 #include "HistoryTrackTab.hpp"
 
+#include <QBrush>
+#include <QColor>
 #include <QDateTimeEdit>
 #include <QDoubleSpinBox>
 #include <QFile>
@@ -11,13 +13,13 @@
 #include <QFormLayout>
 #include <QHeaderView>
 #include <QHBoxLayout>
-#include <QIdentityProxyModel>
 #include <QJsonDocument>
 #include <QLabel>
 #include <QMessageBox>
 #include <QSplitter>
 #include <QStackedWidget>
-#include <QTableView>
+#include <QTableWidget>
+#include <QTableWidgetItem>
 #include <QTimer>
 #include <QToolButton>
 #include <QVBoxLayout>
@@ -28,38 +30,17 @@
 #include "HistoryTrackModel.hpp"
 #include "JsonObjectEditorWidget.hpp"
 
+namespace {
+    const QString kTrackTableStyle = QStringLiteral(
+        "QTableWidget { background: #f7f7f4; color: #1f2937; gridline-color: #d1d5db; selection-background-color: #c7d2fe; selection-color: #111827; }"
+        "QTableCornerButton::section, QHeaderView::section { background: #e5e7eb; color: #111827; border: 1px solid #d1d5db; padding: 4px; }");
+}
+
 namespace fairwindsk::ui::mydata {
-    class HistoryTrackTableProxyModel final : public QIdentityProxyModel {
-    public:
-        explicit HistoryTrackTableProxyModel(QObject *parent = nullptr)
-            : QIdentityProxyModel(parent) {}
-
-        int columnCount(const QModelIndex &parent = QModelIndex()) const override {
-            const int baseCount = QIdentityProxyModel::columnCount(parent);
-            return parent.isValid() ? 0 : baseCount + 1;
-        }
-
-        QVariant data(const QModelIndex &index, const int role = Qt::DisplayRole) const override {
-            const int baseCount = QIdentityProxyModel::columnCount();
-            if (index.column() >= baseCount) {
-                return {};
-            }
-            return QIdentityProxyModel::data(index, role);
-        }
-
-        QVariant headerData(const int section, const Qt::Orientation orientation, const int role) const override {
-            const int baseCount = QIdentityProxyModel::columnCount();
-            if (orientation == Qt::Horizontal && role == Qt::DisplayRole && section >= baseCount) {
-                return QObject::tr("Actions");
-            }
-            return QIdentityProxyModel::headerData(section, orientation, role);
-        }
-    };
 
     HistoryTrackTab::HistoryTrackTab(QWidget *parent)
         : QWidget(parent),
           m_model(new HistoryTrackModel(this)),
-          m_proxyModel(new HistoryTrackTableProxyModel(this)),
           m_stackedWidget(new QStackedWidget(this)),
           m_listPage(new QWidget(this)),
           m_detailsPage(new QWidget(this)),
@@ -67,7 +48,7 @@ namespace fairwindsk::ui::mydata {
           m_titleLabel(new QLabel(this)),
           m_indexValueLabel(new QLabel(this)),
           m_durationCombo(new QComboBox(this)),
-          m_tableView(new QTableView(this)),
+          m_tableWidget(new QTableWidget(this)),
           m_refreshButton(new QToolButton(this)),
           m_importButton(new QToolButton(this)),
           m_exportButton(new QToolButton(this)),
@@ -120,21 +101,22 @@ namespace fairwindsk::ui::mydata {
         toolbarLayout->addStretch(1);
         toolbarLayout->addWidget(m_statusLabel, 1);
 
-        m_proxyModel->setSourceModel(m_model);
-        m_tableView->setModel(m_proxyModel);
-        m_tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
-        m_tableView->setSelectionMode(QAbstractItemView::SingleSelection);
-        m_tableView->setSortingEnabled(false);
-        auto *trackHeader = m_tableView->horizontalHeader();
+        m_tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
+        m_tableWidget->setSelectionMode(QAbstractItemView::SingleSelection);
+        m_tableWidget->setSortingEnabled(false);
+        m_tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
+        m_tableWidget->setColumnCount(m_model->columnCount() + 1);
+        styleTable();
+        auto *trackHeader = m_tableWidget->horizontalHeader();
         trackHeader->setSectionResizeMode(QHeaderView::ResizeToContents);
         if (m_model->columnCount() > 1) {
             trackHeader->setSectionResizeMode(m_model->columnCount() - 2, QHeaderView::Stretch);
         }
         trackHeader->setSectionResizeMode(m_model->columnCount(), QHeaderView::Fixed);
         trackHeader->setStretchLastSection(false);
-        connect(m_tableView, &QTableView::doubleClicked, this, &HistoryTrackTab::onTableDoubleClicked);
-        connect(m_tableView, &QTableView::activated, this, &HistoryTrackTab::onTableDoubleClicked);
-        listLayout->addWidget(m_tableView);
+        connect(m_tableWidget, &QTableWidget::cellDoubleClicked, this, &HistoryTrackTab::onTableDoubleClicked);
+        connect(m_tableWidget, &QTableWidget::cellActivated, this, &HistoryTrackTab::onTableDoubleClicked);
+        listLayout->addWidget(m_tableWidget);
 
         auto *detailsLayout = new QVBoxLayout(m_detailsPage);
         auto *detailsToolbar = new QHBoxLayout();
@@ -215,43 +197,47 @@ namespace fairwindsk::ui::mydata {
         connect(m_refreshTimer, &QTimer::timeout, this, &HistoryTrackTab::onRefreshClicked);
         m_refreshTimer->start(5000);
 
-        connect(m_model, &QAbstractItemModel::modelReset, this, &HistoryTrackTab::updateActionButtons);
-        connect(m_model, &QAbstractItemModel::rowsInserted, this, &HistoryTrackTab::updateActionButtons);
-        connect(m_model, &QAbstractItemModel::rowsRemoved, this, &HistoryTrackTab::updateActionButtons);
+        connect(m_model, &QAbstractItemModel::modelReset, this, &HistoryTrackTab::rebuildTable);
+        connect(m_model, &QAbstractItemModel::rowsInserted, this, &HistoryTrackTab::rebuildTable);
+        connect(m_model, &QAbstractItemModel::rowsRemoved, this, &HistoryTrackTab::rebuildTable);
         showListPage();
         onRefreshClicked();
     }
 
-    QModelIndex HistoryTrackTab::proxyIndexForRow(const int row, const int column) const {
-        return row >= 0 ? m_proxyModel->index(row, column) : QModelIndex{};
+    void HistoryTrackTab::styleTable() {
+        m_tableWidget->setStyleSheet(kTrackTableStyle);
+        m_tableWidget->verticalHeader()->setVisible(false);
     }
 
-    void HistoryTrackTab::clearActionWidgets() {
+    void HistoryTrackTab::rebuildTable() {
         const int actionsColumn = m_model->columnCount();
-        const int visibleColumns = m_proxyModel->columnCount();
-        for (int row = 0; row < m_proxyModel->rowCount(); ++row) {
-            for (int column = 0; column < visibleColumns; ++column) {
-                if (column == actionsColumn) {
-                    continue;
-                }
-                if (QWidget *widget = m_tableView->indexWidget(proxyIndexForRow(row, column))) {
-                    m_tableView->setIndexWidget(proxyIndexForRow(row, column), nullptr);
-                    widget->deleteLater();
-                }
-            }
-            if (QWidget *widget = m_tableView->indexWidget(proxyIndexForRow(row, actionsColumn))) {
-                m_tableView->setIndexWidget(proxyIndexForRow(row, actionsColumn), nullptr);
-                widget->deleteLater();
-            }
+        QStringList headers;
+        for (int column = 0; column < m_model->columnCount(); ++column) {
+            headers.append(m_model->headerData(column, Qt::Horizontal, Qt::DisplayRole).toString());
         }
-    }
-
-    void HistoryTrackTab::updateActionButtons() {
-        const int actionsColumn = m_model->columnCount();
-        clearActionWidgets();
-        m_tableView->setColumnWidth(actionsColumn, 152);
+        headers.append(tr("Actions"));
+        m_tableWidget->clearContents();
+        m_tableWidget->setColumnCount(headers.size());
+        m_tableWidget->setHorizontalHeaderLabels(headers);
+        m_tableWidget->setRowCount(0);
+        m_visibleRows.clear();
 
         for (int row = 0; row < m_model->rowCount(); ++row) {
+            const int visibleRow = m_tableWidget->rowCount();
+            m_tableWidget->insertRow(visibleRow);
+            m_visibleRows.append(row);
+            for (int column = 0; column < m_model->columnCount(); ++column) {
+                auto *item = new QTableWidgetItem(m_model->data(m_model->index(row, column), Qt::DisplayRole).toString());
+                item->setForeground(QBrush(QColor("#1f2937")));
+                item->setBackground(QBrush(QColor("#f7f7f4")));
+                item->setFlags(item->flags() & ~Qt::ItemIsEditable);
+                const auto alignment = m_model->data(m_model->index(row, column), Qt::TextAlignmentRole);
+                if (alignment.isValid()) {
+                    item->setTextAlignment(static_cast<Qt::Alignment>(alignment.toInt()));
+                }
+                m_tableWidget->setItem(visibleRow, column, item);
+            }
+
             auto *actionsWidget = new QWidget();
             auto *actionsLayout = new QHBoxLayout(actionsWidget);
             actionsLayout->setContentsMargins(4, 0, 4, 0);
@@ -283,8 +269,10 @@ namespace fairwindsk::ui::mydata {
             actionsLayout->addWidget(removeButton);
 
             actionsLayout->addStretch(1);
-            m_tableView->setIndexWidget(proxyIndexForRow(row, actionsColumn), actionsWidget);
+            m_tableWidget->setCellWidget(visibleRow, actionsColumn, actionsWidget);
         }
+
+        m_tableWidget->setColumnWidth(actionsColumn, 152);
     }
 
     QString HistoryTrackTab::currentDuration() const {
@@ -410,14 +398,14 @@ namespace fairwindsk::ui::mydata {
     }
 
     int HistoryTrackTab::currentRow() const {
-        const QModelIndex currentIndex = m_tableView->currentIndex();
-        return currentIndex.isValid() ? m_proxyModel->mapToSource(currentIndex).row() : -1;
+        return selectedSourceRow();
     }
 
     void HistoryTrackTab::onRefreshClicked() {
         QString message;
         m_model->reload(currentDuration(), currentResolution(), &message);
         updateStatus(message);
+        rebuildTable();
         if (m_stackedWidget->currentWidget() == m_detailsPage) {
             updatePreview();
         }
@@ -490,12 +478,21 @@ namespace fairwindsk::ui::mydata {
         showDetailsPage(row, false);
     }
 
-    void HistoryTrackTab::onTableDoubleClicked(const QModelIndex &index) {
-        if (!index.isValid()) {
+    int HistoryTrackTab::selectedSourceRow() const {
+        const auto selectedItems = m_tableWidget->selectedItems();
+        if (selectedItems.isEmpty()) {
+            return -1;
+        }
+        const int row = selectedItems.first()->row();
+        return row >= 0 && row < m_visibleRows.size() ? m_visibleRows.at(row) : -1;
+    }
+
+    void HistoryTrackTab::onTableDoubleClicked(const int row, const int) {
+        if (row < 0 || row >= m_visibleRows.size()) {
             return;
         }
 
-        showDetailsPage(m_proxyModel->mapToSource(index).row(), false);
+        showDetailsPage(m_visibleRows.at(row), false);
     }
 
     void HistoryTrackTab::onNavigateRowClicked() {
