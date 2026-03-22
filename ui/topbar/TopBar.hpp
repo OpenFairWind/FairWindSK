@@ -5,6 +5,7 @@
 #ifndef TOPBAR_HPP
 #define TOPBAR_HPP
 
+#include <QIcon>
 #include <QWidget>
 
 #include <FairWindSK.hpp>
@@ -24,6 +25,10 @@ namespace fairwindsk::ui::topbar {
         ~TopBar() override;
 
         void setCurrentApp(AppItem *appItem);
+        void setCurrentContext(const QString &name,
+                               const QString &tooltip = QString(),
+                               const QIcon &icon = QIcon(),
+                               bool enableButton = false);
 
     public slots:
         void toolbuttonUL_clicked();

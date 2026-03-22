@@ -377,6 +377,13 @@ namespace fairwindsk::ui {
         }
 
         ui->stackedWidget_Center->setCurrentWidget(m_myDataPage);
+        if (m_topBar) {
+            m_topBar->setCurrentContext(
+                tr("MyData"),
+                tr("Signal K resources and files"),
+                QIcon(":/resources/svg/OpenBridge/database.svg"),
+                false);
+        }
     }
 
 

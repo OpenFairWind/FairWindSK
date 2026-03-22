@@ -4,11 +4,14 @@
 
 #include "GeoJsonPreviewWidget.hpp"
 
+#include <QJsonObject>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QPlainTextEdit>
 #include <QTabWidget>
+#include <QTimer>
 #include <QUrl>
+#include <QWebEnginePage>
 #include <QVBoxLayout>
 #include <QWebEngineView>
 
@@ -16,6 +19,42 @@
 #include "FairWindSK.hpp"
 
 namespace fairwindsk::ui::mydata {
+    namespace {
+        void collectCoordinatesFromValue(const QJsonValue &value, QVector<QPair<double, double>> *coordinates) {
+            if (!coordinates || value.isUndefined() || value.isNull()) {
+                return;
+            }
+
+            if (value.isArray()) {
+                const auto array = value.toArray();
+                if (array.size() >= 2 && array.at(0).isDouble() && array.at(1).isDouble()) {
+                    coordinates->append({array.at(0).toDouble(), array.at(1).toDouble()});
+                    return;
+                }
+
+                for (const auto &item : array) {
+                    collectCoordinatesFromValue(item, coordinates);
+                }
+                return;
+            }
+
+            if (value.isObject()) {
+                const auto object = value.toObject();
+                if (object["type"].toString() == "FeatureCollection" && object["features"].isArray()) {
+                    collectCoordinatesFromValue(object["features"], coordinates);
+                    return;
+                }
+                if (object["type"].toString() == "Feature") {
+                    collectCoordinatesFromValue(object["geometry"], coordinates);
+                    return;
+                }
+                if (object.contains("coordinates")) {
+                    collectCoordinatesFromValue(object["coordinates"], coordinates);
+                }
+            }
+        }
+    }
+
     QString GeoJsonPreviewWidget::detectFreeboardUrl() {
         const auto fairWindSk = fairwindsk::FairWindSK::getInstance();
         if (!fairWindSk) {
@@ -60,6 +99,12 @@ namespace fairwindsk::ui::mydata {
         m_textView->setStyleSheet("QPlainTextEdit { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
         m_tabWidget->addTab(m_textView, tr("GeoJSON"));
         setMinimumSize(320, 240);
+        connect(m_freeboardView, &QWebEngineView::loadFinished, this, [this](const bool ok) {
+            if (ok) {
+                applyFreeboardFocus();
+                QTimer::singleShot(1200, this, &GeoJsonPreviewWidget::applyFreeboardFocus);
+            }
+        });
         setMessage(tr("GeoJSON preview will appear here."));
     }
 
@@ -82,6 +127,7 @@ namespace fairwindsk::ui::mydata {
     void GeoJsonPreviewWidget::setGeoJson(const QJsonDocument &document, const QString &) {
         const QString json = QString::fromUtf8(document.toJson(QJsonDocument::Compact));
         const QString freeboardUrl = detectFreeboardUrl();
+        updateFocusCoordinate(document);
         ensureFreeboardTab(freeboardUrl);
         m_textView->setPlainText(QString::fromUtf8(document.toJson(QJsonDocument::Indented)));
         const QString script = QStringLiteral(R"(
@@ -172,7 +218,6 @@ if (!allPoints.length) {
   const maxTile = Math.pow(2, zoom) - 1;
 
   tilePane.innerHTML = '';
-  overlayPane.innerHTML = '';
   svg.innerHTML = '';
   svg.setAttribute('viewBox', `0 0 ${viewportWidth} ${viewportHeight}`);
 
@@ -312,6 +357,85 @@ fallbackSource.textContent = '';
 info.textContent = %1[0];
 )").arg(safeMessage.trimmed());
         m_view->setHtml(htmlForContent(script));
+    }
+
+    void GeoJsonPreviewWidget::updateFocusCoordinate(const QJsonDocument &document) {
+        QVector<QPair<double, double>> coordinates;
+        collectCoordinatesFromValue(document.isObject() ? QJsonValue(document.object()) : QJsonValue(document.array()),
+                                    &coordinates);
+
+        if (coordinates.isEmpty()) {
+            m_hasFocusCoordinate = false;
+            m_focusLongitude = 0.0;
+            m_focusLatitude = 0.0;
+            return;
+        }
+
+        double longitudeSum = 0.0;
+        double latitudeSum = 0.0;
+        for (const auto &coordinate : coordinates) {
+            longitudeSum += coordinate.first;
+            latitudeSum += coordinate.second;
+        }
+
+        m_hasFocusCoordinate = true;
+        m_focusLongitude = longitudeSum / coordinates.size();
+        m_focusLatitude = latitudeSum / coordinates.size();
+    }
+
+    void GeoJsonPreviewWidget::applyFreeboardFocus() {
+        if (!m_hasFocusCoordinate || !m_freeboardView || !m_freeboardView->page()) {
+            return;
+        }
+
+        const QString script = QStringLiteral(R"(
+(function() {
+  const lon = %1;
+  const lat = %2;
+  function projectToMercator(longitude, latitude) {
+    const x = longitude * 20037508.34 / 180.0;
+    let y = Math.log(Math.tan((90.0 + latitude) * Math.PI / 360.0)) / (Math.PI / 180.0);
+    y = y * 20037508.34 / 180.0;
+    return [x, y];
+  }
+  const center = projectToMercator(lon, lat);
+  const visited = new Set();
+  const queue = [window];
+  let centered = 0;
+  while (queue.length) {
+    const current = queue.shift();
+    if (!current || (typeof current !== 'object' && typeof current !== 'function') || visited.has(current)) {
+      continue;
+    }
+    visited.add(current);
+    try {
+      if (typeof current.getView === 'function') {
+        const view = current.getView();
+        if (view && typeof view.setCenter === 'function') {
+          view.setCenter(center);
+          if (typeof view.getZoom === 'function' && typeof view.setZoom === 'function' && view.getZoom() < 12) {
+            view.setZoom(14);
+          }
+          centered += 1;
+        }
+      }
+    } catch (error) {}
+    try {
+      for (const key of Object.keys(current).slice(0, 100)) {
+        const next = current[key];
+        if (next && !visited.has(next)) {
+          queue.push(next);
+        }
+      }
+    } catch (error) {}
+  }
+  return centered;
+})();
+)")
+            .arg(m_focusLongitude, 0, 'f', 8)
+            .arg(m_focusLatitude, 0, 'f', 8);
+
+        m_freeboardView->page()->runJavaScript(script);
     }
 
     QString GeoJsonPreviewWidget::htmlForContent(const QString &bodyScript) {

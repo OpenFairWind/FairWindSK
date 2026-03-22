@@ -27,11 +27,16 @@ namespace fairwindsk::ui::mydata {
         static QString detectFreeboardUrl();
         static QString htmlForContent(const QString &bodyScript);
         void ensureFreeboardTab(const QString &url);
+        void updateFocusCoordinate(const QJsonDocument &document);
+        void applyFreeboardFocus();
 
         QTabWidget *m_tabWidget = nullptr;
         QWebEngineView *m_view = nullptr;
         QWebEngineView *m_freeboardView = nullptr;
         QPlainTextEdit *m_textView = nullptr;
+        bool m_hasFocusCoordinate = false;
+        double m_focusLongitude = 0.0;
+        double m_focusLatitude = 0.0;
     };
 }
 

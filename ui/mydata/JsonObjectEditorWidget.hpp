@@ -11,6 +11,8 @@
 class QPlainTextEdit;
 class QTabWidget;
 class QToolButton;
+class QLabel;
+class QStackedWidget;
 class QTreeWidget;
 class QTreeWidgetItem;
 
@@ -41,6 +43,7 @@ namespace fairwindsk::ui::mydata {
         void syncTextFromTree();
         bool syncTreeFromText(QString *message = nullptr);
         void updateButtonState();
+        void updateTreePlaceholder();
         static QString typeName(const QJsonValue &value);
         static QJsonValue defaultValueForType(const QString &typeName);
         static QString scalarToString(const QJsonValue &value);
@@ -48,7 +51,9 @@ namespace fairwindsk::ui::mydata {
         static void renumberArrayChildren(QTreeWidgetItem *item);
 
         QTabWidget *m_tabWidget = nullptr;
+        QStackedWidget *m_treeStack = nullptr;
         QTreeWidget *m_treeWidget = nullptr;
+        QLabel *m_emptyTreeLabel = nullptr;
         QPlainTextEdit *m_jsonEdit = nullptr;
         QToolButton *m_addChildButton = nullptr;
         QToolButton *m_addSiblingButton = nullptr;

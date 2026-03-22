@@ -10,6 +10,7 @@
 #include <QJsonDocument>
 #include <QLabel>
 #include <QPlainTextEdit>
+#include <QStackedWidget>
 #include <QTabWidget>
 #include <QToolButton>
 #include <QTreeWidget>
@@ -34,7 +35,9 @@ namespace fairwindsk::ui::mydata {
     JsonObjectEditorWidget::JsonObjectEditorWidget(QWidget *parent)
         : QWidget(parent),
           m_tabWidget(new QTabWidget(this)),
+          m_treeStack(new QStackedWidget(this)),
           m_treeWidget(new QTreeWidget(this)),
+          m_emptyTreeLabel(new QLabel(this)),
           m_jsonEdit(new QPlainTextEdit(this)),
           m_addChildButton(new QToolButton(this)),
           m_addSiblingButton(new QToolButton(this)),
@@ -64,9 +67,19 @@ namespace fairwindsk::ui::mydata {
         m_treeWidget->setHeaderLabels({tr("Key"), tr("Value"), tr("Type")});
         m_treeWidget->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
         m_treeWidget->header()->setStretchLastSection(false);
-        m_treeWidget->setAlternatingRowColors(true);
+        m_treeWidget->setAlternatingRowColors(false);
+        m_treeWidget->setRootIsDecorated(false);
+        m_treeWidget->setStyleSheet(
+            "QTreeWidget { background: #f7f7f4; color: #1f2937; alternate-background-color: #f7f7f4; selection-background-color: #c7d2fe; selection-color: #111827; border: 1px solid #d1d5db; }"
+            "QHeaderView::section { background: #e5e7eb; color: #111827; padding: 4px; border: 0; border-bottom: 1px solid #d1d5db; }");
         connect(m_treeWidget, &QTreeWidget::itemSelectionChanged, this, &JsonObjectEditorWidget::updateButtonState);
-        m_tabWidget->addTab(m_treeWidget, tr("Tree"));
+        m_emptyTreeLabel->setAlignment(Qt::AlignCenter);
+        m_emptyTreeLabel->setWordWrap(true);
+        m_emptyTreeLabel->setText(tr("No feature properties are available for this resource."));
+        m_emptyTreeLabel->setStyleSheet("QLabel { background: #f7f7f4; color: #4b5563; border: 1px solid #d1d5db; padding: 12px; }");
+        m_treeStack->addWidget(m_treeWidget);
+        m_treeStack->addWidget(m_emptyTreeLabel);
+        m_tabWidget->addTab(m_treeStack, tr("Tree"));
 
         m_jsonEdit->setLineWrapMode(QPlainTextEdit::NoWrap);
         m_jsonEdit->setStyleSheet("QPlainTextEdit { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
@@ -85,6 +98,7 @@ namespace fairwindsk::ui::mydata {
     void JsonObjectEditorWidget::setJsonObject(const QJsonObject &object) {
         populateTree(object);
         syncTextFromTree();
+        updateTreePlaceholder();
         updateButtonState();
     }
 
@@ -137,6 +151,7 @@ namespace fairwindsk::ui::mydata {
         }
 
         m_jsonEdit->setReadOnly(!editMode);
+        updateTreePlaceholder();
         updateButtonState();
     }
 
@@ -157,6 +172,7 @@ namespace fairwindsk::ui::mydata {
             m_treeWidget->addTopLevelItem(item);
             m_treeWidget->setCurrentItem(item);
             syncTextFromTree();
+            updateTreePlaceholder();
             return;
         }
 
@@ -176,6 +192,7 @@ namespace fairwindsk::ui::mydata {
         }
         m_treeWidget->setCurrentItem(child);
         syncTextFromTree();
+        updateTreePlaceholder();
     }
 
     void JsonObjectEditorWidget::onAddSiblingClicked() {
@@ -197,6 +214,7 @@ namespace fairwindsk::ui::mydata {
         }
         m_treeWidget->setCurrentItem(sibling);
         syncTextFromTree();
+        updateTreePlaceholder();
     }
 
     void JsonObjectEditorWidget::onRemoveClicked() {
@@ -213,6 +231,7 @@ namespace fairwindsk::ui::mydata {
             delete m_treeWidget->takeTopLevelItem(m_treeWidget->indexOfTopLevelItem(selected));
         }
         syncTextFromTree();
+        updateTreePlaceholder();
         updateButtonState();
     }
 
@@ -222,6 +241,7 @@ namespace fairwindsk::ui::mydata {
             addValueItem(nullptr, it.key(), it.value());
         }
         m_treeWidget->expandAll();
+        updateTreePlaceholder();
     }
 
     void JsonObjectEditorWidget::addValueItem(QTreeWidgetItem *parent, const QString &key, const QJsonValue &value) {
@@ -316,6 +336,12 @@ namespace fairwindsk::ui::mydata {
         m_addChildButton->setEnabled(m_isEditing);
         m_addSiblingButton->setEnabled(m_isEditing && hasSelection);
         m_removeButton->setEnabled(m_isEditing && hasSelection);
+    }
+
+    void JsonObjectEditorWidget::updateTreePlaceholder() {
+        const bool hasItems = m_treeWidget->topLevelItemCount() > 0;
+        m_treeStack->setCurrentWidget(hasItems ? static_cast<QWidget *>(m_treeWidget)
+                                               : static_cast<QWidget *>(m_emptyTreeLabel));
     }
 
     QString JsonObjectEditorWidget::typeName(const QJsonValue &value) {

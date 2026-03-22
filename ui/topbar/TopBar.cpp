@@ -749,6 +749,17 @@ namespace fairwindsk::ui::topbar {
         }
     }
 
+    void TopBar::setCurrentContext(const QString &name, const QString &tooltip, const QIcon &icon, const bool enableButton) {
+        m_currentApp = nullptr;
+        ui->toolButton_UR->setIcon(icon.isNull()
+                                           ? QPixmap::fromImage(QImage(":/resources/images/icons/apps_icon.png"))
+                                           : icon);
+        ui->toolButton_UR->setIconSize(QSize(32, 32));
+        ui->toolButton_UR->setEnabled(enableButton);
+        ui->label_ApplicationName->setText(name);
+        ui->label_ApplicationName->setToolTip(tooltip);
+    }
+
     void TopBar::updateDistanceLabels() const {
         const auto distanceUnits = FairWindSK::getInstance()->getConfiguration()->getDistanceUnits();
         ui->label_unitDTG->setText(m_units->getLabel(distanceUnits));
