@@ -84,12 +84,7 @@ int main(int argc, char *argv[]) {
     splash.finish((QWidget *) &w);
 #endif
 
-    // Run the application
-    const auto result = QApplication::exec();
-
-    // Delete the FairWindSK singleton
-    delete fairWindSK;
-
-    // Return the result
-    return result;
+    // Run the application. Let Qt tear down the QObject tree on process exit so
+    // the shared WebEngine profile is not destroyed before the remaining pages.
+    return QApplication::exec();
 }
