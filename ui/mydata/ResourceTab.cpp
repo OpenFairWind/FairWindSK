@@ -32,6 +32,15 @@
 #include "signalk/Client.hpp"
 
 namespace {
+    const QString kLineEditStyle = QStringLiteral(
+        "QLineEdit { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
+    const QString kPlainTextStyle = QStringLiteral(
+        "QPlainTextEdit { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
+    const QString kSpinBoxStyle = QStringLiteral(
+        "QAbstractSpinBox { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
+    const QString kComboBoxStyle = QStringLiteral(
+        "QComboBox { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
+
     QJsonObject featureObject(const QJsonObject &resource) {
         return resource["feature"].toObject();
     }
@@ -223,10 +232,25 @@ namespace fairwindsk::ui::mydata {
         m_geometryEdit->setPlaceholderText("{\n  \"type\": \"Polygon\",\n  \"coordinates\": [[[12.4, 41.9], [12.5, 41.9], [12.5, 42.0], [12.4, 41.9]]]\n}");
         m_chartLayersEdit->setPlaceholderText("base,depth");
         m_chartBoundsEdit->setPlaceholderText("[[12.0, 41.0], [13.0, 42.0]]");
-        const QString textEditorStyle = "QPlainTextEdit { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }";
-        m_coordinatesEdit->setStyleSheet(textEditorStyle);
-        m_geometryEdit->setStyleSheet(textEditorStyle);
-        m_chartBoundsEdit->setStyleSheet(textEditorStyle);
+        m_searchEdit->setStyleSheet(kLineEditStyle);
+        m_nameEdit->setStyleSheet(kLineEditStyle);
+        m_descriptionEdit->setStyleSheet(kLineEditStyle);
+        m_typeEdit->setStyleSheet(kLineEditStyle);
+        m_hrefEdit->setStyleSheet(kLineEditStyle);
+        m_mimeTypeEdit->setStyleSheet(kLineEditStyle);
+        m_identifierEdit->setStyleSheet(kLineEditStyle);
+        m_chartFormatEdit->setStyleSheet(kLineEditStyle);
+        m_chartUrlEdit->setStyleSheet(kLineEditStyle);
+        m_tilemapUrlEdit->setStyleSheet(kLineEditStyle);
+        m_chartRegionEdit->setStyleSheet(kLineEditStyle);
+        m_chartLayersEdit->setStyleSheet(kLineEditStyle);
+        m_latitudeSpinBox->setStyleSheet(kSpinBoxStyle);
+        m_longitudeSpinBox->setStyleSheet(kSpinBoxStyle);
+        m_altitudeSpinBox->setStyleSheet(kSpinBoxStyle);
+        m_chartScaleSpinBox->setStyleSheet(kSpinBoxStyle);
+        m_coordinatesEdit->setStyleSheet(kPlainTextStyle);
+        m_geometryEdit->setStyleSheet(kPlainTextStyle);
+        m_chartBoundsEdit->setStyleSheet(kPlainTextStyle);
 
         formLayout->addRow(tr("Id"), m_idValueLabel);
         formLayout->addRow(m_kind == ResourceKind::Note ? tr("Title") : tr("Name"), m_nameEdit);

@@ -181,6 +181,12 @@ namespace fairwindsk::ui::mydata {
         m_longitudeSpinBox->setDecimals(8);
         m_altitudeSpinBox->setRange(-100000.0, 100000.0);
         m_altitudeSpinBox->setDecimals(2);
+        const QString inputStyle =
+            QStringLiteral("QAbstractSpinBox { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
+        m_timestampEdit->setStyleSheet(inputStyle);
+        m_latitudeSpinBox->setStyleSheet(inputStyle);
+        m_longitudeSpinBox->setStyleSheet(inputStyle);
+        m_altitudeSpinBox->setStyleSheet(inputStyle);
         m_propertiesEditor->setLabels(tr("Properties Tree"), tr("Properties JSON"));
 
         formLayout->addRow(tr("Sample"), m_indexValueLabel);

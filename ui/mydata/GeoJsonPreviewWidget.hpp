@@ -26,9 +26,11 @@ namespace fairwindsk::ui::mydata {
     private:
         static QString detectFreeboardUrl();
         static QString htmlForContent(const QString &bodyScript);
+        void ensureFreeboardTab(const QString &url);
 
         QTabWidget *m_tabWidget = nullptr;
         QWebEngineView *m_view = nullptr;
+        QWebEngineView *m_freeboardView = nullptr;
         QPlainTextEdit *m_textView = nullptr;
     };
 }

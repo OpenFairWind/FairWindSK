@@ -49,6 +49,7 @@ namespace fairwindsk::ui::mydata {
         : QWidget(parent),
           m_tabWidget(new QTabWidget(this)),
           m_view(new QWebEngineView(this)),
+          m_freeboardView(new QWebEngineView(this)),
           m_textView(new QPlainTextEdit(this)) {
         auto *layout = new QVBoxLayout(this);
         layout->setContentsMargins(0, 0, 0, 0);
@@ -62,16 +63,31 @@ namespace fairwindsk::ui::mydata {
         setMessage(tr("GeoJSON preview will appear here."));
     }
 
+    void GeoJsonPreviewWidget::ensureFreeboardTab(const QString &url) {
+        const int freeboardTabIndex = m_tabWidget->indexOf(m_freeboardView);
+        if (url.isEmpty()) {
+            if (freeboardTabIndex >= 0) {
+                m_tabWidget->removeTab(freeboardTabIndex);
+            }
+            m_freeboardView->setHtml(QString());
+            return;
+        }
+
+        if (freeboardTabIndex < 0) {
+            m_tabWidget->addTab(m_freeboardView, tr("Freeboard"));
+        }
+        m_freeboardView->load(QUrl(url));
+    }
+
     void GeoJsonPreviewWidget::setGeoJson(const QJsonDocument &document, const QString &) {
         const QString json = QString::fromUtf8(document.toJson(QJsonDocument::Compact));
         const QString freeboardUrl = detectFreeboardUrl();
+        ensureFreeboardTab(freeboardUrl);
         m_textView->setPlainText(QString::fromUtf8(document.toJson(QJsonDocument::Indented)));
         const QString script = QStringLiteral(R"(
 const data = %1;
-const freeboardUrl = %2[0];
 const map = document.getElementById('map');
 const tilePane = document.getElementById('tile-pane');
-const overlayPane = document.getElementById('overlay-pane');
 const svg = document.getElementById('preview');
 const info = document.getElementById('info');
 const fallbackSource = document.getElementById('fallback-source');
@@ -114,21 +130,10 @@ const allPoints = [];
 features.forEach(feature => flattenCoordinates(feature.geometry, allPoints));
 
 if (!allPoints.length) {
+  tilePane.innerHTML = '';
+  svg.innerHTML = '';
+  fallbackSource.textContent = '';
   info.textContent = 'No previewable geometry is available for this resource.';
-} else if (freeboardUrl) {
-  map.innerHTML = '';
-  const frame = document.createElement('iframe');
-  frame.src = freeboardUrl;
-  frame.setAttribute('title', 'Freeboard-SK Map Preview');
-  frame.setAttribute('loading', 'lazy');
-  frame.style.width = '100%';
-  frame.style.height = '100%';
-  frame.style.border = '0';
-  frame.style.borderRadius = '14px';
-  frame.style.background = '#07111b';
-  map.appendChild(frame);
-  fallbackSource.textContent = 'Embedded Freeboard-SK chart view';
-  info.textContent = `${features.length} feature(s) available on the connected Signal K server.`;
 } else {
   function projectMercator(point, zoom) {
     const sinLat = Math.sin(point[1] * Math.PI / 180);
@@ -287,17 +292,23 @@ if (!allPoints.length) {
   info.textContent = `${features.length} feature(s) rendered over the map preview.`;
 }
 )")
-                .arg(json,
-                     QString::fromUtf8(QJsonDocument(QJsonArray{freeboardUrl}).toJson(QJsonDocument::Compact)).trimmed());
+                .arg(json);
 
         m_view->setHtml(htmlForContent(script));
     }
 
     void GeoJsonPreviewWidget::setMessage(const QString &message, const QString &) {
+        ensureFreeboardTab(QString());
         const QString safeMessage = QString::fromUtf8(QJsonDocument(QJsonArray{message}).toJson(QJsonDocument::Compact));
         m_textView->setPlainText(message);
         const QString script = QStringLiteral(R"(
+const tilePane = document.getElementById('tile-pane');
+const svg = document.getElementById('preview');
+const fallbackSource = document.getElementById('fallback-source');
 const info = document.getElementById('info');
+tilePane.innerHTML = '';
+svg.innerHTML = '';
+fallbackSource.textContent = '';
 info.textContent = %1[0];
 )").arg(safeMessage.trimmed());
         m_view->setHtml(htmlForContent(script));

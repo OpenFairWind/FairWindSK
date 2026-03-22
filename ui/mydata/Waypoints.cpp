@@ -30,6 +30,11 @@
 #include "JsonObjectEditorWidget.hpp"
 
 namespace {
+    const QString kLineEditStyle = QStringLiteral(
+        "QLineEdit { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
+    const QString kSpinBoxStyle = QStringLiteral(
+        "QAbstractSpinBox { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
+
     QJsonObject featureObject(const QJsonObject &resource) {
         return resource["feature"].toObject();
     }
@@ -244,6 +249,13 @@ namespace fairwindsk::ui::mydata {
         m_longitudeSpinBox->setDecimals(8);
         m_altitudeSpinBox->setRange(-100000.0, 100000.0);
         m_altitudeSpinBox->setDecimals(2);
+        m_searchEdit->setStyleSheet(kLineEditStyle);
+        m_nameEdit->setStyleSheet(kLineEditStyle);
+        m_descriptionEdit->setStyleSheet(kLineEditStyle);
+        m_typeEdit->setStyleSheet(kLineEditStyle);
+        m_latitudeSpinBox->setStyleSheet(kSpinBoxStyle);
+        m_longitudeSpinBox->setStyleSheet(kSpinBoxStyle);
+        m_altitudeSpinBox->setStyleSheet(kSpinBoxStyle);
         m_propertiesEditor->setLabels(tr("Properties Tree"), tr("Properties JSON"));
 
         formLayout->addRow(tr("Id"), m_idValueLabel);
