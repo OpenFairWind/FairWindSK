@@ -26,6 +26,7 @@ namespace fairwindsk::ui::mydata {
 
     class GeoJsonPreviewWidget;
     class JsonObjectEditorWidget;
+    class ResourceTableProxyModel;
 
     class ResourceTab final : public QWidget {
         Q_OBJECT
@@ -43,12 +44,19 @@ namespace fairwindsk::ui::mydata {
         void onRefreshClicked();
         void onSearchTextChanged(const QString &text);
         void onTableDoubleClicked(const QModelIndex &index);
+        void onNavigateRowClicked();
+        void onEditRowClicked();
+        void onRemoveRowClicked();
         void onBackClicked();
         void onSaveClicked();
         void onCancelClicked();
 
     private:
         QModelIndex currentSourceIndex() const;
+        QModelIndex sourceIndexForProxyRow(int proxyRow) const;
+        void clearActionWidgets();
+        void updateActionButtons();
+        bool canNavigateResource() const;
         void selectResource(const QString &id);
         void showError(const QString &message) const;
         void showListPage();
@@ -69,7 +77,7 @@ namespace fairwindsk::ui::mydata {
 
         ResourceKind m_kind;
         ResourceModel *m_model;
-        QSortFilterProxyModel *m_proxyModel;
+        ResourceTableProxyModel *m_proxyModel;
         QStackedWidget *m_stackedWidget;
         QWidget *m_listPage;
         QWidget *m_detailsPage;

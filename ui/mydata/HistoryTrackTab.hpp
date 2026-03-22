@@ -21,6 +21,7 @@ namespace fairwindsk::ui::mydata {
     class GeoJsonPreviewWidget;
     class JsonObjectEditorWidget;
     class HistoryTrackModel;
+    class HistoryTrackTableProxyModel;
     struct HistoryTrackPoint;
 
     class HistoryTrackTab final : public QWidget {
@@ -36,6 +37,9 @@ namespace fairwindsk::ui::mydata {
         void onExportClicked();
         void onOpenClicked();
         void onTableDoubleClicked(const QModelIndex &index);
+        void onNavigateRowClicked();
+        void onEditRowClicked();
+        void onRemoveRowClicked();
         void onBackClicked();
         void onAddClicked();
         void onEditClicked();
@@ -44,6 +48,9 @@ namespace fairwindsk::ui::mydata {
         void onDeleteClicked();
 
     private:
+        QModelIndex proxyIndexForRow(int row, int column = 0) const;
+        void clearActionWidgets();
+        void updateActionButtons();
         void showListPage();
         void showDetailsPage(int row, bool editMode);
         void setEditMode(bool editMode);
@@ -59,6 +66,7 @@ namespace fairwindsk::ui::mydata {
         void updateStatus(const QString &message);
 
         HistoryTrackModel *m_model = nullptr;
+        HistoryTrackTableProxyModel *m_proxyModel = nullptr;
         QStackedWidget *m_stackedWidget = nullptr;
         QWidget *m_listPage = nullptr;
         QWidget *m_detailsPage = nullptr;

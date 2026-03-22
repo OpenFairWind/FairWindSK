@@ -10,6 +10,7 @@
 #include <QFormLayout>
 #include <QHeaderView>
 #include <QHBoxLayout>
+#include <QIdentityProxyModel>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QLabel>
@@ -29,6 +30,7 @@
 #include "GeoJsonPreviewWidget.hpp"
 #include "GeoJsonUtils.hpp"
 #include "JsonObjectEditorWidget.hpp"
+#include "FairWindSK.hpp"
 #include "signalk/Client.hpp"
 
 namespace {
@@ -59,11 +61,46 @@ namespace {
 }
 
 namespace fairwindsk::ui::mydata {
+    class ResourceTableProxyModel final : public QSortFilterProxyModel {
+    public:
+        explicit ResourceTableProxyModel(QObject *parent = nullptr)
+            : QSortFilterProxyModel(parent) {}
+
+        int columnCount(const QModelIndex &parent = QModelIndex()) const override {
+            const int baseCount = QSortFilterProxyModel::columnCount(parent);
+            return parent.isValid() ? 0 : baseCount + 1;
+        }
+
+        QVariant data(const QModelIndex &index, const int role = Qt::DisplayRole) const override {
+            const int baseCount = QSortFilterProxyModel::columnCount();
+            if (index.column() >= baseCount) {
+                return {};
+            }
+            return QSortFilterProxyModel::data(index, role);
+        }
+
+        QVariant headerData(const int section, const Qt::Orientation orientation, const int role) const override {
+            const int baseCount = QSortFilterProxyModel::columnCount();
+            if (orientation == Qt::Horizontal && role == Qt::DisplayRole && section >= baseCount) {
+                return QObject::tr("Actions");
+            }
+            return QSortFilterProxyModel::headerData(section, orientation, role);
+        }
+
+        bool lessThan(const QModelIndex &left, const QModelIndex &right) const override {
+            const int baseCount = QSortFilterProxyModel::columnCount();
+            if (left.column() >= baseCount || right.column() >= baseCount) {
+                return left.row() < right.row();
+            }
+            return QSortFilterProxyModel::lessThan(left, right);
+        }
+    };
+
     ResourceTab::ResourceTab(const ResourceKind kind, QWidget *parent)
         : QWidget(parent),
           m_kind(kind),
           m_model(new ResourceModel(kind, this)),
-          m_proxyModel(new QSortFilterProxyModel(this)),
+          m_proxyModel(new ResourceTableProxyModel(this)),
           m_stackedWidget(new QStackedWidget(this)),
           m_listPage(new QWidget(this)),
           m_detailsPage(new QWidget(this)),
@@ -133,24 +170,6 @@ namespace fairwindsk::ui::mydata {
         connect(m_addButton, &QToolButton::clicked, this, &ResourceTab::onAddClicked);
         toolbarLayout->addWidget(m_addButton);
 
-        auto *openButton = new QToolButton(this);
-        openButton->setIcon(QIcon(":/resources/svg/gui-view-show-svgrepo-com.svg"));
-        openButton->setToolTip(tr("Show details"));
-        connect(openButton, &QToolButton::clicked, this, &ResourceTab::onOpenClicked);
-        toolbarLayout->addWidget(openButton);
-
-        auto *editListButton = new QToolButton(this);
-        editListButton->setIcon(QIcon(":/resources/svg/OpenBridge/edit-google.svg"));
-        editListButton->setToolTip(tr("Edit selected resource"));
-        connect(editListButton, &QToolButton::clicked, this, &ResourceTab::onEditClicked);
-        toolbarLayout->addWidget(editListButton);
-
-        auto *deleteListButton = new QToolButton(this);
-        deleteListButton->setIcon(QIcon(":/resources/svg/OpenBridge/delete-google.svg"));
-        deleteListButton->setToolTip(tr("Delete selected resource"));
-        connect(deleteListButton, &QToolButton::clicked, this, &ResourceTab::onDeleteClicked);
-        toolbarLayout->addWidget(deleteListButton);
-
         m_proxyModel->setSourceModel(m_model);
         m_proxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
         m_proxyModel->setFilterKeyColumn(-1);
@@ -164,6 +183,7 @@ namespace fairwindsk::ui::mydata {
         auto *resourceHeader = m_tableView->horizontalHeader();
         resourceHeader->setSectionResizeMode(QHeaderView::ResizeToContents);
         resourceHeader->setSectionResizeMode(1, QHeaderView::Stretch);
+        resourceHeader->setSectionResizeMode(m_model->columnCount(), QHeaderView::Fixed);
         resourceHeader->setStretchLastSection(false);
         connect(m_tableView, &QTableView::doubleClicked, this, &ResourceTab::onTableDoubleClicked);
         connect(m_tableView, &QTableView::activated, this, &ResourceTab::onTableDoubleClicked);
@@ -299,11 +319,98 @@ namespace fairwindsk::ui::mydata {
         m_stackedWidget->addWidget(m_listPage);
         m_stackedWidget->addWidget(m_detailsPage);
         showListPage();
+
+        connect(m_model, &QAbstractItemModel::modelReset, this, &ResourceTab::updateActionButtons);
+        connect(m_proxyModel, &QAbstractItemModel::layoutChanged, this, &ResourceTab::updateActionButtons);
+        connect(m_proxyModel, &QAbstractItemModel::modelReset, this, &ResourceTab::updateActionButtons);
+        connect(m_tableView->horizontalHeader(), &QHeaderView::sortIndicatorChanged, this, &ResourceTab::updateActionButtons);
+        updateActionButtons();
     }
 
     QModelIndex ResourceTab::currentSourceIndex() const {
         const QModelIndex proxyIndex = m_tableView->currentIndex();
         return proxyIndex.isValid() ? m_proxyModel->mapToSource(proxyIndex) : QModelIndex{};
+    }
+
+    QModelIndex ResourceTab::sourceIndexForProxyRow(const int proxyRow) const {
+        if (proxyRow < 0) {
+            return {};
+        }
+        const auto proxyIndex = m_proxyModel->index(proxyRow, 0);
+        return proxyIndex.isValid() ? m_proxyModel->mapToSource(proxyIndex) : QModelIndex{};
+    }
+
+    void ResourceTab::clearActionWidgets() {
+        const int actionsColumn = m_model->columnCount();
+        const int visibleColumns = m_proxyModel->columnCount();
+        for (int row = 0; row < m_proxyModel->rowCount(); ++row) {
+            for (int column = 0; column < visibleColumns; ++column) {
+                if (column == actionsColumn) {
+                    continue;
+                }
+                if (QWidget *widget = m_tableView->indexWidget(m_proxyModel->index(row, column))) {
+                    m_tableView->setIndexWidget(m_proxyModel->index(row, column), nullptr);
+                    widget->deleteLater();
+                }
+            }
+            if (QWidget *widget = m_tableView->indexWidget(m_proxyModel->index(row, actionsColumn))) {
+                m_tableView->setIndexWidget(m_proxyModel->index(row, actionsColumn), nullptr);
+                widget->deleteLater();
+            }
+        }
+    }
+
+    bool ResourceTab::canNavigateResource() const {
+        return m_kind == ResourceKind::Waypoint;
+    }
+
+    void ResourceTab::updateActionButtons() {
+        const int actionsColumn = m_model->columnCount();
+        clearActionWidgets();
+        m_tableView->setColumnWidth(actionsColumn, 152);
+
+        for (int row = 0; row < m_proxyModel->rowCount(); ++row) {
+            const auto sourceIndex = sourceIndexForProxyRow(row);
+            if (!sourceIndex.isValid()) {
+                continue;
+            }
+
+            const QString id = m_model->resourceIdAtRow(sourceIndex.row());
+            auto *actionsWidget = new QWidget();
+            auto *actionsLayout = new QHBoxLayout(actionsWidget);
+            actionsLayout->setContentsMargins(4, 0, 4, 0);
+            actionsLayout->setSpacing(2);
+
+            auto *navigateButton = new QToolButton(actionsWidget);
+            navigateButton->setAutoRaise(true);
+            navigateButton->setIcon(QIcon(":/resources/svg/OpenBridge/navigation-route.svg"));
+            navigateButton->setToolTip(canNavigateResource()
+                                               ? tr("Navigate to resource")
+                                               : tr("Navigate is not available for this resource"));
+            navigateButton->setEnabled(canNavigateResource());
+            navigateButton->setProperty("resourceId", id);
+            connect(navigateButton, &QToolButton::clicked, this, &ResourceTab::onNavigateRowClicked);
+            actionsLayout->addWidget(navigateButton);
+
+            auto *editButton = new QToolButton(actionsWidget);
+            editButton->setAutoRaise(true);
+            editButton->setIcon(QIcon(":/resources/svg/OpenBridge/edit-google.svg"));
+            editButton->setToolTip(tr("Edit resource"));
+            editButton->setProperty("resourceId", id);
+            connect(editButton, &QToolButton::clicked, this, &ResourceTab::onEditRowClicked);
+            actionsLayout->addWidget(editButton);
+
+            auto *removeButton = new QToolButton(actionsWidget);
+            removeButton->setAutoRaise(true);
+            removeButton->setIcon(QIcon(":/resources/svg/OpenBridge/delete-google.svg"));
+            removeButton->setToolTip(tr("Remove resource"));
+            removeButton->setProperty("resourceId", id);
+            connect(removeButton, &QToolButton::clicked, this, &ResourceTab::onRemoveRowClicked);
+            actionsLayout->addWidget(removeButton);
+
+            actionsLayout->addStretch(1);
+            m_tableView->setIndexWidget(m_proxyModel->index(row, actionsColumn), actionsWidget);
+        }
     }
 
     void ResourceTab::selectResource(const QString &id) {
@@ -935,6 +1042,62 @@ namespace fairwindsk::ui::mydata {
 
         const QString id = m_model->resourceIdAtRow(sourceIndex.row());
         showDetailsPage(id, m_model->resourceAtRow(sourceIndex.row()), false);
+    }
+
+    void ResourceTab::onNavigateRowClicked() {
+        if (!canNavigateResource()) {
+            return;
+        }
+
+        const auto *button = qobject_cast<QToolButton *>(sender());
+        if (!button) {
+            return;
+        }
+
+        const QString id = button->property("resourceId").toString();
+        if (!fairwindsk::FairWindSK::getInstance()->getSignalKClient()->navigateToWaypoint("/resources/waypoints/" + id)) {
+            showError(tr("Unable to start navigation to the selected resource."));
+        }
+    }
+
+    void ResourceTab::onEditRowClicked() {
+        const auto *button = qobject_cast<QToolButton *>(sender());
+        if (!button) {
+            return;
+        }
+
+        const QString id = button->property("resourceId").toString();
+        for (int row = 0; row < m_model->rowCount(); ++row) {
+            if (m_model->resourceIdAtRow(row) == id) {
+                showDetailsPage(id, m_model->resourceAtRow(row), true);
+                return;
+            }
+        }
+    }
+
+    void ResourceTab::onRemoveRowClicked() {
+        const auto *button = qobject_cast<QToolButton *>(sender());
+        if (!button) {
+            return;
+        }
+
+        const QString id = button->property("resourceId").toString();
+        for (int row = 0; row < m_model->rowCount(); ++row) {
+            if (m_model->resourceIdAtRow(row) == id) {
+                const auto resource = m_model->resourceAtRow(row);
+                const QString previousId = m_currentResourceId;
+                const QString previousName = m_nameEdit->text();
+                const bool wasOnList = m_stackedWidget->currentWidget() == m_listPage;
+                m_currentResourceId = id;
+                m_nameEdit->setText(resourceDisplayName(resource));
+                onDeleteClicked();
+                if (wasOnList) {
+                    m_currentResourceId = previousId;
+                    m_nameEdit->setText(previousName);
+                }
+                return;
+            }
+        }
     }
 
     void ResourceTab::onBackClicked() {

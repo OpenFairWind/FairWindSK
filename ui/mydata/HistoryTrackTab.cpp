@@ -11,6 +11,7 @@
 #include <QFormLayout>
 #include <QHeaderView>
 #include <QHBoxLayout>
+#include <QIdentityProxyModel>
 #include <QJsonDocument>
 #include <QLabel>
 #include <QMessageBox>
@@ -28,9 +29,37 @@
 #include "JsonObjectEditorWidget.hpp"
 
 namespace fairwindsk::ui::mydata {
+    class HistoryTrackTableProxyModel final : public QIdentityProxyModel {
+    public:
+        explicit HistoryTrackTableProxyModel(QObject *parent = nullptr)
+            : QIdentityProxyModel(parent) {}
+
+        int columnCount(const QModelIndex &parent = QModelIndex()) const override {
+            const int baseCount = QIdentityProxyModel::columnCount(parent);
+            return parent.isValid() ? 0 : baseCount + 1;
+        }
+
+        QVariant data(const QModelIndex &index, const int role = Qt::DisplayRole) const override {
+            const int baseCount = QIdentityProxyModel::columnCount();
+            if (index.column() >= baseCount) {
+                return {};
+            }
+            return QIdentityProxyModel::data(index, role);
+        }
+
+        QVariant headerData(const int section, const Qt::Orientation orientation, const int role) const override {
+            const int baseCount = QIdentityProxyModel::columnCount();
+            if (orientation == Qt::Horizontal && role == Qt::DisplayRole && section >= baseCount) {
+                return QObject::tr("Actions");
+            }
+            return QIdentityProxyModel::headerData(section, orientation, role);
+        }
+    };
+
     HistoryTrackTab::HistoryTrackTab(QWidget *parent)
         : QWidget(parent),
           m_model(new HistoryTrackModel(this)),
+          m_proxyModel(new HistoryTrackTableProxyModel(this)),
           m_stackedWidget(new QStackedWidget(this)),
           m_listPage(new QWidget(this)),
           m_detailsPage(new QWidget(this)),
@@ -88,36 +117,20 @@ namespace fairwindsk::ui::mydata {
         connect(m_newButton, &QToolButton::clicked, this, &HistoryTrackTab::onAddClicked);
         toolbarLayout->addWidget(m_newButton);
 
-        auto *openButton = new QToolButton(this);
-        openButton->setIcon(QIcon(":/resources/svg/gui-view-show-svgrepo-com.svg"));
-        openButton->setToolTip(tr("Show details"));
-        connect(openButton, &QToolButton::clicked, this, &HistoryTrackTab::onOpenClicked);
-        toolbarLayout->addWidget(openButton);
-
-        auto *editListButton = new QToolButton(this);
-        editListButton->setIcon(QIcon(":/resources/svg/OpenBridge/edit-google.svg"));
-        editListButton->setToolTip(tr("Edit selected sample"));
-        connect(editListButton, &QToolButton::clicked, this, &HistoryTrackTab::onEditClicked);
-        toolbarLayout->addWidget(editListButton);
-
-        auto *deleteListButton = new QToolButton(this);
-        deleteListButton->setIcon(QIcon(":/resources/svg/OpenBridge/delete-google.svg"));
-        deleteListButton->setToolTip(tr("Delete selected sample"));
-        connect(deleteListButton, &QToolButton::clicked, this, &HistoryTrackTab::onDeleteClicked);
-        toolbarLayout->addWidget(deleteListButton);
-
         toolbarLayout->addStretch(1);
         toolbarLayout->addWidget(m_statusLabel, 1);
 
-        m_tableView->setModel(m_model);
+        m_proxyModel->setSourceModel(m_model);
+        m_tableView->setModel(m_proxyModel);
         m_tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
         m_tableView->setSelectionMode(QAbstractItemView::SingleSelection);
         m_tableView->setSortingEnabled(false);
         auto *trackHeader = m_tableView->horizontalHeader();
         trackHeader->setSectionResizeMode(QHeaderView::ResizeToContents);
-        if (m_model->columnCount() > 0) {
-            trackHeader->setSectionResizeMode(m_model->columnCount() - 1, QHeaderView::Stretch);
+        if (m_model->columnCount() > 1) {
+            trackHeader->setSectionResizeMode(m_model->columnCount() - 2, QHeaderView::Stretch);
         }
+        trackHeader->setSectionResizeMode(m_model->columnCount(), QHeaderView::Fixed);
         trackHeader->setStretchLastSection(false);
         connect(m_tableView, &QTableView::doubleClicked, this, &HistoryTrackTab::onTableDoubleClicked);
         connect(m_tableView, &QTableView::activated, this, &HistoryTrackTab::onTableDoubleClicked);
@@ -202,8 +215,76 @@ namespace fairwindsk::ui::mydata {
         connect(m_refreshTimer, &QTimer::timeout, this, &HistoryTrackTab::onRefreshClicked);
         m_refreshTimer->start(5000);
 
+        connect(m_model, &QAbstractItemModel::modelReset, this, &HistoryTrackTab::updateActionButtons);
+        connect(m_model, &QAbstractItemModel::rowsInserted, this, &HistoryTrackTab::updateActionButtons);
+        connect(m_model, &QAbstractItemModel::rowsRemoved, this, &HistoryTrackTab::updateActionButtons);
         showListPage();
         onRefreshClicked();
+    }
+
+    QModelIndex HistoryTrackTab::proxyIndexForRow(const int row, const int column) const {
+        return row >= 0 ? m_proxyModel->index(row, column) : QModelIndex{};
+    }
+
+    void HistoryTrackTab::clearActionWidgets() {
+        const int actionsColumn = m_model->columnCount();
+        const int visibleColumns = m_proxyModel->columnCount();
+        for (int row = 0; row < m_proxyModel->rowCount(); ++row) {
+            for (int column = 0; column < visibleColumns; ++column) {
+                if (column == actionsColumn) {
+                    continue;
+                }
+                if (QWidget *widget = m_tableView->indexWidget(proxyIndexForRow(row, column))) {
+                    m_tableView->setIndexWidget(proxyIndexForRow(row, column), nullptr);
+                    widget->deleteLater();
+                }
+            }
+            if (QWidget *widget = m_tableView->indexWidget(proxyIndexForRow(row, actionsColumn))) {
+                m_tableView->setIndexWidget(proxyIndexForRow(row, actionsColumn), nullptr);
+                widget->deleteLater();
+            }
+        }
+    }
+
+    void HistoryTrackTab::updateActionButtons() {
+        const int actionsColumn = m_model->columnCount();
+        clearActionWidgets();
+        m_tableView->setColumnWidth(actionsColumn, 152);
+
+        for (int row = 0; row < m_model->rowCount(); ++row) {
+            auto *actionsWidget = new QWidget();
+            auto *actionsLayout = new QHBoxLayout(actionsWidget);
+            actionsLayout->setContentsMargins(4, 0, 4, 0);
+            actionsLayout->setSpacing(2);
+
+            auto *navigateButton = new QToolButton(actionsWidget);
+            navigateButton->setAutoRaise(true);
+            navigateButton->setIcon(QIcon(":/resources/svg/OpenBridge/navigation-route.svg"));
+            navigateButton->setToolTip(tr("Navigate is not available for track samples"));
+            navigateButton->setEnabled(false);
+            navigateButton->setProperty("trackRow", row);
+            connect(navigateButton, &QToolButton::clicked, this, &HistoryTrackTab::onNavigateRowClicked);
+            actionsLayout->addWidget(navigateButton);
+
+            auto *editButton = new QToolButton(actionsWidget);
+            editButton->setAutoRaise(true);
+            editButton->setIcon(QIcon(":/resources/svg/OpenBridge/edit-google.svg"));
+            editButton->setToolTip(tr("Edit track sample"));
+            editButton->setProperty("trackRow", row);
+            connect(editButton, &QToolButton::clicked, this, &HistoryTrackTab::onEditRowClicked);
+            actionsLayout->addWidget(editButton);
+
+            auto *removeButton = new QToolButton(actionsWidget);
+            removeButton->setAutoRaise(true);
+            removeButton->setIcon(QIcon(":/resources/svg/OpenBridge/delete-google.svg"));
+            removeButton->setToolTip(tr("Remove track sample"));
+            removeButton->setProperty("trackRow", row);
+            connect(removeButton, &QToolButton::clicked, this, &HistoryTrackTab::onRemoveRowClicked);
+            actionsLayout->addWidget(removeButton);
+
+            actionsLayout->addStretch(1);
+            m_tableView->setIndexWidget(proxyIndexForRow(row, actionsColumn), actionsWidget);
+        }
     }
 
     QString HistoryTrackTab::currentDuration() const {
@@ -330,7 +411,7 @@ namespace fairwindsk::ui::mydata {
 
     int HistoryTrackTab::currentRow() const {
         const QModelIndex currentIndex = m_tableView->currentIndex();
-        return currentIndex.isValid() ? currentIndex.row() : -1;
+        return currentIndex.isValid() ? m_proxyModel->mapToSource(currentIndex).row() : -1;
     }
 
     void HistoryTrackTab::onRefreshClicked() {
@@ -414,7 +495,34 @@ namespace fairwindsk::ui::mydata {
             return;
         }
 
-        showDetailsPage(index.row(), false);
+        showDetailsPage(m_proxyModel->mapToSource(index).row(), false);
+    }
+
+    void HistoryTrackTab::onNavigateRowClicked() {
+    }
+
+    void HistoryTrackTab::onEditRowClicked() {
+        const auto *button = qobject_cast<QToolButton *>(sender());
+        if (!button) {
+            return;
+        }
+
+        showDetailsPage(button->property("trackRow").toInt(), true);
+    }
+
+    void HistoryTrackTab::onRemoveRowClicked() {
+        const auto *button = qobject_cast<QToolButton *>(sender());
+        if (!button) {
+            return;
+        }
+
+        const int row = button->property("trackRow").toInt();
+        if (row < 0 || row >= m_model->rowCount()) {
+            return;
+        }
+
+        m_currentRow = row;
+        onDeleteClicked();
     }
 
     void HistoryTrackTab::onBackClicked() {
