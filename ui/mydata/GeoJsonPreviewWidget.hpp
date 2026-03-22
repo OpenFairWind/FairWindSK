@@ -29,6 +29,7 @@ namespace fairwindsk::ui::mydata {
         void ensureFreeboardTab(const QString &url);
         void updateFocusCoordinate(const QJsonDocument &document);
         void applyFreeboardFocus();
+        void scheduleFreeboardFocus();
 
         QTabWidget *m_tabWidget = nullptr;
         QWebEngineView *m_view = nullptr;
@@ -37,6 +38,10 @@ namespace fairwindsk::ui::mydata {
         bool m_hasFocusCoordinate = false;
         double m_focusLongitude = 0.0;
         double m_focusLatitude = 0.0;
+        double m_minLongitude = 0.0;
+        double m_maxLongitude = 0.0;
+        double m_minLatitude = 0.0;
+        double m_maxLatitude = 0.0;
     };
 }
 

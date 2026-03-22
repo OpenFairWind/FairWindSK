@@ -9,6 +9,7 @@
 #include <QJsonDocument>
 #include <QPlainTextEdit>
 #include <QTabWidget>
+#include <QByteArray>
 #include <QTimer>
 #include <QUrl>
 #include <QWebEnginePage>
@@ -101,8 +102,7 @@ namespace fairwindsk::ui::mydata {
         setMinimumSize(320, 240);
         connect(m_freeboardView, &QWebEngineView::loadFinished, this, [this](const bool ok) {
             if (ok) {
-                applyFreeboardFocus();
-                QTimer::singleShot(1200, this, &GeoJsonPreviewWidget::applyFreeboardFocus);
+                scheduleFreeboardFocus();
             }
         });
         setMessage(tr("GeoJSON preview will appear here."));
@@ -125,13 +125,13 @@ namespace fairwindsk::ui::mydata {
     }
 
     void GeoJsonPreviewWidget::setGeoJson(const QJsonDocument &document, const QString &) {
-        const QString json = QString::fromUtf8(document.toJson(QJsonDocument::Compact));
+        const QString base64Json = QString::fromLatin1(document.toJson(QJsonDocument::Compact).toBase64());
         const QString freeboardUrl = detectFreeboardUrl();
         updateFocusCoordinate(document);
         ensureFreeboardTab(freeboardUrl);
         m_textView->setPlainText(QString::fromUtf8(document.toJson(QJsonDocument::Indented)));
         const QString script = QStringLiteral(R"(
-const data = %1;
+const data = JSON.parse(atob('%1'));
 const map = document.getElementById('map');
 const tilePane = document.getElementById('tile-pane');
 const svg = document.getElementById('preview');
@@ -168,6 +168,7 @@ function toFeatures(input) {
   if (!input) return [];
   if (input.type === 'FeatureCollection' && Array.isArray(input.features)) return input.features;
   if (input.type === 'Feature') return [input];
+  if (input.geometry) return [{ type: 'Feature', geometry: input.geometry, properties: input.properties || {} }];
   return [];
 }
 
@@ -337,9 +338,9 @@ if (!allPoints.length) {
   info.textContent = `${features.length} feature(s) rendered over the map preview.`;
 }
 )")
-                .arg(json);
+            .arg(base64Json);
 
-        m_view->setHtml(htmlForContent(script));
+        m_view->setHtml(htmlForContent(script), QUrl(QStringLiteral("https://preview.local/")));
     }
 
     void GeoJsonPreviewWidget::setMessage(const QString &message, const QString &) {
@@ -356,7 +357,7 @@ svg.innerHTML = '';
 fallbackSource.textContent = '';
 info.textContent = %1[0];
 )").arg(safeMessage.trimmed());
-        m_view->setHtml(htmlForContent(script));
+        m_view->setHtml(htmlForContent(script), QUrl(QStringLiteral("https://preview.local/")));
     }
 
     void GeoJsonPreviewWidget::updateFocusCoordinate(const QJsonDocument &document) {
@@ -368,19 +369,38 @@ info.textContent = %1[0];
             m_hasFocusCoordinate = false;
             m_focusLongitude = 0.0;
             m_focusLatitude = 0.0;
+            m_minLongitude = 0.0;
+            m_maxLongitude = 0.0;
+            m_minLatitude = 0.0;
+            m_maxLatitude = 0.0;
             return;
         }
 
         double longitudeSum = 0.0;
         double latitudeSum = 0.0;
+        m_minLongitude = coordinates.first().first;
+        m_maxLongitude = coordinates.first().first;
+        m_minLatitude = coordinates.first().second;
+        m_maxLatitude = coordinates.first().second;
         for (const auto &coordinate : coordinates) {
             longitudeSum += coordinate.first;
             latitudeSum += coordinate.second;
+            m_minLongitude = std::min(m_minLongitude, coordinate.first);
+            m_maxLongitude = std::max(m_maxLongitude, coordinate.first);
+            m_minLatitude = std::min(m_minLatitude, coordinate.second);
+            m_maxLatitude = std::max(m_maxLatitude, coordinate.second);
         }
 
         m_hasFocusCoordinate = true;
         m_focusLongitude = longitudeSum / coordinates.size();
         m_focusLatitude = latitudeSum / coordinates.size();
+    }
+
+    void GeoJsonPreviewWidget::scheduleFreeboardFocus() {
+        applyFreeboardFocus();
+        QTimer::singleShot(600, this, &GeoJsonPreviewWidget::applyFreeboardFocus);
+        QTimer::singleShot(1500, this, &GeoJsonPreviewWidget::applyFreeboardFocus);
+        QTimer::singleShot(3000, this, &GeoJsonPreviewWidget::applyFreeboardFocus);
     }
 
     void GeoJsonPreviewWidget::applyFreeboardFocus() {
@@ -392,6 +412,10 @@ info.textContent = %1[0];
 (function() {
   const lon = %1;
   const lat = %2;
+  const minLon = %3;
+  const minLat = %4;
+  const maxLon = %5;
+  const maxLat = %6;
   function projectToMercator(longitude, latitude) {
     const x = longitude * 20037508.34 / 180.0;
     let y = Math.log(Math.tan((90.0 + latitude) * Math.PI / 360.0)) / (Math.PI / 180.0);
@@ -399,6 +423,15 @@ info.textContent = %1[0];
     return [x, y];
   }
   const center = projectToMercator(lon, lat);
+  const paddedExtentLon = Math.max(0.01, Math.abs(maxLon - minLon) * 1.8);
+  const paddedExtentLat = Math.max(0.01, Math.abs(maxLat - minLat) * 1.8);
+  const mercatorExtent = [
+    projectToMercator(lon - paddedExtentLon / 2, lat - paddedExtentLat / 2)[0],
+    projectToMercator(lon - paddedExtentLon / 2, lat - paddedExtentLat / 2)[1],
+    projectToMercator(lon + paddedExtentLon / 2, lat + paddedExtentLat / 2)[0],
+    projectToMercator(lon + paddedExtentLon / 2, lat + paddedExtentLat / 2)[1]
+  ];
+  const geoExtent = [lon - paddedExtentLon / 2, lat - paddedExtentLat / 2, lon + paddedExtentLon / 2, lat + paddedExtentLat / 2];
   const visited = new Set();
   const queue = [window];
   let centered = 0;
@@ -409,15 +442,40 @@ info.textContent = %1[0];
     }
     visited.add(current);
     try {
-      if (typeof current.getView === 'function') {
-        const view = current.getView();
+      const mapObject = typeof current.getView === 'function' ? current : (current.map && typeof current.map.getView === 'function' ? current.map : null);
+      if (mapObject) {
+        const view = mapObject.getView();
         if (view && typeof view.setCenter === 'function') {
-          view.setCenter(center);
-          if (typeof view.getZoom === 'function' && typeof view.setZoom === 'function' && view.getZoom() < 12) {
-            view.setZoom(14);
+          if (typeof view.fit === 'function') {
+            try {
+              if (window.ol && window.ol.proj && typeof window.ol.proj.transformExtent === 'function') {
+                view.fit(window.ol.proj.transformExtent(geoExtent, 'EPSG:4326', 'EPSG:3857'), {
+                  padding: [48, 48, 48, 48],
+                  maxZoom: 15,
+                  duration: 0
+                });
+              } else {
+                view.fit(mercatorExtent, {
+                  padding: [48, 48, 48, 48],
+                  maxZoom: 15,
+                  duration: 0
+                });
+              }
+            } catch (error) {
+              view.setCenter(center);
+            }
+          } else {
+            view.setCenter(center);
+          }
+          if (typeof view.getZoom === 'function' && typeof view.setZoom === 'function' && view.getZoom() < 13) {
+            view.setZoom(15);
           }
           centered += 1;
         }
+      }
+      if (current.setView && current.flyTo) {
+        current.setView([lat, lon], Math.max(14, current.getZoom ? current.getZoom() : 14), { animate: false });
+        centered += 1;
       }
     } catch (error) {}
     try {
@@ -433,7 +491,11 @@ info.textContent = %1[0];
 })();
 )")
             .arg(m_focusLongitude, 0, 'f', 8)
-            .arg(m_focusLatitude, 0, 'f', 8);
+            .arg(m_focusLatitude, 0, 'f', 8)
+            .arg(m_minLongitude, 0, 'f', 8)
+            .arg(m_minLatitude, 0, 'f', 8)
+            .arg(m_maxLongitude, 0, 'f', 8)
+            .arg(m_maxLatitude, 0, 'f', 8);
 
         m_freeboardView->page()->runJavaScript(script);
     }
