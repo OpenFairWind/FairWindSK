@@ -23,6 +23,7 @@
 #include <QSignalBlocker>
 #include <QSplitter>
 #include <QStackedWidget>
+#include <QTabWidget>
 #include <QTableWidget>
 #include <QTableWidgetItem>
 #include <QTimer>
@@ -124,10 +125,13 @@ namespace fairwindsk::ui::mydata {
           m_altitudeSpinBox(new QDoubleSpinBox(this)),
           m_contactsEdit(new QPlainTextEdit(this)),
           m_contactsLabel(new QLabel(tr("Contacts"), this)),
+          m_seaFloorWidget(new QWidget(this)),
+          m_slipsWidget(new QWidget(this)),
+          m_seaFloorMinValueLabel(new QLabel(this)),
+          m_seaFloorMaxValueLabel(new QLabel(this)),
+          m_slipsValueLabel(new QLabel(this)),
           m_propertiesEditor(new JsonObjectEditorWidget(this)),
           m_previewWidget(new GeoJsonPreviewWidget(this)),
-          m_idValueLabel(new QLabel(this)),
-          m_timestampValueLabel(new QLabel(this)),
           m_searchTimer(new QTimer(this)) {
         auto *rootLayout = new QVBoxLayout(this);
         rootLayout->setContentsMargins(0, 0, 0, 0);
@@ -245,10 +249,16 @@ namespace fairwindsk::ui::mydata {
 
         auto *formWidget = new QWidget(detailsSplitter);
         auto *formLayout = new QFormLayout(formWidget);
+        auto *detailsSideWidget = new QWidget(detailsSplitter);
+        auto *detailsSideLayout = new QVBoxLayout(detailsSideWidget);
+        detailsSideLayout->setContentsMargins(0, 0, 0, 0);
+        detailsSideLayout->setSpacing(6);
         detailsSplitter->addWidget(formWidget);
-        detailsSplitter->addWidget(m_previewWidget);
-        detailsSplitter->setStretchFactor(0, 1);
-        detailsSplitter->setStretchFactor(1, 1);
+        detailsSplitter->addWidget(detailsSideWidget);
+        detailsSideLayout->addWidget(m_previewWidget, 2);
+        detailsSideLayout->addWidget(m_propertiesEditor, 1);
+        detailsSplitter->setStretchFactor(0, 3);
+        detailsSplitter->setStretchFactor(1, 2);
 
         m_latitudeSpinBox->setRange(-90.0, 90.0);
         m_latitudeSpinBox->setDecimals(8);
@@ -258,6 +268,8 @@ namespace fairwindsk::ui::mydata {
         m_altitudeSpinBox->setDecimals(2);
         m_descriptionEdit->setTabChangesFocus(true);
         m_contactsEdit->setReadOnly(true);
+        m_seaFloorWidget->setVisible(false);
+        m_slipsWidget->setVisible(false);
         m_searchEdit->setStyleSheet(kLineEditStyle);
         m_nameEdit->setStyleSheet(kLineEditStyle);
         m_descriptionEdit->setStyleSheet(kPlainTextStyle);
@@ -267,11 +279,27 @@ namespace fairwindsk::ui::mydata {
         m_altitudeSpinBox->setStyleSheet(kSpinBoxStyle);
         m_contactsEdit->setStyleSheet(kPlainTextStyle);
         m_propertiesEditor->setLabels(tr("Properties Tree"), tr("Properties JSON"));
-        m_propertiesEditor->setHiddenKeys({QStringLiteral("name"), QStringLiteral("description"), QStringLiteral("contacts")});
+        m_propertiesEditor->setHiddenKeys({QStringLiteral("name"), QStringLiteral("description"), QStringLiteral("contacts"), QStringLiteral("seaFloor"), QStringLiteral("slips")});
         m_previewWidget->setFreeboardEnabled(false);
         m_previewWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        m_previewWidget->setMinimumWidth(360);
 
-        formLayout->addRow(tr("Id"), m_idValueLabel);
+        auto *seaFloorLayout = new QHBoxLayout(m_seaFloorWidget);
+        seaFloorLayout->setContentsMargins(0, 0, 0, 0);
+        seaFloorLayout->setSpacing(6);
+        seaFloorLayout->addWidget(new QLabel(tr("Min"), m_seaFloorWidget));
+        seaFloorLayout->addWidget(m_seaFloorMinValueLabel);
+        seaFloorLayout->addSpacing(12);
+        seaFloorLayout->addWidget(new QLabel(tr("Max"), m_seaFloorWidget));
+        seaFloorLayout->addWidget(m_seaFloorMaxValueLabel);
+        seaFloorLayout->addStretch(1);
+
+        auto *slipsLayout = new QHBoxLayout(m_slipsWidget);
+        slipsLayout->setContentsMargins(0, 0, 0, 0);
+        slipsLayout->setSpacing(6);
+        slipsLayout->addWidget(m_slipsValueLabel);
+        slipsLayout->addStretch(1);
+
         auto *nameTypeWidget = new QWidget(formWidget);
         auto *nameTypeLayout = new QHBoxLayout(nameTypeWidget);
         nameTypeLayout->setContentsMargins(0, 0, 0, 0);
@@ -297,8 +325,8 @@ namespace fairwindsk::ui::mydata {
         positionLayout->addWidget(m_altitudeSpinBox, 1);
         formLayout->addRow(tr("Position"), positionWidget);
         formLayout->addRow(m_contactsLabel, m_contactsEdit);
-        formLayout->addRow(tr("Feature properties"), m_propertiesEditor);
-        formLayout->addRow(tr("Timestamp"), m_timestampValueLabel);
+        formLayout->addRow(tr("Sea floor"), m_seaFloorWidget);
+        formLayout->addRow(tr("Slips"), m_slipsWidget);
 
         m_stackedWidget->addWidget(m_listPage);
         m_stackedWidget->addWidget(m_detailsPage);
@@ -446,7 +474,6 @@ namespace fairwindsk::ui::mydata {
         m_currentWaypointId = id;
         const auto waypointName = displayNameForWaypoint(resource);
         m_titleLabel->setText(waypointName.isEmpty() ? tr("Waypoint details") : waypointName);
-        m_idValueLabel->setText(id);
         m_nameEdit->setText(waypointName);
         m_descriptionEdit->setPlainText(descriptionForWaypoint(resource));
         m_typeEdit->setText(resource["type"].toString());
@@ -458,6 +485,15 @@ namespace fairwindsk::ui::mydata {
 
         const auto properties = featurePropertiesObject(resource);
         m_propertiesEditor->setJsonObject(properties);
+        const auto seaFloor = properties.value("seaFloor").toObject();
+        const bool hasSeaFloor = !seaFloor.isEmpty();
+        m_seaFloorWidget->setVisible(hasSeaFloor);
+        m_seaFloorMinValueLabel->setText(seaFloor.contains("minDepth") ? QString::number(seaFloor.value("minDepth").toDouble()) : QString());
+        m_seaFloorMaxValueLabel->setText(seaFloor.contains("maxDepth") ? QString::number(seaFloor.value("maxDepth").toDouble()) : QString());
+        const auto slipsValue = properties.value("slips");
+        const bool hasSlips = !slipsValue.isUndefined() && !slipsValue.isNull();
+        m_slipsWidget->setVisible(hasSlips);
+        m_slipsValueLabel->setText(hasSlips ? slipsValue.toVariant().toString() : QString());
         const auto contacts = properties.value("contacts").toArray();
         QStringList contactLines;
         for (const auto &contact : contacts) {
@@ -468,7 +504,6 @@ namespace fairwindsk::ui::mydata {
         m_contactsEdit->setPlainText(contactLines.join('\n'));
         m_contactsLabel->setVisible(!contactLines.isEmpty());
         m_contactsEdit->setVisible(!contactLines.isEmpty());
-        m_timestampValueLabel->setText(resource["timestamp"].toString());
         updatePreview(resource);
     }
 
@@ -607,7 +642,6 @@ namespace fairwindsk::ui::mydata {
     void Waypoints::clearEditor() {
         m_currentWaypointId.clear();
         m_titleLabel->setText(tr("New waypoint"));
-        m_idValueLabel->setText(tr("New"));
         m_nameEdit->clear();
         m_descriptionEdit->clear();
         m_typeEdit->setText("generic");
@@ -617,8 +651,10 @@ namespace fairwindsk::ui::mydata {
         m_contactsEdit->clear();
         m_contactsLabel->setVisible(false);
         m_contactsEdit->setVisible(false);
+        m_seaFloorWidget->setVisible(false);
+        m_slipsWidget->setVisible(false);
+        m_slipsValueLabel->clear();
         m_propertiesEditor->setJsonObject(QJsonObject{});
-        m_timestampValueLabel->setText({});
         updatePreview(waypointFromEditor());
     }
 
