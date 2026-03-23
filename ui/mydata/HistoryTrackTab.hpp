@@ -15,6 +15,7 @@ class QStackedWidget;
 class QTableWidget;
 class QToolButton;
 class QTimer;
+namespace Ui { class HistoryTrackTab; }
 
 namespace fairwindsk::ui::mydata {
 
@@ -28,6 +29,7 @@ namespace fairwindsk::ui::mydata {
 
     public:
         explicit HistoryTrackTab(QWidget *parent = nullptr);
+        ~HistoryTrackTab() override;
 
     private slots:
         void onRefreshClicked();
@@ -64,6 +66,7 @@ namespace fairwindsk::ui::mydata {
         QString currentResolution() const;
         void updateStatus(const QString &message);
 
+        ::Ui::HistoryTrackTab *ui = nullptr;
         HistoryTrackModel *m_model = nullptr;
         QStackedWidget *m_stackedWidget = nullptr;
         QWidget *m_listPage = nullptr;

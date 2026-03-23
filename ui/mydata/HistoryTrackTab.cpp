@@ -31,6 +31,7 @@
 #include "HistoryTrackModel.hpp"
 #include "JsonObjectEditorWidget.hpp"
 #include "ui/DrawerDialogHost.hpp"
+#include "ui_HistoryTrackTab.h"
 
 namespace {
     const QString kTrackTableStyle = QStringLiteral(
@@ -42,24 +43,8 @@ namespace fairwindsk::ui::mydata {
 
     HistoryTrackTab::HistoryTrackTab(QWidget *parent)
         : QWidget(parent),
+          ui(new ::Ui::HistoryTrackTab),
           m_model(new HistoryTrackModel(this)),
-          m_stackedWidget(new QStackedWidget(this)),
-          m_listPage(new QWidget(this)),
-          m_detailsPage(new QWidget(this)),
-          m_statusLabel(new QLabel(this)),
-          m_titleLabel(new QLabel(this)),
-          m_indexValueLabel(new QLabel(this)),
-          m_durationCombo(new QComboBox(this)),
-          m_tableWidget(new QTableWidget(this)),
-          m_refreshButton(new QToolButton(this)),
-          m_importButton(new QToolButton(this)),
-          m_exportButton(new QToolButton(this)),
-          m_backButton(new QToolButton(this)),
-          m_newButton(new QToolButton(this)),
-          m_editButton(new QToolButton(this)),
-          m_saveButton(new QToolButton(this)),
-          m_cancelButton(new QToolButton(this)),
-          m_deleteButton(new QToolButton(this)),
           m_timestampEdit(new QDateTimeEdit(this)),
           m_latitudeSpinBox(new QDoubleSpinBox(this)),
           m_longitudeSpinBox(new QDoubleSpinBox(this)),
@@ -67,17 +52,25 @@ namespace fairwindsk::ui::mydata {
           m_propertiesEditor(new JsonObjectEditorWidget(this)),
           m_previewWidget(new GeoJsonPreviewWidget(this)),
           m_refreshTimer(new QTimer(this)) {
-        auto *rootLayout = new QVBoxLayout(this);
-        rootLayout->setContentsMargins(0, 0, 0, 0);
-        rootLayout->addWidget(m_stackedWidget);
+        ui->setupUi(this);
 
-        auto *listLayout = new QVBoxLayout(m_listPage);
-        listLayout->setContentsMargins(0, 0, 0, 0);
-        listLayout->setSpacing(6);
-        auto *toolbarLayout = new QHBoxLayout();
-        toolbarLayout->setContentsMargins(0, 0, 0, 0);
-        toolbarLayout->setSpacing(6);
-        listLayout->addLayout(toolbarLayout);
+        m_stackedWidget = ui->stackedWidget;
+        m_listPage = ui->pageList;
+        m_detailsPage = ui->pageDetails;
+        m_statusLabel = ui->labelStatus;
+        m_titleLabel = ui->labelTitle;
+        m_indexValueLabel = new QLabel(this);
+        m_durationCombo = ui->comboBoxDuration;
+        m_tableWidget = ui->tableWidget;
+        m_refreshButton = ui->toolButtonRefresh;
+        m_importButton = ui->toolButtonImport;
+        m_exportButton = ui->toolButtonExport;
+        m_backButton = ui->toolButtonBack;
+        m_newButton = ui->toolButtonNew;
+        m_editButton = ui->toolButtonEdit;
+        m_saveButton = ui->toolButtonSave;
+        m_cancelButton = ui->toolButtonCancel;
+        m_deleteButton = ui->toolButtonDelete;
 
         m_durationCombo->addItem(tr("Last hour"), "PT1H");
         m_durationCombo->addItem(tr("Last 6 hours"), "PT6H");
@@ -86,28 +79,20 @@ namespace fairwindsk::ui::mydata {
         m_durationCombo->setMaximumHeight(28);
         m_durationCombo->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
         connect(m_durationCombo, qOverload<int>(&QComboBox::currentIndexChanged), this, &HistoryTrackTab::onDurationChanged);
-        toolbarLayout->addWidget(m_durationCombo);
 
         m_refreshButton->setIcon(QIcon(":/resources/svg/OpenBridge/refresh-google.svg"));
         m_refreshButton->setToolTip(tr("Refresh"));
         connect(m_refreshButton, &QToolButton::clicked, this, &HistoryTrackTab::onRefreshClicked);
-        toolbarLayout->addWidget(m_refreshButton);
 
         m_importButton->setText(tr("Import"));
         connect(m_importButton, &QToolButton::clicked, this, &HistoryTrackTab::onImportClicked);
-        toolbarLayout->addWidget(m_importButton);
 
         m_exportButton->setText(tr("Export"));
         connect(m_exportButton, &QToolButton::clicked, this, &HistoryTrackTab::onExportClicked);
-        toolbarLayout->addWidget(m_exportButton);
 
         m_newButton->setIcon(QIcon(":/resources/svg/OpenBridge/widget-add-google.svg"));
         m_newButton->setToolTip(tr("New sample"));
         connect(m_newButton, &QToolButton::clicked, this, &HistoryTrackTab::onAddClicked);
-        toolbarLayout->addWidget(m_newButton);
-
-        toolbarLayout->addStretch(1);
-        toolbarLayout->addWidget(m_statusLabel, 1);
 
         m_tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
         m_tableWidget->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -125,57 +110,37 @@ namespace fairwindsk::ui::mydata {
         m_tableWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         connect(m_tableWidget, &QTableWidget::cellDoubleClicked, this, &HistoryTrackTab::onTableDoubleClicked);
         connect(m_tableWidget, &QTableWidget::cellActivated, this, &HistoryTrackTab::onTableDoubleClicked);
-        listLayout->addWidget(m_tableWidget, 1);
-
-        auto *detailsLayout = new QVBoxLayout(m_detailsPage);
-        auto *detailsToolbar = new QHBoxLayout();
-        detailsLayout->addLayout(detailsToolbar);
 
         m_backButton->setIcon(QIcon(":/resources/svg/OpenBridge/arrow-left-google.svg"));
         m_backButton->setToolTip(tr("Back to list"));
         connect(m_backButton, &QToolButton::clicked, this, &HistoryTrackTab::onBackClicked);
-        detailsToolbar->addWidget(m_backButton);
 
-        auto *detailsNewButton = new QToolButton(this);
+        auto *detailsNewButton = ui->toolButtonNewDetails;
         detailsNewButton->setIcon(QIcon(":/resources/svg/OpenBridge/widget-add-google.svg"));
         detailsNewButton->setToolTip(tr("New sample"));
         connect(detailsNewButton, &QToolButton::clicked, this, &HistoryTrackTab::onAddClicked);
-        detailsToolbar->addWidget(detailsNewButton);
 
         m_editButton->setIcon(QIcon(":/resources/svg/OpenBridge/edit-google.svg"));
         m_editButton->setToolTip(tr("Edit"));
         connect(m_editButton, &QToolButton::clicked, this, &HistoryTrackTab::onEditClicked);
-        detailsToolbar->addWidget(m_editButton);
 
         m_saveButton->setIcon(QIcon(":/resources/svg/OpenBridge/edit-google.svg"));
         m_saveButton->setText(tr("Save"));
         connect(m_saveButton, &QToolButton::clicked, this, &HistoryTrackTab::onSaveClicked);
-        detailsToolbar->addWidget(m_saveButton);
 
         m_cancelButton->setIcon(QIcon(":/resources/svg/OpenBridge/close-google.svg"));
         m_cancelButton->setText(tr("Cancel"));
         connect(m_cancelButton, &QToolButton::clicked, this, &HistoryTrackTab::onCancelClicked);
-        detailsToolbar->addWidget(m_cancelButton);
 
         m_deleteButton->setIcon(QIcon(":/resources/svg/OpenBridge/delete-google.svg"));
         m_deleteButton->setToolTip(tr("Delete"));
         connect(m_deleteButton, &QToolButton::clicked, this, &HistoryTrackTab::onDeleteClicked);
-        detailsToolbar->addWidget(m_deleteButton);
-        detailsToolbar->addStretch(1);
 
         m_titleLabel->setStyleSheet("font-size: 20px; font-weight: bold;");
-        detailsLayout->addWidget(m_titleLabel);
-
-        auto *detailsSplitter = new QSplitter(Qt::Horizontal, m_detailsPage);
-        detailsSplitter->setChildrenCollapsible(false);
-        detailsLayout->addWidget(detailsSplitter, 1);
-
-        auto *formWidget = new QWidget(detailsSplitter);
-        auto *formLayout = new QFormLayout(formWidget);
-        detailsSplitter->addWidget(formWidget);
-        detailsSplitter->addWidget(m_previewWidget);
-        detailsSplitter->setStretchFactor(0, 1);
-        detailsSplitter->setStretchFactor(1, 1);
+        auto *formLayout = new QFormLayout(ui->widgetFormHost);
+        ui->verticalLayoutPreviewHost->addWidget(m_previewWidget);
+        ui->splitterDetails->setStretchFactor(0, 1);
+        ui->splitterDetails->setStretchFactor(1, 1);
 
         m_timestampEdit->setDisplayFormat("yyyy-MM-dd HH:mm:ss");
         m_timestampEdit->setCalendarPopup(true);
@@ -200,9 +165,6 @@ namespace fairwindsk::ui::mydata {
         formLayout->addRow(tr("Altitude"), m_altitudeSpinBox);
         formLayout->addRow(tr("Feature properties"), m_propertiesEditor);
 
-        m_stackedWidget->addWidget(m_listPage);
-        m_stackedWidget->addWidget(m_detailsPage);
-
         connect(m_refreshTimer, &QTimer::timeout, this, &HistoryTrackTab::onRefreshClicked);
         m_refreshTimer->start(5000);
 
@@ -211,6 +173,10 @@ namespace fairwindsk::ui::mydata {
         connect(m_model, &QAbstractItemModel::rowsRemoved, this, &HistoryTrackTab::rebuildTable);
         showListPage();
         onRefreshClicked();
+    }
+
+    HistoryTrackTab::~HistoryTrackTab() {
+        delete ui;
     }
 
     void HistoryTrackTab::styleTable() {

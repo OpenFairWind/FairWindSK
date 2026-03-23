@@ -20,6 +20,7 @@ class QPlainTextEdit;
 class QStackedWidget;
 class QTableWidget;
 class QToolButton;
+namespace Ui { class ResourceTab; }
 
 namespace fairwindsk::ui::mydata {
 
@@ -31,6 +32,7 @@ namespace fairwindsk::ui::mydata {
 
     public:
         explicit ResourceTab(ResourceKind kind, QWidget *parent = nullptr);
+        ~ResourceTab() override;
 
     private slots:
         void onAddClicked();
@@ -72,6 +74,7 @@ namespace fairwindsk::ui::mydata {
         QString resourceDescription(const QJsonObject &resource) const;
         QString detailsTitleForCurrentState() const;
 
+        ::Ui::ResourceTab *ui = nullptr;
         ResourceKind m_kind;
         ResourceModel *m_model;
         QStackedWidget *m_stackedWidget;

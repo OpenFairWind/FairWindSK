@@ -34,6 +34,7 @@
 #include "FairWindSK.hpp"
 #include "signalk/Client.hpp"
 #include "ui/DrawerDialogHost.hpp"
+#include "ui_ResourceTab.h"
 
 namespace {
     const QString kLineEditStyle = QStringLiteral(
@@ -69,26 +70,9 @@ namespace fairwindsk::ui::mydata {
 
     ResourceTab::ResourceTab(const ResourceKind kind, QWidget *parent)
         : QWidget(parent),
+          ui(new ::Ui::ResourceTab),
           m_kind(kind),
           m_model(new ResourceModel(kind, this)),
-          m_stackedWidget(new QStackedWidget(this)),
-          m_listPage(new QWidget(this)),
-          m_detailsPage(new QWidget(this)),
-          m_searchEdit(new QLineEdit(this)),
-          m_tableWidget(new QTableWidget(this)),
-          m_addButton(new QToolButton(this)),
-          m_backButton(new QToolButton(this)),
-          m_newButton(new QToolButton(this)),
-          m_editButton(new QToolButton(this)),
-          m_saveButton(new QToolButton(this)),
-          m_cancelButton(new QToolButton(this)),
-          m_deleteButton(new QToolButton(this)),
-          m_importButton(new QToolButton(this)),
-          m_exportButton(new QToolButton(this)),
-          m_refreshButton(new QToolButton(this)),
-          m_titleLabel(new QLabel(this)),
-          m_idValueLabel(new QLabel(this)),
-          m_timestampValueLabel(new QLabel(this)),
           m_nameEdit(new QLineEdit(this)),
           m_descriptionEdit(new QLineEdit(this)),
           m_typeEdit(new QLineEdit(this)),
@@ -110,41 +94,45 @@ namespace fairwindsk::ui::mydata {
           m_chartScaleSpinBox(new QDoubleSpinBox(this)),
           m_chartLayersEdit(new QLineEdit(this)),
           m_chartBoundsEdit(new QPlainTextEdit(this)) {
-        auto *rootLayout = new QVBoxLayout(this);
-        rootLayout->setContentsMargins(0, 0, 0, 0);
-        rootLayout->addWidget(m_stackedWidget);
+        ui->setupUi(this);
 
-        auto *listLayout = new QVBoxLayout(m_listPage);
-        listLayout->setContentsMargins(0, 0, 0, 0);
-        listLayout->setSpacing(6);
-        auto *toolbarLayout = new QHBoxLayout();
-        toolbarLayout->setContentsMargins(0, 0, 0, 0);
-        toolbarLayout->setSpacing(6);
-        listLayout->addLayout(toolbarLayout);
+        m_stackedWidget = ui->stackedWidget;
+        m_listPage = ui->pageList;
+        m_detailsPage = ui->pageDetails;
+        m_searchEdit = ui->lineEditSearch;
+        m_tableWidget = ui->tableWidget;
+        m_addButton = ui->toolButtonAdd;
+        m_backButton = ui->toolButtonBack;
+        m_newButton = ui->toolButtonNew;
+        m_editButton = ui->toolButtonEdit;
+        m_saveButton = ui->toolButtonSave;
+        m_cancelButton = ui->toolButtonCancel;
+        m_deleteButton = ui->toolButtonDelete;
+        m_importButton = ui->toolButtonImport;
+        m_exportButton = ui->toolButtonExport;
+        m_refreshButton = ui->toolButtonRefresh;
+        m_titleLabel = ui->labelTitle;
+        m_idValueLabel = new QLabel(this);
+        m_timestampValueLabel = new QLabel(this);
 
         m_searchEdit->setPlaceholderText(tr("Search %1").arg(resourceKindToTitle(kind).toLower()));
         m_searchEdit->setMaximumHeight(28);
         m_searchEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         connect(m_searchEdit, &QLineEdit::textChanged, this, &ResourceTab::onSearchTextChanged);
-        toolbarLayout->addWidget(m_searchEdit, 1);
 
         m_refreshButton->setIcon(QIcon(":/resources/svg/OpenBridge/refresh-google.svg"));
         m_refreshButton->setToolTip(tr("Refresh"));
         connect(m_refreshButton, &QToolButton::clicked, this, &ResourceTab::onRefreshClicked);
-        toolbarLayout->addWidget(m_refreshButton);
 
         m_importButton->setText(tr("Import"));
         connect(m_importButton, &QToolButton::clicked, this, &ResourceTab::onImportClicked);
-        toolbarLayout->addWidget(m_importButton);
 
         m_exportButton->setText(tr("Export"));
         connect(m_exportButton, &QToolButton::clicked, this, &ResourceTab::onExportClicked);
-        toolbarLayout->addWidget(m_exportButton);
 
         m_addButton->setIcon(QIcon(":/resources/svg/OpenBridge/widget-add-google.svg"));
         m_addButton->setToolTip(tr("Add"));
         connect(m_addButton, &QToolButton::clicked, this, &ResourceTab::onAddClicked);
-        toolbarLayout->addWidget(m_addButton);
 
         m_tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
         m_tableWidget->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -160,56 +148,36 @@ namespace fairwindsk::ui::mydata {
         m_tableWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         connect(m_tableWidget, &QTableWidget::cellDoubleClicked, this, &ResourceTab::onTableDoubleClicked);
         connect(m_tableWidget, &QTableWidget::cellActivated, this, &ResourceTab::onTableDoubleClicked);
-        listLayout->addWidget(m_tableWidget, 1);
-
-        auto *detailsLayout = new QVBoxLayout(m_detailsPage);
-        auto *detailsToolbar = new QHBoxLayout();
-        detailsLayout->addLayout(detailsToolbar);
 
         m_backButton->setIcon(QIcon(":/resources/svg/OpenBridge/arrow-left-google.svg"));
         m_backButton->setToolTip(tr("Back to list"));
         connect(m_backButton, &QToolButton::clicked, this, &ResourceTab::onBackClicked);
-        detailsToolbar->addWidget(m_backButton);
 
         m_newButton->setIcon(QIcon(":/resources/svg/OpenBridge/widget-add-google.svg"));
         m_newButton->setToolTip(tr("New %1").arg(resourceKindToSingularTitle(kind).toLower()));
         connect(m_newButton, &QToolButton::clicked, this, &ResourceTab::onAddClicked);
-        detailsToolbar->addWidget(m_newButton);
 
         m_editButton->setIcon(QIcon(":/resources/svg/OpenBridge/edit-google.svg"));
         m_editButton->setToolTip(tr("Edit"));
         connect(m_editButton, &QToolButton::clicked, this, &ResourceTab::onEditClicked);
-        detailsToolbar->addWidget(m_editButton);
 
         m_saveButton->setIcon(QIcon(":/resources/svg/OpenBridge/edit-google.svg"));
         m_saveButton->setText(tr("Save"));
         connect(m_saveButton, &QToolButton::clicked, this, &ResourceTab::onSaveClicked);
-        detailsToolbar->addWidget(m_saveButton);
 
         m_cancelButton->setIcon(QIcon(":/resources/svg/OpenBridge/close-google.svg"));
         m_cancelButton->setText(tr("Cancel"));
         connect(m_cancelButton, &QToolButton::clicked, this, &ResourceTab::onCancelClicked);
-        detailsToolbar->addWidget(m_cancelButton);
 
         m_deleteButton->setIcon(QIcon(":/resources/svg/OpenBridge/delete-google.svg"));
         m_deleteButton->setToolTip(tr("Delete"));
         connect(m_deleteButton, &QToolButton::clicked, this, &ResourceTab::onDeleteClicked);
-        detailsToolbar->addWidget(m_deleteButton);
-        detailsToolbar->addStretch(1);
 
         m_titleLabel->setStyleSheet("font-size: 20px; font-weight: bold;");
-        detailsLayout->addWidget(m_titleLabel);
-
-        auto *detailsSplitter = new QSplitter(Qt::Horizontal, m_detailsPage);
-        detailsSplitter->setChildrenCollapsible(false);
-        detailsLayout->addWidget(detailsSplitter, 1);
-
-        auto *formWidget = new QWidget(detailsSplitter);
-        auto *formLayout = new QFormLayout(formWidget);
-        detailsSplitter->addWidget(formWidget);
-        detailsSplitter->addWidget(m_previewWidget);
-        detailsSplitter->setStretchFactor(0, 1);
-        detailsSplitter->setStretchFactor(1, 1);
+        auto *formLayout = new QFormLayout(ui->widgetFormHost);
+        ui->verticalLayoutPreviewHost->addWidget(m_previewWidget);
+        ui->splitterDetails->setStretchFactor(0, 1);
+        ui->splitterDetails->setStretchFactor(1, 1);
 
         m_latitudeSpinBox->setRange(-90.0, 90.0);
         m_latitudeSpinBox->setDecimals(8);
@@ -289,12 +257,14 @@ namespace fairwindsk::ui::mydata {
 
         formLayout->addRow(tr("Timestamp"), m_timestampValueLabel);
 
-        m_stackedWidget->addWidget(m_listPage);
-        m_stackedWidget->addWidget(m_detailsPage);
         showListPage();
 
         connect(m_model, &QAbstractItemModel::modelReset, this, &ResourceTab::rebuildTable);
         rebuildTable();
+    }
+
+    ResourceTab::~ResourceTab() {
+        delete ui;
     }
 
     void ResourceTab::styleTable() {

@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ResourceTab</class>
+ <widget class="QWidget" name="ResourceTab">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1040</width>
+    <height>720</height>
+   </rect>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayoutRoot">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QStackedWidget" name="stackedWidget">
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <widget class="QWidget" name="pageList">
+      <layout class="QVBoxLayout" name="verticalLayoutList">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <property name="spacing">
+        <number>6</number>
+       </property>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayoutListToolbar">
+         <property name="spacing">
+          <number>6</number>
+         </property>
+         <item>
+          <widget class="QLineEdit" name="lineEditSearch"/>
+         </item>
+         <item><widget class="QToolButton" name="toolButtonRefresh"/></item>
+         <item><widget class="QToolButton" name="toolButtonImport"/></item>
+         <item><widget class="QToolButton" name="toolButtonExport"/></item>
+         <item><widget class="QToolButton" name="toolButtonAdd"/></item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QTableWidget" name="tableWidget"/>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="pageDetails">
+      <layout class="QVBoxLayout" name="verticalLayoutDetails">
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayoutDetailsToolbar">
+         <item><widget class="QToolButton" name="toolButtonBack"/></item>
+         <item><widget class="QToolButton" name="toolButtonNew"/></item>
+         <item><widget class="QToolButton" name="toolButtonEdit"/></item>
+         <item><widget class="QToolButton" name="toolButtonSave"/></item>
+         <item><widget class="QToolButton" name="toolButtonCancel"/></item>
+         <item><widget class="QToolButton" name="toolButtonDelete"/></item>
+         <item>
+          <spacer name="horizontalSpacerDetailsToolbar">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+       <item><widget class="QLabel" name="labelTitle"/></item>
+       <item>
+        <widget class="QSplitter" name="splitterDetails">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="childrenCollapsible">
+          <bool>false</bool>
+         </property>
+         <widget class="QWidget" name="widgetFormHost"/>
+         <widget class="QWidget" name="widgetPreviewHost">
+          <layout class="QVBoxLayout" name="verticalLayoutPreviewHost">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+          </layout>
+         </widget>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

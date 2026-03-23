@@ -39,6 +39,7 @@
 #include "GeoJsonUtils.hpp"
 #include "JsonObjectEditorWidget.hpp"
 #include "ui/DrawerDialogHost.hpp"
+#include "ui_Waypoints.h"
 
 namespace {
     const QString kLineEditStyle = QStringLiteral(
@@ -226,27 +227,7 @@ namespace fairwindsk::ui::mydata {
     Waypoints::Waypoints(QWidget *parent)
         : QWidget(parent),
           m_model(new ResourceModel(ResourceKind::Waypoint, this)),
-          m_stackedWidget(new QStackedWidget(this)),
-          m_listPage(new QWidget(this)),
-          m_detailsPage(new QWidget(this)),
-          m_searchStack(new QStackedWidget(this)),
-          m_searchEdit(new QLineEdit(this)),
-          m_progressBar(new QProgressBar(this)),
-          m_tableWidget(new QTableWidget(this)),
-          m_addButton(new QToolButton(this)),
-          m_importButton(new QToolButton(this)),
-          m_exportButton(new QToolButton(this)),
-          m_refreshButton(new QToolButton(this)),
-          m_selectAllButton(new QToolButton(this)),
-          m_bulkRemoveButton(new QToolButton(this)),
-          m_backButton(new QToolButton(this)),
-          m_newButton(new QToolButton(this)),
-          m_navigateButton(new QToolButton(this)),
-          m_editButton(new QToolButton(this)),
-          m_saveButton(new QToolButton(this)),
-          m_cancelButton(new QToolButton(this)),
-          m_deleteButton(new QToolButton(this)),
-          m_titleLabel(new QLabel(this)),
+          ui(new ::Ui::Waypoints),
           m_nameEdit(new QLineEdit(this)),
           m_descriptionEdit(new QPlainTextEdit(this)),
           m_typeEdit(new QLineEdit(this)),
@@ -255,11 +236,6 @@ namespace fairwindsk::ui::mydata {
           m_altitudeSpinBox(new QDoubleSpinBox(this)),
           m_contactsEdit(new QPlainTextEdit(this)),
           m_contactsLabel(new QLabel(tr("Contacts"), this)),
-          m_detailTabs(new QTabWidget(this)),
-          m_propertiesTreeTab(new QWidget(this)),
-          m_propertiesJsonTab(new QWidget(this)),
-          m_geoJsonDetailsEdit(new QPlainTextEdit(this)),
-          m_mapPreviewView(new QWebEngineView(this)),
           m_seaFloorRowLabel(new QLabel(tr("Sea floor"), this)),
           m_slipsRowLabel(new QLabel(tr("Slips"), this)),
           m_seaFloorWidget(new QWidget(this)),
@@ -271,56 +247,64 @@ namespace fairwindsk::ui::mydata {
           m_slipsValueLabel(new QLabel(this)),
           m_propertiesEditor(new JsonObjectEditorWidget(this)),
           m_searchTimer(new QTimer(this)) {
-        auto *rootLayout = new QVBoxLayout(this);
-        rootLayout->setContentsMargins(0, 0, 0, 0);
-        rootLayout->addWidget(m_stackedWidget);
+        ui->setupUi(this);
 
-        auto *listLayout = new QVBoxLayout(m_listPage);
-        listLayout->setContentsMargins(0, 0, 0, 0);
-        listLayout->setSpacing(6);
-        auto *toolbarLayout = new QHBoxLayout();
-        toolbarLayout->setContentsMargins(0, 0, 0, 0);
-        toolbarLayout->setSpacing(6);
-        listLayout->addLayout(toolbarLayout);
+        m_stackedWidget = ui->stackedWidget;
+        m_listPage = ui->pageList;
+        m_detailsPage = ui->pageDetails;
+        m_searchStack = ui->stackedWidgetSearch;
+        m_searchEdit = ui->lineEditSearch;
+        m_progressBar = ui->progressBar;
+        m_tableWidget = ui->tableWidget;
+        m_addButton = ui->toolButtonAdd;
+        m_importButton = ui->toolButtonImport;
+        m_exportButton = ui->toolButtonExport;
+        m_refreshButton = ui->toolButtonRefresh;
+        m_selectAllButton = ui->toolButtonSelectAll;
+        m_bulkRemoveButton = ui->toolButtonBulkRemove;
+        m_backButton = ui->toolButtonBack;
+        m_newButton = ui->toolButtonNew;
+        m_navigateButton = ui->toolButtonNavigate;
+        m_editButton = ui->toolButtonEdit;
+        m_saveButton = ui->toolButtonSave;
+        m_cancelButton = ui->toolButtonCancel;
+        m_deleteButton = ui->toolButtonDelete;
+        m_titleLabel = ui->labelTitle;
+        m_detailTabs = ui->tabWidgetDetails;
+        m_propertiesTreeTab = ui->widgetPropertiesTreeContainer;
+        m_propertiesJsonTab = ui->widgetPropertiesJsonContainer;
+        m_geoJsonDetailsEdit = ui->plainTextEditGeoJson;
+        m_mapPreviewView = ui->webEngineViewPreview;
 
         m_searchEdit->setPlaceholderText(tr("Search waypoints"));
         connect(m_searchEdit, &QLineEdit::textChanged, this, &Waypoints::onSearchTextChanged);
         m_progressBar->setTextVisible(true);
         m_progressBar->setVisible(false);
-        m_searchStack->addWidget(m_searchEdit);
-        m_searchStack->addWidget(m_progressBar);
         m_searchStack->setCurrentWidget(m_searchEdit);
         m_searchEdit->setMaximumHeight(28);
         m_searchStack->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-        toolbarLayout->addWidget(m_searchStack, 1);
 
         m_refreshButton->setIcon(QIcon(":/resources/svg/OpenBridge/refresh-google.svg"));
         m_refreshButton->setToolTip(tr("Refresh"));
         connect(m_refreshButton, &QToolButton::clicked, this, &Waypoints::onRefreshClicked);
-        toolbarLayout->addWidget(m_refreshButton);
 
         m_importButton->setText(tr("Import"));
         connect(m_importButton, &QToolButton::clicked, this, &Waypoints::onImportClicked);
-        toolbarLayout->addWidget(m_importButton);
 
         m_exportButton->setText(tr("Export"));
         connect(m_exportButton, &QToolButton::clicked, this, &Waypoints::onExportClicked);
-        toolbarLayout->addWidget(m_exportButton);
 
         m_addButton->setIcon(QIcon(":/resources/svg/OpenBridge/widget-add-google.svg"));
         m_addButton->setToolTip(tr("Add waypoint"));
         connect(m_addButton, &QToolButton::clicked, this, &Waypoints::onAddClicked);
-        toolbarLayout->addWidget(m_addButton);
 
         m_selectAllButton->setIcon(QIcon(":/resources/svg/OpenBridge/content-copy-google.svg"));
         m_selectAllButton->setToolTip(tr("Select all shown waypoints"));
         connect(m_selectAllButton, &QToolButton::clicked, this, &Waypoints::onSelectAllClicked);
-        toolbarLayout->addWidget(m_selectAllButton);
 
         m_bulkRemoveButton->setIcon(QIcon(":/resources/svg/OpenBridge/delete-google.svg"));
         m_bulkRemoveButton->setToolTip(tr("Remove all shown waypoints"));
         connect(m_bulkRemoveButton, &QToolButton::clicked, this, &Waypoints::onRemoveSelectedClicked);
-        toolbarLayout->addWidget(m_bulkRemoveButton);
 
         m_tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
         m_tableWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
@@ -336,67 +320,41 @@ namespace fairwindsk::ui::mydata {
         m_tableWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         connect(m_tableWidget, &QTableWidget::cellDoubleClicked, this, &Waypoints::onTableDoubleClicked);
         connect(m_tableWidget, &QTableWidget::cellActivated, this, &Waypoints::onTableDoubleClicked);
-        listLayout->addWidget(m_tableWidget, 1);
-
-        auto *detailsLayout = new QVBoxLayout(m_detailsPage);
-        auto *detailsToolbarLayout = new QHBoxLayout();
-        detailsLayout->addLayout(detailsToolbarLayout);
 
         m_backButton->setIcon(QIcon(":/resources/svg/OpenBridge/arrow-left-google.svg"));
         m_backButton->setToolTip(tr("Back to list"));
         connect(m_backButton, &QToolButton::clicked, this, &Waypoints::onBackClicked);
-        detailsToolbarLayout->addWidget(m_backButton);
 
         m_newButton->setIcon(QIcon(":/resources/svg/OpenBridge/widget-add-google.svg"));
         m_newButton->setToolTip(tr("New waypoint"));
         connect(m_newButton, &QToolButton::clicked, this, &Waypoints::onAddClicked);
-        detailsToolbarLayout->addWidget(m_newButton);
 
         m_navigateButton->setIcon(QIcon(":/resources/svg/OpenBridge/navigation-route.svg"));
         m_navigateButton->setToolTip(tr("Navigate to waypoint"));
         connect(m_navigateButton, &QToolButton::clicked, this, &Waypoints::onNavigateCurrentClicked);
-        detailsToolbarLayout->addWidget(m_navigateButton);
 
         m_editButton->setIcon(QIcon(":/resources/svg/OpenBridge/edit-google.svg"));
         m_editButton->setToolTip(tr("Edit waypoint"));
         connect(m_editButton, &QToolButton::clicked, this, &Waypoints::onEditClicked);
-        detailsToolbarLayout->addWidget(m_editButton);
 
         m_saveButton->setIcon(QIcon(":/resources/svg/OpenBridge/edit-google.svg"));
         m_saveButton->setText(tr("Save"));
         connect(m_saveButton, &QToolButton::clicked, this, &Waypoints::onSaveClicked);
-        detailsToolbarLayout->addWidget(m_saveButton);
 
         m_cancelButton->setIcon(QIcon(":/resources/svg/OpenBridge/close-google.svg"));
         m_cancelButton->setText(tr("Cancel"));
         connect(m_cancelButton, &QToolButton::clicked, this, &Waypoints::onCancelClicked);
-        detailsToolbarLayout->addWidget(m_cancelButton);
 
         m_deleteButton->setIcon(QIcon(":/resources/svg/OpenBridge/delete-google.svg"));
         m_deleteButton->setToolTip(tr("Delete waypoint"));
         connect(m_deleteButton, &QToolButton::clicked, this, &Waypoints::onDeleteClicked);
-        detailsToolbarLayout->addWidget(m_deleteButton);
-        detailsToolbarLayout->addStretch(1);
 
         m_titleLabel->setStyleSheet("font-size: 20px; font-weight: bold;");
-        detailsLayout->addWidget(m_titleLabel);
+        ui->splitterDetails->setStretchFactor(0, 3);
+        ui->splitterDetails->setStretchFactor(1, 2);
 
-        auto *detailsSplitter = new QSplitter(Qt::Horizontal, m_detailsPage);
-        detailsSplitter->setChildrenCollapsible(false);
-        detailsLayout->addWidget(detailsSplitter, 1);
-
-        auto *formWidget = new QWidget(detailsSplitter);
-        auto *formLayout = new QFormLayout(formWidget);
+        auto *formLayout = new QFormLayout(ui->widgetDetailsForm);
         m_detailsFormLayout = formLayout;
-        auto *detailsSideWidget = new QWidget(detailsSplitter);
-        auto *detailsSideLayout = new QVBoxLayout(detailsSideWidget);
-        detailsSideLayout->setContentsMargins(0, 0, 0, 0);
-        detailsSideLayout->setSpacing(6);
-        detailsSplitter->addWidget(formWidget);
-        detailsSplitter->addWidget(detailsSideWidget);
-        detailsSideLayout->addWidget(m_detailTabs, 1);
-        detailsSplitter->setStretchFactor(0, 3);
-        detailsSplitter->setStretchFactor(1, 2);
 
         m_latitudeSpinBox->setRange(-90.0, 90.0);
         m_latitudeSpinBox->setDecimals(8);
@@ -430,10 +388,6 @@ namespace fairwindsk::ui::mydata {
         m_geoJsonDetailsEdit->setReadOnly(true);
         m_geoJsonDetailsEdit->setLineWrapMode(QPlainTextEdit::NoWrap);
         m_geoJsonDetailsEdit->setStyleSheet(kPlainTextStyle);
-        m_detailTabs->addTab(m_mapPreviewView, tr("Preview"));
-        m_detailTabs->addTab(m_propertiesTreeTab, tr("Properties Tree"));
-        m_detailTabs->addTab(m_propertiesJsonTab, tr("Properties JSON"));
-        m_detailTabs->addTab(m_geoJsonDetailsEdit, tr("GeoJSON"));
         connect(m_detailTabs, &QTabWidget::currentChanged, this, [this](const int){ syncDetailTabs(); });
 
         auto *seaFloorLayout = new QHBoxLayout(m_seaFloorWidget);
@@ -458,7 +412,7 @@ namespace fairwindsk::ui::mydata {
         slipsLayout->addWidget(m_slipsValueLabel);
         slipsLayout->addStretch(1);
 
-        auto *nameTypeWidget = new QWidget(formWidget);
+        auto *nameTypeWidget = new QWidget(ui->widgetDetailsForm);
         auto *nameTypeLayout = new QHBoxLayout(nameTypeWidget);
         nameTypeLayout->setContentsMargins(0, 0, 0, 0);
         nameTypeLayout->setSpacing(6);
@@ -468,7 +422,7 @@ namespace fairwindsk::ui::mydata {
         nameTypeLayout->addWidget(m_typeEdit);
         formLayout->addRow(tr("Name"), nameTypeWidget);
         formLayout->addRow(tr("Description"), m_descriptionEdit);
-        auto *positionWidget = new QWidget(formWidget);
+        auto *positionWidget = new QWidget(ui->widgetDetailsForm);
         auto *positionLayout = new QHBoxLayout(positionWidget);
         positionLayout->setContentsMargins(0, 0, 0, 0);
         positionLayout->setSpacing(6);
@@ -486,8 +440,6 @@ namespace fairwindsk::ui::mydata {
         formLayout->addRow(m_seaFloorRowLabel, m_seaFloorWidget);
         formLayout->addRow(m_slipsRowLabel, m_slipsWidget);
 
-        m_stackedWidget->addWidget(m_listPage);
-        m_stackedWidget->addWidget(m_detailsPage);
         showListPage();
 
         connect(m_model, &QAbstractItemModel::modelReset, this, &Waypoints::rebuildTable);
@@ -495,6 +447,10 @@ namespace fairwindsk::ui::mydata {
         m_searchTimer->setInterval(180);
         connect(m_searchTimer, &QTimer::timeout, this, &Waypoints::onSearchTimeout);
         rebuildTable();
+    }
+
+    Waypoints::~Waypoints() {
+        delete ui;
     }
 
     void Waypoints::styleTable() {

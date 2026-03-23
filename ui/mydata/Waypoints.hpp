@@ -23,6 +23,7 @@ class QToolButton;
 class QDoubleSpinBox;
 class QTimer;
 class QWebEngineView;
+namespace Ui { class Waypoints; }
 
 namespace fairwindsk::ui::mydata {
 
@@ -33,6 +34,7 @@ namespace fairwindsk::ui::mydata {
 
     public:
         explicit Waypoints(QWidget *parent = nullptr);
+        ~Waypoints() override;
 
     private slots:
         void onSearchTextChanged(const QString &text);
@@ -82,6 +84,7 @@ namespace fairwindsk::ui::mydata {
         void updatePreview(const QJsonObject &resource);
         QString waypointHref(const QString &id) const;
 
+        ::Ui::Waypoints *ui = nullptr;
         ResourceModel *m_model = nullptr;
         QStackedWidget *m_stackedWidget = nullptr;
         QWidget *m_listPage = nullptr;

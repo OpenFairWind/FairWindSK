@@ -161,9 +161,9 @@ set(FAIRWINDSK_SOURCES
         ui/mydata/JsonObjectEditorWidget.cpp ui/mydata/JsonObjectEditorWidget.hpp ui/mydata/JsonObjectEditorWidget.ui
         ui/mydata/ResourceDialog.cpp ui/mydata/ResourceDialog.hpp ui/mydata/ResourceDialog.ui
         ui/mydata/ResourceModel.cpp ui/mydata/ResourceModel.hpp
-        ui/mydata/ResourceTab.cpp ui/mydata/ResourceTab.hpp
+        ui/mydata/ResourceTab.cpp ui/mydata/ResourceTab.hpp ui/mydata/ResourceTab.ui
         ui/mydata/HistoryTrackModel.cpp ui/mydata/HistoryTrackModel.hpp
-        ui/mydata/HistoryTrackTab.cpp ui/mydata/HistoryTrackTab.hpp
+        ui/mydata/HistoryTrackTab.cpp ui/mydata/HistoryTrackTab.hpp ui/mydata/HistoryTrackTab.ui
         ui/bottombar/AnchorBar.cpp ui/bottombar/AnchorBar.hpp ui/bottombar/AnchorBar.ui
         PList.cpp PList.hpp
         ui/mydata/Files.cpp ui/mydata/Files.hpp ui/mydata/Files.ui
