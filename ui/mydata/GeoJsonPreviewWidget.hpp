@@ -11,6 +11,7 @@
 class QPlainTextEdit;
 class QTabWidget;
 class QWebEngineView;
+namespace Ui { class GeoJsonPreviewWidget; }
 
 namespace fairwindsk::ui::mydata {
 
@@ -19,6 +20,7 @@ namespace fairwindsk::ui::mydata {
 
     public:
         explicit GeoJsonPreviewWidget(QWidget *parent = nullptr);
+        ~GeoJsonPreviewWidget() override;
 
         void setGeoJson(const QJsonDocument &document, const QString &title = QString());
         void setMessage(const QString &message, const QString &title = QString());
@@ -36,6 +38,7 @@ namespace fairwindsk::ui::mydata {
         void applyFreeboardFocus();
         void scheduleFreeboardFocus();
 
+        ::Ui::GeoJsonPreviewWidget *ui = nullptr;
         QTabWidget *m_tabWidget = nullptr;
         QWebEngineView *m_view = nullptr;
         QWebEngineView *m_freeboardView = nullptr;

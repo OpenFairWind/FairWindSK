@@ -4,21 +4,17 @@
 
 #include "GeoJsonPreviewWidget.hpp"
 
-#include <QJsonObject>
 #include <QJsonArray>
 #include <QJsonDocument>
-#include <QPlainTextEdit>
-#include <QTabWidget>
 #include <QByteArray>
 #include <QTimer>
 #include <QUrl>
-#include <QWebEnginePage>
 #include <QWebEngineSettings>
-#include <QVBoxLayout>
 #include <QWebEngineView>
 
 #include "AppItem.hpp"
 #include "FairWindSK.hpp"
+#include "ui_GeoJsonPreviewWidget.h"
 
 namespace fairwindsk::ui::mydata {
     namespace {
@@ -88,20 +84,18 @@ namespace fairwindsk::ui::mydata {
 
     GeoJsonPreviewWidget::GeoJsonPreviewWidget(QWidget *parent)
         : QWidget(parent),
-          m_tabWidget(new QTabWidget(this)),
-          m_view(new QWebEngineView(this)),
+          ui(new Ui::GeoJsonPreviewWidget),
           m_freeboardView(new QWebEngineView(this)),
-          m_textView(new QPlainTextEdit(this)) {
-        auto *layout = new QVBoxLayout(this);
-        layout->setContentsMargins(0, 0, 0, 0);
-        layout->addWidget(m_tabWidget);
+          m_textView(nullptr) {
+        ui->setupUi(this);
+        m_tabWidget = ui->tabWidget;
+        m_view = ui->webEngineViewPreview;
+        m_textView = ui->plainTextEditGeoJson;
         m_view->settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
         m_freeboardView->settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
-        m_tabWidget->addTab(m_view, tr("Preview"));
         m_textView->setReadOnly(true);
         m_textView->setLineWrapMode(QPlainTextEdit::NoWrap);
         m_textView->setStyleSheet("QPlainTextEdit { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
-        m_tabWidget->addTab(m_textView, tr("GeoJSON"));
         setMinimumSize(320, 240);
         connect(m_freeboardView, &QWebEngineView::loadFinished, this, [this](const bool ok) {
             if (ok) {
@@ -109,6 +103,10 @@ namespace fairwindsk::ui::mydata {
             }
         });
         setMessage(tr("GeoJSON preview will appear here."));
+    }
+
+    GeoJsonPreviewWidget::~GeoJsonPreviewWidget() {
+        delete ui;
     }
 
     void GeoJsonPreviewWidget::setFreeboardEnabled(const bool enabled) {

@@ -5,17 +5,11 @@
 #include "JsonObjectEditorWidget.hpp"
 
 #include <QHeaderView>
-#include <QHBoxLayout>
 #include <QJsonArray>
 #include <QJsonDocument>
-#include <QLabel>
-#include <QPlainTextEdit>
-#include <QStackedWidget>
 #include <QTabBar>
-#include <QTabWidget>
-#include <QToolButton>
-#include <QTreeWidget>
-#include <QVBoxLayout>
+
+#include "ui_JsonObjectEditorWidget.h"
 
 namespace {
     constexpr int KeyColumn = 0;
@@ -35,36 +29,21 @@ namespace {
 namespace fairwindsk::ui::mydata {
     JsonObjectEditorWidget::JsonObjectEditorWidget(QWidget *parent)
         : QWidget(parent),
-          m_tabWidget(new QTabWidget(this)),
-          m_treeStack(new QStackedWidget(this)),
-          m_treeWidget(new QTreeWidget(this)),
-          m_emptyTreeLabel(new QLabel(this)),
-          m_jsonEdit(new QPlainTextEdit(this)),
-          m_addChildButton(new QToolButton(this)),
-          m_addSiblingButton(new QToolButton(this)),
-          m_removeButton(new QToolButton(this)) {
-        auto *rootLayout = new QVBoxLayout(this);
-        rootLayout->setContentsMargins(0, 0, 0, 0);
+          ui(new Ui::JsonObjectEditorWidget) {
+        ui->setupUi(this);
+        m_tabWidget = ui->tabWidget;
+        m_treeStack = ui->stackedWidgetTree;
+        m_treeWidget = ui->treeWidget;
+        m_emptyTreeLabel = ui->labelEmptyTree;
+        m_jsonEdit = ui->plainTextEditJson;
+        m_addChildButton = ui->toolButtonAddChild;
+        m_addSiblingButton = ui->toolButtonAddSibling;
+        m_removeButton = ui->toolButtonRemove;
 
-        auto *toolbarLayout = new QHBoxLayout();
-        rootLayout->addLayout(toolbarLayout);
-
-        m_addChildButton->setText(tr("Add Child"));
         connect(m_addChildButton, &QToolButton::clicked, this, &JsonObjectEditorWidget::onAddChildClicked);
-        toolbarLayout->addWidget(m_addChildButton);
-
-        m_addSiblingButton->setText(tr("Add Sibling"));
         connect(m_addSiblingButton, &QToolButton::clicked, this, &JsonObjectEditorWidget::onAddSiblingClicked);
-        toolbarLayout->addWidget(m_addSiblingButton);
-
-        m_removeButton->setText(tr("Remove"));
         connect(m_removeButton, &QToolButton::clicked, this, &JsonObjectEditorWidget::onRemoveClicked);
-        toolbarLayout->addWidget(m_removeButton);
-        toolbarLayout->addStretch(1);
 
-        rootLayout->addWidget(m_tabWidget, 1);
-
-        m_treeWidget->setColumnCount(3);
         m_treeWidget->setHeaderLabels({tr("Key"), tr("Value"), tr("Type")});
         m_treeWidget->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
         m_treeWidget->header()->setStretchLastSection(false);
@@ -78,17 +57,17 @@ namespace fairwindsk::ui::mydata {
         m_emptyTreeLabel->setWordWrap(true);
         m_emptyTreeLabel->setText(tr("No feature properties are available for this resource."));
         m_emptyTreeLabel->setStyleSheet("QLabel { background: #f7f7f4; color: #4b5563; border: 1px solid #d1d5db; padding: 12px; }");
-        m_treeStack->addWidget(m_treeWidget);
-        m_treeStack->addWidget(m_emptyTreeLabel);
-        m_tabWidget->addTab(m_treeStack, tr("Tree"));
 
         m_jsonEdit->setLineWrapMode(QPlainTextEdit::NoWrap);
         m_jsonEdit->setStyleSheet("QPlainTextEdit { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
-        m_tabWidget->addTab(m_jsonEdit, tr("JSON"));
         connect(m_tabWidget, &QTabWidget::currentChanged, this, &JsonObjectEditorWidget::onCurrentTabChanged);
 
         setJsonObject(QJsonObject{});
         setEditMode(false);
+    }
+
+    JsonObjectEditorWidget::~JsonObjectEditorWidget() {
+        delete ui;
     }
 
     void JsonObjectEditorWidget::setLabels(const QString &treeTitle, const QString &jsonTitle) {

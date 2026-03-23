@@ -17,6 +17,7 @@ class QLabel;
 class QStackedWidget;
 class QTreeWidget;
 class QTreeWidgetItem;
+namespace Ui { class JsonObjectEditorWidget; }
 
 namespace fairwindsk::ui::mydata {
 
@@ -25,6 +26,7 @@ namespace fairwindsk::ui::mydata {
 
     public:
         explicit JsonObjectEditorWidget(QWidget *parent = nullptr);
+        ~JsonObjectEditorWidget() override;
 
         void setJsonObject(const QJsonObject &object);
         QJsonObject jsonObject(bool *ok = nullptr, QString *message = nullptr) const;
@@ -56,6 +58,7 @@ namespace fairwindsk::ui::mydata {
         static QJsonValue scalarFromString(const QString &typeName, const QString &text);
         static void renumberArrayChildren(QTreeWidgetItem *item);
 
+        ::Ui::JsonObjectEditorWidget *ui = nullptr;
         QTabWidget *m_tabWidget = nullptr;
         QStackedWidget *m_treeStack = nullptr;
         QTreeWidget *m_treeWidget = nullptr;

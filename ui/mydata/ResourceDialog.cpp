@@ -5,20 +5,13 @@
 #include "ResourceDialog.hpp"
 
 #include <QCheckBox>
-#include <QDialogButtonBox>
 #include <QDoubleSpinBox>
-#include <QFormLayout>
 #include <QJsonDocument>
-#include <QLabel>
-#include <QLineEdit>
-#include <QMessageBox>
-#include <QPlainTextEdit>
-#include <QStackedWidget>
-#include <QVBoxLayout>
 #include <QUuid>
 
 #include "FairWindSK.hpp"
 #include "ui/DrawerDialogHost.hpp"
+#include "ui_ResourceDialog.h"
 
 namespace {
     QString stringValue(const QJsonObject &resource, const QString &key, const QString &fallback = {}) {
@@ -57,36 +50,32 @@ namespace fairwindsk::ui::mydata {
     ResourceDialog::ResourceDialog(const ResourceKind kind, QWidget *parent)
         : QDialog(parent),
           m_kind(kind),
-          m_nameEdit(new QLineEdit(this)),
-          m_descriptionEdit(new QLineEdit(this)),
-          m_typeEdit(new QLineEdit(this)),
-          m_latitudeSpinBox(new QDoubleSpinBox(this)),
-          m_longitudeSpinBox(new QDoubleSpinBox(this)),
-          m_altitudeSpinBox(new QDoubleSpinBox(this)),
-          m_coordinatesEdit(new QPlainTextEdit(this)),
-          m_geometryEdit(new QPlainTextEdit(this)),
-          m_propertiesEdit(new QPlainTextEdit(this)),
-          m_hrefEdit(new QLineEdit(this)),
-          m_mimeTypeEdit(new QLineEdit(this)),
-          m_notePositionCheckBox(new QCheckBox(tr("Include position"), this)),
-          m_identifierEdit(new QLineEdit(this)),
-          m_chartFormatEdit(new QLineEdit(this)),
-          m_chartUrlEdit(new QLineEdit(this)),
-          m_tilemapUrlEdit(new QLineEdit(this)),
-          m_chartRegionEdit(new QLineEdit(this)),
-          m_chartScaleSpinBox(new QDoubleSpinBox(this)),
-          m_chartLayersEdit(new QLineEdit(this)),
-          m_chartBoundsEdit(new QPlainTextEdit(this)),
-          m_stackedWidget(new QStackedWidget(this)) {
+          ui(new Ui::ResourceDialog) {
+        ui->setupUi(this);
         setWindowTitle(tr("%1 Editor").arg(resourceKindToSingularTitle(kind)));
-        resize(760, 560);
+        m_nameEdit = ui->lineEditName;
+        m_descriptionEdit = ui->lineEditDescription;
+        m_typeEdit = ui->lineEditType;
+        m_latitudeSpinBox = ui->doubleSpinBoxLatitude;
+        m_longitudeSpinBox = ui->doubleSpinBoxLongitude;
+        m_altitudeSpinBox = ui->doubleSpinBoxAltitude;
+        m_coordinatesEdit = ui->plainTextEditCoordinates;
+        m_geometryEdit = ui->plainTextEditGeometry;
+        m_propertiesEdit = ui->plainTextEditProperties;
+        m_hrefEdit = ui->lineEditHref;
+        m_mimeTypeEdit = ui->lineEditMimeType;
+        m_notePositionCheckBox = ui->checkBoxNotePosition;
+        m_identifierEdit = ui->lineEditIdentifier;
+        m_chartFormatEdit = ui->lineEditChartFormat;
+        m_chartUrlEdit = ui->lineEditChartUrl;
+        m_tilemapUrlEdit = ui->lineEditTilemapUrl;
+        m_chartRegionEdit = ui->lineEditChartRegion;
+        m_chartScaleSpinBox = ui->doubleSpinBoxChartScale;
+        m_chartLayersEdit = ui->lineEditChartLayers;
+        m_chartBoundsEdit = ui->plainTextEditChartBounds;
+        m_stackedWidget = ui->stackedWidgetPages;
 
-        auto *layout = new QVBoxLayout(this);
-        auto *formLayout = new QFormLayout();
-        layout->addLayout(formLayout);
-
-        formLayout->addRow(kind == ResourceKind::Note ? tr("Title") : tr("Name"), m_nameEdit);
-        formLayout->addRow(tr("Description"), m_descriptionEdit);
+        ui->labelName->setText(kind == ResourceKind::Note ? tr("Title") : tr("Name"));
 
         m_latitudeSpinBox->setRange(-90.0, 90.0);
         m_latitudeSpinBox->setDecimals(8);
@@ -94,11 +83,15 @@ namespace fairwindsk::ui::mydata {
         m_longitudeSpinBox->setDecimals(8);
         m_altitudeSpinBox->setRange(-100000.0, 100000.0);
         m_altitudeSpinBox->setDecimals(2);
+        ui->doubleSpinBoxNoteLatitude->setRange(-90.0, 90.0);
+        ui->doubleSpinBoxNoteLatitude->setDecimals(8);
+        ui->doubleSpinBoxNoteLongitude->setRange(-180.0, 180.0);
+        ui->doubleSpinBoxNoteLongitude->setDecimals(8);
+        ui->doubleSpinBoxNoteAltitude->setRange(-100000.0, 100000.0);
+        ui->doubleSpinBoxNoteAltitude->setDecimals(2);
         m_chartScaleSpinBox->setRange(0.0, 1000000000.0);
         m_chartScaleSpinBox->setDecimals(0);
 
-        QWidget *page = new QWidget(this);
-        auto *pageLayout = new QFormLayout(page);
         m_propertiesEdit->setPlaceholderText("{\n  \"color\": \"red\"\n}");
         m_coordinatesEdit->setPlaceholderText(tr("41.9028, 12.4964\n41.9031, 12.4970"));
         m_geometryEdit->setPlaceholderText("{\n  \"type\": \"Polygon\",\n  \"coordinates\": [[[12.4, 41.9], [12.5, 41.9], [12.5, 42.0], [12.4, 41.9]]]\n}");
@@ -108,51 +101,30 @@ namespace fairwindsk::ui::mydata {
 
         switch (kind) {
             case ResourceKind::Waypoint:
-                pageLayout->addRow(tr("Type"), m_typeEdit);
-                pageLayout->addRow(tr("Latitude"), m_latitudeSpinBox);
-                pageLayout->addRow(tr("Longitude"), m_longitudeSpinBox);
-                pageLayout->addRow(tr("Altitude"), m_altitudeSpinBox);
-                pageLayout->addRow(tr("Feature properties (JSON)"), m_propertiesEdit);
+                m_stackedWidget->setCurrentWidget(ui->pageWaypoint);
                 break;
             case ResourceKind::Route:
+                m_typeEdit = ui->lineEditRouteType;
+                m_propertiesEdit = ui->plainTextEditRouteProperties;
+                m_coordinatesEdit = ui->plainTextEditCoordinates;
                 m_typeEdit->setPlaceholderText(tr("route"));
-                pageLayout->addRow(tr("Type"), m_typeEdit);
-                pageLayout->addRow(tr("Coordinates"), m_coordinatesEdit);
-                pageLayout->addRow(tr("Feature properties (JSON)"), m_propertiesEdit);
+                m_stackedWidget->setCurrentWidget(ui->pageRoute);
                 break;
             case ResourceKind::Region:
-                pageLayout->addRow(tr("Geometry (JSON)"), m_geometryEdit);
-                pageLayout->addRow(tr("Feature properties (JSON)"), m_propertiesEdit);
+                m_propertiesEdit = ui->plainTextEditRegionProperties;
+                m_stackedWidget->setCurrentWidget(ui->pageRegion);
                 break;
             case ResourceKind::Note:
-                pageLayout->addRow(tr("Href"), m_hrefEdit);
-                pageLayout->addRow(tr("MIME Type"), m_mimeTypeEdit);
-                pageLayout->addRow(QString(), m_notePositionCheckBox);
-                pageLayout->addRow(tr("Latitude"), m_latitudeSpinBox);
-                pageLayout->addRow(tr("Longitude"), m_longitudeSpinBox);
-                pageLayout->addRow(tr("Altitude"), m_altitudeSpinBox);
-                pageLayout->addRow(tr("Properties (JSON)"), m_propertiesEdit);
+                m_latitudeSpinBox = ui->doubleSpinBoxNoteLatitude;
+                m_longitudeSpinBox = ui->doubleSpinBoxNoteLongitude;
+                m_altitudeSpinBox = ui->doubleSpinBoxNoteAltitude;
+                m_propertiesEdit = ui->plainTextEditNoteProperties;
+                m_stackedWidget->setCurrentWidget(ui->pageNote);
                 break;
             case ResourceKind::Chart:
-                pageLayout->addRow(tr("Identifier"), m_identifierEdit);
-                pageLayout->addRow(tr("Format"), m_chartFormatEdit);
-                pageLayout->addRow(tr("Chart URL"), m_chartUrlEdit);
-                pageLayout->addRow(tr("Tilemap URL"), m_tilemapUrlEdit);
-                pageLayout->addRow(tr("Region"), m_chartRegionEdit);
-                pageLayout->addRow(tr("Scale"), m_chartScaleSpinBox);
-                pageLayout->addRow(tr("Layers"), m_chartLayersEdit);
-                pageLayout->addRow(tr("Bounds (JSON)"), m_chartBoundsEdit);
+                m_stackedWidget->setCurrentWidget(ui->pageChart);
                 break;
         }
-
-        m_stackedWidget->addWidget(page);
-        layout->addWidget(m_stackedWidget);
-        m_stackedWidget->setCurrentIndex(0);
-
-        auto *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
-        connect(buttons, &QDialogButtonBox::accepted, this, &ResourceDialog::accept);
-        connect(buttons, &QDialogButtonBox::rejected, this, &ResourceDialog::reject);
-        layout->addWidget(buttons);
 
         if (kind == ResourceKind::Route) {
             m_typeEdit->setText("route");
@@ -161,6 +133,10 @@ namespace fairwindsk::ui::mydata {
         } else if (kind == ResourceKind::Note) {
             m_mimeTypeEdit->setText("text/plain");
         }
+    }
+
+    ResourceDialog::~ResourceDialog() {
+        delete ui;
     }
 
     void ResourceDialog::setResource(const QString &id, const QJsonObject &resource) {

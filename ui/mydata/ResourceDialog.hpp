@@ -17,6 +17,7 @@ class QDoubleSpinBox;
 class QLineEdit;
 class QPlainTextEdit;
 class QStackedWidget;
+namespace Ui { class ResourceDialog; }
 
 namespace fairwindsk::ui::mydata {
 
@@ -25,6 +26,7 @@ namespace fairwindsk::ui::mydata {
 
     public:
         explicit ResourceDialog(ResourceKind kind, QWidget *parent = nullptr);
+        ~ResourceDialog() override;
 
         void setResource(const QString &id, const QJsonObject &resource);
         QString resourceId() const;
@@ -40,6 +42,7 @@ namespace fairwindsk::ui::mydata {
 
         ResourceKind m_kind;
         QString m_id;
+        ::Ui::ResourceDialog *ui = nullptr;
         QLineEdit *m_nameEdit = nullptr;
         QLineEdit *m_descriptionEdit = nullptr;
         QLineEdit *m_typeEdit = nullptr;

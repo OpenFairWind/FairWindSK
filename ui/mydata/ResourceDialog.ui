@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ResourceDialog</class>
+ <widget class="QDialog" name="ResourceDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>760</width>
+    <height>560</height>
+   </rect>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <layout class="QFormLayout" name="formLayoutCommon">
+     <item row="0" column="0">
+      <widget class="QLabel" name="labelName">
+       <property name="text">
+        <string>Name</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QLineEdit" name="lineEditName"/>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="labelDescription">
+       <property name="text">
+        <string>Description</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QLineEdit" name="lineEditDescription"/>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QStackedWidget" name="stackedWidgetPages">
+     <widget class="QWidget" name="pageWaypoint">
+      <layout class="QFormLayout" name="formLayoutWaypoint">
+       <item row="0" column="0"><widget class="QLabel" name="labelWaypointType"><property name="text"><string>Type</string></property></widget></item>
+       <item row="0" column="1"><widget class="QLineEdit" name="lineEditType"/></item>
+       <item row="1" column="0"><widget class="QLabel" name="labelWaypointLatitude"><property name="text"><string>Latitude</string></property></widget></item>
+       <item row="1" column="1"><widget class="QDoubleSpinBox" name="doubleSpinBoxLatitude"/></item>
+       <item row="2" column="0"><widget class="QLabel" name="labelWaypointLongitude"><property name="text"><string>Longitude</string></property></widget></item>
+       <item row="2" column="1"><widget class="QDoubleSpinBox" name="doubleSpinBoxLongitude"/></item>
+       <item row="3" column="0"><widget class="QLabel" name="labelWaypointAltitude"><property name="text"><string>Altitude</string></property></widget></item>
+       <item row="3" column="1"><widget class="QDoubleSpinBox" name="doubleSpinBoxAltitude"/></item>
+       <item row="4" column="0"><widget class="QLabel" name="labelWaypointProperties"><property name="text"><string>Feature properties (JSON)</string></property></widget></item>
+       <item row="4" column="1"><widget class="QPlainTextEdit" name="plainTextEditProperties"/></item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="pageRoute">
+      <layout class="QFormLayout" name="formLayoutRoute">
+       <item row="0" column="0"><widget class="QLabel" name="labelRouteType"><property name="text"><string>Type</string></property></widget></item>
+       <item row="0" column="1"><widget class="QLineEdit" name="lineEditRouteType"/></item>
+       <item row="1" column="0"><widget class="QLabel" name="labelRouteCoordinates"><property name="text"><string>Coordinates</string></property></widget></item>
+       <item row="1" column="1"><widget class="QPlainTextEdit" name="plainTextEditCoordinates"/></item>
+       <item row="2" column="0"><widget class="QLabel" name="labelRouteProperties"><property name="text"><string>Feature properties (JSON)</string></property></widget></item>
+       <item row="2" column="1"><widget class="QPlainTextEdit" name="plainTextEditRouteProperties"/></item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="pageRegion">
+      <layout class="QFormLayout" name="formLayoutRegion">
+       <item row="0" column="0"><widget class="QLabel" name="labelRegionGeometry"><property name="text"><string>Geometry (JSON)</string></property></widget></item>
+       <item row="0" column="1"><widget class="QPlainTextEdit" name="plainTextEditGeometry"/></item>
+       <item row="1" column="0"><widget class="QLabel" name="labelRegionProperties"><property name="text"><string>Feature properties (JSON)</string></property></widget></item>
+       <item row="1" column="1"><widget class="QPlainTextEdit" name="plainTextEditRegionProperties"/></item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="pageNote">
+      <layout class="QFormLayout" name="formLayoutNote">
+       <item row="0" column="0"><widget class="QLabel" name="labelNoteHref"><property name="text"><string>Href</string></property></widget></item>
+       <item row="0" column="1"><widget class="QLineEdit" name="lineEditHref"/></item>
+       <item row="1" column="0"><widget class="QLabel" name="labelNoteMimeType"><property name="text"><string>MIME Type</string></property></widget></item>
+       <item row="1" column="1"><widget class="QLineEdit" name="lineEditMimeType"/></item>
+       <item row="2" column="1"><widget class="QCheckBox" name="checkBoxNotePosition"><property name="text"><string>Include position</string></property></widget></item>
+       <item row="3" column="0"><widget class="QLabel" name="labelNoteLatitude"><property name="text"><string>Latitude</string></property></widget></item>
+       <item row="3" column="1"><widget class="QDoubleSpinBox" name="doubleSpinBoxNoteLatitude"/></item>
+       <item row="4" column="0"><widget class="QLabel" name="labelNoteLongitude"><property name="text"><string>Longitude</string></property></widget></item>
+       <item row="4" column="1"><widget class="QDoubleSpinBox" name="doubleSpinBoxNoteLongitude"/></item>
+       <item row="5" column="0"><widget class="QLabel" name="labelNoteAltitude"><property name="text"><string>Altitude</string></property></widget></item>
+       <item row="5" column="1"><widget class="QDoubleSpinBox" name="doubleSpinBoxNoteAltitude"/></item>
+       <item row="6" column="0"><widget class="QLabel" name="labelNoteProperties"><property name="text"><string>Properties (JSON)</string></property></widget></item>
+       <item row="6" column="1"><widget class="QPlainTextEdit" name="plainTextEditNoteProperties"/></item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="pageChart">
+      <layout class="QFormLayout" name="formLayoutChart">
+       <item row="0" column="0"><widget class="QLabel" name="labelChartIdentifier"><property name="text"><string>Identifier</string></property></widget></item>
+       <item row="0" column="1"><widget class="QLineEdit" name="lineEditIdentifier"/></item>
+       <item row="1" column="0"><widget class="QLabel" name="labelChartFormat"><property name="text"><string>Format</string></property></widget></item>
+       <item row="1" column="1"><widget class="QLineEdit" name="lineEditChartFormat"/></item>
+       <item row="2" column="0"><widget class="QLabel" name="labelChartUrl"><property name="text"><string>Chart URL</string></property></widget></item>
+       <item row="2" column="1"><widget class="QLineEdit" name="lineEditChartUrl"/></item>
+       <item row="3" column="0"><widget class="QLabel" name="labelTilemapUrl"><property name="text"><string>Tilemap URL</string></property></widget></item>
+       <item row="3" column="1"><widget class="QLineEdit" name="lineEditTilemapUrl"/></item>
+       <item row="4" column="0"><widget class="QLabel" name="labelChartRegion"><property name="text"><string>Region</string></property></widget></item>
+       <item row="4" column="1"><widget class="QLineEdit" name="lineEditChartRegion"/></item>
+       <item row="5" column="0"><widget class="QLabel" name="labelChartScale"><property name="text"><string>Scale</string></property></widget></item>
+       <item row="5" column="1"><widget class="QDoubleSpinBox" name="doubleSpinBoxChartScale"/></item>
+       <item row="6" column="0"><widget class="QLabel" name="labelChartLayers"><property name="text"><string>Layers</string></property></widget></item>
+       <item row="6" column="1"><widget class="QLineEdit" name="lineEditChartLayers"/></item>
+       <item row="7" column="0"><widget class="QLabel" name="labelChartBounds"><property name="text"><string>Bounds (JSON)</string></property></widget></item>
+       <item row="7" column="1"><widget class="QPlainTextEdit" name="plainTextEditChartBounds"/></item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+   <item>
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>ResourceDialog</receiver>
+   <slot>accept()</slot>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>ResourceDialog</receiver>
+   <slot>reject()</slot>
+  </connection>
+ </connections>
+</ui>
