@@ -280,7 +280,7 @@ namespace fairwindsk::ui::mydata {
         connect(m_searchEdit, &QLineEdit::textChanged, this, &Waypoints::onSearchTextChanged);
         m_progressBar->setTextVisible(true);
         m_progressBar->setVisible(false);
-        m_searchStack->setCurrentWidget(m_searchEdit);
+        m_searchStack->setCurrentWidget(ui->pageSearch);
         m_searchEdit->setMaximumHeight(28);
         m_searchStack->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
@@ -1146,7 +1146,7 @@ namespace fairwindsk::ui::mydata {
 
     void Waypoints::setBusy(const bool busy, const QString &label, const int maximum) {
         m_isBusy = busy;
-        m_searchStack->setCurrentWidget(busy ? static_cast<QWidget *>(m_progressBar) : static_cast<QWidget *>(m_searchEdit));
+        m_searchStack->setCurrentWidget(busy ? static_cast<QWidget *>(ui->pageProgress) : static_cast<QWidget *>(ui->pageSearch));
         if (busy) {
             m_progressBar->setFormat(label + QStringLiteral(" %v/%m"));
             m_progressBar->setRange(0, std::max(0, maximum));
