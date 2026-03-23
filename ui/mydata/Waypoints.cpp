@@ -32,9 +32,10 @@
 #include <QDoubleSpinBox>
 #include <QSizePolicy>
 #include <QUuid>
+#include <QWebEngineSettings>
+#include <QWebEngineView>
 
 #include "FairWindSK.hpp"
-#include "GeoJsonPreviewWidget.hpp"
 #include "GeoJsonUtils.hpp"
 #include "JsonObjectEditorWidget.hpp"
 
@@ -90,6 +91,134 @@ namespace {
 
         return {};
     }
+
+    QString seaFloorTypeIconPath(const QString &type) {
+        const QString normalized = type.trimmed().toLower();
+        if (normalized == QLatin1String("rock")) {
+            return QStringLiteral(":/resources/svg/mydata/seafloor-rock.svg");
+        }
+        if (normalized == QLatin1String("sand")) {
+            return QStringLiteral(":/resources/svg/mydata/seafloor-sand.svg");
+        }
+        return QString();
+    }
+
+    QString waypointMapHtml(const QJsonDocument &document, const double longitude, const double latitude) {
+        const QString base64Json = QString::fromLatin1(document.toJson(QJsonDocument::Compact).toBase64());
+        return QStringLiteral(R"(
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v10.6.1/ol.css" />
+  <style>
+    html, body { margin: 0; width: 100%%; height: 100%%; background: #07111b; color: #e5edf7; overflow: hidden; }
+    #map { width: 100%%; height: 100%%; background: #0b1825; }
+    .badge {
+      position: absolute;
+      left: 12px;
+      top: 12px;
+      z-index: 2;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(7, 17, 27, 0.75);
+      color: #e5edf7;
+      font: 12px "Avenir Next", "Helvetica Neue", sans-serif;
+    }
+    .ol-viewport, .ol-layers, .ol-layer, .ol-layer canvas { border-radius: 12px; }
+  </style>
+</head>
+<body>
+  <div class="badge">OpenLayers, OpenStreetMap + OpenSeaMap</div>
+  <div id="map"></div>
+  <script src="https://cdn.jsdelivr.net/npm/ol@v10.6.1/dist/ol.js"></script>
+  <script>
+    const data = JSON.parse(atob('%1'));
+    function asCollection(input) {
+      if (input.type === 'FeatureCollection') return input;
+      if (input.type === 'Feature') return { type: 'FeatureCollection', features: [input] };
+      if (input.type && input.coordinates) {
+        return { type: 'FeatureCollection', features: [{ type: 'Feature', geometry: input, properties: {} }] };
+      }
+      return { type: 'FeatureCollection', features: [] };
+    }
+    function radiusExtent(lon, lat, radiusNm) {
+      const latDelta = radiusNm / 60.0;
+      const cosLat = Math.cos((lat * Math.PI) / 180.0);
+      const lonDelta = radiusNm / (60.0 * Math.max(0.2, cosLat));
+      return [lon - lonDelta, lat - latDelta, lon + lonDelta, lat + latDelta];
+    }
+    function renderMap() {
+      if (!window.ol) {
+        window.setTimeout(renderMap, 150);
+        return;
+      }
+      const existingMap = window.__fairwindWaypointMap;
+      if (existingMap) {
+        window.setTimeout(() => existingMap.updateSize(), 0);
+        return;
+      }
+      const featureCollection = asCollection(data);
+      const format = new ol.format.GeoJSON();
+      const features = format.readFeatures(featureCollection, {
+        dataProjection: 'EPSG:4326',
+        featureProjection: 'EPSG:3857'
+      });
+      const vectorSource = new ol.source.Vector({ features });
+      const map = new ol.Map({
+        target: 'map',
+        controls: [],
+        interactions: ol.interaction.defaults({ altShiftDragRotate: false, pinchRotate: false }),
+        layers: [
+          new ol.layer.Tile({ source: new ol.source.OSM() }),
+          new ol.layer.Tile({
+            source: new ol.source.XYZ({ url: 'https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png' }),
+            opacity: 0.72
+          }),
+          new ol.layer.Vector({
+            source: vectorSource,
+            style: new ol.style.Style({
+              image: new ol.style.Circle({
+                radius: 8,
+                fill: new ol.style.Fill({ color: '#f59e0b' }),
+                stroke: new ol.style.Stroke({ color: '#111827', width: 2 })
+              }),
+              stroke: new ol.style.Stroke({ color: '#0ea5e9', width: 3 }),
+              fill: new ol.style.Fill({ color: 'rgba(14, 165, 233, 0.18)' })
+            })
+          })
+        ],
+        view: new ol.View({
+          center: ol.proj.fromLonLat([%2, %3]),
+          zoom: 11
+        })
+      });
+
+      const desiredExtent = ol.proj.transformExtent(radiusExtent(%2, %3, 10.0), 'EPSG:4326', 'EPSG:3857');
+      map.getView().fit(desiredExtent, { padding: [28, 28, 28, 28], duration: 0, maxZoom: 12 });
+      if (features.length) {
+        const featureExtent = vectorSource.getExtent();
+        if (featureExtent && ol.extent.getWidth(featureExtent) > 0 && ol.extent.getHeight(featureExtent) > 0) {
+          map.getView().fit(featureExtent, { padding: [72, 72, 72, 72], duration: 0, maxZoom: 13 });
+        }
+      }
+      window.__fairwindWaypointMap = map;
+      window.setTimeout(() => map.updateSize(), 0);
+      window.setTimeout(() => map.updateSize(), 250);
+    }
+    renderMap();
+    window.addEventListener('resize', () => {
+      if (window.__fairwindWaypointMap) {
+        window.__fairwindWaypointMap.updateSize();
+      }
+    });
+  </script>
+</body>
+</html>)")
+            .arg(base64Json)
+            .arg(longitude, 0, 'f', 8)
+            .arg(latitude, 0, 'f', 8);
+    }
 }
 
 namespace fairwindsk::ui::mydata {
@@ -129,15 +258,17 @@ namespace fairwindsk::ui::mydata {
           m_propertiesTreeTab(new QWidget(this)),
           m_propertiesJsonTab(new QWidget(this)),
           m_geoJsonDetailsEdit(new QPlainTextEdit(this)),
+          m_mapPreviewView(new QWebEngineView(this)),
           m_seaFloorRowLabel(new QLabel(tr("Sea floor"), this)),
           m_slipsRowLabel(new QLabel(tr("Slips"), this)),
           m_seaFloorWidget(new QWidget(this)),
           m_slipsWidget(new QWidget(this)),
+          m_seaFloorTypeWidget(new QWidget(this)),
+          m_seaFloorTypeLayout(new QHBoxLayout()),
           m_seaFloorMinValueLabel(new QLabel(this)),
           m_seaFloorMaxValueLabel(new QLabel(this)),
           m_slipsValueLabel(new QLabel(this)),
           m_propertiesEditor(new JsonObjectEditorWidget(this)),
-          m_previewWidget(new GeoJsonPreviewWidget(this)),
           m_searchTimer(new QTimer(this)) {
         auto *rootLayout = new QVBoxLayout(this);
         rootLayout->setContentsMargins(0, 0, 0, 0);
@@ -279,24 +410,26 @@ namespace fairwindsk::ui::mydata {
         m_contactsEdit->setMaximumHeight(84);
         m_searchEdit->setStyleSheet(kLineEditStyle);
         m_nameEdit->setStyleSheet(kLineEditStyle);
+        m_nameEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         m_descriptionEdit->setStyleSheet(kPlainTextStyle);
+        m_descriptionEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         m_typeEdit->setStyleSheet(kLineEditStyle);
+        m_typeEdit->setMaximumWidth(180);
         m_latitudeSpinBox->setStyleSheet(kSpinBoxStyle);
         m_longitudeSpinBox->setStyleSheet(kSpinBoxStyle);
         m_altitudeSpinBox->setStyleSheet(kSpinBoxStyle);
         m_contactsEdit->setStyleSheet(kPlainTextStyle);
+        m_contactsEdit->setMaximumHeight(72);
         m_propertiesEditor->setLabels(tr("Properties Tree"), tr("Properties JSON"));
         m_propertiesEditor->setHiddenKeys({QStringLiteral("name"), QStringLiteral("description"), QStringLiteral("contacts"), QStringLiteral("seaFloor"), QStringLiteral("slips")});
-        m_previewWidget->setFreeboardEnabled(false);
-        m_previewWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-        m_previewWidget->setMinimumWidth(360);
-        m_previewWidget->setGeoJsonTabVisible(false);
-        m_previewWidget->setTabBarAutoHide(true);
-        m_propertiesEditor->setTabBarAutoHide(true);
+        m_mapPreviewView->settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
+        m_mapPreviewView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        m_mapPreviewView->setMinimumWidth(360);
+        m_propertiesEditor->setTabBarVisible(false);
         m_geoJsonDetailsEdit->setReadOnly(true);
         m_geoJsonDetailsEdit->setLineWrapMode(QPlainTextEdit::NoWrap);
         m_geoJsonDetailsEdit->setStyleSheet(kPlainTextStyle);
-        m_detailTabs->addTab(m_previewWidget, tr("Preview"));
+        m_detailTabs->addTab(m_mapPreviewView, tr("Preview"));
         m_detailTabs->addTab(m_propertiesTreeTab, tr("Properties Tree"));
         m_detailTabs->addTab(m_propertiesJsonTab, tr("Properties JSON"));
         m_detailTabs->addTab(m_geoJsonDetailsEdit, tr("GeoJSON"));
@@ -310,6 +443,12 @@ namespace fairwindsk::ui::mydata {
         seaFloorLayout->addSpacing(12);
         seaFloorLayout->addWidget(new QLabel(tr("Max"), m_seaFloorWidget));
         seaFloorLayout->addWidget(m_seaFloorMaxValueLabel);
+        seaFloorLayout->addSpacing(12);
+        seaFloorLayout->addWidget(new QLabel(tr("Type"), m_seaFloorWidget));
+        m_seaFloorTypeWidget->setLayout(m_seaFloorTypeLayout);
+        m_seaFloorTypeLayout->setContentsMargins(0, 0, 0, 0);
+        m_seaFloorTypeLayout->setSpacing(4);
+        seaFloorLayout->addWidget(m_seaFloorTypeWidget);
         seaFloorLayout->addStretch(1);
 
         auto *slipsLayout = new QHBoxLayout(m_slipsWidget);
@@ -505,6 +644,37 @@ namespace fairwindsk::ui::mydata {
         m_slipsRowLabel->setVisible(m_slipsWidget->isVisible());
     }
 
+    void Waypoints::rebuildSeaFloorTypeIcons(const QJsonArray &types) {
+        while (m_seaFloorTypeLayout->count() > 0) {
+            auto *item = m_seaFloorTypeLayout->takeAt(0);
+            if (auto *widget = item->widget()) {
+                widget->deleteLater();
+            }
+            delete item;
+        }
+
+        for (const auto &value : types) {
+            if (!value.isString()) {
+                continue;
+            }
+
+            const QString label = value.toString().trimmed();
+            auto *iconLabel = new QLabel(m_seaFloorTypeWidget);
+            const QString iconPath = seaFloorTypeIconPath(label);
+            if (!iconPath.isEmpty()) {
+                iconLabel->setPixmap(QIcon(iconPath).pixmap(18, 18));
+            } else {
+                iconLabel->setText(label.left(1).toUpper());
+                iconLabel->setStyleSheet("QLabel { background: #f3f4f6; color: #111827; border: 1px solid #d1d5db; border-radius: 9px; min-width: 18px; min-height: 18px; padding: 0 4px; }");
+                iconLabel->setAlignment(Qt::AlignCenter);
+            }
+            iconLabel->setToolTip(label);
+            m_seaFloorTypeLayout->addWidget(iconLabel);
+        }
+
+        m_seaFloorTypeWidget->setVisible(m_seaFloorTypeLayout->count() > 0);
+    }
+
     void Waypoints::showDetailsPage(const QString &id, const QJsonObject &resource, const bool editMode) {
         if (resource.isEmpty()) {
             clearEditor();
@@ -512,6 +682,7 @@ namespace fairwindsk::ui::mydata {
         } else {
             applyWaypointToEditor(id, resource);
         }
+        m_detailTabs->setCurrentIndex(0);
         setEditMode(editMode);
         m_stackedWidget->setCurrentWidget(m_detailsPage);
     }
@@ -532,6 +703,7 @@ namespace fairwindsk::ui::mydata {
         const auto properties = featurePropertiesObject(resource);
         m_propertiesEditor->setJsonObject(properties);
         const auto seaFloor = properties.value("seaFloor").toObject();
+        rebuildSeaFloorTypeIcons(seaFloor.value("type").toArray());
         const bool hasSeaFloor = !seaFloor.isEmpty();
         m_seaFloorWidget->setVisible(hasSeaFloor);
         m_seaFloorMinValueLabel->setText(seaFloor.contains("minDepth") ? QString::number(seaFloor.value("minDepth").toDouble()) : QString());
@@ -699,6 +871,7 @@ namespace fairwindsk::ui::mydata {
         m_contactsLabel->setVisible(false);
         m_contactsEdit->setVisible(false);
         m_seaFloorWidget->setVisible(false);
+        rebuildSeaFloorTypeIcons(QJsonArray{});
         m_slipsWidget->setVisible(false);
         m_slipsValueLabel->clear();
         updateSpecialFieldVisibility();
@@ -710,7 +883,10 @@ namespace fairwindsk::ui::mydata {
         QList<QPair<QString, QJsonObject>> resources;
         resources.append({m_currentWaypointId, resource});
         const auto geoJson = exportResourcesAsGeoJson(ResourceKind::Waypoint, resources);
-        m_previewWidget->setGeoJson(geoJson);
+        const auto coordinates = coordinateArray(resource);
+        const double longitude = coordinates.size() > 0 ? coordinates.at(0).toDouble() : 0.0;
+        const double latitude = coordinates.size() > 1 ? coordinates.at(1).toDouble() : 0.0;
+        m_mapPreviewView->setHtml(waypointMapHtml(geoJson, longitude, latitude), QUrl(QStringLiteral("https://preview.local/")));
         m_geoJsonDetailsEdit->setPlainText(QString::fromUtf8(geoJson.toJson(QJsonDocument::Indented)));
         syncDetailTabs();
     }

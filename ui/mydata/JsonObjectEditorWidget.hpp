@@ -11,6 +11,7 @@
 
 class QPlainTextEdit;
 class QTabWidget;
+class QTabBar;
 class QToolButton;
 class QLabel;
 class QStackedWidget;
@@ -32,6 +33,7 @@ namespace fairwindsk::ui::mydata {
         void setHiddenKeys(const QStringList &keys);
         void setCurrentView(int index);
         void setTabBarAutoHide(bool hide);
+        void setTabBarVisible(bool visible);
 
     private slots:
         void onCurrentTabChanged(int index);

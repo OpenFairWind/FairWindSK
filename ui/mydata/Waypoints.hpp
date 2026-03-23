@@ -15,16 +15,17 @@ class QLineEdit;
 class QPlainTextEdit;
 class QProgressBar;
 class QFormLayout;
+class QHBoxLayout;
 class QStackedWidget;
 class QTableWidget;
 class QTabWidget;
 class QToolButton;
 class QDoubleSpinBox;
 class QTimer;
+class QWebEngineView;
 
 namespace fairwindsk::ui::mydata {
 
-    class GeoJsonPreviewWidget;
     class JsonObjectEditorWidget;
 
     class Waypoints final : public QWidget {
@@ -64,6 +65,7 @@ namespace fairwindsk::ui::mydata {
         QStringList visibleWaypointIds() const;
         void syncDetailTabs();
         void updateSpecialFieldVisibility();
+        void rebuildSeaFloorTypeIcons(const QJsonArray &types);
         void showListPage();
         void showDetailsPage(const QString &id, const QJsonObject &resource, bool editMode);
         void applyWaypointToEditor(const QString &id, const QJsonObject &resource);
@@ -115,15 +117,17 @@ namespace fairwindsk::ui::mydata {
         QWidget *m_propertiesTreeTab = nullptr;
         QWidget *m_propertiesJsonTab = nullptr;
         QPlainTextEdit *m_geoJsonDetailsEdit = nullptr;
+        QWebEngineView *m_mapPreviewView = nullptr;
         QLabel *m_seaFloorRowLabel = nullptr;
         QLabel *m_slipsRowLabel = nullptr;
         QWidget *m_seaFloorWidget = nullptr;
         QWidget *m_slipsWidget = nullptr;
+        QWidget *m_seaFloorTypeWidget = nullptr;
+        QHBoxLayout *m_seaFloorTypeLayout = nullptr;
         QLabel *m_seaFloorMinValueLabel = nullptr;
         QLabel *m_seaFloorMaxValueLabel = nullptr;
         QLabel *m_slipsValueLabel = nullptr;
         JsonObjectEditorWidget *m_propertiesEditor = nullptr;
-        GeoJsonPreviewWidget *m_previewWidget = nullptr;
         QTimer *m_searchTimer = nullptr;
         QString m_currentWaypointId;
         QStringList m_visibleWaypointIds;

@@ -11,6 +11,7 @@
 #include <QLabel>
 #include <QPlainTextEdit>
 #include <QStackedWidget>
+#include <QTabBar>
 #include <QTabWidget>
 #include <QToolButton>
 #include <QTreeWidget>
@@ -105,6 +106,12 @@ namespace fairwindsk::ui::mydata {
 
     void JsonObjectEditorWidget::setTabBarAutoHide(const bool hide) {
         m_tabWidget->setTabBarAutoHide(hide);
+    }
+
+    void JsonObjectEditorWidget::setTabBarVisible(const bool visible) {
+        if (auto *tabBar = m_tabWidget->tabBar()) {
+            tabBar->setVisible(visible);
+        }
     }
 
     void JsonObjectEditorWidget::setJsonObject(const QJsonObject &object) {
