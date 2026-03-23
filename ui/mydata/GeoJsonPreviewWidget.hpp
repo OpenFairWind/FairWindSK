@@ -23,6 +23,10 @@ namespace fairwindsk::ui::mydata {
         void setGeoJson(const QJsonDocument &document, const QString &title = QString());
         void setMessage(const QString &message, const QString &title = QString());
         void setFreeboardEnabled(bool enabled);
+        void setCurrentView(int index);
+        void setTabBarAutoHide(bool hide);
+        void setGeoJsonTabVisible(bool visible);
+        QString geoJsonText() const;
 
     private:
         static QString detectFreeboardUrl();

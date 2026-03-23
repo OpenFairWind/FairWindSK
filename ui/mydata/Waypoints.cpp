@@ -125,6 +125,12 @@ namespace fairwindsk::ui::mydata {
           m_altitudeSpinBox(new QDoubleSpinBox(this)),
           m_contactsEdit(new QPlainTextEdit(this)),
           m_contactsLabel(new QLabel(tr("Contacts"), this)),
+          m_detailTabs(new QTabWidget(this)),
+          m_propertiesTreeTab(new QWidget(this)),
+          m_propertiesJsonTab(new QWidget(this)),
+          m_geoJsonDetailsEdit(new QPlainTextEdit(this)),
+          m_seaFloorRowLabel(new QLabel(tr("Sea floor"), this)),
+          m_slipsRowLabel(new QLabel(tr("Slips"), this)),
           m_seaFloorWidget(new QWidget(this)),
           m_slipsWidget(new QWidget(this)),
           m_seaFloorMinValueLabel(new QLabel(this)),
@@ -249,14 +255,14 @@ namespace fairwindsk::ui::mydata {
 
         auto *formWidget = new QWidget(detailsSplitter);
         auto *formLayout = new QFormLayout(formWidget);
+        m_detailsFormLayout = formLayout;
         auto *detailsSideWidget = new QWidget(detailsSplitter);
         auto *detailsSideLayout = new QVBoxLayout(detailsSideWidget);
         detailsSideLayout->setContentsMargins(0, 0, 0, 0);
         detailsSideLayout->setSpacing(6);
         detailsSplitter->addWidget(formWidget);
         detailsSplitter->addWidget(detailsSideWidget);
-        detailsSideLayout->addWidget(m_previewWidget, 2);
-        detailsSideLayout->addWidget(m_propertiesEditor, 1);
+        detailsSideLayout->addWidget(m_detailTabs, 1);
         detailsSplitter->setStretchFactor(0, 3);
         detailsSplitter->setStretchFactor(1, 2);
 
@@ -270,6 +276,7 @@ namespace fairwindsk::ui::mydata {
         m_contactsEdit->setReadOnly(true);
         m_seaFloorWidget->setVisible(false);
         m_slipsWidget->setVisible(false);
+        m_contactsEdit->setMaximumHeight(84);
         m_searchEdit->setStyleSheet(kLineEditStyle);
         m_nameEdit->setStyleSheet(kLineEditStyle);
         m_descriptionEdit->setStyleSheet(kPlainTextStyle);
@@ -283,6 +290,17 @@ namespace fairwindsk::ui::mydata {
         m_previewWidget->setFreeboardEnabled(false);
         m_previewWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         m_previewWidget->setMinimumWidth(360);
+        m_previewWidget->setGeoJsonTabVisible(false);
+        m_previewWidget->setTabBarAutoHide(true);
+        m_propertiesEditor->setTabBarAutoHide(true);
+        m_geoJsonDetailsEdit->setReadOnly(true);
+        m_geoJsonDetailsEdit->setLineWrapMode(QPlainTextEdit::NoWrap);
+        m_geoJsonDetailsEdit->setStyleSheet(kPlainTextStyle);
+        m_detailTabs->addTab(m_previewWidget, tr("Preview"));
+        m_detailTabs->addTab(m_propertiesTreeTab, tr("Properties Tree"));
+        m_detailTabs->addTab(m_propertiesJsonTab, tr("Properties JSON"));
+        m_detailTabs->addTab(m_geoJsonDetailsEdit, tr("GeoJSON"));
+        connect(m_detailTabs, &QTabWidget::currentChanged, this, [this](const int){ syncDetailTabs(); });
 
         auto *seaFloorLayout = new QHBoxLayout(m_seaFloorWidget);
         seaFloorLayout->setContentsMargins(0, 0, 0, 0);
@@ -325,8 +343,8 @@ namespace fairwindsk::ui::mydata {
         positionLayout->addWidget(m_altitudeSpinBox, 1);
         formLayout->addRow(tr("Position"), positionWidget);
         formLayout->addRow(m_contactsLabel, m_contactsEdit);
-        formLayout->addRow(tr("Sea floor"), m_seaFloorWidget);
-        formLayout->addRow(tr("Slips"), m_slipsWidget);
+        formLayout->addRow(m_seaFloorRowLabel, m_seaFloorWidget);
+        formLayout->addRow(m_slipsRowLabel, m_slipsWidget);
 
         m_stackedWidget->addWidget(m_listPage);
         m_stackedWidget->addWidget(m_detailsPage);
@@ -459,6 +477,34 @@ namespace fairwindsk::ui::mydata {
         m_isCreating = false;
     }
 
+    void Waypoints::syncDetailTabs() {
+        if (!m_propertiesTreeTab->layout()) {
+            auto *layout = new QVBoxLayout(m_propertiesTreeTab);
+            layout->setContentsMargins(0, 0, 0, 0);
+        }
+        if (!m_propertiesJsonTab->layout()) {
+            auto *layout = new QVBoxLayout(m_propertiesJsonTab);
+            layout->setContentsMargins(0, 0, 0, 0);
+        }
+
+        const int currentIndex = m_detailTabs->currentIndex();
+        if (currentIndex == 1) {
+            m_propertiesEditor->setCurrentView(0);
+            m_propertiesEditor->setParent(m_propertiesTreeTab);
+            static_cast<QVBoxLayout *>(m_propertiesTreeTab->layout())->addWidget(m_propertiesEditor);
+        } else if (currentIndex == 2) {
+            m_propertiesEditor->setCurrentView(1);
+            m_propertiesEditor->setParent(m_propertiesJsonTab);
+            static_cast<QVBoxLayout *>(m_propertiesJsonTab->layout())->addWidget(m_propertiesEditor);
+        }
+    }
+
+    void Waypoints::updateSpecialFieldVisibility() {
+        m_contactsLabel->setVisible(m_contactsEdit->isVisible());
+        m_seaFloorRowLabel->setVisible(m_seaFloorWidget->isVisible());
+        m_slipsRowLabel->setVisible(m_slipsWidget->isVisible());
+    }
+
     void Waypoints::showDetailsPage(const QString &id, const QJsonObject &resource, const bool editMode) {
         if (resource.isEmpty()) {
             clearEditor();
@@ -504,6 +550,7 @@ namespace fairwindsk::ui::mydata {
         m_contactsEdit->setPlainText(contactLines.join('\n'));
         m_contactsLabel->setVisible(!contactLines.isEmpty());
         m_contactsEdit->setVisible(!contactLines.isEmpty());
+        updateSpecialFieldVisibility();
         updatePreview(resource);
     }
 
@@ -654,6 +701,7 @@ namespace fairwindsk::ui::mydata {
         m_seaFloorWidget->setVisible(false);
         m_slipsWidget->setVisible(false);
         m_slipsValueLabel->clear();
+        updateSpecialFieldVisibility();
         m_propertiesEditor->setJsonObject(QJsonObject{});
         updatePreview(waypointFromEditor());
     }
@@ -661,7 +709,10 @@ namespace fairwindsk::ui::mydata {
     void Waypoints::updatePreview(const QJsonObject &resource) {
         QList<QPair<QString, QJsonObject>> resources;
         resources.append({m_currentWaypointId, resource});
-        m_previewWidget->setGeoJson(exportResourcesAsGeoJson(ResourceKind::Waypoint, resources));
+        const auto geoJson = exportResourcesAsGeoJson(ResourceKind::Waypoint, resources);
+        m_previewWidget->setGeoJson(geoJson);
+        m_geoJsonDetailsEdit->setPlainText(QString::fromUtf8(geoJson.toJson(QJsonDocument::Indented)));
+        syncDetailTabs();
     }
 
     QString Waypoints::waypointHref(const QString &id) const {

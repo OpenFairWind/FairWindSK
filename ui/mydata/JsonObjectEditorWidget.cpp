@@ -99,6 +99,14 @@ namespace fairwindsk::ui::mydata {
         m_hiddenKeys = keys;
     }
 
+    void JsonObjectEditorWidget::setCurrentView(const int index) {
+        m_tabWidget->setCurrentIndex(index);
+    }
+
+    void JsonObjectEditorWidget::setTabBarAutoHide(const bool hide) {
+        m_tabWidget->setTabBarAutoHide(hide);
+    }
+
     void JsonObjectEditorWidget::setJsonObject(const QJsonObject &object) {
         populateTree(object);
         m_jsonEdit->setPlainText(QString::fromUtf8(QJsonDocument(object).toJson(QJsonDocument::Indented)));

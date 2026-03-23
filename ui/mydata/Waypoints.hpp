@@ -14,6 +14,7 @@ class QLabel;
 class QLineEdit;
 class QPlainTextEdit;
 class QProgressBar;
+class QFormLayout;
 class QStackedWidget;
 class QTableWidget;
 class QTabWidget;
@@ -61,6 +62,8 @@ namespace fairwindsk::ui::mydata {
         void setBusy(bool busy, const QString &label = QString(), int maximum = 0);
         void updateBulkButtons();
         QStringList visibleWaypointIds() const;
+        void syncDetailTabs();
+        void updateSpecialFieldVisibility();
         void showListPage();
         void showDetailsPage(const QString &id, const QJsonObject &resource, bool editMode);
         void applyWaypointToEditor(const QString &id, const QJsonObject &resource);
@@ -81,6 +84,7 @@ namespace fairwindsk::ui::mydata {
         QStackedWidget *m_stackedWidget = nullptr;
         QWidget *m_listPage = nullptr;
         QWidget *m_detailsPage = nullptr;
+        QFormLayout *m_detailsFormLayout = nullptr;
         QStackedWidget *m_searchStack = nullptr;
         QLineEdit *m_searchEdit = nullptr;
         QProgressBar *m_progressBar = nullptr;
@@ -107,6 +111,12 @@ namespace fairwindsk::ui::mydata {
         QDoubleSpinBox *m_altitudeSpinBox = nullptr;
         QPlainTextEdit *m_contactsEdit = nullptr;
         QLabel *m_contactsLabel = nullptr;
+        QTabWidget *m_detailTabs = nullptr;
+        QWidget *m_propertiesTreeTab = nullptr;
+        QWidget *m_propertiesJsonTab = nullptr;
+        QPlainTextEdit *m_geoJsonDetailsEdit = nullptr;
+        QLabel *m_seaFloorRowLabel = nullptr;
+        QLabel *m_slipsRowLabel = nullptr;
         QWidget *m_seaFloorWidget = nullptr;
         QWidget *m_slipsWidget = nullptr;
         QLabel *m_seaFloorMinValueLabel = nullptr;

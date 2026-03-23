@@ -30,6 +30,8 @@ namespace fairwindsk::ui::mydata {
         void setEditMode(bool editMode);
         void setLabels(const QString &treeTitle, const QString &jsonTitle);
         void setHiddenKeys(const QStringList &keys);
+        void setCurrentView(int index);
+        void setTabBarAutoHide(bool hide);
 
     private slots:
         void onCurrentTabChanged(int index);
