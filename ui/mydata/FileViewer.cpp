@@ -16,6 +16,8 @@
 #include <QSet>
 #include <QUrl>
 
+#include "ui/DrawerDialogHost.hpp"
+
 namespace fairwindsk::ui::mydata {
 
     FileViewer::FileViewer(const QString& path, QWidget *parent): QWidget(parent), ui(new Ui::FileViewer), m_path(path) {
@@ -103,7 +105,7 @@ namespace fairwindsk::ui::mydata {
     }
 
     void FileViewer::showError(const QString &message) const {
-        QMessageBox::warning(const_cast<FileViewer *>(this), tr("File Viewer"), message);
+        drawer::warning(const_cast<FileViewer *>(this), tr("File Viewer"), message);
     }
 
     FileViewer::~FileViewer() {

@@ -12,6 +12,7 @@
 #include "AppItem.hpp"
 #include "FairWindSK.hpp"
 #include "PList.hpp"
+#include "ui/DrawerDialogHost.hpp"
 
 
 namespace fairwindsk::ui::settings {
@@ -142,7 +143,7 @@ namespace fairwindsk::ui::settings {
             if (newName.isEmpty()) {
                 newName = appName;
             } else if (newName != appName && m_settings->getConfiguration()->findApp(newName) != -1) {
-                QMessageBox::warning(this, tr("Applications"), tr("An application named \"%1\" already exists.").arg(newName));
+                drawer::warning(this, tr("Applications"), tr("An application named \"%1\" already exists.").arg(newName));
                 ui->lineEdit_Apps_Name->setText(appName);
                 return;
             }
@@ -180,13 +181,11 @@ namespace fairwindsk::ui::settings {
             // Check if any change has been made
             if (m_appsEditChanged) {
 
-                QMessageBox msgBox;
-                msgBox.setWindowTitle("Save changes");
-                msgBox.setText("Do you want save application definition edits?");
-                msgBox.setStandardButtons(QMessageBox::Yes);
-                msgBox.addButton(QMessageBox::No);
-                msgBox.setDefaultButton(QMessageBox::No);
-                if (msgBox.exec() == QMessageBox::Yes) {
+                if (drawer::question(this,
+                                     tr("Save changes"),
+                                     tr("Do you want save application definition edits?"),
+                                     QMessageBox::Yes | QMessageBox::No,
+                                     QMessageBox::No) == QMessageBox::Yes) {
                     // Save details
                     saveAppsDetails();
                 }

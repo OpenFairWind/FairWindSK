@@ -33,6 +33,7 @@
 #include "JsonObjectEditorWidget.hpp"
 #include "FairWindSK.hpp"
 #include "signalk/Client.hpp"
+#include "ui/DrawerDialogHost.hpp"
 
 namespace {
     const QString kLineEditStyle = QStringLiteral(
@@ -413,7 +414,7 @@ namespace fairwindsk::ui::mydata {
     }
 
     void ResourceTab::showError(const QString &message) const {
-        QMessageBox::warning(const_cast<ResourceTab *>(this), resourceKindToTitle(m_kind), message);
+        drawer::warning(const_cast<ResourceTab *>(this), resourceKindToTitle(m_kind), message);
     }
 
     void ResourceTab::showListPage() {
@@ -891,10 +892,12 @@ namespace fairwindsk::ui::mydata {
             name = m_nameEdit->text().trimmed();
         }
 
-        const auto choice = QMessageBox::question(
+        const auto choice = drawer::question(
             this,
             resourceKindToTitle(m_kind),
-            tr("Delete %1 \"%2\"?").arg(resourceKindToSingularTitle(m_kind).toLower(), name));
+            tr("Delete %1 \"%2\"?").arg(resourceKindToSingularTitle(m_kind).toLower(), name),
+            QMessageBox::Yes | QMessageBox::No,
+            QMessageBox::No);
         if (choice != QMessageBox::Yes) {
             return;
         }
@@ -955,11 +958,11 @@ namespace fairwindsk::ui::mydata {
             return;
         }
 
-        QMessageBox::information(this,
-                                 resourceKindToTitle(m_kind),
-                                 tr("Imported %1 %2 GeoJSON feature(s).")
-                                         .arg(importedCount)
-                                         .arg(resourceKindToTitle(m_kind).toLower()));
+        drawer::information(this,
+                            resourceKindToTitle(m_kind),
+                            tr("Imported %1 %2 GeoJSON feature(s).")
+                                    .arg(importedCount)
+                                    .arg(resourceKindToTitle(m_kind).toLower()));
     }
 
     void ResourceTab::onExportClicked() {

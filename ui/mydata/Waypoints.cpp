@@ -38,6 +38,7 @@
 #include "FairWindSK.hpp"
 #include "GeoJsonUtils.hpp"
 #include "JsonObjectEditorWidget.hpp"
+#include "ui/DrawerDialogHost.hpp"
 
 namespace {
     const QString kLineEditStyle = QStringLiteral(
@@ -838,10 +839,12 @@ namespace fairwindsk::ui::mydata {
     }
 
     void Waypoints::deleteWaypoint(const QString &id, const QString &name) {
-        const auto choice = QMessageBox::question(
+        const auto choice = drawer::question(
             this,
             tr("Waypoints"),
-            tr("Delete waypoint \"%1\"?").arg(name));
+            tr("Delete waypoint \"%1\"?").arg(name),
+            QMessageBox::Yes | QMessageBox::No,
+            QMessageBox::No);
         if (choice != QMessageBox::Yes) {
             return;
         }
@@ -855,7 +858,7 @@ namespace fairwindsk::ui::mydata {
     }
 
     void Waypoints::showError(const QString &message) const {
-        QMessageBox::warning(const_cast<Waypoints *>(this), tr("Waypoints"), message);
+        drawer::warning(const_cast<Waypoints *>(this), tr("Waypoints"), message);
     }
 
     void Waypoints::clearEditor() {
@@ -962,7 +965,7 @@ namespace fairwindsk::ui::mydata {
         }
 
         rebuildTable();
-        QMessageBox::information(this, tr("Waypoints"), tr("Imported %1 waypoint feature(s).").arg(importedCount));
+        drawer::information(this, tr("Waypoints"), tr("Imported %1 waypoint feature(s).").arg(importedCount));
     }
 
     void Waypoints::onExportClicked() {
@@ -1102,10 +1105,12 @@ namespace fairwindsk::ui::mydata {
             return;
         }
 
-        const auto choice = QMessageBox::question(
+        const auto choice = drawer::question(
             this,
             tr("Waypoints"),
-            tr("Delete %1 shown waypoint(s)?").arg(ids.size()));
+            tr("Delete %1 shown waypoint(s)?").arg(ids.size()),
+            QMessageBox::Yes | QMessageBox::No,
+            QMessageBox::No);
         if (choice != QMessageBox::Yes) {
             return;
         }

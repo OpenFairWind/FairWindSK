@@ -30,6 +30,7 @@
 #include "GeoJsonUtils.hpp"
 #include "HistoryTrackModel.hpp"
 #include "JsonObjectEditorWidget.hpp"
+#include "ui/DrawerDialogHost.hpp"
 
 namespace {
     const QString kTrackTableStyle = QStringLiteral(
@@ -435,14 +436,14 @@ namespace fairwindsk::ui::mydata {
 
         QFile file(fileName);
         if (!file.open(QIODevice::ReadOnly)) {
-            QMessageBox::warning(this, tr("Tracks"), tr("Unable to open %1.").arg(fileName));
+            drawer::warning(this, tr("Tracks"), tr("Unable to open %1.").arg(fileName));
             return;
         }
 
         QList<HistoryTrackPoint> points;
         QString message;
         if (!importTrackPointsFromGeoJson(QJsonDocument::fromJson(file.readAll()), &points, &message)) {
-            QMessageBox::warning(this, tr("Tracks"), message);
+            drawer::warning(this, tr("Tracks"), message);
             return;
         }
 
@@ -469,7 +470,7 @@ namespace fairwindsk::ui::mydata {
 
         QFile file(fileName);
         if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-            QMessageBox::warning(this, tr("Tracks"), tr("Unable to write %1.").arg(fileName));
+            drawer::warning(this, tr("Tracks"), tr("Unable to write %1.").arg(fileName));
             return;
         }
 
@@ -479,7 +480,7 @@ namespace fairwindsk::ui::mydata {
     void HistoryTrackTab::onOpenClicked() {
         const int row = currentRow();
         if (row < 0) {
-            QMessageBox::warning(this, tr("Tracks"), tr("Select a track sample first."));
+            drawer::warning(this, tr("Tracks"), tr("Select a track sample first."));
             return;
         }
 
@@ -551,7 +552,7 @@ namespace fairwindsk::ui::mydata {
         QString message;
         const auto properties = m_propertiesEditor->jsonObject(&propertiesOk, &message);
         if (!propertiesOk) {
-            QMessageBox::warning(this, tr("Tracks"), message);
+            drawer::warning(this, tr("Tracks"), message);
             return;
         }
 
@@ -565,14 +566,14 @@ namespace fairwindsk::ui::mydata {
         point.coordinate.setAltitude(properties.contains("altitude") ? properties["altitude"].toDouble() : m_altitudeSpinBox->value());
 
         if (!point.timestamp.isValid() || !point.coordinate.isValid()) {
-            QMessageBox::warning(this, tr("Tracks"), tr("Please enter a valid timestamp and coordinates."));
+            drawer::warning(this, tr("Tracks"), tr("Please enter a valid timestamp and coordinates."));
             return;
         }
 
         if (m_isCreating) {
             m_model->appendPoint(point);
         } else if (!m_model->updatePointAtRow(m_currentRow, point)) {
-            QMessageBox::warning(this, tr("Tracks"), tr("Unable to update the selected sample."));
+            drawer::warning(this, tr("Tracks"), tr("Unable to update the selected sample."));
             return;
         }
 
@@ -590,14 +591,16 @@ namespace fairwindsk::ui::mydata {
             return;
         }
 
-        if (QMessageBox::question(this,
-                                  tr("Delete sample"),
-                                  tr("Delete the selected track sample?")) != QMessageBox::Yes) {
+        if (drawer::question(this,
+                             tr("Delete sample"),
+                             tr("Delete the selected track sample?"),
+                             QMessageBox::Yes | QMessageBox::No,
+                             QMessageBox::No) != QMessageBox::Yes) {
             return;
         }
 
         if (!m_model->removePointAtRow(m_currentRow)) {
-            QMessageBox::warning(this, tr("Tracks"), tr("Unable to delete the selected sample."));
+            drawer::warning(this, tr("Tracks"), tr("Unable to delete the selected sample."));
             return;
         }
 

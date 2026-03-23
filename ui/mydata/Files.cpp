@@ -17,6 +17,7 @@
 #include <QStorageInfo>
 
 #include "FileInfoListModel.hpp"
+#include "ui/DrawerDialogHost.hpp"
 
 
 
@@ -444,12 +445,7 @@ namespace fairwindsk::ui::mydata {
 
 
 	void Files::showWarning(const QString &message) const {
-		const auto alert = new QMessageBox();
-		alert->setText(message);
-		alert->setIcon(QMessageBox::Warning);
-		alert->setWindowIcon(windowIcon());
-		alert->exec();
-		delete alert;
+		drawer::warning(const_cast<Files *>(this), tr("Files"), message);
 	}
 
 	void Files::onUpClicked() {
@@ -459,13 +455,12 @@ namespace fairwindsk::ui::mydata {
 	}
 
 	void Files::onNewFolderClicked() {
-		bool ok;
-		QString path = QInputDialog::getText(this,
-		                                     tr("Create a new folder"),
-		                                     tr("Enter path:"),
-		                                     QLineEdit::Normal,
-		                                     tr("New folder"),
-		                                     &ok);
+		bool ok = false;
+		QString path = drawer::getText(this,
+		                               tr("Create a new folder"),
+		                               tr("Enter path:"),
+		                               tr("New folder"),
+		                               &ok);
 
 		if (ok && !path.isEmpty()) {
 			QDir dir;
@@ -483,10 +478,11 @@ namespace fairwindsk::ui::mydata {
 
 			QStringList paths_to_delete = getSelection();
 			QMessageBox::StandardButton choice
-				= QMessageBox::warning(this,
-			                           "Confirm delete",
-			                           "Are you sure you want to delete the selected items?",
-			                           QMessageBox::Ok | QMessageBox::Cancel);
+				= drawer::warning(this,
+				                  tr("Confirm delete"),
+				                  tr("Are you sure you want to delete the selected items?"),
+				                  QMessageBox::Ok | QMessageBox::Cancel,
+				                  QMessageBox::Cancel);
 			if (choice == QMessageBox::Ok) {
 				foreach (QString path, paths_to_delete) {
 					if (QFileInfo fileInfo(path); fileInfo.isDir()) {
@@ -509,14 +505,13 @@ namespace fairwindsk::ui::mydata {
 			QStringList selectedItems =getSelection();
 			foreach (QString selectedItem, selectedItems) {
 				if (!selectedItem.isEmpty()) {
-					bool ok;
+					bool ok = false;
 					QFileInfo fileInfo(selectedItem);
-					QString newName = QInputDialog::getText(this,
-					                                        tr("Rename"),
-					                                        tr("New name:"),
-					                                        QLineEdit::Normal,
-					                                        fileInfo.completeBaseName(),
-					                                        &ok);
+					QString newName = drawer::getText(this,
+					                                  tr("Rename"),
+					                                  tr("New name:"),
+					                                  fileInfo.completeBaseName(),
+					                                  &ok);
 					if (ok && !newName.isEmpty()) {
 						QFile item(selectedItem);
 						QString itemType = fileInfo.isDir() ? "Folder" : "File";

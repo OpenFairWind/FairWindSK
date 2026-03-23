@@ -18,6 +18,7 @@
 #include <QUuid>
 
 #include "FairWindSK.hpp"
+#include "ui/DrawerDialogHost.hpp"
 
 namespace {
     QString stringValue(const QJsonObject &resource, const QString &key, const QString &fallback = {}) {
@@ -443,7 +444,7 @@ namespace fairwindsk::ui::mydata {
     void ResourceDialog::accept() {
         QString message;
         if (!validate(&message)) {
-            QMessageBox::warning(this, tr("Invalid %1").arg(resourceKindToSingularTitle(m_kind)), message);
+            drawer::warning(this, tr("Invalid %1").arg(resourceKindToSingularTitle(m_kind)), message);
             return;
         }
 

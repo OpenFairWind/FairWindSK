@@ -18,6 +18,8 @@
 #include <QTimer>
 #include <QStyle>
 
+#include "ui/DrawerDialogHost.hpp"
+
 using namespace Qt::StringLiterals;
 
 namespace fairwindsk::ui::web {
@@ -62,9 +64,11 @@ namespace fairwindsk::ui::web {
                             status = tr("Render process killed");
                             break;
                     }
-                    QMessageBox::StandardButton btn = QMessageBox::question(window(), status,
+                    const QMessageBox::StandardButton btn = drawer::question(window(), status,
                                                                             tr("Render process exited with code: %1\n"
-                                                                               "Do you want to reload the page ?").arg(statusCode));
+                                                                               "Do you want to reload the page ?").arg(statusCode),
+                                                                            QMessageBox::Yes | QMessageBox::No,
+                                                                            QMessageBox::No);
                     if (btn == QMessageBox::Yes)
                         QTimer::singleShot(0, this, &WebView::reload);
                 });
@@ -189,31 +193,34 @@ namespace fairwindsk::ui::web {
 
 
     void WebView::handleCertificateError(QWebEngineCertificateError error) {
-        QDialog dialog(window());
-        dialog.setModal(true);
-        dialog.setWindowFlags(dialog.windowFlags() & ~Qt::WindowContextHelpButtonHint);
+        auto *dialog = new QDialog(window());
+        dialog->setWindowFlags(dialog->windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
         Ui::CertificateErrorDialog certificateDialog;
-        certificateDialog.setupUi(&dialog);
+        certificateDialog.setupUi(dialog);
+        certificateDialog.buttonBox->hide();
         certificateDialog.m_iconLabel->setText(QString());
         const QIcon icon(window()->style()->standardIcon(QStyle::SP_MessageBoxWarning, 0, window()));
         certificateDialog.m_iconLabel->setPixmap(icon.pixmap(32, 32));
         certificateDialog.m_errorLabel->setText(error.description());
-        dialog.setWindowTitle(tr("Certificate Error"));
+        dialog->setWindowTitle(tr("Certificate Error"));
 
-        if (dialog.exec() == QDialog::Accepted)
+        if (drawer::execDrawer(this, tr("Certificate Error"), dialog,
+                               {{tr("Continue"), QDialog::Accepted, false},
+                                {tr("Cancel"), QDialog::Rejected, true}},
+                               QDialog::Rejected) == QDialog::Accepted)
             error.acceptCertificate();
         else
             error.rejectCertificate();
     }
 
     void WebView::handleAuthenticationRequired(const QUrl &requestUrl, QAuthenticator *auth) {
-        QDialog dialog(window());
-        dialog.setModal(true);
-        dialog.setWindowFlags(dialog.windowFlags() & ~Qt::WindowContextHelpButtonHint);
+        auto *dialog = new QDialog(window());
+        dialog->setWindowFlags(dialog->windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
         Ui::PasswordDialog passwordDialog;
-        passwordDialog.setupUi(&dialog);
+        passwordDialog.setupUi(dialog);
+        passwordDialog.buttonBox->hide();
 
         passwordDialog.m_iconLabel->setText(QString());
         const QIcon icon(window()->style()->standardIcon(QStyle::SP_MessageBoxQuestion, 0, window()));
@@ -225,7 +232,10 @@ namespace fairwindsk::ui::web {
         passwordDialog.m_infoLabel->setText(introMessage);
         passwordDialog.m_infoLabel->setWordWrap(true);
 
-        if (dialog.exec() == QDialog::Accepted) {
+        if (drawer::execDrawer(this, tr("Authentication Required"), dialog,
+                               {{tr("OK"), QDialog::Accepted, true},
+                                {tr("Cancel"), QDialog::Rejected, false}},
+                               QDialog::Rejected) == QDialog::Accepted) {
             auth->setUser(passwordDialog.m_userNameLineEdit->text());
             auth->setPassword(passwordDialog.m_passwordLineEdit->text());
         } else {
@@ -237,7 +247,8 @@ namespace fairwindsk::ui::web {
 #if QT_VERSION < QT_VERSION_CHECK(6, 8, 0)
     void WebView::handleFeaturePermissionRequested(const QUrl &securityOrigin, QWebEnginePage::Feature feature) {
         const QString title = tr("Permission Request");
-        if (const QString question = questionForFeature(feature).arg(securityOrigin.host()); !question.isEmpty() && QMessageBox::question(window(), title, question) == QMessageBox::Yes)
+        if (const QString question = questionForFeature(feature).arg(securityOrigin.host()); !question.isEmpty()
+            && drawer::question(window(), title, question, QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes)
             page()->setFeaturePermission(securityOrigin, feature,
                                          QWebEnginePage::PermissionGrantedByUser);
         else
@@ -254,7 +265,7 @@ namespace fairwindsk::ui::web {
 
         const QString title = tr("Permission Request");
         const QString question = questionForPermission(permission.permissionType()).arg(permission.origin().host());
-        if (!question.isEmpty() && QMessageBox::question(window(), title, question) == QMessageBox::Yes) {
+        if (!question.isEmpty() && drawer::question(window(), title, question, QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes) {
             permission.grant();
         } else {
             permission.deny();
@@ -263,12 +274,12 @@ namespace fairwindsk::ui::web {
 #endif
 
     void WebView::handleProxyAuthenticationRequired(const QUrl &, QAuthenticator *auth, const QString &proxyHost) {
-        QDialog dialog(window());
-        dialog.setModal(true);
-        dialog.setWindowFlags(dialog.windowFlags() & ~Qt::WindowContextHelpButtonHint);
+        auto *dialog = new QDialog(window());
+        dialog->setWindowFlags(dialog->windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
         Ui::PasswordDialog passwordDialog;
-        passwordDialog.setupUi(&dialog);
+        passwordDialog.setupUi(dialog);
+        passwordDialog.buttonBox->hide();
 
         passwordDialog.m_iconLabel->setText(QString());
         QIcon icon(window()->style()->standardIcon(QStyle::SP_MessageBoxQuestion, 0, window()));
@@ -279,7 +290,10 @@ namespace fairwindsk::ui::web {
         passwordDialog.m_infoLabel->setText(introMessage);
         passwordDialog.m_infoLabel->setWordWrap(true);
 
-        if (dialog.exec() == QDialog::Accepted) {
+        if (drawer::execDrawer(this, tr("Proxy Authentication Required"), dialog,
+                               {{tr("OK"), QDialog::Accepted, true},
+                                {tr("Cancel"), QDialog::Rejected, false}},
+                               QDialog::Rejected) == QDialog::Accepted) {
             auth->setUser(passwordDialog.m_userNameLineEdit->text());
             auth->setPassword(passwordDialog.m_passwordLineEdit->text());
         } else {
@@ -290,9 +304,11 @@ namespace fairwindsk::ui::web {
 
 //! [registerProtocolHandlerRequested]
     void WebView::handleRegisterProtocolHandlerRequested(QWebEngineRegisterProtocolHandlerRequest request) {
-        const auto answer = QMessageBox::question(window(), tr("Permission Request"),
-                                            tr("Allow %1 to open all %2 links?")
-                                                    .arg(request.origin().host(), request.scheme()));
+        const auto answer = drawer::question(window(), tr("Permission Request"),
+                                             tr("Allow %1 to open all %2 links?")
+                                                     .arg(request.origin().host(), request.scheme()),
+                                             QMessageBox::Yes | QMessageBox::No,
+                                             QMessageBox::No);
         if (answer == QMessageBox::Yes)
             request.accept();
         else
@@ -317,9 +333,11 @@ namespace fairwindsk::ui::web {
                 Q_UNREACHABLE();
         }
 
-        const auto answer = QMessageBox::question(window(), tr("File system access request"),
-                                            tr("Give %1 %2 access to %3?")
-                                                    .arg(request.origin().host(), accessType, request.filePath().toString()));
+        const auto answer = drawer::question(window(), tr("File system access request"),
+                                             tr("Give %1 %2 access to %3?")
+                                                     .arg(request.origin().host(), accessType, request.filePath().toString()),
+                                             QMessageBox::Yes | QMessageBox::No,
+                                             QMessageBox::No);
         if (answer == QMessageBox::Yes)
             request.accept();
         else

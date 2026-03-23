@@ -7,9 +7,12 @@
 #include <QNetworkCookie>
 #include <QWebEngineCookieStore>
 #include <QMessageBox>
+#include <QPushButton>
+#include <QFrame>
 #include <QProcess>
 #include <QWindow>
 #include <QVBoxLayout>
+#include <QHBoxLayout>
 
 #include "MainWindow.hpp"
 #include "ui/topbar/TopBar.hpp"
@@ -19,8 +22,11 @@
 #include "ui/web/Web.hpp"
 #include "ui/settings/Settings.hpp"
 #include "ui/mydata/MyData.hpp"
+#include "ui/DrawerDialogHost.hpp"
 
 namespace fairwindsk::ui {
+    MainWindow *MainWindow::s_instance = nullptr;
+
     /*
      * MainWindow
      * Public constructor - This presents FairWind's UI
@@ -32,6 +38,7 @@ namespace fairwindsk::ui {
 
         // Get the singleton
         auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+        s_instance = this;
 
         // Create the TopBar object
         m_topBar = new topbar::TopBar(ui->widget_Top);
@@ -48,6 +55,32 @@ namespace fairwindsk::ui {
         bottomLayout->setContentsMargins(0, 0, 0, 0);
         bottomLayout->setSpacing(0);
         bottomLayout->addWidget(m_bottomBar);
+
+        m_dialogDrawer = new QFrame(ui->centralwidget);
+        m_dialogDrawer->setVisible(false);
+        m_dialogDrawer->setObjectName(QStringLiteral("dialogDrawer"));
+        m_dialogDrawer->setStyleSheet(
+            "#dialogDrawer { background: #0b0b0b; border-top: 1px solid #232323; }"
+            "#dialogDrawer QLabel { color: white; }"
+            "#dialogDrawer QPushButton { background: #f3f4f6; color: #111827; border: 1px solid #d1d5db; border-radius: 4px; padding: 6px 12px; }"
+            "#dialogDrawer QPushButton:hover { background: #e5e7eb; }");
+        auto *drawerLayout = new QVBoxLayout(m_dialogDrawer);
+        drawerLayout->setContentsMargins(16, 12, 16, 12);
+        drawerLayout->setSpacing(10);
+        m_dialogDrawerTitle = new QLabel(m_dialogDrawer);
+        m_dialogDrawerTitle->setStyleSheet("QLabel { font-size: 16px; font-weight: 700; color: white; }");
+        drawerLayout->addWidget(m_dialogDrawerTitle);
+        m_dialogDrawerContentHost = new QWidget(m_dialogDrawer);
+        m_dialogDrawerContentLayout = new QVBoxLayout(m_dialogDrawerContentHost);
+        m_dialogDrawerContentLayout->setContentsMargins(0, 0, 0, 0);
+        drawerLayout->addWidget(m_dialogDrawerContentHost);
+        auto *buttonRow = new QWidget(m_dialogDrawer);
+        m_dialogDrawerButtonsLayout = new QHBoxLayout(buttonRow);
+        m_dialogDrawerButtonsLayout->setContentsMargins(0, 0, 0, 0);
+        m_dialogDrawerButtonsLayout->setSpacing(8);
+        m_dialogDrawerButtonsLayout->addStretch(1);
+        drawerLayout->addWidget(buttonRow);
+        ui->verticalLayout->insertWidget(2, m_dialogDrawer);
 
         // The Autopilot panel is wired directly to the Signal K autopilot APIs.
         m_bottomBar->setAutopilotIcon(true);
@@ -112,9 +145,92 @@ namespace fairwindsk::ui {
         return m_activeOverlay != nullptr;
     }
 
+    MainWindow *MainWindow::instance(QWidget *context) {
+        if (context) {
+            if (auto *window = qobject_cast<MainWindow *>(context->window())) {
+                return window;
+            }
+        }
+
+        if (s_instance) {
+            return s_instance;
+        }
+
+        for (auto *widget : QApplication::topLevelWidgets()) {
+            if (auto *window = qobject_cast<MainWindow *>(widget)) {
+                return window;
+            }
+        }
+
+        return nullptr;
+    }
+
     void MainWindow::setChromeEnabled(const bool enabled) const {
         ui->widget_Top->setEnabled(enabled);
         ui->widget_Bottom->setEnabled(enabled);
+    }
+
+    void MainWindow::setDrawerEnabled(const bool enabled) const {
+        ui->widget_Top->setEnabled(enabled);
+        ui->stackedWidget_Center->setEnabled(enabled);
+        ui->widget_Bottom->setEnabled(enabled);
+        if (m_dialogDrawer) {
+            m_dialogDrawer->setEnabled(true);
+        }
+    }
+
+    void MainWindow::clearDrawer() {
+        while (m_dialogDrawerButtonsLayout && m_dialogDrawerButtonsLayout->count() > 1) {
+            auto *item = m_dialogDrawerButtonsLayout->takeAt(0);
+            if (auto *widget = item->widget()) {
+                widget->deleteLater();
+            }
+            delete item;
+        }
+        if (m_dialogDrawerButtonsLayout && m_dialogDrawerButtonsLayout->count() == 1 && m_dialogDrawerButtonsLayout->itemAt(0)->spacerItem()) {
+            m_dialogDrawerButtonsLayout->takeAt(0);
+            m_dialogDrawerButtonsLayout->addStretch(1);
+        }
+        while (m_dialogDrawerContentLayout && m_dialogDrawerContentLayout->count() > 0) {
+            auto *item = m_dialogDrawerContentLayout->takeAt(0);
+            if (auto *widget = item->widget()) {
+                widget->deleteLater();
+            }
+            delete item;
+        }
+    }
+
+    int MainWindow::execDrawer(const QString &title, QWidget *content, const QList<DrawerButtonSpec> &buttons, const int defaultResult) {
+        if (!m_dialogDrawer || !content) {
+            return defaultResult;
+        }
+
+        clearDrawer();
+        m_dialogDrawerTitle->setText(title);
+        content->setParent(m_dialogDrawerContentHost);
+        m_dialogDrawerContentLayout->addWidget(content);
+
+        QEventLoop loop;
+        int result = defaultResult;
+
+        for (const auto &buttonSpec : buttons) {
+            auto *button = new QPushButton(buttonSpec.text, m_dialogDrawer);
+            button->setDefault(buttonSpec.isDefault);
+            connect(button, &QPushButton::clicked, this, [&loop, &result, buttonSpec]() {
+                result = buttonSpec.result;
+                loop.quit();
+            });
+            m_dialogDrawerButtonsLayout->insertWidget(m_dialogDrawerButtonsLayout->count() - 1, button);
+        }
+
+        setDrawerEnabled(false);
+        m_dialogDrawer->show();
+        m_dialogDrawer->raise();
+        loop.exec();
+        m_dialogDrawer->hide();
+        clearDrawer();
+        setDrawerEnabled(true);
+        return result;
     }
 
     void MainWindow::showOverlay(QWidget *page) {
@@ -520,9 +636,10 @@ namespace fairwindsk::ui {
     }
 
     void MainWindow::closeEvent(QCloseEvent *event) {
-        QMessageBox::StandardButton reply = QMessageBox::question(this, "Quit FairWindSK",
-                                                                  "Are you sure you want to exit FairWindSK?",
-                                                                  QMessageBox::Yes | QMessageBox::No);
+        const QMessageBox::StandardButton reply = drawer::question(this, "Quit FairWindSK",
+                                                                   "Are you sure you want to exit FairWindSK?",
+                                                                   QMessageBox::Yes | QMessageBox::No,
+                                                                   QMessageBox::No);
         if (reply == QMessageBox::Yes) {
 
             // Accept the event
@@ -553,6 +670,9 @@ namespace fairwindsk::ui {
      * MainWindow's destructor
      */
     MainWindow::~MainWindow() {
+        if (s_instance == this) {
+            s_instance = nullptr;
+        }
 
         // Check if the hotkey is allocated
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)

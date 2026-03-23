@@ -137,6 +137,7 @@ set(FAIRWINDSK_SOURCES
         ui/topbar/TopBar.cpp ui/topbar/TopBar.hpp ui/topbar/TopBar.ui
         ui/bottombar/BottomBar.cpp ui/bottombar/BottomBar.hpp ui/bottombar/BottomBar.ui
         ui/MainWindow.cpp ui/MainWindow.hpp ui/MainWindow.ui
+        ui/DrawerDialogHost.cpp ui/DrawerDialogHost.hpp
         ui/web/Web.cpp ui/web/Web.hpp ui/web/Web.ui
         ui/web/WebPage.cpp ui/web/WebPage.hpp
         ui/web/WebPopupWindow.cpp ui/web/WebPopupWindow.hpp

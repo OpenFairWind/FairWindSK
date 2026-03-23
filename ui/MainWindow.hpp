@@ -9,6 +9,7 @@
 #include <QMap>
 #include <QDebug>
 #include <QCloseEvent>
+#include <QEventLoop>
 #include <QWebEngineProfile>
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
@@ -26,8 +27,17 @@
 #include <ui/about/About.hpp>
 
 namespace Ui { class MainWindow; }
+class QLabel;
+class QHBoxLayout;
+class QVBoxLayout;
 
 namespace fairwindsk::ui {
+
+    struct DrawerButtonSpec {
+        QString text;
+        int result = 0;
+        bool isDefault = false;
+    };
 
     namespace topbar {class TopBar; }
     namespace launcher {class Launcher;}
@@ -57,9 +67,14 @@ namespace fairwindsk::ui {
         // Get the pointer to the bottom bar
         bottombar::BottomBar *getBottomBar();
 
+        static MainWindow *instance(QWidget *context = nullptr);
+        int execDrawer(const QString &title, QWidget *content, const QList<DrawerButtonSpec> &buttons, int defaultResult = 0);
+
     private:
         bool isOverlayOpen() const;
         void setChromeEnabled(bool enabled) const;
+        void setDrawerEnabled(bool enabled) const;
+        void clearDrawer();
         void showOverlay(QWidget *page);
         void closeOverlay(QWidget *page, QWidget *fallbackWidget);
         void showLauncher();
@@ -116,6 +131,11 @@ namespace fairwindsk::ui {
 
         QWidget *m_activeOverlay = nullptr;
         fairwindsk::ui::mydata::MyData *m_myDataPage = nullptr;
+        QWidget *m_dialogDrawer = nullptr;
+        QLabel *m_dialogDrawerTitle = nullptr;
+        QWidget *m_dialogDrawerContentHost = nullptr;
+        QVBoxLayout *m_dialogDrawerContentLayout = nullptr;
+        QHBoxLayout *m_dialogDrawerButtonsLayout = nullptr;
 
         // QWidget containing useful infos
         topbar::TopBar *m_topBar = nullptr;
@@ -133,6 +153,8 @@ namespace fairwindsk::ui {
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         QHotkey *m_hotkey = nullptr;
 #endif
+
+        static MainWindow *s_instance;
 
     };
 
