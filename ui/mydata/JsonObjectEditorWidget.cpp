@@ -346,8 +346,8 @@ namespace fairwindsk::ui::mydata {
 
     void JsonObjectEditorWidget::updateTreePlaceholder() {
         const bool hasItems = m_treeWidget->topLevelItemCount() > 0;
-        m_treeStack->setCurrentWidget(hasItems ? static_cast<QWidget *>(m_treeWidget)
-                                               : static_cast<QWidget *>(m_emptyTreeLabel));
+        m_treeStack->setCurrentWidget(hasItems ? static_cast<QWidget *>(ui->pageTree)
+                                               : static_cast<QWidget *>(ui->pageEmpty));
     }
 
     QString JsonObjectEditorWidget::typeName(const QJsonValue &value) {
