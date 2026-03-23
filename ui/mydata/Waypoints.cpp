@@ -114,8 +114,42 @@ namespace {
   <meta charset="utf-8" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v10.6.1/ol.css" />
   <style>
-    html, body { margin: 0; width: 100%%; height: 100%%; background: #07111b; color: #e5edf7; overflow: hidden; }
-    #map { width: 100%%; height: 100%%; background: #0b1825; }
+    html, body {
+      margin: 0;
+      width: 100%%;
+      height: 100%%;
+      background: #07111b;
+      color: #e5edf7;
+      overflow: hidden;
+      font-family: "Avenir Next", "Helvetica Neue", sans-serif;
+    }
+    .shell {
+      display: flex;
+      flex-direction: column;
+      width: 100%%;
+      height: 100vh;
+      background: linear-gradient(180deg, #0b1724 0%%, #132739 100%%);
+    }
+    .map-wrap {
+      flex: 1;
+      padding: 14px;
+      min-height: 0;
+    }
+    .map-stage {
+      position: relative;
+      width: 100%%;
+      height: 100%%;
+      border-radius: 14px;
+      border: 1px solid rgba(229, 237, 247, 0.12);
+      overflow: hidden;
+      background: #0b1825;
+      box-shadow: inset 0 0 40px rgba(7, 17, 27, 0.35);
+    }
+    #map {
+      width: 100%%;
+      height: 100%%;
+      background: #0b1825;
+    }
     .badge {
       position: absolute;
       left: 12px;
@@ -127,12 +161,24 @@ namespace {
       color: #e5edf7;
       font: 12px "Avenir Next", "Helvetica Neue", sans-serif;
     }
+    .footer {
+      padding: 12px 18px 18px;
+      color: #aebfd3;
+      font-size: 13px;
+    }
     .ol-viewport, .ol-layers, .ol-layer, .ol-layer canvas { border-radius: 12px; }
   </style>
 </head>
 <body>
-  <div class="badge">OpenLayers, OpenStreetMap + OpenSeaMap</div>
-  <div id="map"></div>
+  <div class="shell">
+    <div class="map-wrap">
+      <div class="map-stage">
+        <div class="badge" id="source">OpenLayers, OpenStreetMap + OpenSeaMap</div>
+        <div id="map"></div>
+      </div>
+    </div>
+    <div class="footer" id="info">Preparing waypoint preview map.</div>
+  </div>
   <script src="https://cdn.jsdelivr.net/npm/ol@v10.6.1/dist/ol.js"></script>
   <script>
     const data = JSON.parse(atob('%1'));
@@ -150,14 +196,24 @@ namespace {
       const lonDelta = radiusNm / (60.0 * Math.max(0.2, cosLat));
       return [lon - lonDelta, lat - latDelta, lon + lonDelta, lat + latDelta];
     }
+    function setInfo(message) {
+      const info = document.getElementById('info');
+      if (info) info.textContent = message;
+    }
     function renderMap() {
       if (!window.ol) {
-        window.setTimeout(renderMap, 150);
+        setInfo('Waiting for the OpenLayers runtime to load.');
+        window.setTimeout(renderMap, 200);
         return;
       }
       const existingMap = window.__fairwindWaypointMap;
       if (existingMap) {
-        window.setTimeout(() => existingMap.updateSize(), 0);
+        existingMap.updateSize();
+        return;
+      }
+      const mapNode = document.getElementById('map');
+      if (!mapNode) {
+        setInfo('The preview map container is unavailable.');
         return;
       }
       const featureCollection = asCollection(data);
@@ -167,8 +223,9 @@ namespace {
         featureProjection: 'EPSG:3857'
       });
       const vectorSource = new ol.source.Vector({ features });
+      const desiredExtent = ol.proj.transformExtent(radiusExtent(%2, %3, 10.0), 'EPSG:4326', 'EPSG:3857');
       const map = new ol.Map({
-        target: 'map',
+        target: mapNode,
         controls: [],
         interactions: ol.interaction.defaults({ altShiftDragRotate: false, pinchRotate: false }),
         layers: [
@@ -196,24 +253,30 @@ namespace {
         })
       });
 
-      const desiredExtent = ol.proj.transformExtent(radiusExtent(%2, %3, 10.0), 'EPSG:4326', 'EPSG:3857');
       map.getView().fit(desiredExtent, { padding: [28, 28, 28, 28], duration: 0, maxZoom: 12 });
       if (features.length) {
         const featureExtent = vectorSource.getExtent();
-        if (featureExtent && ol.extent.getWidth(featureExtent) > 0 && ol.extent.getHeight(featureExtent) > 0) {
-          map.getView().fit(featureExtent, { padding: [72, 72, 72, 72], duration: 0, maxZoom: 13 });
+        if (featureExtent && Number.isFinite(featureExtent[0]) && Number.isFinite(featureExtent[2])) {
+          const combinedExtent = ol.extent.extend(desiredExtent.slice(), featureExtent);
+          map.getView().fit(combinedExtent, { padding: [48, 48, 48, 48], duration: 0, maxZoom: 12 });
         }
       }
       window.__fairwindWaypointMap = map;
+      setInfo(features.length
+        ? 'Waypoint rendered on an OpenLayers preview with OpenStreetMap and OpenSeaMap tiles.'
+        : 'Showing a 10 nautical mile map extent around the waypoint coordinates.');
       window.setTimeout(() => map.updateSize(), 0);
       window.setTimeout(() => map.updateSize(), 250);
+      window.setTimeout(() => map.updateSize(), 1000);
     }
-    renderMap();
+    window.addEventListener('load', renderMap);
     window.addEventListener('resize', () => {
       if (window.__fairwindWaypointMap) {
         window.__fairwindWaypointMap.updateSize();
       }
     });
+    window.setTimeout(renderMap, 0);
+    window.setTimeout(renderMap, 400);
   </script>
 </body>
 </html>)")
