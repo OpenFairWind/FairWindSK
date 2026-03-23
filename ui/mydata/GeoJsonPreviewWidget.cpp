@@ -108,9 +108,16 @@ namespace fairwindsk::ui::mydata {
         setMessage(tr("GeoJSON preview will appear here."));
     }
 
+    void GeoJsonPreviewWidget::setFreeboardEnabled(const bool enabled) {
+        m_freeboardEnabled = enabled;
+        if (!enabled) {
+            ensureFreeboardTab(QString());
+        }
+    }
+
     void GeoJsonPreviewWidget::ensureFreeboardTab(const QString &url) {
         const int freeboardTabIndex = m_tabWidget->indexOf(m_freeboardView);
-        if (url.isEmpty()) {
+        if (!m_freeboardEnabled || url.isEmpty()) {
             if (freeboardTabIndex >= 0) {
                 m_tabWidget->removeTab(freeboardTabIndex);
             }
@@ -126,17 +133,12 @@ namespace fairwindsk::ui::mydata {
 
     void GeoJsonPreviewWidget::setGeoJson(const QJsonDocument &document, const QString &) {
         const QString base64Json = QString::fromLatin1(document.toJson(QJsonDocument::Compact).toBase64());
-        const QString freeboardUrl = detectFreeboardUrl();
+        const QString freeboardUrl = m_freeboardEnabled ? detectFreeboardUrl() : QString{};
         updateFocusCoordinate(document);
         ensureFreeboardTab(freeboardUrl);
         m_textView->setPlainText(QString::fromUtf8(document.toJson(QJsonDocument::Indented)));
         const QString script = QStringLiteral(R"(
 const data = JSON.parse(atob('%1'));
-const map = document.getElementById('map');
-const tilePane = document.getElementById('tile-pane');
-const svg = document.getElementById('preview');
-const info = document.getElementById('info');
-const fallbackSource = document.getElementById('fallback-source');
 const TILE_SIZE = 256;
 const PADDING = 48;
 
@@ -172,16 +174,27 @@ function toFeatures(input) {
   return [];
 }
 
-const features = toFeatures(data);
-const allPoints = [];
-features.forEach(feature => flattenCoordinates(feature.geometry, allPoints));
+function renderPreview() {
+  const map = document.getElementById('map');
+  const tilePane = document.getElementById('tile-pane');
+  const svg = document.getElementById('preview');
+  const info = document.getElementById('info');
+  const fallbackSource = document.getElementById('fallback-source');
+  if (!map || !tilePane || !svg || !info || !fallbackSource) {
+    return;
+  }
+  const features = toFeatures(data);
+  const allPoints = [];
+  features.forEach(feature => flattenCoordinates(feature.geometry, allPoints));
 
-if (!allPoints.length) {
-  tilePane.innerHTML = '';
-  svg.innerHTML = '';
-  fallbackSource.textContent = '';
-  info.textContent = 'No previewable geometry is available for this resource.';
-} else {
+  if (!allPoints.length) {
+    tilePane.innerHTML = '';
+    svg.innerHTML = '';
+    fallbackSource.textContent = '';
+    info.textContent = 'No previewable geometry is available for this resource.';
+    return;
+  }
+
   function projectMercator(point, zoom) {
     const sinLat = Math.sin(point[1] * Math.PI / 180);
     const worldSize = TILE_SIZE * Math.pow(2, zoom);
@@ -196,8 +209,8 @@ if (!allPoints.length) {
     minLat = Math.min(minLat, lat); maxLat = Math.max(maxLat, lat);
   });
 
-  const viewportWidth = Math.max(320, map.clientWidth || 960);
-  const viewportHeight = Math.max(240, map.clientHeight || 540);
+  const viewportWidth = Math.max(320, map.clientWidth || map.offsetWidth || 960);
+  const viewportHeight = Math.max(240, map.clientHeight || map.offsetHeight || 540);
   let zoom = 16;
   for (; zoom >= 1; --zoom) {
     const topLeft = projectMercator([minLon, maxLat], zoom);
@@ -337,6 +350,16 @@ if (!allPoints.length) {
   fallbackSource.textContent = 'OpenStreetMap + OpenSeaMap fallback';
   info.textContent = `${features.length} feature(s) rendered over the map preview.`;
 }
+
+let resizeTimer = null;
+window.addEventListener('load', renderPreview);
+window.addEventListener('resize', () => {
+  window.clearTimeout(resizeTimer);
+  resizeTimer = window.setTimeout(renderPreview, 100);
+});
+window.setTimeout(renderPreview, 0);
+window.setTimeout(renderPreview, 250);
+window.setTimeout(renderPreview, 1000);
 )")
             .arg(base64Json);
 

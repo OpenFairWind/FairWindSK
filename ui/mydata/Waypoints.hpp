@@ -12,10 +12,13 @@
 
 class QLabel;
 class QLineEdit;
+class QPlainTextEdit;
+class QProgressBar;
 class QStackedWidget;
 class QTableWidget;
 class QToolButton;
 class QDoubleSpinBox;
+class QTimer;
 
 namespace fairwindsk::ui::mydata {
 
@@ -34,11 +37,14 @@ namespace fairwindsk::ui::mydata {
         void onImportClicked();
         void onExportClicked();
         void onRefreshClicked();
+        void onSearchTimeout();
         void onTableDoubleClicked(int row, int column);
         void onNavigateRowClicked();
         void onDetailsRowClicked();
         void onEditRowClicked();
         void onRemoveRowClicked();
+        void onSelectAllClicked();
+        void onRemoveSelectedClicked();
         void onBackClicked();
         void onNavigateCurrentClicked();
         void onEditClicked();
@@ -49,7 +55,11 @@ namespace fairwindsk::ui::mydata {
     private:
         QString currentWaypointIdFromSelection() const;
         void rebuildTable();
+        void applySearchFilter();
         void styleTable();
+        void setBusy(bool busy, const QString &label = QString(), int maximum = 0);
+        void updateBulkButtons();
+        QStringList visibleWaypointIds() const;
         void showListPage();
         void showDetailsPage(const QString &id, const QJsonObject &resource, bool editMode);
         void applyWaypointToEditor(const QString &id, const QJsonObject &resource);
@@ -70,12 +80,16 @@ namespace fairwindsk::ui::mydata {
         QStackedWidget *m_stackedWidget = nullptr;
         QWidget *m_listPage = nullptr;
         QWidget *m_detailsPage = nullptr;
+        QStackedWidget *m_searchStack = nullptr;
         QLineEdit *m_searchEdit = nullptr;
+        QProgressBar *m_progressBar = nullptr;
         QTableWidget *m_tableWidget = nullptr;
         QToolButton *m_addButton = nullptr;
         QToolButton *m_importButton = nullptr;
         QToolButton *m_exportButton = nullptr;
         QToolButton *m_refreshButton = nullptr;
+        QToolButton *m_selectAllButton = nullptr;
+        QToolButton *m_bulkRemoveButton = nullptr;
         QToolButton *m_backButton = nullptr;
         QToolButton *m_newButton = nullptr;
         QToolButton *m_navigateButton = nullptr;
@@ -85,19 +99,24 @@ namespace fairwindsk::ui::mydata {
         QToolButton *m_deleteButton = nullptr;
         QLabel *m_titleLabel = nullptr;
         QLineEdit *m_nameEdit = nullptr;
-        QLineEdit *m_descriptionEdit = nullptr;
+        QPlainTextEdit *m_descriptionEdit = nullptr;
         QLineEdit *m_typeEdit = nullptr;
         QDoubleSpinBox *m_latitudeSpinBox = nullptr;
         QDoubleSpinBox *m_longitudeSpinBox = nullptr;
         QDoubleSpinBox *m_altitudeSpinBox = nullptr;
+        QPlainTextEdit *m_contactsEdit = nullptr;
+        QLabel *m_contactsLabel = nullptr;
         JsonObjectEditorWidget *m_propertiesEditor = nullptr;
         GeoJsonPreviewWidget *m_previewWidget = nullptr;
         QLabel *m_idValueLabel = nullptr;
         QLabel *m_timestampValueLabel = nullptr;
+        QTimer *m_searchTimer = nullptr;
         QString m_currentWaypointId;
         QStringList m_visibleWaypointIds;
+        QStringList m_searchHaystacks;
         bool m_isEditing = false;
         bool m_isCreating = false;
+        bool m_isBusy = false;
     };
 }
 

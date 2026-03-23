@@ -6,6 +6,7 @@
 #define FAIRWINDSK_UI_MYDATA_JSONOBJECTEDITORWIDGET_HPP
 
 #include <QJsonObject>
+#include <QStringList>
 #include <QWidget>
 
 class QPlainTextEdit;
@@ -28,6 +29,7 @@ namespace fairwindsk::ui::mydata {
         QJsonObject jsonObject(bool *ok = nullptr, QString *message = nullptr) const;
         void setEditMode(bool editMode);
         void setLabels(const QString &treeTitle, const QString &jsonTitle);
+        void setHiddenKeys(const QStringList &keys);
 
     private slots:
         void onCurrentTabChanged(int index);
@@ -58,6 +60,8 @@ namespace fairwindsk::ui::mydata {
         QToolButton *m_addChildButton = nullptr;
         QToolButton *m_addSiblingButton = nullptr;
         QToolButton *m_removeButton = nullptr;
+        QStringList m_hiddenKeys;
+        QJsonObject m_hiddenObject;
         bool m_isEditing = false;
     };
 }

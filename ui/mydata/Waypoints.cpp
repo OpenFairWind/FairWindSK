@@ -4,6 +4,7 @@
 
 #include "Waypoints.hpp"
 
+#include <algorithm>
 #include <QBrush>
 #include <QColor>
 #include <QFile>
@@ -11,15 +12,20 @@
 #include <QFormLayout>
 #include <QHeaderView>
 #include <QHBoxLayout>
+#include <QApplication>
 #include <QJsonDocument>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMessageBox>
+#include <QPlainTextEdit>
+#include <QProgressBar>
 #include <QPushButton>
+#include <QSignalBlocker>
 #include <QSplitter>
 #include <QStackedWidget>
 #include <QTableWidget>
 #include <QTableWidgetItem>
+#include <QTimer>
 #include <QToolButton>
 #include <QVBoxLayout>
 #include <QDoubleSpinBox>
@@ -33,6 +39,8 @@
 namespace {
     const QString kLineEditStyle = QStringLiteral(
         "QLineEdit { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
+    const QString kPlainTextStyle = QStringLiteral(
+        "QPlainTextEdit { background: #f7f7f4; color: #1f2937; border: 1px solid #d1d5db; selection-background-color: #c7d2fe; selection-color: #111827; }");
     const QString kSpinBoxStyle = QStringLiteral(
         "QAbstractSpinBox { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
     const QString kTableStyle = QStringLiteral(
@@ -89,12 +97,16 @@ namespace fairwindsk::ui::mydata {
           m_stackedWidget(new QStackedWidget(this)),
           m_listPage(new QWidget(this)),
           m_detailsPage(new QWidget(this)),
+          m_searchStack(new QStackedWidget(this)),
           m_searchEdit(new QLineEdit(this)),
+          m_progressBar(new QProgressBar(this)),
           m_tableWidget(new QTableWidget(this)),
           m_addButton(new QToolButton(this)),
           m_importButton(new QToolButton(this)),
           m_exportButton(new QToolButton(this)),
           m_refreshButton(new QToolButton(this)),
+          m_selectAllButton(new QToolButton(this)),
+          m_bulkRemoveButton(new QToolButton(this)),
           m_backButton(new QToolButton(this)),
           m_newButton(new QToolButton(this)),
           m_navigateButton(new QToolButton(this)),
@@ -104,15 +116,18 @@ namespace fairwindsk::ui::mydata {
           m_deleteButton(new QToolButton(this)),
           m_titleLabel(new QLabel(this)),
           m_nameEdit(new QLineEdit(this)),
-          m_descriptionEdit(new QLineEdit(this)),
+          m_descriptionEdit(new QPlainTextEdit(this)),
           m_typeEdit(new QLineEdit(this)),
           m_latitudeSpinBox(new QDoubleSpinBox(this)),
           m_longitudeSpinBox(new QDoubleSpinBox(this)),
           m_altitudeSpinBox(new QDoubleSpinBox(this)),
+          m_contactsEdit(new QPlainTextEdit(this)),
+          m_contactsLabel(new QLabel(tr("Contacts"), this)),
           m_propertiesEditor(new JsonObjectEditorWidget(this)),
           m_previewWidget(new GeoJsonPreviewWidget(this)),
           m_idValueLabel(new QLabel(this)),
-          m_timestampValueLabel(new QLabel(this)) {
+          m_timestampValueLabel(new QLabel(this)),
+          m_searchTimer(new QTimer(this)) {
         auto *rootLayout = new QVBoxLayout(this);
         rootLayout->setContentsMargins(0, 0, 0, 0);
         rootLayout->addWidget(m_stackedWidget);
@@ -123,7 +138,12 @@ namespace fairwindsk::ui::mydata {
 
         m_searchEdit->setPlaceholderText(tr("Search waypoints"));
         connect(m_searchEdit, &QLineEdit::textChanged, this, &Waypoints::onSearchTextChanged);
-        toolbarLayout->addWidget(m_searchEdit, 1);
+        m_progressBar->setTextVisible(true);
+        m_progressBar->setVisible(false);
+        m_searchStack->addWidget(m_searchEdit);
+        m_searchStack->addWidget(m_progressBar);
+        m_searchStack->setCurrentWidget(m_searchEdit);
+        toolbarLayout->addWidget(m_searchStack, 1);
 
         m_refreshButton->setIcon(QIcon(":/resources/svg/OpenBridge/refresh-google.svg"));
         m_refreshButton->setToolTip(tr("Refresh"));
@@ -143,8 +163,18 @@ namespace fairwindsk::ui::mydata {
         connect(m_addButton, &QToolButton::clicked, this, &Waypoints::onAddClicked);
         toolbarLayout->addWidget(m_addButton);
 
+        m_selectAllButton->setIcon(QIcon(":/resources/svg/OpenBridge/content-copy-google.svg"));
+        m_selectAllButton->setToolTip(tr("Select all shown waypoints"));
+        connect(m_selectAllButton, &QToolButton::clicked, this, &Waypoints::onSelectAllClicked);
+        toolbarLayout->addWidget(m_selectAllButton);
+
+        m_bulkRemoveButton->setIcon(QIcon(":/resources/svg/OpenBridge/delete-google.svg"));
+        m_bulkRemoveButton->setToolTip(tr("Remove all shown waypoints"));
+        connect(m_bulkRemoveButton, &QToolButton::clicked, this, &Waypoints::onRemoveSelectedClicked);
+        toolbarLayout->addWidget(m_bulkRemoveButton);
+
         m_tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
-        m_tableWidget->setSelectionMode(QAbstractItemView::SingleSelection);
+        m_tableWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
         m_tableWidget->setSortingEnabled(false);
         m_tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
         m_tableWidget->setColumnCount(m_model->columnCount() + 1);
@@ -218,14 +248,19 @@ namespace fairwindsk::ui::mydata {
         m_longitudeSpinBox->setDecimals(8);
         m_altitudeSpinBox->setRange(-100000.0, 100000.0);
         m_altitudeSpinBox->setDecimals(2);
+        m_descriptionEdit->setTabChangesFocus(true);
+        m_contactsEdit->setReadOnly(true);
         m_searchEdit->setStyleSheet(kLineEditStyle);
         m_nameEdit->setStyleSheet(kLineEditStyle);
-        m_descriptionEdit->setStyleSheet(kLineEditStyle);
+        m_descriptionEdit->setStyleSheet(kPlainTextStyle);
         m_typeEdit->setStyleSheet(kLineEditStyle);
         m_latitudeSpinBox->setStyleSheet(kSpinBoxStyle);
         m_longitudeSpinBox->setStyleSheet(kSpinBoxStyle);
         m_altitudeSpinBox->setStyleSheet(kSpinBoxStyle);
+        m_contactsEdit->setStyleSheet(kPlainTextStyle);
         m_propertiesEditor->setLabels(tr("Properties Tree"), tr("Properties JSON"));
+        m_propertiesEditor->setHiddenKeys({QStringLiteral("name"), QStringLiteral("description"), QStringLiteral("contacts")});
+        m_previewWidget->setFreeboardEnabled(false);
 
         formLayout->addRow(tr("Id"), m_idValueLabel);
         formLayout->addRow(tr("Name"), m_nameEdit);
@@ -234,6 +269,7 @@ namespace fairwindsk::ui::mydata {
         formLayout->addRow(tr("Latitude"), m_latitudeSpinBox);
         formLayout->addRow(tr("Longitude"), m_longitudeSpinBox);
         formLayout->addRow(tr("Altitude"), m_altitudeSpinBox);
+        formLayout->addRow(m_contactsLabel, m_contactsEdit);
         formLayout->addRow(tr("Feature properties"), m_propertiesEditor);
         formLayout->addRow(tr("Timestamp"), m_timestampValueLabel);
 
@@ -242,6 +278,9 @@ namespace fairwindsk::ui::mydata {
         showListPage();
 
         connect(m_model, &QAbstractItemModel::modelReset, this, &Waypoints::rebuildTable);
+        m_searchTimer->setSingleShot(true);
+        m_searchTimer->setInterval(180);
+        connect(m_searchTimer, &QTimer::timeout, this, &Waypoints::onSearchTimeout);
         rebuildTable();
     }
 
@@ -265,17 +304,18 @@ namespace fairwindsk::ui::mydata {
 
     void Waypoints::rebuildTable() {
         const int actionsColumn = m_model->columnCount();
-        const QString filter = m_searchEdit->text().trimmed();
         QStringList headers;
         for (int column = 0; column < m_model->columnCount(); ++column) {
             headers.append(m_model->headerData(column, Qt::Horizontal, Qt::DisplayRole).toString());
         }
         headers.append(tr("Actions"));
+        const QSignalBlocker blocker(m_tableWidget);
         m_tableWidget->clearContents();
         m_tableWidget->setColumnCount(headers.size());
         m_tableWidget->setHorizontalHeaderLabels(headers);
         m_tableWidget->setRowCount(0);
         m_visibleWaypointIds.clear();
+        m_searchHaystacks.clear();
 
         for (int row = 0; row < m_model->rowCount(); ++row) {
             const auto resource = m_model->resourceAtRow(row);
@@ -284,13 +324,11 @@ namespace fairwindsk::ui::mydata {
             for (int column = 0; column < m_model->columnCount(); ++column) {
                 haystack += " " + m_model->data(m_model->index(row, column), Qt::DisplayRole).toString();
             }
-            if (!filter.isEmpty() && !haystack.contains(filter, Qt::CaseInsensitive)) {
-                continue;
-            }
 
             const int visibleRow = m_tableWidget->rowCount();
             m_tableWidget->insertRow(visibleRow);
             m_visibleWaypointIds.append(id);
+            m_searchHaystacks.append(haystack);
 
             for (int column = 0; column < m_model->columnCount(); ++column) {
                 auto *item = new QTableWidgetItem(m_model->data(m_model->index(row, column), Qt::DisplayRole).toString());
@@ -346,6 +384,18 @@ namespace fairwindsk::ui::mydata {
         }
 
         m_tableWidget->setColumnWidth(actionsColumn, 196);
+        applySearchFilter();
+        updateBulkButtons();
+    }
+
+    void Waypoints::applySearchFilter() {
+        const QString filter = m_searchEdit->text().trimmed();
+        for (int row = 0; row < m_tableWidget->rowCount(); ++row) {
+            const bool matches = filter.isEmpty()
+                    || (row < m_searchHaystacks.size() && m_searchHaystacks.at(row).contains(filter, Qt::CaseInsensitive));
+            m_tableWidget->setRowHidden(row, !matches);
+        }
+        updateBulkButtons();
     }
 
     void Waypoints::showListPage() {
@@ -371,7 +421,7 @@ namespace fairwindsk::ui::mydata {
         m_titleLabel->setText(waypointName.isEmpty() ? tr("Waypoint details") : waypointName);
         m_idValueLabel->setText(id);
         m_nameEdit->setText(waypointName);
-        m_descriptionEdit->setText(descriptionForWaypoint(resource));
+        m_descriptionEdit->setPlainText(descriptionForWaypoint(resource));
         m_typeEdit->setText(resource["type"].toString());
 
         const auto coordinates = coordinateArray(resource);
@@ -381,6 +431,16 @@ namespace fairwindsk::ui::mydata {
 
         const auto properties = featurePropertiesObject(resource);
         m_propertiesEditor->setJsonObject(properties);
+        const auto contacts = properties.value("contacts").toArray();
+        QStringList contactLines;
+        for (const auto &contact : contacts) {
+            if (contact.isString()) {
+                contactLines.append(contact.toString());
+            }
+        }
+        m_contactsEdit->setPlainText(contactLines.join('\n'));
+        m_contactsLabel->setVisible(!contactLines.isEmpty());
+        m_contactsEdit->setVisible(!contactLines.isEmpty());
         m_timestampValueLabel->setText(resource["timestamp"].toString());
         updatePreview(resource);
     }
@@ -390,7 +450,16 @@ namespace fairwindsk::ui::mydata {
 
         QJsonObject properties = m_propertiesEditor->jsonObject();
         properties["name"] = m_nameEdit->text().trimmed();
-        properties["description"] = m_descriptionEdit->text().trimmed();
+        properties["description"] = m_descriptionEdit->toPlainText().trimmed();
+        if (!m_contactsEdit->toPlainText().trimmed().isEmpty()) {
+            QJsonArray contacts;
+            for (const QString &line : m_contactsEdit->toPlainText().split('\n', Qt::SkipEmptyParts)) {
+                contacts.append(line.trimmed());
+            }
+            properties["contacts"] = contacts;
+        } else {
+            properties.remove("contacts");
+        }
 
         QJsonArray coordinates;
         coordinates.append(m_longitudeSpinBox->value());
@@ -409,7 +478,7 @@ namespace fairwindsk::ui::mydata {
 
         QJsonObject resource;
         resource["name"] = m_nameEdit->text().trimmed();
-        resource["description"] = m_descriptionEdit->text().trimmed();
+        resource["description"] = m_descriptionEdit->toPlainText().trimmed();
         resource["type"] = m_typeEdit->text().trimmed();
         resource["feature"] = feature;
         resource["timestamp"] = fairwindsk::signalk::Client::currentISO8601TimeUTC();
@@ -440,6 +509,7 @@ namespace fairwindsk::ui::mydata {
         m_latitudeSpinBox->setEnabled(editMode);
         m_longitudeSpinBox->setEnabled(editMode);
         m_altitudeSpinBox->setEnabled(editMode);
+        m_contactsEdit->setReadOnly(!editMode);
         m_propertiesEditor->setEditMode(editMode);
 
         if (editMode) {
@@ -517,6 +587,9 @@ namespace fairwindsk::ui::mydata {
         m_latitudeSpinBox->setValue(0.0);
         m_longitudeSpinBox->setValue(0.0);
         m_altitudeSpinBox->setValue(0.0);
+        m_contactsEdit->clear();
+        m_contactsLabel->setVisible(false);
+        m_contactsEdit->setVisible(false);
         m_propertiesEditor->setJsonObject(QJsonObject{});
         m_timestampValueLabel->setText({});
         updatePreview(waypointFromEditor());
@@ -533,7 +606,11 @@ namespace fairwindsk::ui::mydata {
     }
 
     void Waypoints::onSearchTextChanged(const QString &) {
-        rebuildTable();
+        m_searchTimer->start();
+    }
+
+    void Waypoints::onSearchTimeout() {
+        applySearchFilter();
     }
 
     void Waypoints::onAddClicked() {
@@ -565,8 +642,10 @@ namespace fairwindsk::ui::mydata {
             return;
         }
 
+        setBusy(true, tr("Importing waypoints..."), resources.size());
         int importedCount = 0;
-        for (const auto &entry : resources) {
+        for (int index = 0; index < resources.size(); ++index) {
+            const auto &entry = resources.at(index);
             bool updated = false;
             if (!entry.first.isEmpty()) {
                 for (int row = 0; row < m_model->rowCount(); ++row) {
@@ -582,13 +661,17 @@ namespace fairwindsk::ui::mydata {
             if (updated) {
                 ++importedCount;
             }
+            m_progressBar->setValue(index + 1);
+            QApplication::processEvents();
         }
+        setBusy(false);
 
         if (importedCount == 0) {
             showError(tr("No waypoint could be imported from the selected GeoJSON file."));
             return;
         }
 
+        rebuildTable();
         QMessageBox::information(this, tr("Waypoints"), tr("Imported %1 waypoint feature(s).").arg(importedCount));
     }
 
@@ -616,21 +699,23 @@ namespace fairwindsk::ui::mydata {
 
         QList<QPair<QString, QJsonObject>> resources;
         if (ids.isEmpty()) {
+            ids = visibleWaypointIds();
+        }
+        setBusy(true, tr("Exporting waypoints..."), ids.size());
+        for (int index = 0; index < ids.size(); ++index) {
+            const auto &currentId = ids.at(index);
             for (int row = 0; row < m_model->rowCount(); ++row) {
-                resources.append({m_model->resourceIdAtRow(row), m_model->resourceAtRow(row)});
-            }
-        } else {
-            for (const auto &id : ids) {
-                for (int row = 0; row < m_model->rowCount(); ++row) {
-                    if (m_model->resourceIdAtRow(row) == id) {
-                        resources.append({id, m_model->resourceAtRow(row)});
-                        break;
-                    }
+                if (m_model->resourceIdAtRow(row) == currentId) {
+                    resources.append({currentId, m_model->resourceAtRow(row)});
+                    break;
                 }
             }
+            m_progressBar->setValue(index + 1);
+            QApplication::processEvents();
         }
 
         file.write(exportResourcesAsGeoJson(ResourceKind::Waypoint, resources).toJson(QJsonDocument::Indented));
+        setBusy(false);
     }
 
     void Waypoints::onRefreshClicked() {
@@ -712,6 +797,45 @@ namespace fairwindsk::ui::mydata {
         }
     }
 
+    void Waypoints::onSelectAllClicked() {
+        m_tableWidget->clearSelection();
+        for (int row = 0; row < m_tableWidget->rowCount(); ++row) {
+            if (!m_tableWidget->isRowHidden(row)) {
+                m_tableWidget->selectRow(row);
+            }
+        }
+    }
+
+    void Waypoints::onRemoveSelectedClicked() {
+        const auto ids = visibleWaypointIds();
+        if (ids.isEmpty()) {
+            return;
+        }
+
+        const auto choice = QMessageBox::question(
+            this,
+            tr("Waypoints"),
+            tr("Delete %1 shown waypoint(s)?").arg(ids.size()));
+        if (choice != QMessageBox::Yes) {
+            return;
+        }
+
+        setBusy(true, tr("Removing waypoints..."), ids.size());
+        int removed = 0;
+        for (int index = 0; index < ids.size(); ++index) {
+            if (m_model->deleteResource(ids.at(index))) {
+                ++removed;
+            }
+            m_progressBar->setValue(index + 1);
+            QApplication::processEvents();
+        }
+        setBusy(false);
+        rebuildTable();
+        if (removed == 0) {
+            showError(tr("Unable to delete the shown waypoints."));
+        }
+    }
+
     void Waypoints::onBackClicked() {
         showListPage();
     }
@@ -767,5 +891,36 @@ namespace fairwindsk::ui::mydata {
 
     void Waypoints::onCancelClicked() {
         showListPage();
+    }
+
+    void Waypoints::setBusy(const bool busy, const QString &label, const int maximum) {
+        m_isBusy = busy;
+        m_searchStack->setCurrentWidget(busy ? static_cast<QWidget *>(m_progressBar) : static_cast<QWidget *>(m_searchEdit));
+        if (busy) {
+            m_progressBar->setFormat(label + QStringLiteral(" %v/%m"));
+            m_progressBar->setRange(0, std::max(0, maximum));
+            m_progressBar->setValue(0);
+        }
+        m_importButton->setEnabled(!busy);
+        m_exportButton->setEnabled(!busy);
+        m_addButton->setEnabled(!busy);
+        m_selectAllButton->setEnabled(!busy);
+        m_bulkRemoveButton->setEnabled(!busy && !visibleWaypointIds().isEmpty());
+    }
+
+    void Waypoints::updateBulkButtons() {
+        const bool hasVisibleRows = !visibleWaypointIds().isEmpty();
+        m_selectAllButton->setEnabled(!m_isBusy && hasVisibleRows);
+        m_bulkRemoveButton->setEnabled(!m_isBusy && hasVisibleRows);
+    }
+
+    QStringList Waypoints::visibleWaypointIds() const {
+        QStringList ids;
+        for (int row = 0; row < m_visibleWaypointIds.size(); ++row) {
+            if (!m_tableWidget->isRowHidden(row)) {
+                ids.append(m_visibleWaypointIds.at(row));
+            }
+        }
+        return ids;
     }
 }

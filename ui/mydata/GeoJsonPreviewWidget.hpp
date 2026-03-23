@@ -22,6 +22,7 @@ namespace fairwindsk::ui::mydata {
 
         void setGeoJson(const QJsonDocument &document, const QString &title = QString());
         void setMessage(const QString &message, const QString &title = QString());
+        void setFreeboardEnabled(bool enabled);
 
     private:
         static QString detectFreeboardUrl();
@@ -36,6 +37,7 @@ namespace fairwindsk::ui::mydata {
         QWebEngineView *m_freeboardView = nullptr;
         QPlainTextEdit *m_textView = nullptr;
         bool m_hasFocusCoordinate = false;
+        bool m_freeboardEnabled = true;
         double m_focusLongitude = 0.0;
         double m_focusLatitude = 0.0;
         double m_minLongitude = 0.0;

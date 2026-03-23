@@ -95,9 +95,13 @@ namespace fairwindsk::ui::mydata {
         m_tabWidget->setTabText(1, jsonTitle);
     }
 
+    void JsonObjectEditorWidget::setHiddenKeys(const QStringList &keys) {
+        m_hiddenKeys = keys;
+    }
+
     void JsonObjectEditorWidget::setJsonObject(const QJsonObject &object) {
         populateTree(object);
-        syncTextFromTree();
+        m_jsonEdit->setPlainText(QString::fromUtf8(QJsonDocument(object).toJson(QJsonDocument::Indented)));
         updateTreePlaceholder();
         updateButtonState();
     }
@@ -237,7 +241,12 @@ namespace fairwindsk::ui::mydata {
 
     void JsonObjectEditorWidget::populateTree(const QJsonObject &object) {
         m_treeWidget->clear();
+        m_hiddenObject = QJsonObject{};
         for (auto it = object.begin(); it != object.end(); ++it) {
+            if (m_hiddenKeys.contains(it.key())) {
+                m_hiddenObject.insert(it.key(), it.value());
+                continue;
+            }
             addValueItem(nullptr, it.key(), it.value());
         }
         m_treeWidget->expandAll();
@@ -298,6 +307,9 @@ namespace fairwindsk::ui::mydata {
         for (int i = 0; i < m_treeWidget->topLevelItemCount(); ++i) {
             const auto *item = m_treeWidget->topLevelItem(i);
             object[item->text(KeyColumn)] = valueFromItem(item);
+        }
+        for (auto it = m_hiddenObject.begin(); it != m_hiddenObject.end(); ++it) {
+            object.insert(it.key(), it.value());
         }
         return object;
     }
