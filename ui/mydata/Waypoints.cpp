@@ -112,7 +112,7 @@ namespace {
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v10.6.1/ol.css" />
+  <link rel="stylesheet" href="qrc:/resources/vendor/openlayers/ol.css" />
   <style>
     html, body {
       margin: 0;
@@ -179,7 +179,7 @@ namespace {
     </div>
     <div class="footer" id="info">Preparing waypoint preview map.</div>
   </div>
-  <script src="https://cdn.jsdelivr.net/npm/ol@v10.6.1/dist/ol.js"></script>
+  <script src="qrc:/resources/vendor/openlayers/ol.js"></script>
   <script>
     const data = JSON.parse(atob('%1'));
     function asCollection(input) {
@@ -908,7 +908,7 @@ namespace fairwindsk::ui::mydata {
         const auto coordinates = coordinateArray(resource);
         const double longitude = coordinates.size() > 0 ? coordinates.at(0).toDouble() : 0.0;
         const double latitude = coordinates.size() > 1 ? coordinates.at(1).toDouble() : 0.0;
-        m_mapPreviewView->setHtml(waypointMapHtml(geoJson, longitude, latitude), QUrl(QStringLiteral("https://preview.local/")));
+        m_mapPreviewView->setHtml(waypointMapHtml(geoJson, longitude, latitude), QUrl(QStringLiteral("qrc:/")));
         m_geoJsonDetailsEdit->setPlainText(QString::fromUtf8(geoJson.toJson(QJsonDocument::Indented)));
         syncDetailTabs();
     }

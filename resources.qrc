@@ -95,6 +95,8 @@
         <file>resources/svg/mydata/waypoint-remove.svg</file>
         <file>resources/svg/mydata/seafloor-rock.svg</file>
         <file>resources/svg/mydata/seafloor-sand.svg</file>
+        <file>resources/vendor/openlayers/ol.js</file>
+        <file>resources/vendor/openlayers/ol.css</file>
 
         <file>resources/svg/sort-alphabet-ascending-svgrepo-com.svg</file>
         <file>resources/svg/descending-alphabet-sort-svgrepo-com.svg</file>
