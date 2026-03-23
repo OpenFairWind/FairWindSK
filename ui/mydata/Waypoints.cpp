@@ -291,23 +291,6 @@ namespace fairwindsk::ui::mydata {
         : QWidget(parent),
           m_model(new ResourceModel(ResourceKind::Waypoint, this)),
           ui(new ::Ui::Waypoints),
-          m_nameEdit(new QLineEdit(this)),
-          m_descriptionEdit(new QPlainTextEdit(this)),
-          m_typeEdit(new QLineEdit(this)),
-          m_latitudeSpinBox(new QDoubleSpinBox(this)),
-          m_longitudeSpinBox(new QDoubleSpinBox(this)),
-          m_altitudeSpinBox(new QDoubleSpinBox(this)),
-          m_contactsEdit(new QPlainTextEdit(this)),
-          m_contactsLabel(new QLabel(tr("Contacts"), this)),
-          m_seaFloorRowLabel(new QLabel(tr("Sea floor"), this)),
-          m_slipsRowLabel(new QLabel(tr("Slips"), this)),
-          m_seaFloorWidget(new QWidget(this)),
-          m_slipsWidget(new QWidget(this)),
-          m_seaFloorTypeWidget(new QWidget(this)),
-          m_seaFloorTypeLayout(new QHBoxLayout()),
-          m_seaFloorMinValueLabel(new QLabel(this)),
-          m_seaFloorMaxValueLabel(new QLabel(this)),
-          m_slipsValueLabel(new QLabel(this)),
           m_propertiesEditor(new JsonObjectEditorWidget(this)),
           m_searchTimer(new QTimer(this)) {
         ui->setupUi(this);
@@ -338,6 +321,24 @@ namespace fairwindsk::ui::mydata {
         m_propertiesJsonTab = ui->widgetPropertiesJsonContainer;
         m_geoJsonDetailsEdit = ui->plainTextEditGeoJson;
         m_mapPreviewView = ui->webEngineViewPreview;
+        m_detailsFormLayout = ui->formLayoutDetails;
+        m_nameEdit = ui->lineEditName;
+        m_descriptionEdit = ui->plainTextEditDescription;
+        m_typeEdit = ui->lineEditType;
+        m_latitudeSpinBox = ui->doubleSpinBoxLatitude;
+        m_longitudeSpinBox = ui->doubleSpinBoxLongitude;
+        m_altitudeSpinBox = ui->doubleSpinBoxAltitude;
+        m_contactsEdit = ui->plainTextEditContacts;
+        m_contactsLabel = ui->labelContacts;
+        m_seaFloorRowLabel = ui->labelSeaFloor;
+        m_slipsRowLabel = ui->labelSlips;
+        m_seaFloorWidget = ui->widgetSeaFloor;
+        m_slipsWidget = ui->widgetSlips;
+        m_seaFloorTypeWidget = ui->widgetSeaFloorType;
+        m_seaFloorTypeLayout = ui->horizontalLayoutSeaFloorType;
+        m_seaFloorMinValueLabel = ui->labelSeaFloorMinValue;
+        m_seaFloorMaxValueLabel = ui->labelSeaFloorMaxValue;
+        m_slipsValueLabel = ui->labelSlipsValue;
 
         m_searchEdit->setPlaceholderText(tr("Search waypoints"));
         connect(m_searchEdit, &QLineEdit::textChanged, this, &Waypoints::onSearchTextChanged);
@@ -416,9 +417,6 @@ namespace fairwindsk::ui::mydata {
         ui->splitterDetails->setStretchFactor(0, 3);
         ui->splitterDetails->setStretchFactor(1, 2);
 
-        auto *formLayout = new QFormLayout(ui->widgetDetailsForm);
-        m_detailsFormLayout = formLayout;
-
         m_latitudeSpinBox->setRange(-90.0, 90.0);
         m_latitudeSpinBox->setDecimals(8);
         m_longitudeSpinBox->setRange(-180.0, 180.0);
@@ -452,56 +450,8 @@ namespace fairwindsk::ui::mydata {
         m_geoJsonDetailsEdit->setLineWrapMode(QPlainTextEdit::NoWrap);
         m_geoJsonDetailsEdit->setStyleSheet(kPlainTextStyle);
         connect(m_detailTabs, &QTabWidget::currentChanged, this, [this](const int){ syncDetailTabs(); });
-
-        auto *seaFloorLayout = new QHBoxLayout(m_seaFloorWidget);
-        seaFloorLayout->setContentsMargins(0, 0, 0, 0);
-        seaFloorLayout->setSpacing(6);
-        seaFloorLayout->addWidget(new QLabel(tr("Min"), m_seaFloorWidget));
-        seaFloorLayout->addWidget(m_seaFloorMinValueLabel);
-        seaFloorLayout->addSpacing(12);
-        seaFloorLayout->addWidget(new QLabel(tr("Max"), m_seaFloorWidget));
-        seaFloorLayout->addWidget(m_seaFloorMaxValueLabel);
-        seaFloorLayout->addSpacing(12);
-        seaFloorLayout->addWidget(new QLabel(tr("Type"), m_seaFloorWidget));
-        m_seaFloorTypeWidget->setLayout(m_seaFloorTypeLayout);
         m_seaFloorTypeLayout->setContentsMargins(0, 0, 0, 0);
         m_seaFloorTypeLayout->setSpacing(4);
-        seaFloorLayout->addWidget(m_seaFloorTypeWidget);
-        seaFloorLayout->addStretch(1);
-
-        auto *slipsLayout = new QHBoxLayout(m_slipsWidget);
-        slipsLayout->setContentsMargins(0, 0, 0, 0);
-        slipsLayout->setSpacing(6);
-        slipsLayout->addWidget(m_slipsValueLabel);
-        slipsLayout->addStretch(1);
-
-        auto *nameTypeWidget = new QWidget(ui->widgetDetailsForm);
-        auto *nameTypeLayout = new QHBoxLayout(nameTypeWidget);
-        nameTypeLayout->setContentsMargins(0, 0, 0, 0);
-        nameTypeLayout->setSpacing(6);
-        auto *typeLabel = new QLabel(tr("Type"), nameTypeWidget);
-        nameTypeLayout->addWidget(m_nameEdit, 1);
-        nameTypeLayout->addWidget(typeLabel);
-        nameTypeLayout->addWidget(m_typeEdit);
-        formLayout->addRow(tr("Name"), nameTypeWidget);
-        formLayout->addRow(tr("Description"), m_descriptionEdit);
-        auto *positionWidget = new QWidget(ui->widgetDetailsForm);
-        auto *positionLayout = new QHBoxLayout(positionWidget);
-        positionLayout->setContentsMargins(0, 0, 0, 0);
-        positionLayout->setSpacing(6);
-        auto *latitudeLabel = new QLabel(tr("Lat"), positionWidget);
-        auto *longitudeLabel = new QLabel(tr("Lon"), positionWidget);
-        auto *altitudeLabel = new QLabel(tr("Alt"), positionWidget);
-        positionLayout->addWidget(latitudeLabel);
-        positionLayout->addWidget(m_latitudeSpinBox, 1);
-        positionLayout->addWidget(longitudeLabel);
-        positionLayout->addWidget(m_longitudeSpinBox, 1);
-        positionLayout->addWidget(altitudeLabel);
-        positionLayout->addWidget(m_altitudeSpinBox, 1);
-        formLayout->addRow(tr("Position"), positionWidget);
-        formLayout->addRow(m_contactsLabel, m_contactsEdit);
-        formLayout->addRow(m_seaFloorRowLabel, m_seaFloorWidget);
-        formLayout->addRow(m_slipsRowLabel, m_slipsWidget);
 
         showListPage();
 
