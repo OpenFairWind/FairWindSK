@@ -24,6 +24,7 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 #include <QComboBox>
+#include <QSizePolicy>
 
 #include "GeoJsonPreviewWidget.hpp"
 #include "GeoJsonUtils.hpp"
@@ -70,13 +71,19 @@ namespace fairwindsk::ui::mydata {
         rootLayout->addWidget(m_stackedWidget);
 
         auto *listLayout = new QVBoxLayout(m_listPage);
+        listLayout->setContentsMargins(0, 0, 0, 0);
+        listLayout->setSpacing(6);
         auto *toolbarLayout = new QHBoxLayout();
+        toolbarLayout->setContentsMargins(0, 0, 0, 0);
+        toolbarLayout->setSpacing(6);
         listLayout->addLayout(toolbarLayout);
 
         m_durationCombo->addItem(tr("Last hour"), "PT1H");
         m_durationCombo->addItem(tr("Last 6 hours"), "PT6H");
         m_durationCombo->addItem(tr("Last 24 hours"), "P1D");
         m_durationCombo->addItem(tr("Last 7 days"), "P7D");
+        m_durationCombo->setMaximumHeight(28);
+        m_durationCombo->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
         connect(m_durationCombo, qOverload<int>(&QComboBox::currentIndexChanged), this, &HistoryTrackTab::onDurationChanged);
         toolbarLayout->addWidget(m_durationCombo);
 
@@ -114,9 +121,10 @@ namespace fairwindsk::ui::mydata {
         }
         trackHeader->setSectionResizeMode(m_model->columnCount(), QHeaderView::Fixed);
         trackHeader->setStretchLastSection(false);
+        m_tableWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         connect(m_tableWidget, &QTableWidget::cellDoubleClicked, this, &HistoryTrackTab::onTableDoubleClicked);
         connect(m_tableWidget, &QTableWidget::cellActivated, this, &HistoryTrackTab::onTableDoubleClicked);
-        listLayout->addWidget(m_tableWidget);
+        listLayout->addWidget(m_tableWidget, 1);
 
         auto *detailsLayout = new QVBoxLayout(m_detailsPage);
         auto *detailsToolbar = new QHBoxLayout();

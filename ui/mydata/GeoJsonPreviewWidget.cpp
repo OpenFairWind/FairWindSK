@@ -13,6 +13,7 @@
 #include <QTimer>
 #include <QUrl>
 #include <QWebEnginePage>
+#include <QWebEngineSettings>
 #include <QVBoxLayout>
 #include <QWebEngineView>
 
@@ -94,6 +95,8 @@ namespace fairwindsk::ui::mydata {
         auto *layout = new QVBoxLayout(this);
         layout->setContentsMargins(0, 0, 0, 0);
         layout->addWidget(m_tabWidget);
+        m_view->settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
+        m_freeboardView->settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
         m_tabWidget->addTab(m_view, tr("Preview"));
         m_textView->setReadOnly(true);
         m_textView->setLineWrapMode(QPlainTextEdit::NoWrap);

@@ -29,6 +29,7 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 #include <QDoubleSpinBox>
+#include <QSizePolicy>
 #include <QUuid>
 
 #include "FairWindSK.hpp"
@@ -133,7 +134,11 @@ namespace fairwindsk::ui::mydata {
         rootLayout->addWidget(m_stackedWidget);
 
         auto *listLayout = new QVBoxLayout(m_listPage);
+        listLayout->setContentsMargins(0, 0, 0, 0);
+        listLayout->setSpacing(6);
         auto *toolbarLayout = new QHBoxLayout();
+        toolbarLayout->setContentsMargins(0, 0, 0, 0);
+        toolbarLayout->setSpacing(6);
         listLayout->addLayout(toolbarLayout);
 
         m_searchEdit->setPlaceholderText(tr("Search waypoints"));
@@ -143,6 +148,8 @@ namespace fairwindsk::ui::mydata {
         m_searchStack->addWidget(m_searchEdit);
         m_searchStack->addWidget(m_progressBar);
         m_searchStack->setCurrentWidget(m_searchEdit);
+        m_searchEdit->setMaximumHeight(28);
+        m_searchStack->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         toolbarLayout->addWidget(m_searchStack, 1);
 
         m_refreshButton->setIcon(QIcon(":/resources/svg/OpenBridge/refresh-google.svg"));
@@ -184,9 +191,10 @@ namespace fairwindsk::ui::mydata {
         waypointHeader->setSectionResizeMode(1, QHeaderView::Stretch);
         waypointHeader->setSectionResizeMode(m_model->columnCount(), QHeaderView::Fixed);
         waypointHeader->setStretchLastSection(false);
+        m_tableWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         connect(m_tableWidget, &QTableWidget::cellDoubleClicked, this, &Waypoints::onTableDoubleClicked);
         connect(m_tableWidget, &QTableWidget::cellActivated, this, &Waypoints::onTableDoubleClicked);
-        listLayout->addWidget(m_tableWidget);
+        listLayout->addWidget(m_tableWidget, 1);
 
         auto *detailsLayout = new QVBoxLayout(m_detailsPage);
         auto *detailsToolbarLayout = new QHBoxLayout();
@@ -261,14 +269,33 @@ namespace fairwindsk::ui::mydata {
         m_propertiesEditor->setLabels(tr("Properties Tree"), tr("Properties JSON"));
         m_propertiesEditor->setHiddenKeys({QStringLiteral("name"), QStringLiteral("description"), QStringLiteral("contacts")});
         m_previewWidget->setFreeboardEnabled(false);
+        m_previewWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
         formLayout->addRow(tr("Id"), m_idValueLabel);
-        formLayout->addRow(tr("Name"), m_nameEdit);
+        auto *nameTypeWidget = new QWidget(formWidget);
+        auto *nameTypeLayout = new QHBoxLayout(nameTypeWidget);
+        nameTypeLayout->setContentsMargins(0, 0, 0, 0);
+        nameTypeLayout->setSpacing(6);
+        auto *typeLabel = new QLabel(tr("Type"), nameTypeWidget);
+        nameTypeLayout->addWidget(m_nameEdit, 1);
+        nameTypeLayout->addWidget(typeLabel);
+        nameTypeLayout->addWidget(m_typeEdit);
+        formLayout->addRow(tr("Name"), nameTypeWidget);
         formLayout->addRow(tr("Description"), m_descriptionEdit);
-        formLayout->addRow(tr("Type"), m_typeEdit);
-        formLayout->addRow(tr("Latitude"), m_latitudeSpinBox);
-        formLayout->addRow(tr("Longitude"), m_longitudeSpinBox);
-        formLayout->addRow(tr("Altitude"), m_altitudeSpinBox);
+        auto *positionWidget = new QWidget(formWidget);
+        auto *positionLayout = new QHBoxLayout(positionWidget);
+        positionLayout->setContentsMargins(0, 0, 0, 0);
+        positionLayout->setSpacing(6);
+        auto *latitudeLabel = new QLabel(tr("Lat"), positionWidget);
+        auto *longitudeLabel = new QLabel(tr("Lon"), positionWidget);
+        auto *altitudeLabel = new QLabel(tr("Alt"), positionWidget);
+        positionLayout->addWidget(latitudeLabel);
+        positionLayout->addWidget(m_latitudeSpinBox, 1);
+        positionLayout->addWidget(longitudeLabel);
+        positionLayout->addWidget(m_longitudeSpinBox, 1);
+        positionLayout->addWidget(altitudeLabel);
+        positionLayout->addWidget(m_altitudeSpinBox, 1);
+        formLayout->addRow(tr("Position"), positionWidget);
         formLayout->addRow(m_contactsLabel, m_contactsEdit);
         formLayout->addRow(tr("Feature properties"), m_propertiesEditor);
         formLayout->addRow(tr("Timestamp"), m_timestampValueLabel);

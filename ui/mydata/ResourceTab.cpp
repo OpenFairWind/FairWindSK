@@ -25,6 +25,7 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 #include <QDoubleSpinBox>
+#include <QSizePolicy>
 #include <QUuid>
 
 #include "GeoJsonPreviewWidget.hpp"
@@ -113,10 +114,16 @@ namespace fairwindsk::ui::mydata {
         rootLayout->addWidget(m_stackedWidget);
 
         auto *listLayout = new QVBoxLayout(m_listPage);
+        listLayout->setContentsMargins(0, 0, 0, 0);
+        listLayout->setSpacing(6);
         auto *toolbarLayout = new QHBoxLayout();
+        toolbarLayout->setContentsMargins(0, 0, 0, 0);
+        toolbarLayout->setSpacing(6);
         listLayout->addLayout(toolbarLayout);
 
         m_searchEdit->setPlaceholderText(tr("Search %1").arg(resourceKindToTitle(kind).toLower()));
+        m_searchEdit->setMaximumHeight(28);
+        m_searchEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         connect(m_searchEdit, &QLineEdit::textChanged, this, &ResourceTab::onSearchTextChanged);
         toolbarLayout->addWidget(m_searchEdit, 1);
 
@@ -149,9 +156,10 @@ namespace fairwindsk::ui::mydata {
         resourceHeader->setSectionResizeMode(1, QHeaderView::Stretch);
         resourceHeader->setSectionResizeMode(m_model->columnCount(), QHeaderView::Fixed);
         resourceHeader->setStretchLastSection(false);
+        m_tableWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         connect(m_tableWidget, &QTableWidget::cellDoubleClicked, this, &ResourceTab::onTableDoubleClicked);
         connect(m_tableWidget, &QTableWidget::cellActivated, this, &ResourceTab::onTableDoubleClicked);
-        listLayout->addWidget(m_tableWidget);
+        listLayout->addWidget(m_tableWidget, 1);
 
         auto *detailsLayout = new QVBoxLayout(m_detailsPage);
         auto *detailsToolbar = new QHBoxLayout();
