@@ -6,11 +6,26 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>462</width>
-    <height>419</height>
+    <width>520</width>
+    <height>498</height>
    </rect>
   </property>
-  <layout class="QGridLayout" name="gridLayout_Connection">
+  <property name="styleSheet">
+   <string notr="true">QWidget {
+    color: rgb(245, 245, 245);
+}
+QLabel {
+    color: rgb(245, 245, 245);
+}
+QLineEdit, QComboBox, QAbstractItemView, QTextEdit, QScrollArea {
+    background-color: rgb(245, 245, 245);
+    color: rgb(24, 24, 24);
+    border: 1px solid rgb(120, 120, 120);
+    selection-background-color: rgb(65, 107, 195);
+    selection-color: rgb(255, 255, 255);
+}</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_Root">
    <property name="leftMargin">
     <number>0</number>
    </property>
@@ -23,139 +38,182 @@
    <property name="bottomMargin">
     <number>0</number>
    </property>
-   <item row="4" column="1">
-    <widget class="QTextEdit" name="textEdit_message">
-     <property name="readOnly">
+   <item>
+    <widget class="QScrollArea" name="scrollArea_Connection">
+     <property name="widgetResizable">
       <bool>true</bool>
      </property>
-    </widget>
-   </item>
-   <item row="0" column="1">
-    <layout class="QGridLayout" name="gridLayout">
-     <property name="horizontalSpacing">
-      <number>-1</number>
+     <property name="horizontalScrollBarPolicy">
+      <enum>Qt::ScrollBarAlwaysOff</enum>
      </property>
-     <item row="1" column="2">
-      <widget class="QComboBox" name="comboBox_signalkserverurl">
-       <property name="editable">
-        <bool>true</bool>
+     <widget class="QWidget" name="scrollAreaWidgetContents_Connection">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>516</width>
+        <height>494</height>
+       </rect>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_Connection">
+       <property name="leftMargin">
+        <number>0</number>
        </property>
-       <property name="currentText">
-        <string notr="true">http://localhost:3000</string>
+       <property name="topMargin">
+        <number>0</number>
        </property>
-       <item>
-        <property name="text">
-         <string notr="true">http://localhost:3000</string>
-        </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item row="0" column="0">
+        <layout class="QGridLayout" name="gridLayout">
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_signalkserverurl">
+           <property name="text">
+            <string>Signal K Server URL</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QComboBox" name="comboBox_signalkserverurl">
+           <property name="editable">
+            <bool>true</bool>
+           </property>
+           <property name="currentText">
+            <string notr="true">http://localhost:3000</string>
+           </property>
+           <item>
+            <property name="text">
+             <string notr="true">http://localhost:3000</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string notr="true">https://demo.signalk.org</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+         <item row="0" column="2">
+          <widget class="QPushButton" name="pushButton_requestToken">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>Request Token</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="label_state">
+           <property name="text">
+            <string>State</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QLabel" name="label_lblState">
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="2">
+          <widget class="QPushButton" name="pushButton_cancelRequest">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>Cancel Request</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="label_permission">
+           <property name="text">
+            <string>Permission</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QLabel" name="label_lblPermission">
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="2">
+          <widget class="QPushButton" name="pushButton_readOnly">
+           <property name="text">
+            <string>Read Only</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="label_expirationTime">
+           <property name="text">
+            <string>Expiration Time</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QLabel" name="label_lblExpirationTime">
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="2">
+          <widget class="QPushButton" name="pushButton_removeToken">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="text">
+            <string>Remove Token</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
-       <item>
-        <property name="text">
-         <string notr="true">https://demo.signalk.org</string>
-        </property>
+       <item row="1" column="0">
+        <widget class="QWebEngineView" name="webEngineView">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>220</height>
+          </size>
+         </property>
+         <property name="url">
+          <url>
+           <string>about:blank</string>
+          </url>
+         </property>
+        </widget>
        </item>
-      </widget>
-     </item>
-     <item row="1" column="1">
-      <widget class="QLabel" name="label_signalkserverurl">
-       <property name="text">
-        <string>Signal K Server URL</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="3">
-      <widget class="QPushButton" name="pushButton_requestToken">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="text">
-        <string>Request Token</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="1">
-      <widget class="QLabel" name="label_state">
-       <property name="text">
-        <string>State</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="2">
-      <widget class="QLabel" name="label_lblState">
-       <property name="text">
-        <string/>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="1">
-      <widget class="QLabel" name="label_permission">
-       <property name="text">
-        <string>Permission</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="2">
-      <widget class="QLabel" name="label_lblPermission">
-       <property name="text">
-        <string/>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="1">
-      <widget class="QLabel" name="label_expirationTime">
-       <property name="text">
-        <string>Expiration Time</string>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="2">
-      <widget class="QLabel" name="label_lblExpirationTime">
-       <property name="text">
-        <string/>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="3">
-      <widget class="QPushButton" name="pushButton_readOnly">
-       <property name="text">
-        <string>Read Only</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="3">
-      <widget class="QPushButton" name="pushButton_cancelRequest">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="text">
-        <string>Cancel Request</string>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="3">
-      <widget class="QPushButton" name="pushButton_removeToken">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="text">
-        <string>Remove Token</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <item row="3" column="1">
-    <widget class="QWebEngineView" name="webEngineView">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="url">
-      <url>
-       <string>about:blank</string>
-      </url>
-     </property>
+       <item row="2" column="0">
+        <widget class="QTextEdit" name="textEdit_message">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>140</height>
+          </size>
+         </property>
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
   </layout>

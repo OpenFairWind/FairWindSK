@@ -511,6 +511,7 @@ namespace fairwindsk::ui {
         if (isOverlayOpen()) {
             return;
         }
+        ui->widget_Bottom->setVisible(false);
         const auto settingsPage = new settings::Settings(this, ui->stackedWidget_Center->currentWidget());
         showOverlay(settingsPage);
 
@@ -627,11 +628,13 @@ namespace fairwindsk::ui {
     }
 
     void MainWindow::onSettingsRejected(settings::Settings *settingsPage) {
+        ui->widget_Bottom->setVisible(true);
         closeOverlay(settingsPage, settingsPage ? settingsPage->getCurrentWidget() : nullptr);
     }
 
     void MainWindow::onSettingsAccepted(settings::Settings *settingsPage) const
     {
+        const_cast<MainWindow *>(this)->ui->widget_Bottom->setVisible(true);
         const_cast<MainWindow *>(this)->closeOverlay(settingsPage, settingsPage ? settingsPage->getCurrentWidget() : nullptr);
 
 	    QApplication::exit(1);
