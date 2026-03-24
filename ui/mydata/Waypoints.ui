@@ -560,13 +560,7 @@
              <number>0</number>
             </property>
             <item>
-             <widget class="QWebEngineView" name="webEngineViewPreview">
-              <property name="url">
-               <url>
-                <string>about:blank</string>
-               </url>
-              </property>
-             </widget>
+             <widget class="QWidget" name="widgetPreviewHost" native="true"/>
             </item>
            </layout>
           </widget>
@@ -645,13 +639,6 @@
    </item>
   </layout>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>QWebEngineView</class>
-   <extends>QWidget</extends>
-   <header location="global">QtWebEngineWidgets/QWebEngineView</header>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections/>
 </ui>

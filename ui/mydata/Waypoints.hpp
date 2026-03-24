@@ -6,6 +6,7 @@
 #define FAIRWINDSK_UI_MYDATA_WAYPOINTS_HPP
 
 #include <QJsonObject>
+#include <QResizeEvent>
 #include <QWidget>
 
 #include "ResourceModel.hpp"
@@ -16,14 +17,15 @@ class QPlainTextEdit;
 class QProgressBar;
 class QFormLayout;
 class QHBoxLayout;
+class QSplitter;
 class QStackedWidget;
 class QTableWidget;
 class QTabWidget;
 class QToolButton;
 class QDoubleSpinBox;
 class QTimer;
-class QWebEngineView;
 namespace Ui { class Waypoints; }
+namespace fairwindsk::ui::web { class SignalKAppView; }
 
 namespace fairwindsk::ui::mydata {
 
@@ -35,6 +37,9 @@ namespace fairwindsk::ui::mydata {
     public:
         explicit Waypoints(QWidget *parent = nullptr);
         ~Waypoints() override;
+
+    protected:
+        void resizeEvent(QResizeEvent *event) override;
 
     private slots:
         void onSearchTextChanged(const QString &text);
@@ -83,6 +88,9 @@ namespace fairwindsk::ui::mydata {
         void clearEditor();
         void updatePreview(const QJsonObject &resource);
         QString waypointHref(const QString &id) const;
+        void applyDetailSplitterRatio();
+        void schedulePreviewFocus();
+        void applyPreviewFocus();
 
         ::Ui::Waypoints *ui = nullptr;
         ResourceModel *m_model = nullptr;
@@ -117,10 +125,10 @@ namespace fairwindsk::ui::mydata {
         QPlainTextEdit *m_contactsEdit = nullptr;
         QLabel *m_contactsLabel = nullptr;
         QTabWidget *m_detailTabs = nullptr;
+        QSplitter *m_detailsSplitter = nullptr;
         QWidget *m_propertiesTreeTab = nullptr;
         QWidget *m_propertiesJsonTab = nullptr;
         QPlainTextEdit *m_geoJsonDetailsEdit = nullptr;
-        QWebEngineView *m_mapPreviewView = nullptr;
         QLabel *m_seaFloorRowLabel = nullptr;
         QLabel *m_slipsRowLabel = nullptr;
         QWidget *m_seaFloorWidget = nullptr;
@@ -132,9 +140,12 @@ namespace fairwindsk::ui::mydata {
         QLabel *m_slipsValueLabel = nullptr;
         JsonObjectEditorWidget *m_propertiesEditor = nullptr;
         QTimer *m_searchTimer = nullptr;
+        fairwindsk::ui::web::SignalKAppView *m_previewAppView = nullptr;
         QString m_currentWaypointId;
         QStringList m_visibleWaypointIds;
         QStringList m_searchHaystacks;
+        double m_previewLongitude = 0.0;
+        double m_previewLatitude = 0.0;
         bool m_isEditing = false;
         bool m_isCreating = false;
         bool m_isBusy = false;

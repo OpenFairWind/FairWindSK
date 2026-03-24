@@ -142,6 +142,7 @@ set(FAIRWINDSK_SOURCES
         ui/web/WebPage.cpp ui/web/WebPage.hpp
         ui/web/WebPopupWindow.cpp ui/web/WebPopupWindow.hpp
         ui/web/WebView.cpp ui/web/WebView.hpp
+        ui/web/SignalKAppView.cpp ui/web/SignalKAppView.hpp ui/web/SignalKAppView.ui
         ui/web/DownloadManagerWidget.cpp ui/web/DownloadManagerWidget.hpp ui/web/DownloadManagerWidget.ui
         ui/web/DownloadWidget.cpp ui/web/DownloadWidget.hpp ui/web/DownloadWidget.ui
         resources.qrc

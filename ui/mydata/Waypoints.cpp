@@ -5,6 +5,7 @@
 #include "Waypoints.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <QBrush>
 #include <QColor>
 #include <QFile>
@@ -32,13 +33,12 @@
 #include <QDoubleSpinBox>
 #include <QSizePolicy>
 #include <QUuid>
-#include <QWebEngineSettings>
-#include <QWebEngineView>
 
 #include "FairWindSK.hpp"
 #include "GeoJsonUtils.hpp"
 #include "JsonObjectEditorWidget.hpp"
 #include "ui/DrawerDialogHost.hpp"
+#include "ui/web/SignalKAppView.hpp"
 #include "ui_Waypoints.h"
 
 namespace {
@@ -116,186 +116,87 @@ namespace {
         return QString();
     }
 
-    QString waypointMapHtml(const QJsonDocument &document, const double longitude, const double latitude) {
-        const QString base64Json = QString::fromLatin1(document.toJson(QJsonDocument::Compact).toBase64());
+    QString freeboardFocusScript(const double longitude, const double latitude) {
+        constexpr double pi = 3.14159265358979323846;
+        const double latitudeDelta = 10.0 / 60.0;
+        const double cosLatitude = std::cos((latitude * pi) / 180.0);
+        const double longitudeDelta = 10.0 / (60.0 * std::max(0.2, cosLatitude));
+        const double minLongitude = longitude - longitudeDelta;
+        const double maxLongitude = longitude + longitudeDelta;
+        const double minLatitude = latitude - latitudeDelta;
+        const double maxLatitude = latitude + latitudeDelta;
+
         return QStringLiteral(R"(
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <style>
-    html, body {
-      margin: 0;
-      width: 100%%;
-      height: 100%%;
-      background: #07111b;
-      color: #e5edf7;
-      overflow: hidden;
-      font-family: "Avenir Next", "Helvetica Neue", sans-serif;
+(function() {
+  const lon = %1;
+  const lat = %2;
+  const geoExtent = [%3, %4, %5, %6];
+  function projectToMercator(longitude, latitude) {
+    const x = longitude * 20037508.34 / 180.0;
+    let y = Math.log(Math.tan((90.0 + latitude) * Math.PI / 360.0)) / (Math.PI / 180.0);
+    y = y * 20037508.34 / 180.0;
+    return [x, y];
+  }
+  const visited = new Set();
+  const queue = [window];
+  const center = projectToMercator(lon, lat);
+  while (queue.length) {
+    const current = queue.shift();
+    if (!current || (typeof current !== 'object' && typeof current !== 'function') || visited.has(current)) {
+      continue;
     }
-    body {
-      display: flex;
-      flex-direction: column;
-      background: linear-gradient(180deg, #0b1724 0%%, #132739 100%%);
-    }
-    #mapShell {
-      flex: 1;
-      min-height: 0;
-      padding: 14px;
-      box-sizing: border-box;
-    }
-    #mapStage {
-      position: relative;
-      width: 100%%;
-      height: 100%%;
-      min-height: 280px;
-      border-radius: 14px;
-      border: 1px solid rgba(229, 237, 247, 0.12);
-      overflow: hidden;
-      background: #0b1825;
-      box-shadow: inset 0 0 40px rgba(7, 17, 27, 0.35);
-    }
-    #map {
-      position: absolute;
-      inset: 0;
-      background: #0b1825;
-    }
-    #source {
-      position: absolute;
-      left: 12px;
-      top: 12px;
-      z-index: 2;
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: rgba(7, 17, 27, 0.75);
-      color: #e5edf7;
-      font: 12px "Avenir Next", "Helvetica Neue", sans-serif;
-    }
-    #info {
-      padding: 12px 18px 18px;
-      color: #aebfd3;
-      font-size: 13px;
-    }
-  </style>
-</head>
-<body>
-  <div id="mapShell">
-    <div id="mapStage">
-      <div id="source">OpenLayers, OpenStreetMap + OpenSeaMap</div>
-      <div id="map"></div>
-    </div>
-  </div>
-  <div id="info">Preparing waypoint preview map.</div>
-  <script>
-    const data = JSON.parse(atob('%1'));
-    function asCollection(input) {
-      if (input.type === 'FeatureCollection') return input;
-      if (input.type === 'Feature') return { type: 'FeatureCollection', features: [input] };
-      if (input.type && input.coordinates) {
-        return { type: 'FeatureCollection', features: [{ type: 'Feature', geometry: input, properties: {} }] };
-      }
-      return { type: 'FeatureCollection', features: [] };
-    }
-    function radiusExtent(lon, lat, radiusNm) {
-      const latDelta = radiusNm / 60.0;
-      const cosLat = Math.cos((lat * Math.PI) / 180.0);
-      const lonDelta = radiusNm / (60.0 * Math.max(0.2, cosLat));
-      return [lon - lonDelta, lat - latDelta, lon + lonDelta, lat + latDelta];
-    }
-    function setInfo(message) {
-      const info = document.getElementById('info');
-      if (info) info.textContent = message;
-    }
-    function renderMap() {
-      try {
-        if (!window.ol) {
-          setInfo('Waiting for the bundled OpenLayers runtime.');
-          return;
-        }
-        const mapNode = document.getElementById('map');
-        if (!mapNode) {
-          setInfo('The preview map container is unavailable.');
-          return;
-        }
-        if (window.__fairwindWaypointMap) {
-          window.__fairwindWaypointMap.updateSize();
-          return;
-        }
-        const featureCollection = asCollection(data);
-        const format = new ol.format.GeoJSON();
-        const features = format.readFeatures(featureCollection, {
-          dataProjection: 'EPSG:4326',
-          featureProjection: 'EPSG:3857'
-        });
-        const vectorSource = new ol.source.Vector({ features });
-        const desiredExtent = ol.proj.transformExtent(radiusExtent(%2, %3, 10.0), 'EPSG:4326', 'EPSG:3857');
-        const map = new ol.Map({
-          target: mapNode,
-          controls: [],
-          interactions: ol.interaction.defaults({ altShiftDragRotate: false, pinchRotate: false }),
-          layers: [
-            new ol.layer.Tile({ source: new ol.source.OSM() }),
-            new ol.layer.Tile({
-              source: new ol.source.XYZ({ url: 'https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png' }),
-              opacity: 0.72
-            }),
-            new ol.layer.Vector({
-              source: vectorSource,
-              style: new ol.style.Style({
-                image: new ol.style.Circle({
-                  radius: 8,
-                  fill: new ol.style.Fill({ color: '#f59e0b' }),
-                  stroke: new ol.style.Stroke({ color: '#111827', width: 2 })
-                }),
-                stroke: new ol.style.Stroke({ color: '#0ea5e9', width: 3 }),
-                fill: new ol.style.Fill({ color: 'rgba(14, 165, 233, 0.18)' })
-              })
-            })
-          ],
-          view: new ol.View({
-            center: ol.proj.fromLonLat([%2, %3]),
-            zoom: 11
-          })
-        });
-        map.getView().fit(desiredExtent, { padding: [28, 28, 28, 28], duration: 0, maxZoom: 12 });
-        if (features.length) {
-          const featureExtent = vectorSource.getExtent();
-          if (featureExtent && Number.isFinite(featureExtent[0]) && Number.isFinite(featureExtent[2])) {
-            const combinedExtent = ol.extent.extend(desiredExtent.slice(), featureExtent);
-            map.getView().fit(combinedExtent, { padding: [48, 48, 48, 48], duration: 0, maxZoom: 12 });
+    visited.add(current);
+    try {
+      const mapObject = typeof current.getView === 'function' ? current : (current.map && typeof current.map.getView === 'function' ? current.map : null);
+      if (mapObject) {
+        const view = mapObject.getView();
+        if (view && typeof view.fit === 'function') {
+          if (window.ol && window.ol.proj && typeof window.ol.proj.transformExtent === 'function') {
+            view.fit(window.ol.proj.transformExtent(geoExtent, 'EPSG:4326', 'EPSG:3857'), {
+              padding: [40, 40, 40, 40],
+              duration: 0,
+              maxZoom: 13
+            });
+          } else {
+            view.setCenter(center);
+            if (typeof view.setZoom === 'function') {
+              view.setZoom(12);
+            }
+          }
+        } else if (view && typeof view.setCenter === 'function') {
+          view.setCenter(center);
+          if (typeof view.setZoom === 'function') {
+            view.setZoom(12);
           }
         }
-        window.__fairwindWaypointMap = map;
-        setInfo('Waypoint rendered on an OpenLayers preview with OpenStreetMap and OpenSeaMap tiles.');
-        window.setTimeout(() => map.updateSize(), 0);
-        window.setTimeout(() => map.updateSize(), 250);
-        window.setTimeout(() => map.updateSize(), 1000);
-      } catch (error) {
-        setInfo('Unable to render the waypoint preview map: ' + error);
+        if (typeof mapObject.updateSize === 'function') {
+          mapObject.updateSize();
+        }
+        return true;
       }
-    }
-    function loadOpenLayers() {
-      setInfo('Loading the bundled OpenLayers runtime.');
-      const script = document.createElement('script');
-      script.src = 'qrc:///resources/vendor/openlayers/ol.js';
-      script.onload = renderMap;
-      script.onerror = function() {
-        setInfo('Unable to load the bundled OpenLayers runtime.');
-      };
-      document.head.appendChild(script);
-    }
-    window.addEventListener('load', loadOpenLayers);
-    window.addEventListener('resize', () => {
-      if (window.__fairwindWaypointMap) {
-        window.__fairwindWaypointMap.updateSize();
+      if (current.setView && current.flyTo) {
+        current.setView([lat, lon], 12, { animate: false });
+        return true;
       }
-    });
-  </script>
-</body>
-</html>)")
-            .arg(base64Json)
+    } catch (error) {}
+    try {
+      for (const key of Object.keys(current).slice(0, 120)) {
+        const next = current[key];
+        if (next && !visited.has(next)) {
+          queue.push(next);
+        }
+      }
+    } catch (error) {}
+  }
+  return false;
+})();
+)")
             .arg(longitude, 0, 'f', 8)
-            .arg(latitude, 0, 'f', 8);
+            .arg(latitude, 0, 'f', 8)
+            .arg(minLongitude, 0, 'f', 8)
+            .arg(minLatitude, 0, 'f', 8)
+            .arg(maxLongitude, 0, 'f', 8)
+            .arg(maxLatitude, 0, 'f', 8);
     }
 }
 
@@ -330,10 +231,10 @@ namespace fairwindsk::ui::mydata {
         m_deleteButton = ui->toolButtonDelete;
         m_titleLabel = ui->labelTitle;
         m_detailTabs = ui->tabWidgetDetails;
+        m_detailsSplitter = ui->splitterDetails;
         m_propertiesTreeTab = ui->widgetPropertiesTreeContainer;
         m_propertiesJsonTab = ui->widgetPropertiesJsonContainer;
         m_geoJsonDetailsEdit = ui->plainTextEditGeoJson;
-        m_mapPreviewView = ui->webEngineViewPreview;
         m_detailsFormLayout = ui->formLayoutDetails;
         m_nameEdit = ui->lineEditName;
         m_descriptionEdit = ui->plainTextEditDescription;
@@ -428,8 +329,8 @@ namespace fairwindsk::ui::mydata {
 
         m_titleLabel->setStyleSheet("font-size: 20px; font-weight: bold;");
         ui->verticalLayoutDetails->setStretch(2, 1);
-        ui->splitterDetails->setStretchFactor(0, 3);
-        ui->splitterDetails->setStretchFactor(1, 3);
+        m_detailsSplitter->setStretchFactor(0, 2);
+        m_detailsSplitter->setStretchFactor(1, 1);
 
         m_latitudeSpinBox->setRange(-90.0, 90.0);
         m_latitudeSpinBox->setDecimals(8);
@@ -456,31 +357,24 @@ namespace fairwindsk::ui::mydata {
         m_contactsEdit->setMaximumHeight(72);
         m_propertiesEditor->setLabels(tr("Properties Tree"), tr("Properties JSON"));
         m_propertiesEditor->setHiddenKeys({QStringLiteral("name"), QStringLiteral("description"), QStringLiteral("contacts"), QStringLiteral("seaFloor"), QStringLiteral("slips")});
-        m_mapPreviewView->settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
-        m_mapPreviewView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-        m_mapPreviewView->setMinimumWidth(360);
-        m_mapPreviewView->setMinimumHeight(320);
+        auto *previewLayout = new QVBoxLayout(ui->widgetPreviewHost);
+        previewLayout->setContentsMargins(0, 0, 0, 0);
+        previewLayout->setSpacing(0);
+        m_previewAppView = new fairwindsk::ui::web::SignalKAppView(this);
+        previewLayout->addWidget(m_previewAppView);
         m_propertiesEditor->setTabBarVisible(false);
         m_geoJsonDetailsEdit->setReadOnly(true);
         m_geoJsonDetailsEdit->setLineWrapMode(QPlainTextEdit::NoWrap);
         m_geoJsonDetailsEdit->setStyleSheet(kPlainTextStyle);
-        connect(m_mapPreviewView, &QWebEngineView::loadFinished, this, [this](const bool) {
-            if (m_detailTabs->currentIndex() == 0) {
-                m_mapPreviewView->page()->runJavaScript(QStringLiteral(
-                    "if (window.__fairwindWaypointMap) {"
-                    "  window.__fairwindWaypointMap.updateSize();"
-                    "}"
-                ));
+        connect(m_previewAppView, &fairwindsk::ui::web::SignalKAppView::loadFinished, this, [this](const bool ok) {
+            if (ok) {
+                schedulePreviewFocus();
             }
         });
         connect(m_detailTabs, &QTabWidget::currentChanged, this, [this](const int currentIndex) {
             syncDetailTabs();
             if (currentIndex == 0) {
-                m_mapPreviewView->page()->runJavaScript(QStringLiteral(
-                    "if (window.__fairwindWaypointMap) {"
-                    "  window.__fairwindWaypointMap.updateSize();"
-                    "}"
-                ));
+                schedulePreviewFocus();
             }
         });
         m_seaFloorTypeLayout->setContentsMargins(0, 0, 0, 0);
@@ -493,10 +387,16 @@ namespace fairwindsk::ui::mydata {
         m_searchTimer->setInterval(180);
         connect(m_searchTimer, &QTimer::timeout, this, &Waypoints::onSearchTimeout);
         rebuildTable();
+        QTimer::singleShot(0, this, &Waypoints::applyDetailSplitterRatio);
     }
 
     Waypoints::~Waypoints() {
         delete ui;
+    }
+
+    void Waypoints::resizeEvent(QResizeEvent *event) {
+        QWidget::resizeEvent(event);
+        applyDetailSplitterRatio();
     }
 
     void Waypoints::styleTable() {
@@ -695,6 +595,8 @@ namespace fairwindsk::ui::mydata {
         m_detailTabs->setCurrentIndex(0);
         setEditMode(editMode);
         m_stackedWidget->setCurrentWidget(m_detailsPage);
+        QTimer::singleShot(0, this, &Waypoints::applyDetailSplitterRatio);
+        QTimer::singleShot(0, this, &Waypoints::schedulePreviewFocus);
     }
 
     void Waypoints::applyWaypointToEditor(const QString &id, const QJsonObject &resource) {
@@ -898,9 +800,46 @@ namespace fairwindsk::ui::mydata {
         const auto coordinates = coordinateArray(resource);
         const double longitude = coordinates.size() > 0 ? coordinates.at(0).toDouble() : 0.0;
         const double latitude = coordinates.size() > 1 ? coordinates.at(1).toDouble() : 0.0;
-        m_mapPreviewView->setHtml(waypointMapHtml(geoJson, longitude, latitude), QUrl(QStringLiteral("qrc:/")));
+        m_previewLongitude = longitude;
+        m_previewLatitude = latitude;
+        if (m_previewAppView->url().isEmpty() || !m_previewAppView->url().toString().contains(QStringLiteral("freeboard"), Qt::CaseInsensitive)) {
+            if (!m_previewAppView->loadAppByKeyword(QStringLiteral("freeboard"))) {
+                m_previewAppView->setHtml(QStringLiteral(
+                    "<html><body style=\"margin:0;background:#07111b;color:#e5edf7;font-family:sans-serif;display:flex;align-items:center;justify-content:center;\">"
+                    "<div>Freeboard-SK is not installed or not active on the current Signal K server.</div>"
+                    "</body></html>"
+                ));
+            }
+        } else {
+            schedulePreviewFocus();
+        }
         m_geoJsonDetailsEdit->setPlainText(QString::fromUtf8(geoJson.toJson(QJsonDocument::Indented)));
         syncDetailTabs();
+    }
+
+    void Waypoints::applyDetailSplitterRatio() {
+        if (!m_detailsSplitter || m_detailsSplitter->width() <= 0) {
+            return;
+        }
+
+        const int leftWidth = (m_detailsSplitter->width() * 2) / 3;
+        const int rightWidth = std::max(1, m_detailsSplitter->width() - leftWidth);
+        m_detailsSplitter->setSizes({leftWidth, rightWidth});
+    }
+
+    void Waypoints::schedulePreviewFocus() {
+        applyPreviewFocus();
+        QTimer::singleShot(600, this, &Waypoints::applyPreviewFocus);
+        QTimer::singleShot(1500, this, &Waypoints::applyPreviewFocus);
+        QTimer::singleShot(3000, this, &Waypoints::applyPreviewFocus);
+    }
+
+    void Waypoints::applyPreviewFocus() {
+        if (!m_previewAppView || !m_previewAppView->page() || m_detailTabs->currentIndex() != 0) {
+            return;
+        }
+
+        m_previewAppView->runJavaScript(freeboardFocusScript(m_previewLongitude, m_previewLatitude));
     }
 
     QString Waypoints::waypointHref(const QString &id) const {
