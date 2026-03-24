@@ -526,6 +526,16 @@ namespace fairwindsk::ui {
         // Get the FairWind singleton
         const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
+        const auto unlockWindowSize = [this]() {
+            setMinimumSize(QSize(0, 0));
+            setMaximumSize(QSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX));
+        };
+
+        const auto lockWindowSize = [this](const int width, const int height) {
+            setMinimumSize(width, height);
+            setMaximumSize(width, height);
+        };
+
         if (fairWindSK->getConfiguration()->getWindowMode()=="centered") {
 
             const auto width = fairWindSK->getConfiguration()->getWindowWidth();
@@ -539,6 +549,7 @@ namespace fairwindsk::ui {
 
             move(left,top);
             resize(width, height);
+            lockWindowSize(width, height);
 
             // Show windowed
             show();
@@ -547,11 +558,13 @@ namespace fairwindsk::ui {
             activateWindow(); // for Windows
 
         } else if (fairWindSK->getConfiguration()->getWindowMode()=="maximized") {
+            unlockWindowSize();
 
             // Set the window maximized
             showMaximized();
 
         } else if (fairWindSK->getConfiguration()->getWindowMode()=="fullscreen") {
+            unlockWindowSize();
 
             // Show the window full screen
             showFullScreen();
@@ -563,6 +576,7 @@ namespace fairwindsk::ui {
             const auto height = fairWindSK->getConfiguration()->getWindowHeight();
             move(left,top);
             resize(width, height);
+            lockWindowSize(width, height);
 
             // Show windowed
             show();

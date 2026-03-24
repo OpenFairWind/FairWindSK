@@ -98,6 +98,45 @@ namespace fairwindsk {
             return cachedIconsByServer.value(serverUrl).value(appName);
         }
 
+        QString displayNameFromLegacyCatalog(const QString &serverUrl, const QString &appName) {
+            static QHash<QString, QHash<QString, QString>> cachedDisplayNamesByServer;
+            static QHash<QString, bool> loadedServers;
+
+            if (serverUrl.isEmpty() || appName.isEmpty()) {
+                return {};
+            }
+
+            if (!loadedServers.value(serverUrl, false)) {
+                loadedServers.insert(serverUrl, true);
+                const auto legacyCatalog = fetchJsonArray(QUrl(serverUrl + "/skServer/webapps"));
+                if (legacyCatalog.is_array()) {
+                    QHash<QString, QString> displayNames;
+                    for (const auto &appJson : legacyCatalog) {
+                        if (!appJson.is_object() || !appJson.contains("name") || !appJson["name"].is_string()) {
+                            continue;
+                        }
+                        const QString legacyName = QString::fromStdString(appJson["name"].get<std::string>());
+                        QString legacyDisplayName;
+                        if (appJson.contains("signalk") && appJson["signalk"].is_object()) {
+                            const auto &signalkJsonObject = appJson["signalk"];
+                            if (signalkJsonObject.contains("displayName") && signalkJsonObject["displayName"].is_string()) {
+                                legacyDisplayName = QString::fromStdString(signalkJsonObject["displayName"].get<std::string>());
+                            }
+                        }
+                        if (legacyDisplayName.isEmpty() && appJson.contains("displayName") && appJson["displayName"].is_string()) {
+                            legacyDisplayName = QString::fromStdString(appJson["displayName"].get<std::string>());
+                        }
+                        if (!legacyName.isEmpty() && !legacyDisplayName.isEmpty()) {
+                            displayNames.insert(legacyName, legacyDisplayName);
+                        }
+                    }
+                    cachedDisplayNamesByServer.insert(serverUrl, displayNames);
+                }
+            }
+
+            return cachedDisplayNamesByServer.value(serverUrl).value(appName);
+        }
+
         QPixmap loadRemotePixmap(const QList<QUrl> &candidateUrls, const QPixmap &fallback) {
             for (const auto &iconUrl : candidateUrls) {
                 if (!iconUrl.isValid() || iconUrl.scheme().isEmpty()) {
@@ -277,10 +316,20 @@ namespace fairwindsk {
      */
     QString AppItem::getDisplayName() {
         QString displayName = getName();
+        if (m_jsonApp.contains("displayName") && m_jsonApp["displayName"].is_string()) {
+            displayName = QString::fromStdString(m_jsonApp["displayName"].get<std::string>());
+        }
         if (m_jsonApp.contains("signalk") &&  m_jsonApp["signalk"].is_object()) {
             auto signalkJsonObject = m_jsonApp["signalk"];
             if (signalkJsonObject.contains("displayName") && signalkJsonObject["displayName"].is_string()) {
                 displayName = QString::fromStdString(signalkJsonObject["displayName"].get<std::string>());
+            }
+        }
+        if (displayName.isEmpty() || displayName == getName()) {
+            const auto signalKServerUrl = FairWindSK::getInstance()->getConfiguration()->getSignalKServerUrl();
+            const auto legacyDisplayName = displayNameFromLegacyCatalog(signalKServerUrl, getName());
+            if (!legacyDisplayName.isEmpty()) {
+                displayName = legacyDisplayName;
             }
         }
         return displayName;

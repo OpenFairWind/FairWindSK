@@ -36,6 +36,8 @@ namespace fairwindsk {
             int tabHeight = 32;
             int actionIconSize = 24;
             int prominentIconSize = 56;
+            int toggleWidth = 46;
+            int toggleHeight = 24;
             int horizontalPadding = 12;
             int verticalPadding = 6;
         };
@@ -49,6 +51,8 @@ namespace fairwindsk {
                 metrics.tabHeight = 28;
                 metrics.actionIconSize = 20;
                 metrics.prominentIconSize = 40;
+                metrics.toggleWidth = 40;
+                metrics.toggleHeight = 22;
                 metrics.horizontalPadding = 10;
                 metrics.verticalPadding = 4;
             } else if (preset == "large") {
@@ -57,6 +61,8 @@ namespace fairwindsk {
                 metrics.tabHeight = 40;
                 metrics.actionIconSize = 32;
                 metrics.prominentIconSize = 72;
+                metrics.toggleWidth = 56;
+                metrics.toggleHeight = 30;
                 metrics.horizontalPadding = 14;
                 metrics.verticalPadding = 8;
             } else if (preset == "xlarge") {
@@ -65,6 +71,8 @@ namespace fairwindsk {
                 metrics.tabHeight = 48;
                 metrics.actionIconSize = 40;
                 metrics.prominentIconSize = 88;
+                metrics.toggleWidth = 64;
+                metrics.toggleHeight = 34;
                 metrics.horizontalPadding = 18;
                 metrics.verticalPadding = 10;
             } else {
@@ -73,6 +81,8 @@ namespace fairwindsk {
                 metrics.tabHeight = 34;
                 metrics.actionIconSize = 24;
                 metrics.prominentIconSize = 56;
+                metrics.toggleWidth = 46;
+                metrics.toggleHeight = 24;
                 metrics.horizontalPadding = 12;
                 metrics.verticalPadding = 6;
             }
@@ -149,6 +159,21 @@ namespace fairwindsk {
                        "QTabBar::tab:hover:!selected {"
                        " background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #7c8593, stop:1 #5b6472);"
                        " }"
+                       "QCheckBox { spacing: %5px; color: #f9fafb; }"
+                       "QCheckBox::indicator {"
+                       " width: %9px;"
+                       " height: %10px;"
+                       " border-radius: %11px;"
+                       " border: 1px solid #9ca3af;"
+                       " background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #6b7280, stop:1 #4b5563);"
+                       " }"
+                       "QCheckBox::indicator:checked {"
+                       " border-color: #60a5fa;"
+                       " background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #3b82f6, stop:1 #1d4ed8);"
+                       " }"
+                       "QCheckBox::indicator:unchecked:hover, QCheckBox::indicator:checked:hover {"
+                       " border-color: #dbeafe;"
+                       " }"
                        "QHeaderView::section { font-size: %1pt; padding: %4px %5px; }"
                        "QMenu::item { padding: %4px %6px; }")
                 .arg(metrics.fontPointSize)
@@ -158,7 +183,10 @@ namespace fairwindsk {
                 .arg(metrics.horizontalPadding)
                 .arg(metrics.horizontalPadding * 2)
                 .arg(std::max(1, metrics.verticalPadding - 1))
-                .arg(metrics.verticalPadding + 1);
+                .arg(metrics.verticalPadding + 1)
+                .arg(metrics.toggleWidth)
+                .arg(metrics.toggleHeight)
+                .arg(metrics.toggleHeight / 2);
         }
 
         void applyIconMetrics(QWidget *widget, const UiMetrics &metrics) {

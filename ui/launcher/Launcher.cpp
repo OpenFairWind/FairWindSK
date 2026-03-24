@@ -27,6 +27,8 @@ namespace fairwindsk::ui::launcher {
         m_layout = new QGridLayout(ui->scrollAreaWidgetContents);
         if (m_layout) {
             m_layout->setContentsMargins(0,0,0,0);
+            m_layout->setHorizontalSpacing(16);
+            m_layout->setVerticalSpacing(16);
 
 
             // Set the UI scroll area with the newly created layout
@@ -66,6 +68,8 @@ namespace fairwindsk::ui::launcher {
 
             }
 
+            m_cols = qMax(1, (map.size() + m_rows - 1) / m_rows);
+
             // Iterate on the available apps' hash values
             for (const auto& item: map) {
                 // Get the hash value
@@ -88,9 +92,6 @@ namespace fairwindsk::ui::launcher {
 
                 // Check if the icon is available
                 if (!pixmap.isNull()) {
-                    // Scale the icon
-                    pixmap = pixmap.scaled(m_iconSize, m_iconSize);
-
                     // Set the app's icon as the button's icon
                     button->setIcon(pixmap);
 
@@ -100,8 +101,8 @@ namespace fairwindsk::ui::launcher {
 
                 // Set the button's style to have an icon and some text beneath it
                 button->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-                button->setAutoRaise(true);
-                button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+                button->setAutoRaise(false);
+                button->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
 
                 // Launch the app when the button is clicked
                 connect(button, &QToolButton::released, this, &Launcher::toolButton_App_released);
@@ -173,26 +174,34 @@ namespace fairwindsk::ui::launcher {
     }
 
     void Launcher::resize() {
+        auto *layout = qobject_cast<QGridLayout *>(ui->scrollAreaWidgetContents->layout());
+        if (!layout) {
+            return;
+        }
 
-        int iconSize = qMax(64, (height() / qMax(1, m_rows)) - 48 * m_rows);
-
-        auto *layout = (QGridLayout *)ui->scrollAreaWidgetContents->layout();
+        const auto viewportSize = ui->scrollArea->viewport()->size();
+        const int availableHeight = qMax(240, viewportSize.height() - layout->contentsMargins().top() - layout->contentsMargins().bottom());
+        const int availableWidth = qMax(320, viewportSize.width() - layout->contentsMargins().left() - layout->contentsMargins().right());
+        const int rowHeight = qMax(140, (availableHeight - ((m_rows - 1) * layout->verticalSpacing())) / qMax(1, m_rows));
+        const int columnWidth = qMax(180, (availableWidth - ((m_cols - 1) * layout->horizontalSpacing())) / qMax(1, m_cols));
+        const int iconSize = qMax(96, qMin(rowHeight - 54, columnWidth - 28));
 
         // Iterate on the columns
         for (int col = 0; col < m_cols; col++) {
             // Set the column width for each column
-            layout->setColumnMinimumWidth(col, iconSize);
+            layout->setColumnMinimumWidth(col, columnWidth);
         }
 
         // Iterate on the rows
         for (int row = 0; row < m_rows; row++) {
             // Set the row height for each row
-            layout->setRowMinimumHeight(row, iconSize);
+            layout->setRowMinimumHeight(row, rowHeight);
         }
 
         for(auto button:m_buttons) {
             // Give the button's icon a fixed square
             button->setIconSize(QSize(iconSize, iconSize));
+            button->setMinimumSize(columnWidth, rowHeight);
         }
 
         updateScrollButtons();

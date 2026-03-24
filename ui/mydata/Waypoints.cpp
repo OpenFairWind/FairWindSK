@@ -478,6 +478,7 @@ namespace fairwindsk::ui::mydata {
     void Waypoints::styleTable() {
         m_tableWidget->setStyleSheet(kTableStyle);
         m_tableWidget->verticalHeader()->setVisible(false);
+        m_tableWidget->verticalHeader()->setDefaultSectionSize(62);
     }
 
     QString Waypoints::currentWaypointIdFromSelection() const {
@@ -576,6 +577,7 @@ namespace fairwindsk::ui::mydata {
 
             actionsLayout->addStretch(1);
             m_tableWidget->setCellWidget(visibleRow, actionsColumn, actionsWidget);
+            m_tableWidget->setRowHeight(visibleRow, 62);
         }
 
         m_tableWidget->setColumnWidth(actionsColumn, 252);
