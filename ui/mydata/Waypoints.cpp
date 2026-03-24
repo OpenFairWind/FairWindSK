@@ -57,13 +57,15 @@ namespace {
         " color: #111827;"
         " border: 1px solid #9ca3af;"
         " border-radius: 6px;"
-        " padding: 8px;"
-        " min-width: 44px;"
-        " min-height: 44px;"
-        " margin: 2px;"
+        " padding: 4px;"
+        " min-width: 40px;"
+        " max-width: 40px;"
+        " min-height: 40px;"
+        " max-height: 40px;"
+        " margin: 0px;"
         " }"
         "QToolButton:hover { background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ffffff, stop:1 #e5e7eb); }"
-        "QToolButton:pressed { background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #cbd5e1, stop:1 #94a3b8); padding-top: 9px; padding-bottom: 7px; }");
+        "QToolButton:pressed { background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #cbd5e1, stop:1 #94a3b8); padding-top: 5px; padding-bottom: 3px; }");
 
     QJsonObject featureObject(const QJsonObject &resource) {
         return resource["feature"].toObject();
@@ -535,16 +537,18 @@ namespace fairwindsk::ui::mydata {
             }
 
             auto *actionsWidget = new QWidget();
+            actionsWidget->setStyleSheet(QStringLiteral("QWidget { background: transparent; }"));
             auto *actionsLayout = new QHBoxLayout(actionsWidget);
-            actionsLayout->setContentsMargins(8, 2, 8, 2);
-            actionsLayout->setSpacing(6);
+            actionsLayout->setContentsMargins(6, 4, 6, 4);
+            actionsLayout->setSpacing(4);
+            actionsLayout->setAlignment(Qt::AlignCenter);
 
             auto *navigateButton = new QToolButton(actionsWidget);
             navigateButton->setIcon(QIcon(":/resources/svg/mydata/waypoint-navigate-to.svg"));
             navigateButton->setToolTip(tr("Navigate to waypoint"));
             navigateButton->setProperty("waypointId", id);
             navigateButton->setStyleSheet(kActionButtonStyle);
-            navigateButton->setIconSize(QSize(22, 22));
+            navigateButton->setIconSize(QSize(20, 20));
             connect(navigateButton, &QToolButton::clicked, this, &Waypoints::onNavigateRowClicked);
             actionsLayout->addWidget(navigateButton);
 
@@ -553,7 +557,7 @@ namespace fairwindsk::ui::mydata {
             detailsButton->setToolTip(tr("Waypoint details"));
             detailsButton->setProperty("waypointId", id);
             detailsButton->setStyleSheet(kActionButtonStyle);
-            detailsButton->setIconSize(QSize(22, 22));
+            detailsButton->setIconSize(QSize(20, 20));
             connect(detailsButton, &QToolButton::clicked, this, &Waypoints::onDetailsRowClicked);
             actionsLayout->addWidget(detailsButton);
 
@@ -562,7 +566,7 @@ namespace fairwindsk::ui::mydata {
             editButton->setToolTip(tr("Edit waypoint"));
             editButton->setProperty("waypointId", id);
             editButton->setStyleSheet(kActionButtonStyle);
-            editButton->setIconSize(QSize(22, 22));
+            editButton->setIconSize(QSize(20, 20));
             connect(editButton, &QToolButton::clicked, this, &Waypoints::onEditRowClicked);
             actionsLayout->addWidget(editButton);
 
@@ -571,16 +575,15 @@ namespace fairwindsk::ui::mydata {
             removeButton->setToolTip(tr("Remove waypoint"));
             removeButton->setProperty("waypointId", id);
             removeButton->setStyleSheet(kActionButtonStyle);
-            removeButton->setIconSize(QSize(22, 22));
+            removeButton->setIconSize(QSize(20, 20));
             connect(removeButton, &QToolButton::clicked, this, &Waypoints::onRemoveRowClicked);
             actionsLayout->addWidget(removeButton);
 
-            actionsLayout->addStretch(1);
             m_tableWidget->setCellWidget(visibleRow, actionsColumn, actionsWidget);
-            m_tableWidget->setRowHeight(visibleRow, 62);
+            m_tableWidget->setRowHeight(visibleRow, 50);
         }
 
-        m_tableWidget->setColumnWidth(actionsColumn, 252);
+        m_tableWidget->setColumnWidth(actionsColumn, 196);
         applySearchFilter();
         updateBulkButtons();
     }
