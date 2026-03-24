@@ -1,6 +1,8 @@
 {
     "main": {
         "virtualKeyboard": false,
+        "uiScaleMode": "auto",
+        "uiScalePreset": "normal",
         "autopilot": "",
         "windowMode": "windowed",
         "windowWidth": 1024,
@@ -101,4 +103,3 @@
         "anchor": "signalk-anchoralarm-plugin"
     }
 }
-

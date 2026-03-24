@@ -29,9 +29,13 @@ namespace fairwindsk::ui::settings {
         void onWindowLeftTextChanged();
         void onWindowTopTextChanged();
         void onVirtualKeyboardStateChanged(int state);
+        void onUiScaleModeStateChanged(int state);
+        void onUiScalePresetChanged(int index);
 
     private:
         void setWindowGeometryFieldsEnabled(const QString &windowMode) const;
+        void setUiScaleFieldsEnabled(bool automatic) const;
+        void applyUiPreview() const;
 
         Ui::Main *ui;
 

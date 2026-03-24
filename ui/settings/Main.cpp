@@ -23,6 +23,14 @@ namespace fairwindsk::ui::settings {
         ui->lineEdit_height->setEnabled(isWindowed || isCentered);
     }
 
+    void Main::setUiScaleFieldsEnabled(const bool automatic) const {
+        ui->comboBox_uiScalePreset->setEnabled(!automatic);
+    }
+
+    void Main::applyUiPreview() const {
+        FairWindSK::getInstance()->applyUiPreferences(m_settings->getConfiguration());
+    }
+
     Main::Main(Settings *settings, QWidget *parent) :
             QWidget(parent), ui(new Ui::Main) {
 
@@ -34,6 +42,11 @@ namespace fairwindsk::ui::settings {
         ui->comboBox_windowMode->addItem(tr("Centered"));
         ui->comboBox_windowMode->addItem(tr("Maximized"));
         ui->comboBox_windowMode->addItem(tr("Full Screen"));
+
+        ui->comboBox_uiScalePreset->addItem(tr("Small"), "small");
+        ui->comboBox_uiScalePreset->addItem(tr("Normal"), "normal");
+        ui->comboBox_uiScalePreset->addItem(tr("Large"), "large");
+        ui->comboBox_uiScalePreset->addItem(tr("Extra Large"), "xlarge");
 
         int windowModeIndex = 0;
         const auto windowMode = m_settings->getConfiguration()->getWindowMode();
@@ -50,6 +63,14 @@ namespace fairwindsk::ui::settings {
 
         ui->comboBox_windowMode->setCurrentIndex(windowModeIndex);
 
+        const auto uiScalePreset = m_settings->getConfiguration()->getUiScalePreset();
+        const auto uiScaleIndex = ui->comboBox_uiScalePreset->findData(uiScalePreset);
+        ui->comboBox_uiScalePreset->setCurrentIndex(uiScaleIndex >= 0 ? uiScaleIndex : 1);
+
+        const bool automaticUiScale = m_settings->getConfiguration()->getUiScaleMode() == "auto";
+        ui->checkBox_autoUiScale->setCheckState(automaticUiScale ? Qt::Checked : Qt::Unchecked);
+        setUiScaleFieldsEnabled(automaticUiScale);
+
         if (m_settings->getConfiguration()->getVirtualKeyboard()) {
             ui->checkBox_virtualkeboard->setCheckState(Qt::Checked);
         } else {
@@ -58,6 +79,8 @@ namespace fairwindsk::ui::settings {
 
         connect(ui->checkBox_virtualkeboard, SIGNAL(stateChanged(int)),
                 this, SLOT(onVirtualKeyboardStateChanged(int)));
+        connect(ui->checkBox_autoUiScale, SIGNAL(stateChanged(int)),
+                this, SLOT(onUiScaleModeStateChanged(int)));
 
         setWindowGeometryFieldsEnabled(windowMode);
 
@@ -80,6 +103,7 @@ namespace fairwindsk::ui::settings {
         connect(ui->lineEdit_top,&QLineEdit::textChanged,this, &Main::onWindowTopTextChanged);
         connect(ui->lineEdit_width,&QLineEdit::textChanged,this, &Main::onWindowWidthTextChanged);
         connect(ui->lineEdit_height,&QLineEdit::textChanged,this, &Main::onWindowHeightTextChanged);
+        connect(ui->comboBox_uiScalePreset, &QComboBox::currentIndexChanged, this, &Main::onUiScalePresetChanged);
 
         if (auto units = Units::getInstance()->getUnits(); units.contains("measures") && units["measures"].is_object()) {
             int row = 1;
@@ -140,6 +164,23 @@ namespace fairwindsk::ui::settings {
         }
 
         m_settings->getConfiguration()->setVirtualKeyboard(value);
+    }
+
+    void Main::onUiScaleModeStateChanged(const int state) {
+        const bool automatic = state == Qt::Checked;
+        m_settings->getConfiguration()->setUiScaleMode(automatic ? "auto" : "manual");
+        setUiScaleFieldsEnabled(automatic);
+        applyUiPreview();
+    }
+
+    void Main::onUiScalePresetChanged(const int index) {
+        Q_UNUSED(index);
+
+        m_settings->getConfiguration()->setUiScalePreset(ui->comboBox_uiScalePreset->currentData().toString());
+
+        if (ui->checkBox_autoUiScale->checkState() != Qt::Checked) {
+            applyUiPreview();
+        }
     }
 
     void Main::onWindowModeChanged(const int index) {

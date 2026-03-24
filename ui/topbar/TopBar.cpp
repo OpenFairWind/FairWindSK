@@ -14,6 +14,22 @@
 #include <signalk/Waypoint.hpp>
 
 namespace fairwindsk::ui::topbar {
+    void TopBar::refreshMetricLabelWidths() const {
+        const double factor = 1.15;
+        ui->label_POS->setFixedWidth(ui->label_POS->sizeHint().width() * factor);
+        ui->label_COG->setFixedWidth(ui->label_COG->sizeHint().width() * factor);
+        ui->label_SOG->setFixedWidth(ui->label_SOG->sizeHint().width() * factor);
+        ui->label_HDG->setFixedWidth(ui->label_HDG->sizeHint().width() * factor);
+        ui->label_STW->setFixedWidth(ui->label_STW->sizeHint().width() * factor);
+        ui->label_DPT->setFixedWidth(ui->label_DPT->sizeHint().width() * factor);
+        ui->label_BTW->setFixedWidth(ui->label_BTW->sizeHint().width() * factor);
+        ui->label_DTG->setFixedWidth(ui->label_DTG->sizeHint().width() * factor);
+        ui->label_TTG->setFixedWidth(ui->label_TTG->sizeHint().width() * factor);
+        ui->label_ETA->setFixedWidth(ui->label_ETA->sizeHint().width() * factor);
+        ui->label_XTE->setFixedWidth(ui->label_XTE->sizeHint().width() * factor);
+        ui->label_VMG->setFixedWidth(ui->label_VMG->sizeHint().width() * factor);
+    }
+
 /*
  * TopBar
  * Public Constructor - This presents some useful infos at the top of the screen
@@ -48,20 +64,7 @@ namespace fairwindsk::ui::topbar {
         updateDistanceLabels();
 
 
-        double c=1.15;
-        ui->label_POS->setFixedWidth(ui->label_POS->sizeHint().width()*c);
-        ui->label_COG->setFixedWidth(ui->label_COG->sizeHint().width()*c);
-        ui->label_SOG->setFixedWidth(ui->label_SOG->sizeHint().width()*c);
-        ui->label_HDG->setFixedWidth(ui->label_HDG->sizeHint().width()*c);
-        ui->label_STW->setFixedWidth(ui->label_STW->sizeHint().width()*c);
-        ui->label_DPT->setFixedWidth(ui->label_DPT->sizeHint().width()*c);
-
-        ui->label_BTW->setFixedWidth(ui->label_BTW->sizeHint().width()*c);
-        ui->label_DTG->setFixedWidth(ui->label_DTG->sizeHint().width()*c);
-        ui->label_TTG->setFixedWidth(ui->label_TTG->sizeHint().width()*c);
-        ui->label_ETA->setFixedWidth(ui->label_ETA->sizeHint().width()*c);
-        ui->label_XTE->setFixedWidth(ui->label_XTE->sizeHint().width()*c);
-        ui->label_VMG->setFixedWidth(ui->label_VMG->sizeHint().width()*c);
+        refreshMetricLabelWidths();
 
         ui->widget_POS->setVisible(false);
         ui->widget_COG->setVisible(false);
@@ -266,6 +269,14 @@ namespace fairwindsk::ui::topbar {
             }
 
 
+        }
+    }
+
+    void TopBar::changeEvent(QEvent *event) {
+        QWidget::changeEvent(event);
+
+        if (event && event->type() == QEvent::FontChange) {
+            refreshMetricLabelWidths();
         }
     }
 

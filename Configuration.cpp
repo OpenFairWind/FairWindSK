@@ -136,6 +136,22 @@ namespace fairwindsk {
         return getBool("main", "virtualKeyboard");
     }
 
+    void Configuration::setUiScaleMode(const QString &value) {
+        ensureObject("main")["uiScaleMode"] = value.toStdString();
+    }
+
+    QString Configuration::getUiScaleMode() const {
+        return getString("main", "uiScaleMode", "auto");
+    }
+
+    void Configuration::setUiScalePreset(const QString &value) {
+        ensureObject("main")["uiScalePreset"] = value.toStdString();
+    }
+
+    QString Configuration::getUiScalePreset() const {
+        return getString("main", "uiScalePreset", "normal");
+    }
+
     void Configuration::setWindowMode(QString value) {
         ensureObject("main")["windowMode"] = value.toStdString();
     }

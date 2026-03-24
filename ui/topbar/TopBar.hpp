@@ -57,8 +57,10 @@ namespace fairwindsk::ui::topbar {
         void clickedToolbuttonUR();
 
     private:
+        void changeEvent(QEvent *event) override;
         void updateDistanceLabels() const;
         void updateSpeedLabels() const;
+        void refreshMetricLabelWidths() const;
         void resetCurrentAppPresentation() const;
 
         Ui::TopBar *ui;

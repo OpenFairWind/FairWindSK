@@ -31,6 +31,7 @@ namespace fairwindsk::ui::settings {
 
         // Save the configuration permanently
         FairWindSK::getInstance()->getConfiguration()->save();
+        FairWindSK::getInstance()->applyUiPreferences();
     }
 
 
@@ -163,6 +164,7 @@ namespace fairwindsk::ui::settings {
 
             // Initialize all the tabs setting the currentIndex
             initTabs(currentIndex);
+            FairWindSK::getInstance()->applyUiPreferences(&m_configuration);
 
         }
         // Check if the button is Default
@@ -176,6 +178,7 @@ namespace fairwindsk::ui::settings {
 
             // Initialize all the tabs setting the currentIndex
             initTabs(currentIndex);
+            FairWindSK::getInstance()->applyUiPreferences(&m_configuration);
 
         }
         // Check if the button is Restart
@@ -212,6 +215,8 @@ namespace fairwindsk::ui::settings {
      * Invoked when a push button connected with the rejected signal is clicked
      */
     void Settings::onRejected() {
+
+        FairWindSK::getInstance()->applyUiPreferences(m_currentConfiguration);
 
         // Emit a reject signal
         emit rejected(this);

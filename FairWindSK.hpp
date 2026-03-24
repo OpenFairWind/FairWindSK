@@ -9,6 +9,7 @@
 #include <QList>
 #include <QMap>
 #include <QString>
+#include <QEvent>
 #include <nlohmann/json.hpp>
 #include <QWebEngineProfile>
 
@@ -65,6 +66,8 @@ namespace fairwindsk {
         // Load the configuration from the json file
         void loadConfig();
 
+        void applyUiPreferences(const Configuration *configuration = nullptr);
+
         // Check if the Autopilot app is installed
         bool checkAutopilotApp();
 
@@ -75,6 +78,7 @@ namespace fairwindsk {
         ~FairWindSK() override;
 
     private:
+        bool eventFilter(QObject *watched, QEvent *event) override;
         void updateWebProfileCookie();
 
         // The private constructor

@@ -2,11 +2,15 @@
 // Created by Raffaele Montella on 03/04/21.
 //
 #include <QApplication>
+#include <QAbstractButton>
 #include <QThread>
 #include <QPluginLoader>
 #include <QDir>
 #include <QCoreApplication>
 #include <QSettings>
+#include <QScreen>
+#include <QToolButton>
+#include <QPushButton>
 
 
 #include <QLoggingCategory>
@@ -18,6 +22,7 @@
 #include <QNetworkCookie>
 #include <QWebEngineCookieStore>
 #include <QUrl>
+#include <algorithm>
 
 
 
@@ -25,6 +30,122 @@ using namespace Qt::StringLiterals;
 
 namespace fairwindsk {
     namespace {
+        struct UiMetrics {
+            int fontPointSize = 12;
+            int controlHeight = 32;
+            int tabHeight = 32;
+            int actionIconSize = 24;
+            int prominentIconSize = 56;
+            int horizontalPadding = 12;
+            int verticalPadding = 6;
+        };
+
+        UiMetrics uiMetricsForPreset(const QString &preset) {
+            UiMetrics metrics;
+
+            if (preset == "small") {
+                metrics.fontPointSize = 11;
+                metrics.controlHeight = 28;
+                metrics.tabHeight = 28;
+                metrics.actionIconSize = 20;
+                metrics.prominentIconSize = 40;
+                metrics.horizontalPadding = 10;
+                metrics.verticalPadding = 4;
+            } else if (preset == "large") {
+                metrics.fontPointSize = 14;
+                metrics.controlHeight = 40;
+                metrics.tabHeight = 40;
+                metrics.actionIconSize = 32;
+                metrics.prominentIconSize = 72;
+                metrics.horizontalPadding = 14;
+                metrics.verticalPadding = 8;
+            } else if (preset == "xlarge") {
+                metrics.fontPointSize = 16;
+                metrics.controlHeight = 48;
+                metrics.tabHeight = 48;
+                metrics.actionIconSize = 40;
+                metrics.prominentIconSize = 88;
+                metrics.horizontalPadding = 18;
+                metrics.verticalPadding = 10;
+            } else {
+                metrics.fontPointSize = 12;
+                metrics.controlHeight = 34;
+                metrics.tabHeight = 34;
+                metrics.actionIconSize = 24;
+                metrics.prominentIconSize = 56;
+                metrics.horizontalPadding = 12;
+                metrics.verticalPadding = 6;
+            }
+
+            return metrics;
+        }
+
+        QString resolvedUiScalePreset(const Configuration &configuration) {
+            if (configuration.getUiScaleMode() != "auto") {
+                return configuration.getUiScalePreset();
+            }
+
+            const auto *screen = QGuiApplication::primaryScreen();
+            if (!screen) {
+                return "normal";
+            }
+
+            const auto geometry = screen->availableGeometry();
+            const auto shortestSide = std::min(geometry.width(), geometry.height());
+            const auto dpi = screen->logicalDotsPerInch();
+
+            if (shortestSide >= 1800 || dpi >= 170.0) {
+                return "xlarge";
+            }
+            if (shortestSide >= 1200 || dpi >= 130.0) {
+                return "large";
+            }
+            if (shortestSide <= 720) {
+                return "large";
+            }
+            return "normal";
+        }
+
+        QString buildUiStyleSheet(const UiMetrics &metrics) {
+            return QString(
+                       "QWidget { font-size: %1pt; }"
+                       "QToolButton, QPushButton, QComboBox, QLineEdit, QTextEdit, QPlainTextEdit, "
+                       "QSpinBox, QDoubleSpinBox, QDateTimeEdit { min-height: %2px; }"
+                       "QTabBar::tab { min-height: %3px; padding: %4px %5px; }"
+                       "QHeaderView::section { font-size: %1pt; padding: %4px %5px; }"
+                       "QMenu::item { padding: %4px %6px; }")
+                .arg(metrics.fontPointSize)
+                .arg(metrics.controlHeight)
+                .arg(metrics.tabHeight)
+                .arg(metrics.verticalPadding)
+                .arg(metrics.horizontalPadding)
+                .arg(metrics.horizontalPadding * 2);
+        }
+
+        void applyIconMetrics(QWidget *widget, const UiMetrics &metrics) {
+            if (auto *toolButton = qobject_cast<QToolButton *>(widget)) {
+                const bool prominent =
+                    toolButton->toolButtonStyle() == Qt::ToolButtonTextUnderIcon ||
+                    toolButton->iconSize().width() >= 48 ||
+                    toolButton->minimumHeight() >= 64;
+                const QSize iconSize(prominent ? metrics.prominentIconSize : metrics.actionIconSize,
+                                     prominent ? metrics.prominentIconSize : metrics.actionIconSize);
+                if (!toolButton->icon().isNull()) {
+                    toolButton->setIconSize(iconSize);
+                }
+                if (prominent) {
+                    toolButton->setMinimumHeight(std::max(toolButton->minimumHeight(), iconSize.height() + 28));
+                }
+                return;
+            }
+
+            if (auto *pushButton = qobject_cast<QPushButton *>(widget)) {
+                if (!pushButton->icon().isNull()) {
+                    pushButton->setIconSize(QSize(metrics.actionIconSize, metrics.actionIconSize));
+                }
+            }
+        }
+
         nlohmann::json fetchJsonPayload(const QUrl &url, const bool debug) {
             if (!url.isValid()) {
                 return {};
@@ -94,6 +215,10 @@ namespace fairwindsk {
 
         // Create the WebEngine profile
         m_profile = new QWebEngineProfile(profileName, this);
+
+        if (qApp) {
+            qApp->installEventFilter(this);
+        }
 
         updateWebProfileCookie();
     }
@@ -177,7 +302,34 @@ namespace fairwindsk {
         }
 
         updateWebProfileCookie();
+        applyUiPreferences();
 
+    }
+
+    void FairWindSK::applyUiPreferences(const Configuration *configuration) {
+        if (!qApp) {
+            return;
+        }
+
+        const Configuration &effectiveConfiguration = configuration ? *configuration : m_configuration;
+        const auto preset = resolvedUiScalePreset(effectiveConfiguration);
+        const auto metrics = uiMetricsForPreset(preset);
+
+        QFont appFont = qApp->font();
+        appFont.setPointSize(metrics.fontPointSize);
+        qApp->setFont(appFont);
+        qApp->setStyleSheet(buildUiStyleSheet(metrics));
+
+        const auto widgets = QApplication::allWidgets();
+        for (auto *widget : widgets) {
+            if (!widget) {
+                continue;
+            }
+
+            applyIconMetrics(widget, metrics);
+            widget->updateGeometry();
+            widget->update();
+        }
     }
 
     void FairWindSK::updateWebProfileCookie() {
@@ -584,6 +736,7 @@ namespace fairwindsk {
 
     void FairWindSK::setConfiguration(Configuration *configuration) {
         m_configuration.setRoot(configuration->getRoot());
+        applyUiPreferences();
     }
 
     signalk::Client *FairWindSK::getSignalKClient() {
@@ -629,6 +782,9 @@ namespace fairwindsk {
     }
 
     FairWindSK::~FairWindSK() {
+        if (qApp) {
+            qApp->removeEventFilter(this);
+        }
 
         // Get the application hashes
         auto hashes = m_mapHash2AppItem.keys();
@@ -640,6 +796,17 @@ namespace fairwindsk {
             delete m_mapHash2AppItem[hash];
         }
 
+    }
+
+    bool FairWindSK::eventFilter(QObject *watched, QEvent *event) {
+        if (watched && (event->type() == QEvent::Show || event->type() == QEvent::Polish)) {
+            if (auto *widget = qobject_cast<QWidget *>(watched)) {
+                const auto metrics = uiMetricsForPreset(resolvedUiScalePreset(m_configuration));
+                applyIconMetrics(widget, metrics);
+            }
+        }
+
+        return QObject::eventFilter(watched, event);
     }
 
 }
