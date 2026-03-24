@@ -178,14 +178,64 @@
        </item>
        <item>
         <widget class="QSplitter" name="splitterDetails">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>1</verstretch>
+          </sizepolicy>
+         </property>
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
          <property name="childrenCollapsible">
           <bool>false</bool>
          </property>
-         <widget class="QWidget" name="widgetDetailsForm">
-          <layout class="QFormLayout" name="formLayoutDetails">
+         <widget class="QScrollArea" name="scrollAreaDetailsForm">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>1</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::NoFrame</enum>
+          </property>
+          <property name="widgetResizable">
+           <bool>true</bool>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+          </property>
+          <widget class="QWidget" name="widgetDetailsForm">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>467</width>
+             <height>602</height>
+            </rect>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayoutDetailsFormHost">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>6</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <layout class="QFormLayout" name="formLayoutDetails">
+              <property name="fieldGrowthPolicy">
+               <enum>QFormLayout::ExpandingFieldsGrow</enum>
+              </property>
+              <property name="verticalSpacing">
+               <number>10</number>
+              </property>
            <item row="0" column="0">
             <widget class="QLabel" name="labelNameRow">
              <property name="text">
@@ -464,9 +514,31 @@
              </layout>
             </widget>
            </item>
-          </layout>
+             </layout>
+            </item>
+            <item>
+             <spacer name="verticalSpacerDetailsFormBottom">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </widget>
          </widget>
          <widget class="QTabWidget" name="tabWidgetDetails">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>1</verstretch>
+           </sizepolicy>
+          </property>
           <property name="currentIndex">
            <number>0</number>
           </property>

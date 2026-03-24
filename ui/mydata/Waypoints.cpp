@@ -123,7 +123,6 @@ namespace {
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <link rel="stylesheet" href="qrc:/resources/vendor/openlayers/ol.css" />
   <style>
     html, body {
       margin: 0;
@@ -134,22 +133,22 @@ namespace {
       overflow: hidden;
       font-family: "Avenir Next", "Helvetica Neue", sans-serif;
     }
-    .shell {
+    body {
       display: flex;
       flex-direction: column;
-      width: 100%%;
-      height: 100vh;
       background: linear-gradient(180deg, #0b1724 0%%, #132739 100%%);
     }
-    .map-wrap {
+    #mapShell {
       flex: 1;
-      padding: 14px;
       min-height: 0;
+      padding: 14px;
+      box-sizing: border-box;
     }
-    .map-stage {
+    #mapStage {
       position: relative;
       width: 100%%;
       height: 100%%;
+      min-height: 280px;
       border-radius: 14px;
       border: 1px solid rgba(229, 237, 247, 0.12);
       overflow: hidden;
@@ -157,11 +156,11 @@ namespace {
       box-shadow: inset 0 0 40px rgba(7, 17, 27, 0.35);
     }
     #map {
-      width: 100%%;
-      height: 100%%;
+      position: absolute;
+      inset: 0;
       background: #0b1825;
     }
-    .badge {
+    #source {
       position: absolute;
       left: 12px;
       top: 12px;
@@ -172,25 +171,21 @@ namespace {
       color: #e5edf7;
       font: 12px "Avenir Next", "Helvetica Neue", sans-serif;
     }
-    .footer {
+    #info {
       padding: 12px 18px 18px;
       color: #aebfd3;
       font-size: 13px;
     }
-    .ol-viewport, .ol-layers, .ol-layer, .ol-layer canvas { border-radius: 12px; }
   </style>
 </head>
 <body>
-  <div class="shell">
-    <div class="map-wrap">
-      <div class="map-stage">
-        <div class="badge" id="source">OpenLayers, OpenStreetMap + OpenSeaMap</div>
-        <div id="map"></div>
-      </div>
+  <div id="mapShell">
+    <div id="mapStage">
+      <div id="source">OpenLayers, OpenStreetMap + OpenSeaMap</div>
+      <div id="map"></div>
     </div>
-    <div class="footer" id="info">Preparing waypoint preview map.</div>
   </div>
-  <script src="qrc:/resources/vendor/openlayers/ol.js"></script>
+  <div id="info">Preparing waypoint preview map.</div>
   <script>
     const data = JSON.parse(atob('%1'));
     function asCollection(input) {
@@ -212,82 +207,89 @@ namespace {
       if (info) info.textContent = message;
     }
     function renderMap() {
-      if (!window.ol) {
-        setInfo('Waiting for the OpenLayers runtime to load.');
-        window.setTimeout(renderMap, 200);
-        return;
-      }
-      const existingMap = window.__fairwindWaypointMap;
-      if (existingMap) {
-        existingMap.updateSize();
-        return;
-      }
-      const mapNode = document.getElementById('map');
-      if (!mapNode) {
-        setInfo('The preview map container is unavailable.');
-        return;
-      }
-      const featureCollection = asCollection(data);
-      const format = new ol.format.GeoJSON();
-      const features = format.readFeatures(featureCollection, {
-        dataProjection: 'EPSG:4326',
-        featureProjection: 'EPSG:3857'
-      });
-      const vectorSource = new ol.source.Vector({ features });
-      const desiredExtent = ol.proj.transformExtent(radiusExtent(%2, %3, 10.0), 'EPSG:4326', 'EPSG:3857');
-      const map = new ol.Map({
-        target: mapNode,
-        controls: [],
-        interactions: ol.interaction.defaults({ altShiftDragRotate: false, pinchRotate: false }),
-        layers: [
-          new ol.layer.Tile({ source: new ol.source.OSM() }),
-          new ol.layer.Tile({
-            source: new ol.source.XYZ({ url: 'https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png' }),
-            opacity: 0.72
-          }),
-          new ol.layer.Vector({
-            source: vectorSource,
-            style: new ol.style.Style({
-              image: new ol.style.Circle({
-                radius: 8,
-                fill: new ol.style.Fill({ color: '#f59e0b' }),
-                stroke: new ol.style.Stroke({ color: '#111827', width: 2 })
-              }),
-              stroke: new ol.style.Stroke({ color: '#0ea5e9', width: 3 }),
-              fill: new ol.style.Fill({ color: 'rgba(14, 165, 233, 0.18)' })
-            })
-          })
-        ],
-        view: new ol.View({
-          center: ol.proj.fromLonLat([%2, %3]),
-          zoom: 11
-        })
-      });
-
-      map.getView().fit(desiredExtent, { padding: [28, 28, 28, 28], duration: 0, maxZoom: 12 });
-      if (features.length) {
-        const featureExtent = vectorSource.getExtent();
-        if (featureExtent && Number.isFinite(featureExtent[0]) && Number.isFinite(featureExtent[2])) {
-          const combinedExtent = ol.extent.extend(desiredExtent.slice(), featureExtent);
-          map.getView().fit(combinedExtent, { padding: [48, 48, 48, 48], duration: 0, maxZoom: 12 });
+      try {
+        if (!window.ol) {
+          setInfo('Waiting for the bundled OpenLayers runtime.');
+          return;
         }
+        const mapNode = document.getElementById('map');
+        if (!mapNode) {
+          setInfo('The preview map container is unavailable.');
+          return;
+        }
+        if (window.__fairwindWaypointMap) {
+          window.__fairwindWaypointMap.updateSize();
+          return;
+        }
+        const featureCollection = asCollection(data);
+        const format = new ol.format.GeoJSON();
+        const features = format.readFeatures(featureCollection, {
+          dataProjection: 'EPSG:4326',
+          featureProjection: 'EPSG:3857'
+        });
+        const vectorSource = new ol.source.Vector({ features });
+        const desiredExtent = ol.proj.transformExtent(radiusExtent(%2, %3, 10.0), 'EPSG:4326', 'EPSG:3857');
+        const map = new ol.Map({
+          target: mapNode,
+          controls: [],
+          interactions: ol.interaction.defaults({ altShiftDragRotate: false, pinchRotate: false }),
+          layers: [
+            new ol.layer.Tile({ source: new ol.source.OSM() }),
+            new ol.layer.Tile({
+              source: new ol.source.XYZ({ url: 'https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png' }),
+              opacity: 0.72
+            }),
+            new ol.layer.Vector({
+              source: vectorSource,
+              style: new ol.style.Style({
+                image: new ol.style.Circle({
+                  radius: 8,
+                  fill: new ol.style.Fill({ color: '#f59e0b' }),
+                  stroke: new ol.style.Stroke({ color: '#111827', width: 2 })
+                }),
+                stroke: new ol.style.Stroke({ color: '#0ea5e9', width: 3 }),
+                fill: new ol.style.Fill({ color: 'rgba(14, 165, 233, 0.18)' })
+              })
+            })
+          ],
+          view: new ol.View({
+            center: ol.proj.fromLonLat([%2, %3]),
+            zoom: 11
+          })
+        });
+        map.getView().fit(desiredExtent, { padding: [28, 28, 28, 28], duration: 0, maxZoom: 12 });
+        if (features.length) {
+          const featureExtent = vectorSource.getExtent();
+          if (featureExtent && Number.isFinite(featureExtent[0]) && Number.isFinite(featureExtent[2])) {
+            const combinedExtent = ol.extent.extend(desiredExtent.slice(), featureExtent);
+            map.getView().fit(combinedExtent, { padding: [48, 48, 48, 48], duration: 0, maxZoom: 12 });
+          }
+        }
+        window.__fairwindWaypointMap = map;
+        setInfo('Waypoint rendered on an OpenLayers preview with OpenStreetMap and OpenSeaMap tiles.');
+        window.setTimeout(() => map.updateSize(), 0);
+        window.setTimeout(() => map.updateSize(), 250);
+        window.setTimeout(() => map.updateSize(), 1000);
+      } catch (error) {
+        setInfo('Unable to render the waypoint preview map: ' + error);
       }
-      window.__fairwindWaypointMap = map;
-      setInfo(features.length
-        ? 'Waypoint rendered on an OpenLayers preview with OpenStreetMap and OpenSeaMap tiles.'
-        : 'Showing a 10 nautical mile map extent around the waypoint coordinates.');
-      window.setTimeout(() => map.updateSize(), 0);
-      window.setTimeout(() => map.updateSize(), 250);
-      window.setTimeout(() => map.updateSize(), 1000);
     }
-    window.addEventListener('load', renderMap);
+    function loadOpenLayers() {
+      setInfo('Loading the bundled OpenLayers runtime.');
+      const script = document.createElement('script');
+      script.src = 'qrc:///resources/vendor/openlayers/ol.js';
+      script.onload = renderMap;
+      script.onerror = function() {
+        setInfo('Unable to load the bundled OpenLayers runtime.');
+      };
+      document.head.appendChild(script);
+    }
+    window.addEventListener('load', loadOpenLayers);
     window.addEventListener('resize', () => {
       if (window.__fairwindWaypointMap) {
         window.__fairwindWaypointMap.updateSize();
       }
     });
-    window.setTimeout(renderMap, 0);
-    window.setTimeout(renderMap, 400);
   </script>
 </body>
 </html>)")
@@ -425,8 +427,9 @@ namespace fairwindsk::ui::mydata {
         connect(m_deleteButton, &QToolButton::clicked, this, &Waypoints::onDeleteClicked);
 
         m_titleLabel->setStyleSheet("font-size: 20px; font-weight: bold;");
+        ui->verticalLayoutDetails->setStretch(2, 1);
         ui->splitterDetails->setStretchFactor(0, 3);
-        ui->splitterDetails->setStretchFactor(1, 2);
+        ui->splitterDetails->setStretchFactor(1, 3);
 
         m_latitudeSpinBox->setRange(-90.0, 90.0);
         m_latitudeSpinBox->setDecimals(8);
@@ -456,11 +459,30 @@ namespace fairwindsk::ui::mydata {
         m_mapPreviewView->settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
         m_mapPreviewView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         m_mapPreviewView->setMinimumWidth(360);
+        m_mapPreviewView->setMinimumHeight(320);
         m_propertiesEditor->setTabBarVisible(false);
         m_geoJsonDetailsEdit->setReadOnly(true);
         m_geoJsonDetailsEdit->setLineWrapMode(QPlainTextEdit::NoWrap);
         m_geoJsonDetailsEdit->setStyleSheet(kPlainTextStyle);
-        connect(m_detailTabs, &QTabWidget::currentChanged, this, [this](const int){ syncDetailTabs(); });
+        connect(m_mapPreviewView, &QWebEngineView::loadFinished, this, [this](const bool) {
+            if (m_detailTabs->currentIndex() == 0) {
+                m_mapPreviewView->page()->runJavaScript(QStringLiteral(
+                    "if (window.__fairwindWaypointMap) {"
+                    "  window.__fairwindWaypointMap.updateSize();"
+                    "}"
+                ));
+            }
+        });
+        connect(m_detailTabs, &QTabWidget::currentChanged, this, [this](const int currentIndex) {
+            syncDetailTabs();
+            if (currentIndex == 0) {
+                m_mapPreviewView->page()->runJavaScript(QStringLiteral(
+                    "if (window.__fairwindWaypointMap) {"
+                    "  window.__fairwindWaypointMap.updateSize();"
+                    "}"
+                ));
+            }
+        });
         m_seaFloorTypeLayout->setContentsMargins(0, 0, 0, 0);
         m_seaFloorTypeLayout->setSpacing(4);
 
