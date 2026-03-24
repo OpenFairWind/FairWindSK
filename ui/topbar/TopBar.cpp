@@ -14,6 +14,18 @@
 #include <signalk/Waypoint.hpp>
 
 namespace fairwindsk::ui::topbar {
+    namespace {
+        const QString kChromeToolButtonStyle = QStringLiteral(
+            "QToolButton {"
+            " background: transparent;"
+            " color: #f9fafb;"
+            " border: none;"
+            " padding: 6px;"
+            " }"
+            "QToolButton:hover { background: rgba(255, 255, 255, 0.08); border-radius: 8px; }"
+            "QToolButton:pressed { background: rgba(255, 255, 255, 0.14); border-radius: 8px; }");
+    }
+
     void TopBar::refreshMetricLabelWidths() const {
         const double factor = 1.15;
         ui->label_POS->setFixedWidth(ui->label_POS->sizeHint().width() * factor);
@@ -51,9 +63,13 @@ namespace fairwindsk::ui::topbar {
 
         ui->toolButton_UL->setIcon(QPixmap::fromImage(QImage(":/resources/images/mainwindow/fairwind_icon.png")));
         ui->toolButton_UL->setIconSize(QSize(32, 32));
+        ui->toolButton_UL->setAutoRaise(true);
+        ui->toolButton_UL->setStyleSheet(kChromeToolButtonStyle);
 
         ui->toolButton_UR->setIcon(QPixmap::fromImage(QImage(":/resources/images/icons/apps_icon.png")));
         ui->toolButton_UR->setIconSize(QSize(32, 32));
+        ui->toolButton_UR->setAutoRaise(true);
+        ui->toolButton_UR->setStyleSheet(kChromeToolButtonStyle);
         
         ui->label_unitCOG->setText(m_units->getLabel("deg"));
         ui->label_unitBTW->setText(m_units->getLabel("deg"));

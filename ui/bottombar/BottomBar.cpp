@@ -13,6 +13,17 @@
 #include <QtWidgets/QLabel>
 
 namespace fairwindsk::ui::bottombar {
+    namespace {
+        const QString kChromeToolButtonStyle = QStringLiteral(
+            "QToolButton {"
+            " background: transparent;"
+            " color: #f9fafb;"
+            " border: none;"
+            " padding: 6px;"
+            " }"
+            "QToolButton:hover { background: rgba(255, 255, 255, 0.08); border-radius: 8px; }"
+            "QToolButton:pressed { background: rgba(255, 255, 255, 0.14); border-radius: 8px; }");
+    }
 /*
  * BottomBar
  * Public constructor - This presents some navigation buttons at the bottom of the screen
@@ -25,6 +36,20 @@ namespace fairwindsk::ui::bottombar {
 
         // Set the UI
         ui->setupUi(this);
+        ui->toolButton_MyData->setStyleSheet(kChromeToolButtonStyle);
+        ui->toolButton_MyData->setAutoRaise(true);
+        ui->toolButton_POB->setStyleSheet(kChromeToolButtonStyle);
+        ui->toolButton_POB->setAutoRaise(true);
+        ui->toolButton_Autopilot->setStyleSheet(kChromeToolButtonStyle);
+        ui->toolButton_Autopilot->setAutoRaise(true);
+        ui->toolButton_Apps->setStyleSheet(kChromeToolButtonStyle);
+        ui->toolButton_Apps->setAutoRaise(true);
+        ui->toolButton_Anchor->setStyleSheet(kChromeToolButtonStyle);
+        ui->toolButton_Anchor->setAutoRaise(true);
+        ui->toolButton_Alarms->setStyleSheet(kChromeToolButtonStyle);
+        ui->toolButton_Alarms->setAutoRaise(true);
+        ui->toolButton_Settings->setStyleSheet(kChromeToolButtonStyle);
+        ui->toolButton_Settings->setAutoRaise(true);
 
         // Create the POB bar
         m_POBBar = new POBBar(this);
@@ -217,14 +242,15 @@ namespace fairwindsk::ui::bottombar {
                 // Set the tool tip
                 button->setToolTip(appItem->getDisplayName());
                 button->setAutoRaise(true);
+                button->setStyleSheet(kChromeToolButtonStyle);
 
                 // Get the application icon
                 QPixmap pixmap = appItem->getIcon();
 
                 // Check if the icon is available
                 if (!pixmap.isNull()) {
-                    // Scale the icon
-                    pixmap = pixmap.scaled(m_iconSize, m_iconSize);
+                    // Scale the icon keeping the original aspect ratio.
+                    pixmap = pixmap.scaled(m_iconSize, m_iconSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
                     // Set the app's icon as the button's icon
                     button->setIcon(pixmap);

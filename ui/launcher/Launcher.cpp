@@ -9,12 +9,25 @@
 #include <QScrollBar>
 #include <QGridLayout>
 #include <QNetworkReply>
+#include <QFontMetrics>
 #include <QtCore/qjsonarray.h>
 #include "Launcher.hpp"
 
 #include "AppItem.hpp"
 
 namespace fairwindsk::ui::launcher {
+    namespace {
+        const QString kLauncherButtonStyle = QStringLiteral(
+            "QToolButton {"
+            " background: transparent;"
+            " color: #f9fafb;"
+            " border: none;"
+            " padding: 8px;"
+            " }"
+            "QToolButton:hover { background: rgba(255, 255, 255, 0.08); border-radius: 8px; }"
+            "QToolButton:pressed { background: rgba(255, 255, 255, 0.14); border-radius: 8px; }");
+    }
+
     Launcher::Launcher(QWidget *parent) : QWidget(parent), ui(new Ui::Launcher) {
 
         ui->setupUi(this);
@@ -29,6 +42,8 @@ namespace fairwindsk::ui::launcher {
             m_layout->setContentsMargins(0,0,0,0);
             m_layout->setHorizontalSpacing(16);
             m_layout->setVerticalSpacing(16);
+            ui->toolButton_Left->setStyleSheet(kLauncherButtonStyle);
+            ui->toolButton_Right->setStyleSheet(kLauncherButtonStyle);
 
 
             // Set the UI scroll area with the newly created layout
@@ -101,8 +116,9 @@ namespace fairwindsk::ui::launcher {
 
                 // Set the button's style to have an icon and some text beneath it
                 button->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-                button->setAutoRaise(false);
+                button->setAutoRaise(true);
                 button->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+                button->setStyleSheet(kLauncherButtonStyle);
 
                 // Launch the app when the button is clicked
                 connect(button, &QToolButton::released, this, &Launcher::toolButton_App_released);
@@ -184,7 +200,6 @@ namespace fairwindsk::ui::launcher {
         const int availableWidth = qMax(320, viewportSize.width() - layout->contentsMargins().left() - layout->contentsMargins().right());
         const int rowHeight = qMax(140, (availableHeight - ((m_rows - 1) * layout->verticalSpacing())) / qMax(1, m_rows));
         const int columnWidth = qMax(180, (availableWidth - ((m_cols - 1) * layout->horizontalSpacing())) / qMax(1, m_cols));
-        const int iconSize = qMax(96, qMin(rowHeight - 54, columnWidth - 28));
 
         // Iterate on the columns
         for (int col = 0; col < m_cols; col++) {
@@ -198,7 +213,11 @@ namespace fairwindsk::ui::launcher {
             layout->setRowMinimumHeight(row, rowHeight);
         }
 
-        for(auto button:m_buttons) {
+        for (auto button : m_buttons) {
+            const QFontMetrics metrics(button->font());
+            const int textHeight = metrics.lineSpacing() * 2;
+            const int iconSize = qMax(72, qMin(columnWidth - 32, rowHeight - textHeight - 28));
+
             // Give the button's icon a fixed square
             button->setIconSize(QSize(iconSize, iconSize));
             button->setMinimumSize(columnWidth, rowHeight);
