@@ -111,7 +111,44 @@ namespace fairwindsk {
                        "QWidget { font-size: %1pt; }"
                        "QToolButton, QPushButton, QComboBox, QLineEdit, QTextEdit, QPlainTextEdit, "
                        "QSpinBox, QDoubleSpinBox, QDateTimeEdit { min-height: %2px; }"
-                       "QTabBar::tab { min-height: %3px; padding: %4px %5px; }"
+                       "QToolButton, QPushButton {"
+                       " background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #6b7280, stop:1 #4b5563);"
+                       " color: #f9fafb;"
+                       " border: 1px solid #9ca3af;"
+                       " border-radius: 6px;"
+                       " padding: %4px %5px;"
+                       " }"
+                       "QToolButton:hover, QPushButton:hover {"
+                       " background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #7c8593, stop:1 #5b6472);"
+                       " }"
+                       "QToolButton:pressed, QPushButton:pressed,"
+                       "QToolButton:checked, QPushButton:checked {"
+                       " background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #374151, stop:1 #1f2937);"
+                       " padding-top: %7px;"
+                       " padding-bottom: %8px;"
+                       " }"
+                       "QTabWidget::pane { border: 1px solid #4b5563; top: -1px; }"
+                       "QTabBar::tab {"
+                       " min-height: %3px;"
+                       " padding: %4px %5px;"
+                       " color: #f9fafb;"
+                       " background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #6b7280, stop:1 #4b5563);"
+                       " border: 1px solid #9ca3af;"
+                       " border-bottom-color: #4b5563;"
+                       " border-top-left-radius: 6px;"
+                       " border-top-right-radius: 6px;"
+                       " margin-right: 2px;"
+                       " }"
+                       "QTabBar::tab:selected {"
+                       " background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #3b82f6, stop:1 #1d4ed8);"
+                       " color: #eff6ff;"
+                       " border-color: #60a5fa;"
+                       " padding-top: %7px;"
+                       " padding-bottom: %8px;"
+                       " }"
+                       "QTabBar::tab:hover:!selected {"
+                       " background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #7c8593, stop:1 #5b6472);"
+                       " }"
                        "QHeaderView::section { font-size: %1pt; padding: %4px %5px; }"
                        "QMenu::item { padding: %4px %6px; }")
                 .arg(metrics.fontPointSize)
@@ -119,7 +156,9 @@ namespace fairwindsk {
                 .arg(metrics.tabHeight)
                 .arg(metrics.verticalPadding)
                 .arg(metrics.horizontalPadding)
-                .arg(metrics.horizontalPadding * 2);
+                .arg(metrics.horizontalPadding * 2)
+                .arg(std::max(1, metrics.verticalPadding - 1))
+                .arg(metrics.verticalPadding + 1);
         }
 
         void applyIconMetrics(QWidget *widget, const UiMetrics &metrics) {
