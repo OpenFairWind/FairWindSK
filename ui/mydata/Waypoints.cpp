@@ -43,6 +43,12 @@
 
 namespace {
     constexpr int kWaypointTableBatchSize = 40;
+    constexpr int kWaypointNameColumn = 0;
+    constexpr int kWaypointDescriptionColumn = 1;
+    constexpr int kWaypointTypeColumn = 2;
+    constexpr int kWaypointLatitudeColumn = 3;
+    constexpr int kWaypointLongitudeColumn = 4;
+    constexpr int kWaypointTimestampColumn = 5;
 
     const QString kLineEditStyle = QStringLiteral(
         "QLineEdit { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
@@ -409,17 +415,15 @@ namespace fairwindsk::ui::mydata {
     void Waypoints::configureTableColumns() {
         auto *waypointHeader = m_tableWidget->horizontalHeader();
         waypointHeader->setSectionResizeMode(QHeaderView::Interactive);
-        waypointHeader->setSectionResizeMode(WaypointsModel::Columns::Name, QHeaderView::Stretch);
+        waypointHeader->setSectionResizeMode(kWaypointNameColumn, QHeaderView::Stretch);
         waypointHeader->setSectionResizeMode(m_model->columnCount(), QHeaderView::Fixed);
         waypointHeader->setStretchLastSection(false);
 
-        m_tableWidget->setColumnWidth(WaypointsModel::Columns::Type, 72);
-        m_tableWidget->setColumnWidth(WaypointsModel::Columns::Description, 220);
-        m_tableWidget->setColumnWidth(WaypointsModel::Columns::Latitude, 150);
-        m_tableWidget->setColumnWidth(WaypointsModel::Columns::Longitude, 150);
-        m_tableWidget->setColumnWidth(WaypointsModel::Columns::Timestamp, 190);
-        m_tableWidget->setColumnWidth(WaypointsModel::Columns::Distance, 120);
-        m_tableWidget->setColumnWidth(WaypointsModel::Columns::Bearing, 100);
+        m_tableWidget->setColumnWidth(kWaypointDescriptionColumn, 220);
+        m_tableWidget->setColumnWidth(kWaypointTypeColumn, 110);
+        m_tableWidget->setColumnWidth(kWaypointLatitudeColumn, 150);
+        m_tableWidget->setColumnWidth(kWaypointLongitudeColumn, 150);
+        m_tableWidget->setColumnWidth(kWaypointTimestampColumn, 190);
         m_tableWidget->setColumnWidth(m_model->columnCount(), 196);
     }
 
