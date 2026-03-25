@@ -102,7 +102,6 @@ namespace fairwindsk::ui::launcher {
                 auto *button = new QToolButton(ui->scrollAreaWidgetContents);
 
                 button->setProperty("app_hash", name);
-                button->setProperty("launcher_column", col);
                 button->setProperty("base_point_size", button->font().pointSizeF());
 
                 // Set the app's name as the button's text
@@ -209,8 +208,8 @@ namespace fairwindsk::ui::launcher {
         const int availableWidth = qMax(320, viewportSize.width() - layout->contentsMargins().left() - layout->contentsMargins().right());
         const int rowHeight = qMax(140, (availableHeight - ((m_rows - 1) * layout->verticalSpacing())) / qMax(1, m_rows));
         const int columnWidth = qMax(180, (availableWidth - ((m_cols - 1) * layout->horizontalSpacing())) / qMax(1, m_cols));
-        const int maxColumnWidth = qMax(columnWidth, static_cast<int>(std::round(columnWidth * 1.10)));
-        const int maxRowHeight = qMax(rowHeight, static_cast<int>(std::round(rowHeight * 1.08)));
+        const int maxColumnWidth = qMax(columnWidth, static_cast<int>(std::round(columnWidth * 1.35)));
+        const int maxRowHeight = qMax(rowHeight, static_cast<int>(std::round(rowHeight * 1.22)));
         const int baseIconSize = qMax(72, qMin(columnWidth - 32, rowHeight - 64));
 
         m_baseColumnWidth = columnWidth;
@@ -265,26 +264,23 @@ namespace fairwindsk::ui::launcher {
             return;
         }
 
-        const int viewportWidth = ui->scrollArea->viewport()->width();
+        auto *viewport = ui->scrollArea->viewport();
+        const int viewportWidth = viewport->width();
         if (viewportWidth <= 0) {
             return;
         }
 
-        const int scrollValue = ui->scrollArea->horizontalScrollBar()->value();
-        const int viewportCenterX = scrollValue + (viewportWidth / 2);
-        const int columnStride = m_layout->horizontalSpacing() + m_layout->columnMinimumWidth(0);
-        const int leftMargin = m_layout->contentsMargins().left();
-        const qreal influenceRadius = std::max<qreal>(160.0, viewportWidth * 0.7);
+        const qreal viewportCenterX = viewportWidth / 2.0;
+        const qreal influenceRadius = std::max<qreal>(120.0, viewportWidth * 0.36);
 
         for (auto button : m_buttons) {
-            const int column = button->property("launcher_column").toInt();
-            const int columnCenter = leftMargin + (column * columnStride) + (m_layout->columnMinimumWidth(column) / 2);
-            const qreal distance = std::abs(columnCenter - viewportCenterX);
+            const QPoint buttonCenter = button->mapTo(viewport, QPoint(button->width() / 2, button->height() / 2));
+            const qreal distance = std::abs(buttonCenter.x() - viewportCenterX);
             const qreal normalized = std::min<qreal>(1.0, distance / influenceRadius);
-            const qreal eased = 1.0 - (normalized * normalized);
-            const qreal iconScale = 0.72 + (0.42 * eased);
-            const qreal cardScale = 0.86 + (0.18 * eased);
-            const qreal textScale = 0.94 + (0.10 * eased);
+            const qreal eased = 1.0 - std::pow(normalized, 1.7);
+            const qreal iconScale = 0.56 + (0.84 * eased);
+            const qreal cardScale = 0.74 + (0.40 * eased);
+            const qreal textScale = 0.90 + (0.18 * eased);
 
             button->setIconSize(QSize(
                 qRound(m_baseIconSize * iconScale),
@@ -292,6 +288,7 @@ namespace fairwindsk::ui::launcher {
             button->setFixedSize(
                 qRound(m_baseColumnWidth * cardScale),
                 qRound(m_baseRowHeight * cardScale));
+            button->raise();
 
             QFont font = button->font();
             const qreal basePointSize = button->property("base_point_size").toReal();
