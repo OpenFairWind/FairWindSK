@@ -65,6 +65,9 @@ namespace fairwindsk::ui::mydata {
     private:
         QString currentWaypointIdFromSelection() const;
         void rebuildTable();
+        void appendTableBatch();
+        void appendTableRow(int sourceRow);
+        void configureTableColumns();
         void applySearchFilter();
         void styleTable();
         void setBusy(bool busy, const QString &label = QString(), int maximum = 0);
@@ -140,10 +143,13 @@ namespace fairwindsk::ui::mydata {
         QLabel *m_slipsValueLabel = nullptr;
         JsonObjectEditorWidget *m_propertiesEditor = nullptr;
         QTimer *m_searchTimer = nullptr;
+        QTimer *m_rebuildTimer = nullptr;
         fairwindsk::ui::web::SignalKAppView *m_previewAppView = nullptr;
         QString m_currentWaypointId;
         QStringList m_visibleWaypointIds;
         QStringList m_searchHaystacks;
+        int m_pendingBuildRow = 0;
+        int m_totalBuildRows = 0;
         double m_previewLongitude = 0.0;
         double m_previewLatitude = 0.0;
         bool m_isEditing = false;

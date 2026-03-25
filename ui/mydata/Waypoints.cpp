@@ -42,6 +42,8 @@
 #include "ui_Waypoints.h"
 
 namespace {
+    constexpr int kWaypointTableBatchSize = 40;
+
     const QString kLineEditStyle = QStringLiteral(
         "QLineEdit { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
     const QString kPlainTextStyle = QStringLiteral(
@@ -290,11 +292,7 @@ namespace fairwindsk::ui::mydata {
         m_tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
         m_tableWidget->setColumnCount(m_model->columnCount() + 1);
         styleTable();
-        auto *waypointHeader = m_tableWidget->horizontalHeader();
-        waypointHeader->setSectionResizeMode(QHeaderView::ResizeToContents);
-        waypointHeader->setSectionResizeMode(1, QHeaderView::Stretch);
-        waypointHeader->setSectionResizeMode(m_model->columnCount(), QHeaderView::Fixed);
-        waypointHeader->setStretchLastSection(false);
+        configureTableColumns();
         m_tableWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         connect(m_tableWidget, &QTableWidget::cellDoubleClicked, this, &Waypoints::onTableDoubleClicked);
         connect(m_tableWidget, &QTableWidget::cellActivated, this, &Waypoints::onTableDoubleClicked);
@@ -386,6 +384,9 @@ namespace fairwindsk::ui::mydata {
         m_searchTimer->setSingleShot(true);
         m_searchTimer->setInterval(180);
         connect(m_searchTimer, &QTimer::timeout, this, &Waypoints::onSearchTimeout);
+        m_rebuildTimer = new QTimer(this);
+        m_rebuildTimer->setSingleShot(true);
+        connect(m_rebuildTimer, &QTimer::timeout, this, &Waypoints::appendTableBatch);
         rebuildTable();
         QTimer::singleShot(0, this, &Waypoints::applyDetailSplitterRatio);
     }
@@ -405,6 +406,23 @@ namespace fairwindsk::ui::mydata {
         m_tableWidget->verticalHeader()->setDefaultSectionSize(62);
     }
 
+    void Waypoints::configureTableColumns() {
+        auto *waypointHeader = m_tableWidget->horizontalHeader();
+        waypointHeader->setSectionResizeMode(QHeaderView::Interactive);
+        waypointHeader->setSectionResizeMode(WaypointsModel::Columns::Name, QHeaderView::Stretch);
+        waypointHeader->setSectionResizeMode(m_model->columnCount(), QHeaderView::Fixed);
+        waypointHeader->setStretchLastSection(false);
+
+        m_tableWidget->setColumnWidth(WaypointsModel::Columns::Type, 72);
+        m_tableWidget->setColumnWidth(WaypointsModel::Columns::Description, 220);
+        m_tableWidget->setColumnWidth(WaypointsModel::Columns::Latitude, 150);
+        m_tableWidget->setColumnWidth(WaypointsModel::Columns::Longitude, 150);
+        m_tableWidget->setColumnWidth(WaypointsModel::Columns::Timestamp, 190);
+        m_tableWidget->setColumnWidth(WaypointsModel::Columns::Distance, 120);
+        m_tableWidget->setColumnWidth(WaypointsModel::Columns::Bearing, 100);
+        m_tableWidget->setColumnWidth(m_model->columnCount(), 196);
+    }
+
     QString Waypoints::currentWaypointIdFromSelection() const {
         const auto selectedItems = m_tableWidget->selectedItems();
         if (selectedItems.isEmpty()) {
@@ -419,6 +437,10 @@ namespace fairwindsk::ui::mydata {
     }
 
     void Waypoints::rebuildTable() {
+        if (m_rebuildTimer) {
+            m_rebuildTimer->stop();
+        }
+
         const int actionsColumn = m_model->columnCount();
         QStringList headers;
         for (int column = 0; column < m_model->columnCount(); ++column) {
@@ -430,84 +452,118 @@ namespace fairwindsk::ui::mydata {
         m_tableWidget->setColumnCount(headers.size());
         m_tableWidget->setHorizontalHeaderLabels(headers);
         m_tableWidget->setRowCount(0);
+        configureTableColumns();
         m_visibleWaypointIds.clear();
         m_searchHaystacks.clear();
-
-        for (int row = 0; row < m_model->rowCount(); ++row) {
-            const auto resource = m_model->resourceAtRow(row);
-            const QString id = m_model->resourceIdAtRow(row);
-            QString haystack = displayNameForWaypoint(resource) + " " + descriptionForWaypoint(resource);
-            for (int column = 0; column < m_model->columnCount(); ++column) {
-                haystack += " " + m_model->data(m_model->index(row, column), Qt::DisplayRole).toString();
-            }
-
-            const int visibleRow = m_tableWidget->rowCount();
-            m_tableWidget->insertRow(visibleRow);
-            m_visibleWaypointIds.append(id);
-            m_searchHaystacks.append(haystack);
-
-            for (int column = 0; column < m_model->columnCount(); ++column) {
-                auto *item = new QTableWidgetItem(m_model->data(m_model->index(row, column), Qt::DisplayRole).toString());
-                item->setForeground(QBrush(QColor("#1f2937")));
-                item->setBackground(QBrush(QColor("#f7f7f4")));
-                item->setFlags(item->flags() & ~Qt::ItemIsEditable);
-                const auto alignment = m_model->data(m_model->index(row, column), Qt::TextAlignmentRole);
-                if (alignment.isValid()) {
-                    item->setTextAlignment(static_cast<Qt::Alignment>(alignment.toInt()));
-                }
-                m_tableWidget->setItem(visibleRow, column, item);
-            }
-
-            auto *actionsWidget = new QWidget();
-            actionsWidget->setStyleSheet(QStringLiteral("QWidget { background: transparent; }"));
-            auto *actionsLayout = new QHBoxLayout(actionsWidget);
-            actionsLayout->setContentsMargins(6, 4, 6, 4);
-            actionsLayout->setSpacing(4);
-            actionsLayout->setAlignment(Qt::AlignCenter);
-
-            auto *navigateButton = new QToolButton(actionsWidget);
-            navigateButton->setIcon(QIcon(":/resources/svg/mydata/waypoint-navigate-to.svg"));
-            navigateButton->setToolTip(tr("Navigate to waypoint"));
-            navigateButton->setProperty("waypointId", id);
-            navigateButton->setStyleSheet(kActionButtonStyle);
-            navigateButton->setIconSize(QSize(20, 20));
-            connect(navigateButton, &QToolButton::clicked, this, &Waypoints::onNavigateRowClicked);
-            actionsLayout->addWidget(navigateButton);
-
-            auto *detailsButton = new QToolButton(actionsWidget);
-            detailsButton->setIcon(QIcon(":/resources/svg/mydata/waypoint-details.svg"));
-            detailsButton->setToolTip(tr("Waypoint details"));
-            detailsButton->setProperty("waypointId", id);
-            detailsButton->setStyleSheet(kActionButtonStyle);
-            detailsButton->setIconSize(QSize(20, 20));
-            connect(detailsButton, &QToolButton::clicked, this, &Waypoints::onDetailsRowClicked);
-            actionsLayout->addWidget(detailsButton);
-
-            auto *editButton = new QToolButton(actionsWidget);
-            editButton->setIcon(QIcon(":/resources/svg/mydata/waypoint-edit.svg"));
-            editButton->setToolTip(tr("Edit waypoint"));
-            editButton->setProperty("waypointId", id);
-            editButton->setStyleSheet(kActionButtonStyle);
-            editButton->setIconSize(QSize(20, 20));
-            connect(editButton, &QToolButton::clicked, this, &Waypoints::onEditRowClicked);
-            actionsLayout->addWidget(editButton);
-
-            auto *removeButton = new QToolButton(actionsWidget);
-            removeButton->setIcon(QIcon(":/resources/svg/mydata/waypoint-remove.svg"));
-            removeButton->setToolTip(tr("Remove waypoint"));
-            removeButton->setProperty("waypointId", id);
-            removeButton->setStyleSheet(kActionButtonStyle);
-            removeButton->setIconSize(QSize(20, 20));
-            connect(removeButton, &QToolButton::clicked, this, &Waypoints::onRemoveRowClicked);
-            actionsLayout->addWidget(removeButton);
-
-            m_tableWidget->setCellWidget(visibleRow, actionsColumn, actionsWidget);
-            m_tableWidget->setRowHeight(visibleRow, 50);
+        m_pendingBuildRow = 0;
+        m_totalBuildRows = m_model->rowCount();
+        if (m_totalBuildRows == 0) {
+            setBusy(false);
+            updateBulkButtons();
+            return;
         }
 
-        m_tableWidget->setColumnWidth(actionsColumn, 196);
-        applySearchFilter();
+        setBusy(true, tr("Loading waypoints..."), m_totalBuildRows);
+        m_progressBar->setValue(0);
+        m_rebuildTimer->start(0);
+    }
+
+    void Waypoints::appendTableBatch() {
+        const int startRow = m_pendingBuildRow;
+        const int endRow = std::min(m_totalBuildRows, startRow + kWaypointTableBatchSize);
+        for (int row = startRow; row < endRow; ++row) {
+            appendTableRow(row);
+        }
+
+        m_pendingBuildRow = endRow;
+        m_progressBar->setValue(m_pendingBuildRow);
+
+        if (m_pendingBuildRow < m_totalBuildRows) {
+            m_rebuildTimer->start(0);
+            return;
+        }
+
+        setBusy(false);
         updateBulkButtons();
+    }
+
+    void Waypoints::appendTableRow(const int sourceRow) {
+        const int actionsColumn = m_model->columnCount();
+        const auto resource = m_model->resourceAtRow(sourceRow);
+        const QString id = m_model->resourceIdAtRow(sourceRow);
+        QString haystack = displayNameForWaypoint(resource) + " " + descriptionForWaypoint(resource);
+        const int visibleRow = m_tableWidget->rowCount();
+        m_tableWidget->insertRow(visibleRow);
+        m_visibleWaypointIds.append(id);
+
+        for (int column = 0; column < m_model->columnCount(); ++column) {
+            const QModelIndex modelIndex = m_model->index(sourceRow, column);
+            const QString displayText = m_model->data(modelIndex, Qt::DisplayRole).toString();
+            haystack += " " + displayText;
+
+            auto *item = new QTableWidgetItem(displayText);
+            item->setForeground(QBrush(QColor("#1f2937")));
+            item->setBackground(QBrush(QColor("#f7f7f4")));
+            item->setFlags(item->flags() & ~Qt::ItemIsEditable);
+            const auto alignment = m_model->data(modelIndex, Qt::TextAlignmentRole);
+            if (alignment.isValid()) {
+                item->setTextAlignment(static_cast<Qt::Alignment>(alignment.toInt()));
+            }
+            item->setData(Qt::DecorationRole, m_model->data(modelIndex, Qt::DecorationRole));
+            m_tableWidget->setItem(visibleRow, column, item);
+        }
+
+        m_searchHaystacks.append(haystack);
+
+        auto *actionsWidget = new QWidget();
+        actionsWidget->setStyleSheet(QStringLiteral("QWidget { background: transparent; }"));
+        auto *actionsLayout = new QHBoxLayout(actionsWidget);
+        actionsLayout->setContentsMargins(6, 4, 6, 4);
+        actionsLayout->setSpacing(4);
+        actionsLayout->setAlignment(Qt::AlignCenter);
+
+        auto *navigateButton = new QToolButton(actionsWidget);
+        navigateButton->setIcon(QIcon(":/resources/svg/mydata/waypoint-navigate-to.svg"));
+        navigateButton->setToolTip(tr("Navigate to waypoint"));
+        navigateButton->setProperty("waypointId", id);
+        navigateButton->setStyleSheet(kActionButtonStyle);
+        navigateButton->setIconSize(QSize(20, 20));
+        connect(navigateButton, &QToolButton::clicked, this, &Waypoints::onNavigateRowClicked);
+        actionsLayout->addWidget(navigateButton);
+
+        auto *detailsButton = new QToolButton(actionsWidget);
+        detailsButton->setIcon(QIcon(":/resources/svg/mydata/waypoint-details.svg"));
+        detailsButton->setToolTip(tr("Waypoint details"));
+        detailsButton->setProperty("waypointId", id);
+        detailsButton->setStyleSheet(kActionButtonStyle);
+        detailsButton->setIconSize(QSize(20, 20));
+        connect(detailsButton, &QToolButton::clicked, this, &Waypoints::onDetailsRowClicked);
+        actionsLayout->addWidget(detailsButton);
+
+        auto *editButton = new QToolButton(actionsWidget);
+        editButton->setIcon(QIcon(":/resources/svg/mydata/waypoint-edit.svg"));
+        editButton->setToolTip(tr("Edit waypoint"));
+        editButton->setProperty("waypointId", id);
+        editButton->setStyleSheet(kActionButtonStyle);
+        editButton->setIconSize(QSize(20, 20));
+        connect(editButton, &QToolButton::clicked, this, &Waypoints::onEditRowClicked);
+        actionsLayout->addWidget(editButton);
+
+        auto *removeButton = new QToolButton(actionsWidget);
+        removeButton->setIcon(QIcon(":/resources/svg/mydata/waypoint-remove.svg"));
+        removeButton->setToolTip(tr("Remove waypoint"));
+        removeButton->setProperty("waypointId", id);
+        removeButton->setStyleSheet(kActionButtonStyle);
+        removeButton->setIconSize(QSize(20, 20));
+        connect(removeButton, &QToolButton::clicked, this, &Waypoints::onRemoveRowClicked);
+        actionsLayout->addWidget(removeButton);
+
+        m_tableWidget->setCellWidget(visibleRow, actionsColumn, actionsWidget);
+        m_tableWidget->setRowHeight(visibleRow, 50);
+
+        const QString filter = m_searchEdit->text().trimmed();
+        const bool matches = filter.isEmpty() || haystack.contains(filter, Qt::CaseInsensitive);
+        m_tableWidget->setRowHidden(visibleRow, !matches);
     }
 
     void Waypoints::applySearchFilter() {
@@ -1146,6 +1202,7 @@ namespace fairwindsk::ui::mydata {
         }
         m_importButton->setEnabled(!busy);
         m_exportButton->setEnabled(!busy);
+        m_refreshButton->setEnabled(!busy);
         m_addButton->setEnabled(!busy);
         m_selectAllButton->setEnabled(!busy);
         m_bulkRemoveButton->setEnabled(!busy && !visibleWaypointIds().isEmpty());
