@@ -3,6 +3,8 @@
         "virtualKeyboard": false,
         "uiScaleMode": "auto",
         "uiScalePreset": "normal",
+        "launcherRows": 2,
+        "launcherColumns": 3,
         "autopilot": "",
         "windowMode": "windowed",
         "windowWidth": 1024,

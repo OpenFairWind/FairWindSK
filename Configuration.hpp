@@ -49,6 +49,10 @@ namespace fairwindsk {
         QString getUiScaleMode() const;
         void setUiScalePreset(const QString &value);
         QString getUiScalePreset() const;
+        void setLauncherRows(int value);
+        int getLauncherRows() const;
+        void setLauncherColumns(int value);
+        int getLauncherColumns() const;
 
         void setWindowMode(QString value);
         QString getWindowMode();

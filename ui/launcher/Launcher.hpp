@@ -39,7 +39,6 @@ namespace fairwindsk::ui::launcher {
     private:
         void resize();
         void updateScrollButtons() const;
-        void updateButtonScales();
 
     private:
         Ui::Launcher *ui = nullptr;
@@ -47,9 +46,6 @@ namespace fairwindsk::ui::launcher {
         int m_cols = 0;
         int m_rows = 0;
         int m_iconSize = 0;
-        int m_baseColumnWidth = 0;
-        int m_baseRowHeight = 0;
-        int m_baseIconSize = 0;
         QGridLayout *m_layout = nullptr;
         QMap<QString, QToolButton *> m_buttons;
     };

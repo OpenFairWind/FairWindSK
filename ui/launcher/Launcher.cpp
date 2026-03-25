@@ -5,15 +5,15 @@
 // You may need to build the project (run Qt uic code generator) to get "ui_MainPage.h" resolved
 
 #include <algorithm>
-#include <cmath>
-#include <QScreen>
-#include <QRect>
-#include <QScrollBar>
+#include <QFontMetrics>
 #include <QGridLayout>
 #include <QNetworkReply>
+#include <QRect>
+#include <QScreen>
+#include <QScrollBar>
 #include <QtCore/qjsonarray.h>
-#include "Launcher.hpp"
 
+#include "Launcher.hpp"
 #include "AppItem.hpp"
 
 namespace fairwindsk::ui::launcher {
@@ -30,123 +30,71 @@ namespace fairwindsk::ui::launcher {
     }
 
     Launcher::Launcher(QWidget *parent) : QWidget(parent), ui(new Ui::Launcher) {
-
         ui->setupUi(this);
 
-        m_cols = 4;
-        m_rows = 2;
+        const auto configuration = fairwindsk::FairWindSK::getInstance()->getConfiguration();
+        m_cols = std::max(1, configuration->getLauncherColumns());
+        m_rows = std::max(1, configuration->getLauncherRows());
         m_iconSize = 256;
 
-        // Create a new grid layout
         m_layout = new QGridLayout(ui->scrollAreaWidgetContents);
         if (m_layout) {
-            m_layout->setContentsMargins(0,0,0,0);
+            m_layout->setContentsMargins(0, 0, 0, 0);
             m_layout->setHorizontalSpacing(16);
             m_layout->setVerticalSpacing(16);
             ui->toolButton_Left->setStyleSheet(kLauncherButtonStyle);
             ui->toolButton_Right->setStyleSheet(kLauncherButtonStyle);
 
-
-            // Set the UI scroll area with the newly created layout
             ui->scrollAreaWidgetContents->setLayout(m_layout);
             ui->scrollArea->horizontalScrollBar()->setVisible(false);
 
-
-            // Right scroll
             connect(ui->toolButton_Right, &QToolButton::clicked, this, &Launcher::onScrollRight);
-
-            // Left scroll
             connect(ui->toolButton_Left, &QToolButton::clicked, this, &Launcher::onScrollLeft);
-            connect(ui->scrollArea->horizontalScrollBar(), &QScrollBar::valueChanged, this, [this]() {
-                updateButtonScales();
-                updateScrollButtons();
-            });
-            connect(ui->scrollArea->horizontalScrollBar(), &QScrollBar::rangeChanged, this, [this]() {
-                updateButtonScales();
-                updateScrollButtons();
-            });
+            connect(ui->scrollArea->horizontalScrollBar(), &QScrollBar::valueChanged, this, [this]() { updateScrollButtons(); });
+            connect(ui->scrollArea->horizontalScrollBar(), &QScrollBar::rangeChanged, this, [this]() { updateScrollButtons(); });
 
-            // Order by order value
-            QMap<int, QPair<AppItem *, QString>> map;
-            int row = 0, col = 0;
-
-            // Get the FairWind singleton
+            QMap<int, QPair<AppItem *, QString>> orderedApps;
             auto fairWindSK = fairwindsk::FairWindSK::getInstance();
-
-            //qDebug() << "appsHashes: " << fairWindSK->getAppsHashes();
-
-            // Populate the inverted list
             for (auto &hash : fairWindSK->getAppsHashes()) {
-                // Get the hash value
                 auto app = fairWindSK->getAppItemByHash(hash);
-                auto position = app->getOrder();
-
-                //qDebug() << "---------AppItem: "  << app->getName() << " IsActive: " << app->getActive() << " order: " << app->getOrder();
-
-                // Check if the app is active
                 if (app->getActive()) {
-                    map[position] = QPair<AppItem *, QString>(app, hash);
+                    orderedApps[app->getOrder()] = QPair<AppItem *, QString>(app, hash);
                 }
-
             }
 
-            m_cols = qMax(1, (map.size() + m_rows - 1) / m_rows);
-
-            // Iterate on the available apps' hash values
-            for (const auto& item: map) {
-                // Get the hash value
+            const int itemsPerPage = std::max(1, m_rows * m_cols);
+            int index = 0;
+            for (const auto &item : orderedApps) {
                 auto appItem = item.first;
                 auto name = item.second;
+                const int page = index / itemsPerPage;
+                const int indexInPage = index % itemsPerPage;
+                const int row = indexInPage / m_cols;
+                const int col = (page * m_cols) + (indexInPage % m_cols);
 
-                // Create a new button
                 auto *button = new QToolButton(ui->scrollAreaWidgetContents);
-
                 button->setProperty("app_hash", name);
                 button->setProperty("base_point_size", button->font().pointSizeF());
-
-                // Set the app's name as the button's text
                 button->setText(appItem->getDisplayName());
-
-                // Set the tool tip
                 button->setToolTip(appItem->getDescription());
 
-                // Get the application icon
-                QPixmap pixmap = appItem->getIcon();
-
-                // Check if the icon is available
+                const QPixmap pixmap = appItem->getIcon();
                 if (!pixmap.isNull()) {
-                    // Set the app's icon as the button's icon
                     button->setIcon(pixmap);
-
-                    // Give the button's icon a fixed square
                     button->setIconSize(QSize(m_iconSize, m_iconSize));
                 }
 
-                // Set the button's style to have an icon and some text beneath it
                 button->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
                 button->setAutoRaise(true);
                 button->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
                 button->setStyleSheet(kLauncherButtonStyle);
-
-                // Launch the app when the button is clicked
                 connect(button, &QToolButton::released, this, &Launcher::toolButton_App_released);
 
-                // Add the newly created button to the grid layout as a widget
                 m_layout->addWidget(button, row, col, Qt::AlignCenter);
-
-                // Store in buttons in a map
                 m_buttons[name] = button;
-
-                row++;
-                if (row == m_rows) {
-                    row = 0;
-                    col++;
-                }
-
-                // qDebug()<< name;
+                ++index;
             }
 
-            // Resize the icons
             resize();
             updateScrollButtons();
         }
@@ -157,43 +105,26 @@ namespace fairwindsk::ui::launcher {
         ui = nullptr;
     }
 
-    /*
- * toolButton_App_released
- * Method called when the user wants to launch an app
- */
     void Launcher::toolButton_App_released() {
-
-        // Get the sender button
         auto *buttonWidget = qobject_cast<QToolButton *>(sender());
-
-        // Check if the sender is valid
         if (!buttonWidget) {
-
-            // The sender is not a widget
             return;
         }
 
-        // Get the app's hash value from the button's object name
         const QString hash = buttonWidget->property("app_hash").toString();
-
         if (hash.isEmpty()) {
             return;
         }
 
-        // Check if the debug is active
         if (FairWindSK::getInstance()->isDebug()) {
-
-            // Write a message
             qDebug() << "Apps - hash:" << hash;
         }
 
-        // Emit the signal to tell the MainWindow to update the UI and show the app with that particular hash value
         emit foregroundAppChanged(hash);
     }
 
     void Launcher::resizeEvent(QResizeEvent *event) {
         QWidget::resizeEvent(event);
-
         resize();
     }
 
@@ -208,48 +139,46 @@ namespace fairwindsk::ui::launcher {
         const int availableWidth = qMax(320, viewportSize.width() - layout->contentsMargins().left() - layout->contentsMargins().right());
         const int rowHeight = qMax(140, (availableHeight - ((m_rows - 1) * layout->verticalSpacing())) / qMax(1, m_rows));
         const int columnWidth = qMax(180, (availableWidth - ((m_cols - 1) * layout->horizontalSpacing())) / qMax(1, m_cols));
-        const int maxColumnWidth = qMax(columnWidth, static_cast<int>(std::round(columnWidth * 1.35)));
-        const int maxRowHeight = qMax(rowHeight, static_cast<int>(std::round(rowHeight * 1.22)));
-        const int baseIconSize = qMax(72, qMin(columnWidth - 32, rowHeight - 64));
+        const int totalColumns = std::max(1, layout->columnCount());
 
-        m_baseColumnWidth = columnWidth;
-        m_baseRowHeight = rowHeight;
-        m_baseIconSize = baseIconSize;
-
-        // Iterate on the columns
-        for (int col = 0; col < m_cols; col++) {
-            // Set the column width for each column
-            layout->setColumnMinimumWidth(col, maxColumnWidth);
+        for (int col = 0; col < totalColumns; ++col) {
+            layout->setColumnMinimumWidth(col, columnWidth);
         }
 
-        // Iterate on the rows
-        for (int row = 0; row < m_rows; row++) {
-            // Set the row height for each row
-            layout->setRowMinimumHeight(row, maxRowHeight);
+        for (int row = 0; row < m_rows; ++row) {
+            layout->setRowMinimumHeight(row, rowHeight);
         }
 
         for (auto button : m_buttons) {
-            button->setMinimumSize(columnWidth, rowHeight);
+            QFont font = button->font();
+            const qreal basePointSize = button->property("base_point_size").toReal();
+            if (basePointSize > 0.0) {
+                font.setPointSizeF(basePointSize);
+                button->setFont(font);
+            }
+
+            const QFontMetrics metrics(button->font());
+            const QRect textRect(0, 0, qMax(80, columnWidth - 16), rowHeight);
+            const int textHeight = qMax(
+                metrics.lineSpacing(),
+                metrics.boundingRect(textRect, Qt::AlignHCenter | Qt::AlignTop | Qt::TextWordWrap, button->text()).height());
+            const int iconSize = qMax(72, qMin(columnWidth - 24, rowHeight - textHeight - 28));
+
+            button->setIconSize(QSize(iconSize, iconSize));
+            button->setFixedSize(columnWidth, rowHeight);
         }
 
-        updateButtonScales();
         updateScrollButtons();
     }
 
     void Launcher::onScrollLeft() {
-        if (!m_buttons.empty()) {
-            ui->scrollArea->horizontalScrollBar()->setValue(
-                    ui->scrollArea->horizontalScrollBar()->value() - m_buttons.first()->iconSize().width() * 2
-            );
-        }
+        ui->scrollArea->horizontalScrollBar()->setValue(
+                ui->scrollArea->horizontalScrollBar()->value() - ui->scrollArea->viewport()->width());
     }
 
     void Launcher::onScrollRight() {
-        if (!m_buttons.empty()) {
-            ui->scrollArea->horizontalScrollBar()->setValue(
-                    ui->scrollArea->horizontalScrollBar()->value() + m_buttons.first()->iconSize().width() * 2
-            );
-        }
+        ui->scrollArea->horizontalScrollBar()->setValue(
+                ui->scrollArea->horizontalScrollBar()->value() + ui->scrollArea->viewport()->width());
     }
 
     void Launcher::updateScrollButtons() const {
@@ -257,46 +186,6 @@ namespace fairwindsk::ui::launcher {
         const bool canScroll = scrollBar->maximum() > scrollBar->minimum();
         ui->toolButton_Left->setEnabled(canScroll && scrollBar->value() > scrollBar->minimum());
         ui->toolButton_Right->setEnabled(canScroll && scrollBar->value() < scrollBar->maximum());
-    }
-
-    void Launcher::updateButtonScales() {
-        if (!m_layout || m_buttons.isEmpty() || m_baseColumnWidth <= 0 || m_baseRowHeight <= 0 || m_baseIconSize <= 0) {
-            return;
-        }
-
-        auto *viewport = ui->scrollArea->viewport();
-        const int viewportWidth = viewport->width();
-        if (viewportWidth <= 0) {
-            return;
-        }
-
-        const qreal viewportCenterX = viewportWidth / 2.0;
-        const qreal influenceRadius = std::max<qreal>(120.0, viewportWidth * 0.36);
-
-        for (auto button : m_buttons) {
-            const QPoint buttonCenter = button->mapTo(viewport, QPoint(button->width() / 2, button->height() / 2));
-            const qreal distance = std::abs(buttonCenter.x() - viewportCenterX);
-            const qreal normalized = std::min<qreal>(1.0, distance / influenceRadius);
-            const qreal eased = 1.0 - std::pow(normalized, 1.7);
-            const qreal iconScale = 0.56 + (0.84 * eased);
-            const qreal cardScale = 0.74 + (0.40 * eased);
-            const qreal textScale = 0.90 + (0.18 * eased);
-
-            button->setIconSize(QSize(
-                qRound(m_baseIconSize * iconScale),
-                qRound(m_baseIconSize * iconScale)));
-            button->setFixedSize(
-                qRound(m_baseColumnWidth * cardScale),
-                qRound(m_baseRowHeight * cardScale));
-            button->raise();
-
-            QFont font = button->font();
-            const qreal basePointSize = button->property("base_point_size").toReal();
-            if (basePointSize > 0.0) {
-                font.setPointSizeF(basePointSize * textScale);
-                button->setFont(font);
-            }
-        }
     }
 
 } // fairwindsk::ui::launcher

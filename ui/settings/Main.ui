@@ -20,7 +20,7 @@ QGroupBox {
 QLabel {
     color: rgb(245, 245, 245);
 }
-QLineEdit, QComboBox, QAbstractItemView, QScrollArea {
+QLineEdit, QComboBox, QAbstractItemView, QScrollArea, QSpinBox {
     background-color: rgb(245, 245, 245);
     color: rgb(24, 24, 24);
     border: 1px solid rgb(120, 120, 120);
@@ -124,13 +124,59 @@ QLineEdit, QComboBox, QAbstractItemView, QScrollArea {
            </widget>
           </item>
           <item row="3" column="0">
+           <widget class="QLabel" name="label_launcherRows">
+            <property name="text">
+             <string>Launcher rows</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QSpinBox" name="spinBox_launcherRows">
+            <property name="minimum">
+             <number>1</number>
+            </property>
+            <property name="maximum">
+             <number>6</number>
+            </property>
+            <property name="value">
+             <number>2</number>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <widget class="QLabel" name="label_launcherColumns">
+            <property name="text">
+             <string>Launcher columns</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <widget class="QSpinBox" name="spinBox_launcherColumns">
+            <property name="minimum">
+             <number>1</number>
+            </property>
+            <property name="maximum">
+             <number>8</number>
+            </property>
+            <property name="value">
+             <number>3</number>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="0">
            <widget class="QLabel" name="label_windowLeft">
             <property name="text">
              <string>Window left</string>
             </property>
            </widget>
           </item>
-          <item row="3" column="1">
+          <item row="5" column="1">
            <widget class="QLineEdit" name="lineEdit_left">
             <property name="enabled">
              <bool>false</bool>
@@ -143,14 +189,14 @@ QLineEdit, QComboBox, QAbstractItemView, QScrollArea {
             </property>
            </widget>
           </item>
-          <item row="4" column="0">
+          <item row="6" column="0">
            <widget class="QLabel" name="label_windowTop">
             <property name="text">
              <string>Window top</string>
             </property>
            </widget>
           </item>
-          <item row="4" column="1">
+          <item row="6" column="1">
            <widget class="QLineEdit" name="lineEdit_top">
             <property name="enabled">
              <bool>false</bool>
@@ -163,14 +209,14 @@ QLineEdit, QComboBox, QAbstractItemView, QScrollArea {
             </property>
            </widget>
           </item>
-          <item row="5" column="0">
+          <item row="7" column="0">
            <widget class="QLabel" name="label_windowWidth">
             <property name="text">
              <string>Window width</string>
             </property>
            </widget>
           </item>
-          <item row="5" column="1">
+          <item row="7" column="1">
            <widget class="QLineEdit" name="lineEdit_width">
             <property name="enabled">
              <bool>false</bool>
@@ -183,14 +229,14 @@ QLineEdit, QComboBox, QAbstractItemView, QScrollArea {
             </property>
            </widget>
           </item>
-          <item row="6" column="0">
+          <item row="8" column="0">
            <widget class="QLabel" name="label_windowHeight">
             <property name="text">
              <string>Window height</string>
             </property>
            </widget>
           </item>
-          <item row="6" column="1">
+          <item row="8" column="1">
            <widget class="QLineEdit" name="lineEdit_height">
             <property name="enabled">
              <bool>false</bool>

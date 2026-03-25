@@ -6,6 +6,7 @@
 
 #include <QtWidgets/QComboBox>
 #include <QScreen>
+#include <QSpinBox>
 
 #include "Main.hpp"
 #include "ui_Main.h"
@@ -70,6 +71,8 @@ namespace fairwindsk::ui::settings {
         const bool automaticUiScale = m_settings->getConfiguration()->getUiScaleMode() == "auto";
         ui->checkBox_autoUiScale->setCheckState(automaticUiScale ? Qt::Checked : Qt::Unchecked);
         setUiScaleFieldsEnabled(automaticUiScale);
+        ui->spinBox_launcherRows->setValue(m_settings->getConfiguration()->getLauncherRows());
+        ui->spinBox_launcherColumns->setValue(m_settings->getConfiguration()->getLauncherColumns());
 
         if (m_settings->getConfiguration()->getVirtualKeyboard()) {
             ui->checkBox_virtualkeboard->setCheckState(Qt::Checked);
@@ -104,6 +107,8 @@ namespace fairwindsk::ui::settings {
         connect(ui->lineEdit_width,&QLineEdit::textChanged,this, &Main::onWindowWidthTextChanged);
         connect(ui->lineEdit_height,&QLineEdit::textChanged,this, &Main::onWindowHeightTextChanged);
         connect(ui->comboBox_uiScalePreset, &QComboBox::currentIndexChanged, this, &Main::onUiScalePresetChanged);
+        connect(ui->spinBox_launcherRows, qOverload<int>(&QSpinBox::valueChanged), this, &Main::onLauncherRowsValueChanged);
+        connect(ui->spinBox_launcherColumns, qOverload<int>(&QSpinBox::valueChanged), this, &Main::onLauncherColumnsValueChanged);
 
         if (auto units = Units::getInstance()->getUnits(); units.contains("measures") && units["measures"].is_object()) {
             int row = 1;
@@ -219,6 +224,14 @@ namespace fairwindsk::ui::settings {
 
     void Main::onWindowHeightTextChanged() {
         m_settings->getConfiguration()->setWindowHeight(ui->lineEdit_height->text().toInt());
+    }
+
+    void Main::onLauncherRowsValueChanged(const int value) {
+        m_settings->getConfiguration()->setLauncherRows(value);
+    }
+
+    void Main::onLauncherColumnsValueChanged(const int value) {
+        m_settings->getConfiguration()->setLauncherColumns(value);
     }
 
 

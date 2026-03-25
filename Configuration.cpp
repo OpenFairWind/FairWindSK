@@ -4,6 +4,7 @@
 
 #include "Configuration.hpp"
 
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 
@@ -150,6 +151,22 @@ namespace fairwindsk {
 
     QString Configuration::getUiScalePreset() const {
         return getString("main", "uiScalePreset", "normal");
+    }
+
+    void Configuration::setLauncherRows(const int value) {
+        ensureObject("main")["launcherRows"] = std::max(1, value);
+    }
+
+    int Configuration::getLauncherRows() const {
+        return getInt("main", "launcherRows", 2);
+    }
+
+    void Configuration::setLauncherColumns(const int value) {
+        ensureObject("main")["launcherColumns"] = std::max(1, value);
+    }
+
+    int Configuration::getLauncherColumns() const {
+        return getInt("main", "launcherColumns", 3);
     }
 
     void Configuration::setWindowMode(QString value) {
