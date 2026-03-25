@@ -49,16 +49,35 @@ set(FAIRWINDSK_LINK_LIBRARIES
 
 set(FAIRWINDSK_POST_BUILD_COMMANDS)
 
-set(FAIRWINDSK_EXTERNAL_DEPENDENCIES json)
+set(FAIRWINDSK_EXTERNAL_DEPENDENCIES)
 
 include(ExternalProject)
 
-ExternalProject_Add(json
-        GIT_TAG v3.11.3
-        GIT_REPOSITORY https://github.com/nlohmann/json.git
-        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION} -DBUILD_TESTING=OFF -DJSON_BuildTests=OFF
-        TIMEOUT 360
-)
+find_package(nlohmann_json CONFIG QUIET)
+if(NOT nlohmann_json_FOUND)
+    set(NLOHMANN_JSON_INCLUDE_DIR ${CMAKE_BINARY_DIR}/third_party/nlohmann)
+    set(NLOHMANN_JSON_HEADER ${NLOHMANN_JSON_INCLUDE_DIR}/nlohmann/json.hpp)
+    file(MAKE_DIRECTORY ${NLOHMANN_JSON_INCLUDE_DIR}/nlohmann)
+    if(NOT EXISTS ${NLOHMANN_JSON_HEADER})
+        file(DOWNLOAD
+                https://raw.githubusercontent.com/nlohmann/json/v3.11.3/single_include/nlohmann/json.hpp
+                ${NLOHMANN_JSON_HEADER}
+                SHOW_PROGRESS
+                TIMEOUT 120
+                INACTIVITY_TIMEOUT 30
+                STATUS NLOHMANN_JSON_DOWNLOAD_STATUS
+                LOG NLOHMANN_JSON_DOWNLOAD_LOG)
+        list(GET NLOHMANN_JSON_DOWNLOAD_STATUS 0 NLOHMANN_JSON_DOWNLOAD_CODE)
+        list(GET NLOHMANN_JSON_DOWNLOAD_STATUS 1 NLOHMANN_JSON_DOWNLOAD_MESSAGE)
+        if(NOT NLOHMANN_JSON_DOWNLOAD_CODE EQUAL 0)
+            message(FATAL_ERROR "Failed to download nlohmann/json.hpp: ${NLOHMANN_JSON_DOWNLOAD_MESSAGE}\n${NLOHMANN_JSON_DOWNLOAD_LOG}")
+        endif()
+    endif()
+    add_library(nlohmann_json INTERFACE)
+    add_library(nlohmann_json::nlohmann_json ALIAS nlohmann_json)
+    target_include_directories(nlohmann_json INTERFACE ${CMAKE_BINARY_DIR}/third_party/nlohmann)
+endif()
+list(APPEND FAIRWINDSK_LINK_LIBRARIES nlohmann_json::nlohmann_json)
 
 if(NOT FAIRWINDSK_MOBILE)
     find_package(Qt6 REQUIRED COMPONENTS PrintSupport)
