@@ -14,6 +14,7 @@
 #include <QPainter>
 #include <QPainterPath>
 #include <QScrollBar>
+#include <QTimer>
 
 #include "Launcher.hpp"
 #include "AppItem.hpp"
@@ -169,6 +170,7 @@ namespace fairwindsk::ui::launcher {
             ui->scrollAreaWidgetContents->setLayout(m_layout);
             ui->scrollArea->setWidgetResizable(false);
             ui->scrollArea->horizontalScrollBar()->setVisible(false);
+            ui->scrollArea->viewport()->installEventFilter(this);
 
             connect(ui->toolButton_Right, &QToolButton::clicked, this, &Launcher::onScrollRight);
             connect(ui->toolButton_Left, &QToolButton::clicked, this, &Launcher::onScrollLeft);
@@ -227,7 +229,7 @@ namespace fairwindsk::ui::launcher {
                 ++index;
             }
 
-            resize();
+            QTimer::singleShot(0, this, [this]() { resize(); });
             updateScrollButtons();
         }
     }
@@ -240,6 +242,14 @@ namespace fairwindsk::ui::launcher {
     void Launcher::resizeEvent(QResizeEvent *event) {
         QWidget::resizeEvent(event);
         resize();
+    }
+
+    bool Launcher::eventFilter(QObject *watched, QEvent *event) {
+        if (watched == ui->scrollArea->viewport() && event && event->type() == QEvent::Resize) {
+            resize();
+        }
+
+        return QWidget::eventFilter(watched, event);
     }
 
     void Launcher::resize() {

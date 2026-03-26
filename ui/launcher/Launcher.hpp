@@ -25,6 +25,7 @@ namespace fairwindsk::ui::launcher {
         ~Launcher() override ;
 
         void resizeEvent(QResizeEvent *event) override;
+        bool eventFilter(QObject *watched, QEvent *event) override;
 
     public slots:
         void onScrollLeft();
