@@ -13,6 +13,7 @@
 #include <QSignalBlocker>
 #include <QTimer>
 #include <QDateTime>
+#include <QToolButton>
 #include <QTimeZone>
 
 #include "FairWindSK.hpp"
@@ -46,6 +47,11 @@ namespace fairwindsk::ui::bottombar {
 
         // Initialize the user interface
         ui->setupUi(this);
+
+        for (auto *button : findChildren<QToolButton *>()) {
+            button->setAutoRaise(true);
+            button->setStyleSheet("QToolButton { border: none; background: transparent; }");
+        }
 
         // Create a new timer which will contain the current time
         m_timer = new QTimer(this);

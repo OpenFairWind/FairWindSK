@@ -135,7 +135,9 @@ namespace fairwindsk::ui::launcher {
         }
 
         const auto viewportSize = ui->scrollArea->viewport()->size();
-        const int availableHeight = qMax(240, viewportSize.height() - layout->contentsMargins().top() - layout->contentsMargins().bottom());
+        m_stableViewportHeight = qMax(m_stableViewportHeight, viewportSize.height());
+        const int stableViewportHeight = qMax(viewportSize.height(), m_stableViewportHeight);
+        const int availableHeight = qMax(240, stableViewportHeight - layout->contentsMargins().top() - layout->contentsMargins().bottom());
         const int availableWidth = qMax(320, viewportSize.width() - layout->contentsMargins().left() - layout->contentsMargins().right());
         const int rowHeight = qMax(140, (availableHeight - ((m_rows - 1) * layout->verticalSpacing())) / qMax(1, m_rows));
         const int columnWidth = qMax(180, (availableWidth - ((m_cols - 1) * layout->horizontalSpacing())) / qMax(1, m_cols));
