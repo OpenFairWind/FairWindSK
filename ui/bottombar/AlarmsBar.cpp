@@ -17,6 +17,11 @@ namespace fairwindsk::ui::bottombar {
 
         ui->setupUi(this);
 
+        for (auto *button : findChildren<QToolButton *>()) {
+            button->setAutoRaise(true);
+            button->setStyleSheet("QToolButton { border: none; background: transparent; }");
+        }
+
         m_alarmToolButtons["abandon"] = ui->toolButton_Abandon;
         m_alarmToolButtons["adrift"] = ui->toolButton_Adrift;
         m_alarmToolButtons["fire"] = ui->toolButton_Fire;
