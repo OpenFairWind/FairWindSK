@@ -6,7 +6,9 @@
 
 #include <algorithm>
 #include <QFontMetrics>
+#include <QFrame>
 #include <QGridLayout>
+#include <QList>
 #include <QNetworkReply>
 #include <QRect>
 #include <QScreen>
@@ -35,7 +37,6 @@ namespace fairwindsk::ui::launcher {
         const auto configuration = fairwindsk::FairWindSK::getInstance()->getConfiguration();
         m_cols = std::max(1, configuration->getLauncherColumns());
         m_rows = std::max(1, configuration->getLauncherRows());
-        m_iconSize = 256;
 
         m_layout = new QGridLayout(ui->scrollAreaWidgetContents);
         if (m_layout) {
@@ -44,8 +45,12 @@ namespace fairwindsk::ui::launcher {
             m_layout->setVerticalSpacing(16);
             ui->toolButton_Left->setStyleSheet(kLauncherButtonStyle);
             ui->toolButton_Right->setStyleSheet(kLauncherButtonStyle);
+            ui->toolButton_Left->setAutoRaise(true);
+            ui->toolButton_Right->setAutoRaise(true);
+            ui->scrollArea->setFrameShape(QFrame::NoFrame);
 
             ui->scrollAreaWidgetContents->setLayout(m_layout);
+            ui->scrollArea->setWidgetResizable(false);
             ui->scrollArea->horizontalScrollBar()->setVisible(false);
 
             connect(ui->toolButton_Right, &QToolButton::clicked, this, &Launcher::onScrollRight);
@@ -53,16 +58,27 @@ namespace fairwindsk::ui::launcher {
             connect(ui->scrollArea->horizontalScrollBar(), &QScrollBar::valueChanged, this, [this]() { updateScrollButtons(); });
             connect(ui->scrollArea->horizontalScrollBar(), &QScrollBar::rangeChanged, this, [this]() { updateScrollButtons(); });
 
-            QMap<int, QPair<AppItem *, QString>> orderedApps;
+            QList<QPair<AppItem *, QString>> orderedApps;
             auto fairWindSK = fairwindsk::FairWindSK::getInstance();
             for (auto &hash : fairWindSK->getAppsHashes()) {
                 auto app = fairWindSK->getAppItemByHash(hash);
                 if (app->getActive()) {
-                    orderedApps[app->getOrder()] = QPair<AppItem *, QString>(app, hash);
+                    orderedApps.append(QPair<AppItem *, QString>(app, hash));
                 }
             }
+            std::sort(orderedApps.begin(), orderedApps.end(), [](const auto &left, const auto &right) {
+                if (left.first->getOrder() != right.first->getOrder()) {
+                    return left.first->getOrder() < right.first->getOrder();
+                }
+                const int displayNameCompare = QString::compare(left.first->getDisplayName(), right.first->getDisplayName(), Qt::CaseInsensitive);
+                if (displayNameCompare != 0) {
+                    return displayNameCompare < 0;
+                }
+                return QString::compare(left.second, right.second, Qt::CaseInsensitive) < 0;
+            });
 
             const int itemsPerPage = std::max(1, m_rows * m_cols);
+            m_pageCount = std::max(1, int((orderedApps.size() + itemsPerPage - 1) / itemsPerPage));
             int index = 0;
             for (const auto &item : orderedApps) {
                 auto appItem = item.first;
@@ -81,7 +97,6 @@ namespace fairwindsk::ui::launcher {
                 const QPixmap pixmap = appItem->getIcon();
                 if (!pixmap.isNull()) {
                     button->setIcon(pixmap);
-                    button->setIconSize(QSize(m_iconSize, m_iconSize));
                 }
 
                 button->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
@@ -135,6 +150,9 @@ namespace fairwindsk::ui::launcher {
         }
 
         const auto viewportSize = ui->scrollArea->viewport()->size();
+        if (viewportSize.width() <= 0 || viewportSize.height() <= 0) {
+            return;
+        }
         m_stableViewportHeight = qMax(m_stableViewportHeight, viewportSize.height());
         const int stableViewportHeight = qMax(viewportSize.height(), m_stableViewportHeight);
         const int availableHeight = qMax(240, stableViewportHeight - layout->contentsMargins().top() - layout->contentsMargins().bottom());
@@ -142,6 +160,15 @@ namespace fairwindsk::ui::launcher {
         const int rowHeight = qMax(140, (availableHeight - ((m_rows - 1) * layout->verticalSpacing())) / qMax(1, m_rows));
         const int columnWidth = qMax(180, (availableWidth - ((m_cols - 1) * layout->horizontalSpacing())) / qMax(1, m_cols));
         const int totalColumns = std::max(1, layout->columnCount());
+        const int contentWidth = std::max(viewportSize.width(),
+                                          (m_pageCount * availableWidth) +
+                                          ((std::max(0, totalColumns - 1)) * layout->horizontalSpacing()) +
+                                          layout->contentsMargins().left() +
+                                          layout->contentsMargins().right());
+        const int contentHeight = std::max(viewportSize.height(),
+                                           availableHeight +
+                                           layout->contentsMargins().top() +
+                                           layout->contentsMargins().bottom());
 
         for (int col = 0; col < totalColumns; ++col) {
             layout->setColumnMinimumWidth(col, columnWidth);
@@ -171,17 +198,17 @@ namespace fairwindsk::ui::launcher {
             button->setFixedSize(columnWidth, rowHeight);
         }
 
+        ui->scrollAreaWidgetContents->resize(contentWidth, contentHeight);
         updateScrollButtons();
     }
 
     void Launcher::onScrollLeft() {
-        ui->scrollArea->horizontalScrollBar()->setValue(
-                ui->scrollArea->horizontalScrollBar()->value() - ui->scrollArea->viewport()->width());
+        ui->scrollArea->horizontalScrollBar()->setValue((currentPage() - 1) * pageWidth());
     }
 
     void Launcher::onScrollRight() {
-        ui->scrollArea->horizontalScrollBar()->setValue(
-                ui->scrollArea->horizontalScrollBar()->value() + ui->scrollArea->viewport()->width());
+        const auto nextPage = std::min(m_pageCount - 1, currentPage() + 1);
+        ui->scrollArea->horizontalScrollBar()->setValue(nextPage * pageWidth());
     }
 
     void Launcher::updateScrollButtons() const {
@@ -189,6 +216,15 @@ namespace fairwindsk::ui::launcher {
         const bool canScroll = scrollBar->maximum() > scrollBar->minimum();
         ui->toolButton_Left->setEnabled(canScroll && scrollBar->value() > scrollBar->minimum());
         ui->toolButton_Right->setEnabled(canScroll && scrollBar->value() < scrollBar->maximum());
+    }
+
+    int Launcher::pageWidth() const {
+        return qMax(1, ui->scrollArea->viewport()->width());
+    }
+
+    int Launcher::currentPage() const {
+        const auto *scrollBar = ui->scrollArea->horizontalScrollBar();
+        return qBound(0, (scrollBar->value() + (pageWidth() / 2)) / pageWidth(), std::max(0, m_pageCount - 1));
     }
 
 } // fairwindsk::ui::launcher
