@@ -149,6 +149,8 @@ namespace fairwindsk::ui::drawer {
                 m_view->setRootIsDecorated(false);
                 m_view->setItemsExpandable(false);
                 m_view->setSortingEnabled(true);
+                m_view->setMinimumHeight(360);
+                m_view->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
                 m_view->sortByColumn(0, Qt::AscendingOrder);
                 m_view->setStyleSheet(
                     "QTreeView { background: #111827; color: white; alternate-background-color: #0f172a; }"
@@ -166,6 +168,8 @@ namespace fairwindsk::ui::drawer {
                     m_nameEdit->setText(fileName);
                     layout->addWidget(m_nameEdit);
                 }
+
+                setMinimumHeight(m_mode == FileBrowserMode::SaveFile ? 430 : 400);
 
                 m_model = new QFileSystemModel(this);
                 m_model->setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot);
