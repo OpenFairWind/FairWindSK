@@ -6,6 +6,7 @@
 #define FAIRWINDSK_APPS_HPP
 
 #include <QWidget>
+#include <QEvent>
 #include <QListWidgetItem>
 #include "Settings.hpp"
 
@@ -42,6 +43,8 @@ namespace fairwindsk::ui::settings {
         void setAppsEditMode(bool appsEditMode);
         void saveAppsDetails();
         QString uniqueAppName(const QString &baseName) const;
+        void refreshAppActionButtons() const;
+        void syncAppOrdersFromList() const;
 
     private:
         Ui::Apps *ui;

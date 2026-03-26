@@ -4,6 +4,7 @@
 
 // You may need to build the project (run Qt uic code generator) to get "ui_Apps.h" resolved
 
+#include <algorithm>
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QDomDocument>
@@ -44,8 +45,7 @@ namespace fairwindsk::ui::settings {
         m_appsEditMode = false;
         m_appsEditChanged = false;
 
-        // Order by order value
-        QMap<int, QPair<AppItem *, QString>> map;
+        QList<QPair<AppItem *, QString>> orderedApps;
 
         // Get the configuration json data root
         const auto jsonData = m_settings->getConfiguration()->getRoot();
@@ -64,19 +64,22 @@ namespace fairwindsk::ui::settings {
 
                 qDebug() << "App: " << appItem->getName() << " active: " << appItem->getActive() << " order: " << appItem->getOrder();
 
-                // Get the order and set the position
-                auto position = appItem->getOrder();
-
-                // Map the application in the right application
-                map[position] = QPair<AppItem *, QString>(appItem, appItem->getName());
-
-
+                orderedApps.append(QPair<AppItem *, QString>(appItem, appItem->getName()));
             }
 
-
+            std::sort(orderedApps.begin(), orderedApps.end(), [](const auto &left, const auto &right) {
+                if (left.first->getOrder() != right.first->getOrder()) {
+                    return left.first->getOrder() < right.first->getOrder();
+                }
+                const int displayNameCompare = QString::compare(left.first->getDisplayName(), right.first->getDisplayName(), Qt::CaseInsensitive);
+                if (displayNameCompare != 0) {
+                    return displayNameCompare < 0;
+                }
+                return QString::compare(left.second, right.second, Qt::CaseInsensitive) < 0;
+            });
 
             // Iterate on the available apps' hash values
-            for (const auto& item: map) {
+            for (const auto& item: orderedApps) {
                 // Get the hash value
                 const auto appItem = item.first;
                 const auto name = item.second;
@@ -118,6 +121,7 @@ namespace fairwindsk::ui::settings {
         if (ui->listWidget_Apps_List->count()>0) {
             ui->listWidget_Apps_List->setCurrentRow(0);
         }
+        refreshAppActionButtons();
     }
 
     void Apps::saveAppsDetails() {
@@ -230,6 +234,7 @@ namespace fairwindsk::ui::settings {
 
 
         setAppsEditMode(false);
+        refreshAppActionButtons();
 
         if (ui->listWidget_Apps_List->currentRow()!=-1) {
             auto appName = ui->listWidget_Apps_List->currentItem()->data(Qt::UserRole).toString();
@@ -386,34 +391,6 @@ namespace fairwindsk::ui::settings {
     }
 
     bool Apps::eventFilter(QObject *object, QEvent *event) {
-
-
-        if ( object == ui->listWidget_Apps_List &&  ( event->type() == QEvent::ChildRemoved )  ) {
-
-            m_appsEditChanged = true;
-            for(int row=0; row < ui->listWidget_Apps_List->count();row++){
-
-                // Get the list widget item
-                auto listWidgetItem = ui->listWidget_Apps_List->item(row);
-
-                // Get the application name
-                auto appName = listWidgetItem->data(Qt::UserRole).toString();
-
-                // Get the index of the application within the apps array
-                int idx = m_settings->getConfiguration()->findApp(appName);
-
-                // Check if the app is present
-                if (idx != -1) {
-
-                    // Update the configuration
-                    m_settings->getConfiguration()->getRoot()["apps"].at(idx)["fairwind"]["order"] = 1+row;
-
-                    qDebug() << "Updated (order): " << QString::fromStdString(m_settings->getConfiguration()->getRoot()["apps"].at(idx).dump(2));
-
-                }
-            }
-        }
-
         return QObject::eventFilter(object, event);
     }
 
@@ -445,7 +422,9 @@ namespace fairwindsk::ui::settings {
             ui->listWidget_Apps_List->setCurrentRow(ui->listWidget_Apps_List->count()-1);
         }
 
+        syncAppOrdersFromList();
         setAppsEditMode(true);
+        refreshAppActionButtons();
 
         delete appItem;
     }
@@ -474,7 +453,9 @@ namespace fairwindsk::ui::settings {
             }
 
             // Remove the item from the widget list
-            ui->listWidget_Apps_List->takeItem(pos);
+            delete ui->listWidget_Apps_List->takeItem(pos);
+            syncAppOrdersFromList();
+            refreshAppActionButtons();
         }
     }
 
@@ -488,6 +469,8 @@ namespace fairwindsk::ui::settings {
             auto listWidgetItem = ui->listWidget_Apps_List->takeItem(pos);
             ui->listWidget_Apps_List->insertItem(pos-1,listWidgetItem);
             ui->listWidget_Apps_List->setCurrentRow(pos-1);
+            syncAppOrdersFromList();
+            refreshAppActionButtons();
         }
     }
 
@@ -500,6 +483,37 @@ namespace fairwindsk::ui::settings {
             auto listWidgetItem = ui->listWidget_Apps_List->takeItem(pos);
             ui->listWidget_Apps_List->insertItem(pos+1,listWidgetItem);
             ui->listWidget_Apps_List->setCurrentRow(pos+1);
+            syncAppOrdersFromList();
+            refreshAppActionButtons();
+        }
+    }
+
+    void Apps::refreshAppActionButtons() const {
+        const int currentRow = ui->listWidget_Apps_List->currentRow();
+        const int count = ui->listWidget_Apps_List->count();
+        const bool hasSelection = currentRow >= 0 && currentRow < count;
+
+        ui->pushButton_Apps_EditSave->setEnabled(hasSelection);
+        ui->toolButton_Remove->setEnabled(hasSelection);
+        ui->toolButton_Up->setEnabled(hasSelection && currentRow > 0);
+        ui->toolButton_Down->setEnabled(hasSelection && currentRow >= 0 && currentRow < count - 1);
+    }
+
+    void Apps::syncAppOrdersFromList() const {
+        for (int row = 0; row < ui->listWidget_Apps_List->count(); ++row) {
+            const auto *listWidgetItem = ui->listWidget_Apps_List->item(row);
+            if (!listWidgetItem) {
+                continue;
+            }
+
+            const auto appName = listWidgetItem->data(Qt::UserRole).toString();
+            const int idx = m_settings->getConfiguration()->findApp(appName);
+            if (idx == -1) {
+                continue;
+            }
+
+            m_settings->getConfiguration()->getRoot()["apps"].at(idx)["fairwind"]["order"] = row + 1;
+            qDebug() << "Updated (order): " << QString::fromStdString(m_settings->getConfiguration()->getRoot()["apps"].at(idx).dump(2));
         }
     }
 
