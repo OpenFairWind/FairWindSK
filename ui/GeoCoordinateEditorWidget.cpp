@@ -1,64 +1,37 @@
 #include "GeoCoordinateEditorWidget.hpp"
 
-#include <QComboBox>
-#include <QHBoxLayout>
-#include <QLabel>
-#include <QLineEdit>
-
 #include "GeoCoordinateUtils.hpp"
+#include "ui_GeoCoordinateEditorWidget.h"
 
 namespace fairwindsk::ui {
 
-    GeoCoordinateEditorWidget::GeoCoordinateEditorWidget(QWidget *parent) : QWidget(parent) {
-        auto *layout = new QHBoxLayout(this);
-        layout->setContentsMargins(0, 0, 0, 0);
-        layout->setSpacing(8);
+    GeoCoordinateEditorWidget::GeoCoordinateEditorWidget(QWidget *parent)
+        : QWidget(parent),
+          ui(new ::Ui::GeoCoordinateEditorWidget) {
+        ui->setupUi(this);
 
-        auto *formatLabel = new QLabel(tr("Format"), this);
-        formatLabel->setStyleSheet("QLabel { color: white; }");
-        layout->addWidget(formatLabel);
+        const QString lightInputStyle = QStringLiteral(
+            "background: #f7f7f4; color: #1f2937; border: 1px solid #d1d5db; selection-background-color: #c7d2fe; selection-color: #111827;");
 
-        m_formatCombo = new QComboBox(this);
-        m_formatCombo->setStyleSheet(
-            "QComboBox { background: #f7f7f4; color: #1f2937; border: 1px solid #d1d5db; selection-background-color: #c7d2fe; selection-color: #111827; }"
-            "QComboBox QAbstractItemView { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
-        m_formatCombo->setMinimumWidth(170);
+        ui->labelFormat->setStyleSheet(QStringLiteral("QLabel { color: white; }"));
+        ui->labelLatitude->setStyleSheet(QStringLiteral("QLabel { color: white; }"));
+        ui->labelLongitude->setStyleSheet(QStringLiteral("QLabel { color: white; }"));
+        ui->labelAltitude->setStyleSheet(QStringLiteral("QLabel { color: white; }"));
+        ui->comboBoxFormat->setStyleSheet(
+            QStringLiteral("QComboBox { %1 } QComboBox QAbstractItemView { %1 }").arg(lightInputStyle));
+        ui->lineEditLatitude->setStyleSheet(QStringLiteral("QLineEdit { %1 }").arg(lightInputStyle));
+        ui->lineEditLongitude->setStyleSheet(QStringLiteral("QLineEdit { %1 }").arg(lightInputStyle));
+        ui->lineEditAltitude->setStyleSheet(QStringLiteral("QLineEdit { %1 }").arg(lightInputStyle));
+
         for (const auto &option : geo::coordinateFormatOptions()) {
-            m_formatCombo->addItem(option.label, option.id);
+            ui->comboBoxFormat->addItem(option.label, option.id);
         }
-        layout->addWidget(m_formatCombo);
 
-        auto *latitudeLabel = new QLabel(tr("Latitude"), this);
-        latitudeLabel->setStyleSheet("QLabel { color: white; }");
-        layout->addWidget(latitudeLabel);
+        connect(ui->comboBoxFormat, qOverload<int>(&QComboBox::currentIndexChanged), this, &GeoCoordinateEditorWidget::onFormatChanged);
+    }
 
-        m_latitudeEdit = new QLineEdit(this);
-        m_latitudeEdit->setStyleSheet(
-            "QLineEdit { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
-        m_latitudeEdit->setMinimumWidth(170);
-        layout->addWidget(m_latitudeEdit, 1);
-
-        auto *longitudeLabel = new QLabel(tr("Longitude"), this);
-        longitudeLabel->setStyleSheet("QLabel { color: white; }");
-        layout->addWidget(longitudeLabel);
-
-        m_longitudeEdit = new QLineEdit(this);
-        m_longitudeEdit->setStyleSheet(
-            "QLineEdit { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
-        m_longitudeEdit->setMinimumWidth(190);
-        layout->addWidget(m_longitudeEdit, 1);
-
-        auto *altitudeLabel = new QLabel(tr("Altitude"), this);
-        altitudeLabel->setStyleSheet("QLabel { color: white; }");
-        layout->addWidget(altitudeLabel);
-
-        m_altitudeEdit = new QLineEdit(this);
-        m_altitudeEdit->setStyleSheet(
-            "QLineEdit { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
-        m_altitudeEdit->setMinimumWidth(100);
-        layout->addWidget(m_altitudeEdit);
-
-        connect(m_formatCombo, qOverload<int>(&QComboBox::currentIndexChanged), this, &GeoCoordinateEditorWidget::onFormatChanged);
+    GeoCoordinateEditorWidget::~GeoCoordinateEditorWidget() {
+        delete ui;
     }
 
     void GeoCoordinateEditorWidget::setCoordinate(const double latitude,
@@ -68,13 +41,13 @@ namespace fairwindsk::ui {
         m_latitude = latitude;
         m_longitude = longitude;
         m_altitude = altitude;
-        const int index = m_formatCombo->findData(geo::normalizeCoordinateFormatId(formatId));
-        m_formatCombo->setCurrentIndex(index >= 0 ? index : 0);
+        const int index = ui->comboBoxFormat->findData(geo::normalizeCoordinateFormatId(formatId));
+        ui->comboBoxFormat->setCurrentIndex(index >= 0 ? index : 0);
         applyCurrentFormat();
     }
 
     QString GeoCoordinateEditorWidget::formatId() const {
-        return m_formatCombo->currentData().toString();
+        return ui->comboBoxFormat->currentData().toString();
     }
 
     bool GeoCoordinateEditorWidget::coordinate(double *latitude,
@@ -82,12 +55,12 @@ namespace fairwindsk::ui {
                                                double *altitude,
                                                QString *message) const {
         double parsedLatitude = 0.0;
-        if (!geo::parseSingleCoordinate(m_latitudeEdit->text(), true, formatId(), &parsedLatitude, message)) {
+        if (!geo::parseSingleCoordinate(ui->lineEditLatitude->text(), true, formatId(), &parsedLatitude, message)) {
             return false;
         }
 
         double parsedLongitude = 0.0;
-        if (!geo::parseSingleCoordinate(m_longitudeEdit->text(), false, formatId(), &parsedLongitude, message)) {
+        if (!geo::parseSingleCoordinate(ui->lineEditLongitude->text(), false, formatId(), &parsedLongitude, message)) {
             return false;
         }
 
@@ -99,7 +72,7 @@ namespace fairwindsk::ui {
         }
         if (altitude) {
             bool ok = false;
-            const double parsedAltitude = m_altitudeEdit->text().trimmed().toDouble(&ok);
+            const double parsedAltitude = ui->lineEditAltitude->text().trimmed().toDouble(&ok);
             if (!ok) {
                 if (message) {
                     *message = tr("Altitude format is invalid.");
@@ -116,8 +89,8 @@ namespace fairwindsk::ui {
     }
 
     void GeoCoordinateEditorWidget::applyCurrentFormat() {
-        m_latitudeEdit->setText(geo::formatSingleCoordinate(m_latitude, true, formatId()));
-        m_longitudeEdit->setText(geo::formatSingleCoordinate(m_longitude, false, formatId()));
-        m_altitudeEdit->setText(QString::number(m_altitude, 'f', 2));
+        ui->lineEditLatitude->setText(geo::formatSingleCoordinate(m_latitude, true, formatId()));
+        ui->lineEditLongitude->setText(geo::formatSingleCoordinate(m_longitude, false, formatId()));
+        ui->lineEditAltitude->setText(QString::number(m_altitude, 'f', 2));
     }
 }

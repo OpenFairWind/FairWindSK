@@ -3,8 +3,7 @@
 
 #include <QWidget>
 
-class QComboBox;
-class QLineEdit;
+namespace Ui { class GeoCoordinateEditorWidget; }
 
 namespace fairwindsk::ui {
 
@@ -13,6 +12,7 @@ namespace fairwindsk::ui {
 
     public:
         explicit GeoCoordinateEditorWidget(QWidget *parent = nullptr);
+        ~GeoCoordinateEditorWidget() override;
 
         void setCoordinate(double latitude, double longitude, double altitude, const QString &formatId);
         QString formatId() const;
@@ -24,10 +24,7 @@ namespace fairwindsk::ui {
     private:
         void applyCurrentFormat();
 
-        QComboBox *m_formatCombo = nullptr;
-        QLineEdit *m_latitudeEdit = nullptr;
-        QLineEdit *m_longitudeEdit = nullptr;
-        QLineEdit *m_altitudeEdit = nullptr;
+        ::Ui::GeoCoordinateEditorWidget *ui = nullptr;
         double m_latitude = 0.0;
         double m_longitude = 0.0;
         double m_altitude = 0.0;

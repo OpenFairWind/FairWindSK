@@ -158,7 +158,7 @@ set(FAIRWINDSK_SOURCES
         ui/MainWindow.cpp ui/MainWindow.hpp ui/MainWindow.ui
         ui/DrawerDialogHost.cpp ui/DrawerDialogHost.hpp
         ui/GeoCoordinateUtils.cpp ui/GeoCoordinateUtils.hpp
-        ui/GeoCoordinateEditorWidget.cpp ui/GeoCoordinateEditorWidget.hpp
+        ui/GeoCoordinateEditorWidget.cpp ui/GeoCoordinateEditorWidget.hpp ui/GeoCoordinateEditorWidget.ui
         ui/web/Web.cpp ui/web/Web.hpp ui/web/Web.ui
         ui/web/WebPage.cpp ui/web/WebPage.hpp
         ui/web/WebPopupWindow.cpp ui/web/WebPopupWindow.hpp

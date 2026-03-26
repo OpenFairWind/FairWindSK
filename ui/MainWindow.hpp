@@ -29,6 +29,8 @@
 namespace Ui { class MainWindow; }
 class QLabel;
 class QHBoxLayout;
+class QEventLoop;
+class QFrame;
 class QVBoxLayout;
 
 namespace fairwindsk::ui {
@@ -75,6 +77,8 @@ namespace fairwindsk::ui {
         void setChromeEnabled(bool enabled) const;
         void setDrawerEnabled(bool enabled) const;
         void clearDrawer();
+        bool isDrawerOpen() const;
+        void cancelActiveDrawer(int result = 0);
         void showOverlay(QWidget *page);
         void closeOverlay(QWidget *page, QWidget *fallbackWidget);
         void showLauncher();
@@ -136,6 +140,8 @@ namespace fairwindsk::ui {
         QWidget *m_dialogDrawerContentHost = nullptr;
         QVBoxLayout *m_dialogDrawerContentLayout = nullptr;
         QHBoxLayout *m_dialogDrawerButtonsLayout = nullptr;
+        QEventLoop *m_activeDrawerLoop = nullptr;
+        int *m_activeDrawerResult = nullptr;
 
         // QWidget containing useful infos
         topbar::TopBar *m_topBar = nullptr;
