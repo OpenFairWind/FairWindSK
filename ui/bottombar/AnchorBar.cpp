@@ -7,6 +7,7 @@
 
 #include <QPushButton>
 #include <QSlider>
+#include <QToolButton>
 
 #include "AnchorBar.hpp"
 
@@ -15,9 +16,25 @@
 
 
 namespace fairwindsk::ui::bottombar {
+    namespace {
+        const QString kDrawerToolButtonStyle = QStringLiteral(
+            "QToolButton {"
+            " border: none;"
+            " background: transparent;"
+            " padding: 4px;"
+            " }"
+            "QToolButton:hover { background: rgba(255, 255, 255, 0.08); border-radius: 6px; }"
+            "QToolButton:pressed { background: rgba(255, 255, 255, 0.14); border-radius: 6px; }");
+    }
+
     AnchorBar::AnchorBar(QWidget *parent) :
             QWidget(parent), ui(new Ui::AnchorBar) {
         ui->setupUi(this);
+
+        for (auto *button : findChildren<QToolButton *>()) {
+            button->setAutoRaise(true);
+            button->setStyleSheet(kDrawerToolButtonStyle);
+        }
 
         // Get the FairWind singleton
         const auto fairWindSK = fairwindsk::FairWindSK::getInstance();

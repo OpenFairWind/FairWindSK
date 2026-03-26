@@ -8,6 +8,7 @@
 #include <QGeoCoordinate>
 #include <QToolButton>
 #include <QAbstractButton>
+#include <QFrame>
 #include "BottomBar.hpp"
 
 #include <QtWidgets/QLabel>
@@ -36,6 +37,8 @@ namespace fairwindsk::ui::bottombar {
 
         // Set the UI
         ui->setupUi(this);
+        ui->scrollArea_Port->setFrameShape(QFrame::NoFrame);
+        ui->scrollArea_Port->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         ui->toolButton_MyData->setStyleSheet(kChromeToolButtonStyle);
         ui->toolButton_MyData->setAutoRaise(true);
         ui->toolButton_POB->setStyleSheet(kChromeToolButtonStyle);

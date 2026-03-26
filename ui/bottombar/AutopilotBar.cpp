@@ -9,6 +9,7 @@
 
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QToolButton>
 
 #include "FairWindSK.hpp"
 #include "ui_AutopilotBar.h"
@@ -16,11 +17,24 @@
 namespace fairwindsk::ui::bottombar {
     namespace {
         constexpr auto kDefaultAutopilotId = "_default";
+        const QString kDrawerToolButtonStyle = QStringLiteral(
+            "QToolButton {"
+            " border: none;"
+            " background: transparent;"
+            " padding: 4px;"
+            " }"
+            "QToolButton:hover { background: rgba(255, 255, 255, 0.08); border-radius: 6px; }"
+            "QToolButton:pressed { background: rgba(255, 255, 255, 0.14); border-radius: 6px; }");
     }
 
     AutopilotBar::AutopilotBar(QWidget *parent) :
             QWidget(parent), ui(new Ui::AutopilotBar) {
         ui->setupUi(this);
+
+        for (auto *button : findChildren<QToolButton *>()) {
+            button->setAutoRaise(true);
+            button->setStyleSheet(kDrawerToolButtonStyle);
+        }
 
         // Not visible by default
         QWidget::setVisible(false);
@@ -122,7 +136,7 @@ namespace fairwindsk::ui::bottombar {
                 updateTargetHeading(FairWindSK::getInstance()->getSignalKClient()->subscribe(
                         QString::fromStdString(m_signalkPaths["autopilot.target.heading"].get<std::string>()),
                         this,
-                        SLOT(fairwindsk::ui::bottombar::AutopilotBar::updateTargetHeading())
+                        SLOT(fairwindsk::ui::bottombar::AutopilotBar::updateTargetHeading)
                         ));
             }
 
