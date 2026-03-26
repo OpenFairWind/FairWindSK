@@ -9,6 +9,7 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QFileSystemModel>
+#include <QHeaderView>
 #include <QHBoxLayout>
 #include <QInputDialog>
 #include <QLabel>
@@ -149,7 +150,7 @@ namespace fairwindsk::ui::drawer {
                 m_view->setRootIsDecorated(false);
                 m_view->setItemsExpandable(false);
                 m_view->setSortingEnabled(true);
-                m_view->setMinimumHeight(360);
+                m_view->setUniformRowHeights(true);
                 m_view->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
                 m_view->sortByColumn(0, Qt::AscendingOrder);
                 m_view->setStyleSheet(
@@ -182,6 +183,11 @@ namespace fairwindsk::ui::drawer {
                 m_view->hideColumn(1);
                 m_view->hideColumn(2);
                 m_view->hideColumn(3);
+                const int minimumVisibleRows = 10;
+                const int rowHeight = qMax(24, m_view->sizeHintForRow(0));
+                const int headerHeight = m_view->header()->sizeHint().height();
+                const int frameHeight = m_view->frameWidth() * 2;
+                m_view->setMinimumHeight(headerHeight + frameHeight + (rowHeight * minimumVisibleRows));
 
                 const QString initialDirectory = QFileInfo(directory).isDir() ? directory : defaultBrowserDirectory();
                 navigateTo(initialDirectory);
