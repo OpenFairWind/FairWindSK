@@ -8,6 +8,7 @@
 #include <QObject>
 #include <QMap>
 #include <QImage>
+#include <QPixmap>
 #include <QProcess>
 #include <QString>
 #include <nlohmann/json.hpp>
@@ -85,6 +86,8 @@ namespace fairwindsk {
 
             QWidget *m_pWidget = nullptr;
             QProcess *m_pProcess = nullptr;
+            QPixmap m_cachedIcon;
+            bool m_hasCachedIcon = false;
     };
 }
 

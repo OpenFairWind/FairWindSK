@@ -236,19 +236,18 @@ namespace fairwindsk::ui::launcher {
         m_rows = newRows;
 
         if (forceRebuild || geometryChanged || contentChanged || m_tiles.isEmpty()) {
-            if (geometryChanged) {
-                m_stableViewportHeight = 0;
-            }
             rebuildTiles();
             m_layoutSignature = newLayoutSignature;
         }
 
-        QTimer::singleShot(0, this, [this]() { resize(); });
+        if (isVisible()) {
+            QTimer::singleShot(0, this, [this]() { resize(); });
+        }
         updateScrollButtons();
     }
 
     bool Launcher::eventFilter(QObject *watched, QEvent *event) {
-        if (watched == ui->scrollArea->viewport() && event && event->type() == QEvent::Resize) {
+        if (watched == ui->scrollArea->viewport() && event && event->type() == QEvent::Resize && isVisible()) {
             resize();
         }
 
@@ -256,6 +255,10 @@ namespace fairwindsk::ui::launcher {
     }
 
     void Launcher::resize() {
+        if (!isVisible()) {
+            return;
+        }
+
         auto *layout = qobject_cast<QGridLayout *>(ui->scrollAreaWidgetContents->layout());
         if (!layout) {
             return;
@@ -266,9 +269,7 @@ namespace fairwindsk::ui::launcher {
             return;
         }
 
-        m_stableViewportHeight = qMax(m_stableViewportHeight, viewportSize.height());
-        const int stableViewportHeight = qMax(viewportSize.height(), m_stableViewportHeight);
-        const int availableHeight = qMax(220, stableViewportHeight - layout->contentsMargins().top() - layout->contentsMargins().bottom());
+        const int availableHeight = qMax(220, viewportSize.height() - layout->contentsMargins().top() - layout->contentsMargins().bottom());
         const int availableWidth = qMax(320, viewportSize.width() - layout->contentsMargins().left() - layout->contentsMargins().right());
         const int rowHeight = qMax(110, (availableHeight - ((m_rows - 1) * layout->verticalSpacing())) / qMax(1, m_rows));
         const int columnWidth = qMax(140, (availableWidth - ((m_cols - 1) * layout->horizontalSpacing())) / qMax(1, m_cols));
@@ -356,7 +357,7 @@ namespace fairwindsk::ui::launcher {
                                   QString::number(appItem->getOrder()),
                                   appItem->getDisplayName(),
                                   appItem->getDescription(),
-                                  QString::number(appItem->getIcon().cacheKey())));
+                                  appItem->getAppIcon()));
         }
 
         return parts.join(QStringLiteral("||"));

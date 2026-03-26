@@ -51,7 +51,6 @@ namespace fairwindsk::ui::launcher {
 
         int m_cols = 0;
         int m_rows = 0;
-        int m_stableViewportHeight = 0;
         int m_pageCount = 0;
         int m_targetPage = 0;
         QGridLayout *m_layout = nullptr;

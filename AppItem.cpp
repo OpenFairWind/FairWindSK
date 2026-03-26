@@ -199,6 +199,8 @@ namespace fairwindsk {
 
         //m_jsonApp.update(jsonApp);
         m_jsonApp.update(jsonApp, true);
+        m_hasCachedIcon = false;
+        m_cachedIcon = QPixmap();
     }
 
 
@@ -272,6 +274,10 @@ namespace fairwindsk {
      * Returns the app's icon
      */
     QPixmap AppItem::getIcon() {
+        if (m_hasCachedIcon && !m_cachedIcon.isNull()) {
+            return m_cachedIcon;
+        }
+
         // Use a default pixmap so the UI never shows an empty placeholder.
         QPixmap pixmap = QPixmap::fromImage(QImage(":/resources/images/icons/webapp-256x256.png"));
         // Read the optional app icon path from the application metadata.
@@ -281,6 +287,8 @@ namespace fairwindsk {
         const auto signalKServerUrl = FairWindSK::getInstance()->getConfiguration()->getSignalKServerUrl();
         // Avoid issuing a network request if the server URL is not available.
         if (signalKServerUrl.isEmpty()) {
+            m_cachedIcon = pixmap;
+            m_hasCachedIcon = true;
             return pixmap;
         }
 
@@ -290,6 +298,8 @@ namespace fairwindsk {
 
         // If there is still no icon path, return the default without doing any extra work.
         if (appIcon.isEmpty()) {
+            m_cachedIcon = pixmap;
+            m_hasCachedIcon = true;
             return pixmap;
         }
 
@@ -299,6 +309,8 @@ namespace fairwindsk {
             const auto iconFilename = QString(appIcon).replace("file://", "");
             // Attempt to load the provided file, keeping the default if loading fails.
             pixmap.load(iconFilename);
+            m_cachedIcon = pixmap;
+            m_hasCachedIcon = true;
             return pixmap;
         }
 
@@ -307,7 +319,9 @@ namespace fairwindsk {
         candidateUrls.append(QUrl(getUrl()).resolved(QUrl(appIcon)));
         candidateUrls.append(QUrl(signalKServerUrl + "/" + getName() + "/" + appIcon));
 
-        return loadRemotePixmap(candidateUrls, pixmap);
+        m_cachedIcon = loadRemotePixmap(candidateUrls, pixmap);
+        m_hasCachedIcon = true;
+        return m_cachedIcon;
     }
 
     /*
@@ -506,6 +520,8 @@ namespace fairwindsk {
     void AppItem::setAppIcon(const QString& appIcon) {
         // Set the name value
         m_jsonApp["signalk"]["appIcon"] = appIcon.toStdString();
+        m_hasCachedIcon = false;
+        m_cachedIcon = QPixmap();
     }
 
     void AppItem::setSettingsUrl(const QString& settingsUrl) {

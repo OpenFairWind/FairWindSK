@@ -273,7 +273,6 @@ namespace fairwindsk::ui {
         m_currentApp = nullptr;
         if (m_launcher && ui->stackedWidget_Center->indexOf(m_launcher) >= 0) {
             ui->stackedWidget_Center->setCurrentWidget(m_launcher);
-            m_launcher->refreshFromConfiguration();
         }
         if (m_topBar) {
             m_topBar->setCurrentApp(nullptr);
@@ -631,9 +630,6 @@ namespace fairwindsk::ui {
     void MainWindow::onSettingsRejected(settings::Settings *settingsPage) {
         ui->widget_Bottom->setVisible(true);
         closeOverlay(settingsPage, settingsPage ? settingsPage->getCurrentWidget() : nullptr);
-        if (m_launcher) {
-            QTimer::singleShot(0, this, [this]() { m_launcher->refreshFromConfiguration(); });
-        }
     }
 
     void MainWindow::onSettingsAccepted(settings::Settings *settingsPage) const
