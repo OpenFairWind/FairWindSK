@@ -8,7 +8,6 @@
 #include <QCheckBox>
 #include <QColor>
 #include <QFile>
-#include <QFileDialog>
 #include <QFormLayout>
 #include <QHeaderView>
 #include <QHBoxLayout>
@@ -881,7 +880,7 @@ namespace fairwindsk::ui::mydata {
     }
 
     void ResourceTab::onImportClicked() {
-        const QString fileName = QFileDialog::getOpenFileName(
+        const QString fileName = drawer::getOpenFilePath(
             this,
             tr("Import %1").arg(resourceKindToTitle(m_kind)),
             QString(),
@@ -946,7 +945,7 @@ namespace fairwindsk::ui::mydata {
             }
         }
 
-        const QString fileName = QFileDialog::getSaveFileName(
+        const QString fileName = drawer::getSaveFilePath(
             this,
             tr("Export %1").arg(resourceKindToTitle(m_kind)),
             QString("%1.geojson").arg(resourceKindToCollection(m_kind)),

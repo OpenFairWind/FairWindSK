@@ -6,17 +6,30 @@
 
 #include <QDialog>
 #include <QDialogButtonBox>
+#include <QDir>
+#include <QFileInfo>
+#include <QFileSystemModel>
 #include <QHBoxLayout>
 #include <QInputDialog>
 #include <QLabel>
 #include <QLineEdit>
+#include <QPointer>
 #include <QPushButton>
+#include <QRegularExpression>
+#include <QStandardPaths>
+#include <QToolButton>
+#include <QTreeView>
 #include <QVBoxLayout>
 
 #include "MainWindow.hpp"
 
 namespace fairwindsk::ui::drawer {
     namespace {
+        enum class FileBrowserMode {
+            OpenFile,
+            SaveFile
+        };
+
         MainWindow *resolveMainWindow(QWidget *parent) {
             if (parent) {
                 if (auto *mainWindow = qobject_cast<MainWindow *>(parent->window())) {
@@ -54,6 +67,244 @@ namespace fairwindsk::ui::drawer {
             }
             return QString();
         }
+
+        QString defaultBrowserDirectory() {
+            const QString documentsDirectory = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+            if (!documentsDirectory.isEmpty()) {
+                return documentsDirectory;
+            }
+            return QDir::homePath();
+        }
+
+        QStringList wildcardFilters(const QString &filter) {
+            QStringList result;
+            const QStringList groups = filter.split(QStringLiteral(";;"), Qt::SkipEmptyParts);
+            const QRegularExpression matcher(QStringLiteral("\\(([^\\)]*)\\)"));
+
+            for (const auto &group : groups) {
+                const auto match = matcher.match(group);
+                if (!match.hasMatch()) {
+                    continue;
+                }
+
+                const QStringList parts = match.captured(1).split(QLatin1Char(' '), Qt::SkipEmptyParts);
+                for (const auto &part : parts) {
+                    if (!result.contains(part)) {
+                        result.append(part);
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        QString preferredSuffix(const QStringList &filters) {
+            for (const auto &filter : filters) {
+                if (!filter.startsWith(QStringLiteral("*."))) {
+                    continue;
+                }
+
+                const QString suffix = filter.mid(2);
+                if (!suffix.isEmpty() && suffix != QStringLiteral("*")) {
+                    return suffix;
+                }
+            }
+
+            return {};
+        }
+
+        class DrawerFileBrowserWidget final : public QWidget {
+        public:
+            DrawerFileBrowserWidget(const FileBrowserMode mode,
+                                    const QString &directory,
+                                    const QString &fileName,
+                                    const QStringList &nameFilters,
+                                    QWidget *parent = nullptr)
+                : QWidget(parent), m_mode(mode), m_nameFilters(nameFilters) {
+                auto *layout = new QVBoxLayout(this);
+                layout->setContentsMargins(0, 0, 0, 0);
+                layout->setSpacing(8);
+
+                auto *toolbarLayout = new QHBoxLayout();
+                toolbarLayout->setContentsMargins(0, 0, 0, 0);
+                toolbarLayout->setSpacing(8);
+
+                m_homeButton = new QToolButton(this);
+                m_homeButton->setText(tr("Home"));
+                toolbarLayout->addWidget(m_homeButton);
+
+                m_upButton = new QToolButton(this);
+                m_upButton->setText(tr("Up"));
+                toolbarLayout->addWidget(m_upButton);
+
+                m_pathEdit = new QLineEdit(this);
+                m_pathEdit->setStyleSheet(
+                    "QLineEdit { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
+                toolbarLayout->addWidget(m_pathEdit, 1);
+
+                layout->addLayout(toolbarLayout);
+
+                m_view = new QTreeView(this);
+                m_view->setAlternatingRowColors(true);
+                m_view->setRootIsDecorated(false);
+                m_view->setItemsExpandable(false);
+                m_view->setSortingEnabled(true);
+                m_view->sortByColumn(0, Qt::AscendingOrder);
+                m_view->setStyleSheet(
+                    "QTreeView { background: #111827; color: white; alternate-background-color: #0f172a; }"
+                    "QTreeView::item:selected { background: #1d4ed8; color: white; }");
+                layout->addWidget(m_view, 1);
+
+                if (m_mode == FileBrowserMode::SaveFile) {
+                    auto *nameLabel = new QLabel(tr("File name"), this);
+                    nameLabel->setStyleSheet("QLabel { color: white; }");
+                    layout->addWidget(nameLabel);
+
+                    m_nameEdit = new QLineEdit(this);
+                    m_nameEdit->setStyleSheet(
+                        "QLineEdit { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
+                    m_nameEdit->setText(fileName);
+                    layout->addWidget(m_nameEdit);
+                }
+
+                m_model = new QFileSystemModel(this);
+                m_model->setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot);
+                if (!m_nameFilters.isEmpty()) {
+                    m_model->setNameFilters(m_nameFilters);
+                    m_model->setNameFilterDisables(false);
+                }
+
+                m_view->setModel(m_model);
+                m_view->hideColumn(1);
+                m_view->hideColumn(2);
+                m_view->hideColumn(3);
+
+                const QString initialDirectory = QFileInfo(directory).isDir() ? directory : defaultBrowserDirectory();
+                navigateTo(initialDirectory);
+
+                connect(m_homeButton, &QToolButton::clicked, this, [this]() { navigateTo(defaultBrowserDirectory()); });
+                connect(m_upButton, &QToolButton::clicked, this, [this]() {
+                    QDir dir(currentDirectory());
+                    if (dir.cdUp()) {
+                        navigateTo(dir.absolutePath());
+                    }
+                });
+                connect(m_pathEdit, &QLineEdit::returnPressed, this, [this]() {
+                    const QFileInfo info(m_pathEdit->text().trimmed());
+                    if (info.exists() && info.isDir()) {
+                        navigateTo(info.absoluteFilePath());
+                    }
+                });
+                connect(m_view, &QTreeView::clicked, this, [this](const QModelIndex &index) { handleSelection(index, false); });
+                connect(m_view, &QTreeView::doubleClicked, this, [this](const QModelIndex &index) { handleSelection(index, true); });
+            }
+
+            QString currentDirectory() const {
+                return m_currentDirectory;
+            }
+
+            QString fileName() const {
+                if (m_nameEdit) {
+                    return m_nameEdit->text().trimmed();
+                }
+
+                const QFileInfo info(m_selectedPath);
+                return info.isFile() ? info.fileName() : QString();
+            }
+
+            QString selectedPath() const {
+                if (m_mode == FileBrowserMode::SaveFile) {
+                    QString name = fileName();
+                    if (name.isEmpty()) {
+                        return {};
+                    }
+
+                    const QString suffix = preferredSuffix(m_nameFilters);
+                    if (!suffix.isEmpty() && QFileInfo(name).suffix().isEmpty()) {
+                        name += QStringLiteral(".") + suffix;
+                    }
+
+                    return QDir(m_currentDirectory).filePath(name);
+                }
+
+                return m_selectedPath;
+            }
+
+            bool canAccept(QString *message) const {
+                const QString path = selectedPath();
+                if (m_mode == FileBrowserMode::OpenFile) {
+                    const QFileInfo info(path);
+                    if (path.isEmpty() || !info.exists() || !info.isFile()) {
+                        if (message) {
+                            *message = tr("Select an existing file.");
+                        }
+                        return false;
+                    }
+                    return true;
+                }
+
+                if (path.isEmpty()) {
+                    if (message) {
+                        *message = tr("Enter a file name.");
+                    }
+                    return false;
+                }
+
+                const QFileInfo parentInfo(QFileInfo(path).absolutePath());
+                if (!parentInfo.exists() || !parentInfo.isDir()) {
+                    if (message) {
+                        *message = tr("Select a valid destination folder.");
+                    }
+                    return false;
+                }
+                return true;
+            }
+
+        private:
+            void navigateTo(const QString &path) {
+                const QFileInfo info(path);
+                if (!info.exists() || !info.isDir()) {
+                    return;
+                }
+
+                m_currentDirectory = info.absoluteFilePath();
+                const QModelIndex rootIndex = m_model->setRootPath(m_currentDirectory);
+                m_view->setRootIndex(rootIndex);
+                m_pathEdit->setText(m_currentDirectory);
+                m_selectedPath.clear();
+                m_upButton->setEnabled(QDir(m_currentDirectory).cdUp());
+            }
+
+            void handleSelection(const QModelIndex &index, const bool activate) {
+                const QFileInfo info = m_model->fileInfo(index);
+                if (!info.exists()) {
+                    return;
+                }
+
+                if (info.isDir()) {
+                    if (activate) {
+                        navigateTo(info.absoluteFilePath());
+                    }
+                    return;
+                }
+
+                m_selectedPath = info.absoluteFilePath();
+                if (m_nameEdit) {
+                    m_nameEdit->setText(info.fileName());
+                }
+            }
+
+            FileBrowserMode m_mode;
+            QStringList m_nameFilters;
+            QString m_currentDirectory;
+            QString m_selectedPath;
+            QFileSystemModel *m_model = nullptr;
+            QTreeView *m_view = nullptr;
+            QLineEdit *m_pathEdit = nullptr;
+            QLineEdit *m_nameEdit = nullptr;
+            QToolButton *m_homeButton = nullptr;
+            QToolButton *m_upButton = nullptr;
+        };
     }
 
     int execDrawer(QWidget *parent, const QString &title, QWidget *content, const QList<ButtonSpec> &buttons, const int defaultResult) {
@@ -159,5 +410,95 @@ namespace fairwindsk::ui::drawer {
             *ok = result == QMessageBox::Ok;
         }
         return result == QMessageBox::Ok ? lineEdit->text() : QString();
+    }
+
+    QString getOpenFilePath(QWidget *parent,
+                            const QString &title,
+                            const QString &directory,
+                            const QString &filter) {
+        const QStringList filters = wildcardFilters(filter);
+        QString currentDirectory = directory;
+
+        while (true) {
+            auto *browser = new DrawerFileBrowserWidget(FileBrowserMode::OpenFile, currentDirectory, {}, filters);
+            QPointer<DrawerFileBrowserWidget> browserGuard(browser);
+            const QList<DrawerButtonSpec> drawerSpecs = {
+                {QObject::tr("Open"), int(QMessageBox::Open), true},
+                {QObject::tr("Cancel"), int(QMessageBox::Cancel), false}
+            };
+            const int result = execDrawer(parent, title, browser, {
+                {QObject::tr("Open"), int(QMessageBox::Open), true},
+                {QObject::tr("Cancel"), int(QMessageBox::Cancel), false}
+            }, int(QMessageBox::Cancel));
+
+            if (!browserGuard) {
+                return {};
+            }
+
+            currentDirectory = browserGuard->currentDirectory();
+            if (result != QMessageBox::Open) {
+                return {};
+            }
+
+            QString message;
+            if (!browserGuard->canAccept(&message)) {
+                warning(parent, title, message);
+                continue;
+            }
+
+            return browserGuard->selectedPath();
+        }
+    }
+
+    QString getSaveFilePath(QWidget *parent,
+                            const QString &title,
+                            const QString &path,
+                            const QString &filter) {
+        const QStringList filters = wildcardFilters(filter);
+        QFileInfo initialInfo(path);
+        QString currentDirectory = initialInfo.absolutePath();
+        QString currentFileName = initialInfo.fileName();
+
+        if (currentDirectory.isEmpty() || !QFileInfo(currentDirectory).isDir()) {
+            currentDirectory = defaultBrowserDirectory();
+        }
+
+        while (true) {
+            auto *browser = new DrawerFileBrowserWidget(FileBrowserMode::SaveFile, currentDirectory, currentFileName, filters);
+            QPointer<DrawerFileBrowserWidget> browserGuard(browser);
+            const int result = execDrawer(parent, title, browser, {
+                {QObject::tr("Save"), int(QMessageBox::Save), true},
+                {QObject::tr("Cancel"), int(QMessageBox::Cancel), false}
+            }, int(QMessageBox::Cancel));
+
+            if (!browserGuard) {
+                return {};
+            }
+
+            currentDirectory = browserGuard->currentDirectory();
+            currentFileName = browserGuard->fileName();
+            if (result != QMessageBox::Save) {
+                return {};
+            }
+
+            QString message;
+            if (!browserGuard->canAccept(&message)) {
+                warning(parent, title, message);
+                continue;
+            }
+
+            const QString selectedPath = browserGuard->selectedPath();
+            if (QFileInfo::exists(selectedPath)) {
+                if (question(parent,
+                             title,
+                             QObject::tr("Replace existing file \"%1\"?").arg(QFileInfo(selectedPath).fileName()),
+                             QMessageBox::Yes | QMessageBox::No,
+                             QMessageBox::No) != QMessageBox::Yes) {
+                    continue;
+                }
+            }
+
+            return selectedPath;
+        }
     }
 }

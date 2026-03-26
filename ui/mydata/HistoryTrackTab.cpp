@@ -9,7 +9,6 @@
 #include <QDateTimeEdit>
 #include <QDoubleSpinBox>
 #include <QFile>
-#include <QFileDialog>
 #include <QFormLayout>
 #include <QHeaderView>
 #include <QHBoxLayout>
@@ -391,7 +390,7 @@ namespace fairwindsk::ui::mydata {
     }
 
     void HistoryTrackTab::onImportClicked() {
-        const QString fileName = QFileDialog::getOpenFileName(
+        const QString fileName = drawer::getOpenFilePath(
                 this,
                 tr("Import Tracks"),
                 QString(),
@@ -425,7 +424,7 @@ namespace fairwindsk::ui::mydata {
     }
 
     void HistoryTrackTab::onExportClicked() {
-        const QString fileName = QFileDialog::getSaveFileName(
+        const QString fileName = drawer::getSaveFilePath(
                 this,
                 tr("Export Tracks"),
                 QString("tracks-history.geojson"),

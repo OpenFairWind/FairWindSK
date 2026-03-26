@@ -56,6 +56,14 @@ namespace fairwindsk::ui::drawer {
                     const QString &text = QString(),
                     bool *ok = nullptr,
                     QLineEdit::EchoMode echo = QLineEdit::Normal);
+    QString getOpenFilePath(QWidget *parent,
+                            const QString &title,
+                            const QString &directory = QString(),
+                            const QString &filter = QString());
+    QString getSaveFilePath(QWidget *parent,
+                            const QString &title,
+                            const QString &path = QString(),
+                            const QString &filter = QString());
 }
 
 #endif // FAIRWINDSK_UI_DRAWERDIALOGHOST_HPP

@@ -9,7 +9,6 @@
 #include <QBrush>
 #include <QColor>
 #include <QFile>
-#include <QFileDialog>
 #include <QFormLayout>
 #include <QHeaderView>
 #include <QHBoxLayout>
@@ -921,7 +920,7 @@ namespace fairwindsk::ui::mydata {
     }
 
     void Waypoints::onImportClicked() {
-        const QString fileName = QFileDialog::getOpenFileName(
+        const QString fileName = drawer::getOpenFilePath(
             this,
             tr("Import Waypoints"),
             QString(),
@@ -983,7 +982,7 @@ namespace fairwindsk::ui::mydata {
             ids.append(id);
         }
 
-        const QString fileName = QFileDialog::getSaveFileName(
+        const QString fileName = drawer::getSaveFilePath(
             this,
             tr("Export Waypoints"),
             QStringLiteral("waypoints.geojson"),
