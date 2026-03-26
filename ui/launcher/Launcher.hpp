@@ -10,8 +10,6 @@
 #include <QString>
 
 #include <FairWindSK.hpp>
-#include <QNetworkRequest>
-#include <QNetworkAccessManager>
 #include "ui_Launcher.h"
 
 namespace Ui { class Launcher; }

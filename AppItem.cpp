@@ -7,6 +7,8 @@
 #include <QNetworkReply>
 #include <QEventLoop>
 #include <QNetworkRequest>
+#include <QPointer>
+#include <QTimer>
 #include <QUrl>
 #include <QtCore/qjsonarray.h>
 #include <QPixmap>
@@ -21,26 +23,63 @@
 
 namespace fairwindsk {
     namespace {
-        nlohmann::json fetchJsonArray(const QUrl &url) {
+        constexpr int kCatalogRequestTimeoutMs = 5000;
+
+        struct LegacyCatalog {
+            QHash<QString, QString> iconsByName;
+            QHash<QString, QString> displayNamesByName;
+            bool loaded = false;
+        };
+
+        QByteArray performBlockingGet(const QUrl &url, int *statusCode = nullptr) {
+            if (statusCode) {
+                *statusCode = -1;
+            }
             if (!url.isValid()) {
                 return {};
             }
 
             QNetworkAccessManager networkAccessManager;
-            QEventLoop loop;
-            QObject::connect(&networkAccessManager, &QNetworkAccessManager::finished, &loop, &QEventLoop::quit);
+            QNetworkRequest request(url);
+            request.setTransferTimeout(kCatalogRequestTimeoutMs);
 
-            QNetworkReply *reply = networkAccessManager.get(QNetworkRequest(url));
-            loop.exec();
-
-            if (reply == nullptr) {
+            QPointer<QNetworkReply> reply = networkAccessManager.get(request);
+            if (!reply) {
                 return {};
             }
 
-            const auto statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-            const QByteArray payload = reply->readAll();
-            delete reply;
+            QEventLoop loop;
+            QTimer timeoutTimer;
+            timeoutTimer.setSingleShot(true);
+            QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+            QObject::connect(&timeoutTimer, &QTimer::timeout, &loop, &QEventLoop::quit);
+            timeoutTimer.start(kCatalogRequestTimeoutMs);
+            loop.exec();
 
+            if (!reply) {
+                return {};
+            }
+
+            if (!reply->isFinished()) {
+                reply->abort();
+            }
+
+            if (statusCode) {
+                *statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+            }
+
+            const QByteArray payload = reply->readAll();
+            reply->deleteLater();
+            return payload;
+        }
+
+        nlohmann::json fetchJsonArray(const QUrl &url) {
+            if (!url.isValid()) {
+                return {};
+            }
+
+            int statusCode = -1;
+            const QByteArray payload = performBlockingGet(url, &statusCode);
             if (statusCode < 200 || statusCode >= 300 || payload.isEmpty()) {
                 return {};
             }
@@ -68,19 +107,14 @@ namespace fairwindsk {
             return {};
         }
 
-        QString iconFromLegacyCatalog(const QString &serverUrl, const QString &appName) {
-            static QHash<QString, QHash<QString, QString>> cachedIconsByServer;
-            static QHash<QString, bool> loadedServers;
+        const LegacyCatalog &legacyCatalogForServer(const QString &serverUrl) {
+            static QHash<QString, LegacyCatalog> cachedCatalogsByServer;
+            auto &catalog = cachedCatalogsByServer[serverUrl];
 
-            if (serverUrl.isEmpty() || appName.isEmpty()) {
-                return {};
-            }
-
-            if (!loadedServers.value(serverUrl, false)) {
-                loadedServers.insert(serverUrl, true);
+            if (!serverUrl.isEmpty() && !catalog.loaded) {
+                catalog.loaded = true;
                 const auto legacyCatalog = fetchJsonArray(QUrl(serverUrl + "/skServer/webapps"));
                 if (legacyCatalog.is_array()) {
-                    QHash<QString, QString> icons;
                     for (const auto &appJson : legacyCatalog) {
                         if (!appJson.is_object() || !appJson.contains("name") || !appJson["name"].is_string()) {
                             continue;
@@ -88,34 +122,9 @@ namespace fairwindsk {
                         const QString legacyName = QString::fromStdString(appJson["name"].get<std::string>());
                         const QString legacyIcon = iconStringFromJson(appJson);
                         if (!legacyName.isEmpty() && !legacyIcon.isEmpty()) {
-                            icons.insert(legacyName, legacyIcon);
+                            catalog.iconsByName.insert(legacyName, legacyIcon);
                         }
-                    }
-                    cachedIconsByServer.insert(serverUrl, icons);
-                }
-            }
 
-            return cachedIconsByServer.value(serverUrl).value(appName);
-        }
-
-        QString displayNameFromLegacyCatalog(const QString &serverUrl, const QString &appName) {
-            static QHash<QString, QHash<QString, QString>> cachedDisplayNamesByServer;
-            static QHash<QString, bool> loadedServers;
-
-            if (serverUrl.isEmpty() || appName.isEmpty()) {
-                return {};
-            }
-
-            if (!loadedServers.value(serverUrl, false)) {
-                loadedServers.insert(serverUrl, true);
-                const auto legacyCatalog = fetchJsonArray(QUrl(serverUrl + "/skServer/webapps"));
-                if (legacyCatalog.is_array()) {
-                    QHash<QString, QString> displayNames;
-                    for (const auto &appJson : legacyCatalog) {
-                        if (!appJson.is_object() || !appJson.contains("name") || !appJson["name"].is_string()) {
-                            continue;
-                        }
-                        const QString legacyName = QString::fromStdString(appJson["name"].get<std::string>());
                         QString legacyDisplayName;
                         if (appJson.contains("signalk") && appJson["signalk"].is_object()) {
                             const auto &signalkJsonObject = appJson["signalk"];
@@ -127,14 +136,29 @@ namespace fairwindsk {
                             legacyDisplayName = QString::fromStdString(appJson["displayName"].get<std::string>());
                         }
                         if (!legacyName.isEmpty() && !legacyDisplayName.isEmpty()) {
-                            displayNames.insert(legacyName, legacyDisplayName);
+                            catalog.displayNamesByName.insert(legacyName, legacyDisplayName);
                         }
                     }
-                    cachedDisplayNamesByServer.insert(serverUrl, displayNames);
                 }
             }
 
-            return cachedDisplayNamesByServer.value(serverUrl).value(appName);
+            return catalog;
+        }
+
+        QString iconFromLegacyCatalog(const QString &serverUrl, const QString &appName) {
+            if (serverUrl.isEmpty() || appName.isEmpty()) {
+                return {};
+            }
+
+            return legacyCatalogForServer(serverUrl).iconsByName.value(appName);
+        }
+
+        QString displayNameFromLegacyCatalog(const QString &serverUrl, const QString &appName) {
+            if (serverUrl.isEmpty() || appName.isEmpty()) {
+                return {};
+            }
+
+            return legacyCatalogForServer(serverUrl).displayNamesByName.value(appName);
         }
 
         QPixmap loadRemotePixmap(const QList<QUrl> &candidateUrls, const QPixmap &fallback) {
@@ -143,21 +167,8 @@ namespace fairwindsk {
                     continue;
                 }
 
-                QNetworkAccessManager networkAccessManager;
-                QEventLoop loop;
-                QObject::connect(&networkAccessManager, &QNetworkAccessManager::finished, &loop, &QEventLoop::quit);
-
-                QNetworkReply *reply = networkAccessManager.get(QNetworkRequest(iconUrl));
-                loop.exec();
-
-                if (reply == nullptr) {
-                    continue;
-                }
-
-                const auto statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-                const auto payload = reply->readAll();
-                delete reply;
-
+                int statusCode = -1;
+                const QByteArray payload = performBlockingGet(iconUrl, &statusCode);
                 if (statusCode < 200 || statusCode >= 300) {
                     continue;
                 }
@@ -489,7 +500,6 @@ namespace fairwindsk {
         QStringList result;
         if (m_jsonApp.contains("fairwind") && m_jsonApp["fairwind"].is_object()) {
             auto fairWindJsonObject = m_jsonApp["fairwind"];
-            qDebug() << QString::fromStdString(fairWindJsonObject.dump());
 
             if (fairWindJsonObject.contains("arguments") && fairWindJsonObject["arguments"].is_array()) {
                 auto argumentsJsonArray = fairWindJsonObject["arguments"];

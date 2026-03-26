@@ -11,11 +11,48 @@
 #include <QWebEngineSettings>
 #include <QJsonDocument>
 #include <QSettings>
+#include <QEventLoop>
+#include <QPointer>
 #include "Connection.hpp"
 #include "ui_Connection.h"
 #include "FairWindSK.hpp"
 
 namespace fairwindsk::ui::settings {
+    namespace {
+        constexpr int kBlockingRequestTimeoutMs = 5000;
+
+        QByteArray executeBlockingRequest(QNetworkReply *reply, int *statusCode = nullptr) {
+            if (statusCode) {
+                *statusCode = -1;
+            }
+            if (!reply) {
+                return {};
+            }
+
+            QEventLoop loop;
+            QTimer timeoutTimer;
+            timeoutTimer.setSingleShot(true);
+
+            QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+            QObject::connect(&timeoutTimer, &QTimer::timeout, &loop, &QEventLoop::quit);
+
+            timeoutTimer.start(kBlockingRequestTimeoutMs);
+            loop.exec();
+
+            if (!reply->isFinished()) {
+                reply->abort();
+            }
+
+            if (statusCode) {
+                *statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+            }
+
+            const QByteArray payload = reply->readAll();
+            reply->deleteLater();
+            return payload;
+        }
+    }
+
     void Connection::appendMessage(const QString &message) const {
         ui->textEdit_message->append(message);
     }
@@ -102,7 +139,9 @@ namespace fairwindsk::ui::settings {
         // Get the name of the FairWind++ configuration file
         const auto expirationTime = settings.value("expirationTime", "").toString();
 
-        qDebug() << "href: " << href << " token: " << token << " expirationTime: " << expirationTime;
+        if (FairWindSK::getInstance()->isDebug()) {
+            qDebug() << "href:" << href << "token:" << token << "expirationTime:" << expirationTime;
+        }
 
         syncTokenUiState();
 
@@ -235,6 +274,7 @@ namespace fairwindsk::ui::settings {
 
         // Set the content type header as application/json
         networkRequest.setHeader(QNetworkRequest::ContentTypeHeader,"application/json");
+        networkRequest.setTransferTimeout(kBlockingRequestTimeoutMs);
 
         // Create the client id string
         auto clientId = QUuid::createUuid().toString().replace("{","").replace("}","");
@@ -248,24 +288,18 @@ namespace fairwindsk::ui::settings {
         // Get the message as byte array
         const QByteArray data = message.toUtf8();
 
-        // Create the event loop component
-        QEventLoop loop;
-
-        // Connect the network manager to the event loop
-        connect(&networkAccessManager, &QNetworkAccessManager::finished, &loop,&QEventLoop::quit);
-
         // Create the get request
         QNetworkReply *reply = networkAccessManager.post(networkRequest,data);
 
-        // Wait until the request is satisfied
-        loop.exec();
+        int statusCode = -1;
+        const QByteArray responsePayload = executeBlockingRequest(reply, &statusCode);
 
         // Check if the response has been successful
-        if (reply->attribute( QNetworkRequest::HttpStatusCodeAttribute ) == 202) {
+        if (statusCode == 202) {
             // The response has been successful
 
             // Get the json document
-            const auto doc = QJsonDocument::fromJson(reply->readAll());
+            const auto doc = QJsonDocument::fromJson(responsePayload);
 
             // Get the json object
             const auto jsonObject = doc.object();
@@ -363,7 +397,6 @@ namespace fairwindsk::ui::settings {
             appendMessage(tr("Error connecting the server."));
         }
 
-        reply->deleteLater();
     }
 
     /*
@@ -398,24 +431,19 @@ namespace fairwindsk::ui::settings {
 
             // Set the Content Type handler to application/json
             networkRequest.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-
-            // Create the event loop component
-            QEventLoop loop;
-
-            // Connect the network manager to the event loop
-            connect(&networkAccessManager, &QNetworkAccessManager::finished, &loop, &QEventLoop::quit);
+            networkRequest.setTransferTimeout(kBlockingRequestTimeoutMs);
 
             // Create the get request
             QNetworkReply *reply = networkAccessManager.get(networkRequest);
 
-            // Wait until the request is satisfied
-            loop.exec();
+            int statusCode = -1;
+            const QByteArray responsePayload = executeBlockingRequest(reply, &statusCode);
 
             // Check if the response has been successful
-            if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute) == 200) {
+            if (statusCode == 200) {
 
                 // Get the result as a json document
-                const auto doc = QJsonDocument::fromJson(reply->readAll());
+                const auto doc = QJsonDocument::fromJson(responsePayload);
 
                 // Get the content as a json object
                 const auto jsonObject = doc.object();

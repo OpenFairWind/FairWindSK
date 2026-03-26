@@ -22,6 +22,8 @@
 #include <QNetworkCookie>
 #include <QWebEngineCookieStore>
 #include <QUrl>
+#include <QPointer>
+#include <QTimer>
 #include <algorithm>
 
 
@@ -30,6 +32,8 @@ using namespace Qt::StringLiterals;
 
 namespace fairwindsk {
     namespace {
+        constexpr int kAppsRequestTimeoutMs = 5000;
+
         struct UiMetrics {
             int fontPointSize = 12;
             int controlHeight = 32;
@@ -219,19 +223,32 @@ namespace fairwindsk {
             }
 
             QNetworkAccessManager networkAccessManager;
-            QEventLoop loop;
-            QObject::connect(&networkAccessManager, &QNetworkAccessManager::finished, &loop, &QEventLoop::quit);
+            QNetworkRequest request(url);
+            request.setTransferTimeout(kAppsRequestTimeoutMs);
+            QPointer<QNetworkReply> reply = networkAccessManager.get(request);
+            if (!reply) {
+                return {};
+            }
 
-            QNetworkReply *reply = networkAccessManager.get(QNetworkRequest(url));
+            QEventLoop loop;
+            QTimer timeoutTimer;
+            timeoutTimer.setSingleShot(true);
+            QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+            QObject::connect(&timeoutTimer, &QTimer::timeout, &loop, &QEventLoop::quit);
+            timeoutTimer.start(kAppsRequestTimeoutMs);
             loop.exec();
 
             if (!reply) {
                 return {};
             }
 
+            if (!reply->isFinished()) {
+                reply->abort();
+            }
+
             const auto statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
             const QByteArray payload = reply->readAll();
-            delete reply;
+            reply->deleteLater();
 
             if (statusCode < 200 || statusCode >= 300 || payload.isEmpty()) {
                 return {};

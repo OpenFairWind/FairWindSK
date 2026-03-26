@@ -434,10 +434,6 @@ namespace fairwindsk::ui::drawer {
         while (true) {
             auto *browser = new DrawerFileBrowserWidget(FileBrowserMode::OpenFile, currentDirectory, {}, filters);
             QPointer<DrawerFileBrowserWidget> browserGuard(browser);
-            const QList<DrawerButtonSpec> drawerSpecs = {
-                {QObject::tr("Open"), int(QMessageBox::Open), true},
-                {QObject::tr("Cancel"), int(QMessageBox::Cancel), false}
-            };
             const int result = execDrawer(parent, title, browser, {
                 {QObject::tr("Open"), int(QMessageBox::Open), true},
                 {QObject::tr("Cancel"), int(QMessageBox::Cancel), false}
