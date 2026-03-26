@@ -20,7 +20,8 @@ namespace fairwindsk::ui {
 
         m_formatCombo = new QComboBox(this);
         m_formatCombo->setStyleSheet(
-            "QComboBox { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
+            "QComboBox { background: #f7f7f4; color: #1f2937; border: 1px solid #d1d5db; selection-background-color: #c7d2fe; selection-color: #111827; }"
+            "QComboBox QAbstractItemView { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
         m_formatCombo->setMinimumWidth(170);
         for (const auto &option : geo::coordinateFormatOptions()) {
             m_formatCombo->addItem(option.label, option.id);

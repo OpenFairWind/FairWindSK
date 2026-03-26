@@ -78,6 +78,7 @@ namespace fairwindsk::ui {
         m_dialogDrawerButtonsLayout = new QHBoxLayout(buttonRow);
         m_dialogDrawerButtonsLayout->setContentsMargins(0, 0, 0, 0);
         m_dialogDrawerButtonsLayout->setSpacing(8);
+        m_dialogDrawerButtonsLayout->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
         m_dialogDrawerButtonsLayout->addStretch(1);
         drawerLayout->addWidget(buttonRow);
         ui->verticalLayout->insertWidget(2, m_dialogDrawer);
