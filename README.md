@@ -11,8 +11,8 @@ open-source and open-data.
 
 FairWindSK is a browser with steroids designed to host SK applications.
 It is written in C++ 17 and QT6.
-It now has a single CMake-based build path for macOS, Linux, Raspberry Pi OS, Windows, Android, and iOS.
-Desktop targets expose the full feature set. Mobile targets compile with mobile-safe fallbacks for desktop-only features.
+It now has a single CMake-based desktop build path for macOS, Linux, Raspberry Pi OS, and Windows.
+Android and iOS are not currently supported build targets because the application depends on Qt WebEngine Widgets and desktop-style widget flows.
 
 ## Documentation
 
@@ -59,7 +59,7 @@ The full platform guide now lives in [docs/building.md](docs/building.md).
 Quick summary:
 
 - macOS, Linux, Raspberry Pi OS, and Windows are desktop targets.
-- Android and iOS use the same source tree with desktop-only integrations disabled automatically.
+- Android and iOS are currently unsupported and are rejected at CMake configure time with a clear message.
 - Desktop targets download `nlohmann/json`, `QtZeroConf`, and `QHotkey` during the first clean build.
 
 Generic workflow:

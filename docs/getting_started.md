@@ -1,6 +1,6 @@
 # Getting started with FairWindSK
 
-FairWindSK is a Qt6-based shell that launches and supervises Signal K web applications, plus a handful of native bars (autopilot, anchor, person overboard, alarms, and status overlays). The application is written in C++17, uses Qt WebEngine for rendering, and connects directly to a running Signal K server to discover installed web apps.
+FairWindSK is a Qt6 desktop shell that launches and supervises Signal K web applications, plus a handful of native bars (autopilot, anchor, person overboard, alarms, and status overlays). The application is written in C++17, uses Qt WebEngine for rendering, and connects directly to a running Signal K server to discover installed web apps.
 
 ## Prerequisites
 
@@ -10,7 +10,7 @@ FairWindSK is a Qt6-based shell that launches and supervises Signal K web applic
 
 ## Building from source
 
-The project uses a conventional CMake workflow across all targets:
+The project uses a conventional CMake workflow across the supported desktop targets:
 
 ```bash
 git clone https://github.com/OpenFairWind/FairWindSK.git
@@ -19,7 +19,7 @@ cmake -S . -B build
 cmake --build build --parallel
 ```
 
-Platform-specific dependencies, Qt kit selection, Windows deployment, Raspberry Pi notes, and Android/iOS caveats are documented in [building.md](./building.md).
+Platform-specific dependencies, Qt kit selection, Windows deployment, Raspberry Pi notes, and the current Android/iOS limitations are documented in [building.md](./building.md).
 
 ## First run and configuration bootstrap
 

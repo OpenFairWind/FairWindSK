@@ -1,24 +1,26 @@
 # Building FairWindSK
 
-FairWindSK uses a single CMake-based codebase for desktop and mobile targets. The desktop builds keep the full feature set, while mobile builds compile out desktop-only integrations such as the global hotkey, ZeroConf discovery, and launching external `file://` native applications.
+FairWindSK currently targets desktop Qt kits. The project builds and runs on macOS, Linux, Raspberry Pi OS, and Windows from the same CMake codebase.
+
+Android and iOS are not currently supported build targets. The application depends on Qt WebEngine Widgets and desktop-style widget flows, and the project now fails fast at CMake configure time on those mobile targets instead of advertising a broken path.
 
 ## Support matrix
 
-| Platform | Build target status | Notes |
+| Platform | Status | Notes |
 | --- | --- | --- |
-| macOS | Desktop build supported | Full desktop feature set. |
-| Linux | Desktop build supported | Full desktop feature set. |
-| Raspberry Pi OS | Desktop build supported | Same desktop feature set, plus kiosk/autostart helpers in `extras/`. |
-| Windows | Desktop build supported | Use a Qt desktop kit and run `windeployqt` after building. |
-| Android | Mobile build path available | Desktop-only features are disabled; final packaging depends on the installed Qt mobile kit. |
-| iOS | Mobile build path available | Desktop-only features are disabled; final packaging depends on the installed Qt mobile kit. |
+| macOS | Supported | Full desktop feature set. |
+| Linux | Supported | Full desktop feature set. |
+| Raspberry Pi OS | Supported | Same desktop feature set, plus kiosk/autostart helpers in `extras/`. |
+| Windows | Supported | Full desktop feature set, with `windeployqt` recommended after building. |
+| Android | Not supported | Blocked by the current Qt WebEngine Widgets based UI architecture. |
+| iOS | Not supported | Blocked by the current Qt WebEngine Widgets based UI architecture. |
 
-## Common requirements
+## Common desktop requirements
 
 - CMake 3.16 or newer
-- A C++17 compiler supported by the selected Qt kit
+- A C++17 compiler supported by the selected Qt 6 desktop kit
 - Git
-- Qt 6 with these modules available in the selected kit:
+- Qt 6 desktop modules:
   - `Core`
   - `Gui`
   - `Widgets`
@@ -30,9 +32,17 @@ FairWindSK uses a single CMake-based codebase for desktop and mobile targets. Th
   - `Positioning`
   - `WebEngineWidgets`
   - `VirtualKeyboard`
-- Internet access during the first build, because CMake downloads `nlohmann/json`, `QtZeroConf`, and `QHotkey` for desktop targets
+  - `PrintSupport`
+- Internet access during the first clean desktop build, because CMake downloads:
+  - `nlohmann/json` header fallback
+  - `QtZeroConf`
+  - `QHotkey`
 
-## Generic CMake workflow
+If internet access is restricted, install `nlohmann_json` from your platform package manager first so CMake can use the system header instead of downloading it.
+
+The desktop dependency revisions are now pinned in CMake for reproducible builds.
+
+## Generic desktop workflow
 
 ```bash
 git clone https://github.com/OpenFairWind/FairWindSK.git
@@ -41,52 +51,71 @@ cmake -S . -B build
 cmake --build build --parallel
 ```
 
-For kits installed outside the default search path, pass `-DCMAKE_PREFIX_PATH=...` to the configure step.
+Run from the build tree:
+
+- macOS: `open build/FairWindSK.app`
+- Linux / Raspberry Pi OS: `./build/FairWindSK`
+- Windows: `build\\FairWindSK.exe`
+
+If Qt is installed outside the default search path, pass `-DCMAKE_PREFIX_PATH=...` during configure.
 
 ## macOS
 
 Recommended toolchain:
 
 - Xcode command line tools
-- Homebrew Qt 6 or the Qt online installer
+- Qt 6 desktop kit
 - Ninja or the default CMake generator
 
 Example:
 
 ```bash
-brew install qt cmake ninja
+brew install qt cmake ninja nlohmann-json
 cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH="$(brew --prefix qt)"
 cmake --build build --parallel
+open build/FairWindSK.app
 ```
 
-The resulting app bundle is generated under `build/`.
+Notes:
+
+- The build uses the CMake build-tree rpath so the app can run from the build folder with the downloaded desktop dependencies.
+- For redistribution outside the build tree, use `macdeployqt` on the generated app bundle.
 
 ## Linux
 
-On Debian or Ubuntu-like systems, install a Qt 6 desktop stack plus the build tools. Example package set:
+Example package set for Debian or Ubuntu:
 
 ```bash
 sudo apt update
 sudo apt install build-essential cmake ninja-build git \
+  nlohmann-json3-dev \
   qt6-base-dev qt6-base-dev-tools qt6-webengine-dev qt6-webengine-dev-tools \
   qt6-websockets-dev qt6-positioning-dev libqt6svg6-dev qt6-virtualkeyboard-dev \
-  libavahi-compat-libdnssd-dev libnss-mdns avahi-utils
+  qt6-base-private-dev libqt6printsupport6 libavahi-compat-libdnssd-dev \
+  libnss-mdns avahi-utils
 ```
 
-Then build:
+Build and run:
 
 ```bash
 cmake -S . -B build -G Ninja
 cmake --build build --parallel
+./build/FairWindSK
 ```
+
+Notes:
+
+- The desktop dependency libraries are added to the build-tree rpath, so running from `build/` works without setting `LD_LIBRARY_PATH`.
+- For packaging, use your normal Linux deployment workflow and include the Qt runtime plus the desktop dependencies built under `build/external/lib`.
 
 ## Raspberry Pi OS
 
-Raspberry Pi OS follows the Linux desktop path, but it often needs a slightly broader Qt package set:
+Raspberry Pi OS follows the Linux desktop path. On Bookworm-based images a broader Qt installation is usually needed:
 
 ```bash
 sudo apt update
 sudo apt install build-essential cmake ninja-build git \
+  nlohmann-json3-dev \
   qml6-module-qt-labs-folderlistmodel qml6-module-qtquick-window \
   qml6-module-qtquick-layouts qml6-module-qtqml-workerscript \
   libnss-mdns avahi-utils libavahi-compat-libdnssd-dev libxkbcommon-dev \
@@ -95,37 +124,40 @@ sudo apt install build-essential cmake ninja-build git \
   qt6-virtualkeyboard-dev libqt6virtualkeyboard6 qt6-virtualkeyboard-plugin
 ```
 
-If your Qt package misses `Qt6VirtualKeyboardConfigVersionImpl.cmake`, the existing workaround still applies:
+Build and run:
+
+```bash
+cmake -S . -B build -G Ninja
+cmake --build build --parallel
+./build/FairWindSK
+```
+
+Notes:
+
+- If your distribution package misses `Qt6VirtualKeyboardConfigVersionImpl.cmake`, the existing workaround still applies:
 
 ```bash
 sudo touch /usr/lib/aarch64-linux-gnu/cmake/Qt6VirtualKeyboard/Qt6VirtualKeyboardConfigVersionImpl.cmake
 ```
 
-Then configure and build:
-
-```bash
-cmake -S . -B build -G Ninja
-cmake --build build --parallel
-```
-
-For kiosk deployments, see `extras/fairwindsk-startup.desktop` and `extras/fairwindsk-startup`.
+- For kiosk deployments, see `extras/fairwindsk-startup.desktop` and `extras/fairwindsk-startup`.
 
 ## Windows
 
 Recommended toolchain:
 
-- Qt 6 desktop kit for `msvc2019_64`, `msvc2022_64`, or another matching desktop compiler kit
+- Qt 6 desktop kit for MSVC
 - Visual Studio Build Tools or Visual Studio Community
 - CMake and Ninja
-- Git
 
-Suggested command-line flow from a developer prompt where the compiler environment is already loaded:
+Example from a developer prompt with the compiler environment already loaded:
 
 ```powershell
 git clone https://github.com/OpenFairWind/FairWindSK.git
 cd FairWindSK
 cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH="C:\Qt\6.x.x\msvc2022_64"
 cmake --build build --parallel
+build\FairWindSK.exe
 ```
 
 Deploy the Qt runtime after a successful build:
@@ -136,51 +168,39 @@ windeployqt build\FairWindSK.exe
 
 Notes:
 
-- The desktop-only dependencies `QtZeroConf` and `QHotkey` are now handled in a Windows-aware way in CMake.
-- Local external applications referenced with `file://` remain a desktop-only feature and are supported on Windows builds.
+- The CMake build handles `QtZeroConf` and `QHotkey` as desktop-only dependencies and copies their DLLs next to the executable after the build.
+- Local `file://` applications remain a desktop-only integration and are supported on Windows.
 
 ## Android
 
-Use a Qt for Android kit in Qt Creator or provide the Android toolchain information explicitly to CMake. The project now disables desktop-only integrations automatically for mobile builds.
+Android is not currently a supported target for this project.
 
-Typical requirements:
+Reason:
 
-- Qt for Android
-- Android SDK
-- Android NDK
-- JDK
+- The codebase depends on `QtWebEngineWidgets` and several desktop-widget based flows that are not maintained here as an Android-compatible UI stack.
 
-Typical workflow:
+Current behavior:
 
-1. Open the project in Qt Creator.
-2. Select an Android kit.
-3. Configure and build the app through Qt Creator, or use the Android toolchain variables generated by that kit from the command line.
-
-Current mobile behavior:
-
-- ZeroConf discovery is disabled.
-- The global `SHIFT+TAB` hotkey is disabled.
-- Desktop-style `file://` native app launching is disabled.
+- CMake stops during configure with an explicit error instead of pretending the build is supported.
 
 ## iOS
 
-Use Qt for iOS together with a supported Xcode toolchain. As with Android, the project now disables desktop-only integrations automatically for mobile builds.
+iOS is not currently a supported target for this project.
 
-Typical workflow:
+Reason:
 
-1. Open the project in Qt Creator on macOS.
-2. Select an iOS kit.
-3. Build and deploy through Qt Creator or Xcode integration.
+- The codebase depends on `QtWebEngineWidgets` and desktop-style widget flows that are not maintained here as an iOS-compatible UI stack.
 
-Current mobile behavior:
+Current behavior:
 
-- ZeroConf discovery is disabled.
-- The global `SHIFT+TAB` hotkey is disabled.
-- Desktop-style `file://` native app launching is disabled.
+- CMake stops during configure with an explicit error instead of pretending the build is supported.
 
 ## Runtime and deployment notes
 
 - Desktop builds copy the bundled icon directory to the target output folder after the build.
-- Windows builds should be deployed with `windeployqt`.
-- Mobile builds rely on the selected Qt kit for packaging and signing.
-- The first desktop build of a clean tree requires internet access for third-party dependencies.
+- The first clean desktop build requires internet access for third-party dependency download steps.
+- Desktop external dependencies are pinned in CMake so the same revisions are used across machines.
+- For redistribution:
+  - macOS: use `macdeployqt`
+  - Windows: use `windeployqt`
+  - Linux / Raspberry Pi OS: package the Qt runtime plus `build/external/lib`

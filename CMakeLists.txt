@@ -13,6 +13,10 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(FAIRWINDSK_MOBILE FALSE)
 if(ANDROID OR IOS)
     set(FAIRWINDSK_MOBILE TRUE)
+    message(FATAL_ERROR
+            "FairWindSK currently requires Qt WebEngine Widgets and desktop-oriented UI flows that are not supported "
+            "by this project on Android or iOS. Supported build targets are macOS, Linux, Raspberry Pi OS, and Windows. "
+            "See docs/building.md for the current platform support matrix.")
 endif()
 
 find_package(Qt6 REQUIRED COMPONENTS
@@ -55,27 +59,36 @@ include(ExternalProject)
 
 find_package(nlohmann_json CONFIG QUIET)
 if(NOT nlohmann_json_FOUND)
-    set(NLOHMANN_JSON_INCLUDE_DIR ${CMAKE_BINARY_DIR}/third_party/nlohmann)
-    set(NLOHMANN_JSON_HEADER ${NLOHMANN_JSON_INCLUDE_DIR}/nlohmann/json.hpp)
-    file(MAKE_DIRECTORY ${NLOHMANN_JSON_INCLUDE_DIR}/nlohmann)
-    if(NOT EXISTS ${NLOHMANN_JSON_HEADER})
-        file(DOWNLOAD
-                https://raw.githubusercontent.com/nlohmann/json/v3.11.3/single_include/nlohmann/json.hpp
-                ${NLOHMANN_JSON_HEADER}
-                SHOW_PROGRESS
-                TIMEOUT 120
-                INACTIVITY_TIMEOUT 30
-                STATUS NLOHMANN_JSON_DOWNLOAD_STATUS
-                LOG NLOHMANN_JSON_DOWNLOAD_LOG)
-        list(GET NLOHMANN_JSON_DOWNLOAD_STATUS 0 NLOHMANN_JSON_DOWNLOAD_CODE)
-        list(GET NLOHMANN_JSON_DOWNLOAD_STATUS 1 NLOHMANN_JSON_DOWNLOAD_MESSAGE)
-        if(NOT NLOHMANN_JSON_DOWNLOAD_CODE EQUAL 0)
-            message(FATAL_ERROR "Failed to download nlohmann/json.hpp: ${NLOHMANN_JSON_DOWNLOAD_MESSAGE}\n${NLOHMANN_JSON_DOWNLOAD_LOG}")
+    find_path(NLOHMANN_JSON_SYSTEM_INCLUDE_DIR
+            NAMES nlohmann/json.hpp
+            PATH_SUFFIXES include)
+    if(NLOHMANN_JSON_SYSTEM_INCLUDE_DIR)
+        add_library(nlohmann_json INTERFACE)
+        add_library(nlohmann_json::nlohmann_json ALIAS nlohmann_json)
+        target_include_directories(nlohmann_json INTERFACE ${NLOHMANN_JSON_SYSTEM_INCLUDE_DIR})
+    else()
+        set(NLOHMANN_JSON_INCLUDE_DIR ${CMAKE_BINARY_DIR}/third_party/nlohmann)
+        set(NLOHMANN_JSON_HEADER ${NLOHMANN_JSON_INCLUDE_DIR}/nlohmann/json.hpp)
+        file(MAKE_DIRECTORY ${NLOHMANN_JSON_INCLUDE_DIR}/nlohmann)
+        if(NOT EXISTS ${NLOHMANN_JSON_HEADER})
+            file(DOWNLOAD
+                    https://raw.githubusercontent.com/nlohmann/json/v3.11.3/single_include/nlohmann/json.hpp
+                    ${NLOHMANN_JSON_HEADER}
+                    SHOW_PROGRESS
+                    TIMEOUT 120
+                    INACTIVITY_TIMEOUT 30
+                    STATUS NLOHMANN_JSON_DOWNLOAD_STATUS
+                    LOG NLOHMANN_JSON_DOWNLOAD_LOG)
+            list(GET NLOHMANN_JSON_DOWNLOAD_STATUS 0 NLOHMANN_JSON_DOWNLOAD_CODE)
+            list(GET NLOHMANN_JSON_DOWNLOAD_STATUS 1 NLOHMANN_JSON_DOWNLOAD_MESSAGE)
+            if(NOT NLOHMANN_JSON_DOWNLOAD_CODE EQUAL 0)
+                message(FATAL_ERROR "Failed to download nlohmann/json.hpp: ${NLOHMANN_JSON_DOWNLOAD_MESSAGE}\n${NLOHMANN_JSON_DOWNLOAD_LOG}")
+            endif()
         endif()
+        add_library(nlohmann_json INTERFACE)
+        add_library(nlohmann_json::nlohmann_json ALIAS nlohmann_json)
+        target_include_directories(nlohmann_json INTERFACE ${CMAKE_BINARY_DIR}/third_party/nlohmann)
     endif()
-    add_library(nlohmann_json INTERFACE)
-    add_library(nlohmann_json::nlohmann_json ALIAS nlohmann_json)
-    target_include_directories(nlohmann_json INTERFACE ${CMAKE_BINARY_DIR}/third_party/nlohmann)
 endif()
 list(APPEND FAIRWINDSK_LINK_LIBRARIES nlohmann_json::nlohmann_json)
 
@@ -85,6 +98,7 @@ if(NOT FAIRWINDSK_MOBILE)
 
     ExternalProject_Add(QtZeroConf
             GIT_REPOSITORY https://github.com/OpenFairWind/QtZeroConf.git
+            GIT_TAG f7744716dff7fad22ca9edd4e3182477afe43b8d
             CMAKE_ARGS -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH} -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION} -DBUILD_SHARED_LIBS=ON
             TIMEOUT 360
     )
@@ -98,7 +112,8 @@ if(NOT FAIRWINDSK_MOBILE)
 
     ExternalProject_Add(qhotkey
             GIT_REPOSITORY https://github.com/Skycoder42/QHotkey.git
-            CMAKE_ARGS -DBUILD_SHARED_LIBS=on -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION} -DQT_DEFAULT_MAJOR_VERSION=6
+            GIT_TAG 1.5.0
+            CMAKE_ARGS -DBUILD_SHARED_LIBS=on -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION} -DQT_DEFAULT_MAJOR_VERSION=6 -DCMAKE_POLICY_VERSION_MINIMUM=3.5
             TIMEOUT 360
     )
 
@@ -216,6 +231,16 @@ foreach(_dependency IN LISTS FAIRWINDSK_EXTERNAL_DEPENDENCIES)
 endforeach()
 
 target_link_libraries(${PROJECT_NAME} PRIVATE ${FAIRWINDSK_LINK_LIBRARIES})
+
+if(NOT WIN32 AND NOT FAIRWINDSK_MOBILE)
+    set(_FAIRWINDSK_EXTERNAL_LIB_DIR "${EXTERNAL_INSTALL_LOCATION}/${CMAKE_INSTALL_LIBDIR}")
+    set_target_properties(${PROJECT_NAME} PROPERTIES BUILD_RPATH "${_FAIRWINDSK_EXTERNAL_LIB_DIR}")
+    if(APPLE)
+        set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "@executable_path/../Frameworks;@loader_path/../Frameworks")
+    else()
+        set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN;$ORIGIN/../lib")
+    endif()
+endif()
 
 if(NOT FAIRWINDSK_MOBILE)
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
