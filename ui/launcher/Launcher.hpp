@@ -16,7 +16,6 @@
 namespace Ui { class Launcher; }
 
 namespace fairwindsk::ui::launcher {
-
     class Launcher : public QWidget {
     Q_OBJECT
 
@@ -26,7 +25,6 @@ namespace fairwindsk::ui::launcher {
         ~Launcher() override ;
 
         void resizeEvent(QResizeEvent *event) override;
-        void toolButton_App_released();
 
     public slots:
         void onScrollLeft();
@@ -50,7 +48,7 @@ namespace fairwindsk::ui::launcher {
         int m_stableViewportHeight = 0;
         int m_pageCount = 0;
         QGridLayout *m_layout = nullptr;
-        QMap<QString, QToolButton *> m_buttons;
+        QMap<QString, QWidget *> m_tiles;
     };
 } // fairwindsk::ui
 

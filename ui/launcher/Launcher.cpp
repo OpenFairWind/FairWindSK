@@ -5,22 +5,132 @@
 // You may need to build the project (run Qt uic code generator) to get "ui_MainPage.h" resolved
 
 #include <algorithm>
-#include <QFontMetrics>
+#include <functional>
+#include <QEnterEvent>
 #include <QFrame>
 #include <QGridLayout>
 #include <QList>
-#include <QNetworkReply>
-#include <QRect>
-#include <QScreen>
+#include <QMouseEvent>
+#include <QPainter>
+#include <QPainterPath>
 #include <QScrollBar>
-#include <QtCore/qjsonarray.h>
 
 #include "Launcher.hpp"
 #include "AppItem.hpp"
 
 namespace fairwindsk::ui::launcher {
     namespace {
-        const QString kLauncherButtonStyle = QStringLiteral(
+        class AppTile final : public QFrame {
+        public:
+            explicit AppTile(QWidget *parent = nullptr) : QFrame(parent) {
+                setCursor(Qt::PointingHandCursor);
+                setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+            }
+
+            void setAppData(const QString &hash,
+                            const QString &title,
+                            const QString &description,
+                            const QPixmap &pixmap) {
+                m_hash = hash;
+                m_title = title;
+                m_pixmap = pixmap;
+                setToolTip(description);
+                update();
+            }
+
+            void setBasePointSize(const qreal pointSize) {
+                m_basePointSize = pointSize;
+            }
+
+            void setActivateHandler(std::function<void(const QString &)> handler) {
+                m_onActivated = std::move(handler);
+            }
+
+            qreal basePointSize() const {
+                return m_basePointSize;
+            }
+
+            QString appHash() const {
+                return m_hash;
+            }
+
+        protected:
+            void enterEvent(QEnterEvent *event) override {
+                QFrame::enterEvent(event);
+                m_hovered = true;
+                update();
+            }
+
+            void leaveEvent(QEvent *event) override {
+                QFrame::leaveEvent(event);
+                m_hovered = false;
+                update();
+            }
+
+            void mouseReleaseEvent(QMouseEvent *event) override {
+                QFrame::mouseReleaseEvent(event);
+                if (event->button() == Qt::LeftButton && rect().contains(event->position().toPoint()) && m_onActivated) {
+                    m_onActivated(m_hash);
+                }
+            }
+
+            void paintEvent(QPaintEvent *event) override {
+                Q_UNUSED(event);
+
+                QPainter painter(this);
+                painter.setRenderHint(QPainter::Antialiasing, true);
+                painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
+
+                const QRectF tileRect = rect().adjusted(1, 1, -1, -1);
+                const qreal radius = 2.0;
+
+                QPainterPath clipPath;
+                clipPath.addRoundedRect(tileRect, radius, radius);
+                painter.setClipPath(clipPath);
+
+                painter.fillRect(tileRect, QColor(16, 22, 32));
+                if (!m_pixmap.isNull()) {
+                    const QPixmap scaled = m_pixmap.scaled(tileRect.size().toSize(),
+                                                           Qt::KeepAspectRatioByExpanding,
+                                                           Qt::SmoothTransformation);
+                    const QRect sourceRect((scaled.width() - int(tileRect.width())) / 2,
+                                           (scaled.height() - int(tileRect.height())) / 2,
+                                           int(tileRect.width()),
+                                           int(tileRect.height()));
+                    painter.drawPixmap(tileRect.toRect(), scaled, sourceRect);
+                }
+
+                QLinearGradient overlay(tileRect.topLeft(), QPointF(tileRect.left(), tileRect.bottom()));
+                overlay.setColorAt(0.0, QColor(0, 0, 0, 0));
+                overlay.setColorAt(0.55, QColor(0, 0, 0, 10));
+                overlay.setColorAt(1.0, QColor(0, 0, 0, 170));
+                painter.fillRect(tileRect, overlay);
+
+                painter.setClipping(false);
+                painter.setPen(QPen(m_hovered ? QColor(255, 255, 255) : QColor(230, 231, 235), m_hovered ? 2.0 : 1.0));
+                painter.drawRoundedRect(tileRect, radius, radius);
+
+                QFont titleFont = font();
+                if (m_basePointSize > 0.0) {
+                    titleFont.setPointSizeF(m_basePointSize);
+                }
+                painter.setFont(titleFont);
+                painter.setPen(QColor(248, 250, 252));
+                painter.drawText(tileRect.adjusted(10, 10, -10, -10).toRect(),
+                                 Qt::AlignLeft | Qt::AlignBottom | Qt::TextWordWrap,
+                                 m_title);
+            }
+
+        private:
+            QString m_hash;
+            QString m_title;
+            QPixmap m_pixmap;
+            qreal m_basePointSize = 0.0;
+            bool m_hovered = false;
+            std::function<void(const QString &)> m_onActivated;
+        };
+
+        const QString kNavigationButtonStyle = QStringLiteral(
             "QToolButton {"
             " background: transparent;"
             " color: #f9fafb;"
@@ -29,6 +139,12 @@ namespace fairwindsk::ui::launcher {
             " }"
             "QToolButton:hover { background: rgba(255, 255, 255, 0.08); border-radius: 8px; }"
             "QToolButton:pressed { background: rgba(255, 255, 255, 0.14); border-radius: 8px; }");
+        const QString kLauncherFrameStyle = QStringLiteral(
+            "QScrollArea {"
+            " background: transparent;"
+            " border: 4px solid rgba(245, 245, 245, 0.95);"
+            " border-radius: 3px;"
+            " }");
     }
 
     Launcher::Launcher(QWidget *parent) : QWidget(parent), ui(new Ui::Launcher) {
@@ -40,14 +156,15 @@ namespace fairwindsk::ui::launcher {
 
         m_layout = new QGridLayout(ui->scrollAreaWidgetContents);
         if (m_layout) {
-            m_layout->setContentsMargins(0, 0, 0, 0);
-            m_layout->setHorizontalSpacing(16);
-            m_layout->setVerticalSpacing(16);
-            ui->toolButton_Left->setStyleSheet(kLauncherButtonStyle);
-            ui->toolButton_Right->setStyleSheet(kLauncherButtonStyle);
+            m_layout->setContentsMargins(6, 6, 6, 6);
+            m_layout->setHorizontalSpacing(4);
+            m_layout->setVerticalSpacing(4);
+            ui->toolButton_Left->setStyleSheet(kNavigationButtonStyle);
+            ui->toolButton_Right->setStyleSheet(kNavigationButtonStyle);
             ui->toolButton_Left->setAutoRaise(true);
             ui->toolButton_Right->setAutoRaise(true);
             ui->scrollArea->setFrameShape(QFrame::NoFrame);
+            ui->scrollArea->setStyleSheet(kLauncherFrameStyle);
 
             ui->scrollAreaWidgetContents->setLayout(m_layout);
             ui->scrollArea->setWidgetResizable(false);
@@ -59,7 +176,7 @@ namespace fairwindsk::ui::launcher {
             connect(ui->scrollArea->horizontalScrollBar(), &QScrollBar::rangeChanged, this, [this]() { updateScrollButtons(); });
 
             QList<QPair<AppItem *, QString>> orderedApps;
-            auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+            const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
             for (auto &hash : fairWindSK->getAppsHashes()) {
                 auto app = fairWindSK->getAppItemByHash(hash);
                 if (app->getActive()) {
@@ -70,7 +187,9 @@ namespace fairwindsk::ui::launcher {
                 if (left.first->getOrder() != right.first->getOrder()) {
                     return left.first->getOrder() < right.first->getOrder();
                 }
-                const int displayNameCompare = QString::compare(left.first->getDisplayName(), right.first->getDisplayName(), Qt::CaseInsensitive);
+                const int displayNameCompare = QString::compare(left.first->getDisplayName(),
+                                                                right.first->getDisplayName(),
+                                                                Qt::CaseInsensitive);
                 if (displayNameCompare != 0) {
                     return displayNameCompare < 0;
                 }
@@ -81,32 +200,30 @@ namespace fairwindsk::ui::launcher {
             m_pageCount = std::max(1, int((orderedApps.size() + itemsPerPage - 1) / itemsPerPage));
             int index = 0;
             for (const auto &item : orderedApps) {
-                auto appItem = item.first;
-                auto name = item.second;
+                auto *appItem = item.first;
+                const auto &name = item.second;
                 const int page = index / itemsPerPage;
                 const int indexInPage = index % itemsPerPage;
                 const int row = indexInPage / m_cols;
                 const int col = (page * m_cols) + (indexInPage % m_cols);
 
-                auto *button = new QToolButton(ui->scrollAreaWidgetContents);
-                button->setProperty("app_hash", name);
-                button->setProperty("base_point_size", button->font().pointSizeF());
-                button->setText(appItem->getDisplayName());
-                button->setToolTip(appItem->getDescription());
+                auto *tile = new AppTile(ui->scrollAreaWidgetContents);
+                tile->setBasePointSize(tile->font().pointSizeF() + 1.0);
+                tile->setAppData(name, appItem->getDisplayName(), appItem->getDescription(), appItem->getIcon());
+                tile->setActivateHandler([this](const QString &hash) {
+                    if (hash.isEmpty()) {
+                        return;
+                    }
 
-                const QPixmap pixmap = appItem->getIcon();
-                if (!pixmap.isNull()) {
-                    button->setIcon(pixmap);
-                }
+                    if (FairWindSK::getInstance()->isDebug()) {
+                        qDebug() << "Apps - hash:" << hash;
+                    }
 
-                button->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-                button->setAutoRaise(true);
-                button->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
-                button->setStyleSheet(kLauncherButtonStyle);
-                connect(button, &QToolButton::released, this, &Launcher::toolButton_App_released);
+                    emit foregroundAppChanged(hash);
+                });
 
-                m_layout->addWidget(button, row, col, Qt::AlignCenter);
-                m_buttons[name] = button;
+                m_layout->addWidget(tile, row, col);
+                m_tiles[name] = tile;
                 ++index;
             }
 
@@ -118,24 +235,6 @@ namespace fairwindsk::ui::launcher {
     Launcher::~Launcher() {
         delete ui;
         ui = nullptr;
-    }
-
-    void Launcher::toolButton_App_released() {
-        auto *buttonWidget = qobject_cast<QToolButton *>(sender());
-        if (!buttonWidget) {
-            return;
-        }
-
-        const QString hash = buttonWidget->property("app_hash").toString();
-        if (hash.isEmpty()) {
-            return;
-        }
-
-        if (FairWindSK::getInstance()->isDebug()) {
-            qDebug() << "Apps - hash:" << hash;
-        }
-
-        emit foregroundAppChanged(hash);
     }
 
     void Launcher::resizeEvent(QResizeEvent *event) {
@@ -153,12 +252,13 @@ namespace fairwindsk::ui::launcher {
         if (viewportSize.width() <= 0 || viewportSize.height() <= 0) {
             return;
         }
+
         m_stableViewportHeight = qMax(m_stableViewportHeight, viewportSize.height());
         const int stableViewportHeight = qMax(viewportSize.height(), m_stableViewportHeight);
-        const int availableHeight = qMax(240, stableViewportHeight - layout->contentsMargins().top() - layout->contentsMargins().bottom());
+        const int availableHeight = qMax(220, stableViewportHeight - layout->contentsMargins().top() - layout->contentsMargins().bottom());
         const int availableWidth = qMax(320, viewportSize.width() - layout->contentsMargins().left() - layout->contentsMargins().right());
-        const int rowHeight = qMax(140, (availableHeight - ((m_rows - 1) * layout->verticalSpacing())) / qMax(1, m_rows));
-        const int columnWidth = qMax(180, (availableWidth - ((m_cols - 1) * layout->horizontalSpacing())) / qMax(1, m_cols));
+        const int rowHeight = qMax(110, (availableHeight - ((m_rows - 1) * layout->verticalSpacing())) / qMax(1, m_rows));
+        const int columnWidth = qMax(140, (availableWidth - ((m_cols - 1) * layout->horizontalSpacing())) / qMax(1, m_cols));
         const int totalColumns = std::max(1, layout->columnCount());
         const int contentWidth = std::max(viewportSize.width(),
                                           (m_pageCount * availableWidth) +
@@ -178,24 +278,19 @@ namespace fairwindsk::ui::launcher {
             layout->setRowMinimumHeight(row, rowHeight);
         }
 
-        for (auto button : m_buttons) {
-            QFont font = button->font();
-            const qreal basePointSize = button->property("base_point_size").toReal();
-            if (basePointSize > 0.0) {
-                font.setPointSizeF(basePointSize);
-                button->setFont(font);
+        for (auto *tileWidget : m_tiles) {
+            auto *tile = dynamic_cast<AppTile *>(tileWidget);
+            if (!tile) {
+                continue;
             }
 
-            const QFontMetrics metrics(button->font());
-            const QRect textRect(0, 0, qMax(80, columnWidth - 16), rowHeight);
-            const int textHeight = qMax(
-                metrics.lineSpacing(),
-                metrics.boundingRect(textRect, Qt::AlignHCenter | Qt::AlignTop | Qt::TextWordWrap, button->text()).height());
-            const int iconWidth = qMax(72, columnWidth - 24);
-            const int iconHeight = qMax(72, rowHeight - textHeight - 28);
-
-            button->setIconSize(QSize(iconWidth, iconHeight));
-            button->setFixedSize(columnWidth, rowHeight);
+            QFont font = tile->font();
+            const qreal basePointSize = tile->basePointSize();
+            if (basePointSize > 0.0) {
+                font.setPointSizeF(std::max<qreal>(10.0, basePointSize));
+                tile->setFont(font);
+            }
+            tile->setFixedSize(columnWidth, rowHeight);
         }
 
         ui->scrollAreaWidgetContents->resize(contentWidth, contentHeight);
