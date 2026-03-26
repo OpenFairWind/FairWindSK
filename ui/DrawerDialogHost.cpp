@@ -518,6 +518,7 @@ namespace fairwindsk::ui::drawer {
                            const QString &title,
                            double *latitude,
                            double *longitude,
+                           double *altitude,
                            QString *formatId) {
         if (!latitude || !longitude) {
             return false;
@@ -529,7 +530,7 @@ namespace fairwindsk::ui::drawer {
 
         while (true) {
             auto *editor = new fairwindsk::ui::GeoCoordinateEditorWidget();
-            editor->setCoordinate(*latitude, *longitude, currentFormat);
+            editor->setCoordinate(*latitude, *longitude, altitude ? *altitude : 0.0, currentFormat);
             QPointer<fairwindsk::ui::GeoCoordinateEditorWidget> editorGuard(editor);
             const int result = execDrawer(parent, title, editor, {
                 {QObject::tr("Apply"), int(QMessageBox::Ok), true},
@@ -543,7 +544,8 @@ namespace fairwindsk::ui::drawer {
             QString message;
             double parsedLatitude = *latitude;
             double parsedLongitude = *longitude;
-            if (!editorGuard->coordinate(&parsedLatitude, &parsedLongitude, &message)) {
+            double parsedAltitude = altitude ? *altitude : 0.0;
+            if (!editorGuard->coordinate(&parsedLatitude, &parsedLongitude, altitude ? &parsedAltitude : nullptr, &message)) {
                 warning(parent, title, message);
                 currentFormat = editorGuard->formatId();
                 continue;
@@ -551,6 +553,9 @@ namespace fairwindsk::ui::drawer {
 
             *latitude = parsedLatitude;
             *longitude = parsedLongitude;
+            if (altitude) {
+                *altitude = parsedAltitude;
+            }
             if (formatId) {
                 *formatId = editorGuard->formatId();
             }

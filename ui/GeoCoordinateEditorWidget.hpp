@@ -14,9 +14,9 @@ namespace fairwindsk::ui {
     public:
         explicit GeoCoordinateEditorWidget(QWidget *parent = nullptr);
 
-        void setCoordinate(double latitude, double longitude, const QString &formatId);
+        void setCoordinate(double latitude, double longitude, double altitude, const QString &formatId);
         QString formatId() const;
-        bool coordinate(double *latitude, double *longitude, QString *message = nullptr) const;
+        bool coordinate(double *latitude, double *longitude, double *altitude = nullptr, QString *message = nullptr) const;
 
     private slots:
         void onFormatChanged(int index);
@@ -27,8 +27,10 @@ namespace fairwindsk::ui {
         QComboBox *m_formatCombo = nullptr;
         QLineEdit *m_latitudeEdit = nullptr;
         QLineEdit *m_longitudeEdit = nullptr;
+        QLineEdit *m_altitudeEdit = nullptr;
         double m_latitude = 0.0;
         double m_longitude = 0.0;
+        double m_altitude = 0.0;
     };
 }
 

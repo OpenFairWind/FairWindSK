@@ -68,6 +68,7 @@ namespace fairwindsk::ui::drawer {
                            const QString &title,
                            double *latitude,
                            double *longitude,
+                           double *altitude = nullptr,
                            QString *formatId = nullptr);
 }
 

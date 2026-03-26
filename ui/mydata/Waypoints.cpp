@@ -1194,12 +1194,14 @@ namespace fairwindsk::ui::mydata {
 
         double latitude = m_latitudeSpinBox->value();
         double longitude = m_longitudeSpinBox->value();
-        if (!drawer::editGeoCoordinate(this, tr("Coordinates"), &latitude, &longitude)) {
+        double altitude = m_altitudeSpinBox->value();
+        if (!drawer::editGeoCoordinate(this, tr("Coordinates"), &latitude, &longitude, &altitude)) {
             return;
         }
 
         m_latitudeSpinBox->setValue(latitude);
         m_longitudeSpinBox->setValue(longitude);
+        m_altitudeSpinBox->setValue(altitude);
         updateCoordinateDisplay();
         updatePreview(waypointFromEditor());
     }
