@@ -162,9 +162,10 @@ namespace fairwindsk::ui::launcher {
             const int textHeight = qMax(
                 metrics.lineSpacing(),
                 metrics.boundingRect(textRect, Qt::AlignHCenter | Qt::AlignTop | Qt::TextWordWrap, button->text()).height());
-            const int iconSize = qMax(72, qMin(columnWidth - 24, rowHeight - textHeight - 28));
+            const int iconWidth = qMax(72, columnWidth - 24);
+            const int iconHeight = qMax(72, rowHeight - textHeight - 28);
 
-            button->setIconSize(QSize(iconSize, iconSize));
+            button->setIconSize(QSize(iconWidth, iconHeight));
             button->setFixedSize(columnWidth, rowHeight);
         }
 
