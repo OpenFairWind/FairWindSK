@@ -1,6 +1,7 @@
 #ifndef FAIRWINDSK_UI_GEOCOORDINATEEDITORWIDGET_HPP
 #define FAIRWINDSK_UI_GEOCOORDINATEEDITORWIDGET_HPP
 
+#include <QPushButton>
 #include <QWidget>
 
 namespace Ui { class GeoCoordinateEditorWidget; }
@@ -17,6 +18,8 @@ namespace fairwindsk::ui {
         void setCoordinate(double latitude, double longitude, double altitude, const QString &formatId);
         QString formatId() const;
         bool coordinate(double *latitude, double *longitude, double *altitude = nullptr, QString *message = nullptr) const;
+        QPushButton *applyButton() const;
+        QPushButton *cancelButton() const;
 
     private slots:
         void onFormatChanged(int index);

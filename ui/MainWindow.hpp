@@ -71,6 +71,7 @@ namespace fairwindsk::ui {
 
         static MainWindow *instance(QWidget *context = nullptr);
         int execDrawer(const QString &title, QWidget *content, const QList<DrawerButtonSpec> &buttons, int defaultResult = 0);
+        void finishActiveDrawer(int result = 0);
 
     private:
         bool isOverlayOpen() const;
@@ -78,7 +79,6 @@ namespace fairwindsk::ui {
         void setDrawerEnabled(bool enabled) const;
         void clearDrawer();
         bool isDrawerOpen() const;
-        void cancelActiveDrawer(int result = 0);
         void showOverlay(QWidget *page);
         void closeOverlay(QWidget *page, QWidget *fallbackWidget);
         void showLauncher();

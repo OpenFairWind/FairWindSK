@@ -187,7 +187,7 @@ namespace fairwindsk::ui {
         return m_dialogDrawer && m_dialogDrawer->isVisible() && m_activeDrawerLoop != nullptr;
     }
 
-    void MainWindow::cancelActiveDrawer(const int result) {
+    void MainWindow::finishActiveDrawer(const int result) {
         if (m_activeDrawerResult) {
             *m_activeDrawerResult = result;
         }
@@ -205,6 +205,7 @@ namespace fairwindsk::ui {
         m_dialogDrawerTitle->setText(title);
         content->setParent(m_dialogDrawerContentHost);
         m_dialogDrawerContentLayout->addWidget(content);
+        ui->widgetDialogDrawerButtonRow->setVisible(!buttons.isEmpty());
 
         QEventLoop loop;
         int result = defaultResult;
@@ -654,7 +655,7 @@ namespace fairwindsk::ui {
 
     void MainWindow::closeEvent(QCloseEvent *event) {
         if (isDrawerOpen()) {
-            cancelActiveDrawer(int(QMessageBox::Cancel));
+            finishActiveDrawer(int(QMessageBox::Cancel));
             event->ignore();
             QTimer::singleShot(0, this, [this]() {
                 if (isVisible()) {

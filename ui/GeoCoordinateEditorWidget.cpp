@@ -50,6 +50,14 @@ namespace fairwindsk::ui {
         return ui->comboBoxFormat->currentData().toString();
     }
 
+    QPushButton *GeoCoordinateEditorWidget::applyButton() const {
+        return ui->pushButtonApply;
+    }
+
+    QPushButton *GeoCoordinateEditorWidget::cancelButton() const {
+        return ui->pushButtonCancel;
+    }
+
     bool GeoCoordinateEditorWidget::coordinate(double *latitude,
                                                double *longitude,
                                                double *altitude,
