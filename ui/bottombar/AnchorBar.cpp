@@ -12,6 +12,7 @@
 #include "AnchorBar.hpp"
 
 #include "FairWindSK.hpp"
+#include "ui/GeoCoordinateUtils.hpp"
 #include "ui_AnchorBar.h"
 
 
@@ -418,14 +419,17 @@ namespace fairwindsk::ui::bottombar {
         {
             ui->widget_Position->setVisible(false);
         } else {
-
-            auto texts = value.toString(QGeoCoordinate::DegreesMinutesSecondsWithHemisphere).split(",");
-
-            // Set the latitude
-            ui->label_Latitude->setText(texts[0]);
-
-            // Set the longitude
-            ui->label_Longitude->setText(texts[1]);
+            const auto configuration = FairWindSK::getInstance()->getConfiguration();
+            ui->label_Latitude->setText(
+                fairwindsk::ui::geo::formatSingleCoordinate(
+                    value.latitude(),
+                    true,
+                    configuration->getCoordinateFormat()));
+            ui->label_Longitude->setText(
+                fairwindsk::ui::geo::formatSingleCoordinate(
+                    value.longitude(),
+                    false,
+                    configuration->getCoordinateFormat()));
 
             if (!ui->widget_Position->isVisible()) {
                 ui->widget_Position->setVisible(true);

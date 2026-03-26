@@ -64,6 +64,11 @@ namespace fairwindsk::ui::drawer {
                             const QString &title,
                             const QString &path = QString(),
                             const QString &filter = QString());
+    bool editGeoCoordinate(QWidget *parent,
+                           const QString &title,
+                           double *latitude,
+                           double *longitude,
+                           QString *formatId = nullptr);
 }
 
 #endif // FAIRWINDSK_UI_DRAWERDIALOGHOST_HPP

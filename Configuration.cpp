@@ -169,6 +169,14 @@ namespace fairwindsk {
         return getInt("main", "launcherColumns", 3);
     }
 
+    void Configuration::setCoordinateFormat(const QString &value) {
+        ensureObject("main")["coordinateFormat"] = value.toStdString();
+    }
+
+    QString Configuration::getCoordinateFormat() const {
+        return getString("main", "coordinateFormat", "dm_symbols_decimal");
+    }
+
     void Configuration::setWindowMode(QString value) {
         ensureObject("main")["windowMode"] = value.toStdString();
     }

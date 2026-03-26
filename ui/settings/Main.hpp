@@ -33,6 +33,7 @@ namespace fairwindsk::ui::settings {
         void onUiScalePresetChanged(int index);
         void onLauncherRowsValueChanged(int value);
         void onLauncherColumnsValueChanged(int value);
+        void onCoordinateFormatChanged(int index);
 
     private:
         void setWindowGeometryFieldsEnabled(const QString &windowMode) const;

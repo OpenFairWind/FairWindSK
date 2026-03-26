@@ -33,6 +33,7 @@
 #include "FairWindSK.hpp"
 #include "signalk/Client.hpp"
 #include "ui/DrawerDialogHost.hpp"
+#include "ui/GeoCoordinateUtils.hpp"
 #include "ui_ResourceTab.h"
 
 namespace {
@@ -78,6 +79,9 @@ namespace fairwindsk::ui::mydata {
           m_latitudeSpinBox(new QDoubleSpinBox(this)),
           m_longitudeSpinBox(new QDoubleSpinBox(this)),
           m_altitudeSpinBox(new QDoubleSpinBox(this)),
+          m_coordinateRowWidget(new QWidget(this)),
+          m_coordinateDisplayEdit(new QLineEdit(this)),
+          m_coordinateEditButton(new QToolButton(this)),
           m_coordinatesEdit(new QPlainTextEdit(this)),
           m_geometryEdit(new QPlainTextEdit(this)),
           m_propertiesEditor(new JsonObjectEditorWidget(this)),
@@ -207,10 +211,33 @@ namespace fairwindsk::ui::mydata {
         m_latitudeSpinBox->setStyleSheet(kSpinBoxStyle);
         m_longitudeSpinBox->setStyleSheet(kSpinBoxStyle);
         m_altitudeSpinBox->setStyleSheet(kSpinBoxStyle);
+        m_coordinateDisplayEdit->setStyleSheet(kLineEditStyle);
+        m_coordinateDisplayEdit->setReadOnly(true);
+        m_coordinateDisplayEdit->setPlaceholderText(tr("No position"));
+        m_coordinateEditButton->setIcon(QIcon(":/resources/svg/OpenBridge/edit-google.svg"));
+        m_coordinateEditButton->setToolTip(tr("Edit coordinates"));
         m_chartScaleSpinBox->setStyleSheet(kSpinBoxStyle);
         m_coordinatesEdit->setStyleSheet(kPlainTextStyle);
         m_geometryEdit->setStyleSheet(kPlainTextStyle);
         m_chartBoundsEdit->setStyleSheet(kPlainTextStyle);
+
+        auto *coordinateRowLayout = new QHBoxLayout(m_coordinateRowWidget);
+        coordinateRowLayout->setContentsMargins(0, 0, 0, 0);
+        coordinateRowLayout->setSpacing(6);
+        coordinateRowLayout->addWidget(m_coordinateDisplayEdit, 1);
+        coordinateRowLayout->addWidget(m_coordinateEditButton);
+        connect(m_coordinateEditButton, &QToolButton::clicked, this, &ResourceTab::onCoordinateEditClicked);
+        connect(m_notePositionCheckBox, &QCheckBox::toggled, this, [this](const bool checked) {
+            if (m_kind == ResourceKind::Note) {
+                m_coordinateDisplayEdit->setEnabled(checked);
+                m_coordinateEditButton->setEnabled(checked && (m_isEditing || m_isCreating));
+                if (!checked) {
+                    m_coordinateDisplayEdit->clear();
+                } else {
+                    updateCoordinateDisplay();
+                }
+            }
+        });
 
         formLayout->addRow(tr("Id"), m_idValueLabel);
         formLayout->addRow(m_kind == ResourceKind::Note ? tr("Title") : tr("Name"), m_nameEdit);
@@ -230,8 +257,7 @@ namespace fairwindsk::ui::mydata {
                 formLayout->addRow(tr("Href"), m_hrefEdit);
                 formLayout->addRow(tr("MIME Type"), m_mimeTypeEdit);
                 formLayout->addRow(QString(), m_notePositionCheckBox);
-                formLayout->addRow(tr("Latitude"), m_latitudeSpinBox);
-                formLayout->addRow(tr("Longitude"), m_longitudeSpinBox);
+                formLayout->addRow(tr("Position"), m_coordinateRowWidget);
                 formLayout->addRow(tr("Altitude"), m_altitudeSpinBox);
                 formLayout->addRow(tr("Feature properties"), m_propertiesEditor);
                 break;
@@ -247,8 +273,7 @@ namespace fairwindsk::ui::mydata {
                 break;
             case ResourceKind::Waypoint:
                 formLayout->addRow(tr("Type"), m_typeEdit);
-                formLayout->addRow(tr("Latitude"), m_latitudeSpinBox);
-                formLayout->addRow(tr("Longitude"), m_longitudeSpinBox);
+                formLayout->addRow(tr("Position"), m_coordinateRowWidget);
                 formLayout->addRow(tr("Altitude"), m_altitudeSpinBox);
                 formLayout->addRow(tr("Feature properties"), m_propertiesEditor);
                 break;
@@ -427,6 +452,12 @@ namespace fairwindsk::ui::mydata {
         m_chartScaleSpinBox->setEnabled(editMode);
         m_chartLayersEdit->setReadOnly(readOnly);
         m_chartBoundsEdit->setReadOnly(readOnly);
+        const bool coordinateEnabled = m_kind == ResourceKind::Note
+                                       ? m_notePositionCheckBox->isChecked()
+                                       : true;
+        m_coordinateDisplayEdit->setEnabled(coordinateEnabled);
+        m_coordinateEditButton->setEnabled(editMode && coordinateEnabled);
+        updateCoordinateDisplay();
 
         if (editMode) {
             setButtonsForEdit();
@@ -538,6 +569,7 @@ namespace fairwindsk::ui::mydata {
                 m_latitudeSpinBox->setValue(position["latitude"].toDouble());
                 m_longitudeSpinBox->setValue(position["longitude"].toDouble());
                 m_altitudeSpinBox->setValue(position["altitude"].toDouble());
+                updateCoordinateDisplay();
                 break;
             }
             case ResourceKind::Chart: {
@@ -569,6 +601,7 @@ namespace fairwindsk::ui::mydata {
                 m_longitudeSpinBox->setValue(coordinates.size() > 0 ? coordinates.at(0).toDouble() : 0.0);
                 m_latitudeSpinBox->setValue(coordinates.size() > 1 ? coordinates.at(1).toDouble() : 0.0);
                 m_altitudeSpinBox->setValue(coordinates.size() > 2 ? coordinates.at(2).toDouble() : 0.0);
+                updateCoordinateDisplay();
                 break;
             }
         }
@@ -781,6 +814,7 @@ namespace fairwindsk::ui::mydata {
         m_latitudeSpinBox->setValue(0.0);
         m_longitudeSpinBox->setValue(0.0);
         m_altitudeSpinBox->setValue(0.0);
+        m_coordinateDisplayEdit->clear();
         m_coordinatesEdit->clear();
         m_geometryEdit->clear();
         m_propertiesEditor->setJsonObject(QJsonObject{});
@@ -805,6 +839,44 @@ namespace fairwindsk::ui::mydata {
         }
 
         m_titleLabel->setText(detailsTitleForCurrentState());
+        updatePreview(resourceFromEditor());
+    }
+
+    void ResourceTab::updateCoordinateDisplay() {
+        if (m_kind != ResourceKind::Note && m_kind != ResourceKind::Waypoint) {
+            return;
+        }
+
+        if (m_kind == ResourceKind::Note && !m_notePositionCheckBox->isChecked()) {
+            m_coordinateDisplayEdit->clear();
+            return;
+        }
+
+        const auto configuration = FairWindSK::getInstance()->getConfiguration();
+        m_coordinateDisplayEdit->setText(
+            fairwindsk::ui::geo::formatCoordinate(
+                m_latitudeSpinBox->value(),
+                m_longitudeSpinBox->value(),
+                configuration->getCoordinateFormat()));
+    }
+
+    void ResourceTab::onCoordinateEditClicked() {
+        if (!(m_isEditing || m_isCreating)) {
+            return;
+        }
+        if (m_kind == ResourceKind::Note && !m_notePositionCheckBox->isChecked()) {
+            return;
+        }
+
+        double latitude = m_latitudeSpinBox->value();
+        double longitude = m_longitudeSpinBox->value();
+        if (!drawer::editGeoCoordinate(this, tr("Coordinates"), &latitude, &longitude)) {
+            return;
+        }
+
+        m_latitudeSpinBox->setValue(latitude);
+        m_longitudeSpinBox->setValue(longitude);
+        updateCoordinateDisplay();
         updatePreview(resourceFromEditor());
     }
 

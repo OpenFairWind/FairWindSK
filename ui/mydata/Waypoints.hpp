@@ -58,6 +58,7 @@ namespace fairwindsk::ui::mydata {
         void onBackClicked();
         void onNavigateCurrentClicked();
         void onEditClicked();
+        void onCoordinateEditClicked();
         void onDeleteClicked();
         void onSaveClicked();
         void onCancelClicked();
@@ -90,6 +91,7 @@ namespace fairwindsk::ui::mydata {
         void showError(const QString &message) const;
         void clearEditor();
         void updatePreview(const QJsonObject &resource);
+        void updateCoordinateDisplay();
         QString waypointHref(const QString &id) const;
         void applyDetailSplitterRatio();
         void schedulePreviewFocus();
@@ -122,6 +124,8 @@ namespace fairwindsk::ui::mydata {
         QLineEdit *m_nameEdit = nullptr;
         QPlainTextEdit *m_descriptionEdit = nullptr;
         QLineEdit *m_typeEdit = nullptr;
+        QLineEdit *m_coordinateDisplayEdit = nullptr;
+        QToolButton *m_coordinateEditButton = nullptr;
         QDoubleSpinBox *m_latitudeSpinBox = nullptr;
         QDoubleSpinBox *m_longitudeSpinBox = nullptr;
         QDoubleSpinBox *m_altitudeSpinBox = nullptr;

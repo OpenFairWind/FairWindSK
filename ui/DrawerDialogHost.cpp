@@ -22,6 +22,8 @@
 #include <QTreeView>
 #include <QVBoxLayout>
 
+#include "FairWindSK.hpp"
+#include "GeoCoordinateEditorWidget.hpp"
 #include "MainWindow.hpp"
 
 namespace fairwindsk::ui::drawer {
@@ -509,6 +511,50 @@ namespace fairwindsk::ui::drawer {
             }
 
             return selectedPath;
+        }
+    }
+
+    bool editGeoCoordinate(QWidget *parent,
+                           const QString &title,
+                           double *latitude,
+                           double *longitude,
+                           QString *formatId) {
+        if (!latitude || !longitude) {
+            return false;
+        }
+
+        QString currentFormat = formatId && !formatId->isEmpty()
+                                ? *formatId
+                                : fairwindsk::FairWindSK::getInstance()->getConfiguration()->getCoordinateFormat();
+
+        while (true) {
+            auto *editor = new fairwindsk::ui::GeoCoordinateEditorWidget();
+            editor->setCoordinate(*latitude, *longitude, currentFormat);
+            QPointer<fairwindsk::ui::GeoCoordinateEditorWidget> editorGuard(editor);
+            const int result = execDrawer(parent, title, editor, {
+                {QObject::tr("Apply"), int(QMessageBox::Ok), true},
+                {QObject::tr("Cancel"), int(QMessageBox::Cancel), false}
+            }, int(QMessageBox::Cancel));
+
+            if (!editorGuard || result != QMessageBox::Ok) {
+                return false;
+            }
+
+            QString message;
+            double parsedLatitude = *latitude;
+            double parsedLongitude = *longitude;
+            if (!editorGuard->coordinate(&parsedLatitude, &parsedLongitude, &message)) {
+                warning(parent, title, message);
+                currentFormat = editorGuard->formatId();
+                continue;
+            }
+
+            *latitude = parsedLatitude;
+            *longitude = parsedLongitude;
+            if (formatId) {
+                *formatId = editorGuard->formatId();
+            }
+            return true;
         }
     }
 }

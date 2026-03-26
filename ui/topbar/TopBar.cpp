@@ -11,6 +11,7 @@
 
 #include "TopBar.hpp"
 #include "../web/Web.hpp"
+#include "ui/GeoCoordinateUtils.hpp"
 #include <signalk/Waypoint.hpp>
 
 namespace fairwindsk::ui::topbar {
@@ -362,7 +363,9 @@ namespace fairwindsk::ui::topbar {
         } else {
 
 
-            const auto text = value.toString(QGeoCoordinate::DegreesMinutesSecondsWithHemisphere);
+            const auto text = fairwindsk::ui::geo::formatCoordinate(
+                value,
+                FairWindSK::getInstance()->getConfiguration()->getCoordinateFormat());
 
             // Set the course over ground label from the UI to the formatted value
             ui->label_POS->setText(text);

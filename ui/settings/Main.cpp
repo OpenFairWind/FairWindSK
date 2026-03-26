@@ -12,6 +12,7 @@
 #include "ui_Main.h"
 #include "FairWindSK.hpp"
 #include "Units.hpp"
+#include "ui/GeoCoordinateUtils.hpp"
 
 namespace fairwindsk::ui::settings {
     void Main::setWindowGeometryFieldsEnabled(const QString &windowMode) const {
@@ -48,6 +49,9 @@ namespace fairwindsk::ui::settings {
         ui->comboBox_uiScalePreset->addItem(tr("Normal"), "normal");
         ui->comboBox_uiScalePreset->addItem(tr("Large"), "large");
         ui->comboBox_uiScalePreset->addItem(tr("Extra Large"), "xlarge");
+        for (const auto &option : fairwindsk::ui::geo::coordinateFormatOptions()) {
+            ui->comboBox_coordinateFormat->addItem(option.label, option.id);
+        }
 
         int windowModeIndex = 0;
         const auto windowMode = m_settings->getConfiguration()->getWindowMode();
@@ -73,6 +77,8 @@ namespace fairwindsk::ui::settings {
         setUiScaleFieldsEnabled(automaticUiScale);
         ui->spinBox_launcherRows->setValue(m_settings->getConfiguration()->getLauncherRows());
         ui->spinBox_launcherColumns->setValue(m_settings->getConfiguration()->getLauncherColumns());
+        const int coordinateFormatIndex = ui->comboBox_coordinateFormat->findData(m_settings->getConfiguration()->getCoordinateFormat());
+        ui->comboBox_coordinateFormat->setCurrentIndex(coordinateFormatIndex >= 0 ? coordinateFormatIndex : 0);
 
         if (m_settings->getConfiguration()->getVirtualKeyboard()) {
             ui->checkBox_virtualkeboard->setCheckState(Qt::Checked);
@@ -109,6 +115,7 @@ namespace fairwindsk::ui::settings {
         connect(ui->comboBox_uiScalePreset, &QComboBox::currentIndexChanged, this, &Main::onUiScalePresetChanged);
         connect(ui->spinBox_launcherRows, qOverload<int>(&QSpinBox::valueChanged), this, &Main::onLauncherRowsValueChanged);
         connect(ui->spinBox_launcherColumns, qOverload<int>(&QSpinBox::valueChanged), this, &Main::onLauncherColumnsValueChanged);
+        connect(ui->comboBox_coordinateFormat, &QComboBox::currentIndexChanged, this, &Main::onCoordinateFormatChanged);
 
         if (auto units = Units::getInstance()->getUnits(); units.contains("measures") && units["measures"].is_object()) {
             int row = 1;
@@ -232,6 +239,10 @@ namespace fairwindsk::ui::settings {
 
     void Main::onLauncherColumnsValueChanged(const int value) {
         m_settings->getConfiguration()->setLauncherColumns(value);
+    }
+
+    void Main::onCoordinateFormatChanged(const int) {
+        m_settings->getConfiguration()->setCoordinateFormat(ui->comboBox_coordinateFormat->currentData().toString());
     }
 
 

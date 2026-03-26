@@ -44,6 +44,7 @@ namespace fairwindsk::ui::mydata {
         void onRefreshClicked();
         void onSearchTextChanged(const QString &text);
         void onTableDoubleClicked(int row, int column);
+        void onCoordinateEditClicked();
         void onNavigateRowClicked();
         void onEditRowClicked();
         void onRemoveRowClicked();
@@ -70,6 +71,7 @@ namespace fairwindsk::ui::mydata {
         QJsonArray coordinatesJson() const;
         void clearEditor();
         void updatePreview(const QJsonObject &resource);
+        void updateCoordinateDisplay();
         QString resourceDisplayName(const QJsonObject &resource) const;
         QString resourceDescription(const QJsonObject &resource) const;
         QString detailsTitleForCurrentState() const;
@@ -101,6 +103,9 @@ namespace fairwindsk::ui::mydata {
         QDoubleSpinBox *m_latitudeSpinBox;
         QDoubleSpinBox *m_longitudeSpinBox;
         QDoubleSpinBox *m_altitudeSpinBox;
+        QWidget *m_coordinateRowWidget;
+        QLineEdit *m_coordinateDisplayEdit;
+        QToolButton *m_coordinateEditButton;
         QPlainTextEdit *m_coordinatesEdit;
         QPlainTextEdit *m_geometryEdit;
         JsonObjectEditorWidget *m_propertiesEditor;

@@ -13,6 +13,7 @@
 #include <QUuid>
 
 #include "FairWindSK.hpp"
+#include "ui/GeoCoordinateUtils.hpp"
 
 namespace {
     QString displayNameForResource(const QJsonObject &resource) {
@@ -124,12 +125,28 @@ namespace {
 
     QString coordinateLatitudeText(const QJsonObject &resource) {
         const QJsonArray coordinates = coordinatesForResource(resource);
-        return coordinates.size() > 1 ? QString::number(coordinates.at(1).toDouble(), 'f', 6) : QString();
+        if (coordinates.size() <= 1) {
+            return {};
+        }
+
+        const auto configuration = fairwindsk::FairWindSK::getInstance()->getConfiguration();
+        return fairwindsk::ui::geo::formatSingleCoordinate(
+            coordinates.at(1).toDouble(),
+            true,
+            configuration->getCoordinateFormat());
     }
 
     QString coordinateLongitudeText(const QJsonObject &resource) {
         const QJsonArray coordinates = coordinatesForResource(resource);
-        return coordinates.size() > 0 ? QString::number(coordinates.at(0).toDouble(), 'f', 6) : QString();
+        if (coordinates.isEmpty()) {
+            return {};
+        }
+
+        const auto configuration = fairwindsk::FairWindSK::getInstance()->getConfiguration();
+        return fairwindsk::ui::geo::formatSingleCoordinate(
+            coordinates.at(0).toDouble(),
+            false,
+            configuration->getCoordinateFormat());
     }
 
     QString upsertedResourceId(const QJsonObject &response, const QJsonObject &resource, const QString &fallbackId = {}) {

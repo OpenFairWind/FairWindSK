@@ -37,6 +37,7 @@
 #include "GeoJsonUtils.hpp"
 #include "JsonObjectEditorWidget.hpp"
 #include "ui/DrawerDialogHost.hpp"
+#include "ui/GeoCoordinateUtils.hpp"
 #include "ui/web/SignalKAppView.hpp"
 #include "ui_Waypoints.h"
 
@@ -246,6 +247,8 @@ namespace fairwindsk::ui::mydata {
         m_nameEdit = ui->lineEditName;
         m_descriptionEdit = ui->plainTextEditDescription;
         m_typeEdit = ui->lineEditType;
+        m_coordinateDisplayEdit = new QLineEdit(this);
+        m_coordinateEditButton = new QToolButton(this);
         m_latitudeSpinBox = ui->doubleSpinBoxLatitude;
         m_longitudeSpinBox = ui->doubleSpinBoxLongitude;
         m_altitudeSpinBox = ui->doubleSpinBoxAltitude;
@@ -353,6 +356,11 @@ namespace fairwindsk::ui::mydata {
         m_descriptionEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         m_typeEdit->setStyleSheet(kLineEditStyle);
         m_typeEdit->setMaximumWidth(180);
+        m_coordinateDisplayEdit->setStyleSheet(kLineEditStyle);
+        m_coordinateDisplayEdit->setReadOnly(true);
+        m_coordinateDisplayEdit->setPlaceholderText(tr("No position"));
+        m_coordinateEditButton->setIcon(QIcon(":/resources/svg/OpenBridge/edit-google.svg"));
+        m_coordinateEditButton->setToolTip(tr("Edit coordinates"));
         m_latitudeSpinBox->setStyleSheet(kSpinBoxStyle);
         m_longitudeSpinBox->setStyleSheet(kSpinBoxStyle);
         m_altitudeSpinBox->setStyleSheet(kSpinBoxStyle);
@@ -382,6 +390,14 @@ namespace fairwindsk::ui::mydata {
         });
         m_seaFloorTypeLayout->setContentsMargins(0, 0, 0, 0);
         m_seaFloorTypeLayout->setSpacing(4);
+        ui->labelInlineLatitude->setVisible(false);
+        ui->doubleSpinBoxLatitude->setVisible(false);
+        ui->labelInlineLongitude->setVisible(false);
+        ui->doubleSpinBoxLongitude->setVisible(false);
+        auto *positionLayout = ui->horizontalLayoutPosition;
+        positionLayout->insertWidget(0, m_coordinateDisplayEdit, 1);
+        positionLayout->insertWidget(1, m_coordinateEditButton);
+        connect(m_coordinateEditButton, &QToolButton::clicked, this, &Waypoints::onCoordinateEditClicked);
 
         showListPage();
 
@@ -670,6 +686,7 @@ namespace fairwindsk::ui::mydata {
         m_longitudeSpinBox->setValue(coordinates.size() > 0 ? coordinates.at(0).toDouble() : 0.0);
         m_latitudeSpinBox->setValue(coordinates.size() > 1 ? coordinates.at(1).toDouble() : 0.0);
         m_altitudeSpinBox->setValue(coordinates.size() > 2 ? coordinates.at(2).toDouble() : 0.0);
+        updateCoordinateDisplay();
 
         const auto properties = featurePropertiesObject(resource);
         m_propertiesEditor->setJsonObject(properties);
@@ -760,9 +777,11 @@ namespace fairwindsk::ui::mydata {
         m_typeEdit->setReadOnly(!editMode);
         m_latitudeSpinBox->setEnabled(editMode);
         m_longitudeSpinBox->setEnabled(editMode);
+        m_coordinateEditButton->setEnabled(editMode);
         m_altitudeSpinBox->setEnabled(editMode);
         m_contactsEdit->setReadOnly(!editMode);
         m_propertiesEditor->setEditMode(editMode);
+        updateCoordinateDisplay();
 
         if (editMode) {
             setActionButtonsForEdit();
@@ -840,6 +859,7 @@ namespace fairwindsk::ui::mydata {
         m_latitudeSpinBox->setValue(0.0);
         m_longitudeSpinBox->setValue(0.0);
         m_altitudeSpinBox->setValue(0.0);
+        m_coordinateDisplayEdit->clear();
         m_contactsEdit->clear();
         m_contactsLabel->setVisible(false);
         m_contactsEdit->setVisible(false);
@@ -850,6 +870,15 @@ namespace fairwindsk::ui::mydata {
         updateSpecialFieldVisibility();
         m_propertiesEditor->setJsonObject(QJsonObject{});
         updatePreview(waypointFromEditor());
+    }
+
+    void Waypoints::updateCoordinateDisplay() {
+        const auto configuration = FairWindSK::getInstance()->getConfiguration();
+        m_coordinateDisplayEdit->setText(
+            fairwindsk::ui::geo::formatCoordinate(
+                m_latitudeSpinBox->value(),
+                m_longitudeSpinBox->value(),
+                configuration->getCoordinateFormat()));
     }
 
     void Waypoints::updatePreview(const QJsonObject &resource) {
@@ -1156,6 +1185,23 @@ namespace fairwindsk::ui::mydata {
         }
 
         setEditMode(true);
+    }
+
+    void Waypoints::onCoordinateEditClicked() {
+        if (!(m_isEditing || m_isCreating)) {
+            return;
+        }
+
+        double latitude = m_latitudeSpinBox->value();
+        double longitude = m_longitudeSpinBox->value();
+        if (!drawer::editGeoCoordinate(this, tr("Coordinates"), &latitude, &longitude)) {
+            return;
+        }
+
+        m_latitudeSpinBox->setValue(latitude);
+        m_longitudeSpinBox->setValue(longitude);
+        updateCoordinateDisplay();
+        updatePreview(waypointFromEditor());
     }
 
     void Waypoints::onDeleteClicked() {

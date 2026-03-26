@@ -17,6 +17,7 @@
 #include <QTimeZone>
 
 #include "FairWindSK.hpp"
+#include "ui/GeoCoordinateUtils.hpp"
 #include "ui_POBBar.h"
 
 namespace {
@@ -491,8 +492,8 @@ namespace fairwindsk::ui::bottombar {
     }
 
     void POBBar::clearDisplayedPob() {
-        ui->label_Latitude->setText("00°00.000' N");
-        ui->label_Longitude->setText("000°00.000' E");
+        ui->label_Latitude->setText(tr("--"));
+        ui->label_Longitude->setText(tr("--"));
         ui->label_Bearing->setText("___");
         ui->label_Distance->setText("___");
         ui->label_Elapsed->setText("00:00:00");
@@ -512,11 +513,17 @@ namespace fairwindsk::ui::bottombar {
             geoCoordinate.setAltitude(position["altitude"].toDouble());
         }
 
-        const auto texts = geoCoordinate.toString(QGeoCoordinate::DegreesMinutesSecondsWithHemisphere).split(",");
-        if (texts.size() >= 2) {
-            ui->label_Latitude->setText(texts[0].trimmed());
-            ui->label_Longitude->setText(texts[1].trimmed());
-        }
+        const auto configuration = FairWindSK::getInstance()->getConfiguration();
+        ui->label_Latitude->setText(
+            fairwindsk::ui::geo::formatSingleCoordinate(
+                geoCoordinate.latitude(),
+                true,
+                configuration->getCoordinateFormat()));
+        ui->label_Longitude->setText(
+            fairwindsk::ui::geo::formatSingleCoordinate(
+                geoCoordinate.longitude(),
+                false,
+                configuration->getCoordinateFormat()));
     }
 
     void POBBar::updateStartTime() {

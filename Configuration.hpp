@@ -53,6 +53,8 @@ namespace fairwindsk {
         int getLauncherRows() const;
         void setLauncherColumns(int value);
         int getLauncherColumns() const;
+        void setCoordinateFormat(const QString &value);
+        QString getCoordinateFormat() const;
 
         void setWindowMode(QString value);
         QString getWindowMode();

@@ -5,6 +5,7 @@
         "uiScalePreset": "normal",
         "launcherRows": 2,
         "launcherColumns": 3,
+        "coordinateFormat": "dm_symbols_decimal",
         "autopilot": "",
         "windowMode": "windowed",
         "windowWidth": 1024,

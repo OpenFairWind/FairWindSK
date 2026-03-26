@@ -4,14 +4,23 @@
 
 #include "FairWindSK.hpp"
 #include "WaypointsModel.hpp"
+#include "ui/GeoCoordinateUtils.hpp"
 
 namespace {
     QString latitudeText(const QGeoCoordinate &coordinate) {
-        return coordinate.toString(QGeoCoordinate::DegreesMinutesSecondsWithHemisphere).split(",").value(0);
+        const auto configuration = fairwindsk::FairWindSK::getInstance()->getConfiguration();
+        return fairwindsk::ui::geo::formatSingleCoordinate(
+            coordinate.latitude(),
+            true,
+            configuration->getCoordinateFormat());
     }
 
     QString longitudeText(const QGeoCoordinate &coordinate) {
-        return coordinate.toString(QGeoCoordinate::DegreesMinutesSecondsWithHemisphere).split(",").value(1);
+        const auto configuration = fairwindsk::FairWindSK::getInstance()->getConfiguration();
+        return fairwindsk::ui::geo::formatSingleCoordinate(
+            coordinate.longitude(),
+            false,
+            configuration->getCoordinateFormat());
     }
 }
 
