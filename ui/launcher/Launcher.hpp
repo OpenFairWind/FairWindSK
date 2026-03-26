@@ -23,6 +23,7 @@ namespace fairwindsk::ui::launcher {
         explicit Launcher(QWidget *parent = nullptr);
 
         ~Launcher() override ;
+        void refreshFromConfiguration();
 
         void resizeEvent(QResizeEvent *event) override;
         bool eventFilter(QObject *watched, QEvent *event) override;
@@ -36,6 +37,7 @@ namespace fairwindsk::ui::launcher {
         void foregroundAppChanged(const QString hash);
 
     private:
+        void rebuildTiles();
         void resize();
         void updateScrollButtons() const;
         int pageWidth() const;

@@ -629,6 +629,9 @@ namespace fairwindsk::ui {
 
     void MainWindow::onSettingsRejected(settings::Settings *settingsPage) {
         ui->widget_Bottom->setVisible(true);
+        if (m_launcher) {
+            m_launcher->refreshFromConfiguration();
+        }
         closeOverlay(settingsPage, settingsPage ? settingsPage->getCurrentWidget() : nullptr);
     }
 

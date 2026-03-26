@@ -151,10 +151,6 @@ namespace fairwindsk::ui::launcher {
     Launcher::Launcher(QWidget *parent) : QWidget(parent), ui(new Ui::Launcher) {
         ui->setupUi(this);
 
-        const auto configuration = fairwindsk::FairWindSK::getInstance()->getConfiguration();
-        m_cols = std::max(1, configuration->getLauncherColumns());
-        m_rows = std::max(1, configuration->getLauncherRows());
-
         m_layout = new QGridLayout(ui->scrollAreaWidgetContents);
         if (m_layout) {
             m_layout->setContentsMargins(6, 6, 6, 6);
@@ -176,61 +172,7 @@ namespace fairwindsk::ui::launcher {
             connect(ui->toolButton_Left, &QToolButton::clicked, this, &Launcher::onScrollLeft);
             connect(ui->scrollArea->horizontalScrollBar(), &QScrollBar::valueChanged, this, [this]() { updateScrollButtons(); });
             connect(ui->scrollArea->horizontalScrollBar(), &QScrollBar::rangeChanged, this, [this]() { updateScrollButtons(); });
-
-            QList<QPair<AppItem *, QString>> orderedApps;
-            const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
-            for (auto &hash : fairWindSK->getAppsHashes()) {
-                auto app = fairWindSK->getAppItemByHash(hash);
-                if (app->getActive()) {
-                    orderedApps.append(QPair<AppItem *, QString>(app, hash));
-                }
-            }
-            std::sort(orderedApps.begin(), orderedApps.end(), [](const auto &left, const auto &right) {
-                if (left.first->getOrder() != right.first->getOrder()) {
-                    return left.first->getOrder() < right.first->getOrder();
-                }
-                const int displayNameCompare = QString::compare(left.first->getDisplayName(),
-                                                                right.first->getDisplayName(),
-                                                                Qt::CaseInsensitive);
-                if (displayNameCompare != 0) {
-                    return displayNameCompare < 0;
-                }
-                return QString::compare(left.second, right.second, Qt::CaseInsensitive) < 0;
-            });
-
-            const int itemsPerPage = std::max(1, m_rows * m_cols);
-            m_pageCount = std::max(1, int((orderedApps.size() + itemsPerPage - 1) / itemsPerPage));
-            int index = 0;
-            for (const auto &item : orderedApps) {
-                auto *appItem = item.first;
-                const auto &name = item.second;
-                const int page = index / itemsPerPage;
-                const int indexInPage = index % itemsPerPage;
-                const int row = indexInPage / m_cols;
-                const int col = (page * m_cols) + (indexInPage % m_cols);
-
-                auto *tile = new AppTile(ui->scrollAreaWidgetContents);
-                tile->setBasePointSize(tile->font().pointSizeF() + 1.0);
-                tile->setAppData(name, appItem->getDisplayName(), appItem->getDescription(), appItem->getIcon());
-                tile->setActivateHandler([this](const QString &hash) {
-                    if (hash.isEmpty()) {
-                        return;
-                    }
-
-                    if (FairWindSK::getInstance()->isDebug()) {
-                        qDebug() << "Apps - hash:" << hash;
-                    }
-
-                    emit foregroundAppChanged(hash);
-                });
-
-                m_layout->addWidget(tile, row, col);
-                m_tiles[name] = tile;
-                ++index;
-            }
-
-            QTimer::singleShot(0, this, [this]() { resize(); });
-            updateScrollButtons();
+            refreshFromConfiguration();
         }
     }
 
@@ -242,6 +184,16 @@ namespace fairwindsk::ui::launcher {
     void Launcher::resizeEvent(QResizeEvent *event) {
         QWidget::resizeEvent(event);
         resize();
+    }
+
+    void Launcher::refreshFromConfiguration() {
+        const auto configuration = fairwindsk::FairWindSK::getInstance()->getConfiguration();
+        m_cols = std::max(1, configuration->getLauncherColumns());
+        m_rows = std::max(1, configuration->getLauncherRows());
+        m_stableViewportHeight = 0;
+        rebuildTiles();
+        QTimer::singleShot(0, this, [this]() { resize(); });
+        updateScrollButtons();
     }
 
     bool Launcher::eventFilter(QObject *watched, QEvent *event) {
@@ -330,6 +282,75 @@ namespace fairwindsk::ui::launcher {
     int Launcher::currentPage() const {
         const auto *scrollBar = ui->scrollArea->horizontalScrollBar();
         return qBound(0, (scrollBar->value() + (pageWidth() / 2)) / pageWidth(), std::max(0, m_pageCount - 1));
+    }
+
+    void Launcher::rebuildTiles() {
+        if (!m_layout) {
+            return;
+        }
+
+        while (m_layout->count() > 0) {
+            auto *item = m_layout->takeAt(0);
+            if (auto *widget = item->widget()) {
+                widget->deleteLater();
+            }
+            delete item;
+        }
+        m_tiles.clear();
+
+        QList<QPair<AppItem *, QString>> orderedApps;
+        const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+        for (auto &hash : fairWindSK->getAppsHashes()) {
+            auto app = fairWindSK->getAppItemByHash(hash);
+            if (app->getActive()) {
+                orderedApps.append(QPair<AppItem *, QString>(app, hash));
+            }
+        }
+        std::sort(orderedApps.begin(), orderedApps.end(), [](const auto &left, const auto &right) {
+            if (left.first->getOrder() != right.first->getOrder()) {
+                return left.first->getOrder() < right.first->getOrder();
+            }
+            const int displayNameCompare = QString::compare(left.first->getDisplayName(),
+                                                            right.first->getDisplayName(),
+                                                            Qt::CaseInsensitive);
+            if (displayNameCompare != 0) {
+                return displayNameCompare < 0;
+            }
+            return QString::compare(left.second, right.second, Qt::CaseInsensitive) < 0;
+        });
+
+        const int itemsPerPage = std::max(1, m_rows * m_cols);
+        m_pageCount = std::max(1, int((orderedApps.size() + itemsPerPage - 1) / itemsPerPage));
+        int index = 0;
+        for (const auto &item : orderedApps) {
+            auto *appItem = item.first;
+            const auto &name = item.second;
+            const int page = index / itemsPerPage;
+            const int indexInPage = index % itemsPerPage;
+            const int row = indexInPage / m_cols;
+            const int col = (page * m_cols) + (indexInPage % m_cols);
+
+            auto *tile = new AppTile(ui->scrollAreaWidgetContents);
+            tile->setBasePointSize(tile->font().pointSizeF() + 1.0);
+            tile->setAppData(name, appItem->getDisplayName(), appItem->getDescription(), appItem->getIcon());
+            tile->setActivateHandler([this](const QString &hash) {
+                if (hash.isEmpty()) {
+                    return;
+                }
+
+                if (FairWindSK::getInstance()->isDebug()) {
+                    qDebug() << "Apps - hash:" << hash;
+                }
+
+                emit foregroundAppChanged(hash);
+            });
+
+            m_layout->addWidget(tile, row, col);
+            m_tiles[name] = tile;
+            ++index;
+        }
+
+        ui->scrollArea->horizontalScrollBar()->setValue(0);
     }
 
 } // fairwindsk::ui::launcher
