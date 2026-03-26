@@ -7,6 +7,7 @@
 
 #include <QWidget>
 #include <QToolButton>
+#include <QString>
 
 #include <FairWindSK.hpp>
 #include <QNetworkRequest>
@@ -23,9 +24,10 @@ namespace fairwindsk::ui::launcher {
         explicit Launcher(QWidget *parent = nullptr);
 
         ~Launcher() override ;
-        void refreshFromConfiguration();
+        void refreshFromConfiguration(bool forceRebuild = false);
 
         void resizeEvent(QResizeEvent *event) override;
+        void showEvent(QShowEvent *event) override;
         bool eventFilter(QObject *watched, QEvent *event) override;
 
     public slots:
@@ -37,6 +39,7 @@ namespace fairwindsk::ui::launcher {
         void foregroundAppChanged(const QString hash);
 
     private:
+        QString buildLayoutSignature() const;
         void rebuildTiles();
         void resize();
         void updateScrollButtons() const;
@@ -50,8 +53,10 @@ namespace fairwindsk::ui::launcher {
         int m_rows = 0;
         int m_stableViewportHeight = 0;
         int m_pageCount = 0;
+        int m_targetPage = 0;
         QGridLayout *m_layout = nullptr;
         QMap<QString, QWidget *> m_tiles;
+        QString m_layoutSignature;
     };
 } // fairwindsk::ui
 
