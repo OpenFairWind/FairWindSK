@@ -29,6 +29,7 @@ namespace fairwindsk::ui::settings {
         QWidget *getCurrentWidget();
         void setCurrentWidget(QWidget *currentWidget);
         bool hasPendingChanges();
+        void markDirty();
         void saveChanges();
         void discardChanges();
         void resetFromCurrentConfiguration(int currentIndex = -1);
@@ -61,6 +62,7 @@ namespace fairwindsk::ui::settings {
         QWidget *m_currentWidget = nullptr;
         QVector<QWidget *> m_tabPages;
         bool m_rebuildingTabs = false;
+        bool m_hasPendingUiChanges = false;
 
     };
 

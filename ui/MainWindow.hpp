@@ -145,6 +145,7 @@ namespace fairwindsk::ui {
         QHBoxLayout *m_dialogDrawerButtonsLayout = nullptr;
         QEventLoop *m_activeDrawerLoop = nullptr;
         int *m_activeDrawerResult = nullptr;
+        bool m_quitConfirmed = false;
 
         // QWidget containing useful infos
         topbar::TopBar *m_topBar = nullptr;

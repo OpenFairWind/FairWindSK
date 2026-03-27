@@ -807,6 +807,11 @@ namespace fairwindsk::ui {
     }
 
     void MainWindow::closeEvent(QCloseEvent *event) {
+        if (m_quitConfirmed) {
+            event->accept();
+            return;
+        }
+
         if (isDrawerOpen()) {
             finishActiveDrawer(int(QMessageBox::Cancel));
             event->ignore();
@@ -818,6 +823,8 @@ namespace fairwindsk::ui {
             return;
         }
 
+        event->ignore();
+
         if (ui->stackedWidget_Center->currentWidget() == m_settingsPage && m_settingsPage && m_settingsPage->hasPendingChanges()) {
             const auto answer = drawer::question(
                 this,
@@ -826,7 +833,6 @@ namespace fairwindsk::ui {
                 QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel,
                 QMessageBox::Save);
             if (answer == QMessageBox::Cancel) {
-                event->ignore();
                 return;
             }
 
@@ -837,19 +843,17 @@ namespace fairwindsk::ui {
             }
         }
 
-        const QMessageBox::StandardButton reply = drawer::question(this, "Quit FairWindSK",
-                                                                   "Are you sure you want to exit FairWindSK?",
-                                                                   QMessageBox::Yes | QMessageBox::No,
-                                                                   QMessageBox::No);
-        if (reply == QMessageBox::Yes) {
-
-            // Accept the event
-            event->accept();
-
-            // Quit the application
-            QApplication::quit();
-        } else
-            event->ignore();
+        QTimer::singleShot(0, this, [this]() {
+            const QMessageBox::StandardButton reply = drawer::question(this,
+                                                                       tr("Quit FairWindSK"),
+                                                                       tr("Are you sure you want to exit FairWindSK?"),
+                                                                       QMessageBox::Yes | QMessageBox::No,
+                                                                       QMessageBox::No);
+            if (reply == QMessageBox::Yes) {
+                m_quitConfirmed = true;
+                close();
+            }
+        });
     }
 
     /*

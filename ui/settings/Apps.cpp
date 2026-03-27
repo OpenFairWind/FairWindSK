@@ -156,6 +156,7 @@ namespace fairwindsk::ui::settings {
             appJsonObject["signalk"]["appIcon"] = ui->lineEdit_Apps_AppIcon->text().toStdString();
 
             m_settings->getConfiguration()->getRoot()["apps"].at(idx) = appJsonObject;
+            m_settings->markDirty();
 
             auto appItem = new AppItem(appJsonObject);
 
@@ -380,6 +381,7 @@ namespace fairwindsk::ui::settings {
         if (idx != -1) {
             // Update the configuration
             m_settings->getConfiguration()->getRoot()["apps"].at(idx)["fairwind"]["active"] = active;
+            m_settings->markDirty();
 
         }
     }
@@ -399,6 +401,7 @@ namespace fairwindsk::ui::settings {
 
         // Add to the configuration
         m_settings->getConfiguration()->getRoot()["apps"].push_back(appItem->asJson());
+        m_settings->markDirty();
 
         const auto displayName=appItem->getDisplayName();
         const auto listWidgetItem = new QListWidgetItem(displayName);
@@ -444,6 +447,7 @@ namespace fairwindsk::ui::settings {
 
                 // Update the configuration
                 m_settings->getConfiguration()->getRoot()["apps"].erase(idx);
+                m_settings->markDirty();
             }
 
             // Remove the item from the widget list
@@ -508,6 +512,7 @@ namespace fairwindsk::ui::settings {
 
             m_settings->getConfiguration()->getRoot()["apps"].at(idx)["fairwind"]["order"] = row + 1;
         }
+        m_settings->markDirty();
     }
 
     /*

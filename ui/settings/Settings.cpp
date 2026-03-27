@@ -254,16 +254,22 @@ namespace fairwindsk::ui::settings {
     }
 
     bool Settings::hasPendingChanges() {
-        return m_configuration.getRoot() != m_currentConfiguration->getRoot();
+        return m_hasPendingUiChanges || m_configuration.getRoot() != m_currentConfiguration->getRoot();
+    }
+
+    void Settings::markDirty() {
+        m_hasPendingUiChanges = true;
     }
 
     void Settings::saveChanges() {
         applyConfiguration();
+        m_hasPendingUiChanges = false;
         resetFromCurrentConfiguration(ui->tabWidget->currentIndex());
     }
 
     void Settings::discardChanges() {
         FairWindSK::getInstance()->applyUiPreferences(m_currentConfiguration);
+        m_hasPendingUiChanges = false;
         resetFromCurrentConfiguration(ui->tabWidget->currentIndex());
     }
 
@@ -271,6 +277,7 @@ namespace fairwindsk::ui::settings {
         const int resolvedIndex = currentIndex >= 0 ? currentIndex : ui->tabWidget->currentIndex();
         m_configuration.setFilename(m_currentConfiguration->getFilename());
         m_configuration.setRoot(m_currentConfiguration->getRoot());
+        m_hasPendingUiChanges = false;
         initTabs(std::max(0, resolvedIndex));
     }
 
