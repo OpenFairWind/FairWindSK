@@ -11,6 +11,7 @@
 #include <QNetworkAccessManager>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QJsonObject>
 #include <QVariantMap>
 
 #include "Waypoint.hpp"
@@ -88,8 +89,12 @@ namespace fairwindsk::signalk {
         QJsonArray getHistoryPaths(const QVariantMap &query = {});
         QJsonObject getHistoryValues(const QStringList &paths, const QVariantMap &query = {});
         QJsonObject getUnitPreferencesActive();
+        QJsonDocument getUnitPreferencesPresets();
+        QJsonObject getUnitPreferencesPreset(const QString &name);
         QJsonObject getUnitPreferencesDefinitions();
         QJsonObject getUnitPreferencesDefaultCategories();
+        QJsonObject putUnitPreferencesCustomPreset(const QString &name, const QJsonObject &payload);
+        bool deleteUnitPreferencesCustomPreset(const QString &name);
         QJsonObject getPathMeta(const QString &path, const QString &context = QStringLiteral("vessels/self"));
 
         static QString getStringFromUpdateByPath(const QJsonObject &update, const QString& path = "");

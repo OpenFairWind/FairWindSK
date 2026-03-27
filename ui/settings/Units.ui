@@ -67,16 +67,19 @@ QLineEdit, QComboBox, QAbstractItemView, QScrollArea, QSpinBox, QPushButton {
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="QLabel" name="label_presetValue">
+       <widget class="QComboBox" name="comboBox_preset"/>
+      </item>
+      <item row="0" column="2">
+       <widget class="QPushButton" name="pushButton_saveCustomPreset">
         <property name="text">
-         <string>Unavailable</string>
+         <string>Save custom</string>
         </property>
        </widget>
       </item>
-      <item row="0" column="2">
-       <widget class="QPushButton" name="pushButton_syncFromServer">
+      <item row="0" column="3">
+       <widget class="QPushButton" name="pushButton_deletePreset">
         <property name="text">
-         <string>Sync from server</string>
+         <string>Delete custom</string>
         </property>
        </widget>
       </item>
@@ -136,8 +139,8 @@ QLineEdit, QComboBox, QAbstractItemView, QScrollArea, QSpinBox, QPushButton {
             <property name="wordWrap">
              <bool>true</bool>
             </property>
-            <property name="text">
-             <string>No server unit preferences are available. Connect to a Signal K server and reopen Settings to manage local unit overrides.</string>
+           <property name="text">
+             <string>No server unit preferences are available.</string>
             </property>
            </widget>
           </item>
@@ -157,10 +160,10 @@ QLineEdit, QComboBox, QAbstractItemView, QScrollArea, QSpinBox, QPushButton {
               </property>
              </widget>
             </item>
-            <item row="0" column="2">
+           <item row="0" column="2">
              <widget class="QLabel" name="label_headerServer">
               <property name="text">
-               <string>Server preset</string>
+               <string>Preset</string>
               </property>
              </widget>
             </item>

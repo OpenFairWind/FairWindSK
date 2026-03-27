@@ -8,10 +8,12 @@
 #include <QComboBox>
 #include <QLabel>
 #include <QMap>
+#include <QSet>
 #include <QWidget>
 
 #include "Settings.hpp"
 #include "../../Units.hpp"
+#include "../../signalk/Client.hpp"
 
 namespace fairwindsk::ui::settings {
     QT_BEGIN_NAMESPACE
@@ -26,18 +28,40 @@ namespace fairwindsk::ui::settings {
         ~Units() override;
 
     private slots:
-        void onSyncFromServerClicked();
+        void onPresetChanged(int index);
+        void onSaveCustomPresetClicked();
+        void onDeleteCustomPresetClicked();
 
     private:
+        struct PresetInfo {
+            QString name;
+            QString displayName;
+            bool custom = false;
+            QMap<QString, fairwindsk::Units::UnitPreferenceItem> categories;
+        };
+
         struct UnitRowWidgets {
             QLabel *labelCategory = nullptr;
             QComboBox *comboBoxUnit = nullptr;
             QLabel *labelServerUnit = nullptr;
         };
 
+        void refreshServerData();
         void rebuildRows();
         void clearRows();
         void applyLocalOverride(const QString &category, const QString &serverTargetUnit, const QString &targetUnit);
+        void applyPresetSelection(const QString &presetName);
+        void populatePresetCombo();
+        QString selectedPresetName() const;
+        QString configuredPresetName() const;
+        void setConfiguredPresetName(const QString &presetName);
+        bool hasLocalOverrides() const;
+        bool saveCustomPreset(const QString &name);
+        void updatePresetSelectionFromCurrentState();
+        QString currentEffectiveUnitForCategory(const QString &category) const;
+        QJsonObject buildPresetPayload(const QString &name) const;
+        static PresetInfo parsePresetInfo(const QString &name, const QJsonObject &presetObject, bool custom);
+        static QSet<QString> builtInPresetNames();
         QString localOverrideForCategory(const QString &category) const;
         void setLocalOverrideForCategory(const QString &category, const QString &targetUnit);
         void clearLocalOverrideForCategory(const QString &category);
@@ -48,6 +72,9 @@ namespace fairwindsk::ui::settings {
         Ui::Units *ui;
         Settings *m_settings = nullptr;
         QMap<QString, UnitRowWidgets> m_rowWidgets;
+        QMap<QString, PresetInfo> m_presets;
+        QString m_serverActivePresetName;
+        bool m_isUpdatingUi = false;
     };
 }
 

@@ -937,12 +937,34 @@ namespace fairwindsk::signalk {
         return signalkGet(QUrl(url().toString() + "/v1/unitpreferences/active"));
     }
 
+    QJsonDocument Client::getUnitPreferencesPresets() {
+        return getJsonDocument(QUrl(url().toString() + "/v1/unitpreferences/presets"));
+    }
+
+    QJsonObject Client::getUnitPreferencesPreset(const QString &name) {
+        const QString encodedName = QString::fromUtf8(QUrl::toPercentEncoding(name));
+        return signalkGet(QUrl(url().toString() + "/v1/unitpreferences/presets/" + encodedName));
+    }
+
     QJsonObject Client::getUnitPreferencesDefinitions() {
         return signalkGet(QUrl(url().toString() + "/v1/unitpreferences/definitions"));
     }
 
     QJsonObject Client::getUnitPreferencesDefaultCategories() {
         return signalkGet(QUrl(url().toString() + "/v1/unitpreferences/default-categories"));
+    }
+
+    QJsonObject Client::putUnitPreferencesCustomPreset(const QString &name, const QJsonObject &payload) {
+        const QString encodedName = QString::fromUtf8(QUrl::toPercentEncoding(name));
+        QJsonObject mutablePayload = payload;
+        return signalkPut(QUrl(url().toString() + "/v1/unitpreferences/presets/custom/" + encodedName), mutablePayload);
+    }
+
+    bool Client::deleteUnitPreferencesCustomPreset(const QString &name) {
+        const QString encodedName = QString::fromUtf8(QUrl::toPercentEncoding(name));
+        QJsonObject payload;
+        signalkDelete(QUrl(url().toString() + "/v1/unitpreferences/presets/custom/" + encodedName), payload);
+        return true;
     }
 
     QJsonObject Client::getPathMeta(const QString &path, const QString &context) {
