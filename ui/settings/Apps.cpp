@@ -8,6 +8,7 @@
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QDomDocument>
+#include <QTimer>
 #include "Apps.hpp"
 #include "ui_Apps.h"
 #include "AppItem.hpp"
@@ -122,6 +123,7 @@ namespace fairwindsk::ui::settings {
         connect(ui->toolButton_Down, &QToolButton::clicked,this,&Apps::onAppsDownClicked);
 
         ui->listWidget_Apps_List->installEventFilter(this);
+        ui->listWidget_Apps_List->viewport()->installEventFilter(this);
         if (ui->listWidget_Apps_List->count()>0) {
             ui->listWidget_Apps_List->setCurrentRow(0);
         }
@@ -393,6 +395,14 @@ namespace fairwindsk::ui::settings {
     }
 
     bool Apps::eventFilter(QObject *object, QEvent *event) {
+        if ((object == ui->listWidget_Apps_List || object == ui->listWidget_Apps_List->viewport()) &&
+            event && event->type() == QEvent::Drop) {
+            QTimer::singleShot(0, this, [this]() {
+                syncAppOrdersFromList();
+                m_settings->markDirty();
+                refreshAppActionButtons();
+            });
+        }
         return QObject::eventFilter(object, event);
     }
 

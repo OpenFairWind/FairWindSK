@@ -212,27 +212,18 @@ namespace fairwindsk {
 
         QPixmap bundledIconByFileName(const QString &iconPath) {
             const QString fileName = QFileInfo(iconPath).fileName().toLower();
+            const QString directResourcePath = QStringLiteral(":/resources/images/icons/") + fileName;
+            QPixmap pixmap = QPixmap::fromImage(QImage(directResourcePath));
+            if (!pixmap.isNull()) {
+                return pixmap;
+            }
+
             QString resourcePath;
-
-            if (fileName == QStringLiteral("youtube_icon.png")) {
-                resourcePath = QStringLiteral(":/resources/images/icons/youtube_icon.png");
-            } else if (fileName == QStringLiteral("signalkserver_icon.png")) {
-                resourcePath = QStringLiteral(":/resources/images/icons/signalkserver_icon.png");
-            } else if (fileName == QStringLiteral("signalkbrowser_icon.png")) {
+            if (fileName == QStringLiteral("signalk_icon.png")) {
                 resourcePath = QStringLiteral(":/resources/images/icons/signalkbrowser_icon.png");
-            } else if (fileName == QStringLiteral("web_icon.png")) {
-                resourcePath = QStringLiteral(":/resources/images/icons/web_icon.png");
-            } else if (fileName == QStringLiteral("apps_icon.png")) {
-                resourcePath = QStringLiteral(":/resources/images/icons/apps_icon.png");
-            } else if (fileName == QStringLiteral("webapp-256x256.png")) {
-                resourcePath = QStringLiteral(":/resources/images/icons/webapp-256x256.png");
             }
 
-            if (resourcePath.isEmpty()) {
-                return {};
-            }
-
-            return QPixmap::fromImage(QImage(resourcePath));
+            return resourcePath.isEmpty() ? QPixmap() : QPixmap::fromImage(QImage(resourcePath));
         }
     }
 
@@ -406,6 +397,9 @@ namespace fairwindsk {
         candidateUrls.append(QUrl(signalKServerUrl + "/" + appName + "/" + appIcon));
 
         m_cachedIcon = loadRemotePixmap(candidateUrls, pixmap);
+        if (m_cachedIcon.isNull()) {
+            m_cachedIcon = QPixmap::fromImage(QImage(":/resources/images/icons/apps_icon.png"));
+        }
         m_hasCachedIcon = true;
         return m_cachedIcon;
     }
