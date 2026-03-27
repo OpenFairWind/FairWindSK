@@ -8,6 +8,7 @@
 #include <QString>
 #include <QMap>
 #include <QObject>
+#include <QSet>
 #include <nlohmann/json.hpp>
 
 
@@ -23,17 +24,44 @@ namespace fairwindsk {
         double convert(const QString& srcUnit, const QString& unit, double value);
         QString getLabel(const QString &unit);
         QString format(const QString& unit, double value);
+        double convertSignalKValue(const QString &path, double value, const QString &fallbackSourceUnit = QString(), const QString &fallbackTargetUnit = QString());
+        QString formatSignalKValue(const QString &path, double value, const QString &fallbackSourceUnit = QString(), const QString &fallbackTargetUnit = QString());
+        QString getSignalKUnitLabel(const QString &path, const QString &fallbackUnit = QString());
+        void refreshSignalKPreferences();
         nlohmann::json &getUnits();
 
     private:
+        struct DisplayUnitsInfo {
+            QString category;
+            QString targetUnit;
+            QString formula;
+            QString inverseFormula;
+            QString symbol;
+            QString displayFormat;
+            bool valid = false;
+        };
+
         Units();
+        void loadSignalKPreferences();
+        DisplayUnitsInfo displayUnitsForPath(const QString &path);
+        DisplayUnitsInfo parseDisplayUnits(const QJsonObject &jsonObject) const;
+        QString categoryForPath(const QString &path) const;
+        static QString pathPatternToRegex(const QString &pathPattern);
+        static bool isNumericDisplayFormat(const QString &displayFormat);
+        static double evaluateFormula(const QString &formula, double value, bool *ok = nullptr);
+        static QString formatNumericValue(double value, const QString &displayFormat);
+        static QString normalizeSourceUnit(const QString &unit);
 
         inline static Units *m_instance = nullptr;
 
         QMap <QString, QMap<QString, std::function<double(double)>>> mConverters;
 
-
         nlohmann::json m_units;
+        bool m_signalKPreferencesLoaded = false;
+        QMap<QString, DisplayUnitsInfo> m_categoryDisplayUnits;
+        QMap<QString, QString> m_pathPatternCategories;
+        QMap<QString, DisplayUnitsInfo> m_displayUnitsCache;
+        QSet<QString> m_attemptedDisplayUnitsPaths;
     };
 }
 

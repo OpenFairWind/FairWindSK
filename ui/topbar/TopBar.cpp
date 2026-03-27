@@ -72,17 +72,6 @@ namespace fairwindsk::ui::topbar {
         ui->toolButton_UR->setAutoRaise(true);
         ui->toolButton_UR->setStyleSheet(kChromeToolButtonStyle);
         
-        ui->label_unitCOG->setText(m_units->getLabel("deg"));
-        ui->label_unitBTW->setText(m_units->getLabel("deg"));
-        ui->label_unitHDG->setText(m_units->getLabel("deg"));
-
-        ui->label_unitDPT->setText(m_units->getLabel(configuration->getDepthUnits()));
-        updateSpeedLabels();
-        updateDistanceLabels();
-
-
-        refreshMetricLabelWidths();
-
         ui->widget_POS->setVisible(false);
         ui->widget_COG->setVisible(false);
         ui->widget_SOG->setVisible(false);
@@ -127,6 +116,34 @@ namespace fairwindsk::ui::topbar {
 
             // Get the signal k paths object
             auto signalkPaths = confiurationJsonObject["signalk"];
+
+            if (signalkPaths.contains("cog") && signalkPaths["cog"].is_string()) {
+                m_pathCOG = QString::fromStdString(signalkPaths["cog"].get<std::string>());
+            }
+            if (signalkPaths.contains("sog") && signalkPaths["sog"].is_string()) {
+                m_pathSOG = QString::fromStdString(signalkPaths["sog"].get<std::string>());
+            }
+            if (signalkPaths.contains("hdg") && signalkPaths["hdg"].is_string()) {
+                m_pathHDG = QString::fromStdString(signalkPaths["hdg"].get<std::string>());
+            }
+            if (signalkPaths.contains("stw") && signalkPaths["stw"].is_string()) {
+                m_pathSTW = QString::fromStdString(signalkPaths["stw"].get<std::string>());
+            }
+            if (signalkPaths.contains("dpt") && signalkPaths["dpt"].is_string()) {
+                m_pathDPT = QString::fromStdString(signalkPaths["dpt"].get<std::string>());
+            }
+            if (signalkPaths.contains("btw") && signalkPaths["btw"].is_string()) {
+                m_pathBTW = QString::fromStdString(signalkPaths["btw"].get<std::string>());
+            }
+            if (signalkPaths.contains("dtg") && signalkPaths["dtg"].is_string()) {
+                m_pathDTG = QString::fromStdString(signalkPaths["dtg"].get<std::string>());
+            }
+            if (signalkPaths.contains("xte") && signalkPaths["xte"].is_string()) {
+                m_pathXTE = QString::fromStdString(signalkPaths["xte"].get<std::string>());
+            }
+            if (signalkPaths.contains("vmg") && signalkPaths["vmg"].is_string()) {
+                m_pathVMG = QString::fromStdString(signalkPaths["vmg"].get<std::string>());
+            }
 
             // Check if the Options object has tHe Position key and if it is a string
             if (signalkPaths.contains("pos") && signalkPaths["pos"].is_string()) {
@@ -287,6 +304,14 @@ namespace fairwindsk::ui::topbar {
 
 
         }
+
+        ui->label_unitCOG->setText(m_units->getSignalKUnitLabel(m_pathCOG, "deg"));
+        ui->label_unitBTW->setText(m_units->getSignalKUnitLabel(m_pathBTW, "deg"));
+        ui->label_unitHDG->setText(m_units->getSignalKUnitLabel(m_pathHDG, "deg"));
+        ui->label_unitDPT->setText(m_units->getSignalKUnitLabel(m_pathDPT, configuration->getDepthUnits()));
+        updateSpeedLabels();
+        updateDistanceLabels();
+        refreshMetricLabelWidths();
     }
 
     void TopBar::changeEvent(QEvent *event) {
@@ -396,10 +421,7 @@ namespace fairwindsk::ui::topbar {
         } else {
 
             // Convert rad to deg
-            value = m_units->convert("rad","deg", value);
-
-            // Build the formatted value
-            const auto text = m_units->format("deg", value);
+            const auto text = m_units->formatSignalKValue(m_pathCOG, value, "rad", "deg");
 
             // Set the course over ground label from the UI to the formatted value
             ui->label_COG->setText(text);
@@ -430,10 +452,7 @@ namespace fairwindsk::ui::topbar {
         } else {
 
             const auto vesselSpeedUnits = FairWindSK::getInstance()->getConfiguration()->getVesselSpeedUnits();
-            value = m_units->convert("ms-1", vesselSpeedUnits, value);
-
-            // Build the formatted value
-            const auto text = m_units->format(vesselSpeedUnits, value);
+            const auto text = m_units->formatSignalKValue(m_pathSOG, value, "ms-1", vesselSpeedUnits);
 
             // Set the speed over ground label from the UI to the formatted value
             ui->label_SOG->setText(text);
@@ -465,10 +484,7 @@ namespace fairwindsk::ui::topbar {
         } else {
 
             // Convert rad to deg
-            value = m_units->convert("rad","deg", value);
-
-            // Build the formatted value
-            const auto text = m_units->format("deg", value);
+            const auto text = m_units->formatSignalKValue(m_pathHDG, value, "rad", "deg");
 
             // Set the course over ground label from the UI to the formatted value
             ui->label_HDG->setText(text);
@@ -499,10 +515,7 @@ namespace fairwindsk::ui::topbar {
         } else {
 
             const auto vesselSpeedUnits = FairWindSK::getInstance()->getConfiguration()->getVesselSpeedUnits();
-            value = m_units->convert("ms-1", vesselSpeedUnits, value);
-
-            // Build the formatted value
-            const auto text = m_units->format(vesselSpeedUnits, value);
+            const auto text = m_units->formatSignalKValue(m_pathSTW, value, "ms-1", vesselSpeedUnits);
 
             // Set the speed over ground label from the UI to the formatted value
             ui->label_STW->setText(text);
@@ -533,11 +546,11 @@ namespace fairwindsk::ui::topbar {
             ui->widget_DPT->setVisible(false);
         } else {
 
-            // Convert m to depth units
-            value = m_units->convert("mt",FairWindSK::getInstance()->getConfiguration()->getDepthUnits(), value);
-
-            // Build the formatted value
-            const auto text = m_units->format(FairWindSK::getInstance()->getConfiguration()->getDepthUnits(), value);
+            const auto text = m_units->formatSignalKValue(
+                m_pathDPT,
+                value,
+                "mt",
+                FairWindSK::getInstance()->getConfiguration()->getDepthUnits());
 
             // Set the the formatted value
             ui->label_DPT->setText(text);
@@ -598,10 +611,7 @@ namespace fairwindsk::ui::topbar {
         } else {
 
             // Convert rad to deg
-            value = m_units->convert("rad","deg", value);
-
-            // Build the formatted value
-            const auto text = m_units->format("deg", value);
+            const auto text = m_units->formatSignalKValue(m_pathBTW, value, "rad", "deg");
 
             // Set the course over ground label from the UI to the formatted value
             ui->label_BTW->setText(text);
@@ -628,10 +638,7 @@ namespace fairwindsk::ui::topbar {
         } else {
 
             const auto distanceUnits = FairWindSK::getInstance()->getConfiguration()->getDistanceUnits();
-            value = m_units->convert("m", distanceUnits, value);
-
-            // Build the formatted value
-            const auto text = m_units->format(distanceUnits, value);
+            const auto text = m_units->formatSignalKValue(m_pathDTG, value, "m", distanceUnits);
 
             // Set the course over ground label from the UI to the formatted value
             ui->label_DTG->setText(text);
@@ -720,10 +727,7 @@ namespace fairwindsk::ui::topbar {
         } else {
 
             const auto distanceUnits = FairWindSK::getInstance()->getConfiguration()->getDistanceUnits();
-            value = m_units->convert("m", distanceUnits, value);
-
-            // Build the formatted value
-            const auto text = m_units->format(distanceUnits, value);
+            const auto text = m_units->formatSignalKValue(m_pathXTE, value, "m", distanceUnits);
 
             // Set the course over ground label from the UI to the formatted value
             ui->label_XTE->setText(text);
@@ -750,10 +754,7 @@ namespace fairwindsk::ui::topbar {
         } else {
 
             const auto vesselSpeedUnits = FairWindSK::getInstance()->getConfiguration()->getVesselSpeedUnits();
-            value = m_units->convert("ms-1", vesselSpeedUnits, value);
-
-            // Build the formatted value
-            const auto text = m_units->format(vesselSpeedUnits, value);
+            const auto text = m_units->formatSignalKValue(m_pathVMG, value, "ms-1", vesselSpeedUnits);
 
             // Set the course over ground label from the UI to the formatted value
             ui->label_VMG->setText(text);
@@ -792,15 +793,15 @@ namespace fairwindsk::ui::topbar {
 
     void TopBar::updateDistanceLabels() const {
         const auto distanceUnits = FairWindSK::getInstance()->getConfiguration()->getDistanceUnits();
-        ui->label_unitDTG->setText(m_units->getLabel(distanceUnits));
-        ui->label_unitXTE->setText(m_units->getLabel(distanceUnits));
+        ui->label_unitDTG->setText(m_units->getSignalKUnitLabel(m_pathDTG, distanceUnits));
+        ui->label_unitXTE->setText(m_units->getSignalKUnitLabel(m_pathXTE, distanceUnits));
     }
 
     void TopBar::updateSpeedLabels() const {
         const auto vesselSpeedUnits = FairWindSK::getInstance()->getConfiguration()->getVesselSpeedUnits();
-        ui->label_unitSOG->setText(m_units->getLabel(vesselSpeedUnits));
-        ui->label_unitSTW->setText(m_units->getLabel(vesselSpeedUnits));
-        ui->label_unitVMG->setText(m_units->getLabel(vesselSpeedUnits));
+        ui->label_unitSOG->setText(m_units->getSignalKUnitLabel(m_pathSOG, vesselSpeedUnits));
+        ui->label_unitSTW->setText(m_units->getSignalKUnitLabel(m_pathSTW, vesselSpeedUnits));
+        ui->label_unitVMG->setText(m_units->getSignalKUnitLabel(m_pathVMG, vesselSpeedUnits));
     }
 
     void TopBar::resetCurrentAppPresentation() const {

@@ -67,6 +67,15 @@ namespace fairwindsk::ui::topbar {
         AppItem *m_currentApp = nullptr;
         Units *m_units = nullptr;
         QTimer *m_timer = nullptr;
+        QString m_pathCOG;
+        QString m_pathSOG;
+        QString m_pathHDG;
+        QString m_pathSTW;
+        QString m_pathDPT;
+        QString m_pathBTW;
+        QString m_pathDTG;
+        QString m_pathXTE;
+        QString m_pathVMG;
     };
 }
 

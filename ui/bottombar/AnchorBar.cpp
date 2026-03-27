@@ -53,6 +53,42 @@ namespace fairwindsk::ui::bottombar {
 
             // Get the signal k paths object
             m_signalkPaths = configurationJsonObject["signalk"];
+            ui->label_unitDepth->setText(
+                m_units->getSignalKUnitLabel(
+                    m_signalkPaths.contains("anchor.depth") && m_signalkPaths["anchor.depth"].is_string()
+                        ? QString::fromStdString(m_signalkPaths["anchor.depth"].get<std::string>())
+                        : QString(),
+                    configuration->getDepthUnits()));
+            ui->label_unitBearing->setText(
+                m_units->getSignalKUnitLabel(
+                    m_signalkPaths.contains("anchor.bearing") && m_signalkPaths["anchor.bearing"].is_string()
+                        ? QString::fromStdString(m_signalkPaths["anchor.bearing"].get<std::string>())
+                        : QString(),
+                    "deg"));
+            ui->label_unitDistance->setText(
+                m_units->getSignalKUnitLabel(
+                    m_signalkPaths.contains("anchor.distance") && m_signalkPaths["anchor.distance"].is_string()
+                        ? QString::fromStdString(m_signalkPaths["anchor.distance"].get<std::string>())
+                        : QString(),
+                    configuration->getDistanceUnits()));
+            ui->label_unitRode->setText(
+                m_units->getSignalKUnitLabel(
+                    m_signalkPaths.contains("anchor.rode") && m_signalkPaths["anchor.rode"].is_string()
+                        ? QString::fromStdString(m_signalkPaths["anchor.rode"].get<std::string>())
+                        : QString(),
+                    configuration->getRangeUnits()));
+            ui->label_unitCurrentRadius->setText(
+                m_units->getSignalKUnitLabel(
+                    m_signalkPaths.contains("anchor.radius") && m_signalkPaths["anchor.radius"].is_string()
+                        ? QString::fromStdString(m_signalkPaths["anchor.radius"].get<std::string>())
+                        : QString(),
+                    configuration->getRangeUnits()));
+            ui->label_unitMaxRadius->setText(
+                m_units->getSignalKUnitLabel(
+                    m_signalkPaths.contains("anchor.max") && m_signalkPaths["anchor.max"].is_string()
+                        ? QString::fromStdString(m_signalkPaths["anchor.max"].get<std::string>())
+                        : QString(),
+                    configuration->getRangeUnits()));
 
             // Check if the Options object has the rsa key and if it is a string
             if (m_signalkPaths.contains("anchor.position") && m_signalkPaths["anchor.position"].is_string()) {
@@ -458,11 +494,11 @@ namespace fairwindsk::ui::bottombar {
             ui->widget_Depth->setVisible(false);
         } else {
 
-            // Convert m/s to knots
-            value = m_units->convert("m",FairWindSK::getInstance()->getConfiguration()->getDepthUnits(), value);
-
-            // Build the formatted value
-            auto text = m_units->format(FairWindSK::getInstance()->getConfiguration()->getDepthUnits(), value);
+            const auto text = m_units->formatSignalKValue(
+                QString::fromStdString(m_signalkPaths["anchor.depth"].get<std::string>()),
+                value,
+                "m",
+                FairWindSK::getInstance()->getConfiguration()->getDepthUnits());
 
             // Set the speed over ground label from the UI to the formatted value
             ui->label_Depth->setText(text);
@@ -494,11 +530,11 @@ namespace fairwindsk::ui::bottombar {
             ui->widget_Bearing->setVisible(false);
         } else {
 
-            // Convert rad to deg
-            value = m_units->convert("rad","deg", value);
-
-            // Build the formatted value
-            auto text = m_units->format("deg", value);
+            const auto text = m_units->formatSignalKValue(
+                QString::fromStdString(m_signalkPaths["anchor.bearing"].get<std::string>()),
+                value,
+                "rad",
+                "deg");
 
             // Set the course over ground label from the UI to the formatted value
             ui->label_Bearing->setText(text);
@@ -531,11 +567,11 @@ namespace fairwindsk::ui::bottombar {
             ui->widget_Distance->setVisible(false);
         } else {
 
-            // Convert m/s to knots
-            value = m_units->convert("m",FairWindSK::getInstance()->getConfiguration()->getDistanceUnits(), value);
-
-            // Build the formatted value
-            auto text = m_units->format(FairWindSK::getInstance()->getConfiguration()->getDistanceUnits(), value);
+            const auto text = m_units->formatSignalKValue(
+                QString::fromStdString(m_signalkPaths["anchor.distance"].get<std::string>()),
+                value,
+                "m",
+                FairWindSK::getInstance()->getConfiguration()->getDistanceUnits());
 
             // Set the speed over ground label from the UI to the formatted value
             ui->label_Distance->setText(text);
@@ -567,11 +603,11 @@ namespace fairwindsk::ui::bottombar {
             ui->widget_Rode->setVisible(false);
         } else {
 
-            // Convert m/s to knots
-            value = m_units->convert("m",FairWindSK::getInstance()->getConfiguration()->getRangeUnits(), value);
-
-            // Build the formatted value
-            auto text = m_units->format(FairWindSK::getInstance()->getConfiguration()->getRangeUnits(), value);
+            const auto text = m_units->formatSignalKValue(
+                QString::fromStdString(m_signalkPaths["anchor.rode"].get<std::string>()),
+                value,
+                "m",
+                FairWindSK::getInstance()->getConfiguration()->getRangeUnits());
 
             // Set the speed over ground label from the UI to the formatted value
             ui->label_Rode->setText(text);
@@ -603,14 +639,20 @@ namespace fairwindsk::ui::bottombar {
             ui->widget_Radius->setVisible(false);
         } else {
 
-            // Convert m/s to knots
-            value = m_units->convert("m",FairWindSK::getInstance()->getConfiguration()->getRangeUnits(), value);
+            value = m_units->convertSignalKValue(
+                QString::fromStdString(m_signalkPaths["anchor.radius"].get<std::string>()),
+                value,
+                "m",
+                FairWindSK::getInstance()->getConfiguration()->getRangeUnits());
 
             // Set the slider value
             ui->horizontalSlider_CurrentRadius->setValue(static_cast<int>(value));
 
-            // Build the formatted value
-            auto text = m_units->format(FairWindSK::getInstance()->getConfiguration()->getRangeUnits(), value);
+            const auto text = m_units->formatSignalKValue(
+                QString::fromStdString(m_signalkPaths["anchor.radius"].get<std::string>()),
+                fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update),
+                "m",
+                FairWindSK::getInstance()->getConfiguration()->getRangeUnits());
 
             // Set the speed over ground label from the UI to the formatted value
             ui->label_CurrentRadius->setText(text);
@@ -642,15 +684,21 @@ namespace fairwindsk::ui::bottombar {
             ui->widget_Radius->setVisible(false);
         } else {
 
-            // Convert m/s to knots
-            value = m_units->convert("m",FairWindSK::getInstance()->getConfiguration()->getRangeUnits(), value);
+            value = m_units->convertSignalKValue(
+                QString::fromStdString(m_signalkPaths["anchor.max"].get<std::string>()),
+                value,
+                "m",
+                FairWindSK::getInstance()->getConfiguration()->getRangeUnits());
 
 
             // Set the maximum value on the slider
             ui->horizontalSlider_CurrentRadius->setMaximum(static_cast<int>(value));
 
-            // Build the formatted value
-            auto text = m_units->format(FairWindSK::getInstance()->getConfiguration()->getRangeUnits(), value);
+            const auto text = m_units->formatSignalKValue(
+                QString::fromStdString(m_signalkPaths["anchor.max"].get<std::string>()),
+                fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update),
+                "m",
+                FairWindSK::getInstance()->getConfiguration()->getRangeUnits());
 
             // Set the speed over ground label from the UI to the formatted value
             ui->label_MaxRadius->setText(text);

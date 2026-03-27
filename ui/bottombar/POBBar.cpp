@@ -75,13 +75,13 @@ namespace fairwindsk::ui::bottombar {
         // Get the configuration json object
         const auto configurationJsonObject = configuration->getRoot();
 
-        ui->label_unitDistance->setText(FairWindSK::getInstance()->getConfiguration()->getRangeUnits());
-
         // Check if the configuration object contains the key 'signalk' with an object value
         if (configurationJsonObject.contains("signalk") && configurationJsonObject["signalk"].is_object()) {
 
             // Get the signal k paths object
             m_signalkPaths = configurationJsonObject["signalk"];
+            ui->label_unitBearing->setText(m_units->getSignalKUnitLabel(configuredPath("pob.bearing"), "deg"));
+            ui->label_unitDistance->setText(m_units->getSignalKUnitLabel(configuredPath("pob.distance"), configuration->getRangeUnits()));
 
             const auto path = pobNotificationPath();
             if (!path.isEmpty()) {
@@ -275,11 +275,7 @@ namespace fairwindsk::ui::bottombar {
         // Get the value and check if value is valid
         if (auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update); !std::isnan(value)) {
 
-            // Convert rad to deg
-            value = m_units->convert("rad","deg", value);
-
-            // Build the formatted value
-            const auto text = m_units->format("deg", value);
+            const auto text = m_units->formatSignalKValue(configuredPath("pob.bearing"), value, "rad", "deg");
 
             // Set the course over ground label from the UI to the formatted value
             ui->label_Bearing->setText(text);
@@ -305,11 +301,11 @@ namespace fairwindsk::ui::bottombar {
         // Get the value and check if value is valid
         if (auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update); !std::isnan(value)) {
 
-            // Convert m/s to knots
-            value = m_units->convert("m",FairWindSK::getInstance()->getConfiguration()->getRangeUnits(), value);
-
-            // Build the formatted value
-            const auto text = m_units->format(FairWindSK::getInstance()->getConfiguration()->getRangeUnits(), value);
+            const auto text = m_units->formatSignalKValue(
+                configuredPath("pob.distance"),
+                value,
+                "m",
+                FairWindSK::getInstance()->getConfiguration()->getRangeUnits());
 
             // Set the speed over ground label from the UI to the formatted value
             ui->label_Distance->setText(text);

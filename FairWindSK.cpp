@@ -26,6 +26,7 @@
 #include <QTimer>
 #include <algorithm>
 
+#include "Units.hpp"
 
 
 using namespace Qt::StringLiterals;
@@ -493,6 +494,7 @@ namespace fairwindsk {
                     // Set the token
                     fairwindsk::Configuration::setToken(m_signalkClient.getToken());
                     updateWebProfileCookie();
+                    Units::getInstance()->refreshSignalKPreferences();
 
                     // Exit the loop
                     break;

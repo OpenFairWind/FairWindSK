@@ -23,6 +23,7 @@ find_package(Qt6 REQUIRED COMPONENTS
         Core
         Gui
         Widgets
+        Qml
         Concurrent
         Network
         WebSockets
@@ -42,6 +43,7 @@ set(FAIRWINDSK_LINK_LIBRARIES
         Qt::Gui
         Qt::Concurrent
         Qt::Widgets
+        Qt::Qml
         Qt::Network
         Qt::WebSockets
         Qt::Xml
