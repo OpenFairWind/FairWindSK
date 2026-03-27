@@ -547,19 +547,15 @@ namespace fairwindsk::ui::settings {
                 rowWidgets.comboBoxUnit->addItem(option.label, option.key);
             }
 
-            const auto presetItem = m_presets.contains(selectedPresetName()) &&
-                                    m_presets.value(selectedPresetName()).categories.contains(item.category)
-                ? m_presets.value(selectedPresetName()).categories.value(item.category)
+            const auto presetItem = serverPresetItems.contains(item.category)
+                ? serverPresetItems.value(item.category)
                 : fairwindsk::Units::UnitPreferenceItem{};
             const QString presetTargetUnit = presetItem.targetUnit.isEmpty()
-                ? presetUnitForCategory(item.category)
+                ? item.targetUnit
                 : presetItem.targetUnit;
-            const QString effectiveTargetUnit = currentEffectiveUnitForCategory(item.category).isEmpty()
-                ? presetTargetUnit
-                : currentEffectiveUnitForCategory(item.category);
-            int comboIndex = comboIndexForCategoryUnit(rowWidgets.comboBoxUnit, item, effectiveTargetUnit, presetItem.symbol);
+            int comboIndex = comboIndexForCategoryUnit(rowWidgets.comboBoxUnit, item, presetTargetUnit, presetItem.symbol);
             if (comboIndex < 0) {
-                comboIndex = comboIndexForCategoryUnit(rowWidgets.comboBoxUnit, item, presetTargetUnit, presetItem.symbol);
+                comboIndex = comboIndexForCategoryUnit(rowWidgets.comboBoxUnit, item, item.targetUnit, item.symbol);
             }
             rowWidgets.comboBoxUnit->setCurrentIndex(comboIndex >= 0 ? comboIndex : 0);
 
