@@ -10,6 +10,7 @@
 #include <QPointer>
 #include <QTimer>
 #include <QUrl>
+#include <QCoreApplication>
 #include <QtCore/qjsonarray.h>
 #include <QPixmap>
 #include <QHash>
@@ -365,10 +366,20 @@ namespace fairwindsk {
         if (appIcon.startsWith("file://")) {
             const QString iconFilename = QString(appIcon).replace("file://", "");
             const QFileInfo iconInfo(iconFilename);
+            const QString executableRelativePath = QCoreApplication::applicationDirPath() + QLatin1Char('/') + iconFilename;
 
             if (iconInfo.isAbsolute() && QFileInfo::exists(iconFilename)) {
                 QPixmap loadedPixmap;
                 if (loadedPixmap.load(iconFilename) && !loadedPixmap.isNull()) {
+                    m_cachedIcon = loadedPixmap;
+                    m_hasCachedIcon = true;
+                    return m_cachedIcon;
+                }
+            }
+
+            if (!iconInfo.isAbsolute() && QFileInfo::exists(executableRelativePath)) {
+                QPixmap loadedPixmap;
+                if (loadedPixmap.load(executableRelativePath) && !loadedPixmap.isNull()) {
                     m_cachedIcon = loadedPixmap;
                     m_hasCachedIcon = true;
                     return m_cachedIcon;
