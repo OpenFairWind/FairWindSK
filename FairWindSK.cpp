@@ -248,6 +248,10 @@ namespace fairwindsk {
             }
 
             const auto statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+            if (!reply->isOpen()) {
+                reply->deleteLater();
+                return {};
+            }
             const QByteArray payload = reply->readAll();
             reply->deleteLater();
 

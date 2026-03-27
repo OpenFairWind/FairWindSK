@@ -72,6 +72,10 @@ namespace fairwindsk::signalk {
             }
         }
 
+        if (!guard->isOpen()) {
+            return {};
+        }
+
         return guard->readAll();
     }
 
