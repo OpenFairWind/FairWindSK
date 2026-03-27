@@ -740,7 +740,7 @@ namespace fairwindsk::ui {
         }
     }
 
-    bool MainWindow::closeSettingsPage(QWidget *fallbackWidget, const bool showFallback) {
+    bool MainWindow::closeSettingsPage(QWidget *fallbackWidget, const bool showFallback, const bool exitAfterSave) {
         if (!m_settingsPage) {
             return true;
         }
@@ -750,7 +750,7 @@ namespace fairwindsk::ui {
         }
 
         QWidget *targetFallback = fallbackWidget ? fallbackWidget : m_settingsPage->getCurrentWidget();
-        bool exitAfterSave = false;
+        bool shouldExitAfterSave = false;
         if (m_settingsPage->hasPendingChanges()) {
             const auto answer = drawer::question(
                 this,
@@ -763,7 +763,7 @@ namespace fairwindsk::ui {
             }
             if (answer == QMessageBox::Save) {
                 m_settingsPage->saveChanges();
-                exitAfterSave = true;
+                shouldExitAfterSave = exitAfterSave;
             } else {
                 if (showFallback && targetFallback && ui->stackedWidget_Center->indexOf(targetFallback) >= 0) {
                     ui->stackedWidget_Center->setCurrentWidget(targetFallback);
@@ -780,14 +780,14 @@ namespace fairwindsk::ui {
         }
         m_settingsPage->setCurrentWidget(targetFallback);
 
-        if (!exitAfterSave && showFallback && targetFallback && ui->stackedWidget_Center->indexOf(targetFallback) >= 0) {
+        if (!shouldExitAfterSave && showFallback && targetFallback && ui->stackedWidget_Center->indexOf(targetFallback) >= 0) {
             ui->stackedWidget_Center->setCurrentWidget(targetFallback);
             syncTopBarToCurrentPage();
-        } else if (!exitAfterSave && showFallback) {
+        } else if (!shouldExitAfterSave && showFallback) {
             showLauncher();
         }
 
-        if (exitAfterSave) {
+        if (shouldExitAfterSave) {
             QApplication::exit(1);
         }
 
@@ -823,7 +823,7 @@ namespace fairwindsk::ui {
             fallbackWidget = m_settingsPage->getCurrentWidget();
         }
 
-        if (!closeSettingsPage(fallbackWidget, false)) {
+        if (!closeSettingsPage(fallbackWidget, false, false)) {
             event->ignore();
             return;
         }

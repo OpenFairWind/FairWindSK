@@ -81,7 +81,7 @@ namespace fairwindsk::ui {
         bool isDrawerOpen() const;
         void showOverlay(QWidget *page);
         void closeOverlay(QWidget *page, QWidget *fallbackWidget);
-        bool closeSettingsPage(QWidget *fallbackWidget = nullptr, bool showFallback = true);
+        bool closeSettingsPage(QWidget *fallbackWidget = nullptr, bool showFallback = true, bool exitAfterSave = true);
         void closeAboutPage(QWidget *fallbackWidget = nullptr);
         void syncTopBarToCurrentPage();
         void showLauncher();
