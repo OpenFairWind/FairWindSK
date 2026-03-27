@@ -86,6 +86,7 @@ namespace fairwindsk::ui::settings {
 
         // Connect the button box clicked signal with onClicked method
         connect(ui->buttonBox,&QDialogButtonBox::clicked,this,&Settings::onClicked);
+        connect(ui->tabWidget, &QTabWidget::currentChanged, this, &Settings::onTabChanged);
     }
 
     /*
@@ -93,6 +94,7 @@ namespace fairwindsk::ui::settings {
  * Remove all  tabs
  */
     void Settings::removeTabs() {
+        m_tabPages.clear();
         // While there is at least a tab in the tab widget...
         while (ui->tabWidget->count() > 0) {
 
@@ -112,27 +114,77 @@ namespace fairwindsk::ui::settings {
  * Add tabs, then set the current index
  */
     void Settings::initTabs(const int currentIndex) {
+        m_rebuildingTabs = true;
 
         // Remove tabs if present
         removeTabs();
 
-        // Add the main tab
-        ui->tabWidget->addTab(new Main(this), tr("Main"));
-
-        // Add the connection tab
-        ui->tabWidget->addTab(new Connection(this), tr("Connection"));
-
-        // Add the signal k tab
-        ui->tabWidget->addTab(new SignalK(this), tr("Signal K"));
-
-        // Add the units tab
-        ui->tabWidget->addTab(new Units(this), tr("Units"));
-
-        // Add the applications tab
-        ui->tabWidget->addTab(new Apps(this), tr("Applications"));
+        m_tabPages = {nullptr, nullptr, nullptr, nullptr, nullptr};
+        ui->tabWidget->addTab(new QWidget(ui->tabWidget), tr("Main"));
+        ui->tabWidget->addTab(new QWidget(ui->tabWidget), tr("Connection"));
+        ui->tabWidget->addTab(new QWidget(ui->tabWidget), tr("Signal K"));
+        ui->tabWidget->addTab(new QWidget(ui->tabWidget), tr("Units"));
+        ui->tabWidget->addTab(new QWidget(ui->tabWidget), tr("Applications"));
 
         // Set the current tab index
-        ui->tabWidget->setCurrentIndex(currentIndex);
+        const int resolvedIndex = std::clamp(currentIndex, 0, ui->tabWidget->count() - 1);
+        ensureTabCreated(resolvedIndex);
+        ui->tabWidget->setCurrentIndex(resolvedIndex);
+        m_rebuildingTabs = false;
+    }
+
+    QWidget *Settings::createTabWidget(const int index) {
+        switch (index) {
+            case 0:
+                return new Main(this);
+            case 1:
+                return new Connection(this);
+            case 2:
+                return new SignalK(this);
+            case 3:
+                return new Units(this);
+            case 4:
+                return new Apps(this);
+            default:
+                return new QWidget(this);
+        }
+    }
+
+    void Settings::ensureTabCreated(const int index) {
+        if (index < 0 || index >= ui->tabWidget->count()) {
+            return;
+        }
+
+        if (index >= m_tabPages.size()) {
+            m_tabPages.resize(ui->tabWidget->count());
+        }
+
+        if (m_tabPages.at(index)) {
+            return;
+        }
+
+        QWidget *placeholder = ui->tabWidget->widget(index);
+        QWidget *page = createTabWidget(index);
+        m_tabPages[index] = page;
+        const QString tabText = ui->tabWidget->tabText(index);
+        ui->tabWidget->removeTab(index);
+        if (placeholder) {
+            delete placeholder;
+        }
+        ui->tabWidget->insertTab(index, page, tabText);
+    }
+
+    void Settings::onTabChanged(const int index) {
+        if (m_rebuildingTabs) {
+            return;
+        }
+
+        ensureTabCreated(index);
+        if (ui->tabWidget->widget(index) != m_tabPages.value(index, nullptr) && m_tabPages.value(index, nullptr)) {
+            ui->tabWidget->removeTab(index);
+            ui->tabWidget->insertTab(index, m_tabPages.at(index), ui->tabWidget->tabText(index));
+            ui->tabWidget->setCurrentIndex(index);
+        }
     }
 
     /*

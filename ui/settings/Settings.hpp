@@ -8,6 +8,7 @@
 #include <QWidget>
 #include <QAbstractButton>
 #include <QPushButton>
+#include <QVector>
 #include <QtCore/qjsonobject.h>
 #include "AppItem.hpp"
 #include "Configuration.hpp"
@@ -40,11 +41,14 @@ namespace fairwindsk::ui::settings {
 
     public slots:
         void onClicked(QAbstractButton *button);
+        void onTabChanged(int index);
 
     private:
         void initTabs(int currentIndex);
         void removeTabs();
         void applyConfiguration();
+        QWidget *createTabWidget(int index);
+        void ensureTabCreated(int index);
 
     private:
         Ui::Settings *ui;
@@ -55,6 +59,8 @@ namespace fairwindsk::ui::settings {
         Configuration m_configuration;
         Configuration *m_currentConfiguration;
         QWidget *m_currentWidget = nullptr;
+        QVector<QWidget *> m_tabPages;
+        bool m_rebuildingTabs = false;
 
     };
 
