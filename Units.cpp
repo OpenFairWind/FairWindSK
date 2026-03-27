@@ -213,8 +213,6 @@ namespace fairwindsk {
             return;
         }
 
-        m_signalKPreferencesLoaded = true;
-
         const auto fairWindSK = FairWindSK::getInstance();
         if (!fairWindSK) {
             return;
@@ -299,6 +297,8 @@ namespace fairwindsk {
                 }
             }
         }
+
+        m_signalKPreferencesLoaded = true;
     }
 
     Units::DisplayUnitsInfo Units::parseDisplayUnits(const QJsonObject &jsonObject) const {

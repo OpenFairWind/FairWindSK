@@ -7,6 +7,7 @@
 #include <QLabel>
 #include <QPushButton>
 
+#include "FairWindSK.hpp"
 #include "Units.hpp"
 #include "ui_Units.h"
 
@@ -147,16 +148,28 @@ namespace fairwindsk::ui::settings {
     void Units::rebuildRows() {
         clearRows();
 
+        const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+        const auto signalKClient = fairWindSK ? fairWindSK->getSignalKClient() : nullptr;
+        const bool hasConnectedServer = signalKClient && !signalKClient->server().isEmpty();
+        if (hasConnectedServer) {
+            fairwindsk::Units::getInstance()->refreshSignalKPreferences();
+        }
+
         const auto unitItems = fairwindsk::Units::getInstance()->getSignalKUnitPreferenceItems();
         const auto presetName = fairwindsk::Units::getInstance()->getSignalKActivePresetName();
 
         ui->label_presetValue->setText(
             presetName.isEmpty() ? tr("Unavailable") : presetName
         );
-        ui->pushButton_syncFromServer->setEnabled(!unitItems.isEmpty());
+        ui->pushButton_syncFromServer->setEnabled(hasConnectedServer && !unitItems.isEmpty());
         ui->label_emptyState->setVisible(unitItems.isEmpty());
 
         if (unitItems.isEmpty()) {
+            if (hasConnectedServer) {
+                ui->label_emptyState->setText(tr("The Signal K server is connected, but it did not return any unit preference categories."));
+            } else {
+                ui->label_emptyState->setText(tr("No server unit preferences are available. Connect to a Signal K server and reopen Settings to manage local unit overrides."));
+            }
             return;
         }
 
