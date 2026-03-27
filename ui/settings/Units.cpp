@@ -150,7 +150,7 @@ namespace fairwindsk::ui::settings {
 
         const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
         const auto signalKClient = fairWindSK ? fairWindSK->getSignalKClient() : nullptr;
-        const bool hasConnectedServer = signalKClient && !signalKClient->server().isEmpty();
+        const bool hasConnectedServer = signalKClient && !signalKClient->url().isEmpty();
         if (hasConnectedServer) {
             fairwindsk::Units::getInstance()->refreshSignalKPreferences();
         }

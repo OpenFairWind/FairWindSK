@@ -39,7 +39,7 @@ namespace fairwindsk::signalk {
         QJsonObject getAll();
 
         bool login();
-        QUrl url();
+        QUrl url() const;
         QUrl server() const;
         QUrl http(const QString& version = "v1");
         QUrl ws(const QString& version = "v1");

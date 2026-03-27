@@ -1203,7 +1203,7 @@ namespace fairwindsk::signalk {
         return m_WebSocket.sendTextMessage(text);
     }
 
-    QUrl Client::url() {
+    QUrl Client::url() const {
         return m_Url;
     }
 

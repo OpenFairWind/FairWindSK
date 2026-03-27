@@ -72,6 +72,18 @@ namespace fairwindsk {
         void setJsonStringValue(nlohmann::json &jsonObject, const std::string &key, const QString &value) {
             jsonObject[key] = value.toStdString();
         }
+
+        QString signalKRootUrl(const fairwindsk::signalk::Client *client) {
+            if (!client) {
+                return {};
+            }
+
+            auto root = client->url().toString();
+            while (root.endsWith('/')) {
+                root.chop(1);
+            }
+            return root;
+        }
     }
 
 /*
@@ -219,11 +231,12 @@ namespace fairwindsk {
         }
 
         const auto client = fairWindSK->getSignalKClient();
-        if (!client || client->server().isEmpty()) {
+        const auto signalKRoot = signalKRootUrl(client);
+        if (!client || signalKRoot.isEmpty()) {
             return;
         }
 
-        const auto activeUrl = QUrl(client->server().toString() + "/signalk/v1/unitpreferences/active");
+        const auto activeUrl = QUrl(signalKRoot + "/v1/unitpreferences/active");
         const auto activePreset = client->signalkGet(activeUrl);
         if (activePreset.contains("name") && activePreset["name"].isString()) {
             m_signalKActivePresetName = activePreset["name"].toString();
@@ -242,7 +255,7 @@ namespace fairwindsk {
             }
         }
 
-        const auto definitionsUrl = QUrl(client->server().toString() + "/signalk/v1/unitpreferences/definitions");
+        const auto definitionsUrl = QUrl(signalKRoot + "/v1/unitpreferences/definitions");
         const auto definitionsObject = client->signalkGet(definitionsUrl);
         if (definitionsObject.contains("definitions") && definitionsObject["definitions"].isObject()) {
             const auto definitions = definitionsObject["definitions"].toObject();
@@ -277,7 +290,7 @@ namespace fairwindsk {
             }
         }
 
-        const auto categoriesUrl = QUrl(client->server().toString() + "/signalk/v1/unitpreferences/default-categories");
+        const auto categoriesUrl = QUrl(signalKRoot + "/v1/unitpreferences/default-categories");
         const auto categoriesObject = client->signalkGet(categoriesUrl);
         if (categoriesObject.contains("categories") && categoriesObject["categories"].isObject()) {
             const auto categories = categoriesObject["categories"].toObject();
@@ -377,10 +390,11 @@ namespace fairwindsk {
 
             const auto fairWindSK = FairWindSK::getInstance();
             const auto client = fairWindSK ? fairWindSK->getSignalKClient() : nullptr;
-            if (client && !client->server().isEmpty()) {
+            const auto signalKRoot = signalKRootUrl(client);
+            if (client && !signalKRoot.isEmpty()) {
                 QString pathComponent = path;
                 pathComponent.replace('.', '/');
-                const auto metaUrl = QUrl(client->server().toString() + "/signalk/v1/api/vessels/self/" + pathComponent + "/meta");
+                const auto metaUrl = QUrl(signalKRoot + "/v1/api/vessels/self/" + pathComponent + "/meta");
                 const auto metaObject = client->signalkGet(metaUrl);
                 if (metaObject.contains("displayUnits") && metaObject["displayUnits"].isObject()) {
                     auto info = parseDisplayUnits(metaObject["displayUnits"].toObject());
