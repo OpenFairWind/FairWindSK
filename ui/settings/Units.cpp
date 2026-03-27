@@ -152,6 +152,29 @@ namespace fairwindsk::ui::settings {
         }
     }
 
+    QString Units::canonicalUnitToken(const QString &value) {
+        const QString normalized = value.trimmed().toLower();
+        if (normalized == QStringLiteral("m")) {
+            return QStringLiteral("meter");
+        }
+        if (normalized == QStringLiteral("km")) {
+            return QStringLiteral("kilometer");
+        }
+        if (normalized == QStringLiteral("nmi") || normalized == QStringLiteral("nm")) {
+            return QStringLiteral("naut-mile");
+        }
+        if (normalized == QStringLiteral("ft")) {
+            return QStringLiteral("foot");
+        }
+        if (normalized == QStringLiteral("°") || normalized == QStringLiteral("deg")) {
+            return QStringLiteral("degree");
+        }
+        if (normalized == QStringLiteral("rad")) {
+            return QStringLiteral("radian");
+        }
+        return normalized;
+    }
+
     int Units::comboIndexForCategoryUnit(QComboBox *comboBox,
                                          const fairwindsk::Units::UnitPreferenceItem &item,
                                          const QString &targetUnit,
@@ -167,16 +190,25 @@ namespace fairwindsk::ui::settings {
             }
         }
 
+        const QString canonicalTargetUnit = canonicalUnitToken(targetUnit);
+        const QString canonicalSymbol = canonicalUnitToken(symbol);
+
         for (int i = 0; i < item.options.size(); ++i) {
             const auto &option = item.options.at(i);
+            const QString optionKey = canonicalUnitToken(option.key);
+            const QString optionSymbol = canonicalUnitToken(option.symbol);
             if (!targetUnit.isEmpty() &&
-                (option.symbol.compare(targetUnit, Qt::CaseInsensitive) == 0 ||
+                (optionKey == canonicalTargetUnit ||
+                 optionSymbol == canonicalTargetUnit ||
+                 option.symbol.compare(targetUnit, Qt::CaseInsensitive) == 0 ||
                  option.label.startsWith(targetUnit + QStringLiteral(" "), Qt::CaseInsensitive) ||
                  option.label == targetUnit)) {
                 return i;
             }
             if (!symbol.isEmpty() &&
-                (option.symbol.compare(symbol, Qt::CaseInsensitive) == 0 ||
+                (optionKey == canonicalSymbol ||
+                 optionSymbol == canonicalSymbol ||
+                 option.symbol.compare(symbol, Qt::CaseInsensitive) == 0 ||
                  option.label.contains(QStringLiteral("(%1)").arg(symbol), Qt::CaseInsensitive))) {
                 return i;
             }

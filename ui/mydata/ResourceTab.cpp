@@ -179,7 +179,7 @@ namespace fairwindsk::ui::mydata {
         m_titleLabel->setStyleSheet("font-size: 20px; font-weight: bold;");
         auto *formLayout = new QFormLayout(ui->widgetFormHost);
         ui->verticalLayoutPreviewHost->addWidget(m_previewWidget);
-        ui->splitterDetails->setStretchFactor(0, 1);
+        ui->splitterDetails->setStretchFactor(0, 2);
         ui->splitterDetails->setStretchFactor(1, 1);
 
         m_latitudeSpinBox->setRange(-90.0, 90.0);

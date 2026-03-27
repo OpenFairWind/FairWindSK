@@ -48,6 +48,7 @@ namespace fairwindsk::ui::settings {
                                       const fairwindsk::Units::UnitPreferenceItem &item,
                                       const QString &targetUnit,
                                       const QString &symbol) const;
+        static QString canonicalUnitToken(const QString &value);
         bool hasLocalOverrides() const;
         static PresetInfo parsePresetInfo(const QString &name, const QJsonObject &presetObject);
         QString localOverrideForCategory(const QString &category) const;

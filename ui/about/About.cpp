@@ -17,6 +17,7 @@ namespace fairwindsk::ui::about {
         m_currentWidget = currenWidget;
         ui->labelVersion->setText(tr("FairWindSK Version %1").arg(QStringLiteral(FAIRWINDSK_VERSION)));
         ui->label->setText(tr("Copyright %1").arg(QStringLiteral(FAIRWINDSK_BUILD_YEAR)));
+        ui->buttonBox->hide();
         connect(ui->buttonBox, &QDialogButtonBox::rejected, this, &About::onClose);
         connect(ui->buttonBox, &QDialogButtonBox::accepted, this, &About::onClose);
     }
