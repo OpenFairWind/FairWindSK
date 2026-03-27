@@ -7,7 +7,6 @@
 
 #include <QWidget>
 #include <QAbstractButton>
-#include <QPushButton>
 #include <QVector>
 #include <QtCore/qjsonobject.h>
 #include "AppItem.hpp"
@@ -38,6 +37,10 @@ namespace fairwindsk::ui::settings {
         //QList<QString> getAppsHashes();
 
         Configuration *getConfiguration();
+        void resetToCurrentConfiguration();
+        void restoreDefaultConfiguration();
+        void restartApplication();
+        void quitApplication();
 
 
     public slots:
@@ -53,9 +56,6 @@ namespace fairwindsk::ui::settings {
 
     private:
         Ui::Settings *ui;
-
-	    QPushButton *m_pushButtonQuit;
-        QPushButton *m_pushButtonRestart;
 
         Configuration m_configuration;
         Configuration *m_currentConfiguration;

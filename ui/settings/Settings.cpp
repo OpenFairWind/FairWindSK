@@ -15,6 +15,7 @@
 #include "Connection.hpp"
 #include "SignalK.hpp"
 #include "Apps.hpp"
+#include "System.hpp"
 
 
 #include "ui_Settings.h"
@@ -72,20 +73,6 @@ namespace fairwindsk::ui::settings {
         // Store the current widget pointer
         m_currentWidget = currenWidget;
 
-        // Create a push button labelling it with Restart
-        m_pushButtonRestart = new QPushButton(tr("Restart"));
-
-        // Add the push button to the button box sith ActionRole
-        ui->buttonBox->addButton(m_pushButtonRestart,QDialogButtonBox::ActionRole);
-
-        // Create a push button labelling it with Quit
-	    m_pushButtonQuit = new QPushButton(tr("Quit"));
-
-        // Add the push button to the button box sith ActionRole
-	    ui->buttonBox->addButton(m_pushButtonQuit,QDialogButtonBox::ActionRole);
-
-        // Connect the button box clicked signal with onClicked method
-        connect(ui->buttonBox,&QDialogButtonBox::clicked,this,&Settings::onClicked);
         connect(ui->tabWidget, &QTabWidget::currentChanged, this, &Settings::onTabChanged);
     }
 
@@ -119,8 +106,8 @@ namespace fairwindsk::ui::settings {
         // Remove tabs if present
         removeTabs();
 
-        m_tabPages = {nullptr, nullptr, nullptr, nullptr, nullptr};
-        for (const auto &tabTitle : {tr("Main"), tr("Connection"), tr("Signal K"), tr("Units"), tr("Applications")}) {
+        m_tabPages = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+        for (const auto &tabTitle : {tr("Main"), tr("Connection"), tr("Signal K"), tr("Units"), tr("Applications"), tr("System")}) {
             auto *container = new QWidget(ui->tabWidget);
             auto *layout = new QVBoxLayout(container);
             layout->setContentsMargins(0, 0, 0, 0);
@@ -147,6 +134,8 @@ namespace fairwindsk::ui::settings {
                 return new Units(this);
             case 4:
                 return new Apps(this);
+            case 5:
+                return new System(this);
             default:
                 return new QWidget(this);
         }
@@ -193,52 +182,7 @@ namespace fairwindsk::ui::settings {
      */
     void Settings::onClicked(QAbstractButton *button) {
 
-        if (ui->buttonBox->button(QDialogButtonBox::Reset) == dynamic_cast<QPushButton*>(button)) {
-
-            // Get the json configuration object of the current configuration
-            auto configurationAsJson = m_currentConfiguration->getRoot();
-
-            // Set the local configuration as the current one
-            m_configuration.setRoot(configurationAsJson);
-
-            // Get the current tab index
-            const auto currentIndex = ui->tabWidget->currentIndex();
-
-            // Initialize all the tabs setting the currentIndex
-            initTabs(currentIndex);
-            FairWindSK::getInstance()->applyUiPreferences(&m_configuration);
-
-        }
-        // Check if the button is Default
-        else if (ui->buttonBox->button(QDialogButtonBox::RestoreDefaults) == dynamic_cast<QPushButton*>(button)) {
-
-            // Set the configuration with the default values
-            m_configuration.setDefault();
-
-            // Get the current tab index
-            const auto currentIndex = ui->tabWidget->currentIndex();
-
-            // Initialize all the tabs setting the currentIndex
-            initTabs(currentIndex);
-            FairWindSK::getInstance()->applyUiPreferences(&m_configuration);
-
-        }
-        // Check if the button is Restart
-        else if ( m_pushButtonRestart == dynamic_cast<QPushButton*>(button)) {
-
-            applyConfiguration();
-
-            // Quit the application, returning 1 (restart)
-            QApplication::exit(1);
-        }
-        // Check if the button is Quit
-        else if ( m_pushButtonQuit == dynamic_cast<QPushButton*>(button)) {
-
-            applyConfiguration();
-
-            // Quit the application, returning 0 (quit, all ok)
-            QApplication::exit(0);
-        }
+        Q_UNUSED(button);
     }
 
     /*
@@ -281,6 +225,29 @@ namespace fairwindsk::ui::settings {
         initTabs(std::max(0, resolvedIndex));
     }
 
+    void Settings::resetToCurrentConfiguration() {
+        resetFromCurrentConfiguration(ui->tabWidget->currentIndex());
+        FairWindSK::getInstance()->applyUiPreferences(&m_configuration);
+    }
+
+    void Settings::restoreDefaultConfiguration() {
+        m_configuration.setDefault();
+        const auto currentIndex = ui->tabWidget->currentIndex();
+        initTabs(currentIndex);
+        FairWindSK::getInstance()->applyUiPreferences(&m_configuration);
+        markDirty();
+    }
+
+    void Settings::restartApplication() {
+        applyConfiguration();
+        QApplication::exit(1);
+    }
+
+    void Settings::quitApplication() {
+        applyConfiguration();
+        QApplication::exit(0);
+    }
+
     /*
      * getConfiguration
      * Get a pointer  to the local configuration
@@ -297,21 +264,6 @@ namespace fairwindsk::ui::settings {
 
         // Remove the tabs
         removeTabs();
-
-        // Check if the quit push button is allocated
-	    if (m_pushButtonQuit) {
-
-	        // Delete the button
-		    delete m_pushButtonQuit;
-
-	        // Set the pointer to null
-		    m_pushButtonQuit = nullptr;
-	    }
-
-        if (m_pushButtonRestart) {
-            delete m_pushButtonRestart;
-            m_pushButtonRestart = nullptr;
-        }
 
         // Check if the ui pointer is valid
         if (ui) {

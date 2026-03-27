@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>fairwindsk::ui::settings::System</class>
+ <widget class="QWidget" name="System">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>960</width>
+    <height>640</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>System</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_Main">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QScrollArea" name="scrollArea_System">
+     <property name="widgetResizable">
+      <bool>true</bool>
+     </property>
+     <widget class="QWidget" name="scrollAreaWidgetContents">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>960</width>
+        <height>640</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_Content">
+       <item>
+        <widget class="QGroupBox" name="groupBox_Actions">
+         <property name="title">
+          <string>Actions</string>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_Actions">
+          <item>
+           <widget class="QPushButton" name="pushButton_Reset">
+            <property name="text">
+             <string>Reset</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButton_RestoreDefaults">
+            <property name="text">
+             <string>Restore Defaults</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButton_Save">
+            <property name="text">
+             <string>Save</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButton_Restart">
+            <property name="text">
+             <string>Restart</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButton_Quit">
+            <property name="text">
+             <string>Quit</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSplitter" name="splitter_Panes">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <widget class="QGroupBox" name="groupBox_Performance">
+          <property name="title">
+           <string>Performance</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_Performance">
+           <item>
+            <layout class="QFormLayout" name="formLayout_Memory">
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_ProcessMemoryCaption">
+               <property name="text">
+                <string>Process memory</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QLabel" name="label_ProcessMemoryValue">
+               <property name="text">
+                <string>0 MB</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="label_TotalMemoryCaption">
+               <property name="text">
+                <string>Total memory</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QLabel" name="label_TotalMemoryValue">
+               <property name="text">
+                <string>0 MB</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="label_MemoryUsageCaption">
+               <property name="text">
+                <string>Usage</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
+              <widget class="QProgressBar" name="progressBar_MemoryUsage">
+               <property name="value">
+                <number>0</number>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <spacer name="verticalSpacer_Performance">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>40</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QGroupBox" name="groupBox_Diagnostics">
+          <property name="title">
+           <string>Diagnostics</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_Diagnostics">
+           <item>
+            <widget class="QLabel" name="label_CpuHelp">
+             <property name="text">
+              <string>Per-core workload is refreshed automatically.</string>
+             </property>
+             <property name="wordWrap">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QWidget" name="widget_CoresHost" native="true"/>
+           </item>
+          </layout>
+         </widget>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

@@ -70,23 +70,6 @@ QTabBar::tab:selected {
      </item>
     </layout>
    </item>
-   <item row="1" column="0">
-    <widget class="QDialogButtonBox" name="buttonBox">
-     <property name="styleSheet">
-      <string notr="true">background-color: rgb(82, 82, 83);
-border-top-color: rgb(159, 157, 160);
-border-left-color: rgb(159, 157, 160);
-border-right-color: rgb(83, 83, 84);
-border-bottom-color: rgb(83, 83, 84);</string>
-     </property>
-     <property name="standardButtons">
-      <set>QDialogButtonBox::StandardButton::Reset|QDialogButtonBox::StandardButton::RestoreDefaults</set>
-     </property>
-     <property name="centerButtons">
-      <bool>false</bool>
-     </property>
-    </widget>
-   </item>
   </layout>
  </widget>
  <resources/>
