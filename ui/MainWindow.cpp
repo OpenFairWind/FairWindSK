@@ -557,7 +557,6 @@ namespace fairwindsk::ui {
             return;
         }
         if (m_settingsPage && ui->stackedWidget_Center->currentWidget() == m_settingsPage) {
-            closeSettingsPage(m_settingsPage->getCurrentWidget());
             return;
         }
 
@@ -671,7 +670,7 @@ namespace fairwindsk::ui {
         if (fallbackWidget == m_settingsPage && m_settingsPage) {
             fallbackWidget = m_settingsPage->getCurrentWidget();
         }
-        if (!closeSettingsPage(fallbackWidget)) {
+        if (!closeSettingsPage(fallbackWidget, false)) {
             return;
         }
 
@@ -741,7 +740,7 @@ namespace fairwindsk::ui {
         }
     }
 
-    bool MainWindow::closeSettingsPage(QWidget *fallbackWidget) {
+    bool MainWindow::closeSettingsPage(QWidget *fallbackWidget, const bool showFallback) {
         if (!m_settingsPage) {
             return true;
         }
@@ -766,14 +765,14 @@ namespace fairwindsk::ui {
                 m_settingsPage->saveChanges();
                 exitAfterSave = true;
             } else {
-                if (targetFallback && ui->stackedWidget_Center->indexOf(targetFallback) >= 0) {
+                if (showFallback && targetFallback && ui->stackedWidget_Center->indexOf(targetFallback) >= 0) {
                     ui->stackedWidget_Center->setCurrentWidget(targetFallback);
                     syncTopBarToCurrentPage();
                 }
                 m_settingsPage->discardChanges();
             }
         } else {
-            if (targetFallback && ui->stackedWidget_Center->indexOf(targetFallback) >= 0) {
+            if (showFallback && targetFallback && ui->stackedWidget_Center->indexOf(targetFallback) >= 0) {
                 ui->stackedWidget_Center->setCurrentWidget(targetFallback);
                 syncTopBarToCurrentPage();
             }
@@ -781,10 +780,10 @@ namespace fairwindsk::ui {
         }
         m_settingsPage->setCurrentWidget(targetFallback);
 
-        if (!exitAfterSave && targetFallback && ui->stackedWidget_Center->indexOf(targetFallback) >= 0) {
+        if (!exitAfterSave && showFallback && targetFallback && ui->stackedWidget_Center->indexOf(targetFallback) >= 0) {
             ui->stackedWidget_Center->setCurrentWidget(targetFallback);
             syncTopBarToCurrentPage();
-        } else if (!exitAfterSave) {
+        } else if (!exitAfterSave && showFallback) {
             showLauncher();
         }
 

@@ -120,11 +120,13 @@ namespace fairwindsk::ui::settings {
         removeTabs();
 
         m_tabPages = {nullptr, nullptr, nullptr, nullptr, nullptr};
-        ui->tabWidget->addTab(new QWidget(ui->tabWidget), tr("Main"));
-        ui->tabWidget->addTab(new QWidget(ui->tabWidget), tr("Connection"));
-        ui->tabWidget->addTab(new QWidget(ui->tabWidget), tr("Signal K"));
-        ui->tabWidget->addTab(new QWidget(ui->tabWidget), tr("Units"));
-        ui->tabWidget->addTab(new QWidget(ui->tabWidget), tr("Applications"));
+        for (const auto &tabTitle : {tr("Main"), tr("Connection"), tr("Signal K"), tr("Units"), tr("Applications")}) {
+            auto *container = new QWidget(ui->tabWidget);
+            auto *layout = new QVBoxLayout(container);
+            layout->setContentsMargins(0, 0, 0, 0);
+            layout->setSpacing(0);
+            ui->tabWidget->addTab(container, tabTitle);
+        }
 
         // Set the current tab index
         const int resolvedIndex = std::clamp(currentIndex, 0, ui->tabWidget->count() - 1);
@@ -163,15 +165,18 @@ namespace fairwindsk::ui::settings {
             return;
         }
 
-        QWidget *placeholder = ui->tabWidget->widget(index);
         QWidget *page = createTabWidget(index);
         m_tabPages[index] = page;
-        const QString tabText = ui->tabWidget->tabText(index);
-        ui->tabWidget->removeTab(index);
-        if (placeholder) {
-            delete placeholder;
+        QWidget *container = ui->tabWidget->widget(index);
+        if (!container) {
+            return;
         }
-        ui->tabWidget->insertTab(index, page, tabText);
+        if (!container->layout()) {
+            auto *layout = new QVBoxLayout(container);
+            layout->setContentsMargins(0, 0, 0, 0);
+            layout->setSpacing(0);
+        }
+        container->layout()->addWidget(page);
     }
 
     void Settings::onTabChanged(const int index) {
@@ -180,11 +185,6 @@ namespace fairwindsk::ui::settings {
         }
 
         ensureTabCreated(index);
-        if (ui->tabWidget->widget(index) != m_tabPages.value(index, nullptr) && m_tabPages.value(index, nullptr)) {
-            ui->tabWidget->removeTab(index);
-            ui->tabWidget->insertTab(index, m_tabPages.at(index), ui->tabWidget->tabText(index));
-            ui->tabWidget->setCurrentIndex(index);
-        }
     }
 
     /*
