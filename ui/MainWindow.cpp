@@ -766,17 +766,25 @@ namespace fairwindsk::ui {
                 m_settingsPage->saveChanges();
                 exitAfterSave = true;
             } else {
+                if (targetFallback && ui->stackedWidget_Center->indexOf(targetFallback) >= 0) {
+                    ui->stackedWidget_Center->setCurrentWidget(targetFallback);
+                    syncTopBarToCurrentPage();
+                }
                 m_settingsPage->discardChanges();
             }
         } else {
+            if (targetFallback && ui->stackedWidget_Center->indexOf(targetFallback) >= 0) {
+                ui->stackedWidget_Center->setCurrentWidget(targetFallback);
+                syncTopBarToCurrentPage();
+            }
             m_settingsPage->discardChanges();
         }
         m_settingsPage->setCurrentWidget(targetFallback);
 
-        if (targetFallback && ui->stackedWidget_Center->indexOf(targetFallback) >= 0) {
+        if (!exitAfterSave && targetFallback && ui->stackedWidget_Center->indexOf(targetFallback) >= 0) {
             ui->stackedWidget_Center->setCurrentWidget(targetFallback);
             syncTopBarToCurrentPage();
-        } else {
+        } else if (!exitAfterSave) {
             showLauncher();
         }
 
