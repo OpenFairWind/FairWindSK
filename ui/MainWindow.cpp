@@ -124,6 +124,9 @@ namespace fairwindsk::ui {
         setSize();
 
         QTimer::singleShot(0, this, &MainWindow::prewarmPersistentPages);
+        QTimer::singleShot(750, this, [this]() {
+            ensureSettingsPage(m_launcher);
+        });
     }
 
     bool MainWindow::isOverlayOpen() const {
@@ -584,9 +587,12 @@ namespace fairwindsk::ui {
     }
 
     void MainWindow::prewarmPersistentPages() {
+        QWidget *currentWidget = ui->stackedWidget_Center->currentWidget();
         ensureAboutPage(m_launcher);
         ensureMyDataPage(m_launcher);
-        ensureSettingsPage(m_launcher);
+        if (currentWidget && ui->stackedWidget_Center->indexOf(currentWidget) >= 0) {
+            ui->stackedWidget_Center->setCurrentWidget(currentWidget);
+        }
     }
 
     void MainWindow::setSize() {
