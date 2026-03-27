@@ -62,6 +62,12 @@ Apps discovered from the Signal K server (`signalk-webapp` entries) are merged w
     "range": "rm",
     "depth": "mt"
   },
+  "unitPreferences": {
+    "overrides": {
+      "speed": "kn",
+      "distance": "nm"
+    }
+  },
   "signalk": {
     "sog": "navigation.speedOverGround",
     "stw": "navigation.speedThroughWater",
@@ -69,6 +75,10 @@ Apps discovered from the Signal K server (`signalk-webapp` entries) are merged w
   }
 }
 ```
+
+FairWindSK now prefers Signal K server unit preferences when the server exposes `displayUnits` metadata. The dedicated **Settings > Units** tab shows the current server preset, lets you sync the server choices into local configuration, and lets you enable per-category local overrides that are saved under `unitPreferences.overrides`.
+
+The legacy `units` object is still kept for compatibility with parts of the UI that have not yet moved to the server-driven metadata path. FairWindSK updates those legacy keys when you save local category overrides from the Units tab.
 
 These mappings drive UI bars (autopilot, anchor, alarms, POB) and instrument readouts. Ensure any custom paths exist on your Signal K server.
 

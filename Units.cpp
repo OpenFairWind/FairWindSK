@@ -3,6 +3,7 @@
 //
 
 #include <Units.hpp>
+#include <algorithm>
 #include <fstream>
 #include <QFile>
 #include <QJSEngine>
@@ -13,6 +14,66 @@
 #include "FairWindSK.hpp"
 
 namespace fairwindsk {
+    namespace {
+        const QString kUnitOverrideRoot = QStringLiteral("unitPreferences");
+        const QString kUnitOverrideNode = QStringLiteral("overrides");
+
+        QString localOverrideKeyForCategory(const QString &category) {
+            return category;
+        }
+
+        QString displayLabelForCategory(const QString &category) {
+            QString label = category;
+            label.replace('_', ' ');
+            for (int i = 0; i < label.size(); ++i) {
+                const bool capitalize = i == 0 || label.at(i - 1).isSpace();
+                if (capitalize) {
+                    label[i] = label.at(i).toUpper();
+                }
+            }
+            if (label == QStringLiteral("Datetime")) {
+                return QStringLiteral("Date/Time");
+            }
+            return label;
+        }
+
+        void syncLegacyUnitsForCategory(nlohmann::json &root, const QString &category, const QString &targetUnit) {
+            auto &units = root["units"];
+
+            if (category == QStringLiteral("speed")) {
+                units["vesselSpeed"] = targetUnit.toStdString();
+                units["windSpeed"] = targetUnit.toStdString();
+            } else if (category == QStringLiteral("depth")) {
+                if (targetUnit == QStringLiteral("m")) {
+                    units["depth"] = "mt";
+                } else if (targetUnit == QStringLiteral("ft")) {
+                    units["depth"] = "ft";
+                } else if (targetUnit == QStringLiteral("ftm")) {
+                    units["depth"] = "ftm";
+                } else {
+                    units["depth"] = targetUnit.toStdString();
+                }
+            } else if (category == QStringLiteral("distance")) {
+                if (targetUnit == QStringLiteral("m")) {
+                    units["distance"] = "m";
+                    units["range"] = "rm";
+                } else {
+                    units["distance"] = targetUnit.toStdString();
+                    units["range"] = targetUnit.toStdString();
+                }
+            } else if (category == QStringLiteral("temperature")) {
+                units["airTemperature"] = targetUnit.toStdString();
+                units["waterTemperature"] = targetUnit.toStdString();
+            } else if (category == QStringLiteral("pressure")) {
+                units["airPressure"] = targetUnit.toStdString();
+            }
+        }
+
+        void setJsonStringValue(nlohmann::json &jsonObject, const std::string &key, const QString &value) {
+            jsonObject[key] = value.toStdString();
+        }
+    }
+
 /*
  * Units - Public Constructor
  */
@@ -138,7 +199,9 @@ namespace fairwindsk {
 
     void Units::refreshSignalKPreferences() {
         m_signalKPreferencesLoaded = false;
+        m_signalKActivePresetName.clear();
         m_categoryDisplayUnits.clear();
+        m_definitionsByBaseUnit.clear();
         m_pathPatternCategories.clear();
         m_displayUnitsCache.clear();
         m_attemptedDisplayUnitsPaths.clear();
@@ -164,6 +227,9 @@ namespace fairwindsk {
 
         const auto activeUrl = QUrl(client->server().toString() + "/signalk/v1/unitpreferences/active");
         const auto activePreset = client->signalkGet(activeUrl);
+        if (activePreset.contains("name") && activePreset["name"].isString()) {
+            m_signalKActivePresetName = activePreset["name"].toString();
+        }
         if (activePreset.contains("categories") && activePreset["categories"].isObject()) {
             const auto categories = activePreset["categories"].toObject();
             for (auto it = categories.begin(); it != categories.end(); ++it) {
@@ -174,6 +240,41 @@ namespace fairwindsk {
                 displayUnits.category = it.key();
                 if (displayUnits.valid) {
                     m_categoryDisplayUnits.insert(it.key(), displayUnits);
+                }
+            }
+        }
+
+        const auto definitionsUrl = QUrl(client->server().toString() + "/signalk/v1/unitpreferences/definitions");
+        const auto definitionsObject = client->signalkGet(definitionsUrl);
+        if (definitionsObject.contains("definitions") && definitionsObject["definitions"].isObject()) {
+            const auto definitions = definitionsObject["definitions"].toObject();
+            for (auto baseUnitIt = definitions.begin(); baseUnitIt != definitions.end(); ++baseUnitIt) {
+                if (!baseUnitIt.value().isObject()) {
+                    continue;
+                }
+                const auto definitionObject = baseUnitIt.value().toObject();
+                if (!definitionObject.contains("conversions") || !definitionObject["conversions"].isObject()) {
+                    continue;
+                }
+
+                const auto conversions = definitionObject["conversions"].toObject();
+                QMap<QString, DisplayUnitsInfo> conversionsForBaseUnit;
+                for (auto conversionIt = conversions.begin(); conversionIt != conversions.end(); ++conversionIt) {
+                    if (!conversionIt.value().isObject()) {
+                        continue;
+                    }
+                    auto displayUnits = parseDisplayUnits(conversionIt.value().toObject());
+                    displayUnits.baseUnit = baseUnitIt.key();
+                    displayUnits.targetUnit = conversionIt.key();
+                    if (displayUnits.symbol.isEmpty()) {
+                        displayUnits.symbol = conversionIt.key();
+                    }
+                    if (displayUnits.valid) {
+                        conversionsForBaseUnit.insert(conversionIt.key(), displayUnits);
+                    }
+                }
+                if (!conversionsForBaseUnit.isEmpty()) {
+                    m_definitionsByBaseUnit.insert(baseUnitIt.key(), conversionsForBaseUnit);
                 }
             }
         }
@@ -203,6 +304,7 @@ namespace fairwindsk {
     Units::DisplayUnitsInfo Units::parseDisplayUnits(const QJsonObject &jsonObject) const {
         DisplayUnitsInfo info;
         info.category = jsonObject.value("category").toString();
+        info.baseUnit = jsonObject.value("baseUnit").toString();
         info.targetUnit = jsonObject.value("targetUnit").toString();
         info.formula = jsonObject.value("formula").toString();
         info.inverseFormula = jsonObject.value("inverseFormula").toString();
@@ -228,6 +330,37 @@ namespace fairwindsk {
         return {};
     }
 
+    Units::DisplayUnitsInfo Units::localOverrideForCategory(const QString &category) const {
+        const auto fairWindSK = FairWindSK::getInstance();
+        if (!fairWindSK || !fairWindSK->getConfiguration()) {
+            return {};
+        }
+
+        const auto overrideTargetUnit = getLocalUnitOverride(category);
+        if (overrideTargetUnit.isEmpty() || !m_categoryDisplayUnits.contains(category)) {
+            return {};
+        }
+
+        const auto defaultInfo = m_categoryDisplayUnits.value(category);
+        if (defaultInfo.baseUnit.isEmpty() || !m_definitionsByBaseUnit.contains(defaultInfo.baseUnit)) {
+            return {};
+        }
+
+        const auto conversionsForBaseUnit = m_definitionsByBaseUnit.value(defaultInfo.baseUnit);
+        if (!conversionsForBaseUnit.contains(overrideTargetUnit)) {
+            return {};
+        }
+
+        auto info = conversionsForBaseUnit.value(overrideTargetUnit);
+        info.category = category;
+        info.baseUnit = defaultInfo.baseUnit;
+        if (info.symbol.isEmpty()) {
+            info.symbol = overrideTargetUnit;
+        }
+        info.valid = true;
+        return info;
+    }
+
     Units::DisplayUnitsInfo Units::displayUnitsForPath(const QString &path) {
         if (path.isEmpty()) {
             return {};
@@ -251,6 +384,18 @@ namespace fairwindsk {
                 const auto metaObject = client->signalkGet(metaUrl);
                 if (metaObject.contains("displayUnits") && metaObject["displayUnits"].isObject()) {
                     auto info = parseDisplayUnits(metaObject["displayUnits"].toObject());
+                    if (info.baseUnit.isEmpty() && metaObject.contains("units") && metaObject["units"].isString()) {
+                        info.baseUnit = metaObject["units"].toString();
+                    }
+                    if (info.category.isEmpty()) {
+                        info.category = categoryForPath(path);
+                    }
+                    if (!info.category.isEmpty()) {
+                        const auto overrideInfo = localOverrideForCategory(info.category);
+                        if (overrideInfo.valid) {
+                            info = overrideInfo;
+                        }
+                    }
                     if (info.valid) {
                         m_displayUnitsCache.insert(path, info);
                         return info;
@@ -263,6 +408,10 @@ namespace fairwindsk {
                 auto info = m_categoryDisplayUnits.value(category);
                 if (info.category.isEmpty()) {
                     info.category = category;
+                }
+                const auto overrideInfo = localOverrideForCategory(category);
+                if (overrideInfo.valid) {
+                    info = overrideInfo;
                 }
                 m_displayUnitsCache.insert(path, info);
                 return info;
@@ -374,6 +523,130 @@ namespace fairwindsk {
             }
         }
         return getLabel(fallbackUnit);
+    }
+
+    QString Units::getSignalKActivePresetName() {
+        loadSignalKPreferences();
+        return m_signalKActivePresetName;
+    }
+
+    QList<Units::UnitPreferenceItem> Units::getSignalKUnitPreferenceItems() {
+        loadSignalKPreferences();
+
+        QList<UnitPreferenceItem> items;
+        for (auto categoryIt = m_categoryDisplayUnits.constBegin(); categoryIt != m_categoryDisplayUnits.constEnd(); ++categoryIt) {
+            const auto &serverInfo = categoryIt.value();
+            UnitPreferenceItem item;
+            item.category = categoryIt.key();
+            item.baseUnit = serverInfo.baseUnit;
+            item.displayFormat = serverInfo.displayFormat;
+
+            const auto overrideInfo = localOverrideForCategory(categoryIt.key());
+            const auto effectiveInfo = overrideInfo.valid ? overrideInfo : serverInfo;
+            item.targetUnit = effectiveInfo.targetUnit;
+            item.symbol = effectiveInfo.symbol;
+
+            if (m_definitionsByBaseUnit.contains(serverInfo.baseUnit)) {
+                const auto definitions = m_definitionsByBaseUnit.value(serverInfo.baseUnit);
+                for (auto definitionIt = definitions.constBegin(); definitionIt != definitions.constEnd(); ++definitionIt) {
+                    const auto &definition = definitionIt.value();
+                    UnitOption option;
+                    option.key = definitionIt.key();
+                    option.symbol = definition.symbol.isEmpty() ? definitionIt.key() : definition.symbol;
+                    option.label = QStringLiteral("%1 (%2)")
+                            .arg(getLabel(definitionIt.key()), option.symbol);
+                    item.options.append(option);
+                }
+            }
+
+            if (item.options.isEmpty()) {
+                UnitOption option;
+                option.key = effectiveInfo.targetUnit;
+                option.symbol = effectiveInfo.symbol;
+                option.label = QStringLiteral("%1 (%2)")
+                        .arg(getLabel(effectiveInfo.targetUnit), effectiveInfo.symbol.isEmpty() ? effectiveInfo.targetUnit : effectiveInfo.symbol);
+                item.options.append(option);
+            }
+
+            items.append(item);
+        }
+
+        std::sort(items.begin(), items.end(), [](const UnitPreferenceItem &left, const UnitPreferenceItem &right) {
+            return displayLabelForCategory(left.category).localeAwareCompare(displayLabelForCategory(right.category)) < 0;
+        });
+
+        return items;
+    }
+
+    QString Units::getLocalUnitOverride(const QString &category) const {
+        const auto fairWindSK = FairWindSK::getInstance();
+        const auto configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        if (!configuration) {
+            return {};
+        }
+
+        const auto root = configuration->getRoot();
+        const auto unitPreferencesIt = root.find(kUnitOverrideRoot.toStdString());
+        if (unitPreferencesIt == root.end() || !unitPreferencesIt->is_object()) {
+            return {};
+        }
+
+        const auto overridesIt = unitPreferencesIt->find(kUnitOverrideNode.toStdString());
+        if (overridesIt == unitPreferencesIt->end() || !overridesIt->is_object()) {
+            return {};
+        }
+
+        const auto key = localOverrideKeyForCategory(category).toStdString();
+        const auto valueIt = overridesIt->find(key);
+        if (valueIt == overridesIt->end() || !valueIt->is_string()) {
+            return {};
+        }
+
+        return QString::fromStdString(valueIt->get<std::string>());
+    }
+
+    void Units::setLocalUnitOverride(const QString &category, const QString &targetUnit) {
+        const auto fairWindSK = FairWindSK::getInstance();
+        const auto configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        if (!configuration || category.isEmpty() || targetUnit.isEmpty()) {
+            return;
+        }
+
+        auto &root = configuration->getRoot();
+        auto &overrides = root[kUnitOverrideRoot.toStdString()][kUnitOverrideNode.toStdString()];
+        setJsonStringValue(overrides, localOverrideKeyForCategory(category).toStdString(), targetUnit);
+        syncLegacyUnitsForCategory(root, category, targetUnit);
+        m_displayUnitsCache.clear();
+    }
+
+    void Units::clearLocalUnitOverride(const QString &category) {
+        const auto fairWindSK = FairWindSK::getInstance();
+        const auto configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        if (!configuration || category.isEmpty()) {
+            return;
+        }
+
+        auto &root = configuration->getRoot();
+        const auto unitPreferencesKey = kUnitOverrideRoot.toStdString();
+        const auto overridesKey = kUnitOverrideNode.toStdString();
+        if (root.contains(unitPreferencesKey) && root[unitPreferencesKey].is_object()) {
+            auto &unitPreferences = root[unitPreferencesKey];
+            if (unitPreferences.contains(overridesKey) && unitPreferences[overridesKey].is_object()) {
+                unitPreferences[overridesKey].erase(localOverrideKeyForCategory(category).toStdString());
+            }
+        }
+        if (m_categoryDisplayUnits.contains(category)) {
+            syncLegacyUnitsForCategory(root, category, m_categoryDisplayUnits.value(category).targetUnit);
+        }
+        m_displayUnitsCache.clear();
+    }
+
+    void Units::syncLocalUnitsFromServer() {
+        loadSignalKPreferences();
+
+        for (auto categoryIt = m_categoryDisplayUnits.constBegin(); categoryIt != m_categoryDisplayUnits.constEnd(); ++categoryIt) {
+            setLocalUnitOverride(categoryIt.key(), categoryIt.value().targetUnit);
+        }
     }
 
     nlohmann::json &Units::getUnits() {

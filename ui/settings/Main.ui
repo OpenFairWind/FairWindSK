@@ -297,30 +297,6 @@ QLineEdit, QComboBox, QAbstractItemView, QScrollArea, QSpinBox {
          </layout>
         </widget>
        </item>
-       <item row="2" column="0">
-       <widget class="QGroupBox" name="groupBox_Units">
-         <property name="title">
-          <string>Units</string>
-         </property>
-         <layout class="QGridLayout" name="gridLayout_Units">
-          <property name="leftMargin">
-           <number>0</number>
-          </property>
-          <property name="topMargin">
-           <number>0</number>
-          </property>
-          <property name="rightMargin">
-           <number>0</number>
-          </property>
-          <property name="bottomMargin">
-           <number>0</number>
-          </property>
-          <item row="0" column="0">
-           <layout class="QGridLayout" name="gridLayout_Measures"/>
-          </item>
-         </layout>
-        </widget>
-       </item>
       </layout>
      </widget>
     </widget>

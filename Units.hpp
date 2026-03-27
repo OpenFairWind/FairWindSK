@@ -7,8 +7,10 @@
 
 #include <QString>
 #include <QMap>
+#include <QList>
 #include <QObject>
 #include <QSet>
+#include <functional>
 #include <nlohmann/json.hpp>
 
 
@@ -20,6 +22,21 @@ namespace fairwindsk {
     class Units: public QObject {
         Q_OBJECT
     public:
+        struct UnitOption {
+            QString key;
+            QString symbol;
+            QString label;
+        };
+
+        struct UnitPreferenceItem {
+            QString category;
+            QString baseUnit;
+            QString targetUnit;
+            QString displayFormat;
+            QString symbol;
+            QList<UnitOption> options;
+        };
+
         static Units *getInstance();
         double convert(const QString& srcUnit, const QString& unit, double value);
         QString getLabel(const QString &unit);
@@ -27,12 +44,19 @@ namespace fairwindsk {
         double convertSignalKValue(const QString &path, double value, const QString &fallbackSourceUnit = QString(), const QString &fallbackTargetUnit = QString());
         QString formatSignalKValue(const QString &path, double value, const QString &fallbackSourceUnit = QString(), const QString &fallbackTargetUnit = QString());
         QString getSignalKUnitLabel(const QString &path, const QString &fallbackUnit = QString());
+        QString getSignalKActivePresetName();
+        QList<UnitPreferenceItem> getSignalKUnitPreferenceItems();
+        QString getLocalUnitOverride(const QString &category) const;
+        void setLocalUnitOverride(const QString &category, const QString &targetUnit);
+        void clearLocalUnitOverride(const QString &category);
+        void syncLocalUnitsFromServer();
         void refreshSignalKPreferences();
         nlohmann::json &getUnits();
 
     private:
         struct DisplayUnitsInfo {
             QString category;
+            QString baseUnit;
             QString targetUnit;
             QString formula;
             QString inverseFormula;
@@ -45,6 +69,7 @@ namespace fairwindsk {
         void loadSignalKPreferences();
         DisplayUnitsInfo displayUnitsForPath(const QString &path);
         DisplayUnitsInfo parseDisplayUnits(const QJsonObject &jsonObject) const;
+        DisplayUnitsInfo localOverrideForCategory(const QString &category) const;
         QString categoryForPath(const QString &path) const;
         static QString pathPatternToRegex(const QString &pathPattern);
         static bool isNumericDisplayFormat(const QString &displayFormat);
@@ -58,7 +83,9 @@ namespace fairwindsk {
 
         nlohmann::json m_units;
         bool m_signalKPreferencesLoaded = false;
+        QString m_signalKActivePresetName;
         QMap<QString, DisplayUnitsInfo> m_categoryDisplayUnits;
+        QMap<QString, QMap<QString, DisplayUnitsInfo>> m_definitionsByBaseUnit;
         QMap<QString, QString> m_pathPatternCategories;
         QMap<QString, DisplayUnitsInfo> m_displayUnitsCache;
         QSet<QString> m_attemptedDisplayUnitsPaths;

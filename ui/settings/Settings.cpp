@@ -11,6 +11,7 @@
 #include "Settings.hpp"
 
 #include "FairWindSK.hpp"
+#include "Units.hpp"
 
 #include "Main.hpp"
 #include "Connection.hpp"
@@ -31,6 +32,7 @@ namespace fairwindsk::ui::settings {
 
         // Save the configuration permanently
         FairWindSK::getInstance()->getConfiguration()->save();
+        fairwindsk::Units::getInstance()->refreshSignalKPreferences();
         FairWindSK::getInstance()->applyUiPreferences();
     }
 
@@ -130,6 +132,9 @@ namespace fairwindsk::ui::settings {
 
         // Add the signal k tab
         ui->tabWidget->addTab(new SignalK(this), tr("Signal K"));
+
+        // Add the units tab
+        ui->tabWidget->addTab(new Units(this), tr("Units"));
 
         // Add the applications tab
         ui->tabWidget->addTab(new Apps(this), tr("Applications"));

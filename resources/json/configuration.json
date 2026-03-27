@@ -101,6 +101,9 @@
         "vesselSpeed": "kn",
         "windSpeed": "kn"
     },
+    "unitPreferences": {
+        "overrides": {}
+    },
     "applications": {
         "autopilot": "@signalk/signalk-autopilot",
         "anchor": "signalk-anchoralarm-plugin"

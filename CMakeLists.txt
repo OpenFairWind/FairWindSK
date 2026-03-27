@@ -188,6 +188,7 @@ set(FAIRWINDSK_SOURCES
         ui/settings/Main.cpp ui/settings/Main.hpp ui/settings/Main.ui
         ui/settings/Connection.cpp ui/settings/Connection.hpp ui/settings/Connection.ui
         ui/settings/SignalK.cpp ui/settings/SignalK.hpp ui/settings/SignalK.ui
+        ui/settings/Units.cpp ui/settings/Units.hpp ui/settings/Units.ui
         Configuration.cpp Configuration.hpp
         ui/bottombar/POBBar.cpp ui/bottombar/POBBar.hpp ui/bottombar/POBBar.ui
         ui/bottombar/AlarmsBar.cpp ui/bottombar/AlarmsBar.hpp ui/bottombar/AlarmsBar.ui
