@@ -23,11 +23,29 @@
 namespace fairwindsk::ui::launcher {
     namespace {
         using OrderedApp = QPair<AppItem *, QString>;
+        enum class TileKind {
+            Empty,
+            App,
+            Folder
+        };
+
+        struct LauncherTileEntry {
+            TileKind kind = TileKind::Empty;
+            AppItem *app = nullptr;
+            QString id;
+            QString title;
+            QString description;
+            QPixmap pixmap;
+        };
+
         constexpr auto kLauncherLayoutKey = "launcherLayout";
         constexpr auto kLauncherNodesKey = "nodes";
         constexpr auto kNodeTypeKey = "type";
+        constexpr auto kNodeNameKey = "name";
+        constexpr auto kNodeIdKey = "id";
         constexpr auto kNodeItemsKey = "items";
         constexpr auto kNodeChildrenKey = "children";
+        constexpr auto kFolderReferencePrefix = "@folder:";
         constexpr const char *kNodeTypePage = "page";
         constexpr const char *kNodeTypeFolder = "folder";
 
@@ -63,90 +81,183 @@ namespace fairwindsk::ui::launcher {
             }
             return {};
         }
-
-        void collectPageSlots(const nlohmann::json &nodes, QStringList &pageSlots, const int itemsPerPage) {
-            if (!nodes.is_array()) {
-                return;
+        QString nodeName(const nlohmann::json &node) {
+            if (node.contains(kNodeNameKey) && node[kNodeNameKey].is_string()) {
+                return QString::fromStdString(node[kNodeNameKey].get<std::string>());
             }
+            return {};
+        }
 
+        QString nodeId(const nlohmann::json &node) {
+            if (node.contains(kNodeIdKey) && node[kNodeIdKey].is_string()) {
+                return QString::fromStdString(node[kNodeIdKey].get<std::string>());
+            }
+            return {};
+        }
+
+        QString defaultNodeTitle(const nlohmann::json &node) {
+            const QString title = nodeName(node).trimmed();
+            if (!title.isEmpty()) {
+                return title;
+            }
+            return QObject::tr("Page");
+        }
+
+        bool isPageNode(const nlohmann::json &node) {
+            return nodeType(node) == QLatin1String(kNodeTypePage);
+        }
+
+        bool isFolderReference(const QString &value) {
+            return value.startsWith(QLatin1String(kFolderReferencePrefix));
+        }
+
+        QString pageIdFromFolderReference(const QString &value) {
+            return isFolderReference(value) ? value.mid(QLatin1String(kFolderReferencePrefix).size()) : QString();
+        }
+
+        const nlohmann::json *findNodeById(const nlohmann::json &nodes, const QString &id) {
+            if (!nodes.is_array()) {
+                return nullptr;
+            }
             for (const auto &node : nodes) {
                 if (!node.is_object()) {
                     continue;
                 }
-
-                const QString type = nodeType(node);
-                if (type == QLatin1String(kNodeTypePage)) {
-                    int itemIndex = 0;
-                    if (node.contains(kNodeItemsKey) && node[kNodeItemsKey].is_array()) {
-                        for (const auto &item : node[kNodeItemsKey]) {
-                            if (itemIndex >= itemsPerPage) {
-                                break;
-                            }
-                            pageSlots.append(item.is_string() ? QString::fromStdString(item.get<std::string>()) : QString());
-                            ++itemIndex;
-                        }
-                    }
-                    while (itemIndex < itemsPerPage) {
-                        pageSlots.append(QString());
-                        ++itemIndex;
-                    }
+                if (nodeId(node) == id) {
+                    return &node;
                 }
-
                 if (node.contains(kNodeChildrenKey) && node[kNodeChildrenKey].is_array()) {
-                    collectPageSlots(node[kNodeChildrenKey], pageSlots, itemsPerPage);
+                    if (const auto *child = findNodeById(node[kNodeChildrenKey], id)) {
+                        return child;
+                    }
                 }
             }
+            return nullptr;
         }
 
-        QStringList collectLauncherPageSlots(const int itemsPerPage) {
+        QStringList pageItemsFromNode(const nlohmann::json &node, const int itemsPerPage) {
+            QStringList items;
+            items.reserve(itemsPerPage);
+            int itemIndex = 0;
+            if (node.contains(kNodeItemsKey) && node[kNodeItemsKey].is_array()) {
+                for (const auto &item : node[kNodeItemsKey]) {
+                    if (itemIndex >= itemsPerPage) {
+                        break;
+                    }
+                    items.append(item.is_string() ? QString::fromStdString(item.get<std::string>()) : QString());
+                    ++itemIndex;
+                }
+            }
+            while (itemIndex < itemsPerPage) {
+                items.append(QString());
+                ++itemIndex;
+            }
+            return items;
+        }
+
+        const nlohmann::json *resolveScopeNodes(const nlohmann::json &allNodes,
+                                                const QString &rootPageId,
+                                                nlohmann::json &scratchNodes) {
+            if (rootPageId.isEmpty()) {
+                return &allNodes;
+            }
+
+            if (const auto *rootNode = findNodeById(allNodes, rootPageId)) {
+                scratchNodes = nlohmann::json::array();
+                scratchNodes.push_back(*rootNode);
+                return &scratchNodes;
+            }
+
+            return &allNodes;
+        }
+
+        QList<LauncherTileEntry> collectLauncherEntries(const QString &rootPageId,
+                                                        const int itemsPerPage,
+                                                        bool *usedFallbackRoot = nullptr) {
+            QList<LauncherTileEntry> entries;
             const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
             auto *configuration = fairWindSK->getConfiguration();
             auto &root = configuration->getRoot();
 
-            QStringList pageSlots;
-            if (root.contains(kLauncherLayoutKey) && root[kLauncherLayoutKey].is_object()) {
-                const auto &layout = root[kLauncherLayoutKey];
-                if (layout.contains(kLauncherNodesKey) && layout[kLauncherNodesKey].is_array()) {
-                    collectPageSlots(layout[kLauncherNodesKey], pageSlots, itemsPerPage);
-                }
+            if (!(root.contains(kLauncherLayoutKey) && root[kLauncherLayoutKey].is_object())) {
+                return entries;
             }
 
-            if (!pageSlots.isEmpty()) {
-                return pageSlots;
+            const auto &layout = root[kLauncherLayoutKey];
+            if (!(layout.contains(kLauncherNodesKey) && layout[kLauncherNodesKey].is_array())) {
+                return entries;
             }
 
-            const auto orderedApps = collectOrderedApps();
-            int index = 0;
-            for (const auto &item : orderedApps) {
-                pageSlots.append(item.second);
-                ++index;
+            const auto &allNodes = layout[kLauncherNodesKey];
+            nlohmann::json scopedNodesScratch;
+            const nlohmann::json *scopedNodes = resolveScopeNodes(allNodes, rootPageId, scopedNodesScratch);
+            if (usedFallbackRoot) {
+                *usedFallbackRoot = (!rootPageId.isEmpty() && scopedNodes == &allNodes);
             }
-            while (index % itemsPerPage != 0) {
-                pageSlots.append(QString());
-                ++index;
+
+            if (!scopedNodes || !scopedNodes->is_array()) {
+                return entries;
             }
-            return pageSlots;
-        }
 
-        QList<OrderedApp> collectLauncherApps(const int itemsPerPage) {
-            QList<OrderedApp> launcherApps;
-            const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
-            const QStringList placementNames = collectLauncherPageSlots(itemsPerPage);
-
-            for (const auto &name : placementNames) {
-                if (name.isEmpty()) {
-                    launcherApps.append(OrderedApp(nullptr, QString()));
+            for (const auto &node : *scopedNodes) {
+                if (!node.is_object() || !isPageNode(node)) {
                     continue;
                 }
-                auto *app = fairWindSK->getAppItemByHash(name);
-                if (app && app->getActive()) {
-                    launcherApps.append(OrderedApp(app, name));
-                } else {
-                    launcherApps.append(OrderedApp(nullptr, QString()));
+
+                const QStringList pageEntries = pageItemsFromNode(node, itemsPerPage);
+                for (const QString &slot : pageEntries) {
+                    LauncherTileEntry entry;
+                    if (slot.trimmed().isEmpty()) {
+                        entries.append(entry);
+                        continue;
+                    }
+
+                    if (isFolderReference(slot)) {
+                        const QString childPageId = pageIdFromFolderReference(slot);
+                        entry.kind = TileKind::Folder;
+                        entry.id = childPageId;
+                        if (const auto *childNode = findNodeById(allNodes, childPageId)) {
+                            entry.title = defaultNodeTitle(*childNode);
+                            entry.description = QObject::tr("Open folder");
+                        } else {
+                            entry.title = QObject::tr("Folder");
+                            entry.description = QObject::tr("Open folder");
+                        }
+                        entry.pixmap = QPixmap(QStringLiteral(":/resources/svg/OpenBridge/home.svg"));
+                        entries.append(entry);
+                        continue;
+                    }
+
+                    auto *app = fairWindSK->getAppItemByHash(slot);
+                    if (app && app->getActive()) {
+                        entry.kind = TileKind::App;
+                        entry.app = app;
+                        entry.id = slot;
+                        entry.title = app->getDisplayName();
+                        entry.description = app->getDescription();
+                        entry.pixmap = app->getIcon();
+                    }
+                    entries.append(entry);
                 }
             }
 
-            return launcherApps;
+            if (entries.isEmpty()) {
+                const auto orderedApps = collectOrderedApps();
+                for (const auto &item : orderedApps) {
+                    LauncherTileEntry entry;
+                    if (item.first && item.first->getActive()) {
+                        entry.kind = TileKind::App;
+                        entry.app = item.first;
+                        entry.id = item.second;
+                        entry.title = item.first->getDisplayName();
+                        entry.description = item.first->getDescription();
+                        entry.pixmap = item.first->getIcon();
+                    }
+                    entries.append(entry);
+                }
+            }
+
+            return entries;
         }
 
         class AppTile final : public QFrame {
@@ -419,6 +530,12 @@ namespace fairwindsk::ui::launcher {
     }
 
     void Launcher::onScrollLeft() {
+        if (currentPage() == 0 && !m_navigationStack.isEmpty()) {
+            m_currentRootPageId = m_navigationStack.takeLast();
+            m_targetPage = 0;
+            refreshFromConfiguration(true);
+            return;
+        }
         m_targetPage = std::max(0, currentPage() - 1);
         ui->scrollArea->horizontalScrollBar()->setValue(m_targetPage * pageWidth());
     }
@@ -431,7 +548,8 @@ namespace fairwindsk::ui::launcher {
     void Launcher::updateScrollButtons() const {
         const auto *scrollBar = ui->scrollArea->horizontalScrollBar();
         const bool canScroll = scrollBar->maximum() > scrollBar->minimum();
-        ui->toolButton_Left->setEnabled(canScroll && scrollBar->value() > scrollBar->minimum());
+        const bool canGoBack = !m_navigationStack.isEmpty() && currentPage() == 0;
+        ui->toolButton_Left->setEnabled(canGoBack || (canScroll && scrollBar->value() > scrollBar->minimum()));
         ui->toolButton_Right->setEnabled(canScroll && scrollBar->value() < scrollBar->maximum());
     }
 
@@ -447,23 +565,28 @@ namespace fairwindsk::ui::launcher {
     QString Launcher::buildLayoutSignature() const {
         QStringList parts;
         const int itemsPerPage = std::max(1, m_rows * m_cols);
-        const auto orderedApps = collectLauncherApps(itemsPerPage);
-        parts.reserve(orderedApps.size() + 1);
+        bool usedFallbackRoot = false;
+        const auto entries = collectLauncherEntries(m_currentRootPageId, itemsPerPage, &usedFallbackRoot);
+        parts.reserve(entries.size() + 2);
+        parts.append(m_currentRootPageId);
+        parts.append(usedFallbackRoot ? QStringLiteral("root-fallback") : QStringLiteral("root-ok"));
 
-        parts.append(collectLauncherPageSlots(itemsPerPage).join(QStringLiteral("|")));
-
-        for (const auto &item : orderedApps) {
-            auto *appItem = item.first;
-            if (!appItem || item.second.isEmpty()) {
+        for (const auto &entry : entries) {
+            if (entry.kind == TileKind::Empty) {
                 parts.append(QStringLiteral("_"));
                 continue;
             }
+            if (entry.kind == TileKind::Folder) {
+                parts.append(QStringLiteral("folder|%1|%2").arg(entry.id, entry.title));
+                continue;
+            }
+            auto *appItem = entry.app;
             parts.append(QStringLiteral("%1|%2|%3|%4|%5")
-                             .arg(item.second,
-                                  QString::number(appItem->getOrder()),
-                                  appItem->getDisplayName(),
-                                  appItem->getDescription(),
-                                  appItem->getAppIcon()));
+                             .arg(entry.id,
+                                  QString::number(appItem ? appItem->getOrder() : 0),
+                                  entry.title,
+                                  entry.description,
+                                  appItem ? appItem->getAppIcon() : QString()));
         }
 
         return parts.join(QStringLiteral("||"));
@@ -485,33 +608,41 @@ namespace fairwindsk::ui::launcher {
         m_tiles.clear();
 
         const int itemsPerPage = std::max(1, m_rows * m_cols);
-        const auto orderedApps = collectLauncherApps(itemsPerPage);
-        m_pageCount = std::max(1, int((orderedApps.size() + itemsPerPage - 1) / itemsPerPage));
+        bool usedFallbackRoot = false;
+        const auto entries = collectLauncherEntries(m_currentRootPageId, itemsPerPage, &usedFallbackRoot);
+        if (usedFallbackRoot) {
+            m_currentRootPageId.clear();
+            m_navigationStack.clear();
+        }
+        m_pageCount = std::max(1, int((entries.size() + itemsPerPage - 1) / itemsPerPage));
         m_targetPage = qBound(0, preservedPage, std::max(0, m_pageCount - 1));
         int index = 0;
-        for (const auto &item : orderedApps) {
-            auto *appItem = item.first;
-            const auto &name = item.second;
+        for (const auto &entry : entries) {
             const int page = index / itemsPerPage;
             const int indexInPage = index % itemsPerPage;
             const int row = indexInPage / m_cols;
             const int col = (page * m_cols) + (indexInPage % m_cols);
 
-            if (!appItem || name.isEmpty()) {
+            if (entry.kind == TileKind::Empty) {
                 ++index;
                 continue;
             }
 
             auto *tile = new AppTile(ui->scrollAreaWidgetContents);
             tile->setBasePointSize(tile->font().pointSizeF() + 1.0);
-            tile->setAppData(name, appItem->getDisplayName(), appItem->getDescription(), appItem->getIcon());
-            tile->setActivateHandler([this](const QString &hash) {
+            tile->setAppData(entry.id, entry.title, entry.description, entry.pixmap);
+            const TileKind kind = entry.kind;
+            tile->setActivateHandler([this, kind](const QString &hash) {
                 if (hash.isEmpty()) {
                     return;
                 }
 
-                if (FairWindSK::getInstance()->isDebug()) {
-                    qDebug() << "Apps - hash:" << hash;
+                if (kind == TileKind::Folder) {
+                    m_navigationStack.append(m_currentRootPageId);
+                    m_currentRootPageId = hash;
+                    m_targetPage = 0;
+                    refreshFromConfiguration(true);
+                    return;
                 }
 
                 emit foregroundAppChanged(hash);

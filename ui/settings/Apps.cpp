@@ -38,6 +38,7 @@ namespace fairwindsk::ui::settings {
         constexpr auto kNodeIdKey = "id";
         constexpr auto kNodeItemsKey = "items";
         constexpr auto kNodeChildrenKey = "children";
+        constexpr auto kFolderReferencePrefix = "@folder:";
         constexpr const char *kNodeTypePage = "page";
         constexpr const char *kNodeTypeFolder = "folder";
         constexpr auto kTreeIdRole = Qt::UserRole;
@@ -441,9 +442,11 @@ namespace fairwindsk::ui::settings {
         setupImageToolButton(ui->toolButton_Add, QStringLiteral(":/resources/svg/OpenBridge/widget-add-google.svg"), tr("Add application"));
         setupImageToolButton(ui->toolButton_SyncApps, QStringLiteral(":/resources/svg/OpenBridge/refresh-google.svg"), tr("Sync applications from server"));
         setupImageToolButton(ui->toolButton_Remove, QStringLiteral(":/resources/svg/OpenBridge/delete-google.svg"), tr("Delete application"));
-        setupImageToolButton(ui->toolButton_EditApp, QStringLiteral(":/resources/svg/OpenBridge/edit-google.svg"), tr("Edit application"));
+        setupImageToolButton(ui->toolButton_EditApp, QStringLiteral(":/resources/svg/OpenBridge/info.svg"), tr("Application details"));
         setupImageToolButton(ui->toolButton_AddPage, QStringLiteral(":/resources/svg/OpenBridge/navigation-route.svg"), tr("Add page"));
         setupImageToolButton(ui->toolButton_RemoveNode, QStringLiteral(":/resources/svg/OpenBridge/delete-google.svg"), tr("Delete page or folder"));
+        setupImageToolButton(ui->toolButton_MoveNodeLeft, QStringLiteral(":/resources/svg/OpenBridge/arrow-left-google.svg"), tr("Move page out of current parent"));
+        setupImageToolButton(ui->toolButton_MoveNodeRight, QStringLiteral(":/resources/svg/OpenBridge/arrow-right-google.svg"), tr("Nest page under previous page"));
         setupImageToolButton(ui->toolButton_MoveNodeUp, QStringLiteral(":/resources/svg/OpenBridge/arrow-up-google.svg"), tr("Move page up"));
         setupImageToolButton(ui->toolButton_MoveNodeDown, QStringLiteral(":/resources/svg/OpenBridge/arrow-down-google.svg"), tr("Move page down"));
         setupImageToolButton(ui->toolButton_ClearPageSlot, QStringLiteral(":/resources/svg/OpenBridge/delete-google.svg"), tr("Clear selected slot"));
@@ -464,11 +467,13 @@ namespace fairwindsk::ui::settings {
         connect(ui->toolButton_EditApp, &QToolButton::clicked, this, [this]() {
             auto *item = m_availableAppsList->currentItem();
             if (item) {
-                showDetailsForApp(item->data(Qt::UserRole).toString(), true);
+                showDetailsForApp(item->data(Qt::UserRole).toString(), false);
             }
         });
         connect(ui->toolButton_AddPage, &QToolButton::clicked, this, &Apps::onAddPageClicked);
         connect(ui->toolButton_RemoveNode, &QToolButton::clicked, this, &Apps::onRemoveNodeClicked);
+        connect(ui->toolButton_MoveNodeLeft, &QToolButton::clicked, this, &Apps::onMoveNodeLeftClicked);
+        connect(ui->toolButton_MoveNodeRight, &QToolButton::clicked, this, &Apps::onMoveNodeRightClicked);
         connect(ui->toolButton_MoveNodeUp, &QToolButton::clicked, this, &Apps::onMoveNodeUpClicked);
         connect(ui->toolButton_MoveNodeDown, &QToolButton::clicked, this, &Apps::onMoveNodeDownClicked);
         connect(m_pageTree, &QTreeWidget::itemSelectionChanged, this, &Apps::onPageTreeSelectionChanged);
@@ -578,6 +583,8 @@ namespace fairwindsk::ui::settings {
         auto *item = m_pageTree ? m_pageTree->currentItem() : nullptr;
         const bool hasSelection = item != nullptr;
         ui->toolButton_RemoveNode->setEnabled(hasSelection);
+        ui->toolButton_MoveNodeLeft->setEnabled(hasSelection);
+        ui->toolButton_MoveNodeRight->setEnabled(hasSelection);
         ui->toolButton_MoveNodeUp->setEnabled(hasSelection);
         ui->toolButton_MoveNodeDown->setEnabled(hasSelection);
         ui->toolButton_ClearPageSlot->setEnabled(m_pageGrid && m_pageGrid->hasSelectedSlot() && !selectedPageId().isEmpty());
@@ -889,6 +896,54 @@ namespace fairwindsk::ui::settings {
         return {};
     }
 
+    bool Apps::isFolderReference(const QString &value) const {
+        return value.startsWith(QLatin1String(kFolderReferencePrefix));
+    }
+
+    QString Apps::folderReferenceForPageId(const QString &pageId) const {
+        return QStringLiteral("%1%2").arg(QLatin1String(kFolderReferencePrefix), pageId);
+    }
+
+    QString Apps::pageIdFromFolderReference(const QString &value) const {
+        return isFolderReference(value) ? value.mid(QLatin1String(kFolderReferencePrefix).size()) : QString();
+    }
+
+    int Apps::firstAvailableSlot(const QStringList &items) const {
+        for (int i = 0; i < items.size(); ++i) {
+            if (items.at(i).trimmed().isEmpty()) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    QString Apps::requestedPageName(const QString &title, const QString &initialText) const {
+        bool ok = false;
+        const QString text = drawer::getText(const_cast<Apps *>(this),
+                                             title,
+                                             tr("Page name"),
+                                             initialText,
+                                             &ok);
+        if (!ok) {
+            return {};
+        }
+        return text.trimmed();
+    }
+
+    void Apps::removeFolderReferenceFromNode(nlohmann::json &node, const QString &pageId) const {
+        if (!isPageNode(node)) {
+            return;
+        }
+        QStringList items = pageItemsFromNode(node);
+        const QString reference = folderReferenceForPageId(pageId);
+        for (QString &item : items) {
+            if (item == reference) {
+                item.clear();
+            }
+        }
+        setPageItemsForNode(node, items);
+    }
+
     nlohmann::json Apps::makePageNode(const QString &name) const {
         nlohmann::json node = nlohmann::json::object();
         node[kNodeIdKey] = nextNodeId(QStringLiteral("page")).toStdString();
@@ -1030,6 +1085,16 @@ namespace fairwindsk::ui::settings {
     }
 
     QPair<QString, QPixmap> Apps::resolveAppPresentation(const QString &appName) const {
+        if (isFolderReference(appName)) {
+            const QString pageId = pageIdFromFolderReference(appName);
+            if (const auto *nodes = launcherLayoutNodes()) {
+                if (const auto *node = findNodeById(*nodes, pageId)) {
+                    return qMakePair(defaultNodeTitle(*node), QPixmap(QStringLiteral(":/resources/svg/OpenBridge/home.svg")));
+                }
+            }
+            return qMakePair(tr("Folder"), QPixmap(QStringLiteral(":/resources/svg/OpenBridge/home.svg")));
+        }
+
         const int idx = m_settings->getConfiguration()->findApp(appName);
         if (idx == -1) {
             return qMakePair(appName, QPixmap::fromImage(QImage(":/resources/images/icons/webapp-256x256.png")));
@@ -1121,7 +1186,10 @@ namespace fairwindsk::ui::settings {
     }
 
     void Apps::onAppsAppIconBrowse() {
-        const QString appIcon = QFileDialog::getOpenFileName(this, tr("Open Image"), QStringLiteral("./icons"), tr("Image Files (*.png *.svg)"));
+        const QString appIcon = drawer::getOpenFilePath(this,
+                                                        tr("Open Image"),
+                                                        QDir::currentPath() + QStringLiteral("/icons"),
+                                                        tr("Image Files (*.png *.svg)"));
         if (appIcon.isEmpty()) {
             return;
         }
@@ -1247,7 +1315,12 @@ namespace fairwindsk::ui::settings {
 
     void Apps::onAddPageClicked() {
         ensureLauncherLayout();
-        auto pageNode = makePageNode(tr("Page"));
+        const QString pageName = requestedPageName(tr("New page"), tr("Page"));
+        if (pageName.isNull()) {
+            return;
+        }
+
+        auto pageNode = makePageNode(pageName.isEmpty() ? tr("Page") : pageName);
         nlohmann::json *parentChildren = launcherLayoutNodes();
         int index = parentChildren ? int(parentChildren->size()) : 0;
 
@@ -1289,6 +1362,36 @@ namespace fairwindsk::ui::settings {
         nlohmann::json *parentChildren = nullptr;
         int index = -1;
         if (findNodeParent(*launcherLayoutNodes(), nodeId(*currentNode), &parentChildren, &index) && parentChildren && index >= 0) {
+            std::function<bool(nlohmann::json &, nlohmann::json *, nlohmann::json **, int *)> findChildrenOwner =
+                [&](nlohmann::json &nodes, nlohmann::json *targetChildren, nlohmann::json **ownerChildren, int *ownerIndex) -> bool {
+                    if (!nodes.is_array()) {
+                        return false;
+                    }
+                    for (size_t i = 0; i < nodes.size(); ++i) {
+                        auto &candidate = nodes[i];
+                        if (!candidate.is_object()) {
+                            continue;
+                        }
+                        if (candidate.contains(kNodeChildrenKey) && candidate[kNodeChildrenKey].is_array() &&
+                            &candidate[kNodeChildrenKey] == parentChildren) {
+                            *ownerChildren = &nodes;
+                            *ownerIndex = int(i);
+                            return true;
+                        }
+                        if (candidate.contains(kNodeChildrenKey) && candidate[kNodeChildrenKey].is_array()) {
+                            if (findChildrenOwner(candidate[kNodeChildrenKey], targetChildren, ownerChildren, ownerIndex)) {
+                                return true;
+                            }
+                        }
+                    }
+                    return false;
+                };
+            nlohmann::json *ownerChildren = nullptr;
+            int ownerIndex = -1;
+            if (findChildrenOwner(*launcherLayoutNodes(), parentChildren, &ownerChildren, &ownerIndex) &&
+                ownerChildren && ownerIndex >= 0) {
+                removeFolderReferenceFromNode((*ownerChildren)[ownerIndex], nodeId(*currentNode));
+            }
             parentChildren->erase(parentChildren->begin() + index);
         }
 
@@ -1300,6 +1403,147 @@ namespace fairwindsk::ui::settings {
         markSettingsDirty();
         rebuildPageTree();
         rebuildPageEditor();
+    }
+
+    void Apps::onMoveNodeLeftClicked() {
+        auto *currentNode = selectedNode();
+        if (!currentNode) {
+            return;
+        }
+
+        const QString currentNodeId = nodeId(*currentNode);
+        nlohmann::json *parentChildren = nullptr;
+        int index = -1;
+        if (!findNodeParent(*launcherLayoutNodes(), currentNodeId, &parentChildren, &index) || !parentChildren || index < 0) {
+            return;
+        }
+
+        std::function<bool(nlohmann::json &, nlohmann::json *, nlohmann::json **, int *)> findChildrenOwner =
+            [&](nlohmann::json &nodes, nlohmann::json *targetChildren, nlohmann::json **ownerChildren, int *ownerIndex) -> bool {
+                if (!nodes.is_array()) {
+                    return false;
+                }
+                for (size_t i = 0; i < nodes.size(); ++i) {
+                    auto &candidate = nodes[i];
+                    if (!candidate.is_object()) {
+                        continue;
+                    }
+                    if (candidate.contains(kNodeChildrenKey) && candidate[kNodeChildrenKey].is_array() &&
+                        &candidate[kNodeChildrenKey] == targetChildren) {
+                        *ownerChildren = &nodes;
+                        *ownerIndex = int(i);
+                        return true;
+                    }
+                    if (candidate.contains(kNodeChildrenKey) && candidate[kNodeChildrenKey].is_array()) {
+                        if (findChildrenOwner(candidate[kNodeChildrenKey], targetChildren, ownerChildren, ownerIndex)) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            };
+
+        nlohmann::json *grandParentChildren = nullptr;
+        int parentIndex = -1;
+        if (!findChildrenOwner(*launcherLayoutNodes(), parentChildren, &grandParentChildren, &parentIndex) ||
+            !grandParentChildren || parentIndex < 0) {
+            return;
+        }
+
+        auto &parentPage = (*grandParentChildren)[parentIndex];
+        removeFolderReferenceFromNode(parentPage, currentNodeId);
+
+        nlohmann::json nodeCopy = (*parentChildren)[index];
+        parentChildren->erase(parentChildren->begin() + index);
+
+        nlohmann::json *greatGrandParentChildren = nullptr;
+        int grandParentIndex = -1;
+        if (grandParentChildren == launcherLayoutNodes()) {
+            greatGrandParentChildren = grandParentChildren;
+            grandParentIndex = parentIndex;
+        } else if (!findChildrenOwner(*launcherLayoutNodes(), grandParentChildren, &greatGrandParentChildren, &grandParentIndex) ||
+                   !greatGrandParentChildren || grandParentIndex < 0) {
+            return;
+        }
+
+        greatGrandParentChildren->insert(greatGrandParentChildren->begin() + grandParentIndex + 1, nodeCopy);
+        markSettingsDirty();
+        rebuildPageTree();
+        rebuildPageEditor();
+        selectTreeItemById(currentNodeId);
+    }
+
+    void Apps::onMoveNodeRightClicked() {
+        auto *currentNode = selectedNode();
+        if (!currentNode) {
+            return;
+        }
+
+        const QString currentNodeId = nodeId(*currentNode);
+        nlohmann::json *parentChildren = nullptr;
+        int index = -1;
+        if (!findNodeParent(*launcherLayoutNodes(), currentNodeId, &parentChildren, &index) ||
+            !parentChildren || index <= 0 || index >= int(parentChildren->size())) {
+            return;
+        }
+
+        std::function<bool(nlohmann::json &, nlohmann::json *, nlohmann::json **, int *)> findChildrenOwner =
+            [&](nlohmann::json &nodes, nlohmann::json *targetChildren, nlohmann::json **ownerChildren, int *ownerIndex) -> bool {
+                if (!nodes.is_array()) {
+                    return false;
+                }
+                for (size_t i = 0; i < nodes.size(); ++i) {
+                    auto &candidate = nodes[i];
+                    if (!candidate.is_object()) {
+                        continue;
+                    }
+                    if (candidate.contains(kNodeChildrenKey) && candidate[kNodeChildrenKey].is_array() &&
+                        &candidate[kNodeChildrenKey] == targetChildren) {
+                        *ownerChildren = &nodes;
+                        *ownerIndex = int(i);
+                        return true;
+                    }
+                    if (candidate.contains(kNodeChildrenKey) && candidate[kNodeChildrenKey].is_array()) {
+                        if (findChildrenOwner(candidate[kNodeChildrenKey], targetChildren, ownerChildren, ownerIndex)) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            };
+
+        nlohmann::json *currentOwnerChildren = nullptr;
+        int currentOwnerIndex = -1;
+        if (findChildrenOwner(*launcherLayoutNodes(), parentChildren, &currentOwnerChildren, &currentOwnerIndex) &&
+            currentOwnerChildren && currentOwnerIndex >= 0) {
+            removeFolderReferenceFromNode((*currentOwnerChildren)[currentOwnerIndex], currentNodeId);
+        }
+
+        auto &previousSibling = (*parentChildren)[index - 1];
+        if (!isPageNode(previousSibling)) {
+            drawer::warning(this, tr("Pages"), tr("A page can only be nested under another page."));
+            return;
+        }
+
+        QStringList parentItems = pageItemsFromNode(previousSibling);
+        const int availableIndex = firstAvailableSlot(parentItems);
+        if (availableIndex < 0) {
+            drawer::warning(this, tr("Pages"), tr("No available slot exists in the parent page for the folder icon."));
+            return;
+        }
+
+        parentItems[availableIndex] = folderReferenceForPageId(currentNodeId);
+        setPageItemsForNode(previousSibling, parentItems);
+        ensureJsonArray(previousSibling, kNodeChildrenKey);
+
+        nlohmann::json nodeCopy = (*parentChildren)[index];
+        parentChildren->erase(parentChildren->begin() + index);
+        previousSibling[kNodeChildrenKey].push_back(nodeCopy);
+
+        markSettingsDirty();
+        rebuildPageTree();
+        rebuildPageEditor();
+        selectTreeItemById(currentNodeId);
     }
 
     void Apps::onMoveNodeUpClicked() {
@@ -1377,6 +1621,10 @@ namespace fairwindsk::ui::settings {
     }
 
     void Apps::onPageGridAppDoubleClicked(const QString &appName) {
+        if (isFolderReference(appName)) {
+            selectTreeItemById(pageIdFromFolderReference(appName));
+            return;
+        }
         showDetailsForApp(appName);
     }
 

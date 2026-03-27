@@ -88,6 +88,8 @@ namespace fairwindsk::ui::settings {
         void onRemoveAppClicked();
         void onAddPageClicked();
         void onRemoveNodeClicked();
+        void onMoveNodeLeftClicked();
+        void onMoveNodeRightClicked();
         void onMoveNodeUpClicked();
         void onMoveNodeDownClicked();
         void onPageTreeSelectionChanged();
@@ -117,6 +119,12 @@ namespace fairwindsk::ui::settings {
         int launcherItemsPerPage() const;
         QString defaultNodeTitle(const nlohmann::json &node) const;
         QString selectedPageId() const;
+        bool isFolderReference(const QString &value) const;
+        QString folderReferenceForPageId(const QString &pageId) const;
+        QString pageIdFromFolderReference(const QString &value) const;
+        int firstAvailableSlot(const QStringList &items) const;
+        QString requestedPageName(const QString &title, const QString &initialText = QString()) const;
+        void removeFolderReferenceFromNode(nlohmann::json &node, const QString &pageId) const;
         QTreeWidgetItem *addTreeNode(const nlohmann::json &node, QTreeWidgetItem *parentItem);
         nlohmann::json makePageNode(const QString &name = QString()) const;
         nlohmann::json makeFolderNode(const QString &name = QString()) const;

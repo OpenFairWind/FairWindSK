@@ -54,6 +54,8 @@ namespace fairwindsk::ui::launcher {
         QGridLayout *m_layout = nullptr;
         QList<QWidget *> m_tiles;
         QString m_layoutSignature;
+        QString m_currentRootPageId;
+        QStringList m_navigationStack;
     };
 } // fairwindsk::ui
 

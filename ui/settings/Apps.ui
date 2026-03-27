@@ -44,6 +44,13 @@
           </item>
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_AvailableAppButtons">
+           <item>
+             <widget class="QToolButton" name="toolButton_SyncApps">
+              <property name="text">
+               <string>Sync</string>
+              </property>
+             </widget>
+            </item>
             <item>
              <widget class="QToolButton" name="toolButton_Add">
               <property name="text">
@@ -52,9 +59,9 @@
              </widget>
             </item>
             <item>
-             <widget class="QToolButton" name="toolButton_SyncApps">
+             <widget class="QToolButton" name="toolButton_EditApp">
               <property name="text">
-               <string>Sync</string>
+               <string>Details</string>
               </property>
              </widget>
             </item>
@@ -62,13 +69,6 @@
              <widget class="QToolButton" name="toolButton_Remove">
               <property name="text">
                <string>Remove</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QToolButton" name="toolButton_EditApp">
-              <property name="text">
-               <string>Edit</string>
               </property>
              </widget>
             </item>
@@ -112,6 +112,20 @@
              <widget class="QToolButton" name="toolButton_RemoveNode">
               <property name="text">
                <string>Delete</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QToolButton" name="toolButton_MoveNodeLeft">
+              <property name="text">
+               <string>Left</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QToolButton" name="toolButton_MoveNodeRight">
+              <property name="text">
+               <string>Right</string>
               </property>
              </widget>
             </item>
