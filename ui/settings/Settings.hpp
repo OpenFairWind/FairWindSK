@@ -30,6 +30,7 @@ namespace fairwindsk::ui::settings {
         bool hasPendingChanges();
         void saveChanges();
         void discardChanges();
+        void resetFromCurrentConfiguration(int currentIndex = -1);
 
         //AppItem *getAppItemByHash(QString hash);
         //QList<QString> getAppsHashes();

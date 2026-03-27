@@ -120,6 +120,8 @@ namespace fairwindsk::ui {
             onSettings();
         };
 
+        QTimer::singleShot(0, this, &MainWindow::prewarmPersistentPages);
+
         // Set the window size
         setSize();
     }
@@ -297,7 +299,7 @@ namespace fairwindsk::ui {
                 m_topBar->setCurrentContext(
                     tr("Settings"),
                     tr("Application settings"),
-                    QIcon(":/resources/svg/OpenBridge/settings.svg"),
+                    QIcon(":/resources/svg/OpenBridge/settings-iec.svg"),
                     false);
             } else if (currentWidget == m_aboutPage) {
                 m_topBar->setCurrentContext(
@@ -537,12 +539,7 @@ namespace fairwindsk::ui {
         }
         closeAboutPage(m_myDataPage ? m_myDataPage : ui->stackedWidget_Center->currentWidget());
 
-        if (!m_myDataPage) {
-            m_myDataPage = new mydata::MyData(this, ui->stackedWidget_Center->currentWidget());
-            ui->stackedWidget_Center->addWidget(m_myDataPage);
-            connect(m_myDataPage, &mydata::MyData::closed, this, &MainWindow::onMyDataClosed);
-        }
-
+        ensureMyDataPage(ui->stackedWidget_Center->currentWidget());
         ui->stackedWidget_Center->setCurrentWidget(m_myDataPage);
         syncTopBarToCurrentPage();
     }
@@ -564,15 +561,31 @@ namespace fairwindsk::ui {
         closeAboutPage(ui->stackedWidget_Center->currentWidget());
 
         const auto fallbackWidget = ui->stackedWidget_Center->currentWidget();
-        if (!m_settingsPage) {
-            m_settingsPage = new settings::Settings(this, fallbackWidget);
-            ui->stackedWidget_Center->addWidget(m_settingsPage);
-        } else {
-            m_settingsPage->setCurrentWidget(fallbackWidget);
-        }
-
+        ensureSettingsPage(fallbackWidget);
         ui->stackedWidget_Center->setCurrentWidget(m_settingsPage);
         syncTopBarToCurrentPage();
+    }
+
+    void MainWindow::ensureMyDataPage(QWidget *fallbackWidget) {
+        if (!m_myDataPage) {
+            m_myDataPage = new mydata::MyData(this, fallbackWidget ? fallbackWidget : m_launcher);
+            ui->stackedWidget_Center->addWidget(m_myDataPage);
+            connect(m_myDataPage, &mydata::MyData::closed, this, &MainWindow::onMyDataClosed);
+        }
+    }
+
+    void MainWindow::ensureSettingsPage(QWidget *fallbackWidget) {
+        if (!m_settingsPage) {
+            m_settingsPage = new settings::Settings(this, fallbackWidget ? fallbackWidget : m_launcher);
+            ui->stackedWidget_Center->addWidget(m_settingsPage);
+        } else {
+            m_settingsPage->setCurrentWidget(fallbackWidget ? fallbackWidget : m_launcher);
+        }
+    }
+
+    void MainWindow::prewarmPersistentPages() {
+        ensureMyDataPage(m_launcher);
+        ensureSettingsPage(m_launcher);
     }
 
     void MainWindow::setSize() {
@@ -739,11 +752,7 @@ namespace fairwindsk::ui {
         } else {
             m_settingsPage->discardChanges();
         }
-
-        ui->stackedWidget_Center->removeWidget(m_settingsPage);
-        m_settingsPage->close();
-        delete m_settingsPage;
-        m_settingsPage = nullptr;
+        m_settingsPage->setCurrentWidget(targetFallback);
 
         if (targetFallback && ui->stackedWidget_Center->indexOf(targetFallback) >= 0) {
             ui->stackedWidget_Center->setCurrentWidget(targetFallback);

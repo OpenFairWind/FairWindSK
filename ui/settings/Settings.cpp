@@ -207,10 +207,19 @@ namespace fairwindsk::ui::settings {
 
     void Settings::saveChanges() {
         applyConfiguration();
+        resetFromCurrentConfiguration(ui->tabWidget->currentIndex());
     }
 
     void Settings::discardChanges() {
         FairWindSK::getInstance()->applyUiPreferences(m_currentConfiguration);
+        resetFromCurrentConfiguration(ui->tabWidget->currentIndex());
+    }
+
+    void Settings::resetFromCurrentConfiguration(const int currentIndex) {
+        const int resolvedIndex = currentIndex >= 0 ? currentIndex : ui->tabWidget->currentIndex();
+        m_configuration.setFilename(m_currentConfiguration->getFilename());
+        m_configuration.setRoot(m_currentConfiguration->getRoot());
+        initTabs(std::max(0, resolvedIndex));
     }
 
     /*

@@ -85,6 +85,9 @@ namespace fairwindsk::ui {
         void closeAboutPage(QWidget *fallbackWidget = nullptr);
         void syncTopBarToCurrentPage();
         void showLauncher();
+        void ensureMyDataPage(QWidget *fallbackWidget = nullptr);
+        void ensureSettingsPage(QWidget *fallbackWidget = nullptr);
+        void prewarmPersistentPages();
 
         // Close Event handler
         void closeEvent(QCloseEvent *bar) override;
