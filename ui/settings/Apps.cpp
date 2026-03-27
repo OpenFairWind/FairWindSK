@@ -174,6 +174,8 @@ namespace fairwindsk::ui::settings {
     AvailableAppsListWidget::AvailableAppsListWidget(QWidget *parent) : QListWidget(parent) {
         setSelectionMode(QAbstractItemView::SingleSelection);
         setDragEnabled(true);
+        setDragDropMode(QAbstractItemView::DragOnly);
+        setDefaultDropAction(Qt::CopyAction);
         setAcceptDrops(false);
         setDropIndicatorShown(false);
         setUniformItemSizes(true);

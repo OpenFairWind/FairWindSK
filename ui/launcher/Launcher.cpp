@@ -179,65 +179,59 @@ namespace fairwindsk::ui::launcher {
             auto *configuration = fairWindSK->getConfiguration();
             auto &root = configuration->getRoot();
 
-            if (!(root.contains(kLauncherLayoutKey) && root[kLauncherLayoutKey].is_object())) {
-                return entries;
-            }
-
-            const auto &layout = root[kLauncherLayoutKey];
-            if (!(layout.contains(kLauncherNodesKey) && layout[kLauncherNodesKey].is_array())) {
-                return entries;
-            }
-
-            const auto &allNodes = layout[kLauncherNodesKey];
-            nlohmann::json scopedNodesScratch;
-            const nlohmann::json *scopedNodes = resolveScopeNodes(allNodes, rootPageId, scopedNodesScratch);
-            if (usedFallbackRoot) {
-                *usedFallbackRoot = (!rootPageId.isEmpty() && scopedNodes == &allNodes);
-            }
-
-            if (!scopedNodes || !scopedNodes->is_array()) {
-                return entries;
-            }
-
-            for (const auto &node : *scopedNodes) {
-                if (!node.is_object() || !isPageNode(node)) {
-                    continue;
-                }
-
-                const QStringList pageEntries = pageItemsFromNode(node, itemsPerPage);
-                for (const QString &slot : pageEntries) {
-                    LauncherTileEntry entry;
-                    if (slot.trimmed().isEmpty()) {
-                        entries.append(entry);
-                        continue;
+            if (root.contains(kLauncherLayoutKey) && root[kLauncherLayoutKey].is_object()) {
+                const auto &layout = root[kLauncherLayoutKey];
+                if (layout.contains(kLauncherNodesKey) && layout[kLauncherNodesKey].is_array()) {
+                    const auto &allNodes = layout[kLauncherNodesKey];
+                    nlohmann::json scopedNodesScratch;
+                    const nlohmann::json *scopedNodes = resolveScopeNodes(allNodes, rootPageId, scopedNodesScratch);
+                    if (usedFallbackRoot) {
+                        *usedFallbackRoot = (!rootPageId.isEmpty() && scopedNodes == &allNodes);
                     }
 
-                    if (isFolderReference(slot)) {
-                        const QString childPageId = pageIdFromFolderReference(slot);
-                        entry.kind = TileKind::Folder;
-                        entry.id = childPageId;
-                        if (const auto *childNode = findNodeById(allNodes, childPageId)) {
-                            entry.title = defaultNodeTitle(*childNode);
-                            entry.description = QObject::tr("Open folder");
-                        } else {
-                            entry.title = QObject::tr("Folder");
-                            entry.description = QObject::tr("Open folder");
+                    if (scopedNodes && scopedNodes->is_array()) {
+                        for (const auto &node : *scopedNodes) {
+                            if (!node.is_object() || !isPageNode(node)) {
+                                continue;
+                            }
+
+                            const QStringList pageEntries = pageItemsFromNode(node, itemsPerPage);
+                            for (const QString &slot : pageEntries) {
+                                LauncherTileEntry entry;
+                                if (slot.trimmed().isEmpty()) {
+                                    entries.append(entry);
+                                    continue;
+                                }
+
+                                if (isFolderReference(slot)) {
+                                    const QString childPageId = pageIdFromFolderReference(slot);
+                                    entry.kind = TileKind::Folder;
+                                    entry.id = childPageId;
+                                    if (const auto *childNode = findNodeById(allNodes, childPageId)) {
+                                        entry.title = defaultNodeTitle(*childNode);
+                                        entry.description = QObject::tr("Open folder");
+                                    } else {
+                                        entry.title = QObject::tr("Folder");
+                                        entry.description = QObject::tr("Open folder");
+                                    }
+                                    entry.pixmap = QPixmap(QStringLiteral(":/resources/svg/OpenBridge/home.svg"));
+                                    entries.append(entry);
+                                    continue;
+                                }
+
+                                auto *app = fairWindSK->getAppItemByHash(slot);
+                                if (app && app->getActive()) {
+                                    entry.kind = TileKind::App;
+                                    entry.app = app;
+                                    entry.id = slot;
+                                    entry.title = app->getDisplayName();
+                                    entry.description = app->getDescription();
+                                    entry.pixmap = app->getIcon();
+                                }
+                                entries.append(entry);
+                            }
                         }
-                        entry.pixmap = QPixmap(QStringLiteral(":/resources/svg/OpenBridge/home.svg"));
-                        entries.append(entry);
-                        continue;
                     }
-
-                    auto *app = fairWindSK->getAppItemByHash(slot);
-                    if (app && app->getActive()) {
-                        entry.kind = TileKind::App;
-                        entry.app = app;
-                        entry.id = slot;
-                        entry.title = app->getDisplayName();
-                        entry.description = app->getDescription();
-                        entry.pixmap = app->getIcon();
-                    }
-                    entries.append(entry);
                 }
             }
 
