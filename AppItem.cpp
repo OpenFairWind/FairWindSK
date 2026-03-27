@@ -13,6 +13,7 @@
 #include <QtCore/qjsonarray.h>
 #include <QPixmap>
 #include <QHash>
+#include <QFileInfo>
 #include <iostream>
 
 #include "AppItem.hpp"
@@ -208,6 +209,31 @@ namespace fairwindsk {
 
             return QPixmap::fromImage(QImage(resourcePath));
         }
+
+        QPixmap bundledIconByFileName(const QString &iconPath) {
+            const QString fileName = QFileInfo(iconPath).fileName().toLower();
+            QString resourcePath;
+
+            if (fileName == QStringLiteral("youtube_icon.png")) {
+                resourcePath = QStringLiteral(":/resources/images/icons/youtube_icon.png");
+            } else if (fileName == QStringLiteral("signalkserver_icon.png")) {
+                resourcePath = QStringLiteral(":/resources/images/icons/signalkserver_icon.png");
+            } else if (fileName == QStringLiteral("signalkbrowser_icon.png")) {
+                resourcePath = QStringLiteral(":/resources/images/icons/signalkbrowser_icon.png");
+            } else if (fileName == QStringLiteral("web_icon.png")) {
+                resourcePath = QStringLiteral(":/resources/images/icons/web_icon.png");
+            } else if (fileName == QStringLiteral("apps_icon.png")) {
+                resourcePath = QStringLiteral(":/resources/images/icons/apps_icon.png");
+            } else if (fileName == QStringLiteral("webapp-256x256.png")) {
+                resourcePath = QStringLiteral(":/resources/images/icons/webapp-256x256.png");
+            }
+
+            if (resourcePath.isEmpty()) {
+                return {};
+            }
+
+            return QPixmap::fromImage(QImage(resourcePath));
+        }
     }
 
     AppItem::AppItem() = default;
@@ -346,13 +372,32 @@ namespace fairwindsk {
 
         // Handle icons bundled with the plugin and referenced using a file:// URL.
         if (appIcon.startsWith("file://")) {
-            // Strip the scheme prefix to obtain a regular filesystem path.
-            const auto iconFilename = QString(appIcon).replace("file://", "");
-            // Attempt to load the provided file, keeping the default if loading fails.
-            pixmap.load(iconFilename);
-            m_cachedIcon = pixmap;
+            const QString iconFilename = QString(appIcon).replace("file://", "");
+            const QFileInfo iconInfo(iconFilename);
+
+            if (iconInfo.isAbsolute() && QFileInfo::exists(iconFilename)) {
+                QPixmap loadedPixmap;
+                if (loadedPixmap.load(iconFilename) && !loadedPixmap.isNull()) {
+                    m_cachedIcon = loadedPixmap;
+                    m_hasCachedIcon = true;
+                    return m_cachedIcon;
+                }
+            }
+
+            const QPixmap bundledPixmap = bundledIconByFileName(iconFilename);
+            if (!bundledPixmap.isNull()) {
+                m_cachedIcon = bundledPixmap;
+                m_hasCachedIcon = true;
+                return m_cachedIcon;
+            }
+
+            QList<QUrl> candidateUrls;
+            candidateUrls.append(QUrl(appUrl).resolved(QUrl(iconFilename)));
+            candidateUrls.append(QUrl(signalKServerUrl + "/" + appName + "/" + iconFilename));
+
+            m_cachedIcon = loadRemotePixmap(candidateUrls, pixmap);
             m_hasCachedIcon = true;
-            return pixmap;
+            return m_cachedIcon;
         }
 
         QList<QUrl> candidateUrls;

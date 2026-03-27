@@ -99,6 +99,12 @@ namespace fairwindsk::ui::settings {
         }
         connect(ui->listWidget_Apps_List,&QListWidget::itemSelectionChanged, this, &Apps::onAppsListSelectionChanged);
         connect( ui->listWidget_Apps_List, &QListWidget::itemChanged, this, &Apps::onAppsListItemChanged);
+        connect(ui->listWidget_Apps_List->model(), &QAbstractItemModel::rowsMoved, this,
+                [this](const QModelIndex &, int, int, const QModelIndex &, int) {
+                    syncAppOrdersFromList();
+                    m_settings->markDirty();
+                    refreshAppActionButtons();
+                });
 
         connect(ui->pushButton_Apps_EditSave, &QPushButton::clicked,this,&Apps::onAppsEditSaveClicked);
 
