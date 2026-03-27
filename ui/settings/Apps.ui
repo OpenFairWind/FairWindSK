@@ -339,14 +339,18 @@
               </widget>
              </item>
              <item row="0" column="1">
-              <widget class="QLineEdit" name="lineEdit_Apps_Name"/>
-             </item>
-             <item row="0" column="2">
-              <widget class="QPushButton" name="pushButton_Apps_Name_Browse">
-               <property name="text">
-                <string>Browse...</string>
-               </property>
-              </widget>
+              <layout class="QHBoxLayout" name="horizontalLayout_AppsNameField">
+               <item>
+                <widget class="QLineEdit" name="lineEdit_Apps_Name"/>
+               </item>
+               <item>
+                <widget class="QPushButton" name="pushButton_Apps_Name_Browse">
+                 <property name="text">
+                  <string>Browse...</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
              </item>
              <item row="1" column="0">
               <widget class="QLabel" name="label_Apps_Description">
@@ -376,14 +380,18 @@
               </widget>
              </item>
              <item row="3" column="1">
-              <widget class="QLineEdit" name="lineEdit_Apps_AppIcon"/>
-             </item>
-             <item row="3" column="2">
-              <widget class="QPushButton" name="pushButton_Apps_AppIcon_Browse">
-               <property name="text">
-                <string>Browse...</string>
-               </property>
-              </widget>
+              <layout class="QHBoxLayout" name="horizontalLayout_AppsIconField">
+               <item>
+                <widget class="QLineEdit" name="lineEdit_Apps_AppIcon"/>
+               </item>
+               <item>
+                <widget class="QPushButton" name="pushButton_Apps_AppIcon_Browse">
+                 <property name="text">
+                  <string>Browse...</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
              </item>
             </layout>
            </item>
