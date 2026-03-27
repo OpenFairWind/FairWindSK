@@ -52,6 +52,13 @@
              </widget>
             </item>
             <item>
+             <widget class="QToolButton" name="toolButton_SyncApps">
+              <property name="text">
+               <string>Sync</string>
+              </property>
+             </widget>
+            </item>
+            <item>
              <widget class="QToolButton" name="toolButton_Remove">
               <property name="text">
                <string>Remove</string>
@@ -109,16 +116,16 @@
              </widget>
             </item>
             <item>
-             <widget class="QToolButton" name="toolButton_MoveNodeLeft">
+             <widget class="QToolButton" name="toolButton_MoveNodeUp">
               <property name="text">
-               <string>Left</string>
+               <string>Up</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QToolButton" name="toolButton_MoveNodeRight">
+             <widget class="QToolButton" name="toolButton_MoveNodeDown">
               <property name="text">
-               <string>Right</string>
+               <string>Down</string>
               </property>
              </widget>
             </item>

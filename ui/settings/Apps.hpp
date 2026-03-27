@@ -78,18 +78,18 @@ namespace fairwindsk::ui::settings {
 
     private slots:
         void onAvailableAppSelectionChanged();
-        void onAvailableAppItemChanged(QListWidgetItem *listWidgetItem);
         void onAvailableAppDoubleClicked(QListWidgetItem *listWidgetItem);
         void onAppsEditSaveClicked();
         void onAppsDetailsFieldsTextChanged(const QString &text);
         void onAppsAppIconBrowse();
         void onAppsNameBrowse();
         void onAddAppClicked();
+        void onSyncAppsClicked();
         void onRemoveAppClicked();
         void onAddPageClicked();
         void onRemoveNodeClicked();
-        void onMoveNodeLeftClicked();
-        void onMoveNodeRightClicked();
+        void onMoveNodeUpClicked();
+        void onMoveNodeDownClicked();
         void onPageTreeSelectionChanged();
         void onPageTreeItemChanged(QTreeWidgetItem *item, int column);
         void onPageGridItemsChanged(const QStringList &items);
@@ -110,7 +110,6 @@ namespace fairwindsk::ui::settings {
         void refreshDetailActionButtons() const;
         void showDetailsForApp(const QString &appName, bool startEditing = false);
         void showLayoutEditor();
-        void syncAppActiveState(const QString &appName, bool active);
         void removeAppFromLauncherNodes(const QString &appName);
         void renameAppInLauncherNodes(const QString &oldName, const QString &newName);
         void markSettingsDirty();

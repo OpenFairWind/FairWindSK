@@ -439,17 +439,17 @@ namespace fairwindsk::ui::settings {
         pageGridLayout->addWidget(m_pageGrid);
 
         setupImageToolButton(ui->toolButton_Add, QStringLiteral(":/resources/svg/OpenBridge/widget-add-google.svg"), tr("Add application"));
+        setupImageToolButton(ui->toolButton_SyncApps, QStringLiteral(":/resources/svg/OpenBridge/refresh-google.svg"), tr("Sync applications from server"));
         setupImageToolButton(ui->toolButton_Remove, QStringLiteral(":/resources/svg/OpenBridge/delete-google.svg"), tr("Delete application"));
         setupImageToolButton(ui->toolButton_EditApp, QStringLiteral(":/resources/svg/OpenBridge/edit-google.svg"), tr("Edit application"));
         setupImageToolButton(ui->toolButton_AddPage, QStringLiteral(":/resources/svg/OpenBridge/navigation-route.svg"), tr("Add page"));
         setupImageToolButton(ui->toolButton_RemoveNode, QStringLiteral(":/resources/svg/OpenBridge/delete-google.svg"), tr("Delete page or folder"));
-        setupImageToolButton(ui->toolButton_MoveNodeLeft, QStringLiteral(":/resources/svg/OpenBridge/arrow-left-google.svg"), tr("Move page out"));
-        setupImageToolButton(ui->toolButton_MoveNodeRight, QStringLiteral(":/resources/svg/OpenBridge/arrow-right-google.svg"), tr("Nest page under previous item"));
+        setupImageToolButton(ui->toolButton_MoveNodeUp, QStringLiteral(":/resources/svg/OpenBridge/arrow-up-google.svg"), tr("Move page up"));
+        setupImageToolButton(ui->toolButton_MoveNodeDown, QStringLiteral(":/resources/svg/OpenBridge/arrow-down-google.svg"), tr("Move page down"));
         setupImageToolButton(ui->toolButton_ClearPageSlot, QStringLiteral(":/resources/svg/OpenBridge/delete-google.svg"), tr("Clear selected slot"));
         setupImageToolButton(ui->toolButton_BackToLayout, QStringLiteral(":/resources/svg/OpenBridge/arrow-left-google.svg"), tr("Back to layout"));
 
         connect(m_availableAppsList, &QListWidget::itemSelectionChanged, this, &Apps::onAvailableAppSelectionChanged);
-        connect(m_availableAppsList, &QListWidget::itemChanged, this, &Apps::onAvailableAppItemChanged);
         connect(m_availableAppsList, &QListWidget::itemDoubleClicked, this, &Apps::onAvailableAppDoubleClicked);
         connect(ui->pushButton_Apps_EditSave, &QPushButton::clicked, this, &Apps::onAppsEditSaveClicked);
         connect(ui->lineEdit_Apps_Name, &QLineEdit::textChanged, this, &Apps::onAppsDetailsFieldsTextChanged);
@@ -459,6 +459,7 @@ namespace fairwindsk::ui::settings {
         connect(ui->pushButton_Apps_AppIcon_Browse, &QPushButton::clicked, this, &Apps::onAppsAppIconBrowse);
         connect(ui->pushButton_Apps_Name_Browse, &QPushButton::clicked, this, &Apps::onAppsNameBrowse);
         connect(ui->toolButton_Add, &QToolButton::clicked, this, &Apps::onAddAppClicked);
+        connect(ui->toolButton_SyncApps, &QToolButton::clicked, this, &Apps::onSyncAppsClicked);
         connect(ui->toolButton_Remove, &QToolButton::clicked, this, &Apps::onRemoveAppClicked);
         connect(ui->toolButton_EditApp, &QToolButton::clicked, this, [this]() {
             auto *item = m_availableAppsList->currentItem();
@@ -468,8 +469,8 @@ namespace fairwindsk::ui::settings {
         });
         connect(ui->toolButton_AddPage, &QToolButton::clicked, this, &Apps::onAddPageClicked);
         connect(ui->toolButton_RemoveNode, &QToolButton::clicked, this, &Apps::onRemoveNodeClicked);
-        connect(ui->toolButton_MoveNodeLeft, &QToolButton::clicked, this, &Apps::onMoveNodeLeftClicked);
-        connect(ui->toolButton_MoveNodeRight, &QToolButton::clicked, this, &Apps::onMoveNodeRightClicked);
+        connect(ui->toolButton_MoveNodeUp, &QToolButton::clicked, this, &Apps::onMoveNodeUpClicked);
+        connect(ui->toolButton_MoveNodeDown, &QToolButton::clicked, this, &Apps::onMoveNodeDownClicked);
         connect(m_pageTree, &QTreeWidget::itemSelectionChanged, this, &Apps::onPageTreeSelectionChanged);
         connect(m_pageTree, &QTreeWidget::itemChanged, this, &Apps::onPageTreeItemChanged);
         connect(m_pageGrid, &LauncherPageGridWidget::itemsChanged, this, &Apps::onPageGridItemsChanged);
@@ -577,8 +578,8 @@ namespace fairwindsk::ui::settings {
         auto *item = m_pageTree ? m_pageTree->currentItem() : nullptr;
         const bool hasSelection = item != nullptr;
         ui->toolButton_RemoveNode->setEnabled(hasSelection);
-        ui->toolButton_MoveNodeLeft->setEnabled(hasSelection);
-        ui->toolButton_MoveNodeRight->setEnabled(hasSelection);
+        ui->toolButton_MoveNodeUp->setEnabled(hasSelection);
+        ui->toolButton_MoveNodeDown->setEnabled(hasSelection);
         ui->toolButton_ClearPageSlot->setEnabled(m_pageGrid && m_pageGrid->hasSelectedSlot() && !selectedPageId().isEmpty());
     }
 
@@ -626,8 +627,7 @@ namespace fairwindsk::ui::settings {
             auto *item = new QListWidgetItem(QIcon(appItem.getIcon()), appItem.getDisplayName());
             item->setData(Qt::UserRole, appItem.getName());
             item->setToolTip(appItem.getDescription());
-            item->setCheckState(appItem.getActive() ? Qt::Checked : Qt::Unchecked);
-            item->setFlags(item->flags() | Qt::ItemIsUserCheckable | Qt::ItemIsDragEnabled | Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+            item->setFlags((item->flags() | Qt::ItemIsDragEnabled | Qt::ItemIsSelectable | Qt::ItemIsEnabled) & ~Qt::ItemIsUserCheckable);
             m_availableAppsList->addItem(item);
             if (appItem.getName() == currentAppName) {
                 m_availableAppsList->setCurrentItem(item);
@@ -769,15 +769,6 @@ namespace fairwindsk::ui::settings {
         setAppsEditMode(false);
         ui->stackedWidget_RightPane->setCurrentWidget(ui->page_Layout);
         rebuildPageEditor();
-    }
-
-    void Apps::syncAppActiveState(const QString &appName, const bool active) {
-        const int idx = m_settings->getConfiguration()->findApp(appName);
-        if (idx == -1) {
-            return;
-        }
-        m_settings->getConfiguration()->getRoot()["apps"].at(idx)["fairwind"]["active"] = active;
-        markSettingsDirty();
     }
 
     void Apps::removeAppFromLauncherNodes(const QString &appName) {
@@ -1105,13 +1096,6 @@ namespace fairwindsk::ui::settings {
         refreshAvailableAppActionButtons();
     }
 
-    void Apps::onAvailableAppItemChanged(QListWidgetItem *listWidgetItem) {
-        if (!listWidgetItem) {
-            return;
-        }
-        syncAppActiveState(listWidgetItem->data(Qt::UserRole).toString(), listWidgetItem->checkState() == Qt::Checked);
-    }
-
     void Apps::onAvailableAppDoubleClicked(QListWidgetItem *listWidgetItem) {
         if (!listWidgetItem) {
             return;
@@ -1200,6 +1184,40 @@ namespace fairwindsk::ui::settings {
         showDetailsForApp(appItem.getName(), true);
     }
 
+    void Apps::onSyncAppsClicked() {
+        auto *fairWind = FairWindSK::getInstance();
+        if (!fairWind) {
+            return;
+        }
+
+        auto localLauncherLayout = m_settings->getConfiguration()->getRoot().contains(kLauncherLayoutKey)
+                                       ? m_settings->getConfiguration()->getRoot()[kLauncherLayoutKey]
+                                       : nlohmann::json::object();
+        const QString preservedSelection = m_selectedPageNodeId;
+        const QString preservedDetail = m_currentDetailAppName;
+
+        if (!fairWind->loadApps()) {
+            drawer::warning(this, tr("Applications"), tr("Unable to synchronize applications from the server."));
+            return;
+        }
+
+        auto &localRoot = m_settings->getConfiguration()->getRoot();
+        localRoot["apps"] = fairWind->getConfiguration()->getRoot()["apps"];
+        if (!localLauncherLayout.is_null() && !localLauncherLayout.empty()) {
+            localRoot[kLauncherLayoutKey] = localLauncherLayout;
+        }
+
+        ensureLauncherLayout();
+        m_selectedPageNodeId = preservedSelection;
+        rebuildAvailableAppsList();
+        rebuildPageTree();
+        rebuildPageEditor();
+        if (!preservedDetail.isEmpty() && m_settings->getConfiguration()->findApp(preservedDetail) != -1) {
+            showDetailsForApp(preservedDetail, false);
+        }
+        markSettingsDirty();
+    }
+
     void Apps::onRemoveAppClicked() {
         auto *item = m_availableAppsList->currentItem();
         if (!item) {
@@ -1284,7 +1302,7 @@ namespace fairwindsk::ui::settings {
         rebuildPageEditor();
     }
 
-    void Apps::onMoveNodeLeftClicked() {
+    void Apps::onMoveNodeUpClicked() {
         auto *currentNode = selectedNode();
         if (!currentNode) {
             return;
@@ -1296,56 +1314,16 @@ namespace fairwindsk::ui::settings {
         if (!findNodeParent(*launcherLayoutNodes(), currentNodeId, &parentChildren, &index) || !parentChildren || index < 0) {
             return;
         }
-
-        nlohmann::json *grandParentChildren = nullptr;
-        int parentIndex = -1;
-        bool hasParentContainer = false;
-        if (parentChildren != launcherLayoutNodes()) {
-            for (int i = 0; i < int(parentChildren->size()); ++i) {
-                if (!(*parentChildren)[i].is_object()) {
-                    continue;
-                }
-            }
-            std::function<bool(nlohmann::json &, nlohmann::json *, nlohmann::json **, int *)> findChildrenOwner =
-                [&](nlohmann::json &nodes, nlohmann::json *targetChildren, nlohmann::json **ownerChildren, int *ownerIndex) -> bool {
-                    if (!nodes.is_array()) {
-                        return false;
-                    }
-                    for (size_t i = 0; i < nodes.size(); ++i) {
-                        auto &candidate = nodes[i];
-                        if (!candidate.is_object()) {
-                            continue;
-                        }
-                        if (candidate.contains(kNodeChildrenKey) && candidate[kNodeChildrenKey].is_array() &&
-                            &candidate[kNodeChildrenKey] == parentChildren) {
-                            *ownerChildren = &nodes;
-                            *ownerIndex = int(i);
-                            return true;
-                        }
-                        if (candidate.contains(kNodeChildrenKey) && candidate[kNodeChildrenKey].is_array()) {
-                            if (findChildrenOwner(candidate[kNodeChildrenKey], targetChildren, ownerChildren, ownerIndex)) {
-                                return true;
-                            }
-                        }
-                    }
-                    return false;
-                };
-            hasParentContainer = findChildrenOwner(*launcherLayoutNodes(), parentChildren, &grandParentChildren, &parentIndex);
-        }
-
-        if (!hasParentContainer || !grandParentChildren || parentIndex < 0) {
+        if (index <= 0) {
             return;
         }
-
-        nlohmann::json nodeCopy = (*parentChildren)[index];
-        parentChildren->erase(parentChildren->begin() + index);
-        grandParentChildren->insert(grandParentChildren->begin() + parentIndex + 1, nodeCopy);
+        std::iter_swap(parentChildren->begin() + index, parentChildren->begin() + index - 1);
         markSettingsDirty();
         rebuildPageTree();
         selectTreeItemById(currentNodeId);
     }
 
-    void Apps::onMoveNodeRightClicked() {
+    void Apps::onMoveNodeDownClicked() {
         auto *currentNode = selectedNode();
         if (!currentNode) {
             return;
@@ -1355,15 +1333,10 @@ namespace fairwindsk::ui::settings {
         nlohmann::json *parentChildren = nullptr;
         int index = -1;
         if (!findNodeParent(*launcherLayoutNodes(), currentNodeId, &parentChildren, &index) ||
-            !parentChildren || index <= 0 || index >= int(parentChildren->size())) {
+            !parentChildren || index < 0 || index >= int(parentChildren->size()) - 1) {
             return;
         }
-
-        auto &previousSibling = (*parentChildren)[index - 1];
-        ensureJsonArray(previousSibling, kNodeChildrenKey);
-        nlohmann::json nodeCopy = (*parentChildren)[index];
-        parentChildren->erase(parentChildren->begin() + index);
-        previousSibling[kNodeChildrenKey].push_back(nodeCopy);
+        std::iter_swap(parentChildren->begin() + index, parentChildren->begin() + index + 1);
         markSettingsDirty();
         rebuildPageTree();
         selectTreeItemById(currentNodeId);
