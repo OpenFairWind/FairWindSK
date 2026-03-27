@@ -818,7 +818,12 @@ namespace fairwindsk::ui {
             return;
         }
 
-        if (!closeSettingsPage(m_launcher)) {
+        QWidget *fallbackWidget = m_launcher;
+        if (ui->stackedWidget_Center->currentWidget() == m_settingsPage && m_settingsPage) {
+            fallbackWidget = m_settingsPage->getCurrentWidget();
+        }
+
+        if (!closeSettingsPage(fallbackWidget, false)) {
             event->ignore();
             return;
         }
