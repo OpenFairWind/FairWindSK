@@ -72,18 +72,6 @@ namespace fairwindsk {
         void setJsonStringValue(nlohmann::json &jsonObject, const std::string &key, const QString &value) {
             jsonObject[key] = value.toStdString();
         }
-
-        QString signalKRootUrl(const fairwindsk::signalk::Client *client) {
-            if (!client) {
-                return {};
-            }
-
-            auto root = client->url().toString();
-            while (root.endsWith('/')) {
-                root.chop(1);
-            }
-            return root;
-        }
     }
 
 /*
@@ -231,13 +219,11 @@ namespace fairwindsk {
         }
 
         const auto client = fairWindSK->getSignalKClient();
-        const auto signalKRoot = signalKRootUrl(client);
-        if (!client || signalKRoot.isEmpty()) {
+        if (!client || client->url().isEmpty()) {
             return;
         }
 
-        const auto activeUrl = QUrl(signalKRoot + "/v1/unitpreferences/active");
-        const auto activePreset = client->signalkGet(activeUrl);
+        const auto activePreset = client->getUnitPreferencesActive();
         if (activePreset.contains("name") && activePreset["name"].isString()) {
             m_signalKActivePresetName = activePreset["name"].toString();
         }
@@ -255,8 +241,7 @@ namespace fairwindsk {
             }
         }
 
-        const auto definitionsUrl = QUrl(signalKRoot + "/v1/unitpreferences/definitions");
-        const auto definitionsObject = client->signalkGet(definitionsUrl);
+        const auto definitionsObject = client->getUnitPreferencesDefinitions();
         if (definitionsObject.contains("definitions") && definitionsObject["definitions"].isObject()) {
             const auto definitions = definitionsObject["definitions"].toObject();
             for (auto baseUnitIt = definitions.begin(); baseUnitIt != definitions.end(); ++baseUnitIt) {
@@ -290,8 +275,7 @@ namespace fairwindsk {
             }
         }
 
-        const auto categoriesUrl = QUrl(signalKRoot + "/v1/unitpreferences/default-categories");
-        const auto categoriesObject = client->signalkGet(categoriesUrl);
+        const auto categoriesObject = client->getUnitPreferencesDefaultCategories();
         if (categoriesObject.contains("categories") && categoriesObject["categories"].isObject()) {
             const auto categories = categoriesObject["categories"].toObject();
             for (auto categoryIt = categories.begin(); categoryIt != categories.end(); ++categoryIt) {
@@ -390,12 +374,8 @@ namespace fairwindsk {
 
             const auto fairWindSK = FairWindSK::getInstance();
             const auto client = fairWindSK ? fairWindSK->getSignalKClient() : nullptr;
-            const auto signalKRoot = signalKRootUrl(client);
-            if (client && !signalKRoot.isEmpty()) {
-                QString pathComponent = path;
-                pathComponent.replace('.', '/');
-                const auto metaUrl = QUrl(signalKRoot + "/v1/api/vessels/self/" + pathComponent + "/meta");
-                const auto metaObject = client->signalkGet(metaUrl);
+            if (client && !client->url().isEmpty()) {
+                const auto metaObject = client->getPathMeta(path);
                 if (metaObject.contains("displayUnits") && metaObject["displayUnits"].isObject()) {
                     auto info = parseDisplayUnits(metaObject["displayUnits"].toObject());
                     if (info.baseUnit.isEmpty() && metaObject.contains("units") && metaObject["units"].isString()) {
@@ -554,11 +534,8 @@ namespace fairwindsk {
             item.category = categoryIt.key();
             item.baseUnit = serverInfo.baseUnit;
             item.displayFormat = serverInfo.displayFormat;
-
-            const auto overrideInfo = localOverrideForCategory(categoryIt.key());
-            const auto effectiveInfo = overrideInfo.valid ? overrideInfo : serverInfo;
-            item.targetUnit = effectiveInfo.targetUnit;
-            item.symbol = effectiveInfo.symbol;
+            item.targetUnit = serverInfo.targetUnit;
+            item.symbol = serverInfo.symbol;
 
             if (m_definitionsByBaseUnit.contains(serverInfo.baseUnit)) {
                 const auto definitions = m_definitionsByBaseUnit.value(serverInfo.baseUnit);
@@ -575,10 +552,10 @@ namespace fairwindsk {
 
             if (item.options.isEmpty()) {
                 UnitOption option;
-                option.key = effectiveInfo.targetUnit;
-                option.symbol = effectiveInfo.symbol;
+                option.key = serverInfo.targetUnit;
+                option.symbol = serverInfo.symbol;
                 option.label = QStringLiteral("%1 (%2)")
-                        .arg(getLabel(effectiveInfo.targetUnit), effectiveInfo.symbol.isEmpty() ? effectiveInfo.targetUnit : effectiveInfo.symbol);
+                        .arg(getLabel(serverInfo.targetUnit), serverInfo.symbol.isEmpty() ? serverInfo.targetUnit : serverInfo.symbol);
                 item.options.append(option);
             }
 

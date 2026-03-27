@@ -42,6 +42,48 @@ QLineEdit, QComboBox, QAbstractItemView, QScrollArea, QSpinBox, QPushButton {
     <number>0</number>
    </property>
    <item>
+    <widget class="QGroupBox" name="groupBox_ServerPreset">
+     <property name="title">
+      <string>Server preset</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_ServerPreset">
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_presetTitle">
+        <property name="text">
+         <string>Current preset</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLabel" name="label_presetValue">
+        <property name="text">
+         <string>Unavailable</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QPushButton" name="pushButton_syncFromServer">
+        <property name="text">
+         <string>Sync from server</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
     <widget class="QScrollArea" name="scrollArea_Units">
      <property name="widgetResizable">
       <bool>true</bool>
@@ -72,48 +114,6 @@ QLineEdit, QComboBox, QAbstractItemView, QScrollArea, QSpinBox, QPushButton {
         <number>0</number>
        </property>
        <item>
-        <widget class="QGroupBox" name="groupBox_ServerPreset">
-         <property name="title">
-          <string>Server preset</string>
-         </property>
-         <layout class="QGridLayout" name="gridLayout_ServerPreset">
-          <property name="leftMargin">
-           <number>0</number>
-          </property>
-          <property name="topMargin">
-           <number>0</number>
-          </property>
-          <property name="rightMargin">
-           <number>0</number>
-          </property>
-          <property name="bottomMargin">
-           <number>0</number>
-          </property>
-          <item row="0" column="0">
-           <widget class="QLabel" name="label_presetTitle">
-            <property name="text">
-             <string>Current preset</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <widget class="QLabel" name="label_presetValue">
-            <property name="text">
-             <string>Unavailable</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="2">
-           <widget class="QPushButton" name="pushButton_syncFromServer">
-            <property name="text">
-             <string>Sync from server</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
         <widget class="QGroupBox" name="groupBox_CategoryOverrides">
          <property name="title">
           <string>Category overrides</string>
@@ -131,16 +131,6 @@ QLineEdit, QComboBox, QAbstractItemView, QScrollArea, QSpinBox, QPushButton {
           <property name="bottomMargin">
            <number>0</number>
           </property>
-          <item>
-           <widget class="QLabel" name="label_description">
-            <property name="wordWrap">
-             <bool>true</bool>
-            </property>
-            <property name="text">
-             <string>FairWindSK reads the available unit categories from the connected Signal K server. Enable Override for a category to save a local unit choice for this installation.</string>
-            </property>
-           </widget>
-          </item>
           <item>
            <widget class="QLabel" name="label_emptyState">
             <property name="wordWrap">
@@ -161,23 +151,16 @@ QLineEdit, QComboBox, QAbstractItemView, QScrollArea, QSpinBox, QPushButton {
              </widget>
             </item>
             <item row="0" column="1">
-             <widget class="QLabel" name="label_headerOverride">
-              <property name="text">
-               <string>Local</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="2">
              <widget class="QLabel" name="label_headerUnit">
               <property name="text">
                <string>Unit</string>
               </property>
              </widget>
             </item>
-            <item row="0" column="3">
+            <item row="0" column="2">
              <widget class="QLabel" name="label_headerServer">
               <property name="text">
-               <string>Server setting</string>
+               <string>Server preset</string>
               </property>
              </widget>
             </item>

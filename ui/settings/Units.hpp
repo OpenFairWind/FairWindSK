@@ -5,7 +5,6 @@
 #ifndef FAIRWINDSK_SETTINGS_UNITS_HPP
 #define FAIRWINDSK_SETTINGS_UNITS_HPP
 
-#include <QCheckBox>
 #include <QComboBox>
 #include <QLabel>
 #include <QMap>
@@ -32,14 +31,13 @@ namespace fairwindsk::ui::settings {
     private:
         struct UnitRowWidgets {
             QLabel *labelCategory = nullptr;
-            QCheckBox *checkBoxOverride = nullptr;
             QComboBox *comboBoxUnit = nullptr;
             QLabel *labelServerUnit = nullptr;
         };
 
         void rebuildRows();
         void clearRows();
-        void applyLocalOverride(const QString &category, bool enabled, const QString &targetUnit);
+        void applyLocalOverride(const QString &category, const QString &serverTargetUnit, const QString &targetUnit);
         QString localOverrideForCategory(const QString &category) const;
         void setLocalOverrideForCategory(const QString &category, const QString &targetUnit);
         void clearLocalOverrideForCategory(const QString &category);

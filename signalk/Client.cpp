@@ -933,6 +933,30 @@ namespace fairwindsk::signalk {
         return getJsonDocument(historyUrl("values", effectiveQuery)).object();
     }
 
+    QJsonObject Client::getUnitPreferencesActive() {
+        return signalkGet(QUrl(url().toString() + "/v1/unitpreferences/active"));
+    }
+
+    QJsonObject Client::getUnitPreferencesDefinitions() {
+        return signalkGet(QUrl(url().toString() + "/v1/unitpreferences/definitions"));
+    }
+
+    QJsonObject Client::getUnitPreferencesDefaultCategories() {
+        return signalkGet(QUrl(url().toString() + "/v1/unitpreferences/default-categories"));
+    }
+
+    QJsonObject Client::getPathMeta(const QString &path, const QString &context) {
+        QString normalizedContext = context;
+        if (normalizedContext.endsWith('/')) {
+            normalizedContext.chop(1);
+        }
+
+        QString pathComponent = path;
+        pathComponent.replace('.', '/');
+
+        return signalkGet(QUrl(url().toString() + "/v1/api/" + normalizedContext + "/" + pathComponent + "/meta"));
+    }
+
     QJsonObject Client::subscribe(const QString& path, QObject *receiver, const char *member, int period, const QString& policy, int minPeriod) {
         return(subscribe("vessels.self", path, receiver, member, period, policy, minPeriod));
     }

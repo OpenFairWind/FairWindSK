@@ -2,7 +2,6 @@
 // Created by Codex on 27/03/26.
 //
 
-#include <QCheckBox>
 #include <QComboBox>
 #include <QLabel>
 #include <QPushButton>
@@ -130,18 +129,22 @@ namespace fairwindsk::ui::settings {
         }
     }
 
-    void Units::applyLocalOverride(const QString &category, const bool enabled, const QString &targetUnit) {
-        if (enabled) {
+    void Units::applyLocalOverride(const QString &category, const QString &serverTargetUnit, const QString &targetUnit) {
+        if (targetUnit != serverTargetUnit) {
             setLocalOverrideForCategory(category, targetUnit);
         } else {
             clearLocalOverrideForCategory(category);
+            auto &root = m_settings->getConfiguration()->getRoot();
+            syncLegacyUnitsForCategory(root, category, serverTargetUnit);
         }
     }
 
     void Units::syncLocalOverridesFromServer() {
         const auto items = fairwindsk::Units::getInstance()->getSignalKUnitPreferenceItems();
         for (const auto &item : items) {
-            setLocalOverrideForCategory(item.category, item.targetUnit);
+            clearLocalOverrideForCategory(item.category);
+            auto &root = m_settings->getConfiguration()->getRoot();
+            syncLegacyUnitsForCategory(root, item.category, item.targetUnit);
         }
     }
 
@@ -177,7 +180,6 @@ namespace fairwindsk::ui::settings {
         for (const auto &item : unitItems) {
             UnitRowWidgets rowWidgets;
             rowWidgets.labelCategory = new QLabel(displayLabelForCategory(item.category), this);
-            rowWidgets.checkBoxOverride = new QCheckBox(tr("Override"), this);
             rowWidgets.comboBoxUnit = new QComboBox(this);
             rowWidgets.labelServerUnit = new QLabel(this);
 
@@ -186,32 +188,19 @@ namespace fairwindsk::ui::settings {
             }
 
             const auto localOverride = localOverrideForCategory(item.category);
-            const bool overrideEnabled = !localOverride.isEmpty();
-            const QString effectiveTargetUnit = overrideEnabled ? localOverride : item.targetUnit;
+            const QString effectiveTargetUnit = localOverride.isEmpty() ? item.targetUnit : localOverride;
             const int comboIndex = rowWidgets.comboBoxUnit->findData(effectiveTargetUnit);
             rowWidgets.comboBoxUnit->setCurrentIndex(comboIndex >= 0 ? comboIndex : 0);
-            rowWidgets.comboBoxUnit->setEnabled(overrideEnabled);
-
-            rowWidgets.checkBoxOverride->setChecked(overrideEnabled);
-            rowWidgets.labelServerUnit->setText(tr("Server: %1").arg(item.symbol.isEmpty() ? item.targetUnit : item.symbol));
-
-            connect(rowWidgets.checkBoxOverride, &QCheckBox::toggled, this,
-                    [this, category = item.category, comboBox = rowWidgets.comboBoxUnit](bool checked) {
-                        comboBox->setEnabled(checked);
-                        applyLocalOverride(category, checked, comboBox->currentData().toString());
-                    });
+            rowWidgets.labelServerUnit->setText(tr("Preset: %1").arg(item.symbol.isEmpty() ? item.targetUnit : item.symbol));
 
             connect(rowWidgets.comboBoxUnit, &QComboBox::currentIndexChanged, this,
-                    [this, category = item.category, checkBox = rowWidgets.checkBoxOverride, comboBox = rowWidgets.comboBoxUnit](int) {
-                        if (checkBox->isChecked()) {
-                            applyLocalOverride(category, true, comboBox->currentData().toString());
-                        }
+                    [this, category = item.category, serverTargetUnit = item.targetUnit, comboBox = rowWidgets.comboBoxUnit](int) {
+                        applyLocalOverride(category, serverTargetUnit, comboBox->currentData().toString());
                     });
 
             ui->gridLayout_Items->addWidget(rowWidgets.labelCategory, row, 0);
-            ui->gridLayout_Items->addWidget(rowWidgets.checkBoxOverride, row, 1);
-            ui->gridLayout_Items->addWidget(rowWidgets.comboBoxUnit, row, 2);
-            ui->gridLayout_Items->addWidget(rowWidgets.labelServerUnit, row, 3);
+            ui->gridLayout_Items->addWidget(rowWidgets.comboBoxUnit, row, 1);
+            ui->gridLayout_Items->addWidget(rowWidgets.labelServerUnit, row, 2);
 
             m_rowWidgets.insert(item.category, rowWidgets);
             ++row;

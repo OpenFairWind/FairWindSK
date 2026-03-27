@@ -87,6 +87,10 @@ namespace fairwindsk::signalk {
         bool navigateToWaypoint(const QString &href);
         QJsonArray getHistoryPaths(const QVariantMap &query = {});
         QJsonObject getHistoryValues(const QStringList &paths, const QVariantMap &query = {});
+        QJsonObject getUnitPreferencesActive();
+        QJsonObject getUnitPreferencesDefinitions();
+        QJsonObject getUnitPreferencesDefaultCategories();
+        QJsonObject getPathMeta(const QString &path, const QString &context = QStringLiteral("vessels/self"));
 
         static QString getStringFromUpdateByPath(const QJsonObject &update, const QString& path = "");
         static double getDoubleFromUpdateByPath(const QJsonObject &update, const QString& path = "");
