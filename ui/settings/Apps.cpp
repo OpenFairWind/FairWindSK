@@ -420,6 +420,7 @@ namespace fairwindsk::ui::settings {
         }
 
         syncAppOrdersFromList();
+        m_settings->markDirty();
         setAppsEditMode(true);
         refreshAppActionButtons();
 
@@ -453,6 +454,7 @@ namespace fairwindsk::ui::settings {
             // Remove the item from the widget list
             delete ui->listWidget_Apps_List->takeItem(pos);
             syncAppOrdersFromList();
+            m_settings->markDirty();
             refreshAppActionButtons();
         }
     }
@@ -468,6 +470,7 @@ namespace fairwindsk::ui::settings {
             ui->listWidget_Apps_List->insertItem(pos-1,listWidgetItem);
             ui->listWidget_Apps_List->setCurrentRow(pos-1);
             syncAppOrdersFromList();
+            m_settings->markDirty();
             refreshAppActionButtons();
         }
     }
@@ -482,6 +485,7 @@ namespace fairwindsk::ui::settings {
             ui->listWidget_Apps_List->insertItem(pos+1,listWidgetItem);
             ui->listWidget_Apps_List->setCurrentRow(pos+1);
             syncAppOrdersFromList();
+            m_settings->markDirty();
             refreshAppActionButtons();
         }
     }

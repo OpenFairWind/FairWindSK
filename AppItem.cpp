@@ -186,6 +186,28 @@ namespace fairwindsk {
 
             return fallback;
         }
+
+        QPixmap bundledFallbackIcon(const QString &appName, const QString &displayName, const QString &appUrl) {
+            const QString combined = (appName + " " + displayName + " " + appUrl).toLower();
+            QString resourcePath = QStringLiteral(":/resources/images/icons/webapp-256x256.png");
+
+            if (combined.contains(QStringLiteral("youtube"))) {
+                resourcePath = QStringLiteral(":/resources/images/icons/youtube_icon.png");
+            } else if (combined.contains(QStringLiteral("server-admin-ui")) ||
+                       combined.contains(QStringLiteral("signalk server")) ||
+                       combined.contains(QStringLiteral("signalk admin"))) {
+                resourcePath = QStringLiteral(":/resources/images/icons/signalkserver_icon.png");
+            } else if (combined.contains(QStringLiteral("http:///")) ||
+                       combined.contains(QStringLiteral("https:///")) ||
+                       combined.contains(QStringLiteral("signalk browser"))) {
+                resourcePath = QStringLiteral(":/resources/images/icons/signalkbrowser_icon.png");
+            } else if (combined.startsWith(QStringLiteral("http://")) ||
+                       combined.startsWith(QStringLiteral("https://"))) {
+                resourcePath = QStringLiteral(":/resources/images/icons/web_icon.png");
+            }
+
+            return QPixmap::fromImage(QImage(resourcePath));
+        }
     }
 
     AppItem::AppItem() = default;
@@ -294,8 +316,11 @@ namespace fairwindsk {
             return m_cachedIcon;
         }
 
+        const QString appName = getName();
+        const QString displayName = getDisplayName();
+        const QString appUrl = getUrl();
         // Use a default pixmap so the UI never shows an empty placeholder.
-        QPixmap pixmap = QPixmap::fromImage(QImage(":/resources/images/icons/webapp-256x256.png"));
+        QPixmap pixmap = bundledFallbackIcon(appName, displayName, appUrl);
         // Read the optional app icon path from the application metadata.
         QString appIcon = getAppIcon();
 
@@ -332,8 +357,8 @@ namespace fairwindsk {
 
         QList<QUrl> candidateUrls;
         candidateUrls.append(QUrl(appIcon));
-        candidateUrls.append(QUrl(getUrl()).resolved(QUrl(appIcon)));
-        candidateUrls.append(QUrl(signalKServerUrl + "/" + getName() + "/" + appIcon));
+        candidateUrls.append(QUrl(appUrl).resolved(QUrl(appIcon)));
+        candidateUrls.append(QUrl(signalKServerUrl + "/" + appName + "/" + appIcon));
 
         m_cachedIcon = loadRemotePixmap(candidateUrls, pixmap);
         m_hasCachedIcon = true;
