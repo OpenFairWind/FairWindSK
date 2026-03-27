@@ -27,16 +27,10 @@ namespace fairwindsk::ui::settings {
         explicit Units(Settings *settings, QWidget *parent = nullptr);
         ~Units() override;
 
-    private slots:
-        void onPresetChanged(int index);
-        void onSaveCustomPresetClicked();
-        void onDeleteCustomPresetClicked();
-
     private:
         struct PresetInfo {
             QString name;
             QString displayName;
-            bool custom = false;
             QMap<QString, fairwindsk::Units::UnitPreferenceItem> categories;
         };
 
@@ -50,27 +44,15 @@ namespace fairwindsk::ui::settings {
         void rebuildRows();
         void clearRows();
         void applyLocalOverride(const QString &category, const QString &serverTargetUnit, const QString &targetUnit);
-        void applyPresetSelection(const QString &presetName);
-        void populatePresetCombo();
-        QString selectedPresetName() const;
-        QString presetUnitForCategory(const QString &category) const;
         int comboIndexForCategoryUnit(QComboBox *comboBox,
                                       const fairwindsk::Units::UnitPreferenceItem &item,
                                       const QString &targetUnit,
                                       const QString &symbol) const;
-        QString configuredPresetName() const;
-        void setConfiguredPresetName(const QString &presetName);
         bool hasLocalOverrides() const;
-        bool saveCustomPreset(const QString &name);
-        void updatePresetSelectionFromCurrentState();
-        QString currentEffectiveUnitForCategory(const QString &category) const;
-        QJsonObject buildPresetPayload(const QString &name) const;
-        static PresetInfo parsePresetInfo(const QString &name, const QJsonObject &presetObject, bool custom);
-        static QSet<QString> builtInPresetNames();
+        static PresetInfo parsePresetInfo(const QString &name, const QJsonObject &presetObject);
         QString localOverrideForCategory(const QString &category) const;
         void setLocalOverrideForCategory(const QString &category, const QString &targetUnit);
         void clearLocalOverrideForCategory(const QString &category);
-        void syncLocalOverridesFromServer();
         static QString displayLabelForCategory(const QString &category);
         static void syncLegacyUnitsForCategory(nlohmann::json &root, const QString &category, const QString &targetUnit);
 
