@@ -3,9 +3,6 @@
      <class>fairwindsk::ui::settings::Settings</class>
  
  <widget class="QWidget" name="Settings">
-  <property name="windowModality">
-   <enum>Qt::WindowModality::ApplicationModal</enum>
-  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -83,7 +80,7 @@ border-right-color: rgb(83, 83, 84);
 border-bottom-color: rgb(83, 83, 84);</string>
      </property>
      <property name="standardButtons">
-      <set>QDialogButtonBox::StandardButton::Cancel|QDialogButtonBox::StandardButton::Reset|QDialogButtonBox::StandardButton::RestoreDefaults|QDialogButtonBox::StandardButton::Save</set>
+      <set>QDialogButtonBox::StandardButton::Reset|QDialogButtonBox::StandardButton::RestoreDefaults</set>
      </property>
      <property name="centerButtons">
       <bool>false</bool>

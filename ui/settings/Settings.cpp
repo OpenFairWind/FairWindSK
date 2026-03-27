@@ -6,8 +6,6 @@
 
 #include <iostream>
 
-#include <QTranslator>
-#include <QMessageBox>
 #include "Settings.hpp"
 
 #include "FairWindSK.hpp"
@@ -86,12 +84,6 @@ namespace fairwindsk::ui::settings {
         // Add the push button to the button box sith ActionRole
 	    ui->buttonBox->addButton(m_pushButtonQuit,QDialogButtonBox::ActionRole);
 
-        // Connect the button box accepted signal with onAccepted method
-        connect(ui->buttonBox,&QDialogButtonBox::accepted,this,&Settings::onAccepted);
-
-        // Connect the button box rejected signal with onRejected method
-        connect(ui->buttonBox,&QDialogButtonBox::rejected,this,&Settings::onRejected);
-
         // Connect the button box clicked signal with onClicked method
         connect(ui->buttonBox,&QDialogButtonBox::clicked,this,&Settings::onClicked);
     }
@@ -149,14 +141,7 @@ namespace fairwindsk::ui::settings {
      */
     void Settings::onClicked(QAbstractButton *button) {
 
-        // Check if the button is Discard
-        if (ui->buttonBox->button(QDialogButtonBox::Discard) == dynamic_cast<QPushButton*>(button)) {
-
-            // Emits a rejected signal
-            emit rejected(this);
-        }
-        // Check if the button is Reset
-        else if (ui->buttonBox->button(QDialogButtonBox::Reset) == dynamic_cast<QPushButton*>(button)) {
+        if (ui->buttonBox->button(QDialogButtonBox::Reset) == dynamic_cast<QPushButton*>(button)) {
 
             // Get the json configuration object of the current configuration
             auto configurationAsJson = m_currentConfiguration->getRoot();
@@ -205,34 +190,27 @@ namespace fairwindsk::ui::settings {
     }
 
     /*
-     * onAccepted
-     * Invoked when a push button connected with the accepted signal is clicked
-     */
-    void Settings::onAccepted() {
-        applyConfiguration();
-
-        // Emit an accepted signal
-        emit accepted(this);
-    }
-
-    /*
-     * onRejected
-     * Invoked when a push button connected with the rejected signal is clicked
-     */
-    void Settings::onRejected() {
-
-        FairWindSK::getInstance()->applyUiPreferences(m_currentConfiguration);
-
-        // Emit a reject signal
-        emit rejected(this);
-    }
-
-    /*
      * getCurrentWidget
      * Return the current widget
      */
     QWidget *Settings::getCurrentWidget() {
         return m_currentWidget;
+    }
+
+    void Settings::setCurrentWidget(QWidget *currentWidget) {
+        m_currentWidget = currentWidget;
+    }
+
+    bool Settings::hasPendingChanges() {
+        return m_configuration.getRoot() != m_currentConfiguration->getRoot();
+    }
+
+    void Settings::saveChanges() {
+        applyConfiguration();
+    }
+
+    void Settings::discardChanges() {
+        FairWindSK::getInstance()->applyUiPreferences(m_currentConfiguration);
     }
 
     /*

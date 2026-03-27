@@ -23,12 +23,13 @@ namespace fairwindsk::ui::about {
         ~About() override;
 
         QWidget *getCurrentWidget();
+        void setCurrentWidget(QWidget *currentWidget);
 
     public slots:
-        void onAccepted();
+        void onClose();
 
     signals:
-        void accepted(About *);
+        void closed(About *);
 
     private:
         Ui::About *ui;

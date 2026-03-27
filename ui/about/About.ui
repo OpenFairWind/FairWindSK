@@ -2,9 +2,6 @@
 <ui version="4.0">
  <class>About</class>
  <widget class="QWidget" name="About">
-  <property name="windowModality">
-   <enum>Qt::WindowModality::ApplicationModal</enum>
-  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -67,7 +64,7 @@ color: rgb(250, 255, 255);</string>
             <string notr="true">background-color: rgba(255, 255, 255, 0);</string>
            </property>
            <property name="text">
-            <string>Signal K Version 0.01</string>
+            <string>FairWindSK Version</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -80,7 +77,7 @@ color: rgb(250, 255, 255);</string>
             <string notr="true">background-color: rgba(255, 255, 255, 0);</string>
            </property>
            <property name="text">
-            <string>Copyright 2024</string>
+            <string>Copyright</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignmentFlag::AlignCenter</set>
@@ -372,45 +369,6 @@ color: rgb(65, 107, 195);</string>
                </item>
               </layout>
              </item>
-             <item row="1" column="0">
-              <layout class="QHBoxLayout" name="horizontalLayout_4">
-               <item>
-                <widget class="QLabel" name="label_14">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="text">
-                  <string/>
-                 </property>
-                 <property name="pixmap">
-                  <pixmap resource="../../resources.qrc">:/resources/images/about/aciaramella_64x64.png</pixmap>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QLabel" name="label_13">
-                 <property name="text">
-                  <string>Angelo Ciaramella</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QLabel" name="label_24">
-                 <property name="font">
-                  <font>
-                   <bold>true</bold>
-                  </font>
-                 </property>
-                 <property name="text">
-                  <string>AI Specialist</string>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </item>
             </layout>
            </widget>
           </widget>
@@ -432,7 +390,7 @@ border-bottom-color: rgb(83, 83, 84);</string>
         <enum>Qt::Orientation::Horizontal</enum>
        </property>
        <property name="standardButtons">
-        <set>QDialogButtonBox::StandardButton::Ok</set>
+        <set>QDialogButtonBox::StandardButton::Close</set>
        </property>
        <property name="centerButtons">
         <bool>true</bool>

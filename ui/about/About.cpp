@@ -6,6 +6,7 @@
 
 
 #include <QDialogButtonBox>
+#include <QDate>
 #include "About.hpp"
 #include <ui/MainWindow.hpp>
 
@@ -14,18 +15,25 @@ namespace fairwindsk::ui::about {
             QWidget(parent), ui(new Ui::About) {
         ui->setupUi(this);
         m_currentWidget = currenWidget;
-        connect(ui->buttonBox,&QDialogButtonBox::accepted,this,&About::onAccepted);
+        ui->labelVersion->setText(tr("FairWindSK Version %1").arg(QStringLiteral(FAIRWINDSK_VERSION)));
+        ui->label->setText(tr("Copyright %1").arg(QStringLiteral(FAIRWINDSK_BUILD_YEAR)));
+        connect(ui->buttonBox, &QDialogButtonBox::rejected, this, &About::onClose);
+        connect(ui->buttonBox, &QDialogButtonBox::accepted, this, &About::onClose);
     }
 
     About::~About() {
         delete ui;
     }
 
-    void About::onAccepted() {
-        emit accepted(this);
+    void About::onClose() {
+        emit closed(this);
     }
 
     QWidget *About::getCurrentWidget() {
         return m_currentWidget;
+    }
+
+    void About::setCurrentWidget(QWidget *currentWidget) {
+        m_currentWidget = currentWidget;
     }
 } // fairwindsk::ui::colophon

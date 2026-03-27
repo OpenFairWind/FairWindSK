@@ -89,6 +89,7 @@ namespace fairwindsk::signalk {
         QJsonArray getHistoryPaths(const QVariantMap &query = {});
         QJsonObject getHistoryValues(const QStringList &paths, const QVariantMap &query = {});
         QJsonObject getUnitPreferencesActive();
+        QJsonObject getUnitPreferencesConfig();
         QJsonDocument getUnitPreferencesPresets();
         QJsonObject getUnitPreferencesPreset(const QString &name);
         QJsonObject getUnitPreferencesCategories();

@@ -26,6 +26,10 @@ namespace fairwindsk::ui::settings {
         ~Settings() override;
 
         QWidget *getCurrentWidget();
+        void setCurrentWidget(QWidget *currentWidget);
+        bool hasPendingChanges();
+        void saveChanges();
+        void discardChanges();
 
         //AppItem *getAppItemByHash(QString hash);
         //QList<QString> getAppsHashes();
@@ -34,13 +38,7 @@ namespace fairwindsk::ui::settings {
 
 
     public slots:
-        void onAccepted();
-        void onRejected();
         void onClicked(QAbstractButton *button);
-
-    signals:
-        void accepted(Settings *);
-        void rejected(Settings *);
 
     private:
         void initTabs(int currentIndex);
@@ -55,7 +53,7 @@ namespace fairwindsk::ui::settings {
 
         Configuration m_configuration;
         Configuration *m_currentConfiguration;
-        QWidget *m_currentWidget;
+        QWidget *m_currentWidget = nullptr;
 
     };
 

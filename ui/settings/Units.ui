@@ -44,7 +44,7 @@ QLineEdit, QComboBox, QAbstractItemView, QScrollArea, QSpinBox, QPushButton {
    <item>
     <widget class="QGroupBox" name="groupBox_ServerPreset">
      <property name="title">
-      <string>Server preset</string>
+      <string/>
      </property>
      <layout class="QGridLayout" name="gridLayout_ServerPreset">
       <property name="leftMargin">

@@ -937,6 +937,10 @@ namespace fairwindsk::signalk {
         return signalkGet(QUrl(url().toString() + "/v1/unitpreferences/active"));
     }
 
+    QJsonObject Client::getUnitPreferencesConfig() {
+        return signalkGet(QUrl(url().toString() + "/v1/unitpreferences/config"));
+    }
+
     QJsonDocument Client::getUnitPreferencesPresets() {
         return getJsonDocument(QUrl(url().toString() + "/v1/unitpreferences/presets"));
     }

@@ -81,6 +81,9 @@ namespace fairwindsk::ui {
         bool isDrawerOpen() const;
         void showOverlay(QWidget *page);
         void closeOverlay(QWidget *page, QWidget *fallbackWidget);
+        bool closeSettingsPage(QWidget *fallbackWidget = nullptr);
+        void closeAboutPage(QWidget *fallbackWidget = nullptr);
+        void syncTopBarToCurrentPage();
         void showLauncher();
 
         // Close Event handler
@@ -106,14 +109,8 @@ namespace fairwindsk::ui {
         // Invoked when the top bar upper left button is clicked
         void onUpperLeft();
 
-        // Invoked when the Ok button of the About widget is clicked
-        void onAboutAccepted(fairwindsk::ui::about::About *aboutPage);
-
-        // Invoked when the Save button of the Settings widget is clicked
-        void onSettingsAccepted(fairwindsk::ui::settings::Settings *settingsPage) const;
-
-        // Invoked when the Cancel button of the Settings widget is clicked
-        void onSettingsRejected(fairwindsk::ui::settings::Settings *settingsPage);
+        // Invoked when the Close button of the About widget is clicked
+        void onAboutClosed(fairwindsk::ui::about::About *aboutPage);
 
         // Invoked when the Close button of the MyData widget is clicked
         void onMyDataClosed(fairwindsk::ui::mydata::MyData *myDataPage);
@@ -134,7 +131,9 @@ namespace fairwindsk::ui {
         QMap<QString, QWidget *> m_mapHash2Widget;
 
         QWidget *m_activeOverlay = nullptr;
+        fairwindsk::ui::about::About *m_aboutPage = nullptr;
         fairwindsk::ui::mydata::MyData *m_myDataPage = nullptr;
+        fairwindsk::ui::settings::Settings *m_settingsPage = nullptr;
         QWidget *m_dialogDrawer = nullptr;
         QLabel *m_dialogDrawerTitle = nullptr;
         QWidget *m_dialogDrawerContentHost = nullptr;

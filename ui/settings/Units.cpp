@@ -226,13 +226,47 @@ namespace fairwindsk::ui::settings {
 
         fairwindsk::Units::getInstance()->refreshSignalKPreferences();
 
+        const auto configObject = signalKClient->getUnitPreferencesConfig();
+        if (configObject.contains(QStringLiteral("activePreset")) && configObject.value(QStringLiteral("activePreset")).isString()) {
+            m_serverActivePresetName = configObject.value(QStringLiteral("activePreset")).toString();
+        }
+
         const auto activePresetObject = signalKClient->getUnitPreferencesActive();
-        const auto activePresetName = activePresetObject.value(QStringLiteral("id")).toString(
+        QString activePresetKey = activePresetObject.value(QStringLiteral("id")).toString(
             activePresetObject.value(QStringLiteral("key")).toString()
         );
-        if (!activePresetName.isEmpty()) {
-            m_serverActivePresetName = activePresetName;
-            m_presets.insert(activePresetName, parsePresetInfo(activePresetName, activePresetObject));
+        if (activePresetKey.isEmpty()) {
+            activePresetKey = m_serverActivePresetName;
+        }
+        if (!activePresetKey.isEmpty()) {
+            m_presets.insert(activePresetKey, parsePresetInfo(activePresetKey, activePresetObject));
+        }
+
+        const auto presetsDocument = signalKClient->getUnitPreferencesPresets();
+        if (presetsDocument.isObject()) {
+            const auto presetsObject = presetsDocument.object();
+            const QStringList groups{QStringLiteral("builtIn"), QStringLiteral("custom")};
+            for (const auto &groupName : groups) {
+                if (!presetsObject.contains(groupName) || !presetsObject.value(groupName).isArray()) {
+                    continue;
+                }
+                const auto presetArray = presetsObject.value(groupName).toArray();
+                for (const auto &presetValue : presetArray) {
+                    if (!presetValue.isObject()) {
+                        continue;
+                    }
+                    const auto presetObject = presetValue.toObject();
+                    const QString presetName = presetObject.value(QStringLiteral("name")).toString();
+                    if (presetName.isEmpty()) {
+                        continue;
+                    }
+
+                    auto info = m_presets.value(presetName);
+                    info.name = presetName;
+                    info.displayName = presetObject.value(QStringLiteral("displayName")).toString(presetObject.value(QStringLiteral("name")).toString());
+                    m_presets.insert(presetName, info);
+                }
+            }
         }
     }
 

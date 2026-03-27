@@ -275,12 +275,45 @@ namespace fairwindsk::ui {
         if (m_launcher && ui->stackedWidget_Center->indexOf(m_launcher) >= 0) {
             ui->stackedWidget_Center->setCurrentWidget(m_launcher);
         }
+        syncTopBarToCurrentPage();
+    }
+
+    void MainWindow::syncTopBarToCurrentPage() {
         if (m_topBar) {
-            m_topBar->setCurrentContext(
-                tr("Apps"),
-                tr("Application launcher"),
-                QIcon(":/resources/images/icons/apps_icon.png"),
-                false);
+            const auto *currentWidget = ui->stackedWidget_Center->currentWidget();
+            if (currentWidget == m_launcher) {
+                m_topBar->setCurrentContext(
+                    tr("Apps"),
+                    tr("Application launcher"),
+                    QIcon(":/resources/images/icons/apps_icon.png"),
+                    false);
+            } else if (currentWidget == m_myDataPage) {
+                m_topBar->setCurrentContext(
+                    tr("MyData"),
+                    tr("Signal K resources and files"),
+                    QIcon(":/resources/svg/OpenBridge/database.svg"),
+                    false);
+            } else if (currentWidget == m_settingsPage) {
+                m_topBar->setCurrentContext(
+                    tr("Settings"),
+                    tr("Application settings"),
+                    QIcon(":/resources/svg/OpenBridge/settings.svg"),
+                    false);
+            } else if (currentWidget == m_aboutPage) {
+                m_topBar->setCurrentContext(
+                    tr("About"),
+                    tr("About FairWindSK"),
+                    QIcon(":/resources/images/mainwindow/fairwind_icon.png"),
+                    false);
+            } else if (m_currentApp) {
+                m_topBar->setCurrentApp(m_currentApp);
+            } else {
+                m_topBar->setCurrentContext(
+                    tr("Apps"),
+                    tr("Application launcher"),
+                    QIcon(":/resources/images/icons/apps_icon.png"),
+                    false);
+            }
         }
     }
 
@@ -306,6 +339,10 @@ namespace fairwindsk::ui {
      * Method called when the user clicks on the Apps widget: show a new foreground app with the provided hash value
      */
     void MainWindow::setForegroundApp(const QString& hash) {
+        if (!closeSettingsPage()) {
+            return;
+        }
+        closeAboutPage();
 
         // Get the FairWind singleton
         const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
@@ -483,6 +520,10 @@ namespace fairwindsk::ui {
         if (isOverlayOpen()) {
             return;
         }
+        if (!closeSettingsPage(m_launcher)) {
+            return;
+        }
+        closeAboutPage(m_launcher);
         showLauncher();
     }
 
@@ -491,6 +532,11 @@ namespace fairwindsk::ui {
  * Method called when the user clicks the Settings button on the BottomBar object
  */
     void MainWindow::onMyData() {
+        if (!closeSettingsPage(m_myDataPage ? m_myDataPage : ui->stackedWidget_Center->currentWidget())) {
+            return;
+        }
+        closeAboutPage(m_myDataPage ? m_myDataPage : ui->stackedWidget_Center->currentWidget());
+
         if (!m_myDataPage) {
             m_myDataPage = new mydata::MyData(this, ui->stackedWidget_Center->currentWidget());
             ui->stackedWidget_Center->addWidget(m_myDataPage);
@@ -498,13 +544,7 @@ namespace fairwindsk::ui {
         }
 
         ui->stackedWidget_Center->setCurrentWidget(m_myDataPage);
-        if (m_topBar) {
-            m_topBar->setCurrentContext(
-                tr("MyData"),
-                tr("Signal K resources and files"),
-                QIcon(":/resources/svg/OpenBridge/database.svg"),
-                false);
-        }
+        syncTopBarToCurrentPage();
     }
 
 
@@ -516,23 +556,23 @@ namespace fairwindsk::ui {
         if (isOverlayOpen()) {
             return;
         }
-        ui->widget_Bottom->setVisible(false);
-        const auto settingsPage = new settings::Settings(this, ui->stackedWidget_Center->currentWidget());
-        showOverlay(settingsPage);
-
-        connect(settingsPage, &settings::Settings::accepted, this, &MainWindow::onSettingsAccepted);
-        connect(settingsPage, &settings::Settings::rejected, this, &MainWindow::onSettingsRejected);
-
-        if (m_topBar) {
-            m_topBar->setCurrentContext(
-                tr("Settings"),
-                tr("Application settings"),
-                QIcon(":/resources/svg/OpenBridge/settings.svg"),
-                false);
+        if (m_settingsPage && ui->stackedWidget_Center->currentWidget() == m_settingsPage) {
+            closeSettingsPage(m_settingsPage->getCurrentWidget());
+            return;
         }
 
-        // Set the window size
-        //setSize();
+        closeAboutPage(ui->stackedWidget_Center->currentWidget());
+
+        const auto fallbackWidget = ui->stackedWidget_Center->currentWidget();
+        if (!m_settingsPage) {
+            m_settingsPage = new settings::Settings(this, fallbackWidget);
+            ui->stackedWidget_Center->addWidget(m_settingsPage);
+        } else {
+            m_settingsPage->setCurrentWidget(fallbackWidget);
+        }
+
+        ui->stackedWidget_Center->setCurrentWidget(m_settingsPage);
+        syncTopBarToCurrentPage();
     }
 
     void MainWindow::setSize() {
@@ -607,11 +647,20 @@ namespace fairwindsk::ui {
         if (isOverlayOpen()) {
             return;
         }
-        // Show the settings view
-        auto aboutPage = new about::About(this, ui->stackedWidget_Center->currentWidget());
-        showOverlay(aboutPage);
+        if (!closeSettingsPage(ui->stackedWidget_Center->currentWidget())) {
+            return;
+        }
 
-        connect(aboutPage, &about::About::accepted, this, &MainWindow::onAboutAccepted);
+        if (!m_aboutPage) {
+            m_aboutPage = new about::About(this, ui->stackedWidget_Center->currentWidget());
+            ui->stackedWidget_Center->addWidget(m_aboutPage);
+            connect(m_aboutPage, &about::About::closed, this, &MainWindow::onAboutClosed);
+        } else {
+            m_aboutPage->setCurrentWidget(ui->stackedWidget_Center->currentWidget());
+        }
+
+        ui->stackedWidget_Center->setCurrentWidget(m_aboutPage);
+        syncTopBarToCurrentPage();
     }
 
     void MainWindow::onMyDataClosed(mydata::MyData *myDataPage) {
@@ -633,24 +682,75 @@ namespace fairwindsk::ui {
             ui->stackedWidget_Center->setCurrentWidget(fallbackWidget);
         } else {
             showLauncher();
+            return;
+        }
+        syncTopBarToCurrentPage();
+    }
+
+    void MainWindow::closeAboutPage(QWidget *fallbackWidget) {
+        if (!m_aboutPage) {
+            return;
+        }
+
+        QWidget *targetFallback = fallbackWidget ? fallbackWidget : m_aboutPage->getCurrentWidget();
+        ui->stackedWidget_Center->removeWidget(m_aboutPage);
+        m_aboutPage->close();
+        delete m_aboutPage;
+        m_aboutPage = nullptr;
+
+        if (targetFallback && ui->stackedWidget_Center->indexOf(targetFallback) >= 0) {
+            ui->stackedWidget_Center->setCurrentWidget(targetFallback);
+            syncTopBarToCurrentPage();
+        } else {
+            showLauncher();
         }
     }
 
-    void MainWindow::onAboutAccepted(about::About *aboutPage) {
-        closeOverlay(aboutPage, aboutPage ? aboutPage->getCurrentWidget() : nullptr);
+    void MainWindow::onAboutClosed(about::About *aboutPage) {
+        if (aboutPage != m_aboutPage) {
+            return;
+        }
+        closeAboutPage(aboutPage->getCurrentWidget());
     }
 
-    void MainWindow::onSettingsRejected(settings::Settings *settingsPage) {
-        ui->widget_Bottom->setVisible(true);
-        closeOverlay(settingsPage, settingsPage ? settingsPage->getCurrentWidget() : nullptr);
-    }
+    bool MainWindow::closeSettingsPage(QWidget *fallbackWidget) {
+        if (!m_settingsPage) {
+            return true;
+        }
 
-    void MainWindow::onSettingsAccepted(settings::Settings *settingsPage) const
-    {
-        const_cast<MainWindow *>(this)->ui->widget_Bottom->setVisible(true);
-        const_cast<MainWindow *>(this)->closeOverlay(settingsPage, settingsPage ? settingsPage->getCurrentWidget() : nullptr);
+        QWidget *targetFallback = fallbackWidget ? fallbackWidget : m_settingsPage->getCurrentWidget();
+        if (m_settingsPage->hasPendingChanges()) {
+            const auto answer = drawer::question(
+                this,
+                tr("Settings"),
+                tr("Make the pending settings changes permanent?"),
+                QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel,
+                QMessageBox::Save);
+            if (answer == QMessageBox::Cancel) {
+                return false;
+            }
+            if (answer == QMessageBox::Save) {
+                m_settingsPage->saveChanges();
+            } else {
+                m_settingsPage->discardChanges();
+            }
+        } else {
+            m_settingsPage->discardChanges();
+        }
 
-	    QApplication::exit(1);
+        ui->stackedWidget_Center->removeWidget(m_settingsPage);
+        m_settingsPage->close();
+        delete m_settingsPage;
+        m_settingsPage = nullptr;
+
+        if (targetFallback && ui->stackedWidget_Center->indexOf(targetFallback) >= 0) {
+            ui->stackedWidget_Center->setCurrentWidget(targetFallback);
+            syncTopBarToCurrentPage();
+        } else {
+            showLauncher();
+        }
+
+        return true;
     }
 
     topbar::TopBar *MainWindow::getTopBar() {
@@ -674,6 +774,11 @@ namespace fairwindsk::ui {
                     close();
                 }
             });
+            return;
+        }
+
+        if (!closeSettingsPage(m_launcher)) {
+            event->ignore();
             return;
         }
 
