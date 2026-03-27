@@ -62,8 +62,6 @@ namespace fairwindsk::ui::settings {
                 // Create an application object
                 auto appItem = new AppItem(jsonApp);
 
-                qDebug() << "App: " << appItem->getName() << " active: " << appItem->getActive() << " order: " << appItem->getOrder();
-
                 orderedApps.append(QPair<AppItem *, QString>(appItem, appItem->getName()));
             }
 
@@ -169,8 +167,6 @@ namespace fairwindsk::ui::settings {
 
             delete appItem;
 
-            qDebug() << "Updated (from edits): " << QString::fromStdString(m_settings->getConfiguration()->getRoot()["apps"].at(idx).dump(2));
-
         }
 
         // Reset the apps edit changed flag
@@ -262,7 +258,9 @@ namespace fairwindsk::ui::settings {
                 auto icon = appItem->getIcon();
 
                 // Scale the icon
-                icon = icon.scaled(128, 128);
+                if (!icon.isNull()) {
+                    icon = icon.scaled(128, 128, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                }
 
                 ui->label_Apps_Icon->setPixmap(icon);
 
@@ -324,8 +322,6 @@ namespace fairwindsk::ui::settings {
         auto name = QFileDialog::getOpenFileName(this,tr("Select executable"));
         if (!name.isEmpty()) {
 
-            qDebug() << name;
-
             // Check if the application name is a Mac application
             if (name.endsWith(".app")) {
 
@@ -384,8 +380,6 @@ namespace fairwindsk::ui::settings {
         if (idx != -1) {
             // Update the configuration
             m_settings->getConfiguration()->getRoot()["apps"].at(idx)["fairwind"]["active"] = active;
-
-            qDebug() << "Updated (active): " << QString::fromStdString(m_settings->getConfiguration()->getRoot()["apps"].at(idx).dump(2));
 
         }
     }
@@ -513,7 +507,6 @@ namespace fairwindsk::ui::settings {
             }
 
             m_settings->getConfiguration()->getRoot()["apps"].at(idx)["fairwind"]["order"] = row + 1;
-            qDebug() << "Updated (order): " << QString::fromStdString(m_settings->getConfiguration()->getRoot()["apps"].at(idx).dump(2));
         }
     }
 

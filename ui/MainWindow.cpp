@@ -120,10 +120,10 @@ namespace fairwindsk::ui {
             onSettings();
         };
 
-        QTimer::singleShot(0, this, &MainWindow::prewarmPersistentPages);
-
         // Set the window size
         setSize();
+
+        QTimer::singleShot(0, this, &MainWindow::prewarmPersistentPages);
     }
 
     bool MainWindow::isOverlayOpen() const {
@@ -584,6 +584,7 @@ namespace fairwindsk::ui {
     }
 
     void MainWindow::prewarmPersistentPages() {
+        ensureAboutPage(m_launcher);
         ensureMyDataPage(m_launcher);
         ensureSettingsPage(m_launcher);
     }
@@ -664,14 +665,7 @@ namespace fairwindsk::ui {
             return;
         }
 
-        if (!m_aboutPage) {
-            m_aboutPage = new about::About(this, ui->stackedWidget_Center->currentWidget());
-            ui->stackedWidget_Center->addWidget(m_aboutPage);
-            connect(m_aboutPage, &about::About::closed, this, &MainWindow::onAboutClosed);
-        } else {
-            m_aboutPage->setCurrentWidget(ui->stackedWidget_Center->currentWidget());
-        }
-
+        ensureAboutPage(ui->stackedWidget_Center->currentWidget());
         ui->stackedWidget_Center->setCurrentWidget(m_aboutPage);
         syncTopBarToCurrentPage();
     }
@@ -705,11 +699,12 @@ namespace fairwindsk::ui {
             return;
         }
 
+        if (ui->stackedWidget_Center->currentWidget() != m_aboutPage) {
+            return;
+        }
+
         QWidget *targetFallback = fallbackWidget ? fallbackWidget : m_aboutPage->getCurrentWidget();
-        ui->stackedWidget_Center->removeWidget(m_aboutPage);
-        m_aboutPage->close();
-        delete m_aboutPage;
-        m_aboutPage = nullptr;
+        m_aboutPage->setCurrentWidget(targetFallback);
 
         if (targetFallback && ui->stackedWidget_Center->indexOf(targetFallback) >= 0) {
             ui->stackedWidget_Center->setCurrentWidget(targetFallback);
@@ -726,8 +721,22 @@ namespace fairwindsk::ui {
         closeAboutPage(aboutPage->getCurrentWidget());
     }
 
+    void MainWindow::ensureAboutPage(QWidget *fallbackWidget) {
+        if (!m_aboutPage) {
+            m_aboutPage = new about::About(this, fallbackWidget ? fallbackWidget : m_launcher);
+            ui->stackedWidget_Center->addWidget(m_aboutPage);
+            connect(m_aboutPage, &about::About::closed, this, &MainWindow::onAboutClosed);
+        } else {
+            m_aboutPage->setCurrentWidget(fallbackWidget ? fallbackWidget : m_launcher);
+        }
+    }
+
     bool MainWindow::closeSettingsPage(QWidget *fallbackWidget) {
         if (!m_settingsPage) {
+            return true;
+        }
+
+        if (ui->stackedWidget_Center->currentWidget() != m_settingsPage) {
             return true;
         }
 
