@@ -276,7 +276,11 @@ namespace fairwindsk::ui {
             ui->stackedWidget_Center->setCurrentWidget(m_launcher);
         }
         if (m_topBar) {
-            m_topBar->setCurrentApp(nullptr);
+            m_topBar->setCurrentContext(
+                tr("Apps"),
+                tr("Application launcher"),
+                QIcon(":/resources/images/icons/apps_icon.png"),
+                false);
         }
     }
 
@@ -518,6 +522,14 @@ namespace fairwindsk::ui {
 
         connect(settingsPage, &settings::Settings::accepted, this, &MainWindow::onSettingsAccepted);
         connect(settingsPage, &settings::Settings::rejected, this, &MainWindow::onSettingsRejected);
+
+        if (m_topBar) {
+            m_topBar->setCurrentContext(
+                tr("Settings"),
+                tr("Application settings"),
+                QIcon(":/resources/svg/OpenBridge/settings.svg"),
+                false);
+        }
 
         // Set the window size
         //setSize();

@@ -54,6 +54,10 @@ namespace fairwindsk::ui::settings {
         void populatePresetCombo();
         QString selectedPresetName() const;
         QString presetUnitForCategory(const QString &category) const;
+        int comboIndexForCategoryUnit(QComboBox *comboBox,
+                                      const fairwindsk::Units::UnitPreferenceItem &item,
+                                      const QString &targetUnit,
+                                      const QString &symbol) const;
         QString configuredPresetName() const;
         void setConfiguredPresetName(const QString &presetName);
         bool hasLocalOverrides() const;

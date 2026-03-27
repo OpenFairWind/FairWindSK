@@ -234,6 +234,39 @@ namespace fairwindsk::ui::settings {
         return {};
     }
 
+    int Units::comboIndexForCategoryUnit(QComboBox *comboBox,
+                                         const fairwindsk::Units::UnitPreferenceItem &item,
+                                         const QString &targetUnit,
+                                         const QString &symbol) const {
+        if (!comboBox) {
+            return -1;
+        }
+
+        if (!targetUnit.isEmpty()) {
+            const int exactIndex = comboBox->findData(targetUnit);
+            if (exactIndex >= 0) {
+                return exactIndex;
+            }
+        }
+
+        for (int i = 0; i < item.options.size(); ++i) {
+            const auto &option = item.options.at(i);
+            if (!targetUnit.isEmpty() &&
+                (option.symbol.compare(targetUnit, Qt::CaseInsensitive) == 0 ||
+                 option.label.startsWith(targetUnit + QStringLiteral(" "), Qt::CaseInsensitive) ||
+                 option.label == targetUnit)) {
+                return i;
+            }
+            if (!symbol.isEmpty() &&
+                (option.symbol.compare(symbol, Qt::CaseInsensitive) == 0 ||
+                 option.label.contains(QStringLiteral("(%1)").arg(symbol), Qt::CaseInsensitive))) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
     QString Units::currentEffectiveUnitForCategory(const QString &category) const {
         const auto override = localOverrideForCategory(category);
         if (!override.isEmpty()) {
@@ -514,11 +547,20 @@ namespace fairwindsk::ui::settings {
                 rowWidgets.comboBoxUnit->addItem(option.label, option.key);
             }
 
-            const QString presetTargetUnit = presetUnitForCategory(item.category);
+            const auto presetItem = m_presets.contains(selectedPresetName()) &&
+                                    m_presets.value(selectedPresetName()).categories.contains(item.category)
+                ? m_presets.value(selectedPresetName()).categories.value(item.category)
+                : fairwindsk::Units::UnitPreferenceItem{};
+            const QString presetTargetUnit = presetItem.targetUnit.isEmpty()
+                ? presetUnitForCategory(item.category)
+                : presetItem.targetUnit;
             const QString effectiveTargetUnit = currentEffectiveUnitForCategory(item.category).isEmpty()
                 ? presetTargetUnit
                 : currentEffectiveUnitForCategory(item.category);
-            const int comboIndex = rowWidgets.comboBoxUnit->findData(effectiveTargetUnit);
+            int comboIndex = comboIndexForCategoryUnit(rowWidgets.comboBoxUnit, item, effectiveTargetUnit, presetItem.symbol);
+            if (comboIndex < 0) {
+                comboIndex = comboIndexForCategoryUnit(rowWidgets.comboBoxUnit, item, presetTargetUnit, presetItem.symbol);
+            }
             rowWidgets.comboBoxUnit->setCurrentIndex(comboIndex >= 0 ? comboIndex : 0);
 
             QString serverUnitText = item.symbol.isEmpty() ? item.targetUnit : item.symbol;
