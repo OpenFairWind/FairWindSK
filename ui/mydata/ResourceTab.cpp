@@ -19,6 +19,7 @@
 #include <QPlainTextEdit>
 #include <QSplitter>
 #include <QStackedWidget>
+#include <QTabWidget>
 #include <QTableWidget>
 #include <QTableWidgetItem>
 #include <QToolButton>
@@ -178,7 +179,6 @@ namespace fairwindsk::ui::mydata {
 
         m_titleLabel->setStyleSheet("font-size: 20px; font-weight: bold;");
         auto *formLayout = new QFormLayout(ui->widgetFormHost);
-        ui->verticalLayoutPreviewHost->addWidget(m_previewWidget);
         ui->splitterDetails->setStretchFactor(0, 2);
         ui->splitterDetails->setStretchFactor(1, 1);
 
@@ -221,6 +221,24 @@ namespace fairwindsk::ui::mydata {
         m_geometryEdit->setStyleSheet(kPlainTextStyle);
         m_chartBoundsEdit->setStyleSheet(kPlainTextStyle);
 
+        if (m_kind == ResourceKind::Route) {
+            m_detailTabs = new QTabWidget(ui->widgetPreviewHost);
+            m_detailTabs->setDocumentMode(true);
+            m_detailTabs->addTab(m_previewWidget, tr("Preview"));
+            m_propertiesTreeTab = new QWidget(m_detailTabs);
+            m_propertiesJsonTab = new QWidget(m_detailTabs);
+            m_detailTabs->addTab(m_propertiesTreeTab, tr("Properties Tree"));
+            m_detailTabs->addTab(m_propertiesJsonTab, tr("Properties JSON"));
+            ui->verticalLayoutPreviewHost->addWidget(m_detailTabs);
+            m_propertiesEditor->setLabels(tr("Properties Tree"), tr("Properties JSON"));
+            m_propertiesEditor->setTabBarVisible(false);
+            connect(m_detailTabs, &QTabWidget::currentChanged, this, [this](int) {
+                syncDetailTabs();
+            });
+        } else {
+            ui->verticalLayoutPreviewHost->addWidget(m_previewWidget);
+        }
+
         auto *coordinateRowLayout = new QHBoxLayout(m_coordinateRowWidget);
         coordinateRowLayout->setContentsMargins(0, 0, 0, 0);
         coordinateRowLayout->setSpacing(6);
@@ -239,7 +257,9 @@ namespace fairwindsk::ui::mydata {
             }
         });
 
-        formLayout->addRow(tr("Id"), m_idValueLabel);
+        if (m_kind != ResourceKind::Route) {
+            formLayout->addRow(tr("Id"), m_idValueLabel);
+        }
         formLayout->addRow(m_kind == ResourceKind::Note ? tr("Title") : tr("Name"), m_nameEdit);
         formLayout->addRow(tr("Description"), m_descriptionEdit);
 
@@ -247,7 +267,6 @@ namespace fairwindsk::ui::mydata {
             case ResourceKind::Route:
                 formLayout->addRow(tr("Type"), m_typeEdit);
                 formLayout->addRow(tr("Coordinates"), m_coordinatesEdit);
-                formLayout->addRow(tr("Feature properties"), m_propertiesEditor);
                 break;
             case ResourceKind::Region:
                 formLayout->addRow(tr("Geometry (JSON)"), m_geometryEdit);
@@ -279,7 +298,9 @@ namespace fairwindsk::ui::mydata {
                 break;
         }
 
-        formLayout->addRow(tr("Timestamp"), m_timestampValueLabel);
+        if (m_kind != ResourceKind::Route) {
+            formLayout->addRow(tr("Timestamp"), m_timestampValueLabel);
+        }
 
         showListPage();
 
@@ -415,6 +436,32 @@ namespace fairwindsk::ui::mydata {
         m_stackedWidget->setCurrentWidget(m_listPage);
         m_isEditing = false;
         m_isCreating = false;
+    }
+
+    void ResourceTab::syncDetailTabs() {
+        if (!m_detailTabs || !m_propertiesTreeTab || !m_propertiesJsonTab) {
+            return;
+        }
+
+        if (!m_propertiesTreeTab->layout()) {
+            auto *layout = new QVBoxLayout(m_propertiesTreeTab);
+            layout->setContentsMargins(0, 0, 0, 0);
+        }
+        if (!m_propertiesJsonTab->layout()) {
+            auto *layout = new QVBoxLayout(m_propertiesJsonTab);
+            layout->setContentsMargins(0, 0, 0, 0);
+        }
+
+        const int currentIndex = m_detailTabs->currentIndex();
+        if (currentIndex == 1) {
+            m_propertiesEditor->setCurrentView(0);
+            m_propertiesEditor->setParent(m_propertiesTreeTab);
+            static_cast<QVBoxLayout *>(m_propertiesTreeTab->layout())->addWidget(m_propertiesEditor);
+        } else if (currentIndex == 2) {
+            m_propertiesEditor->setCurrentView(1);
+            m_propertiesEditor->setParent(m_propertiesJsonTab);
+            static_cast<QVBoxLayout *>(m_propertiesJsonTab->layout())->addWidget(m_propertiesEditor);
+        }
     }
 
     void ResourceTab::showDetailsPage(const QString &id, const QJsonObject &resource, const bool editMode) {
@@ -608,6 +655,7 @@ namespace fairwindsk::ui::mydata {
 
         m_titleLabel->setText(detailsTitleForCurrentState());
         updatePreview(resource);
+        syncDetailTabs();
     }
 
     QJsonObject ResourceTab::parseJsonObject(const QPlainTextEdit *edit) const {
@@ -840,6 +888,10 @@ namespace fairwindsk::ui::mydata {
 
         m_titleLabel->setText(detailsTitleForCurrentState());
         updatePreview(resourceFromEditor());
+        if (m_detailTabs) {
+            m_detailTabs->setCurrentIndex(0);
+            syncDetailTabs();
+        }
     }
 
     void ResourceTab::updateCoordinateDisplay() {

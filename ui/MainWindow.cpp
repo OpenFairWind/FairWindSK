@@ -719,6 +719,7 @@ namespace fairwindsk::ui {
         }
 
         QWidget *targetFallback = fallbackWidget ? fallbackWidget : m_settingsPage->getCurrentWidget();
+        bool exitAfterSave = false;
         if (m_settingsPage->hasPendingChanges()) {
             const auto answer = drawer::question(
                 this,
@@ -731,6 +732,7 @@ namespace fairwindsk::ui {
             }
             if (answer == QMessageBox::Save) {
                 m_settingsPage->saveChanges();
+                exitAfterSave = true;
             } else {
                 m_settingsPage->discardChanges();
             }
@@ -748,6 +750,10 @@ namespace fairwindsk::ui {
             syncTopBarToCurrentPage();
         } else {
             showLauncher();
+        }
+
+        if (exitAfterSave) {
+            QApplication::exit(1);
         }
 
         return true;

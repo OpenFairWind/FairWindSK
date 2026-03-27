@@ -19,6 +19,7 @@ class QLineEdit;
 class QPlainTextEdit;
 class QStackedWidget;
 class QTableWidget;
+class QTabWidget;
 class QToolButton;
 namespace Ui { class ResourceTab; }
 
@@ -72,6 +73,7 @@ namespace fairwindsk::ui::mydata {
         void clearEditor();
         void updatePreview(const QJsonObject &resource);
         void updateCoordinateDisplay();
+        void syncDetailTabs();
         QString resourceDisplayName(const QJsonObject &resource) const;
         QString resourceDescription(const QJsonObject &resource) const;
         QString detailsTitleForCurrentState() const;
@@ -80,8 +82,11 @@ namespace fairwindsk::ui::mydata {
         ResourceKind m_kind;
         ResourceModel *m_model;
         QStackedWidget *m_stackedWidget;
+        QTabWidget *m_detailTabs = nullptr;
         QWidget *m_listPage;
         QWidget *m_detailsPage;
+        QWidget *m_propertiesTreeTab = nullptr;
+        QWidget *m_propertiesJsonTab = nullptr;
         QLineEdit *m_searchEdit;
         QTableWidget *m_tableWidget;
         QToolButton *m_addButton;
