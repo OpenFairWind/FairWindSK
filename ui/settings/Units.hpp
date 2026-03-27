@@ -53,6 +53,7 @@ namespace fairwindsk::ui::settings {
         void applyPresetSelection(const QString &presetName);
         void populatePresetCombo();
         QString selectedPresetName() const;
+        QString presetUnitForCategory(const QString &category) const;
         QString configuredPresetName() const;
         void setConfiguredPresetName(const QString &presetName);
         bool hasLocalOverrides() const;

@@ -219,12 +219,7 @@ namespace fairwindsk::ui::settings {
         return {};
     }
 
-    QString Units::currentEffectiveUnitForCategory(const QString &category) const {
-        const auto override = localOverrideForCategory(category);
-        if (!override.isEmpty()) {
-            return override;
-        }
-
+    QString Units::presetUnitForCategory(const QString &category) const {
         const auto presetName = selectedPresetName();
         if (presetName != kLocalPresetName && m_presets.contains(presetName) &&
             m_presets.value(presetName).categories.contains(category)) {
@@ -237,6 +232,15 @@ namespace fairwindsk::ui::settings {
         }
 
         return {};
+    }
+
+    QString Units::currentEffectiveUnitForCategory(const QString &category) const {
+        const auto override = localOverrideForCategory(category);
+        if (!override.isEmpty()) {
+            return override;
+        }
+
+        return presetUnitForCategory(category);
     }
 
     Units::PresetInfo Units::parsePresetInfo(const QString &name, const QJsonObject &presetObject, const bool custom) {
@@ -510,7 +514,10 @@ namespace fairwindsk::ui::settings {
                 rowWidgets.comboBoxUnit->addItem(option.label, option.key);
             }
 
-            const QString effectiveTargetUnit = currentEffectiveUnitForCategory(item.category);
+            const QString presetTargetUnit = presetUnitForCategory(item.category);
+            const QString effectiveTargetUnit = currentEffectiveUnitForCategory(item.category).isEmpty()
+                ? presetTargetUnit
+                : currentEffectiveUnitForCategory(item.category);
             const int comboIndex = rowWidgets.comboBoxUnit->findData(effectiveTargetUnit);
             rowWidgets.comboBoxUnit->setCurrentIndex(comboIndex >= 0 ? comboIndex : 0);
 
@@ -522,7 +529,7 @@ namespace fairwindsk::ui::settings {
             rowWidgets.labelServerUnit->setText(serverUnitText);
 
             connect(rowWidgets.comboBoxUnit, &QComboBox::currentIndexChanged, this,
-                    [this, category = item.category, serverTargetUnit = item.targetUnit, comboBox = rowWidgets.comboBoxUnit](int) {
+                    [this, category = item.category, serverTargetUnit = presetTargetUnit.isEmpty() ? item.targetUnit : presetTargetUnit, comboBox = rowWidgets.comboBoxUnit](int) {
                         if (m_isUpdatingUi) {
                             return;
                         }
