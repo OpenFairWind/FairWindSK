@@ -176,11 +176,18 @@ namespace fairwindsk::ui::settings {
         setDragEnabled(true);
         setAcceptDrops(false);
         setDropIndicatorShown(false);
-        setUniformItemSizes(false);
-        setIconSize(QSize(48, 48));
-        setSpacing(4);
+        setUniformItemSizes(true);
+        setResizeMode(QListView::Adjust);
+        setMovement(QListView::Static);
+        setWrapping(true);
+        setWordWrap(true);
+        setViewMode(QListView::IconMode);
+        setFlow(QListView::LeftToRight);
+        setGridSize(QSize(110, 110));
+        setIconSize(QSize(64, 64));
+        setSpacing(8);
         setAlternatingRowColors(false);
-        setViewMode(QListView::ListMode);
+        setTextElideMode(Qt::ElideRight);
     }
 
     void AvailableAppsListWidget::startDrag(Qt::DropActions supportedActions) {
@@ -518,10 +525,10 @@ namespace fairwindsk::ui::settings {
         m_appsEditMode = editMode;
         ui->pushButton_Apps_EditSave->setText(m_appsEditMode ? tr("Save") : tr("Edit"));
         ui->lineEdit_Apps_Name->setReadOnly(!m_appsEditMode);
-        ui->lineEdit_Apps_Description->setReadOnly(!m_appsEditMode);
-        ui->lineEdit_Apps_DisplayName->setReadOnly(!m_appsEditMode);
+        ui->lineEdit_Apps_Description->setReadOnly(true);
+        ui->lineEdit_Apps_DisplayName->setReadOnly(true);
         ui->lineEdit_Apps_AppIcon->setReadOnly(!m_appsEditMode);
-        ui->pushButton_Apps_Name_Browse->setEnabled(m_appsEditMode);
+        ui->pushButton_Apps_Name_Browse->setEnabled(false);
         ui->pushButton_Apps_AppIcon_Browse->setEnabled(m_appsEditMode);
         m_appsEditChanged = false;
         refreshDetailActionButtons();
@@ -548,8 +555,6 @@ namespace fairwindsk::ui::settings {
         }
 
         appJsonObject["name"] = newName.toStdString();
-        appJsonObject["description"] = ui->lineEdit_Apps_Description->text().toStdString();
-        appJsonObject["signalk"]["displayName"] = ui->lineEdit_Apps_DisplayName->text().toStdString();
         appJsonObject["signalk"]["appIcon"] = ui->lineEdit_Apps_AppIcon->text().toStdString();
         m_settings->getConfiguration()->getRoot()["apps"].at(idx) = appJsonObject;
 
@@ -1201,33 +1206,7 @@ namespace fairwindsk::ui::settings {
         m_appsEditChanged = true;
     }
 
-    void Apps::onAppsNameBrowse() {
-        QString name = QFileDialog::getOpenFileName(this, tr("Select executable"));
-        if (name.isEmpty()) {
-            return;
-        }
-
-        if (name.endsWith(QStringLiteral(".app"))) {
-            const QFileInfo appPath(name);
-            if (appPath.isDir()) {
-                const QFileInfo fileInfo(name + QStringLiteral("/Contents/Info.plist"));
-                if (fileInfo.isFile()) {
-                    QFile file(name + QStringLiteral("/Contents/Info.plist"));
-                    if (file.open(QIODevice::ReadOnly)) {
-                        auto infoPlist = PList(&file);
-                        const auto map = infoPlist.toMap();
-                        if (map.contains(QStringLiteral("CFBundleExecutable"))) {
-                            name += QStringLiteral("/Contents/MacOS/") + map[QStringLiteral("CFBundleExecutable")].toString();
-                        }
-                        file.close();
-                    }
-                }
-            }
-        }
-
-        ui->lineEdit_Apps_Name->setText(QStringLiteral("file://") + name);
-        m_appsEditChanged = true;
-    }
+    void Apps::onAppsNameBrowse() {}
 
     void Apps::onAddAppClicked() {
         AppItem appItem;
