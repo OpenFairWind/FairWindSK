@@ -7,6 +7,7 @@
 #include <QGeoCoordinate>
 #include <QToolButton>
 #include <QString>
+#include <QFontMetrics>
 #include <nlohmann/json.hpp>
 
 #include "TopBar.hpp"
@@ -28,19 +29,43 @@ namespace fairwindsk::ui::topbar {
     }
 
     void TopBar::refreshMetricLabelWidths() const {
-        const double factor = 1.15;
-        ui->label_POS->setFixedWidth(ui->label_POS->sizeHint().width() * factor);
-        ui->label_COG->setFixedWidth(ui->label_COG->sizeHint().width() * factor);
-        ui->label_SOG->setFixedWidth(ui->label_SOG->sizeHint().width() * factor);
-        ui->label_HDG->setFixedWidth(ui->label_HDG->sizeHint().width() * factor);
-        ui->label_STW->setFixedWidth(ui->label_STW->sizeHint().width() * factor);
-        ui->label_DPT->setFixedWidth(ui->label_DPT->sizeHint().width() * factor);
-        ui->label_BTW->setFixedWidth(ui->label_BTW->sizeHint().width() * factor);
-        ui->label_DTG->setFixedWidth(ui->label_DTG->sizeHint().width() * factor);
-        ui->label_TTG->setFixedWidth(ui->label_TTG->sizeHint().width() * factor);
-        ui->label_ETA->setFixedWidth(ui->label_ETA->sizeHint().width() * factor);
-        ui->label_XTE->setFixedWidth(ui->label_XTE->sizeHint().width() * factor);
-        ui->label_VMG->setFixedWidth(ui->label_VMG->sizeHint().width() * factor);
+        const QFontMetrics valueMetrics(ui->label_COG->font());
+        const QFontMetrics unitMetrics(ui->label_unitCOG->font());
+        const QFontMetrics appMetrics(ui->label_ApplicationName->font());
+
+        const int positionWidth = valueMetrics.horizontalAdvance(QStringLiteral("59°59.999' N 179°59.999' E"));
+        const int angleWidth = valueMetrics.horizontalAdvance(QStringLiteral("360.0"));
+        const int distanceWidth = valueMetrics.horizontalAdvance(QStringLiteral("9999.9"));
+        const int timeWidth = valueMetrics.horizontalAdvance(QStringLiteral("23:59"));
+        const int etaWidth = valueMetrics.horizontalAdvance(QStringLiteral("31-12 23:59"));
+        const int waypointWidth = valueMetrics.horizontalAdvance(QStringLiteral("WAYPOINT NAME"));
+        const int unitWidth = unitMetrics.horizontalAdvance(QStringLiteral("nmi"));
+        const int appWidth = appMetrics.horizontalAdvance(QStringLiteral("Application launcher"));
+
+        ui->label_POS->setFixedWidth(positionWidth);
+        ui->label_COG->setFixedWidth(angleWidth);
+        ui->label_SOG->setFixedWidth(distanceWidth);
+        ui->label_HDG->setFixedWidth(angleWidth);
+        ui->label_STW->setFixedWidth(distanceWidth);
+        ui->label_DPT->setFixedWidth(distanceWidth);
+        ui->label_WPT->setFixedWidth(waypointWidth);
+        ui->label_BTW->setFixedWidth(angleWidth);
+        ui->label_DTG->setFixedWidth(distanceWidth);
+        ui->label_TTG->setFixedWidth(timeWidth);
+        ui->label_ETA->setFixedWidth(etaWidth);
+        ui->label_XTE->setFixedWidth(distanceWidth);
+        ui->label_VMG->setFixedWidth(distanceWidth);
+
+        ui->label_unitCOG->setFixedWidth(unitWidth);
+        ui->label_unitSOG->setFixedWidth(unitWidth);
+        ui->label_unitHDG->setFixedWidth(unitWidth);
+        ui->label_unitSTW->setFixedWidth(unitWidth);
+        ui->label_unitDPT->setFixedWidth(unitWidth);
+        ui->label_unitBTW->setFixedWidth(unitWidth);
+        ui->label_unitDTG->setFixedWidth(unitWidth);
+        ui->label_unitXTE->setFixedWidth(unitWidth);
+        ui->label_unitVMG->setFixedWidth(unitWidth);
+        ui->label_ApplicationName->setMinimumWidth(appWidth);
     }
 
 /*

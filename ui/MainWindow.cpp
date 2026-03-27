@@ -667,11 +667,15 @@ namespace fairwindsk::ui {
         if (isOverlayOpen()) {
             return;
         }
-        if (!closeSettingsPage(ui->stackedWidget_Center->currentWidget())) {
+        QWidget *fallbackWidget = ui->stackedWidget_Center->currentWidget();
+        if (fallbackWidget == m_settingsPage && m_settingsPage) {
+            fallbackWidget = m_settingsPage->getCurrentWidget();
+        }
+        if (!closeSettingsPage(fallbackWidget)) {
             return;
         }
 
-        ensureAboutPage(ui->stackedWidget_Center->currentWidget());
+        ensureAboutPage(fallbackWidget ? fallbackWidget : ui->stackedWidget_Center->currentWidget());
         ui->stackedWidget_Center->setCurrentWidget(m_aboutPage);
         syncTopBarToCurrentPage();
     }
