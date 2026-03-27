@@ -818,14 +818,23 @@ namespace fairwindsk::ui {
             return;
         }
 
-        QWidget *fallbackWidget = m_launcher;
-        if (ui->stackedWidget_Center->currentWidget() == m_settingsPage && m_settingsPage) {
-            fallbackWidget = m_settingsPage->getCurrentWidget();
-        }
+        if (ui->stackedWidget_Center->currentWidget() == m_settingsPage && m_settingsPage && m_settingsPage->hasPendingChanges()) {
+            const auto answer = drawer::question(
+                this,
+                tr("Settings"),
+                tr("Make the pending settings changes permanent?"),
+                QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel,
+                QMessageBox::Save);
+            if (answer == QMessageBox::Cancel) {
+                event->ignore();
+                return;
+            }
 
-        if (!closeSettingsPage(fallbackWidget, false, false)) {
-            event->ignore();
-            return;
+            if (answer == QMessageBox::Save) {
+                m_settingsPage->saveChanges();
+            } else {
+                m_settingsPage->discardChanges();
+            }
         }
 
         const QMessageBox::StandardButton reply = drawer::question(this, "Quit FairWindSK",
