@@ -87,10 +87,9 @@ namespace fairwindsk::ui::settings {
         void onAddAppClicked();
         void onRemoveAppClicked();
         void onAddPageClicked();
-        void onAddFolderClicked();
         void onRemoveNodeClicked();
-        void onMoveNodeUpClicked();
-        void onMoveNodeDownClicked();
+        void onMoveNodeLeftClicked();
+        void onMoveNodeRightClicked();
         void onPageTreeSelectionChanged();
         void onPageTreeItemChanged(QTreeWidgetItem *item, int column);
         void onPageGridItemsChanged(const QStringList &items);

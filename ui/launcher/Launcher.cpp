@@ -90,10 +90,10 @@ namespace fairwindsk::ui::launcher {
                         pageSlots.append(QString());
                         ++itemIndex;
                     }
-                } else if (type == QLatin1String(kNodeTypeFolder)) {
-                    if (node.contains(kNodeChildrenKey) && node[kNodeChildrenKey].is_array()) {
-                        collectPageSlots(node[kNodeChildrenKey], pageSlots, itemsPerPage);
-                    }
+                }
+
+                if (node.contains(kNodeChildrenKey) && node[kNodeChildrenKey].is_array()) {
+                    collectPageSlots(node[kNodeChildrenKey], pageSlots, itemsPerPage);
                 }
             }
         }

@@ -102,13 +102,6 @@
              </widget>
             </item>
             <item>
-             <widget class="QToolButton" name="toolButton_AddFolder">
-              <property name="text">
-               <string>Add Folder</string>
-              </property>
-             </widget>
-            </item>
-            <item>
              <widget class="QToolButton" name="toolButton_RemoveNode">
               <property name="text">
                <string>Delete</string>
@@ -116,16 +109,16 @@
              </widget>
             </item>
             <item>
-             <widget class="QToolButton" name="toolButton_MoveNodeUp">
+             <widget class="QToolButton" name="toolButton_MoveNodeLeft">
               <property name="text">
-               <string>Up</string>
+               <string>Left</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QToolButton" name="toolButton_MoveNodeDown">
+             <widget class="QToolButton" name="toolButton_MoveNodeRight">
               <property name="text">
-               <string>Down</string>
+               <string>Right</string>
               </property>
              </widget>
             </item>
