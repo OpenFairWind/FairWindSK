@@ -91,6 +91,7 @@ namespace fairwindsk::signalk {
         QJsonObject getUnitPreferencesActive();
         QJsonDocument getUnitPreferencesPresets();
         QJsonObject getUnitPreferencesPreset(const QString &name);
+        QJsonObject getUnitPreferencesCategories();
         QJsonObject getUnitPreferencesDefinitions();
         QJsonObject getUnitPreferencesDefaultCategories();
         QJsonObject putUnitPreferencesCustomPreset(const QString &name, const QJsonObject &payload);

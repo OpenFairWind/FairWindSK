@@ -241,43 +241,65 @@ namespace fairwindsk {
             }
         }
 
-        const auto definitionsObject = client->getUnitPreferencesDefinitions();
-        if (definitionsObject.contains("definitions") && definitionsObject["definitions"].isObject()) {
-            const auto definitions = definitionsObject["definitions"].toObject();
-            for (auto baseUnitIt = definitions.begin(); baseUnitIt != definitions.end(); ++baseUnitIt) {
-                if (!baseUnitIt.value().isObject()) {
-                    continue;
-                }
-                const auto definitionObject = baseUnitIt.value().toObject();
-                if (!definitionObject.contains("conversions") || !definitionObject["conversions"].isObject()) {
+        const auto categoriesObject = client->getUnitPreferencesCategories();
+        if (categoriesObject.contains("categoryToBaseUnit") && categoriesObject["categoryToBaseUnit"].isObject()) {
+            const auto categoryToBaseUnit = categoriesObject["categoryToBaseUnit"].toObject();
+            for (auto categoryIt = categoryToBaseUnit.begin(); categoryIt != categoryToBaseUnit.end(); ++categoryIt) {
+                if (!categoryIt.value().isString()) {
                     continue;
                 }
 
-                const auto conversions = definitionObject["conversions"].toObject();
-                QMap<QString, DisplayUnitsInfo> conversionsForBaseUnit;
-                for (auto conversionIt = conversions.begin(); conversionIt != conversions.end(); ++conversionIt) {
-                    if (!conversionIt.value().isObject()) {
-                        continue;
-                    }
-                    auto displayUnits = parseDisplayUnits(conversionIt.value().toObject());
-                    displayUnits.baseUnit = baseUnitIt.key();
-                    displayUnits.targetUnit = conversionIt.key();
-                    if (displayUnits.symbol.isEmpty()) {
-                        displayUnits.symbol = conversionIt.key();
-                    }
-                    if (displayUnits.valid) {
-                        conversionsForBaseUnit.insert(conversionIt.key(), displayUnits);
-                    }
+                auto info = m_categoryDisplayUnits.value(categoryIt.key());
+                info.category = categoryIt.key();
+                info.baseUnit = categoryIt.value().toString();
+                if (info.targetUnit.isEmpty()) {
+                    info.targetUnit = info.baseUnit;
                 }
-                if (!conversionsForBaseUnit.isEmpty()) {
-                    m_definitionsByBaseUnit.insert(baseUnitIt.key(), conversionsForBaseUnit);
+                if (info.symbol.isEmpty()) {
+                    info.symbol = info.targetUnit;
                 }
+                info.valid = !info.baseUnit.isEmpty();
+                m_categoryDisplayUnits.insert(categoryIt.key(), info);
             }
         }
 
-        const auto categoriesObject = client->getUnitPreferencesDefaultCategories();
-        if (categoriesObject.contains("categories") && categoriesObject["categories"].isObject()) {
-            const auto categories = categoriesObject["categories"].toObject();
+        const auto definitionsObject = client->getUnitPreferencesDefinitions();
+        for (auto baseUnitIt = definitionsObject.begin(); baseUnitIt != definitionsObject.end(); ++baseUnitIt) {
+            if (!baseUnitIt.value().isObject()) {
+                continue;
+            }
+            const auto definitionObject = baseUnitIt.value().toObject();
+            if (!definitionObject.contains("conversions") || !definitionObject["conversions"].isObject()) {
+                continue;
+            }
+
+            const auto conversions = definitionObject["conversions"].toObject();
+            QMap<QString, DisplayUnitsInfo> conversionsForBaseUnit;
+            for (auto conversionIt = conversions.begin(); conversionIt != conversions.end(); ++conversionIt) {
+                if (!conversionIt.value().isObject()) {
+                    continue;
+                }
+                auto displayUnits = parseDisplayUnits(conversionIt.value().toObject());
+                displayUnits.baseUnit = baseUnitIt.key();
+                displayUnits.targetUnit = conversionIt.key();
+                if (displayUnits.symbol.isEmpty()) {
+                    displayUnits.symbol = conversionIt.key();
+                }
+                if (displayUnits.longName.isEmpty()) {
+                    displayUnits.longName = conversionIt.key();
+                }
+                if (displayUnits.valid) {
+                    conversionsForBaseUnit.insert(conversionIt.key(), displayUnits);
+                }
+            }
+            if (!conversionsForBaseUnit.isEmpty()) {
+                m_definitionsByBaseUnit.insert(baseUnitIt.key(), conversionsForBaseUnit);
+            }
+        }
+
+        const auto defaultCategoriesObject = client->getUnitPreferencesDefaultCategories();
+        if (defaultCategoriesObject.contains("categories") && defaultCategoriesObject["categories"].isObject()) {
+            const auto categories = defaultCategoriesObject["categories"].toObject();
             for (auto categoryIt = categories.begin(); categoryIt != categories.end(); ++categoryIt) {
                 if (!categoryIt.value().isObject()) {
                     continue;
@@ -306,6 +328,7 @@ namespace fairwindsk {
         info.formula = jsonObject.value("formula").toString();
         info.inverseFormula = jsonObject.value("inverseFormula").toString();
         info.symbol = jsonObject.value("symbol").toString();
+        info.longName = jsonObject.value("longName").toString();
         info.displayFormat = jsonObject.value("displayFormat").toString();
         info.valid = !info.targetUnit.isEmpty() || !info.symbol.isEmpty() || !info.formula.isEmpty();
         return info;
@@ -544,8 +567,12 @@ namespace fairwindsk {
                     UnitOption option;
                     option.key = definitionIt.key();
                     option.symbol = definition.symbol.isEmpty() ? definitionIt.key() : definition.symbol;
-                    option.label = QStringLiteral("%1 (%2)")
-                            .arg(getLabel(definitionIt.key()), option.symbol);
+                    const QString optionName = !definition.longName.isEmpty()
+                        ? definition.longName
+                        : getLabel(definitionIt.key());
+                    option.label = option.symbol.isEmpty()
+                        ? optionName
+                        : QStringLiteral("%1 (%2)").arg(optionName, option.symbol);
                     item.options.append(option);
                 }
             }
@@ -554,8 +581,13 @@ namespace fairwindsk {
                 UnitOption option;
                 option.key = serverInfo.targetUnit;
                 option.symbol = serverInfo.symbol;
-                option.label = QStringLiteral("%1 (%2)")
-                        .arg(getLabel(serverInfo.targetUnit), serverInfo.symbol.isEmpty() ? serverInfo.targetUnit : serverInfo.symbol);
+                const QString optionName = !serverInfo.longName.isEmpty()
+                    ? serverInfo.longName
+                    : getLabel(serverInfo.targetUnit);
+                option.label = option.symbol.isEmpty()
+                    ? optionName
+                    : QStringLiteral("%1 (%2)")
+                        .arg(optionName, serverInfo.symbol.isEmpty() ? serverInfo.targetUnit : serverInfo.symbol);
                 item.options.append(option);
             }
 

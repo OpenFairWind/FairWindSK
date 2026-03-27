@@ -61,6 +61,7 @@ namespace fairwindsk {
             QString formula;
             QString inverseFormula;
             QString symbol;
+            QString longName;
             QString displayFormat;
             bool valid = false;
         };
