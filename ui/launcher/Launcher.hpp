@@ -52,7 +52,7 @@ namespace fairwindsk::ui::launcher {
         int m_pageCount = 0;
         int m_targetPage = 0;
         QGridLayout *m_layout = nullptr;
-        QMap<QString, QWidget *> m_tiles;
+        QList<QWidget *> m_tiles;
         QString m_layoutSignature;
     };
 } // fairwindsk::ui

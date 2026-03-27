@@ -2,296 +2,1133 @@
 // Created by Raffaele Montella on 06/05/24.
 //
 
-// You may need to build the project (run Qt uic code generator) to get "ui_Apps.h" resolved
+#include "Apps.hpp"
 
 #include <algorithm>
-#include <QMessageBox>
+
+#include <QDir>
+#include <QDrag>
 #include <QFileDialog>
-#include <QDomDocument>
-#include <QTimer>
-#include "Apps.hpp"
-#include "ui_Apps.h"
+#include <QFile>
+#include <QFormLayout>
+#include <QHeaderView>
+#include <QLabel>
+#include <QLayout>
+#include <QMessageBox>
+#include <QMimeData>
+#include <QSignalBlocker>
+#include <QVBoxLayout>
+
 #include "AppItem.hpp"
 #include "FairWindSK.hpp"
 #include "PList.hpp"
 #include "ui/DrawerDialogHost.hpp"
-
+#include "ui_Apps.h"
 
 namespace fairwindsk::ui::settings {
-    QString Apps::uniqueAppName(const QString &baseName) const {
-        QString candidate = baseName;
-        int suffix = 1;
+    namespace {
+        constexpr auto kAppMimeType = "application/x-fairwind-app-name";
+        constexpr auto kAppSourceRowMimeType = "application/x-fairwind-source-row";
+        constexpr auto kAppSourceColumnMimeType = "application/x-fairwind-source-column";
+        constexpr auto kLauncherLayoutKey = "launcherLayout";
+        constexpr auto kLauncherNodesKey = "nodes";
+        constexpr auto kLauncherNextNodeIdKey = "nextNodeId";
+        constexpr auto kNodeTypeKey = "type";
+        constexpr auto kNodeNameKey = "name";
+        constexpr auto kNodeIdKey = "id";
+        constexpr auto kNodeItemsKey = "items";
+        constexpr auto kNodeChildrenKey = "children";
+        constexpr const char *kNodeTypePage = "page";
+        constexpr const char *kNodeTypeFolder = "folder";
+        constexpr auto kTreeIdRole = Qt::UserRole;
 
-        while (m_settings->getConfiguration()->findApp(candidate) != -1) {
-            candidate = QString("%1_%2").arg(baseName).arg(suffix++);
+        QString toolButtonStyle() {
+            return QStringLiteral(
+                "QToolButton {"
+                " background: transparent;"
+                " border: 1px solid rgba(255, 255, 255, 0.24);"
+                " border-radius: 6px;"
+                " padding: 8px;"
+                " }"
+                "QToolButton:hover { background: rgba(255, 255, 255, 0.08); }"
+                "QToolButton:pressed { background: rgba(255, 255, 255, 0.14); }"
+                "QToolButton:disabled { color: rgba(255,255,255,0.35); border-color: rgba(255,255,255,0.12); }");
         }
 
-        return candidate;
-    }
-
-
-    /*
-     * Apps
-     * Class constructor
-     */
-    Apps::Apps(Settings *settings, QWidget *parent) :
-            QWidget(parent), ui(new Ui::Apps) {
-
-        // Set up the UI
-        ui->setupUi(this);
-
-        // Set the pointer to the main settings
-        m_settings = settings;
-
-        m_appsEditMode = false;
-        m_appsEditChanged = false;
-
-        QList<QPair<AppItem *, QString>> orderedApps;
-
-        // Get the configuration json data root
-        const auto jsonData = m_settings->getConfiguration()->getRoot();
-
-        // Check if the configuration has an apps element and if it is an array
-        if (jsonData.contains("apps") && jsonData["apps"].is_array()) {
-
-            // For each item of the apps array...
-            for (const auto& app: jsonData["apps"].items()) {
-
-                // Get the application data
-                const auto& jsonApp = app.value();
-
-                // Create an application object
-                auto appItem = new AppItem(jsonApp);
-
-                orderedApps.append(QPair<AppItem *, QString>(appItem, appItem->getName()));
+        void setupImageToolButton(QToolButton *button, const QString &iconPath, const QString &toolTip) {
+            if (!button) {
+                return;
             }
 
-            std::sort(orderedApps.begin(), orderedApps.end(), [](const auto &left, const auto &right) {
-                if (left.first->getOrder() != right.first->getOrder()) {
-                    return left.first->getOrder() < right.first->getOrder();
+            button->setIcon(QIcon(iconPath));
+            button->setIconSize(QSize(24, 24));
+            button->setToolButtonStyle(Qt::ToolButtonIconOnly);
+            button->setAutoRaise(false);
+            button->setToolTip(toolTip);
+            button->setText(toolTip);
+            button->setStyleSheet(toolButtonStyle());
+        }
+
+        QString nodeType(const nlohmann::json &node) {
+            if (node.contains(kNodeTypeKey) && node[kNodeTypeKey].is_string()) {
+                return QString::fromStdString(node[kNodeTypeKey].get<std::string>());
+            }
+            return {};
+        }
+
+        QString nodeName(const nlohmann::json &node) {
+            if (node.contains(kNodeNameKey) && node[kNodeNameKey].is_string()) {
+                return QString::fromStdString(node[kNodeNameKey].get<std::string>());
+            }
+            return {};
+        }
+
+        QString nodeId(const nlohmann::json &node) {
+            if (node.contains(kNodeIdKey) && node[kNodeIdKey].is_string()) {
+                return QString::fromStdString(node[kNodeIdKey].get<std::string>());
+            }
+            return {};
+        }
+
+        bool isPageNode(const nlohmann::json &node) {
+            return nodeType(node) == QLatin1String(kNodeTypePage);
+        }
+
+        bool isFolderNode(const nlohmann::json &node) {
+            return nodeType(node) == QLatin1String(kNodeTypeFolder);
+        }
+
+        void ensureJsonObject(nlohmann::json &jsonObject, const char *key) {
+            if (!jsonObject.contains(key) || !jsonObject[key].is_object()) {
+                jsonObject[key] = nlohmann::json::object();
+            }
+        }
+
+        void ensureJsonArray(nlohmann::json &jsonObject, const char *key) {
+            if (!jsonObject.contains(key) || !jsonObject[key].is_array()) {
+                jsonObject[key] = nlohmann::json::array();
+            }
+        }
+
+        QList<QString> collectActiveAppNames(const fairwindsk::Configuration &configuration) {
+            QList<QString> appNames;
+            auto &root = const_cast<fairwindsk::Configuration &>(configuration).getRoot();
+            if (!root.contains("apps") || !root["apps"].is_array()) {
+                return appNames;
+            }
+
+            QList<nlohmann::json> jsonApps;
+            for (const auto &jsonApp : root["apps"]) {
+                if (jsonApp.is_object()) {
+                    jsonApps.append(jsonApp);
                 }
-                const int displayNameCompare = QString::compare(left.first->getDisplayName(), right.first->getDisplayName(), Qt::CaseInsensitive);
-                if (displayNameCompare != 0) {
-                    return displayNameCompare < 0;
+            }
+
+            std::sort(jsonApps.begin(), jsonApps.end(), [](const auto &left, const auto &right) {
+                AppItem leftItem(left);
+                AppItem rightItem(right);
+                if (leftItem.getOrder() != rightItem.getOrder()) {
+                    return leftItem.getOrder() < rightItem.getOrder();
                 }
-                return QString::compare(left.second, right.second, Qt::CaseInsensitive) < 0;
+                return QString::compare(leftItem.getDisplayName(), rightItem.getDisplayName(), Qt::CaseInsensitive) < 0;
             });
 
-            // Iterate on the available apps' hash values
-            for (const auto& item: orderedApps) {
-                // Get the hash value
-                const auto appItem = item.first;
-                const auto name = item.second;
-
-                const auto displayName = appItem->getDisplayName();
-
-                const auto listWidgetItem = new QListWidgetItem(displayName);
-
-                listWidgetItem->setIcon(QIcon(appItem->getIcon()));
-                listWidgetItem->setToolTip(appItem->getDescription());
-                listWidgetItem->setData(Qt::UserRole, name);
-                if (appItem->getActive()) {
-                    listWidgetItem->setCheckState(Qt::Checked);
-                } else {
-                    listWidgetItem->setCheckState(Qt::Unchecked);
+            for (const auto &jsonApp : jsonApps) {
+                AppItem appItem(jsonApp);
+                if (appItem.getActive()) {
+                    appNames.append(appItem.getName());
                 }
-                ui->listWidget_Apps_List->addItem(listWidgetItem);
+            }
+
+            return appNames;
+        }
+
+        QTreeWidgetItem *firstPageItem(QTreeWidget *treeWidget) {
+            if (!treeWidget) {
+                return nullptr;
+            }
+
+            QList<QTreeWidgetItem *> pending;
+            for (int i = 0; i < treeWidget->topLevelItemCount(); ++i) {
+                pending.append(treeWidget->topLevelItem(i));
+            }
+
+            while (!pending.isEmpty()) {
+                auto *item = pending.takeFirst();
+                if (item && item->data(0, kTreeIdRole + 1).toString() == QLatin1String(kNodeTypePage)) {
+                    return item;
+                }
+                if (!item) {
+                    continue;
+                }
+                for (int i = 0; i < item->childCount(); ++i) {
+                    pending.append(item->child(i));
+                }
+            }
+
+            return nullptr;
+        }
+    }
+
+    AvailableAppsListWidget::AvailableAppsListWidget(QWidget *parent) : QListWidget(parent) {
+        setSelectionMode(QAbstractItemView::SingleSelection);
+        setDragEnabled(true);
+        setAcceptDrops(false);
+        setDropIndicatorShown(false);
+        setUniformItemSizes(false);
+        setIconSize(QSize(48, 48));
+        setSpacing(4);
+        setAlternatingRowColors(false);
+        setViewMode(QListView::ListMode);
+    }
+
+    void AvailableAppsListWidget::startDrag(Qt::DropActions supportedActions) {
+        auto *item = currentItem();
+        if (!item) {
+            return;
+        }
+
+        const QString appName = item->data(Qt::UserRole).toString();
+        if (appName.isEmpty()) {
+            return;
+        }
+
+        auto *mimeData = new QMimeData();
+        mimeData->setData(kAppMimeType, appName.toUtf8());
+
+        auto *drag = new QDrag(this);
+        drag->setMimeData(mimeData);
+        drag->setPixmap(item->icon().pixmap(iconSize()));
+        drag->exec(Qt::CopyAction, Qt::CopyAction);
+        Q_UNUSED(supportedActions);
+    }
+
+    LauncherPageGridWidget::LauncherPageGridWidget(QWidget *parent) : QTableWidget(parent) {
+        setSelectionMode(QAbstractItemView::SingleSelection);
+        setSelectionBehavior(QAbstractItemView::SelectItems);
+        setDragEnabled(true);
+        setAcceptDrops(true);
+        setDropIndicatorShown(true);
+        setDragDropMode(QAbstractItemView::DragDrop);
+        setDefaultDropAction(Qt::MoveAction);
+        setIconSize(QSize(96, 96));
+        setEditTriggers(QAbstractItemView::NoEditTriggers);
+        horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+        verticalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+        horizontalHeader()->setVisible(false);
+        verticalHeader()->setVisible(false);
+        setShowGrid(true);
+    }
+
+    void LauncherPageGridWidget::setGridSize(const int rows, const int columns) {
+        const QSignalBlocker blocker(this);
+        setRowCount(std::max(1, rows));
+        setColumnCount(std::max(1, columns));
+        for (int row = 0; row < rowCount(); ++row) {
+            for (int column = 0; column < columnCount(); ++column) {
+                if (!item(row, column)) {
+                    auto *tableItem = new QTableWidgetItem();
+                    tableItem->setTextAlignment(Qt::AlignLeft | Qt::AlignBottom);
+                    tableItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled | Qt::ItemIsDragEnabled | Qt::ItemIsDropEnabled);
+                    setItem(row, column, tableItem);
+                }
             }
         }
-        connect(ui->listWidget_Apps_List,&QListWidget::itemSelectionChanged, this, &Apps::onAppsListSelectionChanged);
-        connect( ui->listWidget_Apps_List, &QListWidget::itemChanged, this, &Apps::onAppsListItemChanged);
-        connect(ui->listWidget_Apps_List->model(), &QAbstractItemModel::rowsMoved, this,
-                [this](const QModelIndex &, int, int, const QModelIndex &, int) {
-                    syncAppOrdersFromList();
-                    m_settings->markDirty();
-                    refreshAppActionButtons();
-                });
+    }
 
-        connect(ui->pushButton_Apps_EditSave, &QPushButton::clicked,this,&Apps::onAppsEditSaveClicked);
+    void LauncherPageGridWidget::setAppResolver(std::function<QPair<QString, QPixmap>(const QString &)> resolver) {
+        m_appResolver = std::move(resolver);
+    }
 
+    void LauncherPageGridWidget::setPageItems(const QStringList &items) {
+        const QSignalBlocker blocker(this);
+        int index = 0;
+        for (int row = 0; row < rowCount(); ++row) {
+            for (int column = 0; column < columnCount(); ++column) {
+                setSlotApp(row, column, index < items.size() ? items.at(index) : QString());
+                ++index;
+            }
+        }
+    }
+
+    QStringList LauncherPageGridWidget::pageItems() const {
+        QStringList items;
+        items.reserve(rowCount() * columnCount());
+        for (int row = 0; row < rowCount(); ++row) {
+            for (int column = 0; column < columnCount(); ++column) {
+                items.append(slotApp(row, column));
+            }
+        }
+        return items;
+    }
+
+    void LauncherPageGridWidget::clearSelectedSlot() {
+        const auto selectedIndexes = selectionModel() ? selectionModel()->selectedIndexes() : QModelIndexList{};
+        if (selectedIndexes.isEmpty()) {
+            return;
+        }
+        const QModelIndex index = selectedIndexes.first();
+        setSlotApp(index.row(), index.column(), QString());
+        emitItemsChanged();
+    }
+
+    bool LauncherPageGridWidget::hasSelectedSlot() const {
+        return selectionModel() && !selectionModel()->selectedIndexes().isEmpty();
+    }
+
+    void LauncherPageGridWidget::assignSelectedSlot(const QString &appName) {
+        const auto selectedIndexes = selectionModel() ? selectionModel()->selectedIndexes() : QModelIndexList{};
+        if (selectedIndexes.isEmpty()) {
+            return;
+        }
+        const QModelIndex index = selectedIndexes.first();
+        setSlotApp(index.row(), index.column(), appName);
+        emitItemsChanged();
+    }
+
+    void LauncherPageGridWidget::dragEnterEvent(QDragEnterEvent *event) {
+        if (event && event->mimeData()->hasFormat(kAppMimeType)) {
+            event->acceptProposedAction();
+            return;
+        }
+        QTableWidget::dragEnterEvent(event);
+    }
+
+    void LauncherPageGridWidget::dragMoveEvent(QDragMoveEvent *event) {
+        if (event && event->mimeData()->hasFormat(kAppMimeType)) {
+            event->acceptProposedAction();
+            return;
+        }
+        QTableWidget::dragMoveEvent(event);
+    }
+
+    void LauncherPageGridWidget::dropEvent(QDropEvent *event) {
+        if (!event || !event->mimeData()->hasFormat(kAppMimeType)) {
+            QTableWidget::dropEvent(event);
+            return;
+        }
+
+        const QModelIndex targetIndex = indexAt(event->position().toPoint());
+        if (!targetIndex.isValid()) {
+            event->ignore();
+            return;
+        }
+
+        const QString appName = QString::fromUtf8(event->mimeData()->data(kAppMimeType));
+        if (appName.isEmpty()) {
+            event->ignore();
+            return;
+        }
+
+        const int sourceRow = event->mimeData()->hasFormat(kAppSourceRowMimeType)
+                                  ? QString::fromUtf8(event->mimeData()->data(kAppSourceRowMimeType)).toInt()
+                                  : -1;
+        const int sourceColumn = event->mimeData()->hasFormat(kAppSourceColumnMimeType)
+                                     ? QString::fromUtf8(event->mimeData()->data(kAppSourceColumnMimeType)).toInt()
+                                     : -1;
+
+        if (event->source() == this && sourceRow >= 0 && sourceColumn >= 0 &&
+            !(sourceRow == targetIndex.row() && sourceColumn == targetIndex.column())) {
+            setSlotApp(sourceRow, sourceColumn, QString());
+        }
+
+        setSlotApp(targetIndex.row(), targetIndex.column(), appName);
+        emitItemsChanged();
+        event->acceptProposedAction();
+    }
+
+    void LauncherPageGridWidget::startDrag(Qt::DropActions supportedActions) {
+        auto *current = currentItem();
+        if (!current) {
+            return;
+        }
+
+        const QString appName = current->data(Qt::UserRole).toString();
+        if (appName.isEmpty()) {
+            return;
+        }
+
+        auto *mimeData = new QMimeData();
+        mimeData->setData(kAppMimeType, appName.toUtf8());
+        mimeData->setData(kAppSourceRowMimeType, QByteArray::number(currentRow()));
+        mimeData->setData(kAppSourceColumnMimeType, QByteArray::number(currentColumn()));
+
+        auto *drag = new QDrag(this);
+        drag->setMimeData(mimeData);
+        drag->setPixmap(current->icon().pixmap(iconSize()));
+        drag->exec(Qt::MoveAction | Qt::CopyAction, Qt::MoveAction);
+        Q_UNUSED(supportedActions);
+    }
+
+    void LauncherPageGridWidget::keyPressEvent(QKeyEvent *event) {
+        if (event && (event->key() == Qt::Key_Delete || event->key() == Qt::Key_Backspace)) {
+            clearSelectedSlot();
+            event->accept();
+            return;
+        }
+        QTableWidget::keyPressEvent(event);
+    }
+
+    void LauncherPageGridWidget::mouseDoubleClickEvent(QMouseEvent *event) {
+        QTableWidget::mouseDoubleClickEvent(event);
+        auto *current = currentItem();
+        if (!current) {
+            return;
+        }
+        const QString appName = current->data(Qt::UserRole).toString();
+        if (!appName.isEmpty()) {
+            emit appDoubleClicked(appName);
+        }
+    }
+
+    void LauncherPageGridWidget::setSlotApp(const int row, const int column, const QString &appName) {
+        auto *tableItem = item(row, column);
+        if (!tableItem) {
+            tableItem = new QTableWidgetItem();
+            tableItem->setTextAlignment(Qt::AlignLeft | Qt::AlignBottom);
+            tableItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled | Qt::ItemIsDragEnabled | Qt::ItemIsDropEnabled);
+            setItem(row, column, tableItem);
+        }
+
+        tableItem->setData(Qt::UserRole, appName);
+        if (appName.isEmpty()) {
+            tableItem->setText(QString());
+            tableItem->setIcon(QIcon());
+            tableItem->setToolTip(QString());
+            return;
+        }
+
+        const auto presentation = m_appResolver ? m_appResolver(appName) : qMakePair(appName, QPixmap());
+        tableItem->setText(presentation.first);
+        tableItem->setIcon(QIcon(presentation.second));
+        tableItem->setToolTip(presentation.first);
+    }
+
+    QString LauncherPageGridWidget::slotApp(const int row, const int column) const {
+        const auto *tableItem = item(row, column);
+        return tableItem ? tableItem->data(Qt::UserRole).toString() : QString();
+    }
+
+    void LauncherPageGridWidget::emitItemsChanged() {
+        emit itemsChanged(pageItems());
+    }
+
+    Apps::Apps(Settings *settings, QWidget *parent) : QWidget(parent), ui(new Ui::Apps), m_settings(settings) {
+        ui->setupUi(this);
+
+        ui->splitter_Main->setStretchFactor(0, 1);
+        ui->splitter_Main->setStretchFactor(1, 2);
+
+        m_availableAppsList = new AvailableAppsListWidget(this);
+        auto *availableAppsLayout = new QVBoxLayout(ui->widget_AvailableAppsHost);
+        availableAppsLayout->setContentsMargins(0, 0, 0, 0);
+        availableAppsLayout->addWidget(m_availableAppsList);
+
+        m_pageTree = new QTreeWidget(this);
+        m_pageTree->setColumnCount(1);
+        m_pageTree->setHeaderHidden(true);
+        m_pageTree->setEditTriggers(QAbstractItemView::SelectedClicked | QAbstractItemView::EditKeyPressed);
+        auto *pageTreeLayout = new QVBoxLayout(ui->widget_PageTreeHost);
+        pageTreeLayout->setContentsMargins(0, 0, 0, 0);
+        pageTreeLayout->addWidget(m_pageTree);
+
+        m_pageGrid = new LauncherPageGridWidget(this);
+        m_pageGrid->setAppResolver([this](const QString &appName) { return resolveAppPresentation(appName); });
+        auto *pageGridLayout = new QVBoxLayout(ui->widget_PageGridHost);
+        pageGridLayout->setContentsMargins(0, 0, 0, 0);
+        pageGridLayout->addWidget(m_pageGrid);
+
+        setupImageToolButton(ui->toolButton_Add, QStringLiteral(":/resources/svg/OpenBridge/widget-add-google.svg"), tr("Add application"));
+        setupImageToolButton(ui->toolButton_Remove, QStringLiteral(":/resources/svg/OpenBridge/delete-google.svg"), tr("Delete application"));
+        setupImageToolButton(ui->toolButton_EditApp, QStringLiteral(":/resources/svg/OpenBridge/edit-google.svg"), tr("Edit application"));
+        setupImageToolButton(ui->toolButton_AddPage, QStringLiteral(":/resources/svg/OpenBridge/navigation-route.svg"), tr("Add page"));
+        setupImageToolButton(ui->toolButton_AddFolder, QStringLiteral(":/resources/svg/OpenBridge/home.svg"), tr("Add folder"));
+        setupImageToolButton(ui->toolButton_RemoveNode, QStringLiteral(":/resources/svg/OpenBridge/delete-google.svg"), tr("Delete page or folder"));
+        setupImageToolButton(ui->toolButton_MoveNodeUp, QStringLiteral(":/resources/svg/OpenBridge/arrow-up-google.svg"), tr("Move up"));
+        setupImageToolButton(ui->toolButton_MoveNodeDown, QStringLiteral(":/resources/svg/OpenBridge/arrow-down-google.svg"), tr("Move down"));
+        setupImageToolButton(ui->toolButton_ClearPageSlot, QStringLiteral(":/resources/svg/OpenBridge/delete-google.svg"), tr("Clear selected slot"));
+        setupImageToolButton(ui->toolButton_BackToLayout, QStringLiteral(":/resources/svg/OpenBridge/arrow-left-google.svg"), tr("Back to layout"));
+
+        connect(m_availableAppsList, &QListWidget::itemSelectionChanged, this, &Apps::onAvailableAppSelectionChanged);
+        connect(m_availableAppsList, &QListWidget::itemChanged, this, &Apps::onAvailableAppItemChanged);
+        connect(m_availableAppsList, &QListWidget::itemDoubleClicked, this, &Apps::onAvailableAppDoubleClicked);
+        connect(ui->pushButton_Apps_EditSave, &QPushButton::clicked, this, &Apps::onAppsEditSaveClicked);
         connect(ui->lineEdit_Apps_Name, &QLineEdit::textChanged, this, &Apps::onAppsDetailsFieldsTextChanged);
         connect(ui->lineEdit_Apps_Description, &QLineEdit::textChanged, this, &Apps::onAppsDetailsFieldsTextChanged);
         connect(ui->lineEdit_Apps_DisplayName, &QLineEdit::textChanged, this, &Apps::onAppsDetailsFieldsTextChanged);
         connect(ui->lineEdit_Apps_AppIcon, &QLineEdit::textChanged, this, &Apps::onAppsDetailsFieldsTextChanged);
-
-        connect(ui->pushButton_Apps_AppIcon_Browse, &QPushButton::clicked,this,&Apps::onAppsAppIconBrowse);
-	    connect(ui->pushButton_Apps_Name_Browse, &QPushButton::clicked,this,&Apps::onAppsNameBrowse);
-
-        connect(ui->toolButton_Add, &QToolButton::clicked,this,&Apps::onAppsAddClicked);
-        connect(ui->toolButton_Remove, &QToolButton::clicked,this,&Apps::onAppsRemoveClicked);
-        connect(ui->toolButton_Up, &QToolButton::clicked,this,&Apps::onAppsUpClicked);
-        connect(ui->toolButton_Down, &QToolButton::clicked,this,&Apps::onAppsDownClicked);
-
-        ui->listWidget_Apps_List->installEventFilter(this);
-        ui->listWidget_Apps_List->viewport()->installEventFilter(this);
-        if (ui->listWidget_Apps_List->count()>0) {
-            ui->listWidget_Apps_List->setCurrentRow(0);
-        }
-        refreshAppActionButtons();
-    }
-
-    void Apps::saveAppsDetails() {
-        if (!ui->listWidget_Apps_List->currentItem()) {
-            return;
-        }
-
-        // Get the application name
-        auto appName =  ui->listWidget_Apps_List->currentItem()->data(Qt::UserRole).toString();
-
-        // Get the index of the application within the apps array
-        int idx = m_settings->getConfiguration()->findApp(appName);
-
-        // Check if the app is present
-        if (idx != -1) {
-
-
-            // Set the current app json object
-            auto appJsonObject = m_settings->getConfiguration()->getRoot()["apps"].at(idx);
-
-            // Update the configuration
-            QString newName = ui->lineEdit_Apps_Name->text().trimmed();
-            if (newName.isEmpty()) {
-                newName = appName;
-            } else if (newName != appName && m_settings->getConfiguration()->findApp(newName) != -1) {
-                drawer::warning(this, tr("Applications"), tr("An application named \"%1\" already exists.").arg(newName));
-                ui->lineEdit_Apps_Name->setText(appName);
-                return;
+        connect(ui->pushButton_Apps_AppIcon_Browse, &QPushButton::clicked, this, &Apps::onAppsAppIconBrowse);
+        connect(ui->pushButton_Apps_Name_Browse, &QPushButton::clicked, this, &Apps::onAppsNameBrowse);
+        connect(ui->toolButton_Add, &QToolButton::clicked, this, &Apps::onAddAppClicked);
+        connect(ui->toolButton_Remove, &QToolButton::clicked, this, &Apps::onRemoveAppClicked);
+        connect(ui->toolButton_EditApp, &QToolButton::clicked, this, [this]() {
+            auto *item = m_availableAppsList->currentItem();
+            if (item) {
+                showDetailsForApp(item->data(Qt::UserRole).toString(), true);
             }
+        });
+        connect(ui->toolButton_AddPage, &QToolButton::clicked, this, &Apps::onAddPageClicked);
+        connect(ui->toolButton_AddFolder, &QToolButton::clicked, this, &Apps::onAddFolderClicked);
+        connect(ui->toolButton_RemoveNode, &QToolButton::clicked, this, &Apps::onRemoveNodeClicked);
+        connect(ui->toolButton_MoveNodeUp, &QToolButton::clicked, this, &Apps::onMoveNodeUpClicked);
+        connect(ui->toolButton_MoveNodeDown, &QToolButton::clicked, this, &Apps::onMoveNodeDownClicked);
+        connect(m_pageTree, &QTreeWidget::itemSelectionChanged, this, &Apps::onPageTreeSelectionChanged);
+        connect(m_pageTree, &QTreeWidget::itemChanged, this, &Apps::onPageTreeItemChanged);
+        connect(m_pageGrid, &LauncherPageGridWidget::itemsChanged, this, &Apps::onPageGridItemsChanged);
+        connect(m_pageGrid, &LauncherPageGridWidget::appDoubleClicked, this, &Apps::onPageGridAppDoubleClicked);
+        connect(ui->toolButton_ClearPageSlot, &QToolButton::clicked, this, &Apps::onClearPageSlotClicked);
+        connect(ui->toolButton_BackToLayout, &QToolButton::clicked, this, &Apps::onBackToLayoutClicked);
 
-            appJsonObject["name"] = newName.toStdString();
-            appJsonObject["description"] = ui->lineEdit_Apps_Description->text().toStdString();
-            appJsonObject["signalk"]["displayName"] = ui->lineEdit_Apps_DisplayName->text().toStdString();
-            appJsonObject["signalk"]["appIcon"] = ui->lineEdit_Apps_AppIcon->text().toStdString();
-
-            m_settings->getConfiguration()->getRoot()["apps"].at(idx) = appJsonObject;
-            m_settings->markDirty();
-
-            auto appItem = new AppItem(appJsonObject);
-
-            auto listWidgetItem =  ui->listWidget_Apps_List->currentItem();
-            listWidgetItem->setText(appItem->getDisplayName());
-            listWidgetItem->setIcon(QIcon(appItem->getIcon()));
-            listWidgetItem->setToolTip(appItem->getDescription());
-            listWidgetItem->setData(Qt::UserRole, appItem->getName());
-
-            delete appItem;
-
-        }
-
-        // Reset the apps edit changed flag
-        m_appsEditChanged = false;
+        ensureLauncherLayout();
+        rebuildAvailableAppsList();
+        rebuildPageTree();
+        showLayoutEditor();
+        refreshAvailableAppActionButtons();
+        refreshPageTreeActionButtons();
+        refreshDetailActionButtons();
     }
 
-    void Apps::setAppsEditMode(bool editMode) {
+    Apps::~Apps() {
+        delete ui;
+        ui = nullptr;
+    }
 
-        // Check if in edit mode
-        if (m_appsEditMode) {
+    bool Apps::eventFilter(QObject *object, QEvent *event) {
+        Q_UNUSED(object);
+        Q_UNUSED(event);
+        return QWidget::eventFilter(object, event);
+    }
 
-            // Check if any change has been made
-            if (m_appsEditChanged) {
-
-                if (drawer::question(this,
-                                     tr("Save changes"),
-                                     tr("Do you want save application definition edits?"),
-                                     QMessageBox::Yes | QMessageBox::No,
-                                     QMessageBox::No) == QMessageBox::Yes) {
-                    // Save details
-                    saveAppsDetails();
-                }
+    void Apps::setAppsEditMode(const bool editMode) {
+        if (m_appsEditMode && m_appsEditChanged) {
+            const auto answer = drawer::question(this,
+                                                 tr("Save changes"),
+                                                 tr("Do you want to save application definition edits?"),
+                                                 QMessageBox::Yes | QMessageBox::No,
+                                                 QMessageBox::Yes);
+            if (answer == QMessageBox::Yes) {
+                saveAppsDetails();
             }
         }
 
-        // Set the dit mode
         m_appsEditMode = editMode;
-
-        // Set the edit save button text
-        if (m_appsEditMode)
-            ui->pushButton_Apps_EditSave->setText("Save");
-        else
-            ui->pushButton_Apps_EditSave->setText("Edit");
-
-
-        // Set the read only or write status
+        ui->pushButton_Apps_EditSave->setText(m_appsEditMode ? tr("Save") : tr("Edit"));
         ui->lineEdit_Apps_Name->setReadOnly(!m_appsEditMode);
         ui->lineEdit_Apps_Description->setReadOnly(!m_appsEditMode);
         ui->lineEdit_Apps_DisplayName->setReadOnly(!m_appsEditMode);
         ui->lineEdit_Apps_AppIcon->setReadOnly(!m_appsEditMode);
-
-        // Enable/disable the browser buttons
-        ui->pushButton_Apps_AppIcon_Browse->setEnabled(m_appsEditMode);
         ui->pushButton_Apps_Name_Browse->setEnabled(m_appsEditMode);
+        ui->pushButton_Apps_AppIcon_Browse->setEnabled(m_appsEditMode);
+        m_appsEditChanged = false;
+        refreshDetailActionButtons();
+    }
 
-        // Reset the changes flag
+    void Apps::saveAppsDetails() {
+        if (m_currentDetailAppName.isEmpty()) {
+            return;
+        }
+
+        const int idx = m_settings->getConfiguration()->findApp(m_currentDetailAppName);
+        if (idx == -1) {
+            return;
+        }
+
+        auto appJsonObject = m_settings->getConfiguration()->getRoot()["apps"].at(idx);
+        QString newName = ui->lineEdit_Apps_Name->text().trimmed();
+        if (newName.isEmpty()) {
+            newName = m_currentDetailAppName;
+        } else if (newName != m_currentDetailAppName && m_settings->getConfiguration()->findApp(newName) != -1) {
+            drawer::warning(this, tr("Applications"), tr("An application named \"%1\" already exists.").arg(newName));
+            ui->lineEdit_Apps_Name->setText(m_currentDetailAppName);
+            return;
+        }
+
+        appJsonObject["name"] = newName.toStdString();
+        appJsonObject["description"] = ui->lineEdit_Apps_Description->text().toStdString();
+        appJsonObject["signalk"]["displayName"] = ui->lineEdit_Apps_DisplayName->text().toStdString();
+        appJsonObject["signalk"]["appIcon"] = ui->lineEdit_Apps_AppIcon->text().toStdString();
+        m_settings->getConfiguration()->getRoot()["apps"].at(idx) = appJsonObject;
+
+        if (newName != m_currentDetailAppName) {
+            renameAppInLauncherNodes(m_currentDetailAppName, newName);
+            m_currentDetailAppName = newName;
+        }
+
+        markSettingsDirty();
+        rebuildAvailableAppsList();
+        rebuildPageEditor();
         m_appsEditChanged = false;
     }
 
-    void Apps::onAppsEditSaveClicked() {
-        // Check if in edit mode
-        if (m_appsEditMode) {
-            saveAppsDetails();
-            setAppsEditMode(false);
-        } else {
-            setAppsEditMode(true);
+    QString Apps::uniqueAppName(const QString &baseName) const {
+        QString candidate = baseName;
+        int suffix = 1;
+        while (m_settings->getConfiguration()->findApp(candidate) != -1) {
+            candidate = QStringLiteral("%1_%2").arg(baseName).arg(suffix++);
+        }
+        return candidate;
+    }
+
+    void Apps::refreshAvailableAppActionButtons() const {
+        const bool hasSelection = m_availableAppsList && m_availableAppsList->currentItem();
+        ui->toolButton_Remove->setEnabled(hasSelection);
+        ui->toolButton_EditApp->setEnabled(hasSelection);
+    }
+
+    void Apps::refreshPageTreeActionButtons() const {
+        auto *item = m_pageTree ? m_pageTree->currentItem() : nullptr;
+        const bool hasSelection = item != nullptr;
+        ui->toolButton_RemoveNode->setEnabled(hasSelection);
+        ui->toolButton_MoveNodeUp->setEnabled(hasSelection);
+        ui->toolButton_MoveNodeDown->setEnabled(hasSelection);
+        ui->toolButton_ClearPageSlot->setEnabled(m_pageGrid && m_pageGrid->hasSelectedSlot() && !selectedPageId().isEmpty());
+    }
+
+    void Apps::refreshDetailActionButtons() const {
+        const bool hasDetail = !m_currentDetailAppName.isEmpty();
+        ui->pushButton_Apps_EditSave->setEnabled(hasDetail);
+        ui->pushButton_Apps_Name_Browse->setEnabled(hasDetail && m_appsEditMode);
+        ui->pushButton_Apps_AppIcon_Browse->setEnabled(hasDetail && m_appsEditMode);
+        ui->toolButton_BackToLayout->setEnabled(true);
+    }
+
+    void Apps::rebuildAvailableAppsList() {
+        if (!m_availableAppsList) {
+            return;
+        }
+
+        const QString currentAppName = m_availableAppsList->currentItem() ? m_availableAppsList->currentItem()->data(Qt::UserRole).toString()
+                                                                          : m_currentDetailAppName;
+        QSignalBlocker blocker(m_availableAppsList);
+        m_availableAppsList->clear();
+
+        const auto &root = m_settings->getConfiguration()->getRoot();
+        if (!root.contains("apps") || !root["apps"].is_array()) {
+            return;
+        }
+
+        QList<nlohmann::json> jsonApps;
+        for (const auto &jsonApp : root["apps"]) {
+            if (jsonApp.is_object()) {
+                jsonApps.append(jsonApp);
+            }
+        }
+
+        std::sort(jsonApps.begin(), jsonApps.end(), [](const auto &left, const auto &right) {
+            AppItem leftItem(left);
+            AppItem rightItem(right);
+            if (leftItem.getOrder() != rightItem.getOrder()) {
+                return leftItem.getOrder() < rightItem.getOrder();
+            }
+            return QString::compare(leftItem.getDisplayName(), rightItem.getDisplayName(), Qt::CaseInsensitive) < 0;
+        });
+
+        for (const auto &jsonApp : jsonApps) {
+            AppItem appItem(jsonApp);
+            auto *item = new QListWidgetItem(QIcon(appItem.getIcon()), appItem.getDisplayName());
+            item->setData(Qt::UserRole, appItem.getName());
+            item->setToolTip(appItem.getDescription());
+            item->setCheckState(appItem.getActive() ? Qt::Checked : Qt::Unchecked);
+            item->setFlags(item->flags() | Qt::ItemIsUserCheckable | Qt::ItemIsDragEnabled | Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+            m_availableAppsList->addItem(item);
+            if (appItem.getName() == currentAppName) {
+                m_availableAppsList->setCurrentItem(item);
+            }
+        }
+
+        if (!currentAppName.isEmpty() && !m_availableAppsList->currentItem()) {
+            for (int i = 0; i < m_availableAppsList->count(); ++i) {
+                auto *item = m_availableAppsList->item(i);
+                if (item && item->data(Qt::UserRole).toString() == currentAppName) {
+                    m_availableAppsList->setCurrentItem(item);
+                    break;
+                }
+            }
         }
     }
 
-    void Apps::onAppsListSelectionChanged() {
+    QTreeWidgetItem *Apps::addTreeNode(const nlohmann::json &node, QTreeWidgetItem *parentItem) {
+        const QString type = nodeType(node);
+        const QString title = defaultNodeTitle(node);
+        auto *item = parentItem ? new QTreeWidgetItem(parentItem) : new QTreeWidgetItem(m_pageTree);
+        item->setText(0, title);
+        item->setData(0, kTreeIdRole, nodeId(node));
+        item->setData(0, kTreeIdRole + 1, type);
+        item->setFlags(item->flags() | Qt::ItemIsEditable | Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+        item->setIcon(0, QIcon(type == QLatin1String(kNodeTypeFolder)
+                                   ? QStringLiteral(":/resources/svg/OpenBridge/home.svg")
+                                   : QStringLiteral(":/resources/svg/OpenBridge/navigation-route.svg")));
 
-
-        setAppsEditMode(false);
-        refreshAppActionButtons();
-
-        if (ui->listWidget_Apps_List->currentRow()!=-1) {
-            auto appName = ui->listWidget_Apps_List->currentItem()->data(Qt::UserRole).toString();
-
-            // Get the index of the application within the apps array
-            int idx = m_settings->getConfiguration()->findApp(appName);
-
-            // Check if the app is present
-            if (idx != -1) {
-                auto appItem = new AppItem(m_settings->getConfiguration()->getRoot()["apps"].at(idx));
-
-                ui->label_Apps_Url_Text->setText(appItem->getUrl());
-                ui->label_Apps_Version_Text->setText(appItem->getVersion());
-                ui->label_Apps_Author_Text->setText(appItem->getAuthor());
-                ui->label_Apps_Vendor_Text->setText(appItem->getVendor());
-                ui->label_Apps_Copyright_Text->setText(appItem->getCopyright());
-                ui->label_Apps_License_Text->setText(appItem->getLicense());
-
-                ui->lineEdit_Apps_Name->setText(appName);
-                ui->lineEdit_Apps_Description->setText(appItem->getDescription());
-                ui->lineEdit_Apps_DisplayName->setText(appItem->getDisplayName());
-                ui->lineEdit_Apps_AppIcon->setText(appItem->getAppIcon());
-
-
-                auto icon = appItem->getIcon();
-
-                // Scale the icon
-                if (!icon.isNull()) {
-                    icon = icon.scaled(128, 128, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        if (isFolderNode(node) && node.contains(kNodeChildrenKey) && node[kNodeChildrenKey].is_array()) {
+            for (const auto &child : node[kNodeChildrenKey]) {
+                if (child.is_object()) {
+                    addTreeNode(child, item);
                 }
-
-                ui->label_Apps_Icon->setPixmap(icon);
-
-                delete appItem;
             }
-        } else {
-            ui->label_Apps_Url_Text->setText("");
-            ui->label_Apps_Version_Text->setText("");
-            ui->label_Apps_Author_Text->setText("");
-            ui->label_Apps_Vendor_Text->setText("");
-            ui->label_Apps_Copyright_Text->setText("");
-            ui->label_Apps_License_Text->setText("");
-
-            ui->lineEdit_Apps_Name->setText("");
-            ui->lineEdit_Apps_Description->setText("");
-            ui->lineEdit_Apps_DisplayName->setText("");
-            ui->lineEdit_Apps_AppIcon->setText("");
-
-            QPixmap pixmap = QPixmap::fromImage(QImage(":/resources/images/icons/webapp-256x256.png"));
-            ui->label_Apps_Icon->setPixmap(pixmap);
         }
 
+        return item;
+    }
+
+    void Apps::rebuildPageTree() {
+        if (!m_pageTree) {
+            return;
+        }
+
+        ensureLauncherLayout();
+        const QString preservedSelection = m_selectedPageNodeId;
+        QSignalBlocker blocker(m_pageTree);
+        m_pageTree->clear();
+
+        if (const auto *nodes = launcherLayoutNodes()) {
+            for (const auto &node : *nodes) {
+                if (node.is_object()) {
+                    addTreeNode(node, nullptr);
+                }
+            }
+        }
+
+        m_pageTree->expandAll();
+        if (!preservedSelection.isEmpty()) {
+            selectTreeItemById(preservedSelection);
+        }
+        if (!m_pageTree->currentItem()) {
+            if (auto *firstPage = firstPageItem(m_pageTree)) {
+                m_pageTree->setCurrentItem(firstPage);
+            } else if (m_pageTree->topLevelItemCount() > 0) {
+                m_pageTree->setCurrentItem(m_pageTree->topLevelItem(0));
+            }
+        }
+        if (m_pageTree->currentItem()) {
+            m_selectedPageNodeId = m_pageTree->currentItem()->data(0, kTreeIdRole).toString();
+        }
+    }
+
+    void Apps::rebuildPageEditor() {
+        const QString pageId = selectedPageId();
+        const int rows = std::max(1, FairWindSK::getInstance()->getConfiguration()->getLauncherRows());
+        const int columns = std::max(1, FairWindSK::getInstance()->getConfiguration()->getLauncherColumns());
+        QStringList emptyItems;
+        emptyItems.reserve(rows * columns);
+        for (int i = 0; i < rows * columns; ++i) {
+            emptyItems.append(QString());
+        }
+        m_pageGrid->setGridSize(rows, columns);
+
+        if (pageId.isEmpty()) {
+            ui->label_PageNameValue->setText(tr("Select a page"));
+            m_pageGrid->setPageItems(emptyItems);
+            refreshPageTreeActionButtons();
+            return;
+        }
+
+        if (const auto *node = selectedNode()) {
+            ui->label_PageNameValue->setText(defaultNodeTitle(*node));
+            m_pageGrid->setPageItems(pageItemsFromNode(*node));
+        } else {
+            ui->label_PageNameValue->setText(tr("Select a page"));
+            m_pageGrid->setPageItems(emptyItems);
+        }
+
+        refreshPageTreeActionButtons();
+    }
+
+    void Apps::showDetailsForApp(const QString &appName, const bool startEditing) {
+        setAppsEditMode(false);
+        m_currentDetailAppName = appName;
+        const int idx = m_settings->getConfiguration()->findApp(appName);
+        if (idx == -1) {
+            return;
+        }
+
+        AppItem appItem(m_settings->getConfiguration()->getRoot()["apps"].at(idx));
+        ui->label_Apps_Version_Text->setText(appItem.getVersion());
+        ui->label_Apps_Url_Text->setText(appItem.getUrl());
+        ui->label_Apps_Copyright_Text->setText(appItem.getCopyright());
+        ui->label_Apps_License_Text->setText(appItem.getLicense());
+        ui->label_Apps_Author_Text->setText(appItem.getAuthor());
+        ui->label_Apps_Vendor_Text->setText(appItem.getVendor());
+        ui->lineEdit_Apps_Name->setText(appItem.getName());
+        ui->lineEdit_Apps_Description->setText(appItem.getDescription());
+        ui->lineEdit_Apps_DisplayName->setText(appItem.getDisplayName());
+        ui->lineEdit_Apps_AppIcon->setText(appItem.getAppIcon());
+
+        QPixmap pixmap = appItem.getIcon();
+        if (!pixmap.isNull()) {
+            pixmap = pixmap.scaled(128, 128, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        }
+        ui->label_Apps_Icon->setPixmap(pixmap);
+
+        ui->stackedWidget_RightPane->setCurrentWidget(ui->page_Details);
+        if (startEditing) {
+            setAppsEditMode(true);
+        } else {
+            setAppsEditMode(false);
+        }
+    }
+
+    void Apps::showLayoutEditor() {
+        setAppsEditMode(false);
+        ui->stackedWidget_RightPane->setCurrentWidget(ui->page_Layout);
+        rebuildPageEditor();
+    }
+
+    void Apps::syncAppActiveState(const QString &appName, const bool active) {
+        const int idx = m_settings->getConfiguration()->findApp(appName);
+        if (idx == -1) {
+            return;
+        }
+        m_settings->getConfiguration()->getRoot()["apps"].at(idx)["fairwind"]["active"] = active;
+        markSettingsDirty();
+    }
+
+    void Apps::removeAppFromLauncherNodes(const QString &appName) {
+        std::function<void(nlohmann::json &)> removeFromNodes = [&](nlohmann::json &nodes) {
+            if (!nodes.is_array()) {
+                return;
+            }
+            for (auto &node : nodes) {
+                if (!node.is_object()) {
+                    continue;
+                }
+                if (isPageNode(node)) {
+                    ensureJsonArray(node, kNodeItemsKey);
+                    nlohmann::json filteredItems = nlohmann::json::array();
+                    for (const auto &item : node[kNodeItemsKey]) {
+                        if (item.is_string() && QString::fromStdString(item.get<std::string>()) == appName) {
+                            continue;
+                        }
+                        filteredItems.push_back(item);
+                    }
+                    node[kNodeItemsKey] = filteredItems;
+                } else if (isFolderNode(node)) {
+                    ensureJsonArray(node, kNodeChildrenKey);
+                    removeFromNodes(node[kNodeChildrenKey]);
+                }
+            }
+        };
+
+        if (auto *nodes = launcherLayoutNodes()) {
+            removeFromNodes(*nodes);
+        }
+    }
+
+    void Apps::renameAppInLauncherNodes(const QString &oldName, const QString &newName) {
+        std::function<void(nlohmann::json &)> renameInNodes = [&](nlohmann::json &nodes) {
+            if (!nodes.is_array()) {
+                return;
+            }
+            for (auto &node : nodes) {
+                if (!node.is_object()) {
+                    continue;
+                }
+                if (isPageNode(node)) {
+                    ensureJsonArray(node, kNodeItemsKey);
+                    for (auto &item : node[kNodeItemsKey]) {
+                        if (item.is_string() && QString::fromStdString(item.get<std::string>()) == oldName) {
+                            item = newName.toStdString();
+                        }
+                    }
+                } else if (isFolderNode(node)) {
+                    ensureJsonArray(node, kNodeChildrenKey);
+                    renameInNodes(node[kNodeChildrenKey]);
+                }
+            }
+        };
+
+        if (auto *nodes = launcherLayoutNodes()) {
+            renameInNodes(*nodes);
+        }
+    }
+
+    void Apps::markSettingsDirty() {
+        if (m_settings) {
+            m_settings->markDirty();
+        }
+    }
+
+    void Apps::ensureLauncherLayout() {
+        auto &root = m_settings->getConfiguration()->getRoot();
+        ensureJsonObject(root, kLauncherLayoutKey);
+        auto &launcherLayout = root[kLauncherLayoutKey];
+        ensureJsonArray(launcherLayout, kLauncherNodesKey);
+        if (!launcherLayout.contains(kLauncherNextNodeIdKey) || !launcherLayout[kLauncherNextNodeIdKey].is_number_integer()) {
+            launcherLayout[kLauncherNextNodeIdKey] = 1;
+        }
+
+        if (!launcherLayout[kLauncherNodesKey].empty()) {
+            return;
+        }
+
+        const int itemsPerPage = launcherItemsPerPage();
+        const auto activeAppNames = collectActiveAppNames(*m_settings->getConfiguration());
+        if (activeAppNames.isEmpty()) {
+            launcherLayout[kLauncherNodesKey].push_back(makePageNode(tr("Page 1")));
+            return;
+        }
+
+        int pageNumber = 1;
+        for (int i = 0; i < activeAppNames.size(); i += itemsPerPage) {
+            auto pageNode = makePageNode(tr("Page %1").arg(pageNumber++));
+            ensureJsonArray(pageNode, kNodeItemsKey);
+            const int pageEnd = std::min(i + itemsPerPage, int(activeAppNames.size()));
+            for (int itemIndex = i; itemIndex < pageEnd; ++itemIndex) {
+                pageNode[kNodeItemsKey].push_back(activeAppNames.at(itemIndex).toStdString());
+            }
+            launcherLayout[kLauncherNodesKey].push_back(pageNode);
+        }
+    }
+
+    int Apps::launcherItemsPerPage() const {
+        const auto *configuration = FairWindSK::getInstance()->getConfiguration();
+        return std::max(1, configuration->getLauncherRows() * configuration->getLauncherColumns());
+    }
+
+    QString Apps::defaultNodeTitle(const nlohmann::json &node) const {
+        const QString title = nodeName(node);
+        if (!title.trimmed().isEmpty()) {
+            return title;
+        }
+        return isFolderNode(node) ? tr("Folder") : tr("Page");
+    }
+
+    QString Apps::selectedPageId() const {
+        const auto *node = selectedNode();
+        if (node && isPageNode(*node)) {
+            return nodeId(*node);
+        }
+        return {};
+    }
+
+    nlohmann::json Apps::makePageNode(const QString &name) const {
+        nlohmann::json node = nlohmann::json::object();
+        node[kNodeIdKey] = nextNodeId(QStringLiteral("page")).toStdString();
+        node[kNodeTypeKey] = kNodeTypePage;
+        node[kNodeNameKey] = name.toStdString();
+        node[kNodeItemsKey] = nlohmann::json::array();
+        return node;
+    }
+
+    nlohmann::json Apps::makeFolderNode(const QString &name) const {
+        nlohmann::json node = nlohmann::json::object();
+        node[kNodeIdKey] = nextNodeId(QStringLiteral("folder")).toStdString();
+        node[kNodeTypeKey] = kNodeTypeFolder;
+        node[kNodeNameKey] = name.toStdString();
+        node[kNodeChildrenKey] = nlohmann::json::array();
+        return node;
+    }
+
+    nlohmann::json *Apps::launcherLayoutNodes() {
+        auto &root = m_settings->getConfiguration()->getRoot();
+        ensureJsonObject(root, kLauncherLayoutKey);
+        ensureJsonArray(root[kLauncherLayoutKey], kLauncherNodesKey);
+        return &root[kLauncherLayoutKey][kLauncherNodesKey];
+    }
+
+    const nlohmann::json *Apps::launcherLayoutNodes() const {
+        const auto &root = m_settings->getConfiguration()->getRoot();
+        if (!root.contains(kLauncherLayoutKey) || !root[kLauncherLayoutKey].is_object()) {
+            return nullptr;
+        }
+        const auto &launcherLayout = root[kLauncherLayoutKey];
+        if (!launcherLayout.contains(kLauncherNodesKey) || !launcherLayout[kLauncherNodesKey].is_array()) {
+            return nullptr;
+        }
+        return &launcherLayout[kLauncherNodesKey];
+    }
+
+    nlohmann::json *Apps::findNodeById(nlohmann::json &nodes, const QString &id) const {
+        if (!nodes.is_array()) {
+            return nullptr;
+        }
+        for (auto &node : nodes) {
+            if (!node.is_object()) {
+                continue;
+            }
+            if (nodeId(node) == id) {
+                return &node;
+            }
+            if (isFolderNode(node)) {
+                ensureJsonArray(node, kNodeChildrenKey);
+                if (auto *child = findNodeById(node[kNodeChildrenKey], id)) {
+                    return child;
+                }
+            }
+        }
+        return nullptr;
+    }
+
+    const nlohmann::json *Apps::findNodeById(const nlohmann::json &nodes, const QString &id) const {
+        if (!nodes.is_array()) {
+            return nullptr;
+        }
+        for (const auto &node : nodes) {
+            if (!node.is_object()) {
+                continue;
+            }
+            if (nodeId(node) == id) {
+                return &node;
+            }
+            if (isFolderNode(node) && node.contains(kNodeChildrenKey) && node[kNodeChildrenKey].is_array()) {
+                if (const auto *child = findNodeById(node[kNodeChildrenKey], id)) {
+                    return child;
+                }
+            }
+        }
+        return nullptr;
+    }
+
+    bool Apps::findNodeParent(nlohmann::json &nodes, const QString &id, nlohmann::json **parentChildren, int *index) const {
+        if (!nodes.is_array()) {
+            return false;
+        }
+        for (size_t nodeIndex = 0; nodeIndex < nodes.size(); ++nodeIndex) {
+            auto &node = nodes[nodeIndex];
+            if (!node.is_object()) {
+                continue;
+            }
+            if (nodeId(node) == id) {
+                if (parentChildren) {
+                    *parentChildren = &nodes;
+                }
+                if (index) {
+                    *index = int(nodeIndex);
+                }
+                return true;
+            }
+            if (isFolderNode(node)) {
+                ensureJsonArray(node, kNodeChildrenKey);
+                if (findNodeParent(node[kNodeChildrenKey], id, parentChildren, index)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    QStringList Apps::pageItemsFromNode(const nlohmann::json &node) const {
+        QStringList items;
+        items.reserve(launcherItemsPerPage());
+        for (int i = 0; i < launcherItemsPerPage(); ++i) {
+            items.append(QString());
+        }
+        if (!isPageNode(node) || !node.contains(kNodeItemsKey) || !node[kNodeItemsKey].is_array()) {
+            return items;
+        }
+
+        int index = 0;
+        for (const auto &item : node[kNodeItemsKey]) {
+            if (index >= items.size()) {
+                break;
+            }
+            if (item.is_string()) {
+                items[index] = QString::fromStdString(item.get<std::string>());
+            }
+            ++index;
+        }
+        return items;
+    }
+
+    void Apps::setPageItemsForNode(nlohmann::json &node, const QStringList &items) const {
+        node[kNodeItemsKey] = nlohmann::json::array();
+        for (const auto &item : items) {
+            if (item.isEmpty()) {
+                node[kNodeItemsKey].push_back("");
+            } else {
+                node[kNodeItemsKey].push_back(item.toStdString());
+            }
+        }
+    }
+
+    QPair<QString, QPixmap> Apps::resolveAppPresentation(const QString &appName) const {
+        const int idx = m_settings->getConfiguration()->findApp(appName);
+        if (idx == -1) {
+            return qMakePair(appName, QPixmap::fromImage(QImage(":/resources/images/icons/webapp-256x256.png")));
+        }
+
+        AppItem appItem(m_settings->getConfiguration()->getRoot()["apps"].at(idx));
+        return qMakePair(appItem.getDisplayName(), appItem.getIcon());
+    }
+
+    nlohmann::json *Apps::selectedNode() {
+        if (m_selectedPageNodeId.isEmpty()) {
+            return nullptr;
+        }
+        auto *nodes = launcherLayoutNodes();
+        return nodes ? findNodeById(*nodes, m_selectedPageNodeId) : nullptr;
+    }
+
+    const nlohmann::json *Apps::selectedNode() const {
+        if (m_selectedPageNodeId.isEmpty()) {
+            return nullptr;
+        }
+        const auto *nodes = launcherLayoutNodes();
+        return nodes ? findNodeById(*nodes, m_selectedPageNodeId) : nullptr;
+    }
+
+    void Apps::selectTreeItemById(const QString &id) {
+        if (!m_pageTree || id.isEmpty()) {
+            return;
+        }
+
+        QList<QTreeWidgetItem *> pending;
+        for (int i = 0; i < m_pageTree->topLevelItemCount(); ++i) {
+            pending.append(m_pageTree->topLevelItem(i));
+        }
+
+        while (!pending.isEmpty()) {
+            auto *item = pending.takeFirst();
+            if (!item) {
+                continue;
+            }
+            if (item->data(0, kTreeIdRole).toString() == id) {
+                m_pageTree->setCurrentItem(item);
+                return;
+            }
+            for (int i = 0; i < item->childCount(); ++i) {
+                pending.append(item->child(i));
+            }
+        }
+    }
+
+    QString Apps::nextNodeId(const QString &prefix) const {
+        auto &root = m_settings->getConfiguration()->getRoot();
+        ensureJsonObject(root, kLauncherLayoutKey);
+        auto &launcherLayout = root[kLauncherLayoutKey];
+        if (!launcherLayout.contains(kLauncherNextNodeIdKey) || !launcherLayout[kLauncherNextNodeIdKey].is_number_integer()) {
+            launcherLayout[kLauncherNextNodeIdKey] = 1;
+        }
+        const int nextId = launcherLayout[kLauncherNextNodeIdKey].get<int>();
+        launcherLayout[kLauncherNextNodeIdKey] = nextId + 1;
+        return QStringLiteral("%1-%2").arg(prefix).arg(nextId);
+    }
+
+    void Apps::onAvailableAppSelectionChanged() {
+        refreshAvailableAppActionButtons();
+    }
+
+    void Apps::onAvailableAppItemChanged(QListWidgetItem *listWidgetItem) {
+        if (!listWidgetItem) {
+            return;
+        }
+        syncAppActiveState(listWidgetItem->data(Qt::UserRole).toString(), listWidgetItem->checkState() == Qt::Checked);
+    }
+
+    void Apps::onAvailableAppDoubleClicked(QListWidgetItem *listWidgetItem) {
+        if (!listWidgetItem) {
+            return;
+        }
+        showDetailsForApp(listWidgetItem->data(Qt::UserRole).toString());
+    }
+
+    void Apps::onAppsEditSaveClicked() {
+        if (m_appsEditMode) {
+            saveAppsDetails();
+            setAppsEditMode(false);
+            showDetailsForApp(m_currentDetailAppName);
+        } else if (!m_currentDetailAppName.isEmpty()) {
+            setAppsEditMode(true);
+        }
     }
 
     void Apps::onAppsDetailsFieldsTextChanged(const QString &text) {
@@ -302,267 +1139,263 @@ namespace fairwindsk::ui::settings {
     }
 
     void Apps::onAppsAppIconBrowse() {
-
-
-        auto appIcon = QFileDialog::getOpenFileName(this,tr("Open Image"), "./icons", tr("Image Files (*.png)"));
-        if (!appIcon.isEmpty()) {
-
-            QPixmap icon;
-
-            icon.load(appIcon);
-
-            appIcon = "file://" + appIcon;
-
-            ui->lineEdit_Apps_AppIcon->setText(appIcon);
-
-
-            // Scale the icon
-            icon = icon.scaled(128, 128);
-
-            ui->label_Apps_Icon->setPixmap(icon);
-
-            m_appsEditChanged = true;
-
-        }
-
-    }
-
-    void Apps::onAppsNameBrowse() {
-        auto name = QFileDialog::getOpenFileName(this,tr("Select executable"));
-        if (!name.isEmpty()) {
-
-            // Check if the application name is a Mac application
-            if (name.endsWith(".app")) {
-
-                // Get the file information
-                const QFileInfo appPath(name);
-
-                // Check if the name is a path
-                if (appPath.isDir()) {
-
-                    // Get the package information file
-                    const QFileInfo fileInfo(name+"/Contents/Info.plist");
-
-                    // Check if the file exists
-                    if (fileInfo.isFile()) {
-
-                        QFile file(name+"/Contents/Info.plist");
-                        if (file.open(QIODevice::ReadOnly)) {
-                            auto infoPlist = PList(&file);
-                            auto map = infoPlist.toMap();
-
-                            if (map.contains("CFBundleExecutable")) {
-                                name = name + "/Contents/MacOS/" + map["CFBundleExecutable"].toString();
-                            }
-                            file.close();
-                        }
-                    }
-                }
-            }
-
-            name = "file://" + name;
-
-            ui->lineEdit_Apps_Name->setText(name);
-
-            m_appsEditChanged = true;
-
-        }
-    }
-
-
-
-    void Apps::onAppsListItemChanged(QListWidgetItem* listWidgetItem) {
-        if (!listWidgetItem) {
+        const QString appIcon = QFileDialog::getOpenFileName(this, tr("Open Image"), QStringLiteral("./icons"), tr("Image Files (*.png *.svg)"));
+        if (appIcon.isEmpty()) {
             return;
         }
 
-        // Get the application name
-        auto appName = listWidgetItem->data(Qt::UserRole).toString();
+        ui->lineEdit_Apps_AppIcon->setText(QStringLiteral("file://") + appIcon);
+        QPixmap pixmap;
+        pixmap.load(appIcon);
+        ui->label_Apps_Icon->setPixmap(pixmap.scaled(128, 128, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        m_appsEditChanged = true;
+    }
 
-        // Check the state
-        const bool active = listWidgetItem->checkState() == Qt::Checked;
+    void Apps::onAppsNameBrowse() {
+        QString name = QFileDialog::getOpenFileName(this, tr("Select executable"));
+        if (name.isEmpty()) {
+            return;
+        }
 
-        // Get the index of the application within the apps array
-        int idx = m_settings->getConfiguration()->findApp(appName);
+        if (name.endsWith(QStringLiteral(".app"))) {
+            const QFileInfo appPath(name);
+            if (appPath.isDir()) {
+                const QFileInfo fileInfo(name + QStringLiteral("/Contents/Info.plist"));
+                if (fileInfo.isFile()) {
+                    QFile file(name + QStringLiteral("/Contents/Info.plist"));
+                    if (file.open(QIODevice::ReadOnly)) {
+                        auto infoPlist = PList(&file);
+                        const auto map = infoPlist.toMap();
+                        if (map.contains(QStringLiteral("CFBundleExecutable"))) {
+                            name += QStringLiteral("/Contents/MacOS/") + map[QStringLiteral("CFBundleExecutable")].toString();
+                        }
+                        file.close();
+                    }
+                }
+            }
+        }
 
-        // Check if the app is present
+        ui->lineEdit_Apps_Name->setText(QStringLiteral("file://") + name);
+        m_appsEditChanged = true;
+    }
+
+    void Apps::onAddAppClicked() {
+        AppItem appItem;
+        appItem.setName(uniqueAppName(QStringLiteral("new_app")));
+        appItem.setDisplayName(tr("New application"));
+        appItem.setDescription(tr("Describe this application"));
+        appItem.setOrder(m_availableAppsList->count() + 1);
+        appItem.setActive(false);
+
+        m_settings->getConfiguration()->getRoot()["apps"].push_back(appItem.asJson());
+        markSettingsDirty();
+        rebuildAvailableAppsList();
+
+        for (int i = 0; i < m_availableAppsList->count(); ++i) {
+            auto *item = m_availableAppsList->item(i);
+            if (item && item->data(Qt::UserRole).toString() == appItem.getName()) {
+                m_availableAppsList->setCurrentItem(item);
+                break;
+            }
+        }
+
+        showDetailsForApp(appItem.getName(), true);
+    }
+
+    void Apps::onRemoveAppClicked() {
+        auto *item = m_availableAppsList->currentItem();
+        if (!item) {
+            return;
+        }
+
+        const QString appName = item->data(Qt::UserRole).toString();
+        if (drawer::question(this,
+                             tr("Remove application"),
+                             tr("Remove \"%1\" from the available applications list?").arg(item->text()),
+                             QMessageBox::Yes | QMessageBox::No,
+                             QMessageBox::No) != QMessageBox::Yes) {
+            return;
+        }
+
+        const int idx = m_settings->getConfiguration()->findApp(appName);
         if (idx != -1) {
-            // Update the configuration
-            m_settings->getConfiguration()->getRoot()["apps"].at(idx)["fairwind"]["active"] = active;
-            m_settings->markDirty();
-
+            m_settings->getConfiguration()->getRoot()["apps"].erase(idx);
         }
+        removeAppFromLauncherNodes(appName);
+        markSettingsDirty();
+        m_currentDetailAppName.clear();
+        rebuildAvailableAppsList();
+        rebuildPageEditor();
+        showLayoutEditor();
     }
 
-    bool Apps::eventFilter(QObject *object, QEvent *event) {
-        if ((object == ui->listWidget_Apps_List || object == ui->listWidget_Apps_List->viewport()) &&
-            event && event->type() == QEvent::Drop) {
-            QTimer::singleShot(0, this, [this]() {
-                syncAppOrdersFromList();
-                m_settings->markDirty();
-                refreshAppActionButtons();
-            });
-        }
-        return QObject::eventFilter(object, event);
-    }
+    void Apps::onAddPageClicked() {
+        ensureLauncherLayout();
+        auto pageNode = makePageNode(tr("Page"));
+        nlohmann::json *parentChildren = launcherLayoutNodes();
+        int index = parentChildren ? int(parentChildren->size()) : 0;
 
-    void Apps::onAppsAddClicked() {
-        // Get the current item index
-        auto pos = ui->listWidget_Apps_List->currentRow();
-
-
-        // Create an application object
-        auto appItem = new AppItem();
-        appItem->setName(uniqueAppName("new_app"));
-
-        // Add to the configuration
-        m_settings->getConfiguration()->getRoot()["apps"].push_back(appItem->asJson());
-        m_settings->markDirty();
-
-        const auto displayName=appItem->getDisplayName();
-        const auto listWidgetItem = new QListWidgetItem(displayName);
-        listWidgetItem->setIcon(QIcon(appItem->getIcon()));
-        listWidgetItem->setToolTip(appItem->getDescription());
-        listWidgetItem->setData(Qt::UserRole, appItem->getName());
-        listWidgetItem->setCheckState(Qt::Unchecked);
-
-        // Check if the index is valid
-        if (pos >= 0) {
-            ui->listWidget_Apps_List->insertItem(pos,listWidgetItem);
-            ui->listWidget_Apps_List->setCurrentRow(pos);
-        } else {
-            ui->listWidget_Apps_List->addItem(listWidgetItem);
-            ui->listWidget_Apps_List->setCurrentRow(ui->listWidget_Apps_List->count()-1);
-        }
-
-        syncAppOrdersFromList();
-        m_settings->markDirty();
-        setAppsEditMode(true);
-        refreshAppActionButtons();
-
-        delete appItem;
-    }
-
-    void Apps::onAppsRemoveClicked() {
-
-        // Get the current item index
-        auto pos = ui->listWidget_Apps_List->currentRow();
-
-        // Check if the index is valid
-        if (pos >= 0 && pos < ui->listWidget_Apps_List->count()) {
-
-            auto listWidgetItem = ui->listWidget_Apps_List->item(pos);
-
-            // Get the application name
-            auto appName = listWidgetItem->data(Qt::UserRole).toString();
-
-            // Get the index of the application within the apps array
-            int idx = m_settings->getConfiguration()->findApp(appName);
-
-            // Check if the app is present
-            if (idx != -1) {
-
-                // Update the configuration
-                m_settings->getConfiguration()->getRoot()["apps"].erase(idx);
-                m_settings->markDirty();
+        if (auto *currentNode = selectedNode()) {
+            if (isFolderNode(*currentNode)) {
+                ensureJsonArray(*currentNode, kNodeChildrenKey);
+                parentChildren = &(*currentNode)[kNodeChildrenKey];
+                index = int(parentChildren->size());
+            } else if (findNodeParent(*launcherLayoutNodes(), nodeId(*currentNode), &parentChildren, &index)) {
+                ++index;
             }
-
-            // Remove the item from the widget list
-            delete ui->listWidget_Apps_List->takeItem(pos);
-            syncAppOrdersFromList();
-            m_settings->markDirty();
-            refreshAppActionButtons();
         }
-    }
 
-    void Apps::onAppsUpClicked() {
-
-        // Get the current item index
-        auto pos = ui->listWidget_Apps_List->currentRow();
-
-        // Check if the index is valid
-        if (pos > 0) {
-            auto listWidgetItem = ui->listWidget_Apps_List->takeItem(pos);
-            ui->listWidget_Apps_List->insertItem(pos-1,listWidgetItem);
-            ui->listWidget_Apps_List->setCurrentRow(pos-1);
-            syncAppOrdersFromList();
-            m_settings->markDirty();
-            refreshAppActionButtons();
+        if (!parentChildren) {
+            return;
         }
+
+        parentChildren->insert(parentChildren->begin() + index, pageNode);
+        m_selectedPageNodeId = nodeId(pageNode);
+        markSettingsDirty();
+        rebuildPageTree();
+        rebuildPageEditor();
     }
 
-    void Apps::onAppsDownClicked() {
-        // Get the current item index
-        auto pos = ui->listWidget_Apps_List->currentRow();
+    void Apps::onAddFolderClicked() {
+        ensureLauncherLayout();
+        auto folderNode = makeFolderNode(tr("Folder"));
+        nlohmann::json *parentChildren = launcherLayoutNodes();
+        int index = parentChildren ? int(parentChildren->size()) : 0;
 
-        // Check if the index is valid
-        if (pos != -1 && pos < ui->listWidget_Apps_List->count()-1) {
-            auto listWidgetItem = ui->listWidget_Apps_List->takeItem(pos);
-            ui->listWidget_Apps_List->insertItem(pos+1,listWidgetItem);
-            ui->listWidget_Apps_List->setCurrentRow(pos+1);
-            syncAppOrdersFromList();
-            m_settings->markDirty();
-            refreshAppActionButtons();
-        }
-    }
-
-    void Apps::refreshAppActionButtons() const {
-        const int currentRow = ui->listWidget_Apps_List->currentRow();
-        const int count = ui->listWidget_Apps_List->count();
-        const bool hasSelection = currentRow >= 0 && currentRow < count;
-
-        ui->pushButton_Apps_EditSave->setEnabled(hasSelection);
-        ui->toolButton_Remove->setEnabled(hasSelection);
-        ui->toolButton_Up->setEnabled(hasSelection && currentRow > 0);
-        ui->toolButton_Down->setEnabled(hasSelection && currentRow >= 0 && currentRow < count - 1);
-    }
-
-    void Apps::syncAppOrdersFromList() const {
-        for (int row = 0; row < ui->listWidget_Apps_List->count(); ++row) {
-            const auto *listWidgetItem = ui->listWidget_Apps_List->item(row);
-            if (!listWidgetItem) {
-                continue;
+        if (auto *currentNode = selectedNode()) {
+            if (isFolderNode(*currentNode)) {
+                ensureJsonArray(*currentNode, kNodeChildrenKey);
+                parentChildren = &(*currentNode)[kNodeChildrenKey];
+                index = int(parentChildren->size());
+            } else if (findNodeParent(*launcherLayoutNodes(), nodeId(*currentNode), &parentChildren, &index)) {
+                ++index;
             }
-
-            const auto appName = listWidgetItem->data(Qt::UserRole).toString();
-            const int idx = m_settings->getConfiguration()->findApp(appName);
-            if (idx == -1) {
-                continue;
-            }
-
-            m_settings->getConfiguration()->getRoot()["apps"].at(idx)["fairwind"]["order"] = row + 1;
         }
-        m_settings->markDirty();
+
+        if (!parentChildren) {
+            return;
+        }
+
+        parentChildren->insert(parentChildren->begin() + index, folderNode);
+        m_selectedPageNodeId = nodeId(folderNode);
+        markSettingsDirty();
+        rebuildPageTree();
+        rebuildPageEditor();
     }
 
-    /*
-     * ~Apps
-     * Class destructor
-     */
-    Apps::~Apps() {
+    void Apps::onRemoveNodeClicked() {
+        auto *currentNode = selectedNode();
+        if (!currentNode) {
+            return;
+        }
 
-        // Check if the ui pointer is valid
-        if (ui) {
+        if (drawer::question(this,
+                             tr("Remove launcher node"),
+                             tr("Remove the selected page or folder from the launcher layout?"),
+                             QMessageBox::Yes | QMessageBox::No,
+                             QMessageBox::No) != QMessageBox::Yes) {
+            return;
+        }
 
-            // While there are still items...
-            while (ui->listWidget_Apps_List->count()>0) {
+        nlohmann::json *parentChildren = nullptr;
+        int index = -1;
+        if (findNodeParent(*launcherLayoutNodes(), nodeId(*currentNode), &parentChildren, &index) && parentChildren && index >= 0) {
+            parentChildren->erase(parentChildren->begin() + index);
+        }
 
-                // Take the item
-                const auto item =  ui->listWidget_Apps_List->takeItem(0);
+        if (launcherLayoutNodes()->empty()) {
+            launcherLayoutNodes()->push_back(makePageNode(tr("Page 1")));
+        }
 
-                // Delete the item
-                delete item;
-            }
+        m_selectedPageNodeId.clear();
+        markSettingsDirty();
+        rebuildPageTree();
+        rebuildPageEditor();
+    }
 
-            // Delete ui
-            delete ui;
+    void Apps::onMoveNodeUpClicked() {
+        auto *currentNode = selectedNode();
+        if (!currentNode) {
+            return;
+        }
 
-            // Set the ui pointer to null
-            ui = nullptr;
+        nlohmann::json *parentChildren = nullptr;
+        int index = -1;
+        if (!findNodeParent(*launcherLayoutNodes(), nodeId(*currentNode), &parentChildren, &index) || !parentChildren || index <= 0) {
+            return;
+        }
+
+        std::swap((*parentChildren)[index], (*parentChildren)[index - 1]);
+        markSettingsDirty();
+        rebuildPageTree();
+        selectTreeItemById(nodeId((*parentChildren)[index - 1]));
+    }
+
+    void Apps::onMoveNodeDownClicked() {
+        auto *currentNode = selectedNode();
+        if (!currentNode) {
+            return;
+        }
+
+        nlohmann::json *parentChildren = nullptr;
+        int index = -1;
+        if (!findNodeParent(*launcherLayoutNodes(), nodeId(*currentNode), &parentChildren, &index) ||
+            !parentChildren || index < 0 || index >= int(parentChildren->size()) - 1) {
+            return;
+        }
+
+        std::swap((*parentChildren)[index], (*parentChildren)[index + 1]);
+        markSettingsDirty();
+        rebuildPageTree();
+        selectTreeItemById(nodeId((*parentChildren)[index + 1]));
+    }
+
+    void Apps::onPageTreeSelectionChanged() {
+        auto *item = m_pageTree->currentItem();
+        m_selectedPageNodeId = item ? item->data(0, kTreeIdRole).toString() : QString();
+        rebuildPageEditor();
+    }
+
+    void Apps::onPageTreeItemChanged(QTreeWidgetItem *item, int column) {
+        Q_UNUSED(column);
+        if (!item) {
+            return;
+        }
+
+        const QString id = item->data(0, kTreeIdRole).toString();
+        if (id.isEmpty()) {
+            return;
+        }
+
+        if (auto *node = findNodeById(*launcherLayoutNodes(), id)) {
+            (*node)[kNodeNameKey] = item->text(0).toStdString();
+            markSettingsDirty();
+            rebuildPageEditor();
         }
     }
 
+    void Apps::onPageGridItemsChanged(const QStringList &items) {
+        auto *node = selectedNode();
+        if (!node || !isPageNode(*node)) {
+            return;
+        }
+        setPageItemsForNode(*node, items);
+        markSettingsDirty();
+        refreshPageTreeActionButtons();
+    }
 
+    void Apps::onPageGridAppDoubleClicked(const QString &appName) {
+        showDetailsForApp(appName);
+    }
 
+    void Apps::onClearPageSlotClicked() {
+        if (m_pageGrid) {
+            m_pageGrid->clearSelectedSlot();
+        }
+        refreshPageTreeActionButtons();
+    }
 
+    void Apps::onBackToLayoutClicked() {
+        showLayoutEditor();
+    }
 } // fairwindsk::ui::settings

@@ -23,6 +23,13 @@
 namespace fairwindsk::ui::launcher {
     namespace {
         using OrderedApp = QPair<AppItem *, QString>;
+        constexpr auto kLauncherLayoutKey = "launcherLayout";
+        constexpr auto kLauncherNodesKey = "nodes";
+        constexpr auto kNodeTypeKey = "type";
+        constexpr auto kNodeItemsKey = "items";
+        constexpr auto kNodeChildrenKey = "children";
+        constexpr const char *kNodeTypePage = "page";
+        constexpr const char *kNodeTypeFolder = "folder";
 
         QList<OrderedApp> collectOrderedApps() {
             QList<OrderedApp> orderedApps;
@@ -48,6 +55,98 @@ namespace fairwindsk::ui::launcher {
             });
 
             return orderedApps;
+        }
+
+        QString nodeType(const nlohmann::json &node) {
+            if (node.contains(kNodeTypeKey) && node[kNodeTypeKey].is_string()) {
+                return QString::fromStdString(node[kNodeTypeKey].get<std::string>());
+            }
+            return {};
+        }
+
+        void collectPageSlots(const nlohmann::json &nodes, QStringList &pageSlots, const int itemsPerPage) {
+            if (!nodes.is_array()) {
+                return;
+            }
+
+            for (const auto &node : nodes) {
+                if (!node.is_object()) {
+                    continue;
+                }
+
+                const QString type = nodeType(node);
+                if (type == QLatin1String(kNodeTypePage)) {
+                    int itemIndex = 0;
+                    if (node.contains(kNodeItemsKey) && node[kNodeItemsKey].is_array()) {
+                        for (const auto &item : node[kNodeItemsKey]) {
+                            if (itemIndex >= itemsPerPage) {
+                                break;
+                            }
+                            pageSlots.append(item.is_string() ? QString::fromStdString(item.get<std::string>()) : QString());
+                            ++itemIndex;
+                        }
+                    }
+                    while (itemIndex < itemsPerPage) {
+                        pageSlots.append(QString());
+                        ++itemIndex;
+                    }
+                } else if (type == QLatin1String(kNodeTypeFolder)) {
+                    if (node.contains(kNodeChildrenKey) && node[kNodeChildrenKey].is_array()) {
+                        collectPageSlots(node[kNodeChildrenKey], pageSlots, itemsPerPage);
+                    }
+                }
+            }
+        }
+
+        QStringList collectLauncherPageSlots(const int itemsPerPage) {
+            const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+            auto *configuration = fairWindSK->getConfiguration();
+            auto &root = configuration->getRoot();
+
+            QStringList pageSlots;
+            if (root.contains(kLauncherLayoutKey) && root[kLauncherLayoutKey].is_object()) {
+                const auto &layout = root[kLauncherLayoutKey];
+                if (layout.contains(kLauncherNodesKey) && layout[kLauncherNodesKey].is_array()) {
+                    collectPageSlots(layout[kLauncherNodesKey], pageSlots, itemsPerPage);
+                }
+            }
+
+            if (!pageSlots.isEmpty()) {
+                return pageSlots;
+            }
+
+            const auto orderedApps = collectOrderedApps();
+            int index = 0;
+            for (const auto &item : orderedApps) {
+                pageSlots.append(item.second);
+                ++index;
+            }
+            while (index % itemsPerPage != 0) {
+                pageSlots.append(QString());
+                ++index;
+            }
+            return pageSlots;
+        }
+
+        QList<OrderedApp> collectLauncherApps(const int itemsPerPage) {
+            QList<OrderedApp> launcherApps;
+            const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+            const QStringList placementNames = collectLauncherPageSlots(itemsPerPage);
+
+            for (const auto &name : placementNames) {
+                if (name.isEmpty()) {
+                    launcherApps.append(OrderedApp(nullptr, QString()));
+                    continue;
+                }
+                auto *app = fairWindSK->getAppItemByHash(name);
+                if (app && app->getActive()) {
+                    launcherApps.append(OrderedApp(app, name));
+                } else {
+                    launcherApps.append(OrderedApp(nullptr, QString()));
+                }
+            }
+
+            return launcherApps;
         }
 
         class AppTile final : public QFrame {
@@ -347,11 +446,18 @@ namespace fairwindsk::ui::launcher {
 
     QString Launcher::buildLayoutSignature() const {
         QStringList parts;
-        const auto orderedApps = collectOrderedApps();
-        parts.reserve(orderedApps.size());
+        const int itemsPerPage = std::max(1, m_rows * m_cols);
+        const auto orderedApps = collectLauncherApps(itemsPerPage);
+        parts.reserve(orderedApps.size() + 1);
+
+        parts.append(collectLauncherPageSlots(itemsPerPage).join(QStringLiteral("|")));
 
         for (const auto &item : orderedApps) {
             auto *appItem = item.first;
+            if (!appItem || item.second.isEmpty()) {
+                parts.append(QStringLiteral("_"));
+                continue;
+            }
             parts.append(QStringLiteral("%1|%2|%3|%4|%5")
                              .arg(item.second,
                                   QString::number(appItem->getOrder()),
@@ -378,8 +484,8 @@ namespace fairwindsk::ui::launcher {
         }
         m_tiles.clear();
 
-        const auto orderedApps = collectOrderedApps();
         const int itemsPerPage = std::max(1, m_rows * m_cols);
+        const auto orderedApps = collectLauncherApps(itemsPerPage);
         m_pageCount = std::max(1, int((orderedApps.size() + itemsPerPage - 1) / itemsPerPage));
         m_targetPage = qBound(0, preservedPage, std::max(0, m_pageCount - 1));
         int index = 0;
@@ -390,6 +496,11 @@ namespace fairwindsk::ui::launcher {
             const int indexInPage = index % itemsPerPage;
             const int row = indexInPage / m_cols;
             const int col = (page * m_cols) + (indexInPage % m_cols);
+
+            if (!appItem || name.isEmpty()) {
+                ++index;
+                continue;
+            }
 
             auto *tile = new AppTile(ui->scrollAreaWidgetContents);
             tile->setBasePointSize(tile->font().pointSizeF() + 1.0);
@@ -407,7 +518,7 @@ namespace fairwindsk::ui::launcher {
             });
 
             m_layout->addWidget(tile, row, col);
-            m_tiles[name] = tile;
+            m_tiles.append(tile);
             ++index;
         }
     }
