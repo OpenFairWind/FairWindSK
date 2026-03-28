@@ -599,8 +599,8 @@ namespace fairwindsk::ui::settings {
         pageGridLayout->setContentsMargins(0, 0, 0, 0);
         pageGridLayout->addWidget(m_pageGrid);
 
+        setupImageToolButton(ui->toolButton_AddAllApps, QStringLiteral(":/resources/svg/OpenBridge/widget-add-google.svg"), tr("Add all applications to pages"));
         setupImageToolButton(ui->toolButton_Add, QStringLiteral(":/resources/svg/OpenBridge/widget-add-google.svg"), tr("Add application"));
-        setupImageToolButton(ui->toolButton_SyncApps, QStringLiteral(":/resources/svg/OpenBridge/refresh-google.svg"), tr("Sync applications from server"));
         setupImageToolButton(ui->toolButton_Remove, QStringLiteral(":/resources/svg/OpenBridge/delete-google.svg"), tr("Delete application"));
         setupImageToolButton(ui->toolButton_EditApp, QStringLiteral(":/resources/svg/OpenBridge/info.svg"), tr("Application details"));
         setupImageToolButton(ui->toolButton_AddPage, QStringLiteral(":/resources/svg/OpenBridge/navigation-route.svg"), tr("Add page"));
@@ -624,8 +624,8 @@ namespace fairwindsk::ui::settings {
         connect(ui->lineEdit_Apps_AppIcon, &QLineEdit::textChanged, this, &Apps::onAppsDetailsFieldsTextChanged);
         connect(ui->pushButton_Apps_AppIcon_Browse, &QPushButton::clicked, this, &Apps::onAppsAppIconBrowse);
         connect(ui->pushButton_Apps_Name_Browse, &QPushButton::clicked, this, &Apps::onAppsNameBrowse);
+        connect(ui->toolButton_AddAllApps, &QToolButton::clicked, this, &Apps::onAddAllAppsClicked);
         connect(ui->toolButton_Add, &QToolButton::clicked, this, &Apps::onAddAppClicked);
-        connect(ui->toolButton_SyncApps, &QToolButton::clicked, this, &Apps::onSyncAppsClicked);
         connect(ui->toolButton_Remove, &QToolButton::clicked, this, &Apps::onRemoveAppClicked);
         connect(ui->toolButton_EditApp, &QToolButton::clicked, this, [this]() {
             auto *item = m_availableAppsList->currentItem();
@@ -657,7 +657,9 @@ namespace fairwindsk::ui::settings {
         connect(ui->lineEdit_Page_Icon, &QLineEdit::textChanged, this, &Apps::onPageDetailsFieldsTextChanged);
         connect(ui->pushButton_Page_Icon_Browse, &QPushButton::clicked, this, &Apps::onPageIconBrowse);
 
+        synchronizeAvailableApps(false);
         ensureLauncherLayout();
+        normalizeLauncherLayout();
         rebuildAvailableAppsList();
         rebuildPageTree();
         showLayoutEditor();
@@ -669,6 +671,15 @@ namespace fairwindsk::ui::settings {
     Apps::~Apps() {
         delete ui;
         ui = nullptr;
+    }
+
+    void Apps::refreshFromConfiguration() {
+        synchronizeAvailableApps(false);
+        ensureLauncherLayout();
+        normalizeLauncherLayout();
+        rebuildAvailableAppsList();
+        rebuildPageTree();
+        rebuildPageEditor();
     }
 
     bool Apps::eventFilter(QObject *object, QEvent *event) {
@@ -888,6 +899,7 @@ namespace fairwindsk::ui::settings {
         }
 
         ensureLauncherLayout();
+        normalizeLauncherLayout();
         const QString preservedSelection = m_selectedPageNodeId;
         QSignalBlocker blocker(m_pageTree);
         m_pageTree->clear();
@@ -918,8 +930,8 @@ namespace fairwindsk::ui::settings {
 
     void Apps::rebuildPageEditor() {
         const QString pageId = selectedPageId();
-        const int rows = std::max(1, FairWindSK::getInstance()->getConfiguration()->getLauncherRows());
-        const int columns = std::max(1, FairWindSK::getInstance()->getConfiguration()->getLauncherColumns());
+        const int rows = std::max(1, m_settings->getConfiguration()->getLauncherRows());
+        const int columns = std::max(1, m_settings->getConfiguration()->getLauncherColumns());
         QStringList emptyItems;
         emptyItems.reserve(rows * columns);
         for (int i = 0; i < rows * columns; ++i) {
@@ -1193,8 +1205,202 @@ namespace fairwindsk::ui::settings {
         }
     }
 
+    bool Apps::synchronizeAvailableApps(const bool showErrors) {
+        auto *fairWind = FairWindSK::getInstance();
+        if (!fairWind) {
+            return false;
+        }
+
+        auto localLauncherLayout = m_settings->getConfiguration()->getRoot().contains(kLauncherLayoutKey)
+                                       ? m_settings->getConfiguration()->getRoot()[kLauncherLayoutKey]
+                                       : nlohmann::json::object();
+        const QString preservedSelection = m_selectedPageNodeId;
+        const QString preservedDetail = m_currentDetailAppName;
+
+        if (!fairWind->loadApps()) {
+            if (showErrors) {
+                drawer::warning(this, tr("Applications"), tr("Unable to synchronize applications from the server."));
+            }
+            return false;
+        }
+
+        auto &localRoot = m_settings->getConfiguration()->getRoot();
+        localRoot["apps"] = fairWind->getConfiguration()->getRoot()["apps"];
+        if (!localLauncherLayout.is_null() && !localLauncherLayout.empty()) {
+            localRoot[kLauncherLayoutKey] = localLauncherLayout;
+        }
+
+        m_selectedPageNodeId = preservedSelection;
+        m_currentDetailAppName = preservedDetail;
+        ensureLauncherLayout();
+        normalizeLauncherLayout();
+        return true;
+    }
+
+    void Apps::appendOverflowPages(nlohmann::json &nodes, const int insertIndex, const QStringList &overflowItems, const QString &baseName) {
+        if (!nodes.is_array() || overflowItems.isEmpty()) {
+            return;
+        }
+
+        const int itemsPerPage = launcherItemsPerPage();
+        int offset = 0;
+        int pageNumber = 2;
+        int currentInsertIndex = std::clamp(insertIndex, 0, int(nodes.size()));
+        while (offset < overflowItems.size()) {
+            auto pageNode = makePageNode(tr("%1 %2").arg(baseName, QString::number(pageNumber++)), QLatin1String(kDefaultPageIconPath));
+            QStringList pageItems;
+            pageItems.reserve(itemsPerPage);
+            for (int i = 0; i < itemsPerPage; ++i) {
+                if (offset < overflowItems.size()) {
+                    pageItems.append(overflowItems.at(offset++));
+                } else {
+                    pageItems.append(QString());
+                }
+            }
+            setPageItemsForNode(pageNode, pageItems);
+            nodes.insert(nodes.begin() + currentInsertIndex, pageNode);
+            ++currentInsertIndex;
+        }
+    }
+
+    void Apps::normalizeLauncherNodes(nlohmann::json &nodes) {
+        if (!nodes.is_array()) {
+            return;
+        }
+
+        const int itemsPerPage = launcherItemsPerPage();
+        for (size_t index = 0; index < nodes.size(); ++index) {
+            auto &node = nodes[index];
+            if (!node.is_object()) {
+                continue;
+            }
+
+            if (isPageNode(node)) {
+                QStringList items = pageItemsFromNode(node);
+                const QString parentPageId = parentPageIdForNodeId(nodeId(node));
+                items.removeAll(QString());
+                if (!parentPageId.isEmpty()) {
+                    items.removeAll(parentReferenceToken());
+                    items.prepend(parentReferenceToken());
+                } else {
+                    items.removeAll(parentReferenceToken());
+                }
+
+                QStringList currentItems;
+                QStringList overflowItems;
+                currentItems.reserve(itemsPerPage);
+                overflowItems.reserve(std::max(0, int(items.size()) - itemsPerPage));
+                for (int itemIndex = 0; itemIndex < items.size(); ++itemIndex) {
+                    if (itemIndex < itemsPerPage) {
+                        currentItems.append(items.at(itemIndex));
+                    } else {
+                        overflowItems.append(items.at(itemIndex));
+                    }
+                }
+                while (currentItems.size() < itemsPerPage) {
+                    currentItems.append(QString());
+                }
+
+                setPageItemsForNode(node, currentItems);
+                normalizeParentReferenceForNode(node, parentPageId);
+
+                if (!overflowItems.isEmpty()) {
+                    appendOverflowPages(nodes, int(index) + 1, overflowItems, defaultNodeTitle(node));
+                }
+            }
+
+            if (node.contains(kNodeChildrenKey) && node[kNodeChildrenKey].is_array()) {
+                ensureJsonArray(node, kNodeChildrenKey);
+                normalizeLauncherNodes(node[kNodeChildrenKey]);
+            }
+        }
+    }
+
+    void Apps::normalizeLauncherLayout() {
+        auto *nodes = launcherLayoutNodes();
+        if (!nodes) {
+            return;
+        }
+        normalizeLauncherNodes(*nodes);
+    }
+
+    void Apps::collectPageIds(const nlohmann::json &nodes, QStringList &pageIds) const {
+        if (!nodes.is_array()) {
+            return;
+        }
+        for (const auto &node : nodes) {
+            if (!node.is_object()) {
+                continue;
+            }
+            if (isPageNode(node)) {
+                pageIds.append(nodeId(node));
+            }
+            if (node.contains(kNodeChildrenKey) && node[kNodeChildrenKey].is_array()) {
+                collectPageIds(node[kNodeChildrenKey], pageIds);
+            }
+        }
+    }
+
+    void Apps::fillPageChainWithApps(const QString &startPageId, const QStringList &appNames) {
+        if (startPageId.isEmpty()) {
+            return;
+        }
+
+        auto *nodes = launcherLayoutNodes();
+        if (!nodes) {
+            return;
+        }
+
+        nlohmann::json *parentChildren = nullptr;
+        int pageIndex = -1;
+        if (!findNodeParent(*nodes, startPageId, &parentChildren, &pageIndex) || !parentChildren || pageIndex < 0) {
+            return;
+        }
+
+        const int itemsPerPage = launcherItemsPerPage();
+        QStringList remainingApps = appNames;
+        int currentIndex = pageIndex;
+        QString currentPageId = startPageId;
+
+        while (!remainingApps.isEmpty()) {
+            auto *pageNode = findNodeById(*parentChildren, currentPageId);
+            if (!pageNode || !isPageNode(*pageNode)) {
+                break;
+            }
+
+            QStringList pageItems = pageItemsFromNode(*pageNode);
+            const QString parentPageId = parentPageIdForNodeId(nodeId(*pageNode));
+            int slotIndex = 0;
+            if (!parentPageId.isEmpty() && !pageItems.isEmpty() && pageItems.first() == parentReferenceToken()) {
+                slotIndex = 1;
+            }
+
+            for (; slotIndex < itemsPerPage && !remainingApps.isEmpty(); ++slotIndex) {
+                pageItems[slotIndex] = remainingApps.takeFirst();
+            }
+
+            while (slotIndex < itemsPerPage) {
+                pageItems[slotIndex++] = QString();
+            }
+
+            setPageItemsForNode(*pageNode, pageItems);
+            normalizeParentReferenceForNode(*pageNode, parentPageId);
+
+            if (remainingApps.isEmpty()) {
+                break;
+            }
+
+            auto nextPageNode = makePageNode(tr("%1 %2").arg(defaultNodeTitle(*pageNode), QString::number(currentIndex - pageIndex + 2)),
+                                             QLatin1String(kDefaultPageIconPath));
+            const QString nextPageId = nodeId(nextPageNode);
+            parentChildren->insert(parentChildren->begin() + currentIndex + 1, nextPageNode);
+            ++currentIndex;
+            currentPageId = nextPageId;
+        }
+    }
+
     int Apps::launcherItemsPerPage() const {
-        const auto *configuration = FairWindSK::getInstance()->getConfiguration();
+        const auto *configuration = m_settings ? m_settings->getConfiguration() : FairWindSK::getInstance()->getConfiguration();
         return std::max(1, configuration->getLauncherRows() * configuration->getLauncherColumns());
     }
 
@@ -1638,38 +1844,46 @@ namespace fairwindsk::ui::settings {
         showDetailsForApp(appItem.getName(), true);
     }
 
-    void Apps::onSyncAppsClicked() {
-        auto *fairWind = FairWindSK::getInstance();
-        if (!fairWind) {
-            return;
-        }
-
-        auto localLauncherLayout = m_settings->getConfiguration()->getRoot().contains(kLauncherLayoutKey)
-                                       ? m_settings->getConfiguration()->getRoot()[kLauncherLayoutKey]
-                                       : nlohmann::json::object();
-        const QString preservedSelection = m_selectedPageNodeId;
-        const QString preservedDetail = m_currentDetailAppName;
-
-        if (!fairWind->loadApps()) {
-            drawer::warning(this, tr("Applications"), tr("Unable to synchronize applications from the server."));
-            return;
-        }
-
-        auto &localRoot = m_settings->getConfiguration()->getRoot();
-        localRoot["apps"] = fairWind->getConfiguration()->getRoot()["apps"];
-        if (!localLauncherLayout.is_null() && !localLauncherLayout.empty()) {
-            localRoot[kLauncherLayoutKey] = localLauncherLayout;
-        }
-
+    void Apps::onAddAllAppsClicked() {
         ensureLauncherLayout();
-        m_selectedPageNodeId = preservedSelection;
-        rebuildAvailableAppsList();
-        rebuildPageTree();
-        rebuildPageEditor();
-        if (!preservedDetail.isEmpty() && m_settings->getConfiguration()->findApp(preservedDetail) != -1) {
-            showDetailsForApp(preservedDetail, false);
+        normalizeLauncherLayout();
+
+        const QString pageId = selectedPageId();
+        if (pageId.isEmpty()) {
+            drawer::warning(this, tr("Applications"), tr("Select a target page first."));
+            return;
         }
+
+        QStringList appNames;
+        const auto &root = m_settings->getConfiguration()->getRoot();
+        if (root.contains("apps") && root["apps"].is_array()) {
+            QList<nlohmann::json> jsonApps;
+            for (const auto &jsonApp : root["apps"]) {
+                if (jsonApp.is_object()) {
+                    jsonApps.append(jsonApp);
+                }
+            }
+
+            std::sort(jsonApps.begin(), jsonApps.end(), [](const auto &left, const auto &right) {
+                AppItem leftItem(left);
+                AppItem rightItem(right);
+                if (leftItem.getOrder() != rightItem.getOrder()) {
+                    return leftItem.getOrder() < rightItem.getOrder();
+                }
+                return QString::compare(leftItem.getDisplayName(), rightItem.getDisplayName(), Qt::CaseInsensitive) < 0;
+            });
+
+            for (const auto &jsonApp : jsonApps) {
+                AppItem appItem(jsonApp);
+                appNames.append(appItem.getName());
+            }
+        }
+
+        fillPageChainWithApps(pageId, appNames);
         markSettingsDirty();
+        rebuildPageTree();
+        selectTreeItemById(pageId);
+        rebuildPageEditor();
     }
 
     void Apps::onRemoveAppClicked() {

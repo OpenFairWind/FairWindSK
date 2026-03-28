@@ -192,6 +192,9 @@ namespace fairwindsk::ui::settings {
         }
 
         ensureTabCreated(index);
+        if (auto *appsTab = qobject_cast<Apps *>(index >= 0 && index < m_tabPages.size() ? m_tabPages.at(index) : nullptr)) {
+            appsTab->refreshFromConfiguration();
+        }
     }
 
     /*

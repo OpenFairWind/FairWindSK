@@ -80,6 +80,7 @@ namespace fairwindsk::ui::settings {
     public:
         explicit Apps(Settings *settings, QWidget *parent = nullptr);
         ~Apps() override;
+        void refreshFromConfiguration();
 
     private slots:
         void onAvailableAppSelectionChanged();
@@ -89,7 +90,7 @@ namespace fairwindsk::ui::settings {
         void onAppsAppIconBrowse();
         void onAppsNameBrowse();
         void onAddAppClicked();
-        void onSyncAppsClicked();
+        void onAddAllAppsClicked();
         void onRemoveAppClicked();
         void onAddPageClicked();
         void onRemoveNodeClicked();
@@ -122,6 +123,12 @@ namespace fairwindsk::ui::settings {
         void rebuildAvailableAppsList();
         void rebuildPageTree();
         void rebuildPageEditor();
+        bool synchronizeAvailableApps(bool showErrors);
+        void normalizeLauncherLayout();
+        void normalizeLauncherNodes(nlohmann::json &nodes);
+        void appendOverflowPages(nlohmann::json &nodes, int insertIndex, const QStringList &overflowItems, const QString &baseName);
+        void collectPageIds(const nlohmann::json &nodes, QStringList &pageIds) const;
+        void fillPageChainWithApps(const QString &startPageId, const QStringList &appNames);
         void refreshDetailActionButtons() const;
         void showDetailsForApp(const QString &appName, bool startEditing = false);
         void showDetailsForPage(const QString &pageId, bool startEditing = false);

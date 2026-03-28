@@ -45,9 +45,9 @@
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_AvailableAppButtons">
            <item>
-             <widget class="QToolButton" name="toolButton_SyncApps">
+             <widget class="QToolButton" name="toolButton_AddAllApps">
               <property name="text">
-               <string>Sync</string>
+               <string>Add All</string>
               </property>
              </widget>
             </item>
