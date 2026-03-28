@@ -134,7 +134,7 @@ namespace fairwindsk::ui::launcher {
             if (!title.isEmpty()) {
                 return title;
             }
-            return QObject::tr("Page");
+            return QObject::tr("Home");
         }
 
         bool isPageNode(const nlohmann::json &node) {
@@ -493,6 +493,51 @@ namespace fairwindsk::ui::launcher {
         ui = nullptr;
     }
 
+    QString Launcher::currentPageTitle() const {
+        if (m_currentRootPageId.trimmed().isEmpty()) {
+            return tr("Home");
+        }
+
+        auto *configuration = fairwindsk::FairWindSK::getInstance()->getConfiguration();
+        const auto &root = configuration->getRoot();
+        if (root.contains(kLauncherLayoutKey) && root[kLauncherLayoutKey].is_object()) {
+            const auto &layout = root[kLauncherLayoutKey];
+            if (layout.contains(kLauncherNodesKey) && layout[kLauncherNodesKey].is_array()) {
+                if (const auto *node = findNodeById(layout[kLauncherNodesKey], m_currentRootPageId)) {
+                    const QString title = nodeName(*node).trimmed();
+                    if (!title.isEmpty()) {
+                        return title;
+                    }
+                }
+            }
+        }
+
+        return tr("Home");
+    }
+
+    QIcon Launcher::currentPageIcon() const {
+        QString iconPath = QLatin1String(kDefaultPageIconPath);
+
+        if (!m_currentRootPageId.trimmed().isEmpty()) {
+            auto *configuration = fairwindsk::FairWindSK::getInstance()->getConfiguration();
+            const auto &root = configuration->getRoot();
+            if (root.contains(kLauncherLayoutKey) && root[kLauncherLayoutKey].is_object()) {
+                const auto &layout = root[kLauncherLayoutKey];
+                if (layout.contains(kLauncherNodesKey) && layout[kLauncherNodesKey].is_array()) {
+                    if (const auto *node = findNodeById(layout[kLauncherNodesKey], m_currentRootPageId)) {
+                        iconPath = nodeIconPath(*node).trimmed();
+                        if (iconPath.isEmpty()) {
+                            iconPath = QLatin1String(kDefaultPageIconPath);
+                        }
+                    }
+                }
+            }
+        }
+
+        const QPixmap pixmap = pageIconForPath(iconPath);
+        return pixmap.isNull() ? QIcon(QLatin1String(kDefaultPageIconPath)) : QIcon(pixmap);
+    }
+
     void Launcher::resizeEvent(QResizeEvent *event) {
         QWidget::resizeEvent(event);
         resize();
@@ -524,6 +569,7 @@ namespace fairwindsk::ui::launcher {
             QTimer::singleShot(0, this, [this]() { resize(); });
         }
         updateScrollButtons();
+        emit pageContextChanged();
     }
 
     bool Launcher::eventFilter(QObject *watched, QEvent *event) {
@@ -707,36 +753,38 @@ namespace fairwindsk::ui::launcher {
             tile->setAppData(entry.id, entry.title, entry.description, entry.pixmap);
             const TileKind kind = entry.kind;
             tile->setActivateHandler([this, kind](const QString &hash) {
-                if (hash.isEmpty()) {
-                    if (kind == TileKind::Parent && !m_navigationStack.isEmpty()) {
-                        m_currentRootPageId = m_navigationStack.takeLast();
+                QTimer::singleShot(0, this, [this, kind, hash]() {
+                    if (hash.isEmpty()) {
+                        if (kind == TileKind::Parent && !m_navigationStack.isEmpty()) {
+                            m_currentRootPageId = m_navigationStack.takeLast();
+                            m_targetPage = 0;
+                            refreshFromConfiguration(true);
+                        }
+                        return;
+                    }
+
+                    if (kind == TileKind::Folder) {
+                        m_navigationStack.append(m_currentRootPageId);
+                        m_currentRootPageId = hash;
                         m_targetPage = 0;
                         refreshFromConfiguration(true);
+                        return;
                     }
-                    return;
-                }
 
-                if (kind == TileKind::Folder) {
-                    m_navigationStack.append(m_currentRootPageId);
-                    m_currentRootPageId = hash;
-                    m_targetPage = 0;
-                    refreshFromConfiguration(true);
-                    return;
-                }
-
-                if (kind == TileKind::Parent) {
-                    if (!m_navigationStack.isEmpty()) {
-                        const QString previousRoot = m_navigationStack.takeLast();
-                        m_currentRootPageId = previousRoot.isEmpty() ? hash : previousRoot;
-                    } else {
-                        m_currentRootPageId = hash;
+                    if (kind == TileKind::Parent) {
+                        if (!m_navigationStack.isEmpty()) {
+                            const QString previousRoot = m_navigationStack.takeLast();
+                            m_currentRootPageId = previousRoot.isEmpty() ? hash : previousRoot;
+                        } else {
+                            m_currentRootPageId = hash;
+                        }
+                        m_targetPage = 0;
+                        refreshFromConfiguration(true);
+                        return;
                     }
-                    m_targetPage = 0;
-                    refreshFromConfiguration(true);
-                    return;
-                }
 
-                emit foregroundAppChanged(hash);
+                    emit foregroundAppChanged(hash);
+                });
             });
 
             m_layout->addWidget(tile, row, col);

@@ -23,6 +23,8 @@ namespace fairwindsk::ui::launcher {
 
         ~Launcher() override ;
         void refreshFromConfiguration(bool forceRebuild = false);
+        QString currentPageTitle() const;
+        QIcon currentPageIcon() const;
 
         void resizeEvent(QResizeEvent *event) override;
         void showEvent(QShowEvent *event) override;
@@ -35,6 +37,7 @@ namespace fairwindsk::ui::launcher {
     signals:
 
         void foregroundAppChanged(const QString hash);
+        void pageContextChanged();
 
     private:
         QString buildLayoutSignature() const;

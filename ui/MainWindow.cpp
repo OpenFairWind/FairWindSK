@@ -94,6 +94,11 @@ namespace fairwindsk::ui {
 
         // Connect the foreground app changed signal to the setForegroundApp method (launcher)
         connect(m_launcher, &launcher::Launcher::foregroundAppChanged,this, &MainWindow::setForegroundApp);
+        connect(m_launcher, &launcher::Launcher::pageContextChanged, this, [this]() {
+            if (ui->stackedWidget_Center->currentWidget() == m_launcher) {
+                syncTopBarToCurrentPage();
+            }
+        });
 
         // Connect the foreground app changed signal to the setForegroundApp method (bottom bar)
         connect(m_bottomBar, &bottombar::BottomBar::foregroundAppChanged,this, &MainWindow::setForegroundApp);
@@ -288,9 +293,9 @@ namespace fairwindsk::ui {
             const auto *currentWidget = ui->stackedWidget_Center->currentWidget();
             if (currentWidget == m_launcher) {
                 m_topBar->setCurrentContext(
-                    tr("Apps"),
+                    m_launcher ? m_launcher->currentPageTitle() : tr("Home"),
                     tr("Application launcher"),
-                    QIcon(":/resources/images/icons/apps_icon.png"),
+                    m_launcher ? m_launcher->currentPageIcon() : QIcon(":/resources/svg/OpenBridge/home.svg"),
                     false);
             } else if (currentWidget == m_myDataPage) {
                 m_topBar->setCurrentContext(
