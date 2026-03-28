@@ -16,7 +16,10 @@
 #include <QLayout>
 #include <QMessageBox>
 #include <QMimeData>
+#include <QPainter>
+#include <QPainterPath>
 #include <QSignalBlocker>
+#include <QStyledItemDelegate>
 #include <QVBoxLayout>
 
 #include "AppItem.hpp"
@@ -169,6 +172,64 @@ namespace fairwindsk::ui::settings {
 
             return nullptr;
         }
+
+        class LauncherTileDelegate final : public QStyledItemDelegate {
+        public:
+            explicit LauncherTileDelegate(QObject *parent = nullptr) : QStyledItemDelegate(parent) {}
+
+            void paint(QPainter *painter,
+                       const QStyleOptionViewItem &option,
+                       const QModelIndex &index) const override {
+                if (!painter) {
+                    return;
+                }
+
+                painter->save();
+                painter->setRenderHint(QPainter::Antialiasing, true);
+                painter->setRenderHint(QPainter::SmoothPixmapTransform, true);
+
+                const QRect rect = option.rect.adjusted(3, 3, -3, -3);
+                const bool isSelected = option.state & QStyle::State_Selected;
+
+                QPainterPath clipPath;
+                clipPath.addRoundedRect(rect, 3.0, 3.0);
+                painter->setClipPath(clipPath);
+
+                painter->fillRect(rect, QColor(16, 22, 32));
+
+                const QPixmap pixmap = index.data(Qt::DecorationRole).value<QPixmap>();
+                if (!pixmap.isNull()) {
+                    const QPixmap scaled = pixmap.scaled(rect.size(),
+                                                         Qt::KeepAspectRatioByExpanding,
+                                                         Qt::SmoothTransformation);
+                    const QRect sourceRect((scaled.width() - rect.width()) / 2,
+                                           (scaled.height() - rect.height()) / 2,
+                                           rect.width(),
+                                           rect.height());
+                    painter->drawPixmap(rect, scaled, sourceRect);
+                }
+
+                QLinearGradient overlay(rect.topLeft(), QPointF(rect.left(), rect.bottom()));
+                overlay.setColorAt(0.0, QColor(0, 0, 0, 0));
+                overlay.setColorAt(0.55, QColor(0, 0, 0, 10));
+                overlay.setColorAt(1.0, QColor(0, 0, 0, 170));
+                painter->fillRect(rect, overlay);
+
+                painter->setClipping(false);
+                painter->setPen(QPen(isSelected ? QColor(255, 255, 255) : QColor(230, 231, 235), isSelected ? 2.0 : 1.0));
+                painter->drawRoundedRect(rect, 3.0, 3.0);
+
+                QFont font = option.font;
+                font.setPointSizeF(std::max<qreal>(10.0, font.pointSizeF()));
+                painter->setFont(font);
+                painter->setPen(QColor(248, 250, 252));
+                painter->drawText(rect.adjusted(10, 10, -10, -10),
+                                  Qt::AlignLeft | Qt::AlignBottom | Qt::TextWordWrap,
+                                  index.data(Qt::DisplayRole).toString());
+
+                painter->restore();
+            }
+        };
     }
 
     AvailableAppsListWidget::AvailableAppsListWidget(QWidget *parent) : QListWidget(parent) {
@@ -228,6 +289,7 @@ namespace fairwindsk::ui::settings {
         horizontalHeader()->setVisible(false);
         verticalHeader()->setVisible(false);
         setShowGrid(true);
+        setItemDelegate(new LauncherTileDelegate(this));
     }
 
     void LauncherPageGridWidget::setGridSize(const int rows, const int columns) {
@@ -403,14 +465,14 @@ namespace fairwindsk::ui::settings {
         tableItem->setData(Qt::UserRole, appName);
         if (appName.isEmpty()) {
             tableItem->setText(QString());
-            tableItem->setIcon(QIcon());
+            tableItem->setData(Qt::DecorationRole, QPixmap());
             tableItem->setToolTip(QString());
             return;
         }
 
         const auto presentation = m_appResolver ? m_appResolver(appName) : qMakePair(appName, QPixmap());
         tableItem->setText(presentation.first);
-        tableItem->setIcon(QIcon(presentation.second));
+        tableItem->setData(Qt::DecorationRole, presentation.second);
         tableItem->setToolTip(presentation.first);
     }
 
