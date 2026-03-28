@@ -208,6 +208,8 @@ set(FAIRWINDSK_SOURCES
         ui/web/DownloadWidget.cpp ui/web/DownloadWidget.hpp ui/web/DownloadWidget.ui
         resources.qrc
         ui/settings/Apps.cpp ui/settings/Apps.hpp ui/settings/Apps.ui
+        ui/settings/AppDetailsWidget.cpp ui/settings/AppDetailsWidget.hpp ui/settings/AppDetailsWidget.ui
+        ui/settings/PageDetailsWidget.cpp ui/settings/PageDetailsWidget.hpp ui/settings/PageDetailsWidget.ui
         ui/settings/Main.cpp ui/settings/Main.hpp ui/settings/Main.ui
         ui/settings/Connection.cpp ui/settings/Connection.hpp ui/settings/Connection.ui
         ui/settings/SignalK.cpp ui/settings/SignalK.hpp ui/settings/SignalK.ui

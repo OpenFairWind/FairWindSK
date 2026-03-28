@@ -26,8 +26,12 @@
 #include "AppItem.hpp"
 #include "FairWindSK.hpp"
 #include "PList.hpp"
+#include "AppDetailsWidget.hpp"
+#include "PageDetailsWidget.hpp"
 #include "ui/DrawerDialogHost.hpp"
+#include "ui_AppDetailsWidget.h"
 #include "ui_Apps.h"
+#include "ui_PageDetailsWidget.h"
 
 namespace fairwindsk::ui::settings {
     namespace {
@@ -599,6 +603,16 @@ namespace fairwindsk::ui::settings {
         pageGridLayout->setContentsMargins(0, 0, 0, 0);
         pageGridLayout->addWidget(m_pageGrid);
 
+        m_appDetailsWidget = new AppDetailsWidget(this);
+        auto *appDetailsLayout = new QVBoxLayout(ui->widget_AppDetailsHost);
+        appDetailsLayout->setContentsMargins(0, 0, 0, 0);
+        appDetailsLayout->addWidget(m_appDetailsWidget);
+
+        m_pageDetailsWidget = new PageDetailsWidget(this);
+        auto *pageDetailsLayout = new QVBoxLayout(ui->widget_PageDetailsHost);
+        pageDetailsLayout->setContentsMargins(0, 0, 0, 0);
+        pageDetailsLayout->addWidget(m_pageDetailsWidget);
+
         setupImageToolButton(ui->toolButton_AddAllApps, QStringLiteral(":/resources/svg/OpenBridge/widget-add-google.svg"), tr("Add all applications to pages"));
         setupImageToolButton(ui->toolButton_Add, QStringLiteral(":/resources/svg/OpenBridge/widget-add-google.svg"), tr("Add application"));
         setupImageToolButton(ui->toolButton_Remove, QStringLiteral(":/resources/svg/OpenBridge/delete-google.svg"), tr("Delete application"));
@@ -612,18 +626,18 @@ namespace fairwindsk::ui::settings {
         setupImageToolButton(ui->toolButton_PageDetails, QStringLiteral(":/resources/svg/OpenBridge/info.svg"), tr("Page details"));
         setupImageToolButton(ui->toolButton_SelectedSlotDetails, QStringLiteral(":/resources/svg/OpenBridge/info.svg"), tr("Selected item details"));
         setupImageToolButton(ui->toolButton_ClearPageSlot, QStringLiteral(":/resources/svg/OpenBridge/delete-google.svg"), tr("Clear selected slot"));
-        setupImageToolButton(ui->toolButton_BackToLayout, QStringLiteral(":/resources/svg/OpenBridge/arrow-left-google.svg"), tr("Back to layout"));
-        setupImageToolButton(ui->toolButton_BackFromPageDetails, QStringLiteral(":/resources/svg/OpenBridge/arrow-left-google.svg"), tr("Back to layout"));
+        setupImageToolButton(m_appDetailsWidget->ui->toolButton_BackToLayout, QStringLiteral(":/resources/svg/OpenBridge/arrow-left-google.svg"), tr("Back to layout"));
+        setupImageToolButton(m_pageDetailsWidget->ui->toolButton_BackFromPageDetails, QStringLiteral(":/resources/svg/OpenBridge/arrow-left-google.svg"), tr("Back to layout"));
 
         connect(m_availableAppsList, &QListWidget::itemSelectionChanged, this, &Apps::onAvailableAppSelectionChanged);
         connect(m_availableAppsList, &QListWidget::itemDoubleClicked, this, &Apps::onAvailableAppDoubleClicked);
-        connect(ui->pushButton_Apps_EditSave, &QPushButton::clicked, this, &Apps::onAppsEditSaveClicked);
-        connect(ui->lineEdit_Apps_Name, &QLineEdit::textChanged, this, &Apps::onAppsDetailsFieldsTextChanged);
-        connect(ui->lineEdit_Apps_Description, &QLineEdit::textChanged, this, &Apps::onAppsDetailsFieldsTextChanged);
-        connect(ui->lineEdit_Apps_DisplayName, &QLineEdit::textChanged, this, &Apps::onAppsDetailsFieldsTextChanged);
-        connect(ui->lineEdit_Apps_AppIcon, &QLineEdit::textChanged, this, &Apps::onAppsDetailsFieldsTextChanged);
-        connect(ui->pushButton_Apps_AppIcon_Browse, &QPushButton::clicked, this, &Apps::onAppsAppIconBrowse);
-        connect(ui->pushButton_Apps_Name_Browse, &QPushButton::clicked, this, &Apps::onAppsNameBrowse);
+        connect(m_appDetailsWidget->ui->pushButton_Apps_EditSave, &QPushButton::clicked, this, &Apps::onAppsEditSaveClicked);
+        connect(m_appDetailsWidget->ui->lineEdit_Apps_Name, &QLineEdit::textChanged, this, &Apps::onAppsDetailsFieldsTextChanged);
+        connect(m_appDetailsWidget->ui->lineEdit_Apps_Description, &QLineEdit::textChanged, this, &Apps::onAppsDetailsFieldsTextChanged);
+        connect(m_appDetailsWidget->ui->lineEdit_Apps_DisplayName, &QLineEdit::textChanged, this, &Apps::onAppsDetailsFieldsTextChanged);
+        connect(m_appDetailsWidget->ui->lineEdit_Apps_AppIcon, &QLineEdit::textChanged, this, &Apps::onAppsDetailsFieldsTextChanged);
+        connect(m_appDetailsWidget->ui->pushButton_Apps_AppIcon_Browse, &QPushButton::clicked, this, &Apps::onAppsAppIconBrowse);
+        connect(m_appDetailsWidget->ui->pushButton_Apps_Name_Browse, &QPushButton::clicked, this, &Apps::onAppsNameBrowse);
         connect(ui->toolButton_AddAllApps, &QToolButton::clicked, this, &Apps::onAddAllAppsClicked);
         connect(ui->toolButton_Add, &QToolButton::clicked, this, &Apps::onAddAppClicked);
         connect(ui->toolButton_Remove, &QToolButton::clicked, this, &Apps::onRemoveAppClicked);
@@ -650,12 +664,12 @@ namespace fairwindsk::ui::settings {
         connect(ui->toolButton_PageDetails, &QToolButton::clicked, this, &Apps::onShowSelectedPageDetails);
         connect(ui->toolButton_SelectedSlotDetails, &QToolButton::clicked, this, &Apps::onShowSelectedGridItemDetails);
         connect(ui->toolButton_ClearPageSlot, &QToolButton::clicked, this, &Apps::onClearPageSlotClicked);
-        connect(ui->toolButton_BackToLayout, &QToolButton::clicked, this, &Apps::onBackToLayoutClicked);
-        connect(ui->toolButton_BackFromPageDetails, &QToolButton::clicked, this, &Apps::onBackToLayoutClicked);
-        connect(ui->pushButton_Page_EditSave, &QPushButton::clicked, this, &Apps::onPageEditSaveClicked);
-        connect(ui->lineEdit_Page_Name, &QLineEdit::textChanged, this, &Apps::onPageDetailsFieldsTextChanged);
-        connect(ui->lineEdit_Page_Icon, &QLineEdit::textChanged, this, &Apps::onPageDetailsFieldsTextChanged);
-        connect(ui->pushButton_Page_Icon_Browse, &QPushButton::clicked, this, &Apps::onPageIconBrowse);
+        connect(m_appDetailsWidget->ui->toolButton_BackToLayout, &QToolButton::clicked, this, &Apps::onBackToLayoutClicked);
+        connect(m_pageDetailsWidget->ui->toolButton_BackFromPageDetails, &QToolButton::clicked, this, &Apps::onBackToLayoutClicked);
+        connect(m_pageDetailsWidget->ui->pushButton_Page_EditSave, &QPushButton::clicked, this, &Apps::onPageEditSaveClicked);
+        connect(m_pageDetailsWidget->ui->lineEdit_Page_Name, &QLineEdit::textChanged, this, &Apps::onPageDetailsFieldsTextChanged);
+        connect(m_pageDetailsWidget->ui->lineEdit_Page_Icon, &QLineEdit::textChanged, this, &Apps::onPageDetailsFieldsTextChanged);
+        connect(m_pageDetailsWidget->ui->pushButton_Page_Icon_Browse, &QPushButton::clicked, this, &Apps::onPageIconBrowse);
 
         synchronizeAvailableApps(false);
         ensureLauncherLayout();
@@ -694,13 +708,13 @@ namespace fairwindsk::ui::settings {
         }
 
         m_appsEditMode = editMode;
-        ui->pushButton_Apps_EditSave->setText(m_appsEditMode ? tr("Save") : tr("Edit"));
-        ui->lineEdit_Apps_Name->setReadOnly(!m_appsEditMode);
-        ui->lineEdit_Apps_Description->setReadOnly(true);
-        ui->lineEdit_Apps_DisplayName->setReadOnly(true);
-        ui->lineEdit_Apps_AppIcon->setReadOnly(!m_appsEditMode);
-        ui->pushButton_Apps_Name_Browse->setEnabled(false);
-        ui->pushButton_Apps_AppIcon_Browse->setEnabled(m_appsEditMode);
+        m_appDetailsWidget->ui->pushButton_Apps_EditSave->setText(m_appsEditMode ? tr("Save") : tr("Edit"));
+        m_appDetailsWidget->ui->lineEdit_Apps_Name->setReadOnly(!m_appsEditMode);
+        m_appDetailsWidget->ui->lineEdit_Apps_Description->setReadOnly(true);
+        m_appDetailsWidget->ui->lineEdit_Apps_DisplayName->setReadOnly(true);
+        m_appDetailsWidget->ui->lineEdit_Apps_AppIcon->setReadOnly(!m_appsEditMode);
+        m_appDetailsWidget->ui->pushButton_Apps_Name_Browse->setEnabled(false);
+        m_appDetailsWidget->ui->pushButton_Apps_AppIcon_Browse->setEnabled(m_appsEditMode);
         m_appsEditChanged = false;
         refreshDetailActionButtons();
     }
@@ -711,10 +725,10 @@ namespace fairwindsk::ui::settings {
         }
 
         m_pageEditMode = editMode;
-        ui->pushButton_Page_EditSave->setText(m_pageEditMode ? tr("Save") : tr("Edit"));
-        ui->lineEdit_Page_Name->setReadOnly(!m_pageEditMode);
-        ui->lineEdit_Page_Icon->setReadOnly(!m_pageEditMode);
-        ui->pushButton_Page_Icon_Browse->setEnabled(m_pageEditMode);
+        m_pageDetailsWidget->ui->pushButton_Page_EditSave->setText(m_pageEditMode ? tr("Save") : tr("Edit"));
+        m_pageDetailsWidget->ui->lineEdit_Page_Name->setReadOnly(!m_pageEditMode);
+        m_pageDetailsWidget->ui->lineEdit_Page_Icon->setReadOnly(!m_pageEditMode);
+        m_pageDetailsWidget->ui->pushButton_Page_Icon_Browse->setEnabled(m_pageEditMode);
         m_pageEditChanged = false;
         refreshDetailActionButtons();
     }
@@ -730,17 +744,17 @@ namespace fairwindsk::ui::settings {
         }
 
         auto appJsonObject = m_settings->getConfiguration()->getRoot()["apps"].at(idx);
-        QString newName = ui->lineEdit_Apps_Name->text().trimmed();
+        QString newName = m_appDetailsWidget->ui->lineEdit_Apps_Name->text().trimmed();
         if (newName.isEmpty()) {
             newName = m_currentDetailAppName;
         } else if (newName != m_currentDetailAppName && m_settings->getConfiguration()->findApp(newName) != -1) {
             drawer::warning(this, tr("Applications"), tr("An application named \"%1\" already exists.").arg(newName));
-            ui->lineEdit_Apps_Name->setText(m_currentDetailAppName);
+            m_appDetailsWidget->ui->lineEdit_Apps_Name->setText(m_currentDetailAppName);
             return;
         }
 
         appJsonObject["name"] = newName.toStdString();
-        appJsonObject["signalk"]["appIcon"] = ui->lineEdit_Apps_AppIcon->text().toStdString();
+        appJsonObject["signalk"]["appIcon"] = m_appDetailsWidget->ui->lineEdit_Apps_AppIcon->text().toStdString();
         m_settings->getConfiguration()->getRoot()["apps"].at(idx) = appJsonObject;
 
         if (newName != m_currentDetailAppName) {
@@ -769,8 +783,8 @@ namespace fairwindsk::ui::settings {
             return;
         }
 
-        (*node)[kNodeNameKey] = ui->lineEdit_Page_Name->text().trimmed().toStdString();
-        (*node)[kNodeIconKey] = ui->lineEdit_Page_Icon->text().trimmed().toStdString();
+        (*node)[kNodeNameKey] = m_pageDetailsWidget->ui->lineEdit_Page_Name->text().trimmed().toStdString();
+        (*node)[kNodeIconKey] = m_pageDetailsWidget->ui->lineEdit_Page_Icon->text().trimmed().toStdString();
         m_pageEditChanged = false;
         markSettingsDirty();
         rebuildPageTree();
@@ -808,14 +822,14 @@ namespace fairwindsk::ui::settings {
 
     void Apps::refreshDetailActionButtons() const {
         const bool hasDetail = !m_currentDetailAppName.isEmpty();
-        ui->pushButton_Apps_EditSave->setEnabled(hasDetail);
-        ui->pushButton_Apps_Name_Browse->setEnabled(hasDetail && m_appsEditMode);
-        ui->pushButton_Apps_AppIcon_Browse->setEnabled(hasDetail && m_appsEditMode);
+        m_appDetailsWidget->ui->pushButton_Apps_EditSave->setEnabled(hasDetail);
+        m_appDetailsWidget->ui->pushButton_Apps_Name_Browse->setEnabled(hasDetail && m_appsEditMode);
+        m_appDetailsWidget->ui->pushButton_Apps_AppIcon_Browse->setEnabled(hasDetail && m_appsEditMode);
         const bool hasPageDetail = !m_currentDetailPageId.isEmpty();
-        ui->pushButton_Page_EditSave->setEnabled(hasPageDetail);
-        ui->pushButton_Page_Icon_Browse->setEnabled(hasPageDetail && m_pageEditMode);
-        ui->toolButton_BackToLayout->setEnabled(true);
-        ui->toolButton_BackFromPageDetails->setEnabled(true);
+        m_pageDetailsWidget->ui->pushButton_Page_EditSave->setEnabled(hasPageDetail);
+        m_pageDetailsWidget->ui->pushButton_Page_Icon_Browse->setEnabled(hasPageDetail && m_pageEditMode);
+        m_appDetailsWidget->ui->toolButton_BackToLayout->setEnabled(true);
+        m_pageDetailsWidget->ui->toolButton_BackFromPageDetails->setEnabled(true);
     }
 
     void Apps::rebuildAvailableAppsList() {
@@ -968,22 +982,22 @@ namespace fairwindsk::ui::settings {
         }
 
         AppItem appItem(m_settings->getConfiguration()->getRoot()["apps"].at(idx));
-        ui->label_Apps_Version_Text->setText(appItem.getVersion());
-        ui->label_Apps_Url_Text->setText(appItem.getUrl());
-        ui->label_Apps_Copyright_Text->setText(appItem.getCopyright());
-        ui->label_Apps_License_Text->setText(appItem.getLicense());
-        ui->label_Apps_Author_Text->setText(appItem.getAuthor());
-        ui->label_Apps_Vendor_Text->setText(appItem.getVendor());
-        ui->lineEdit_Apps_Name->setText(appItem.getName());
-        ui->lineEdit_Apps_Description->setText(appItem.getDescription());
-        ui->lineEdit_Apps_DisplayName->setText(appItem.getDisplayName());
-        ui->lineEdit_Apps_AppIcon->setText(appItem.getAppIcon());
+        m_appDetailsWidget->ui->label_Apps_Version_Text->setText(appItem.getVersion());
+        m_appDetailsWidget->ui->label_Apps_Url_Text->setText(appItem.getUrl());
+        m_appDetailsWidget->ui->label_Apps_Copyright_Text->setText(appItem.getCopyright());
+        m_appDetailsWidget->ui->label_Apps_License_Text->setText(appItem.getLicense());
+        m_appDetailsWidget->ui->label_Apps_Author_Text->setText(appItem.getAuthor());
+        m_appDetailsWidget->ui->label_Apps_Vendor_Text->setText(appItem.getVendor());
+        m_appDetailsWidget->ui->lineEdit_Apps_Name->setText(appItem.getName());
+        m_appDetailsWidget->ui->lineEdit_Apps_Description->setText(appItem.getDescription());
+        m_appDetailsWidget->ui->lineEdit_Apps_DisplayName->setText(appItem.getDisplayName());
+        m_appDetailsWidget->ui->lineEdit_Apps_AppIcon->setText(appItem.getAppIcon());
 
         QPixmap pixmap = appItem.getIcon();
         if (!pixmap.isNull()) {
             pixmap = pixmap.scaled(128, 128, Qt::KeepAspectRatio, Qt::SmoothTransformation);
         }
-        ui->label_Apps_Icon->setPixmap(pixmap);
+        m_appDetailsWidget->ui->label_Apps_Icon->setPixmap(pixmap);
 
         ui->stackedWidget_RightPane->setCurrentWidget(ui->page_Details);
         if (startEditing) {
@@ -1007,14 +1021,14 @@ namespace fairwindsk::ui::settings {
             return;
         }
 
-        ui->lineEdit_Page_Name->setText(nodeName(*node));
+        m_pageDetailsWidget->ui->lineEdit_Page_Name->setText(nodeName(*node));
         const QString iconPath = pageIconPath(*node);
-        ui->lineEdit_Page_Icon->setText(iconPath);
+        m_pageDetailsWidget->ui->lineEdit_Page_Icon->setText(iconPath);
         QPixmap pixmap = pageIconPixmap(*node);
         if (!pixmap.isNull()) {
             pixmap = pixmap.scaled(128, 128, Qt::KeepAspectRatio, Qt::SmoothTransformation);
         }
-        ui->label_Page_Icon->setPixmap(pixmap);
+        m_pageDetailsWidget->ui->label_Page_Icon->setPixmap(pixmap);
         ui->stackedWidget_RightPane->setCurrentWidget(ui->page_PageDetails);
 
         if (startEditing) {
@@ -1463,15 +1477,14 @@ namespace fairwindsk::ui::settings {
     }
 
     QString Apps::requestedPageIcon(const QString &pageName) const {
-        const QString iconPath = drawer::getOpenFilePath(const_cast<Apps *>(this),
-                                                         tr("Page icon"),
-                                                         QDir::currentPath() + QStringLiteral("/icons"),
-                                                         tr("Image Files (*.png *.svg *.jpg *.jpeg)"));
+        Q_UNUSED(pageName);
+        const QString iconPath = drawer::getIconPath(const_cast<Apps *>(this),
+                                                     tr("Page icon"),
+                                                     QLatin1String(kDefaultPageIconPath));
         if (iconPath.isEmpty()) {
             return QLatin1String(kDefaultPageIconPath);
         }
-
-        return QStringLiteral("file://") + iconPath;
+        return iconPath;
     }
 
     void Apps::removeFolderReferenceFromNode(nlohmann::json &node, const QString &pageId) const {
@@ -1804,18 +1817,17 @@ namespace fairwindsk::ui::settings {
     }
 
     void Apps::onAppsAppIconBrowse() {
-        const QString appIcon = drawer::getOpenFilePath(this,
-                                                        tr("Open Image"),
-                                                        QDir::currentPath() + QStringLiteral("/icons"),
-                                                        tr("Image Files (*.png *.svg)"));
+        const QString appIcon = drawer::getIconPath(this,
+                                                    tr("Application icon"),
+                                                    m_appDetailsWidget->ui->lineEdit_Apps_AppIcon->text());
         if (appIcon.isEmpty()) {
             return;
         }
 
-        ui->lineEdit_Apps_AppIcon->setText(QStringLiteral("file://") + appIcon);
+        m_appDetailsWidget->ui->lineEdit_Apps_AppIcon->setText(appIcon);
         QPixmap pixmap;
-        pixmap.load(appIcon);
-        ui->label_Apps_Icon->setPixmap(pixmap.scaled(128, 128, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        pixmap.load(appIcon.startsWith(QStringLiteral("file://")) ? appIcon.mid(7) : appIcon);
+        m_appDetailsWidget->ui->label_Apps_Icon->setPixmap(pixmap.scaled(128, 128, Qt::KeepAspectRatio, Qt::SmoothTransformation));
         m_appsEditChanged = true;
     }
 
@@ -2286,17 +2298,16 @@ namespace fairwindsk::ui::settings {
     }
 
     void Apps::onPageIconBrowse() {
-        const QString iconPath = drawer::getOpenFilePath(this,
-                                                         tr("Page icon"),
-                                                         QDir::currentPath() + QStringLiteral("/icons"),
-                                                         tr("Image Files (*.png *.svg *.jpg *.jpeg)"));
+        const QString iconPath = drawer::getIconPath(this,
+                                                     tr("Page icon"),
+                                                     m_pageDetailsWidget->ui->lineEdit_Page_Icon->text());
         if (iconPath.isEmpty()) {
             return;
         }
 
-        ui->lineEdit_Page_Icon->setText(QStringLiteral("file://") + iconPath);
-        QPixmap pixmap(iconPath);
-        ui->label_Page_Icon->setPixmap(pixmap.scaled(128, 128, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        m_pageDetailsWidget->ui->lineEdit_Page_Icon->setText(iconPath);
+        QPixmap pixmap(iconPath.startsWith(QStringLiteral("file://")) ? iconPath.mid(7) : iconPath);
+        m_pageDetailsWidget->ui->label_Page_Icon->setPixmap(pixmap.scaled(128, 128, Qt::KeepAspectRatio, Qt::SmoothTransformation));
         m_pageEditChanged = true;
     }
 } // fairwindsk::ui::settings

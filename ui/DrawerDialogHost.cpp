@@ -14,9 +14,11 @@
 #include <QInputDialog>
 #include <QLabel>
 #include <QLineEdit>
+#include <QListWidget>
 #include <QPointer>
 #include <QPushButton>
 #include <QRegularExpression>
+#include <QSet>
 #include <QStandardPaths>
 #include <QToolButton>
 #include <QTreeView>
@@ -317,6 +319,180 @@ namespace fairwindsk::ui::drawer {
             QToolButton *m_homeButton = nullptr;
             QToolButton *m_upButton = nullptr;
         };
+
+        struct IconEntry {
+            QString path;
+            QString label;
+        };
+
+        int iconPickerIconSize() {
+            const auto *configuration = fairwindsk::FairWindSK::getInstance()->getConfiguration();
+            const QString preset = configuration->getUiScaleMode() == QStringLiteral("auto")
+                                       ? QStringLiteral("normal")
+                                       : configuration->getUiScalePreset();
+            if (preset == QStringLiteral("xlarge")) {
+                return 96;
+            }
+            if (preset == QStringLiteral("large")) {
+                return 80;
+            }
+            if (preset == QStringLiteral("small")) {
+                return 56;
+            }
+            return 64;
+        }
+
+        void appendIconEntry(QList<IconEntry> &entries, QSet<QString> &seen, const QString &path, const QString &label = QString()) {
+            if (path.trimmed().isEmpty() || seen.contains(path)) {
+                return;
+            }
+            seen.insert(path);
+            entries.append({path, label.isEmpty() ? QFileInfo(path).completeBaseName() : label});
+        }
+
+        QList<IconEntry> availableIconEntries() {
+            QList<IconEntry> entries;
+            QSet<QString> seen;
+
+            const QStringList resourceIcons = {
+                QStringLiteral(":/resources/svg/OpenBridge/home.svg"),
+                QStringLiteral(":/resources/svg/OpenBridge/applications.svg"),
+                QStringLiteral(":/resources/svg/OpenBridge/settings-iec.svg"),
+                QStringLiteral(":/resources/svg/OpenBridge/navigation-route.svg"),
+                QStringLiteral(":/resources/svg/OpenBridge/database.svg"),
+                QStringLiteral(":/resources/svg/OpenBridge/anchor-iec.svg"),
+                QStringLiteral(":/resources/svg/OpenBridge/alerts.svg"),
+                QStringLiteral(":/resources/svg/OpenBridge/command-autopilot.svg"),
+                QStringLiteral(":/resources/images/icons/apps_icon.png"),
+                QStringLiteral(":/resources/images/icons/settings_icon.png"),
+                QStringLiteral(":/resources/images/icons/signalkserver_icon.png"),
+                QStringLiteral(":/resources/images/icons/youtube_icon.png"),
+                QStringLiteral(":/resources/images/icons/web_icon.png"),
+                QStringLiteral(":/resources/images/icons/webapp-256x256.png")
+            };
+            for (const QString &path : resourceIcons) {
+                appendIconEntry(entries, seen, path);
+            }
+
+            const QStringList directories = {
+                QDir::currentPath() + QStringLiteral("/icons"),
+                QCoreApplication::applicationDirPath() + QStringLiteral("/icons"),
+                QDir(QCoreApplication::applicationDirPath()).absoluteFilePath(QStringLiteral("../Resources/icons"))
+            };
+
+            for (const QString &directoryPath : directories) {
+                QDir dir(directoryPath);
+                if (!dir.exists()) {
+                    continue;
+                }
+                const QFileInfoList iconFiles = dir.entryInfoList(
+                    QStringList() << QStringLiteral("*.png") << QStringLiteral("*.svg") << QStringLiteral("*.jpg") << QStringLiteral("*.jpeg"),
+                    QDir::Files | QDir::NoDotAndDotDot,
+                    QDir::Name);
+                for (const QFileInfo &fileInfo : iconFiles) {
+                    appendIconEntry(entries, seen, QStringLiteral("file://") + fileInfo.absoluteFilePath(), fileInfo.completeBaseName());
+                }
+            }
+
+            return entries;
+        }
+
+        QPixmap iconPixmapForPath(const QString &path, const int iconSize) {
+            QPixmap pixmap;
+            if (path.startsWith(QStringLiteral("file://"))) {
+                pixmap.load(path.mid(QStringLiteral("file://").size()));
+            } else {
+                pixmap.load(path);
+            }
+            if (pixmap.isNull()) {
+                pixmap = QPixmap(QStringLiteral(":/resources/images/icons/webapp-256x256.png"));
+            }
+            return pixmap.scaled(iconSize, iconSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        }
+
+        class DrawerIconPickerWidget final : public QWidget {
+        public:
+            explicit DrawerIconPickerWidget(const QString &currentPath, QWidget *parent = nullptr)
+                : QWidget(parent), m_currentPath(currentPath.trimmed()) {
+                auto *layout = new QVBoxLayout(this);
+                layout->setContentsMargins(0, 0, 0, 0);
+                layout->setSpacing(8);
+
+                m_previewLabel = new QLabel(this);
+                m_previewLabel->setAlignment(Qt::AlignCenter);
+                m_previewLabel->setMinimumHeight(110);
+                layout->addWidget(m_previewLabel);
+
+                m_listWidget = new QListWidget(this);
+                m_listWidget->setViewMode(QListView::IconMode);
+                m_listWidget->setFlow(QListView::LeftToRight);
+                m_listWidget->setWrapping(true);
+                m_listWidget->setResizeMode(QListView::Adjust);
+                m_listWidget->setMovement(QListView::Static);
+                m_listWidget->setSelectionMode(QAbstractItemView::SingleSelection);
+                m_listWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+                const int iconSize = iconPickerIconSize();
+                m_listWidget->setIconSize(QSize(iconSize, iconSize));
+                m_listWidget->setGridSize(QSize(iconSize + 36, iconSize + 44));
+                const int visibleRows = 2;
+                m_listWidget->setMinimumHeight((iconSize + 44) * visibleRows + 18);
+                layout->addWidget(m_listWidget, 1);
+
+                const QList<IconEntry> entries = availableIconEntries();
+                for (const IconEntry &entry : entries) {
+                    auto *item = new QListWidgetItem(QIcon(iconPixmapForPath(entry.path, iconSize)), entry.label);
+                    item->setData(Qt::UserRole, entry.path);
+                    item->setToolTip(entry.path);
+                    m_listWidget->addItem(item);
+                    if (entry.path == m_currentPath) {
+                        m_listWidget->setCurrentItem(item);
+                    }
+                }
+
+                if (!m_currentPath.isEmpty() && !m_listWidget->currentItem()) {
+                    const QPixmap pixmap = iconPixmapForPath(m_currentPath, iconSize);
+                    auto *item = new QListWidgetItem(QIcon(pixmap), QFileInfo(m_currentPath).completeBaseName());
+                    item->setData(Qt::UserRole, m_currentPath);
+                    item->setToolTip(m_currentPath);
+                    m_listWidget->insertItem(0, item);
+                    m_listWidget->setCurrentItem(item);
+                }
+
+                if (!m_listWidget->currentItem() && m_listWidget->count() > 0) {
+                    m_listWidget->setCurrentRow(0);
+                }
+
+                updatePreview();
+                QObject::connect(m_listWidget, &QListWidget::itemSelectionChanged, this, [this]() { updatePreview(); });
+                QObject::connect(m_listWidget, &QListWidget::itemDoubleClicked, this, [this]() {
+                    if (auto *mainWindow = resolveMainWindow(this)) {
+                        mainWindow->finishActiveDrawer(int(QMessageBox::Ok));
+                    }
+                });
+            }
+
+            QString selectedPath() const {
+                auto *item = m_listWidget ? m_listWidget->currentItem() : nullptr;
+                return item ? item->data(Qt::UserRole).toString() : QString();
+            }
+
+        private:
+            void updatePreview() {
+                auto *item = m_listWidget ? m_listWidget->currentItem() : nullptr;
+                if (!item) {
+                    m_previewLabel->clear();
+                    return;
+                }
+
+                const int previewSize = std::max(96, iconPickerIconSize() + 24);
+                const QPixmap pixmap = iconPixmapForPath(item->data(Qt::UserRole).toString(), previewSize);
+                m_previewLabel->setPixmap(pixmap);
+            }
+
+            QString m_currentPath;
+            QLabel *m_previewLabel = nullptr;
+            QListWidget *m_listWidget = nullptr;
+        };
     }
 
     int execDrawer(QWidget *parent, const QString &title, QWidget *content, const QList<ButtonSpec> &buttons, const int defaultResult) {
@@ -456,6 +632,23 @@ namespace fairwindsk::ui::drawer {
 
             return browserGuard->selectedPath();
         }
+    }
+
+    QString getIconPath(QWidget *parent,
+                        const QString &title,
+                        const QString &currentPath) {
+        auto *picker = new DrawerIconPickerWidget(currentPath);
+        QPointer<DrawerIconPickerWidget> pickerGuard(picker);
+        const int result = execDrawer(parent, title, picker, {
+            {QObject::tr("Select"), int(QMessageBox::Ok), true},
+            {QObject::tr("Cancel"), int(QMessageBox::Cancel), false}
+        }, int(QMessageBox::Cancel));
+
+        if (!pickerGuard || result != QMessageBox::Ok) {
+            return {};
+        }
+
+        return pickerGuard->selectedPath();
     }
 
     QString getSaveFilePath(QWidget *parent,

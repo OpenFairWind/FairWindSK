@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>AppDetailsWidget</class>
+ <widget class="QWidget" name="AppDetailsWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>640</width>
+    <height>520</height>
+   </rect>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_DetailsPage">
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_DetailsHeader">
+     <item>
+      <widget class="QToolButton" name="toolButton_BackToLayout">
+       <property name="text">
+        <string>Back</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_DetailsHeader">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButton_Apps_EditSave">
+       <property name="text">
+        <string>Edit</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_DetailsTop">
+     <item>
+      <widget class="QLabel" name="label_Apps_Icon">
+       <property name="minimumSize">
+        <size>
+         <width>128</width>
+         <height>128</height>
+        </size>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <layout class="QFormLayout" name="formLayout_Metadata">
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_Apps_Version">
+         <property name="text">
+          <string>Version</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QLabel" name="label_Apps_Version_Text"/>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_Apps_Url">
+         <property name="text">
+          <string>URL</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QLabel" name="label_Apps_Url_Text"/>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="label_Apps_Copyright">
+         <property name="text">
+          <string>Copyright</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QLabel" name="label_Apps_Copyright_Text"/>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="label_Apps_License">
+         <property name="text">
+          <string>License</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="QLabel" name="label_Apps_License_Text"/>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="label_Apps_Author">
+         <property name="text">
+          <string>Author</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QLabel" name="label_Apps_Author_Text"/>
+       </item>
+       <item row="5" column="0">
+        <widget class="QLabel" name="label_Apps_Vendor">
+         <property name="text">
+          <string>Vendor</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="1">
+        <widget class="QLabel" name="label_Apps_Vendor_Text"/>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QFormLayout" name="formLayout_Details">
+     <item row="0" column="0">
+      <widget class="QLabel" name="label_Apps_Name">
+       <property name="text">
+        <string>Name</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <layout class="QHBoxLayout" name="horizontalLayout_NameField">
+       <item>
+        <widget class="QLineEdit" name="lineEdit_Apps_Name"/>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pushButton_Apps_Name_Browse">
+         <property name="text">
+          <string>Browse...</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="label_Apps_Description">
+       <property name="text">
+        <string>Description</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QLineEdit" name="lineEdit_Apps_Description"/>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="label_Apps_DisplayName">
+       <property name="text">
+        <string>Display Name</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QLineEdit" name="lineEdit_Apps_DisplayName"/>
+     </item>
+     <item row="3" column="0">
+      <widget class="QLabel" name="label_Apps_AppIcon">
+       <property name="text">
+        <string>App Icon</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <layout class="QHBoxLayout" name="horizontalLayout_AppIconField">
+       <item>
+        <widget class="QLineEdit" name="lineEdit_Apps_AppIcon"/>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pushButton_Apps_AppIcon_Browse">
+         <property name="text">
+          <string>Browse...</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

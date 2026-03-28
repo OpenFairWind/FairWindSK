@@ -24,6 +24,9 @@ namespace fairwindsk::ui::settings {
     namespace Ui { class Apps; }
     QT_END_NAMESPACE
 
+    class AppDetailsWidget;
+    class PageDetailsWidget;
+
     class AvailableAppsListWidget final : public QListWidget {
         Q_OBJECT
 
@@ -184,6 +187,8 @@ namespace fairwindsk::ui::settings {
         AvailableAppsListWidget *m_availableAppsList = nullptr;
         QTreeWidget *m_pageTree = nullptr;
         LauncherPageGridWidget *m_pageGrid = nullptr;
+        AppDetailsWidget *m_appDetailsWidget = nullptr;
+        PageDetailsWidget *m_pageDetailsWidget = nullptr;
     };
 } // fairwindsk::ui::settings
 

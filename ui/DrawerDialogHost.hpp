@@ -60,6 +60,9 @@ namespace fairwindsk::ui::drawer {
                             const QString &title,
                             const QString &directory = QString(),
                             const QString &filter = QString());
+    QString getIconPath(QWidget *parent,
+                        const QString &title,
+                        const QString &currentPath = QString());
     QString getSaveFilePath(QWidget *parent,
                             const QString &title,
                             const QString &path = QString(),
