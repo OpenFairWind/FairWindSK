@@ -658,6 +658,22 @@ namespace fairwindsk::ui {
             activateWindow(); // for Windows
         }
     }
+
+    void MainWindow::applyRuntimeConfiguration() {
+        const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+        if (!fairWindSK) {
+            return;
+        }
+
+        m_bottomBar->setAnchorIcon(fairWindSK->checkAnchorApp());
+        setSize();
+
+        if (m_launcher) {
+            m_launcher->refreshFromConfiguration(true);
+        }
+
+        syncTopBarToCurrentPage();
+    }
 /*
  * onUpperLeft
  * Method called when the user clicks the upper left icon

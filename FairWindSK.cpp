@@ -27,6 +27,7 @@
 #include <algorithm>
 
 #include "Units.hpp"
+#include "ui/MainWindow.hpp"
 
 
 using namespace Qt::StringLiterals;
@@ -418,6 +419,22 @@ namespace fairwindsk {
             applyIconMetrics(widget, metrics);
             widget->updateGeometry();
             widget->update();
+        }
+    }
+
+    void FairWindSK::reconfigureRuntime() {
+        updateWebProfileCookie();
+        Units::getInstance()->refreshSignalKPreferences();
+        applyUiPreferences();
+
+        if (!m_configuration.getSignalKServerUrl().isEmpty()) {
+            startSignalK();
+        }
+
+        loadApps();
+
+        if (auto *mainWindow = fairwindsk::ui::MainWindow::instance()) {
+            mainWindow->applyRuntimeConfiguration();
         }
     }
 

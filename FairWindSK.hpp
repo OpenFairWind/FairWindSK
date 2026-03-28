@@ -67,6 +67,7 @@ namespace fairwindsk {
         void loadConfig();
 
         void applyUiPreferences(const Configuration *configuration = nullptr);
+        void reconfigureRuntime();
 
         // Check if the Autopilot app is installed
         bool checkAutopilotApp();

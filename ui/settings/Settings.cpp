@@ -34,8 +34,7 @@ namespace fairwindsk::ui::settings {
 
         // Save the configuration permanently
         FairWindSK::getInstance()->getConfiguration()->save();
-        fairwindsk::Units::getInstance()->refreshSignalKPreferences();
-        FairWindSK::getInstance()->applyUiPreferences();
+        FairWindSK::getInstance()->reconfigureRuntime();
     }
 
 

@@ -81,7 +81,7 @@ namespace fairwindsk::ui {
         bool isDrawerOpen() const;
         void showOverlay(QWidget *page);
         void closeOverlay(QWidget *page, QWidget *fallbackWidget);
-        bool closeSettingsPage(QWidget *fallbackWidget = nullptr, bool showFallback = true, bool exitAfterSave = true);
+        bool closeSettingsPage(QWidget *fallbackWidget = nullptr, bool showFallback = true, bool exitAfterSave = false);
         void closeAboutPage(QWidget *fallbackWidget = nullptr);
         void syncTopBarToCurrentPage();
         void showLauncher();
@@ -127,6 +127,7 @@ namespace fairwindsk::ui {
 
         // Set the windows size
         void setSize();
+        void applyRuntimeConfiguration();
     private:
         // The UI pointer
         Ui::MainWindow *ui = nullptr;
