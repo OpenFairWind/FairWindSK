@@ -1738,6 +1738,7 @@ namespace fairwindsk::ui::settings {
             drawer::warning(this, tr("Pages"), tr("A page can only be nested under another page."));
             return;
         }
+        const QString parentPageId = nodeId(previousSibling);
 
         QStringList parentItems = pageItemsFromNode(previousSibling);
         const int availableIndex = firstAvailableSlot(parentItems);
@@ -1757,7 +1758,8 @@ namespace fairwindsk::ui::settings {
         markSettingsDirty();
         rebuildPageTree();
         rebuildPageEditor();
-        selectTreeItemById(currentNodeId);
+        selectTreeItemById(parentPageId);
+        showLayoutEditor();
     }
 
     void Apps::onMoveNodeUpClicked() {
