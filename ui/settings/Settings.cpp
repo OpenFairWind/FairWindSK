@@ -222,6 +222,14 @@ namespace fairwindsk::ui::settings {
     void Settings::markDirty(const quint32 runtimeChanges, const int delayMs) {
         m_hasPendingUiChanges = true;
         m_pendingRuntimeChanges |= (runtimeChanges == 0 ? FairWindSK::RuntimeAll : runtimeChanges);
+
+        const auto configurationAsJson = m_configuration.getRoot();
+        m_configuration.save();
+        if (m_currentConfiguration) {
+            m_currentConfiguration->setRoot(configurationAsJson);
+            m_currentConfiguration->save();
+        }
+
         scheduleApplyConfiguration(delayMs >= 0 ? delayMs : kLiveApplyDelayMs);
     }
 

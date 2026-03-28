@@ -140,6 +140,10 @@ namespace fairwindsk::ui::settings {
             return value == QLatin1String(kParentReferenceToken);
         }
 
+        bool isProtectedPageEntryValue(const QString &value) {
+            return isParentReferenceValue(value) || value.startsWith(QLatin1String(kFolderReferencePrefix));
+        }
+
         void ensureJsonObject(nlohmann::json &jsonObject, const char *key) {
             if (!jsonObject.contains(key) || !jsonObject[key].is_object()) {
                 jsonObject[key] = nlohmann::json::object();
@@ -407,7 +411,7 @@ namespace fairwindsk::ui::settings {
             return;
         }
         const QModelIndex index = selectedIndexes.first();
-        if (isParentReferenceValue(slotApp(index.row(), index.column()))) {
+        if (isProtectedPageEntryValue(slotApp(index.row(), index.column()))) {
             return;
         }
         setSlotApp(index.row(), index.column(), QString());
@@ -469,6 +473,21 @@ namespace fairwindsk::ui::settings {
                                      ? QString::fromUtf8(event->mimeData()->data(kAppSourceColumnMimeType)).toInt()
                                      : -1;
 
+        const QString targetEntry = slotApp(targetIndex.row(), targetIndex.column());
+        if (isProtectedPageEntryValue(targetEntry) &&
+            !(event->source() == this && sourceRow == targetIndex.row() && sourceColumn == targetIndex.column())) {
+            event->ignore();
+            return;
+        }
+
+        if (event->source() == this && sourceRow >= 0 && sourceColumn >= 0) {
+            const QString sourceEntry = slotApp(sourceRow, sourceColumn);
+            if (isProtectedPageEntryValue(sourceEntry)) {
+                event->ignore();
+                return;
+            }
+        }
+
         if (event->source() == this && sourceRow >= 0 && sourceColumn >= 0 &&
             !(sourceRow == targetIndex.row() && sourceColumn == targetIndex.column())) {
             setSlotApp(sourceRow, sourceColumn, QString());
@@ -486,7 +505,7 @@ namespace fairwindsk::ui::settings {
         }
 
         const QString appName = current->data(Qt::UserRole).toString();
-        if (appName.isEmpty() || isParentReferenceValue(appName)) {
+        if (appName.isEmpty() || isProtectedPageEntryValue(appName)) {
             return;
         }
 
