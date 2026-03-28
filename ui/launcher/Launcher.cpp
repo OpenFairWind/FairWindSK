@@ -26,7 +26,8 @@ namespace fairwindsk::ui::launcher {
         enum class TileKind {
             Empty,
             App,
-            Folder
+            Folder,
+            Parent
         };
 
         struct LauncherTileEntry {
@@ -47,9 +48,11 @@ namespace fairwindsk::ui::launcher {
         constexpr auto kNodeItemsKey = "items";
         constexpr auto kNodeChildrenKey = "children";
         constexpr auto kFolderReferencePrefix = "@folder:";
+        constexpr auto kParentReferenceToken = "@parent";
         constexpr const char *kNodeTypePage = "page";
         constexpr const char *kNodeTypeFolder = "folder";
         constexpr auto kDefaultPageIconPath = ":/resources/svg/OpenBridge/home.svg";
+        constexpr auto kParentNavigationIconPath = ":/resources/svg/OpenBridge/arrow-left-google.svg";
 
         QList<OrderedApp> collectOrderedApps() {
             QList<OrderedApp> orderedApps;
@@ -142,8 +145,39 @@ namespace fairwindsk::ui::launcher {
             return value.startsWith(QLatin1String(kFolderReferencePrefix));
         }
 
+        bool isParentReference(const QString &value) {
+            return value == QLatin1String(kParentReferenceToken);
+        }
+
         QString pageIdFromFolderReference(const QString &value) {
             return isFolderReference(value) ? value.mid(QLatin1String(kFolderReferencePrefix).size()) : QString();
+        }
+
+        QString parentPageIdForNodeId(const nlohmann::json &nodes, const QString &pageId) {
+            if (!nodes.is_array()) {
+                return {};
+            }
+
+            for (const auto &node : nodes) {
+                if (!node.is_object()) {
+                    continue;
+                }
+
+                if (node.contains(kNodeChildrenKey) && node[kNodeChildrenKey].is_array()) {
+                    for (const auto &child : node[kNodeChildrenKey]) {
+                        if (child.is_object() && nodeId(child) == pageId && isPageNode(node)) {
+                            return nodeId(node);
+                        }
+                    }
+
+                    const QString nestedParentId = parentPageIdForNodeId(node[kNodeChildrenKey], pageId);
+                    if (!nestedParentId.isEmpty()) {
+                        return nestedParentId;
+                    }
+                }
+            }
+
+            return {};
         }
 
         const nlohmann::json *findNodeById(const nlohmann::json &nodes, const QString &id) {
@@ -230,6 +264,16 @@ namespace fairwindsk::ui::launcher {
                             for (const QString &slot : pageEntries) {
                                 LauncherTileEntry entry;
                                 if (slot.trimmed().isEmpty()) {
+                                    entries.append(entry);
+                                    continue;
+                                }
+
+                                if (isParentReference(slot)) {
+                                    entry.kind = TileKind::Parent;
+                                    entry.id = parentPageIdForNodeId(allNodes, nodeId(node));
+                                    entry.title = QObject::tr("Parent page");
+                                    entry.description = QObject::tr("Return to the parent page");
+                                    entry.pixmap = QPixmap(QLatin1String(kParentNavigationIconPath));
                                     entries.append(entry);
                                     continue;
                                 }
@@ -606,6 +650,10 @@ namespace fairwindsk::ui::launcher {
                 parts.append(QStringLiteral("folder|%1|%2").arg(entry.id, entry.title));
                 continue;
             }
+            if (entry.kind == TileKind::Parent) {
+                parts.append(QStringLiteral("parent|%1|%2").arg(entry.id, entry.title));
+                continue;
+            }
             auto *appItem = entry.app;
             parts.append(QStringLiteral("%1|%2|%3|%4|%5")
                              .arg(entry.id,
@@ -660,12 +708,29 @@ namespace fairwindsk::ui::launcher {
             const TileKind kind = entry.kind;
             tile->setActivateHandler([this, kind](const QString &hash) {
                 if (hash.isEmpty()) {
+                    if (kind == TileKind::Parent && !m_navigationStack.isEmpty()) {
+                        m_currentRootPageId = m_navigationStack.takeLast();
+                        m_targetPage = 0;
+                        refreshFromConfiguration(true);
+                    }
                     return;
                 }
 
                 if (kind == TileKind::Folder) {
                     m_navigationStack.append(m_currentRootPageId);
                     m_currentRootPageId = hash;
+                    m_targetPage = 0;
+                    refreshFromConfiguration(true);
+                    return;
+                }
+
+                if (kind == TileKind::Parent) {
+                    if (!m_navigationStack.isEmpty()) {
+                        const QString previousRoot = m_navigationStack.takeLast();
+                        m_currentRootPageId = previousRoot.isEmpty() ? hash : previousRoot;
+                    } else {
+                        m_currentRootPageId = hash;
+                    }
                     m_targetPage = 0;
                     refreshFromConfiguration(true);
                     return;

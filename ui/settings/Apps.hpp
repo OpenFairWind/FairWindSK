@@ -134,12 +134,15 @@ namespace fairwindsk::ui::settings {
         QString defaultNodeTitle(const nlohmann::json &node) const;
         QString selectedPageId() const;
         bool isFolderReference(const QString &value) const;
+        bool isParentReference(const QString &value) const;
         QString folderReferenceForPageId(const QString &pageId) const;
         QString pageIdFromFolderReference(const QString &value) const;
+        QString parentReferenceToken() const;
         int firstAvailableSlot(const QStringList &items) const;
         QString requestedPageName(const QString &title, const QString &initialText = QString()) const;
         QString requestedPageIcon(const QString &pageName) const;
         void removeFolderReferenceFromNode(nlohmann::json &node, const QString &pageId) const;
+        void normalizeParentReferenceForNode(nlohmann::json &node, const QString &parentPageId) const;
         QTreeWidgetItem *addTreeNode(const nlohmann::json &node, QTreeWidgetItem *parentItem);
         nlohmann::json makePageNode(const QString &name = QString(), const QString &icon = QString()) const;
         nlohmann::json makeFolderNode(const QString &name = QString()) const;
@@ -148,6 +151,7 @@ namespace fairwindsk::ui::settings {
         nlohmann::json *findNodeById(nlohmann::json &nodes, const QString &id) const;
         const nlohmann::json *findNodeById(const nlohmann::json &nodes, const QString &id) const;
         bool findNodeParent(nlohmann::json &nodes, const QString &id, nlohmann::json **parentChildren, int *index) const;
+        QString parentPageIdForNodeId(const QString &pageId) const;
         QStringList pageItemsFromNode(const nlohmann::json &node) const;
         void setPageItemsForNode(nlohmann::json &node, const QStringList &items) const;
         QString pageIconPath(const nlohmann::json &node) const;

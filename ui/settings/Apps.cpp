@@ -44,9 +44,11 @@ namespace fairwindsk::ui::settings {
         constexpr auto kNodeItemsKey = "items";
         constexpr auto kNodeChildrenKey = "children";
         constexpr auto kFolderReferencePrefix = "@folder:";
+        constexpr auto kParentReferenceToken = "@parent";
         constexpr const char *kNodeTypePage = "page";
         constexpr const char *kNodeTypeFolder = "folder";
         constexpr auto kDefaultPageIconPath = ":/resources/svg/OpenBridge/home.svg";
+        constexpr auto kParentNavigationIconPath = ":/resources/svg/OpenBridge/arrow-left-google.svg";
         constexpr auto kTreeIdRole = Qt::UserRole;
 
         QString toolButtonStyle() {
@@ -132,6 +134,10 @@ namespace fairwindsk::ui::settings {
 
         bool isFolderNode(const nlohmann::json &node) {
             return nodeType(node) == QLatin1String(kNodeTypeFolder);
+        }
+
+        bool isParentReferenceValue(const QString &value) {
+            return value == QLatin1String(kParentReferenceToken);
         }
 
         void ensureJsonObject(nlohmann::json &jsonObject, const char *key) {
@@ -401,6 +407,9 @@ namespace fairwindsk::ui::settings {
             return;
         }
         const QModelIndex index = selectedIndexes.first();
+        if (isParentReferenceValue(slotApp(index.row(), index.column()))) {
+            return;
+        }
         setSlotApp(index.row(), index.column(), QString());
         emitItemsChanged();
     }
@@ -477,7 +486,7 @@ namespace fairwindsk::ui::settings {
         }
 
         const QString appName = current->data(Qt::UserRole).toString();
-        if (appName.isEmpty()) {
+        if (appName.isEmpty() || isParentReferenceValue(appName)) {
             return;
         }
 
@@ -1115,12 +1124,20 @@ namespace fairwindsk::ui::settings {
         return value.startsWith(QLatin1String(kFolderReferencePrefix));
     }
 
+    bool Apps::isParentReference(const QString &value) const {
+        return isParentReferenceValue(value);
+    }
+
     QString Apps::folderReferenceForPageId(const QString &pageId) const {
         return QStringLiteral("%1%2").arg(QLatin1String(kFolderReferencePrefix), pageId);
     }
 
     QString Apps::pageIdFromFolderReference(const QString &value) const {
         return isFolderReference(value) ? value.mid(QLatin1String(kFolderReferencePrefix).size()) : QString();
+    }
+
+    QString Apps::parentReferenceToken() const {
+        return QLatin1String(kParentReferenceToken);
     }
 
     int Apps::firstAvailableSlot(const QStringList &items) const {
@@ -1168,6 +1185,32 @@ namespace fairwindsk::ui::settings {
                 item.clear();
             }
         }
+        setPageItemsForNode(node, items);
+    }
+
+    void Apps::normalizeParentReferenceForNode(nlohmann::json &node, const QString &parentPageId) const {
+        if (!isPageNode(node)) {
+            return;
+        }
+
+        QStringList items = pageItemsFromNode(node);
+        items.removeAll(parentReferenceToken());
+
+        if (!parentPageId.isEmpty()) {
+            if (items.isEmpty()) {
+                items.append(parentReferenceToken());
+            } else {
+                items[0] = parentReferenceToken();
+            }
+        }
+
+        while (items.size() < launcherItemsPerPage()) {
+            items.append(QString());
+        }
+        while (items.size() > launcherItemsPerPage()) {
+            items.removeLast();
+        }
+
         setPageItemsForNode(node, items);
     }
 
@@ -1278,6 +1321,38 @@ namespace fairwindsk::ui::settings {
         return false;
     }
 
+    QString Apps::parentPageIdForNodeId(const QString &pageId) const {
+        std::function<QString(const nlohmann::json &)> findParentId = [&](const nlohmann::json &nodes) -> QString {
+            if (!nodes.is_array()) {
+                return {};
+            }
+
+            for (const auto &node : nodes) {
+                if (!node.is_object()) {
+                    continue;
+                }
+
+                if (node.contains(kNodeChildrenKey) && node[kNodeChildrenKey].is_array()) {
+                    for (const auto &child : node[kNodeChildrenKey]) {
+                        if (child.is_object() && nodeId(child) == pageId && isPageNode(node)) {
+                            return nodeId(node);
+                        }
+                    }
+
+                    const QString nestedParentId = findParentId(node[kNodeChildrenKey]);
+                    if (!nestedParentId.isEmpty()) {
+                        return nestedParentId;
+                    }
+                }
+            }
+
+            return {};
+        };
+
+        const auto *nodes = launcherLayoutNodes();
+        return nodes ? findParentId(*nodes) : QString();
+    }
+
     QStringList Apps::pageItemsFromNode(const nlohmann::json &node) const {
         QStringList items;
         items.reserve(launcherItemsPerPage());
@@ -1321,6 +1396,10 @@ namespace fairwindsk::ui::settings {
     }
 
     QPair<QString, QPixmap> Apps::resolveAppPresentation(const QString &appName) const {
+        if (isParentReference(appName)) {
+            return qMakePair(tr("Parent page"), QPixmap(QLatin1String(kParentNavigationIconPath)));
+        }
+
         if (isFolderReference(appName)) {
             const QString pageId = pageIdFromFolderReference(appName);
             if (const auto *nodes = launcherLayoutNodes()) {
@@ -1669,6 +1748,7 @@ namespace fairwindsk::ui::settings {
 
         nlohmann::json nodeCopy = (*parentChildren)[index];
         parentChildren->erase(parentChildren->begin() + index);
+        normalizeParentReferenceForNode(nodeCopy, QString());
 
         nlohmann::json *greatGrandParentChildren = nullptr;
         int grandParentIndex = -1;
@@ -1753,6 +1833,7 @@ namespace fairwindsk::ui::settings {
 
         nlohmann::json nodeCopy = (*parentChildren)[index];
         parentChildren->erase(parentChildren->begin() + index);
+        normalizeParentReferenceForNode(nodeCopy, parentPageId);
         previousSibling[kNodeChildrenKey].push_back(nodeCopy);
 
         markSettingsDirty();
@@ -1851,11 +1932,20 @@ namespace fairwindsk::ui::settings {
             return;
         }
         setPageItemsForNode(*node, items);
+        normalizeParentReferenceForNode(*node, parentPageIdForNodeId(nodeId(*node)));
         markSettingsDirty();
         refreshPageTreeActionButtons();
     }
 
     void Apps::onPageGridAppDoubleClicked(const QString &appName) {
+        if (isParentReference(appName)) {
+            const QString parentPageId = parentPageIdForNodeId(selectedPageId());
+            if (!parentPageId.isEmpty()) {
+                selectTreeItemById(parentPageId);
+                showDetailsForPage(parentPageId, false);
+            }
+            return;
+        }
         if (isFolderReference(appName)) {
             const QString pageId = pageIdFromFolderReference(appName);
             selectTreeItemById(pageId);
@@ -1885,6 +1975,14 @@ namespace fairwindsk::ui::settings {
     void Apps::onShowSelectedGridItemDetails() {
         const QString value = selectedGridEntry();
         if (value.isEmpty()) {
+            return;
+        }
+        if (isParentReference(value)) {
+            const QString parentPageId = parentPageIdForNodeId(selectedPageId());
+            if (!parentPageId.isEmpty()) {
+                selectTreeItemById(parentPageId);
+                showDetailsForPage(parentPageId, false);
+            }
             return;
         }
         if (isFolderReference(value)) {
