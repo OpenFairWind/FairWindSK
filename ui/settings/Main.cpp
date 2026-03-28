@@ -28,10 +28,6 @@ namespace fairwindsk::ui::settings {
         ui->comboBox_uiScalePreset->setEnabled(!automatic);
     }
 
-    void Main::applyUiPreview() const {
-        FairWindSK::getInstance()->applyUiPreferences(m_settings->getConfiguration());
-    }
-
     Main::Main(Settings *settings, QWidget *parent) :
             QWidget(parent), ui(new Ui::Main) {
 
@@ -134,7 +130,6 @@ namespace fairwindsk::ui::settings {
         const bool automatic = state == Qt::Checked;
         m_settings->getConfiguration()->setUiScaleMode(automatic ? "auto" : "manual");
         setUiScaleFieldsEnabled(automatic);
-        applyUiPreview();
         m_settings->markDirty(FairWindSK::RuntimeUi, 0);
     }
 
@@ -142,10 +137,6 @@ namespace fairwindsk::ui::settings {
         Q_UNUSED(index);
 
         m_settings->getConfiguration()->setUiScalePreset(ui->comboBox_uiScalePreset->currentData().toString());
-
-        if (ui->checkBox_autoUiScale->checkState() != Qt::Checked) {
-            applyUiPreview();
-        }
         m_settings->markDirty(FairWindSK::RuntimeUi, 0);
     }
 
