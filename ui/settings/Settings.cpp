@@ -6,6 +6,8 @@
 
 #include <iostream>
 
+#include <QSignalBlocker>
+
 #include "Settings.hpp"
 
 #include "FairWindSK.hpp"
@@ -99,12 +101,21 @@ namespace fairwindsk::ui::settings {
  * Remove all  tabs
  */
     void Settings::removeTabs() {
-        m_tabPages.clear();
+        if (!ui || !ui->tabWidget) {
+            m_tabPages.clear();
+            return;
+        }
+
+        disconnect(ui->tabWidget, &QTabWidget::currentChanged, this, &Settings::onTabChanged);
+        const QSignalBlocker blocker(ui->tabWidget);
         // While there is at least a tab in the tab widget...
         while (ui->tabWidget->count() > 0) {
 
             // Get the reference of the tab in position 0
             const auto tab = ui->tabWidget->widget(0);
+            if (!m_tabPages.isEmpty()) {
+                m_tabPages.removeFirst();
+            }
 
             // Remove the tab
             ui->tabWidget->removeTab(0);
@@ -112,6 +123,8 @@ namespace fairwindsk::ui::settings {
             // Delete the object
             delete tab;
         }
+
+        m_tabPages.clear();
     }
 
     /*
@@ -187,12 +200,13 @@ namespace fairwindsk::ui::settings {
     }
 
     void Settings::onTabChanged(const int index) {
-        if (m_rebuildingTabs) {
+        if (m_rebuildingTabs || !ui || !ui->tabWidget) {
             return;
         }
 
         ensureTabCreated(index);
-        if (auto *appsTab = qobject_cast<Apps *>(index >= 0 && index < m_tabPages.size() ? m_tabPages.at(index) : nullptr)) {
+        QWidget *page = index >= 0 && index < m_tabPages.size() ? m_tabPages.at(index).data() : nullptr;
+        if (auto *appsTab = qobject_cast<Apps *>(page)) {
             appsTab->refreshFromConfiguration();
         }
     }
@@ -309,6 +323,10 @@ namespace fairwindsk::ui::settings {
      * Class destructor
      */
     Settings::~Settings() {
+        m_rebuildingTabs = true;
+        if (m_applyTimer) {
+            m_applyTimer->stop();
+        }
 
         // Remove the tabs
         removeTabs();

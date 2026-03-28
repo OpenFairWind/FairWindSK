@@ -7,6 +7,7 @@
 
 #include <QWidget>
 #include <QAbstractButton>
+#include <QPointer>
 #include <QTimer>
 #include <QVector>
 #include <QtCore/qjsonobject.h>
@@ -62,7 +63,7 @@ namespace fairwindsk::ui::settings {
         Configuration m_configuration;
         Configuration *m_currentConfiguration;
         QWidget *m_currentWidget = nullptr;
-        QVector<QWidget *> m_tabPages;
+        QVector<QPointer<QWidget>> m_tabPages;
         bool m_rebuildingTabs = false;
         bool m_hasPendingUiChanges = false;
         QTimer *m_applyTimer = nullptr;
