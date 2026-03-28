@@ -56,33 +56,6 @@ namespace fairwindsk::ui::settings {
         constexpr auto kParentNavigationIconPath = ":/resources/svg/OpenBridge/arrow-left-google.svg";
         constexpr auto kTreeIdRole = Qt::UserRole;
 
-        QString toolButtonStyle() {
-            return QStringLiteral(
-                "QToolButton {"
-                " background: transparent;"
-                " border: 1px solid rgba(255, 255, 255, 0.24);"
-                " border-radius: 6px;"
-                " padding: 8px;"
-                " }"
-                "QToolButton:hover { background: rgba(255, 255, 255, 0.08); }"
-                "QToolButton:pressed { background: rgba(255, 255, 255, 0.14); }"
-                "QToolButton:disabled { color: rgba(255,255,255,0.35); border-color: rgba(255,255,255,0.12); }");
-        }
-
-        void setupImageToolButton(QToolButton *button, const QString &iconPath, const QString &toolTip) {
-            if (!button) {
-                return;
-            }
-
-            button->setIcon(QIcon(iconPath));
-            button->setIconSize(QSize(24, 24));
-            button->setToolButtonStyle(Qt::ToolButtonIconOnly);
-            button->setAutoRaise(false);
-            button->setToolTip(toolTip);
-            button->setText(toolTip);
-            button->setStyleSheet(toolButtonStyle());
-        }
-
         QString nodeType(const nlohmann::json &node) {
             if (node.contains(kNodeTypeKey) && node[kNodeTypeKey].is_string()) {
                 return QString::fromStdString(node[kNodeTypeKey].get<std::string>());
@@ -620,22 +593,6 @@ namespace fairwindsk::ui::settings {
         auto *pageDetailsLayout = new QVBoxLayout(ui->widget_PageDetailsHost);
         pageDetailsLayout->setContentsMargins(0, 0, 0, 0);
         pageDetailsLayout->addWidget(m_pageDetailsWidget);
-
-        setupImageToolButton(ui->toolButton_AddAllApps, QStringLiteral(":/resources/svg/OpenBridge/widget-add-google.svg"), tr("Add all applications to pages"));
-        setupImageToolButton(ui->toolButton_Add, QStringLiteral(":/resources/svg/OpenBridge/widget-add-google.svg"), tr("Add application"));
-        setupImageToolButton(ui->toolButton_Remove, QStringLiteral(":/resources/svg/OpenBridge/delete-google.svg"), tr("Delete application"));
-        setupImageToolButton(ui->toolButton_EditApp, QStringLiteral(":/resources/svg/OpenBridge/info.svg"), tr("Application details"));
-        setupImageToolButton(ui->toolButton_AddPage, QStringLiteral(":/resources/svg/OpenBridge/navigation-route.svg"), tr("Add page"));
-        setupImageToolButton(ui->toolButton_RemoveNode, QStringLiteral(":/resources/svg/OpenBridge/delete-google.svg"), tr("Delete page or folder"));
-        setupImageToolButton(ui->toolButton_MoveNodeLeft, QStringLiteral(":/resources/svg/OpenBridge/arrow-left-google.svg"), tr("Move page out of current parent"));
-        setupImageToolButton(ui->toolButton_MoveNodeRight, QStringLiteral(":/resources/svg/OpenBridge/arrow-right-google.svg"), tr("Nest page under previous page"));
-        setupImageToolButton(ui->toolButton_MoveNodeUp, QStringLiteral(":/resources/svg/OpenBridge/arrow-up-google.svg"), tr("Move page up"));
-        setupImageToolButton(ui->toolButton_MoveNodeDown, QStringLiteral(":/resources/svg/OpenBridge/arrow-down-google.svg"), tr("Move page down"));
-        setupImageToolButton(ui->toolButton_PageDetails, QStringLiteral(":/resources/svg/OpenBridge/info.svg"), tr("Page details"));
-        setupImageToolButton(ui->toolButton_SelectedSlotDetails, QStringLiteral(":/resources/svg/OpenBridge/info.svg"), tr("Selected item details"));
-        setupImageToolButton(ui->toolButton_ClearPageSlot, QStringLiteral(":/resources/svg/OpenBridge/delete-google.svg"), tr("Clear selected slot"));
-        setupImageToolButton(m_appDetailsWidget->ui->toolButton_BackToLayout, QStringLiteral(":/resources/svg/OpenBridge/arrow-left-google.svg"), tr("Back to layout"));
-        setupImageToolButton(m_pageDetailsWidget->ui->toolButton_BackFromPageDetails, QStringLiteral(":/resources/svg/OpenBridge/arrow-left-google.svg"), tr("Back to layout"));
 
         connect(m_availableAppsList, &QListWidget::itemSelectionChanged, this, &Apps::onAvailableAppSelectionChanged);
         connect(m_availableAppsList, &QListWidget::itemDoubleClicked, this, &Apps::onAvailableAppDoubleClicked);

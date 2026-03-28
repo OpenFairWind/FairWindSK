@@ -10,11 +10,45 @@
     <height>520</height>
    </rect>
   </property>
+  <property name="styleSheet">
+   <string notr="true">QToolButton#toolButton_BackToLayout {
+ background: transparent;
+ border: 1px solid rgba(255, 255, 255, 0.24);
+ border-radius: 6px;
+ padding: 8px;
+}
+QToolButton#toolButton_BackToLayout:hover {
+ background: rgba(255, 255, 255, 0.08);
+}
+QToolButton#toolButton_BackToLayout:pressed {
+ background: rgba(255, 255, 255, 0.14);
+}
+QToolButton#toolButton_BackToLayout:disabled {
+ color: rgba(255,255,255,0.35);
+ border-color: rgba(255,255,255,0.12);
+}</string>
+  </property>
   <layout class="QVBoxLayout" name="verticalLayout_DetailsPage">
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_DetailsHeader">
      <item>
       <widget class="QToolButton" name="toolButton_BackToLayout">
+       <property name="toolTip">
+        <string>Back to layout</string>
+       </property>
+       <property name="icon">
+        <iconset>
+         <normaloff>:/resources/svg/OpenBridge/arrow-left-google.svg</normaloff>:/resources/svg/OpenBridge/arrow-left-google.svg</iconset>
+       </property>
+       <property name="iconSize">
+        <size>
+         <width>24</width>
+         <height>24</height>
+        </size>
+       </property>
+       <property name="toolButtonStyle">
+        <enum>Qt::ToolButtonIconOnly</enum>
+       </property>
        <property name="text">
         <string>Back</string>
        </property>
