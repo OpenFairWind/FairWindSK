@@ -26,6 +26,9 @@ namespace fairwindsk::ui::settings {
         // Get the configuration root element
         const auto configurationAsJson = m_configuration.getRoot();
 
+        // Persist the edited local configuration snapshot first.
+        m_configuration.save();
+
         // Set the new configuration in the FairWindSK singleton instance
         FairWindSK::getInstance()->getConfiguration()->setRoot(configurationAsJson);
 

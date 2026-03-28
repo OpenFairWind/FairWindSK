@@ -266,7 +266,7 @@ namespace fairwindsk::ui::settings {
 
     AvailableAppsListWidget::AvailableAppsListWidget(QWidget *parent) : QListWidget(parent) {
         setSelectionMode(QAbstractItemView::SingleSelection);
-        setDragEnabled(true);
+        setDragEnabled(false);
         setDragDropMode(QAbstractItemView::DragOnly);
         setDefaultDropAction(Qt::CopyAction);
         setAcceptDrops(false);
@@ -1133,7 +1133,7 @@ namespace fairwindsk::ui::settings {
             if (nodeId(node) == id) {
                 return &node;
             }
-            if (isFolderNode(node)) {
+            if (node.contains(kNodeChildrenKey) && node[kNodeChildrenKey].is_array()) {
                 ensureJsonArray(node, kNodeChildrenKey);
                 if (auto *child = findNodeById(node[kNodeChildrenKey], id)) {
                     return child;
@@ -1154,7 +1154,7 @@ namespace fairwindsk::ui::settings {
             if (nodeId(node) == id) {
                 return &node;
             }
-            if (isFolderNode(node) && node.contains(kNodeChildrenKey) && node[kNodeChildrenKey].is_array()) {
+            if (node.contains(kNodeChildrenKey) && node[kNodeChildrenKey].is_array()) {
                 if (const auto *child = findNodeById(node[kNodeChildrenKey], id)) {
                     return child;
                 }
@@ -1181,7 +1181,7 @@ namespace fairwindsk::ui::settings {
                 }
                 return true;
             }
-            if (isFolderNode(node)) {
+            if (node.contains(kNodeChildrenKey) && node[kNodeChildrenKey].is_array()) {
                 ensureJsonArray(node, kNodeChildrenKey);
                 if (findNodeParent(node[kNodeChildrenKey], id, parentChildren, index)) {
                     return true;
