@@ -422,16 +422,26 @@ namespace fairwindsk {
         }
     }
 
-    void FairWindSK::reconfigureRuntime() {
-        updateWebProfileCookie();
-        Units::getInstance()->refreshSignalKPreferences();
-        applyUiPreferences();
+    void FairWindSK::reconfigureRuntime(const quint32 runtimeChanges) {
+        if (runtimeChanges & RuntimeSignalKConnection) {
+            updateWebProfileCookie();
+        }
 
-        if (!m_configuration.getSignalKServerUrl().isEmpty()) {
+        if (runtimeChanges & (RuntimeUnits | RuntimeSignalKConnection | RuntimeSignalKPaths)) {
+            Units::getInstance()->refreshSignalKPreferences();
+        }
+
+        if (runtimeChanges & RuntimeUi) {
+            applyUiPreferences();
+        }
+
+        if ((runtimeChanges & (RuntimeSignalKConnection | RuntimeSignalKPaths)) && !m_configuration.getSignalKServerUrl().isEmpty()) {
             startSignalK();
         }
 
-        loadApps();
+        if (runtimeChanges & RuntimeApps) {
+            loadApps();
+        }
 
         if (auto *mainWindow = fairwindsk::ui::MainWindow::instance()) {
             mainWindow->applyRuntimeConfiguration();

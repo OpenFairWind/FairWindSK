@@ -29,7 +29,7 @@ namespace fairwindsk::ui::settings {
         QWidget *getCurrentWidget();
         void setCurrentWidget(QWidget *currentWidget);
         bool hasPendingChanges();
-        void markDirty();
+        void markDirty(quint32 runtimeChanges = 0, int delayMs = -1);
         void saveChanges();
         void discardChanges();
         void resetFromCurrentConfiguration(int currentIndex = -1);
@@ -66,6 +66,7 @@ namespace fairwindsk::ui::settings {
         bool m_rebuildingTabs = false;
         bool m_hasPendingUiChanges = false;
         QTimer *m_applyTimer = nullptr;
+        quint32 m_pendingRuntimeChanges = 0;
 
     };
 

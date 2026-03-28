@@ -26,6 +26,7 @@ namespace fairwindsk::ui::settings {
     }
 
     void Settings::applyConfiguration() {
+        const quint32 runtimeChanges = m_pendingRuntimeChanges == 0 ? FairWindSK::RuntimeAll : m_pendingRuntimeChanges;
 
         // Get the configuration root element
         const auto configurationAsJson = m_configuration.getRoot();
@@ -38,8 +39,9 @@ namespace fairwindsk::ui::settings {
 
         // Save the configuration permanently
         FairWindSK::getInstance()->getConfiguration()->save();
-        FairWindSK::getInstance()->reconfigureRuntime();
+        FairWindSK::getInstance()->reconfigureRuntime(runtimeChanges);
         m_hasPendingUiChanges = false;
+        m_pendingRuntimeChanges = 0;
     }
 
 
@@ -217,9 +219,10 @@ namespace fairwindsk::ui::settings {
         return m_hasPendingUiChanges || m_configuration.getRoot() != m_currentConfiguration->getRoot();
     }
 
-    void Settings::markDirty() {
+    void Settings::markDirty(const quint32 runtimeChanges, const int delayMs) {
         m_hasPendingUiChanges = true;
-        scheduleApplyConfiguration(kLiveApplyDelayMs);
+        m_pendingRuntimeChanges |= (runtimeChanges == 0 ? FairWindSK::RuntimeAll : runtimeChanges);
+        scheduleApplyConfiguration(delayMs >= 0 ? delayMs : kLiveApplyDelayMs);
     }
 
     void Settings::saveChanges() {
@@ -227,8 +230,6 @@ namespace fairwindsk::ui::settings {
             m_applyTimer->stop();
         }
         applyConfiguration();
-        m_hasPendingUiChanges = false;
-        resetFromCurrentConfiguration(ui->tabWidget->currentIndex());
     }
 
     void Settings::discardChanges() {
@@ -237,6 +238,7 @@ namespace fairwindsk::ui::settings {
         }
         FairWindSK::getInstance()->applyUiPreferences(m_currentConfiguration);
         m_hasPendingUiChanges = false;
+        m_pendingRuntimeChanges = 0;
         resetFromCurrentConfiguration(ui->tabWidget->currentIndex());
     }
 
@@ -248,6 +250,7 @@ namespace fairwindsk::ui::settings {
             m_applyTimer->stop();
         }
         m_hasPendingUiChanges = false;
+        m_pendingRuntimeChanges = 0;
         initTabs(std::max(0, resolvedIndex));
     }
 
@@ -269,7 +272,7 @@ namespace fairwindsk::ui::settings {
         const auto currentIndex = ui->tabWidget->currentIndex();
         initTabs(currentIndex);
         FairWindSK::getInstance()->applyUiPreferences(&m_configuration);
-        markDirty();
+        markDirty(FairWindSK::RuntimeAll, 0);
     }
 
     void Settings::restartApplication() {

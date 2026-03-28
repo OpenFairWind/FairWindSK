@@ -1054,7 +1054,7 @@ namespace fairwindsk::ui::settings {
 
     void Apps::markSettingsDirty() {
         if (m_settings) {
-            m_settings->markDirty();
+            m_settings->markDirty(FairWindSK::RuntimeApps, 0);
         }
     }
 

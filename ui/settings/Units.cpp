@@ -151,7 +151,7 @@ namespace fairwindsk::ui::settings {
             syncLegacyUnitsForCategory(root, category, serverTargetUnit);
         }
         if (m_settings) {
-            m_settings->markDirty();
+            m_settings->markDirty(FairWindSK::RuntimeUnits, 0);
         }
     }
 

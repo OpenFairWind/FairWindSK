@@ -29,6 +29,12 @@ namespace fairwindsk {
         Q_OBJECT
 
     public:
+        static constexpr quint32 RuntimeUi = 1u << 0;
+        static constexpr quint32 RuntimeUnits = 1u << 1;
+        static constexpr quint32 RuntimeSignalKConnection = 1u << 2;
+        static constexpr quint32 RuntimeApps = 1u << 3;
+        static constexpr quint32 RuntimeSignalKPaths = 1u << 4;
+        static constexpr quint32 RuntimeAll = RuntimeUi | RuntimeUnits | RuntimeSignalKConnection | RuntimeApps | RuntimeSignalKPaths;
 
         // Get the singleton instance
         static FairWindSK *getInstance();
@@ -67,7 +73,7 @@ namespace fairwindsk {
         void loadConfig();
 
         void applyUiPreferences(const Configuration *configuration = nullptr);
-        void reconfigureRuntime();
+        void reconfigureRuntime(quint32 runtimeChanges = RuntimeAll);
 
         // Check if the Autopilot app is installed
         bool checkAutopilotApp();
