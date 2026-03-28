@@ -129,6 +129,7 @@ namespace fairwindsk::ui::settings {
         void removeAppFromLauncherNodes(const QString &appName);
         void renameAppInLauncherNodes(const QString &oldName, const QString &newName);
         void markSettingsDirty();
+        bool promotePageNode(const QString &pageId, bool selectPromotedPage = true);
         void ensureLauncherLayout();
         int launcherItemsPerPage() const;
         QString defaultNodeTitle(const nlohmann::json &node) const;

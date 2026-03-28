@@ -11,6 +11,7 @@
 #include <QScreen>
 #include <QToolButton>
 #include <QPushButton>
+#include <QStandardPaths>
 
 
 #include <QLoggingCategory>
@@ -35,6 +36,30 @@ using namespace Qt::StringLiterals;
 namespace fairwindsk {
     namespace {
         constexpr int kAppsRequestTimeoutMs = 5000;
+
+        QString defaultConfigFilename() {
+            QString configDir = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
+            if (configDir.trimmed().isEmpty()) {
+                configDir = QDir::homePath();
+            }
+            QDir().mkpath(configDir);
+            return QDir(configDir).filePath(QStringLiteral("fairwindsk.json"));
+        }
+
+        QString normalizedConfigFilename(const QString &filename) {
+            const QString trimmed = filename.trimmed();
+            if (trimmed.isEmpty()) {
+                return defaultConfigFilename();
+            }
+
+            QFileInfo fileInfo(trimmed);
+            if (fileInfo.isAbsolute()) {
+                QDir().mkpath(fileInfo.absolutePath());
+                return fileInfo.absoluteFilePath();
+            }
+
+            return QDir(QFileInfo(defaultConfigFilename()).absolutePath()).filePath(trimmed);
+        }
 
         struct UiMetrics {
             int fontPointSize = 12;
@@ -298,7 +323,7 @@ namespace fairwindsk {
 
 
         // Se the default configuration file name
-        m_configFilename = "fairwindsk.json";
+        m_configFilename = defaultConfigFilename();
 
         // Create the WebEngine profile file name
         auto profileName = QString::fromLatin1("FairWindSK.%1").arg(qWebEngineChromiumVersion());
@@ -359,7 +384,7 @@ namespace fairwindsk {
         }
 
         // Get the name of the FairWindSK configuration file
-        m_configFilename = settings.value("config", m_configFilename).toString();
+        m_configFilename = normalizedConfigFilename(settings.value("config", m_configFilename).toString());
 
         // Store the name of the FairWindSK configuration in the settings
         settings.setValue("config",m_configFilename);
@@ -378,7 +403,7 @@ namespace fairwindsk {
             m_configuration.setDefault();
 
             // Save the configuration file
-            //m_configuration.save();
+            m_configuration.save();
         }
 
         // Check if the debug is active
