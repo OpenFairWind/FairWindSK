@@ -775,44 +775,19 @@ namespace fairwindsk::ui {
         }
 
         QWidget *targetFallback = fallbackWidget ? fallbackWidget : m_settingsPage->getCurrentWidget();
-        bool shouldExitAfterSave = false;
         if (m_settingsPage->hasPendingChanges()) {
-            const auto answer = drawer::question(
-                this,
-                tr("Settings"),
-                tr("Make the pending settings changes permanent?"),
-                QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel,
-                QMessageBox::Save);
-            if (answer == QMessageBox::Cancel) {
-                return false;
-            }
-            if (answer == QMessageBox::Save) {
-                m_settingsPage->saveChanges();
-                shouldExitAfterSave = exitAfterSave;
-            } else {
-                if (showFallback && targetFallback && ui->stackedWidget_Center->indexOf(targetFallback) >= 0) {
-                    ui->stackedWidget_Center->setCurrentWidget(targetFallback);
-                    syncTopBarToCurrentPage();
-                }
-                m_settingsPage->discardChanges();
-            }
-        } else {
-            if (showFallback && targetFallback && ui->stackedWidget_Center->indexOf(targetFallback) >= 0) {
-                ui->stackedWidget_Center->setCurrentWidget(targetFallback);
-                syncTopBarToCurrentPage();
-            }
-            m_settingsPage->discardChanges();
+            m_settingsPage->saveChanges();
         }
         m_settingsPage->setCurrentWidget(targetFallback);
 
-        if (!shouldExitAfterSave && showFallback && targetFallback && ui->stackedWidget_Center->indexOf(targetFallback) >= 0) {
+        if (showFallback && targetFallback && ui->stackedWidget_Center->indexOf(targetFallback) >= 0) {
             ui->stackedWidget_Center->setCurrentWidget(targetFallback);
             syncTopBarToCurrentPage();
-        } else if (!shouldExitAfterSave && showFallback) {
+        } else if (showFallback) {
             showLauncher();
         }
 
-        if (shouldExitAfterSave) {
+        if (exitAfterSave) {
             QApplication::exit(1);
         }
 
@@ -851,21 +826,7 @@ namespace fairwindsk::ui {
         event->ignore();
 
         if (ui->stackedWidget_Center->currentWidget() == m_settingsPage && m_settingsPage && m_settingsPage->hasPendingChanges()) {
-            const auto answer = drawer::question(
-                this,
-                tr("Settings"),
-                tr("Make the pending settings changes permanent?"),
-                QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel,
-                QMessageBox::Save);
-            if (answer == QMessageBox::Cancel) {
-                return;
-            }
-
-            if (answer == QMessageBox::Save) {
-                m_settingsPage->saveChanges();
-            } else {
-                m_settingsPage->discardChanges();
-            }
+            m_settingsPage->saveChanges();
         }
 
         QTimer::singleShot(0, this, [this]() {

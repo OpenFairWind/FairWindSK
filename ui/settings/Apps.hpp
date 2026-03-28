@@ -98,16 +98,24 @@ namespace fairwindsk::ui::settings {
         void onMoveNodeUpClicked();
         void onMoveNodeDownClicked();
         void onPageTreeSelectionChanged();
+        void onPageTreeItemDoubleClicked(QTreeWidgetItem *item, int column);
         void onPageTreeItemChanged(QTreeWidgetItem *item, int column);
         void onPageGridItemsChanged(const QStringList &items);
         void onPageGridAppDoubleClicked(const QString &appName);
         void onClearPageSlotClicked();
         void onBackToLayoutClicked();
+        void onShowSelectedPageDetails();
+        void onShowSelectedGridItemDetails();
+        void onPageEditSaveClicked();
+        void onPageDetailsFieldsTextChanged(const QString &text);
+        void onPageIconBrowse();
 
     private:
         bool eventFilter(QObject *object, QEvent *event) override;
         void setAppsEditMode(bool appsEditMode);
+        void setPageEditMode(bool pageEditMode);
         void saveAppsDetails();
+        void savePageDetails();
         QString uniqueAppName(const QString &baseName) const;
         void refreshAvailableAppActionButtons() const;
         void refreshPageTreeActionButtons() const;
@@ -116,6 +124,7 @@ namespace fairwindsk::ui::settings {
         void rebuildPageEditor();
         void refreshDetailActionButtons() const;
         void showDetailsForApp(const QString &appName, bool startEditing = false);
+        void showDetailsForPage(const QString &pageId, bool startEditing = false);
         void showLayoutEditor();
         void removeAppFromLauncherNodes(const QString &appName);
         void renameAppInLauncherNodes(const QString &oldName, const QString &newName);
@@ -144,6 +153,7 @@ namespace fairwindsk::ui::settings {
         QString pageIconPath(const nlohmann::json &node) const;
         QPixmap pageIconPixmap(const nlohmann::json &node) const;
         QPair<QString, QPixmap> resolveAppPresentation(const QString &appName) const;
+        QString selectedGridEntry() const;
         nlohmann::json *selectedNode();
         const nlohmann::json *selectedNode() const;
         void selectTreeItemById(const QString &id);
@@ -154,7 +164,10 @@ namespace fairwindsk::ui::settings {
         Settings *m_settings = nullptr;
         bool m_appsEditMode = false;
         bool m_appsEditChanged = false;
+        bool m_pageEditMode = false;
+        bool m_pageEditChanged = false;
         QString m_currentDetailAppName;
+        QString m_currentDetailPageId;
         QString m_selectedPageNodeId;
         AvailableAppsListWidget *m_availableAppsList = nullptr;
         QTreeWidget *m_pageTree = nullptr;
