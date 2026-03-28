@@ -66,7 +66,7 @@ namespace fairwindsk::ui::settings {
     }
 
     void Connection::syncTokenUiState() {
-        const QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
+        const QSettings settings(Configuration::settingsFilename(), QSettings::IniFormat);
         const QString href = settings.value("href", "").toString();
         const QString token = settings.value("token", "").toString();
         const QString expirationTime = settings.value("expirationTime", "").toString();
@@ -128,7 +128,7 @@ namespace fairwindsk::ui::settings {
         ui->textEdit_message->setVisible(true);
 
         // Initialize the QT managed settings
-        const QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
+        const QSettings settings(Configuration::settingsFilename(), QSettings::IniFormat);
 
         // Get the name of the FairWind++ configuration file
         const auto href = settings.value("href", "").toString();
@@ -324,10 +324,11 @@ namespace fairwindsk::ui::settings {
                         const auto href = jsonObject["href"].toString();
 
                         // Initialize the QT managed settings
-                        QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
+                        QSettings settings(Configuration::settingsFilename(), QSettings::IniFormat);
 
                         // Store the configuration in the settings
                         settings.setValue("href", href);
+                        settings.sync();
 
                         stopTokenTimer();
                         m_timer = new QTimer(this);
@@ -410,7 +411,7 @@ namespace fairwindsk::ui::settings {
         auto fairWinSK = FairWindSK::getInstance();
 
         // Initialize the QT managed settings
-        QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
+        QSettings settings(Configuration::settingsFilename(), QSettings::IniFormat);
 
         // Get the name of the FairWind++ configuration file
         const auto href = settings.value("href", "").toString();
@@ -540,7 +541,7 @@ namespace fairwindsk::ui::settings {
 
                                             }
 
-                                            // Check if the json request contains the token field and the token is a string
+                                                // Check if the json request contains the token field and the token is a string
                                             if (accessRequestJsonObject.contains("token") &&
                                                 accessRequestJsonObject["token"].isString()) {
 
@@ -551,6 +552,8 @@ namespace fairwindsk::ui::settings {
                                                 settings.setValue("token", token);
                                             }
 
+                                            settings.sync();
+
                                             // Hide the web page
                                             ui->webEngineView->setVisible(false);
 
@@ -558,6 +561,7 @@ namespace fairwindsk::ui::settings {
 
                                             // Set the message in the permission field
                                             ui->label_lblPermission->setText(permission);
+                                            settings.sync();
                                         }
                                     }
                                 }
@@ -582,13 +586,14 @@ namespace fairwindsk::ui::settings {
     void Connection::onCancelRequest() {
 
         // Initialize the QT managed settings
-        QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
+        QSettings settings(Configuration::settingsFilename(), QSettings::IniFormat);
 
         stopTokenTimer();
 
         // Remove href
         settings.remove("href");
         settings.remove("expirationTime");
+        settings.sync();
 
         syncTokenUiState();
 
@@ -620,10 +625,11 @@ namespace fairwindsk::ui::settings {
         m_settings->getConfiguration()->setSignalKServerUrl(signalKServerUrl);
         m_settings->markDirty(FairWindSK::RuntimeSignalKConnection, 0);
 
-        QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
+        QSettings settings(Configuration::settingsFilename(), QSettings::IniFormat);
         settings.remove("href");
         settings.remove("token");
         settings.remove("expirationTime");
+        settings.sync();
 
         stopTokenTimer();
         syncTokenUiState();
@@ -644,7 +650,7 @@ namespace fairwindsk::ui::settings {
     void Connection::onRemoveToken() {
 
         // Initialize the QT managed settings
-        QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
+        QSettings settings(Configuration::settingsFilename(), QSettings::IniFormat);
 
         // Store the configuration in the settings
         settings.setValue("token", "");
@@ -652,6 +658,7 @@ namespace fairwindsk::ui::settings {
         // Store the configuration in the settings
         settings.setValue("expirationTime", "");
         settings.remove("href");
+        settings.sync();
 
         stopTokenTimer();
         syncTokenUiState();

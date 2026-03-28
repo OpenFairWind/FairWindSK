@@ -22,6 +22,7 @@ int main(int argc, char *argv[]) {
 
     // Set the organization name
     QCoreApplication::setOrganizationName("uniparthenope.it");
+    QCoreApplication::setApplicationName("FairWindSK");
 
     // Enable OpenGL shared contexts
     QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts );

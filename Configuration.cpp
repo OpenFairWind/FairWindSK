@@ -5,7 +5,6 @@
 #include "Configuration.hpp"
 
 #include <algorithm>
-#include <fstream>
 #include <iostream>
 
 #include <QFile>
@@ -13,8 +12,22 @@
 #include <QFileInfo>
 #include <QSettings>
 #include <QByteArray>
+#include <QDir>
+#include <QSaveFile>
+#include <QStandardPaths>
 
 namespace fairwindsk {
+    namespace {
+        QString defaultSettingsFilename() {
+            QString settingsDir = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
+            if (settingsDir.trimmed().isEmpty()) {
+                settingsDir = QDir::homePath();
+            }
+            QDir().mkpath(settingsDir);
+            return QDir(settingsDir).filePath(QStringLiteral("fairwindsk.ini"));
+        }
+    }
+
     Configuration::Configuration() {
         m_filename = "configuration.json";
         setDefault();
@@ -57,9 +70,16 @@ namespace fairwindsk {
     }
 
     void Configuration::save(const QString& filename) {
-        std::ofstream file(filename.toUtf8());
-        if (file.is_open()) {
-            file << m_jsonData.dump(2);
+        const QFileInfo fileInfo(filename);
+        if (!fileInfo.absolutePath().isEmpty()) {
+            QDir().mkpath(fileInfo.absolutePath());
+        }
+
+        QSaveFile file(filename);
+        if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+            const QByteArray data = QByteArray::fromStdString(m_jsonData.dump(2));
+            file.write(data);
+            file.commit();
         }
     }
 
@@ -99,7 +119,7 @@ namespace fairwindsk {
 
     QString Configuration::getToken() {
         // Initialize the QT managed settings
-        QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
+        QSettings settings(settingsFilename(), QSettings::IniFormat);
 
         // Get the name of the FairWind++ configuration file
         auto token = settings.value("token", "").toString();
@@ -109,10 +129,15 @@ namespace fairwindsk {
 
     void Configuration::setToken(const QString& token) {
         // Initialize the QT managed settings
-        QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
+        QSettings settings(settingsFilename(), QSettings::IniFormat);
 
         // Set the token
         settings.setValue("token", token);
+        settings.sync();
+    }
+
+    QString Configuration::settingsFilename() {
+        return defaultSettingsFilename();
     }
 
     void Configuration::setSignalKServerUrl(const QString& signalKServerUrl) {

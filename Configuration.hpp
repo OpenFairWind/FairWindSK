@@ -7,6 +7,7 @@
 
 #include <QObject>
 #include <QString>
+#include <QSettings>
 #include <nlohmann/json.hpp>
 
 
@@ -38,6 +39,7 @@ namespace fairwindsk {
 
         static QString getToken();
         static void setToken(const QString& token);
+        static QString settingsFilename();
 
         QString getAutopilotApp();
         QString getAnchorApp();

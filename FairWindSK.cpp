@@ -364,7 +364,7 @@ namespace fairwindsk {
     void FairWindSK::loadConfig() {
 
         // Initialize the QT managed settings
-        QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
+        QSettings settings(Configuration::settingsFilename(), QSettings::IniFormat);
 
         // Get the name of the FairWind++ configuration file
         m_debug = settings.value("debug", m_debug).toBool();
@@ -388,6 +388,7 @@ namespace fairwindsk {
 
         // Store the name of the FairWindSK configuration in the settings
         settings.setValue("config",m_configFilename);
+        settings.sync();
 
         // Set the configuration file name
         m_configuration.setFilename(m_configFilename);

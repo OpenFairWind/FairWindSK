@@ -1,6 +1,6 @@
 # Configuring FairWindSK
 
-FairWindSK stores its runtime settings in `fairwindsk.json`, with the location recorded in `fairwindsk.ini` (managed by Qt). If the JSON file is missing, defaults are copied from the embedded `resources/json/configuration.json`.
+FairWindSK stores its runtime settings in `fairwindsk.json`, with the location recorded in `fairwindsk.ini` (managed by Qt). Both files live in the per-user FairWindSK configuration directory. If the JSON file is missing, defaults are copied from the embedded `resources/json/configuration.json`.
 
 ## Configuration files
 
