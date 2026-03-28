@@ -343,7 +343,14 @@ namespace fairwindsk::ui::settings {
             const QString presetTargetUnit = presetItem.targetUnit.isEmpty()
                 ? item.targetUnit
                 : presetItem.targetUnit;
-            int comboIndex = comboIndexForCategoryUnit(rowWidgets.comboBoxUnit, item, presetTargetUnit, presetItem.symbol);
+            const QString localOverrideTargetUnit = localOverrideForCategory(item.category);
+            int comboIndex = -1;
+            if (!localOverrideTargetUnit.isEmpty()) {
+                comboIndex = comboIndexForCategoryUnit(rowWidgets.comboBoxUnit, item, localOverrideTargetUnit, QString());
+            }
+            if (comboIndex < 0) {
+                comboIndex = comboIndexForCategoryUnit(rowWidgets.comboBoxUnit, item, presetTargetUnit, presetItem.symbol);
+            }
             if (comboIndex < 0) {
                 comboIndex = comboIndexForCategoryUnit(rowWidgets.comboBoxUnit, item, item.targetUnit, item.symbol);
             }
