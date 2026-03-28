@@ -141,6 +141,15 @@ namespace fairwindsk::ui::bottombar {
         }
     }
 
+    void BottomBar::refreshFromConfiguration() const {
+        if (m_POBBar) {
+            m_POBBar->refreshFromConfiguration();
+        }
+        if (m_AnchorBar) {
+            m_AnchorBar->refreshFromConfiguration();
+        }
+    }
+
 /*
  * myData_clicked
  * Method called when the user wants to view the stored data

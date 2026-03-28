@@ -32,6 +32,7 @@ namespace fairwindsk::ui::bottombar {
 
         // Set POB Icon visibility
         void setPOBIcon(bool value) const;
+        void refreshFromConfiguration() const;
 
         // Add application icon to the shortcut
         void addApp(const QString& name);

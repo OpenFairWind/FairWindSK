@@ -7,6 +7,7 @@
 
 #include <QWidget>
 #include <QAbstractButton>
+#include <QTimer>
 #include <QVector>
 #include <QtCore/qjsonobject.h>
 #include "AppItem.hpp"
@@ -51,6 +52,7 @@ namespace fairwindsk::ui::settings {
         void initTabs(int currentIndex);
         void removeTabs();
         void applyConfiguration();
+        void scheduleApplyConfiguration(int delayMs = 150);
         QWidget *createTabWidget(int index);
         void ensureTabCreated(int index);
 
@@ -63,6 +65,7 @@ namespace fairwindsk::ui::settings {
         QVector<QWidget *> m_tabPages;
         bool m_rebuildingTabs = false;
         bool m_hasPendingUiChanges = false;
+        QTimer *m_applyTimer = nullptr;
 
     };
 

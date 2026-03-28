@@ -219,6 +219,7 @@ namespace fairwindsk::ui::settings {
 
         // Set the signal k server url
         m_settings->getConfiguration()->setSignalKServerUrl(ui->comboBox_signalkserverurl->currentText());
+        m_settings->markDirty();
     }
 
     /*
@@ -617,6 +618,7 @@ namespace fairwindsk::ui::settings {
         }
 
         m_settings->getConfiguration()->setSignalKServerUrl(signalKServerUrl);
+        m_settings->markDirty();
 
         QSettings settings("fairwindsk.ini", QSettings::NativeFormat);
         settings.remove("href");

@@ -127,6 +127,7 @@ namespace fairwindsk::ui::settings {
         }
 
         m_settings->getConfiguration()->setVirtualKeyboard(value);
+        m_settings->markDirty();
     }
 
     void Main::onUiScaleModeStateChanged(const int state) {
@@ -134,6 +135,7 @@ namespace fairwindsk::ui::settings {
         m_settings->getConfiguration()->setUiScaleMode(automatic ? "auto" : "manual");
         setUiScaleFieldsEnabled(automatic);
         applyUiPreview();
+        m_settings->markDirty();
     }
 
     void Main::onUiScalePresetChanged(const int index) {
@@ -144,6 +146,7 @@ namespace fairwindsk::ui::settings {
         if (ui->checkBox_autoUiScale->checkState() != Qt::Checked) {
             applyUiPreview();
         }
+        m_settings->markDirty();
     }
 
     void Main::onWindowModeChanged(const int index) {
@@ -164,36 +167,44 @@ namespace fairwindsk::ui::settings {
         }
         setWindowGeometryFieldsEnabled(windowMode);
         m_settings->getConfiguration()->setWindowMode(windowMode);
+        m_settings->markDirty();
 
 
     }
 
     void Main::onWindowLeftTextChanged() {
         m_settings->getConfiguration()->setWindowLeft(ui->lineEdit_left->text().toInt());
+        m_settings->markDirty();
     }
 
     void Main::onWindowTopTextChanged() {
         m_settings->getConfiguration()->setWindowTop(ui->lineEdit_top->text().toInt());
+        m_settings->markDirty();
     }
 
     void Main::onWindowWidthTextChanged() {
         m_settings->getConfiguration()->setWindowWidth(ui->lineEdit_width->text().toInt());
+        m_settings->markDirty();
     }
 
     void Main::onWindowHeightTextChanged() {
         m_settings->getConfiguration()->setWindowHeight(ui->lineEdit_height->text().toInt());
+        m_settings->markDirty();
     }
 
     void Main::onLauncherRowsValueChanged(const int value) {
         m_settings->getConfiguration()->setLauncherRows(value);
+        m_settings->markDirty();
     }
 
     void Main::onLauncherColumnsValueChanged(const int value) {
         m_settings->getConfiguration()->setLauncherColumns(value);
+        m_settings->markDirty();
     }
 
     void Main::onCoordinateFormatChanged(const int) {
         m_settings->getConfiguration()->setCoordinateFormat(ui->comboBox_coordinateFormat->currentData().toString());
+        m_settings->markDirty();
     }
     Main::~Main() {
         delete ui;

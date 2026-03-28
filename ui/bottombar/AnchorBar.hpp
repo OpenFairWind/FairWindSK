@@ -6,6 +6,7 @@
 #define ANCHORBAR_H
 
 #include <QWidget>
+#include <QJsonObject>
 #include <nlohmann/json.hpp>
 #include "Units.hpp"
 
@@ -20,6 +21,7 @@ namespace fairwindsk::ui::bottombar {
         explicit AnchorBar(QWidget *parent = nullptr);
 
         ~AnchorBar() override;
+        void refreshFromConfiguration();
 
         public
             slots:
@@ -60,9 +62,18 @@ namespace fairwindsk::ui::bottombar {
 
 
     private:
+        void updateUnitLabels() const;
+
         Ui::AnchorBar *ui;
         Units *m_units;
         nlohmann::json m_signalkPaths;
+        QJsonObject m_lastPositionUpdate;
+        QJsonObject m_lastDepthUpdate;
+        QJsonObject m_lastBearingUpdate;
+        QJsonObject m_lastDistanceUpdate;
+        QJsonObject m_lastRodeUpdate;
+        QJsonObject m_lastCurrentRadiusUpdate;
+        QJsonObject m_lastMaxRadiusUpdate;
     };
 } // fairwindsk::ui::bottombar
 

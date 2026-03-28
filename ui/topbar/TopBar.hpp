@@ -6,6 +6,7 @@
 #define TOPBAR_HPP
 
 #include <QIcon>
+#include <QJsonObject>
 #include <QWidget>
 
 #include <FairWindSK.hpp>
@@ -29,6 +30,7 @@ namespace fairwindsk::ui::topbar {
                                const QString &tooltip = QString(),
                                const QIcon &icon = QIcon(),
                                bool enableButton = false);
+        void refreshFromConfiguration();
 
     public slots:
         void toolbuttonUL_clicked();
@@ -76,6 +78,19 @@ namespace fairwindsk::ui::topbar {
         QString m_pathDTG;
         QString m_pathXTE;
         QString m_pathVMG;
+        QJsonObject m_lastPosUpdate;
+        QJsonObject m_lastCogUpdate;
+        QJsonObject m_lastSogUpdate;
+        QJsonObject m_lastHdgUpdate;
+        QJsonObject m_lastStwUpdate;
+        QJsonObject m_lastDptUpdate;
+        QJsonObject m_lastWptUpdate;
+        QJsonObject m_lastBtwUpdate;
+        QJsonObject m_lastDtgUpdate;
+        QJsonObject m_lastTtgUpdate;
+        QJsonObject m_lastEtaUpdate;
+        QJsonObject m_lastXteUpdate;
+        QJsonObject m_lastVmgUpdate;
     };
 }
 

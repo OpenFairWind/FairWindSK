@@ -43,9 +43,6 @@ namespace fairwindsk::ui::settings {
         connect(ui->pushButton_RestoreDefaults, &QPushButton::clicked, this, [this]() {
             m_settings->restoreDefaultConfiguration();
         });
-        connect(ui->pushButton_Save, &QPushButton::clicked, this, [this]() {
-            m_settings->saveChanges();
-        });
         connect(ui->pushButton_Restart, &QPushButton::clicked, this, [this]() {
             m_settings->restartApplication();
         });

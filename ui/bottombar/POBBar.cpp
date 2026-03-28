@@ -80,8 +80,7 @@ namespace fairwindsk::ui::bottombar {
 
             // Get the signal k paths object
             m_signalkPaths = configurationJsonObject["signalk"];
-            ui->label_unitBearing->setText(m_units->getSignalKUnitLabel(configuredPath("pob.bearing"), "deg"));
-            ui->label_unitDistance->setText(m_units->getSignalKUnitLabel(configuredPath("pob.distance"), configuration->getRangeUnits()));
+            updateUnitLabels();
 
             const auto path = pobNotificationPath();
             if (!path.isEmpty()) {
@@ -98,6 +97,19 @@ namespace fairwindsk::ui::bottombar {
                 ));
             }
         }
+    }
+
+    void POBBar::updateUnitLabels() const {
+        const auto configuration = FairWindSK::getInstance()->getConfiguration();
+        ui->label_unitBearing->setText(m_units->getSignalKUnitLabel(configuredPath("pob.bearing"), "deg"));
+        ui->label_unitDistance->setText(m_units->getSignalKUnitLabel(configuredPath("pob.distance"), configuration->getRangeUnits()));
+    }
+
+    void POBBar::refreshFromConfiguration() {
+        updateUnitLabels();
+        refreshCurrentPobUi();
+        updateBearing(m_lastBearingUpdate);
+        updateDistance(m_lastDistanceUpdate);
     }
 
     /*
@@ -264,6 +276,7 @@ namespace fairwindsk::ui::bottombar {
  * Method called in accordance to signalk to update the bearing
  */
     void POBBar::updateBearing(const QJsonObject &update) {
+        m_lastBearingUpdate = update;
 
         // Check if for any reason the update is empty
         if (update.isEmpty()) {
@@ -288,6 +301,7 @@ namespace fairwindsk::ui::bottombar {
  * Method called in accordance to signalk to update the distance
  */
     void POBBar::updateDistance(const QJsonObject &update) {
+        m_lastDistanceUpdate = update;
 
 
         // Check if for any reason the update is empty

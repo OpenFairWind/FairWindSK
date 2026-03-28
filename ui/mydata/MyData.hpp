@@ -22,6 +22,7 @@ namespace fairwindsk::ui::mydata {
         ~MyData() override;
 
         QWidget *getCurrentWidget();
+        void refreshFromConfiguration();
 
     public slots:
         void onClose();

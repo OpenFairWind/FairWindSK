@@ -666,10 +666,19 @@ namespace fairwindsk::ui {
         }
 
         m_bottomBar->setAnchorIcon(fairWindSK->checkAnchorApp());
+        if (m_topBar) {
+            m_topBar->refreshFromConfiguration();
+        }
+        if (m_bottomBar) {
+            m_bottomBar->refreshFromConfiguration();
+        }
         setSize();
 
         if (m_launcher) {
             m_launcher->refreshFromConfiguration(true);
+        }
+        if (m_myDataPage) {
+            m_myDataPage->refreshFromConfiguration();
         }
 
         syncTopBarToCurrentPage();

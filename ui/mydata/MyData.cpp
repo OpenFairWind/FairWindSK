@@ -4,6 +4,8 @@
 
 // You may need to build the project (run Qt uic code generator) to get "ui_MyData.h" resolved
 
+#include <algorithm>
+
 #include "MyData.hpp"
 #include "ui_MyData.h"
 #include "Files.hpp"
@@ -76,6 +78,11 @@ namespace fairwindsk::ui::mydata {
 
     QWidget *MyData::getCurrentWidget() {
         return m_currentWidget;
+    }
+
+    void MyData::refreshFromConfiguration() {
+        const int currentIndex = ui->tabWidget ? ui->tabWidget->currentIndex() : 0;
+        initTabs(std::max(0, currentIndex));
     }
 
     MyData::~MyData() {

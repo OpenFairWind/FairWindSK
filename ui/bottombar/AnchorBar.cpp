@@ -53,43 +53,6 @@ namespace fairwindsk::ui::bottombar {
 
             // Get the signal k paths object
             m_signalkPaths = configurationJsonObject["signalk"];
-            ui->label_unitDepth->setText(
-                m_units->getSignalKUnitLabel(
-                    m_signalkPaths.contains("anchor.depth") && m_signalkPaths["anchor.depth"].is_string()
-                        ? QString::fromStdString(m_signalkPaths["anchor.depth"].get<std::string>())
-                        : QString(),
-                    configuration->getDepthUnits()));
-            ui->label_unitBearing->setText(
-                m_units->getSignalKUnitLabel(
-                    m_signalkPaths.contains("anchor.bearing") && m_signalkPaths["anchor.bearing"].is_string()
-                        ? QString::fromStdString(m_signalkPaths["anchor.bearing"].get<std::string>())
-                        : QString(),
-                    "deg"));
-            ui->label_unitDistance->setText(
-                m_units->getSignalKUnitLabel(
-                    m_signalkPaths.contains("anchor.distance") && m_signalkPaths["anchor.distance"].is_string()
-                        ? QString::fromStdString(m_signalkPaths["anchor.distance"].get<std::string>())
-                        : QString(),
-                    configuration->getDistanceUnits()));
-            ui->label_unitRode->setText(
-                m_units->getSignalKUnitLabel(
-                    m_signalkPaths.contains("anchor.rode") && m_signalkPaths["anchor.rode"].is_string()
-                        ? QString::fromStdString(m_signalkPaths["anchor.rode"].get<std::string>())
-                        : QString(),
-                    configuration->getRangeUnits()));
-            ui->label_unitCurrentRadius->setText(
-                m_units->getSignalKUnitLabel(
-                    m_signalkPaths.contains("anchor.radius") && m_signalkPaths["anchor.radius"].is_string()
-                        ? QString::fromStdString(m_signalkPaths["anchor.radius"].get<std::string>())
-                        : QString(),
-                    configuration->getRangeUnits()));
-            ui->label_unitMaxRadius->setText(
-                m_units->getSignalKUnitLabel(
-                    m_signalkPaths.contains("anchor.max") && m_signalkPaths["anchor.max"].is_string()
-                        ? QString::fromStdString(m_signalkPaths["anchor.max"].get<std::string>())
-                        : QString(),
-                    configuration->getRangeUnits()));
-
             // Check if the Options object has the rsa key and if it is a string
             if (m_signalkPaths.contains("anchor.position") && m_signalkPaths["anchor.position"].is_string()) {
 
@@ -169,6 +132,8 @@ namespace fairwindsk::ui::bottombar {
 
         }
 
+        updateUnitLabels();
+
         // Not visible by default
         QWidget::setVisible(false);
 
@@ -186,6 +151,57 @@ namespace fairwindsk::ui::bottombar {
         connect(ui->toolButton_Down, &QToolButton::released, this, &AnchorBar::onDownReleased);
         connect(ui->toolButton_Release, &QToolButton::clicked, this, &AnchorBar::onReleaseClicked);
 
+    }
+
+    void AnchorBar::updateUnitLabels() const {
+        const auto configuration = FairWindSK::getInstance()->getConfiguration();
+        ui->label_unitDepth->setText(
+            m_units->getSignalKUnitLabel(
+                m_signalkPaths.contains("anchor.depth") && m_signalkPaths["anchor.depth"].is_string()
+                    ? QString::fromStdString(m_signalkPaths["anchor.depth"].get<std::string>())
+                    : QString(),
+                configuration->getDepthUnits()));
+        ui->label_unitBearing->setText(
+            m_units->getSignalKUnitLabel(
+                m_signalkPaths.contains("anchor.bearing") && m_signalkPaths["anchor.bearing"].is_string()
+                    ? QString::fromStdString(m_signalkPaths["anchor.bearing"].get<std::string>())
+                    : QString(),
+                "deg"));
+        ui->label_unitDistance->setText(
+            m_units->getSignalKUnitLabel(
+                m_signalkPaths.contains("anchor.distance") && m_signalkPaths["anchor.distance"].is_string()
+                    ? QString::fromStdString(m_signalkPaths["anchor.distance"].get<std::string>())
+                    : QString(),
+                configuration->getDistanceUnits()));
+        ui->label_unitRode->setText(
+            m_units->getSignalKUnitLabel(
+                m_signalkPaths.contains("anchor.rode") && m_signalkPaths["anchor.rode"].is_string()
+                    ? QString::fromStdString(m_signalkPaths["anchor.rode"].get<std::string>())
+                    : QString(),
+                configuration->getRangeUnits()));
+        ui->label_unitCurrentRadius->setText(
+            m_units->getSignalKUnitLabel(
+                m_signalkPaths.contains("anchor.radius") && m_signalkPaths["anchor.radius"].is_string()
+                    ? QString::fromStdString(m_signalkPaths["anchor.radius"].get<std::string>())
+                    : QString(),
+                configuration->getRangeUnits()));
+        ui->label_unitMaxRadius->setText(
+            m_units->getSignalKUnitLabel(
+                m_signalkPaths.contains("anchor.max") && m_signalkPaths["anchor.max"].is_string()
+                    ? QString::fromStdString(m_signalkPaths["anchor.max"].get<std::string>())
+                    : QString(),
+                configuration->getRangeUnits()));
+    }
+
+    void AnchorBar::refreshFromConfiguration() {
+        updateUnitLabels();
+        updatePosition(m_lastPositionUpdate);
+        updateDepth(m_lastDepthUpdate);
+        updateBearing(m_lastBearingUpdate);
+        updateDistance(m_lastDistanceUpdate);
+        updateRode(m_lastRodeUpdate);
+        updateCurrentRadius(m_lastCurrentRadiusUpdate);
+        updateMaxRadius(m_lastMaxRadiusUpdate);
     }
 
     void AnchorBar::onHideClicked() {
@@ -440,6 +456,7 @@ namespace fairwindsk::ui::bottombar {
  * Method called in accordance to signalk to update the distance
  */
     void AnchorBar::updatePosition(const QJsonObject &update) {
+        m_lastPositionUpdate = update;
 
         // Check if for any reason the update is empty
         if (update.isEmpty()) {
@@ -478,6 +495,7 @@ namespace fairwindsk::ui::bottombar {
  * Method called in accordance to signalk to update the distance
  */
     void AnchorBar::updateDepth(const QJsonObject &update) {
+        m_lastDepthUpdate = update;
 
         // Check if for any reason the update is empty
         if (update.isEmpty()) {
@@ -514,6 +532,7 @@ namespace fairwindsk::ui::bottombar {
      * Method called in accordance to signalk to update the bearing
      */
     void AnchorBar::updateBearing(const QJsonObject &update) {
+        m_lastBearingUpdate = update;
 
         // Check if for any reason the update is empty
         if (update.isEmpty()) {
@@ -551,6 +570,7 @@ namespace fairwindsk::ui::bottombar {
  * Method called in accordance to signalk to update the distance
  */
     void AnchorBar::updateDistance(const QJsonObject &update) {
+        m_lastDistanceUpdate = update;
 
         // Check if for any reason the update is empty
         if (update.isEmpty()) {
@@ -587,6 +607,7 @@ namespace fairwindsk::ui::bottombar {
  * Method called in accordance to signalk to update the distance
  */
     void AnchorBar::updateRode(const QJsonObject &update) {
+        m_lastRodeUpdate = update;
 
         // Check if for any reason the update is empty
         if (update.isEmpty()) {
@@ -623,6 +644,7 @@ namespace fairwindsk::ui::bottombar {
  * Method called in accordance to signalk to update the distance
  */
     void AnchorBar::updateCurrentRadius(const QJsonObject &update) {
+        m_lastCurrentRadiusUpdate = update;
 
         // Check if for any reason the update is empty
         if (update.isEmpty()) {
@@ -668,6 +690,7 @@ namespace fairwindsk::ui::bottombar {
  * Method called in accordance to signalk to update the distance
  */
     void AnchorBar::updateMaxRadius(const QJsonObject &update) {
+        m_lastMaxRadiusUpdate = update;
 
         // Check if for any reason the update is empty
         if (update.isEmpty()) {

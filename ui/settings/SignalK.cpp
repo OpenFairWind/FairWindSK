@@ -79,5 +79,6 @@ namespace fairwindsk::ui::settings {
         qDebug() << "onTextChanged: " << lineEdit->objectName() << " --> " << lineEdit->text();
 
         m_settings->getConfiguration()->getRoot()["signalk"][lineEdit->objectName().toStdString()] = lineEdit->text().toStdString();
+        m_settings->markDirty();
     }
 } // fairwindsk::ui::settings

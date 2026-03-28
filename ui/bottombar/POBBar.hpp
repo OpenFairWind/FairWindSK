@@ -28,6 +28,7 @@ namespace fairwindsk::ui::bottombar {
         ~POBBar() override;
 
         void POB();
+        void refreshFromConfiguration();
 
     public
         slots:
@@ -55,6 +56,7 @@ namespace fairwindsk::ui::bottombar {
         void refreshCurrentPobUi();
         void refreshCancelButton();
         void clearDisplayedPob();
+        void updateUnitLabels() const;
         void updateDisplayedPosition(const QJsonObject& position);
         void updateStartTime();
         void addOrSelectPOB(const QString& uuid);
@@ -69,6 +71,8 @@ namespace fairwindsk::ui::bottombar {
         QHash<QString, QString> m_pobLabels;
         QDateTime m_currentStartTimeUtc;
         bool m_metricSubscriptionsActive = false;
+        QJsonObject m_lastBearingUpdate;
+        QJsonObject m_lastDistanceUpdate;
     };
 } // fairwindsk::ui::bottombar
 

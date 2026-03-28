@@ -393,11 +393,37 @@ namespace fairwindsk::ui::topbar {
         }
     }
 
+    void TopBar::refreshFromConfiguration() {
+        const auto configuration = FairWindSK::getInstance()->getConfiguration();
+        ui->label_unitCOG->setText(m_units->getSignalKUnitLabel(m_pathCOG, "deg"));
+        ui->label_unitBTW->setText(m_units->getSignalKUnitLabel(m_pathBTW, "deg"));
+        ui->label_unitHDG->setText(m_units->getSignalKUnitLabel(m_pathHDG, "deg"));
+        ui->label_unitDPT->setText(m_units->getSignalKUnitLabel(m_pathDPT, configuration->getDepthUnits()));
+        updateSpeedLabels();
+        updateDistanceLabels();
+        refreshMetricLabelWidths();
+
+        updatePOS(m_lastPosUpdate);
+        updateCOG(m_lastCogUpdate);
+        updateSOG(m_lastSogUpdate);
+        updateHDG(m_lastHdgUpdate);
+        updateSTW(m_lastStwUpdate);
+        updateDPT(m_lastDptUpdate);
+        updateWPT(m_lastWptUpdate);
+        updateBTW(m_lastBtwUpdate);
+        updateDTG(m_lastDtgUpdate);
+        updateTTG(m_lastTtgUpdate);
+        updateETA(m_lastEtaUpdate);
+        updateXTE(m_lastXteUpdate);
+        updateVMG(m_lastVmgUpdate);
+    }
+
 /*
  * updateNavigationPosition
  * Method called in accordance to signalk to update the navigation position
  */
     void TopBar::updatePOS(const QJsonObject &update) {
+        m_lastPosUpdate = update;
 
         // Check if for any reason the update is empty
         if (update.isEmpty()) {
@@ -432,6 +458,7 @@ namespace fairwindsk::ui::topbar {
  * Method called in accordance to signalk to update the navigation course over ground
  */
     void TopBar::updateCOG(const QJsonObject &update) {
+        m_lastCogUpdate = update;
 
         // Check if for any reason the update is empty
         if (update.isEmpty()) {
@@ -463,6 +490,7 @@ namespace fairwindsk::ui::topbar {
  * Method called in accordance to signalk to update the navigation speed over ground
  */
     void TopBar::updateSOG(const QJsonObject &update) {
+        m_lastSogUpdate = update;
 
         // Check if for any reason the update is empty
         if (update.isEmpty()) {
@@ -495,6 +523,7 @@ namespace fairwindsk::ui::topbar {
  * Method called in accordance to signalk to update the navigation course over ground
  */
     void TopBar::updateHDG(const QJsonObject &update) {
+        m_lastHdgUpdate = update;
 
         // Check if for any reason the update is empty
         if (update.isEmpty()) {
@@ -526,6 +555,7 @@ namespace fairwindsk::ui::topbar {
  * Method called in accordance to signalk to update the navigation speed over ground
  */
     void TopBar::updateSTW(const QJsonObject &update) {
+        m_lastStwUpdate = update;
 
         // Check if for any reason the update is empty
         if (update.isEmpty()) {
@@ -558,6 +588,7 @@ namespace fairwindsk::ui::topbar {
  * Method called in accordance to signalk to update the navigation speed over ground
  */
     void TopBar::updateDPT(const QJsonObject &update) {
+        m_lastDptUpdate = update;
 
         // Check if for any reason the update is empty
         if (update.isEmpty()) {
@@ -592,6 +623,7 @@ namespace fairwindsk::ui::topbar {
     }
 
     void TopBar::updateWPT(const QJsonObject &update) {
+        m_lastWptUpdate = update;
 
         // Check if for any reason the update is empty
         if (update.isEmpty()) {
@@ -622,6 +654,7 @@ namespace fairwindsk::ui::topbar {
     }
 
     void TopBar::updateBTW(const QJsonObject &update) {
+        m_lastBtwUpdate = update;
 
         // Check if for any reason the update is empty
         if (update.isEmpty()) {
@@ -649,6 +682,7 @@ namespace fairwindsk::ui::topbar {
     }
 
     void TopBar::updateDTG(const QJsonObject &update) {
+        m_lastDtgUpdate = update;
 
         // Check if for any reason the update is empty
         if (update.isEmpty()) {
@@ -676,6 +710,7 @@ namespace fairwindsk::ui::topbar {
     }
 
     void TopBar::updateTTG(const QJsonObject &update) {
+        m_lastTtgUpdate = update;
 
         // Check if for any reason the update is empty
         if (update.isEmpty()) {
@@ -707,6 +742,7 @@ namespace fairwindsk::ui::topbar {
     }
 
     void TopBar::updateETA(const QJsonObject &update) {
+        m_lastEtaUpdate = update;
 
         // Check if for any reason the update is empty
         if (update.isEmpty()) {
@@ -738,6 +774,7 @@ namespace fairwindsk::ui::topbar {
     }
 
     void TopBar::updateXTE(const QJsonObject &update) {
+        m_lastXteUpdate = update;
 
         // Check if for any reason the update is empty
         if (update.isEmpty()) {
@@ -765,6 +802,7 @@ namespace fairwindsk::ui::topbar {
     }
 
     void TopBar::updateVMG(const QJsonObject &update) {
+        m_lastVmgUpdate = update;
 
         // Check if for any reason the update is empty
         if (update.isEmpty()) {

@@ -21,6 +21,10 @@
 #include "ui_Settings.h"
 
 namespace fairwindsk::ui::settings {
+    namespace {
+        constexpr int kLiveApplyDelayMs = 150;
+    }
+
     void Settings::applyConfiguration() {
 
         // Get the configuration root element
@@ -35,6 +39,7 @@ namespace fairwindsk::ui::settings {
         // Save the configuration permanently
         FairWindSK::getInstance()->getConfiguration()->save();
         FairWindSK::getInstance()->reconfigureRuntime();
+        m_hasPendingUiChanges = false;
     }
 
 
@@ -76,6 +81,15 @@ namespace fairwindsk::ui::settings {
         m_currentWidget = currenWidget;
 
         connect(ui->tabWidget, &QTabWidget::currentChanged, this, &Settings::onTabChanged);
+
+        m_applyTimer = new QTimer(this);
+        m_applyTimer->setSingleShot(true);
+        connect(m_applyTimer, &QTimer::timeout, this, [this]() {
+            if (m_rebuildingTabs) {
+                return;
+            }
+            applyConfiguration();
+        });
     }
 
     /*
@@ -205,15 +219,22 @@ namespace fairwindsk::ui::settings {
 
     void Settings::markDirty() {
         m_hasPendingUiChanges = true;
+        scheduleApplyConfiguration(kLiveApplyDelayMs);
     }
 
     void Settings::saveChanges() {
+        if (m_applyTimer) {
+            m_applyTimer->stop();
+        }
         applyConfiguration();
         m_hasPendingUiChanges = false;
         resetFromCurrentConfiguration(ui->tabWidget->currentIndex());
     }
 
     void Settings::discardChanges() {
+        if (m_applyTimer) {
+            m_applyTimer->stop();
+        }
         FairWindSK::getInstance()->applyUiPreferences(m_currentConfiguration);
         m_hasPendingUiChanges = false;
         resetFromCurrentConfiguration(ui->tabWidget->currentIndex());
@@ -223,8 +244,19 @@ namespace fairwindsk::ui::settings {
         const int resolvedIndex = currentIndex >= 0 ? currentIndex : ui->tabWidget->currentIndex();
         m_configuration.setFilename(m_currentConfiguration->getFilename());
         m_configuration.setRoot(m_currentConfiguration->getRoot());
+        if (m_applyTimer) {
+            m_applyTimer->stop();
+        }
         m_hasPendingUiChanges = false;
         initTabs(std::max(0, resolvedIndex));
+    }
+
+    void Settings::scheduleApplyConfiguration(const int delayMs) {
+        if (m_rebuildingTabs || !m_applyTimer) {
+            return;
+        }
+
+        m_applyTimer->start(std::max(0, delayMs));
     }
 
     void Settings::resetToCurrentConfiguration() {
