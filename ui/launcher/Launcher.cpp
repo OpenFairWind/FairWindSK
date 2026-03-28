@@ -6,7 +6,10 @@
 
 #include <algorithm>
 #include <functional>
+#include <QCoreApplication>
+#include <QDir>
 #include <QEnterEvent>
+#include <QFileInfo>
 #include <QFrame>
 #include <QGridLayout>
 #include <QList>
@@ -115,9 +118,16 @@ namespace fairwindsk::ui::launcher {
 
             if (trimmed.startsWith(QStringLiteral("file://"))) {
                 const QString localPath = trimmed.mid(QStringLiteral("file://").size());
+                const QFileInfo localInfo(localPath);
                 QPixmap pixmap(localPath);
                 if (!pixmap.isNull()) {
                     return pixmap;
+                }
+                if (!localInfo.isAbsolute()) {
+                    pixmap.load(QDir(QCoreApplication::applicationDirPath()).absoluteFilePath(localPath));
+                    if (!pixmap.isNull()) {
+                        return pixmap;
+                    }
                 }
             }
 
@@ -273,7 +283,11 @@ namespace fairwindsk::ui::launcher {
                                     entry.id = parentPageIdForNodeId(allNodes, nodeId(node));
                                     entry.title = QObject::tr("Parent page");
                                     entry.description = QObject::tr("Return to the parent page");
-                                    entry.pixmap = QPixmap(QLatin1String(kParentNavigationIconPath));
+                                    if (const auto *parentNode = findNodeById(allNodes, entry.id)) {
+                                        entry.pixmap = pageIconForPath(nodeIconPath(*parentNode));
+                                    } else {
+                                        entry.pixmap = QPixmap(QLatin1String(kParentNavigationIconPath));
+                                    }
                                     entries.append(entry);
                                     continue;
                                 }

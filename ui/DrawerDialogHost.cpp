@@ -4,6 +4,7 @@
 
 #include "DrawerDialogHost.hpp"
 
+#include <QCoreApplication>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QDir>
@@ -350,6 +351,57 @@ namespace fairwindsk::ui::drawer {
             entries.append({path, label.isEmpty() ? QFileInfo(path).completeBaseName() : label});
         }
 
+        QString normalizedIconStoragePath(const QString &path) {
+            const QString trimmed = path.trimmed();
+            if (!trimmed.startsWith(QStringLiteral("file://"))) {
+                return trimmed;
+            }
+
+            const QString localPath = trimmed.mid(QStringLiteral("file://").size());
+            const QFileInfo info(localPath);
+            if (!info.isAbsolute()) {
+                return QStringLiteral("file://") + QDir::cleanPath(localPath);
+            }
+
+            const QString absolutePath = info.absoluteFilePath();
+            const QStringList baseDirectories = {
+                QCoreApplication::applicationDirPath(),
+                QDir::currentPath()
+            };
+
+            for (const QString &baseDirectory : baseDirectories) {
+                const QDir baseDir(baseDirectory);
+                const QString relativePath = QDir::cleanPath(baseDir.relativeFilePath(absolutePath));
+                if (!relativePath.startsWith(QStringLiteral("../")) && relativePath != QStringLiteral("..")) {
+                    return QStringLiteral("file://") + relativePath;
+                }
+            }
+
+            return trimmed;
+        }
+
+        QString resolvedLocalIconPath(const QString &path) {
+            const QString trimmed = path.trimmed();
+            if (trimmed.isEmpty()) {
+                return {};
+            }
+
+            const QString localPath = trimmed.startsWith(QStringLiteral("file://"))
+                                          ? trimmed.mid(QStringLiteral("file://").size())
+                                          : trimmed;
+            const QFileInfo info(localPath);
+            if (info.isAbsolute()) {
+                return info.absoluteFilePath();
+            }
+
+            const QString executableRelativePath = QDir(QCoreApplication::applicationDirPath()).absoluteFilePath(localPath);
+            if (QFileInfo::exists(executableRelativePath)) {
+                return executableRelativePath;
+            }
+
+            return QDir::current().absoluteFilePath(localPath);
+        }
+
         QList<IconEntry> availableIconEntries() {
             QList<IconEntry> entries;
             QSet<QString> seen;
@@ -390,7 +442,10 @@ namespace fairwindsk::ui::drawer {
                     QDir::Files | QDir::NoDotAndDotDot,
                     QDir::Name);
                 for (const QFileInfo &fileInfo : iconFiles) {
-                    appendIconEntry(entries, seen, QStringLiteral("file://") + fileInfo.absoluteFilePath(), fileInfo.completeBaseName());
+                    appendIconEntry(entries,
+                                    seen,
+                                    normalizedIconStoragePath(QStringLiteral("file://") + fileInfo.absoluteFilePath()),
+                                    fileInfo.completeBaseName());
                 }
             }
 
@@ -400,7 +455,7 @@ namespace fairwindsk::ui::drawer {
         QPixmap iconPixmapForPath(const QString &path, const int iconSize) {
             QPixmap pixmap;
             if (path.startsWith(QStringLiteral("file://"))) {
-                pixmap.load(path.mid(QStringLiteral("file://").size()));
+                pixmap.load(resolvedLocalIconPath(path));
             } else {
                 pixmap.load(path);
             }
@@ -434,7 +489,7 @@ namespace fairwindsk::ui::drawer {
                 const int iconSize = iconPickerIconSize();
                 m_listWidget->setIconSize(QSize(iconSize, iconSize));
                 m_listWidget->setGridSize(QSize(iconSize + 36, iconSize + 44));
-                const int visibleRows = 2;
+                const int visibleRows = 4;
                 m_listWidget->setMinimumHeight((iconSize + 44) * visibleRows + 18);
                 layout->addWidget(m_listWidget, 1);
 
@@ -648,7 +703,7 @@ namespace fairwindsk::ui::drawer {
             return {};
         }
 
-        return pickerGuard->selectedPath();
+        return normalizedIconStoragePath(pickerGuard->selectedPath());
     }
 
     QString getSaveFilePath(QWidget *parent,

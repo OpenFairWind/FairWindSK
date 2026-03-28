@@ -7,6 +7,7 @@
 #include <algorithm>
 
 #include <QApplication>
+#include <QCoreApplication>
 #include <QDir>
 #include <QDrag>
 #include <QFileDialog>
@@ -118,9 +119,16 @@ namespace fairwindsk::ui::settings {
 
             if (trimmed.startsWith(QStringLiteral("file://"))) {
                 const QString localPath = trimmed.mid(QStringLiteral("file://").size());
+                const QFileInfo localInfo(localPath);
                 QPixmap pixmap(localPath);
                 if (!pixmap.isNull()) {
                     return pixmap;
+                }
+                if (!localInfo.isAbsolute()) {
+                    pixmap.load(QDir(QCoreApplication::applicationDirPath()).absoluteFilePath(localPath));
+                    if (!pixmap.isNull()) {
+                        return pixmap;
+                    }
                 }
             }
 
@@ -1706,6 +1714,12 @@ namespace fairwindsk::ui::settings {
 
     QPair<QString, QPixmap> Apps::resolveAppPresentation(const QString &appName) const {
         if (isParentReference(appName)) {
+            const QString parentPageId = parentPageIdForNodeId(selectedPageId());
+            if (const auto *nodes = launcherLayoutNodes()) {
+                if (const auto *parentNode = findNodeById(*nodes, parentPageId)) {
+                    return qMakePair(tr("Parent page"), pageIconPixmap(*parentNode));
+                }
+            }
             return qMakePair(tr("Parent page"), QPixmap(QLatin1String(kParentNavigationIconPath)));
         }
 
