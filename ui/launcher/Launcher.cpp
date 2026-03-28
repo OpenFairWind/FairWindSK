@@ -43,11 +43,13 @@ namespace fairwindsk::ui::launcher {
         constexpr auto kNodeTypeKey = "type";
         constexpr auto kNodeNameKey = "name";
         constexpr auto kNodeIdKey = "id";
+        constexpr auto kNodeIconKey = "icon";
         constexpr auto kNodeItemsKey = "items";
         constexpr auto kNodeChildrenKey = "children";
         constexpr auto kFolderReferencePrefix = "@folder:";
         constexpr const char *kNodeTypePage = "page";
         constexpr const char *kNodeTypeFolder = "folder";
+        constexpr auto kDefaultPageIconPath = ":/resources/svg/OpenBridge/home.svg";
 
         QList<OrderedApp> collectOrderedApps() {
             QList<OrderedApp> orderedApps;
@@ -93,6 +95,35 @@ namespace fairwindsk::ui::launcher {
                 return QString::fromStdString(node[kNodeIdKey].get<std::string>());
             }
             return {};
+        }
+
+        QString nodeIconPath(const nlohmann::json &node) {
+            if (node.contains(kNodeIconKey) && node[kNodeIconKey].is_string()) {
+                return QString::fromStdString(node[kNodeIconKey].get<std::string>());
+            }
+            return QLatin1String(kDefaultPageIconPath);
+        }
+
+        QPixmap pageIconForPath(const QString &iconPath) {
+            const QString trimmed = iconPath.trimmed();
+            if (trimmed.isEmpty()) {
+                return QPixmap(QLatin1String(kDefaultPageIconPath));
+            }
+
+            if (trimmed.startsWith(QStringLiteral("file://"))) {
+                const QString localPath = trimmed.mid(QStringLiteral("file://").size());
+                QPixmap pixmap(localPath);
+                if (!pixmap.isNull()) {
+                    return pixmap;
+                }
+            }
+
+            QPixmap pixmap(trimmed);
+            if (!pixmap.isNull()) {
+                return pixmap;
+            }
+
+            return QPixmap(QLatin1String(kDefaultPageIconPath));
         }
 
         QString defaultNodeTitle(const nlohmann::json &node) {
@@ -210,11 +241,12 @@ namespace fairwindsk::ui::launcher {
                                     if (const auto *childNode = findNodeById(allNodes, childPageId)) {
                                         entry.title = defaultNodeTitle(*childNode);
                                         entry.description = QObject::tr("Open folder");
+                                        entry.pixmap = pageIconForPath(nodeIconPath(*childNode));
                                     } else {
                                         entry.title = QObject::tr("Folder");
                                         entry.description = QObject::tr("Open folder");
+                                        entry.pixmap = QPixmap(QLatin1String(kDefaultPageIconPath));
                                     }
-                                    entry.pixmap = QPixmap(QStringLiteral(":/resources/svg/OpenBridge/home.svg"));
                                     entries.append(entry);
                                     continue;
                                 }

@@ -31,7 +31,12 @@ namespace fairwindsk::ui::settings {
         explicit AvailableAppsListWidget(QWidget *parent = nullptr);
 
     protected:
+        void mousePressEvent(QMouseEvent *event) override;
+        void mouseMoveEvent(QMouseEvent *event) override;
         void startDrag(Qt::DropActions supportedActions) override;
+
+    private:
+        QPoint m_dragStartPosition;
     };
 
     class LauncherPageGridWidget final : public QTableWidget {
@@ -124,9 +129,10 @@ namespace fairwindsk::ui::settings {
         QString pageIdFromFolderReference(const QString &value) const;
         int firstAvailableSlot(const QStringList &items) const;
         QString requestedPageName(const QString &title, const QString &initialText = QString()) const;
+        QString requestedPageIcon(const QString &pageName) const;
         void removeFolderReferenceFromNode(nlohmann::json &node, const QString &pageId) const;
         QTreeWidgetItem *addTreeNode(const nlohmann::json &node, QTreeWidgetItem *parentItem);
-        nlohmann::json makePageNode(const QString &name = QString()) const;
+        nlohmann::json makePageNode(const QString &name = QString(), const QString &icon = QString()) const;
         nlohmann::json makeFolderNode(const QString &name = QString()) const;
         nlohmann::json *launcherLayoutNodes();
         const nlohmann::json *launcherLayoutNodes() const;
@@ -135,6 +141,8 @@ namespace fairwindsk::ui::settings {
         bool findNodeParent(nlohmann::json &nodes, const QString &id, nlohmann::json **parentChildren, int *index) const;
         QStringList pageItemsFromNode(const nlohmann::json &node) const;
         void setPageItemsForNode(nlohmann::json &node, const QStringList &items) const;
+        QString pageIconPath(const nlohmann::json &node) const;
+        QPixmap pageIconPixmap(const nlohmann::json &node) const;
         QPair<QString, QPixmap> resolveAppPresentation(const QString &appName) const;
         nlohmann::json *selectedNode();
         const nlohmann::json *selectedNode() const;

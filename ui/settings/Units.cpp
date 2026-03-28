@@ -150,6 +150,9 @@ namespace fairwindsk::ui::settings {
             auto &root = m_settings->getConfiguration()->getRoot();
             syncLegacyUnitsForCategory(root, category, serverTargetUnit);
         }
+        if (m_settings) {
+            m_settings->markDirty();
+        }
     }
 
     QString Units::canonicalUnitToken(const QString &value) {
