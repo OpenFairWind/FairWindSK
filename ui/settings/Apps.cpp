@@ -612,17 +612,18 @@ namespace fairwindsk::ui::settings {
         auto *pageDetailsLayout = new QVBoxLayout(ui->widget_PageDetailsHost);
         pageDetailsLayout->setContentsMargins(0, 0, 0, 0);
         pageDetailsLayout->addWidget(pageDetailsScrollArea);
+        m_appDetailsSaveTimer = new QTimer(this);
+        m_appDetailsSaveTimer->setSingleShot(true);
+        m_appDetailsSaveTimer->setInterval(300);
         m_pageDetailsSaveTimer = new QTimer(this);
         m_pageDetailsSaveTimer->setSingleShot(true);
         m_pageDetailsSaveTimer->setInterval(300);
 
         connect(m_availableAppsList, &QListWidget::itemSelectionChanged, this, &Apps::onAvailableAppSelectionChanged);
         connect(m_availableAppsList, &QListWidget::itemDoubleClicked, this, &Apps::onAvailableAppDoubleClicked);
-        connect(m_appDetailsWidget->ui->pushButton_Apps_EditSave, &QPushButton::clicked, this, &Apps::onAppsEditSaveClicked);
         connect(m_appDetailsWidget->ui->lineEdit_Apps_Name, &QLineEdit::textChanged, this, &Apps::onAppsDetailsFieldsTextChanged);
         connect(m_appDetailsWidget->ui->lineEdit_Apps_Description, &QLineEdit::textChanged, this, &Apps::onAppsDetailsFieldsTextChanged);
         connect(m_appDetailsWidget->ui->lineEdit_Apps_DisplayName, &QLineEdit::textChanged, this, &Apps::onAppsDetailsFieldsTextChanged);
-        connect(m_appDetailsWidget->ui->lineEdit_Apps_AppIcon, &QLineEdit::textChanged, this, &Apps::onAppsDetailsFieldsTextChanged);
         connect(m_appDetailsWidget->ui->pushButton_Apps_AppIcon_Browse, &QPushButton::clicked, this, &Apps::onAppsAppIconBrowse);
         connect(m_appDetailsWidget->ui->pushButton_Apps_Name_Browse, &QPushButton::clicked, this, &Apps::onAppsNameBrowse);
         connect(ui->toolButton_AddAllApps, &QToolButton::clicked, this, &Apps::onAddAllAppsClicked);
@@ -652,6 +653,20 @@ namespace fairwindsk::ui::settings {
         connect(ui->toolButton_SelectedSlotDetails, &QToolButton::clicked, this, &Apps::onShowSelectedGridItemDetails);
         connect(ui->toolButton_ClearPageSlot, &QToolButton::clicked, this, &Apps::onClearPageSlotClicked);
         connect(m_appDetailsWidget->ui->toolButton_BackToLayout, &QToolButton::clicked, this, &Apps::onBackToLayoutClicked);
+        connect(m_appDetailsWidget, &AppDetailsWidget::iconPathSelected, this, [this](const QString &) {
+            if (m_currentDetailAppName.isEmpty()) {
+                return;
+            }
+            m_appsEditChanged = true;
+            saveAppsDetails();
+            showDetailsForApp(m_currentDetailAppName, false);
+        });
+        connect(m_appDetailsSaveTimer, &QTimer::timeout, this, [this]() {
+            if (!m_appsEditChanged || m_currentDetailAppName.isEmpty()) {
+                return;
+            }
+            saveAppsDetails();
+        });
         connect(m_pageDetailsWidget->ui->toolButton_BackFromPageDetails, &QToolButton::clicked, this, &Apps::onBackToLayoutClicked);
         connect(m_pageDetailsWidget->ui->lineEdit_Page_Name, &QLineEdit::textChanged, this, &Apps::onPageDetailsFieldsTextChanged);
         connect(m_pageDetailsWidget, &PageDetailsWidget::iconPathSelected, this, [this](const QString &) {
@@ -706,13 +721,11 @@ namespace fairwindsk::ui::settings {
         }
 
         m_appsEditMode = editMode;
-        m_appDetailsWidget->ui->pushButton_Apps_EditSave->setText(m_appsEditMode ? tr("Save") : tr("Edit"));
-        m_appDetailsWidget->ui->lineEdit_Apps_Name->setReadOnly(!m_appsEditMode);
-        m_appDetailsWidget->ui->lineEdit_Apps_Description->setReadOnly(true);
-        m_appDetailsWidget->ui->lineEdit_Apps_DisplayName->setReadOnly(true);
-        m_appDetailsWidget->ui->lineEdit_Apps_AppIcon->setReadOnly(!m_appsEditMode);
-        m_appDetailsWidget->ui->pushButton_Apps_Name_Browse->setEnabled(false);
-        m_appDetailsWidget->ui->pushButton_Apps_AppIcon_Browse->setEnabled(m_appsEditMode);
+        m_appDetailsWidget->ui->lineEdit_Apps_Name->setReadOnly(false);
+        m_appDetailsWidget->ui->lineEdit_Apps_Description->setReadOnly(false);
+        m_appDetailsWidget->ui->lineEdit_Apps_DisplayName->setReadOnly(false);
+        m_appDetailsWidget->ui->pushButton_Apps_Name_Browse->setEnabled(!m_currentDetailAppName.isEmpty());
+        m_appDetailsWidget->ui->pushButton_Apps_AppIcon_Browse->setEnabled(!m_currentDetailAppName.isEmpty());
         m_appsEditChanged = false;
         refreshDetailActionButtons();
     }
@@ -750,7 +763,9 @@ namespace fairwindsk::ui::settings {
         }
 
         appJsonObject["name"] = newName.toStdString();
-        appJsonObject["signalk"]["appIcon"] = m_appDetailsWidget->ui->lineEdit_Apps_AppIcon->text().toStdString();
+        appJsonObject["description"] = m_appDetailsWidget->ui->lineEdit_Apps_Description->text().trimmed().toStdString();
+        appJsonObject["displayName"] = m_appDetailsWidget->ui->lineEdit_Apps_DisplayName->text().trimmed().toStdString();
+        appJsonObject["signalk"]["appIcon"] = m_appDetailsWidget->appIconPath().toStdString();
         m_settings->getConfiguration()->getRoot()["apps"].at(idx) = appJsonObject;
 
         if (newName != m_currentDetailAppName) {
@@ -761,6 +776,9 @@ namespace fairwindsk::ui::settings {
         markSettingsDirty();
         rebuildAvailableAppsList();
         rebuildPageEditor();
+        if (m_appDetailsSaveTimer) {
+            m_appDetailsSaveTimer->stop();
+        }
         m_appsEditChanged = false;
     }
 
@@ -821,9 +839,11 @@ namespace fairwindsk::ui::settings {
 
     void Apps::refreshDetailActionButtons() const {
         const bool hasDetail = !m_currentDetailAppName.isEmpty();
-        m_appDetailsWidget->ui->pushButton_Apps_EditSave->setEnabled(hasDetail);
-        m_appDetailsWidget->ui->pushButton_Apps_Name_Browse->setEnabled(hasDetail && m_appsEditMode);
-        m_appDetailsWidget->ui->pushButton_Apps_AppIcon_Browse->setEnabled(hasDetail && m_appsEditMode);
+        m_appDetailsWidget->ui->lineEdit_Apps_Name->setEnabled(hasDetail);
+        m_appDetailsWidget->ui->lineEdit_Apps_Description->setEnabled(hasDetail);
+        m_appDetailsWidget->ui->lineEdit_Apps_DisplayName->setEnabled(hasDetail);
+        m_appDetailsWidget->ui->pushButton_Apps_Name_Browse->setEnabled(hasDetail);
+        m_appDetailsWidget->ui->pushButton_Apps_AppIcon_Browse->setEnabled(hasDetail);
         const bool hasPageDetail = !m_currentDetailPageId.isEmpty();
         m_pageDetailsWidget->ui->lineEdit_Page_Name->setEnabled(hasPageDetail);
         m_pageDetailsWidget->ui->pushButton_Page_Icon_Browse->setEnabled(hasPageDetail);
@@ -980,6 +1000,10 @@ namespace fairwindsk::ui::settings {
     }
 
     void Apps::showDetailsForApp(const QString &appName, const bool startEditing) {
+        Q_UNUSED(startEditing);
+        if (m_appsEditChanged && !m_currentDetailAppName.isEmpty() && m_currentDetailAppName != appName) {
+            saveAppsDetails();
+        }
         m_currentDetailPageId.clear();
         setPageEditMode(false);
         setAppsEditMode(false);
@@ -990,6 +1014,9 @@ namespace fairwindsk::ui::settings {
         }
 
         AppItem appItem(m_settings->getConfiguration()->getRoot()["apps"].at(idx));
+        const QSignalBlocker nameBlocker(m_appDetailsWidget->ui->lineEdit_Apps_Name);
+        const QSignalBlocker descriptionBlocker(m_appDetailsWidget->ui->lineEdit_Apps_Description);
+        const QSignalBlocker displayNameBlocker(m_appDetailsWidget->ui->lineEdit_Apps_DisplayName);
         m_appDetailsWidget->ui->label_Apps_Version_Text->setText(appItem.getVersion());
         m_appDetailsWidget->ui->label_Apps_Url_Text->setText(appItem.getUrl());
         m_appDetailsWidget->ui->label_Apps_Copyright_Text->setText(appItem.getCopyright());
@@ -999,7 +1026,7 @@ namespace fairwindsk::ui::settings {
         m_appDetailsWidget->ui->lineEdit_Apps_Name->setText(appItem.getName());
         m_appDetailsWidget->ui->lineEdit_Apps_Description->setText(appItem.getDescription());
         m_appDetailsWidget->ui->lineEdit_Apps_DisplayName->setText(appItem.getDisplayName());
-        m_appDetailsWidget->ui->lineEdit_Apps_AppIcon->setText(appItem.getAppIcon());
+        m_appDetailsWidget->setAppIconPath(appItem.getAppIcon());
 
         QPixmap pixmap = appItem.getIcon();
         if (!pixmap.isNull()) {
@@ -1008,11 +1035,16 @@ namespace fairwindsk::ui::settings {
         m_appDetailsWidget->ui->label_Apps_Icon->setPixmap(pixmap);
 
         ui->stackedWidget_RightPane->setCurrentWidget(ui->page_Details);
-        if (startEditing) {
-            setAppsEditMode(true);
-        } else {
-            setAppsEditMode(false);
-        }
+        m_appDetailsWidget->ui->lineEdit_Apps_Name->setEnabled(true);
+        m_appDetailsWidget->ui->lineEdit_Apps_Name->setReadOnly(false);
+        m_appDetailsWidget->ui->lineEdit_Apps_Description->setEnabled(true);
+        m_appDetailsWidget->ui->lineEdit_Apps_Description->setReadOnly(false);
+        m_appDetailsWidget->ui->lineEdit_Apps_DisplayName->setEnabled(true);
+        m_appDetailsWidget->ui->lineEdit_Apps_DisplayName->setReadOnly(false);
+        m_appDetailsWidget->ui->pushButton_Apps_Name_Browse->setEnabled(true);
+        m_appDetailsWidget->ui->pushButton_Apps_AppIcon_Browse->setEnabled(true);
+        m_appDetailsWidget->hideIconPicker();
+        refreshDetailActionButtons();
     }
 
     void Apps::showDetailsForPage(const QString &pageId, const bool startEditing) {
@@ -1047,6 +1079,9 @@ namespace fairwindsk::ui::settings {
     }
 
     void Apps::showLayoutEditor() {
+        if (m_appsEditChanged && !m_currentDetailAppName.isEmpty()) {
+            saveAppsDetails();
+        }
         if (m_pageEditChanged && !m_currentDetailPageId.isEmpty()) {
             savePageDetails();
         }
@@ -1054,6 +1089,9 @@ namespace fairwindsk::ui::settings {
         setPageEditMode(false);
         m_currentDetailAppName.clear();
         m_currentDetailPageId.clear();
+        if (m_appDetailsSaveTimer) {
+            m_appDetailsSaveTimer->stop();
+        }
         if (m_pageDetailsSaveTimer) {
             m_pageDetailsSaveTimer->stop();
         }
@@ -1820,39 +1858,38 @@ namespace fairwindsk::ui::settings {
         showDetailsForApp(listWidgetItem->data(Qt::UserRole).toString());
     }
 
-    void Apps::onAppsEditSaveClicked() {
-        if (m_appsEditMode) {
-            saveAppsDetails();
-            setAppsEditMode(false);
-            showDetailsForApp(m_currentDetailAppName);
-        } else if (!m_currentDetailAppName.isEmpty()) {
-            setAppsEditMode(true);
-        }
-    }
-
     void Apps::onAppsDetailsFieldsTextChanged(const QString &text) {
         Q_UNUSED(text);
-        if (m_appsEditMode) {
+        if (!m_currentDetailAppName.isEmpty()) {
             m_appsEditChanged = true;
+            if (m_appDetailsSaveTimer) {
+                m_appDetailsSaveTimer->start();
+            }
         }
     }
 
     void Apps::onAppsAppIconBrowse() {
-        const QString appIcon = drawer::getIconPath(this,
-                                                    tr("Application icon"),
-                                                    m_appDetailsWidget->ui->lineEdit_Apps_AppIcon->text());
-        if (appIcon.isEmpty()) {
+        if (m_currentDetailAppName.isEmpty()) {
+            return;
+        }
+        m_appDetailsWidget->showIconPicker();
+    }
+
+    void Apps::onAppsNameBrowse() {
+        if (m_currentDetailAppName.isEmpty()) {
             return;
         }
 
-        m_appDetailsWidget->ui->lineEdit_Apps_AppIcon->setText(appIcon);
-        QPixmap pixmap;
-        pixmap.load(appIcon.startsWith(QStringLiteral("file://")) ? appIcon.mid(7) : appIcon);
-        m_appDetailsWidget->ui->label_Apps_Icon->setPixmap(pixmap.scaled(128, 128, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-        m_appsEditChanged = true;
-    }
+        const QString selectedPath = drawer::getOpenFilePath(this,
+                                                             tr("Select file"),
+                                                             QDir::homePath(),
+                                                             tr("All files (*.*)"));
+        if (selectedPath.isEmpty()) {
+            return;
+        }
 
-    void Apps::onAppsNameBrowse() {}
+        m_appDetailsWidget->ui->lineEdit_Apps_Name->setText(QFileInfo(selectedPath).completeBaseName());
+    }
 
     void Apps::onAddAppClicked() {
         AppItem appItem;

@@ -29,12 +29,34 @@ QToolButton#toolButton_BackToLayout:disabled {
 }
 QLineEdit#lineEdit_Apps_Name,
 QLineEdit#lineEdit_Apps_Description,
-QLineEdit#lineEdit_Apps_DisplayName,
-QLineEdit#lineEdit_Apps_AppIcon {
+QLineEdit#lineEdit_Apps_DisplayName {
  background: #f7f7f4;
  color: #1f2937;
  selection-background-color: #c7d2fe;
  selection-color: #111827;
+}
+QListWidget#listWidget_Apps_Icons {
+ selection-background-color: transparent;
+ background: #0f172a;
+ color: white;
+ border: none;
+}
+QListWidget#listWidget_Apps_Icons::item {
+ border: 2px solid transparent;
+ border-radius: 8px;
+ padding: 4px;
+ margin: 2px;
+ color: white;
+}
+QListWidget#listWidget_Apps_Icons::item:selected {
+ border: 2px solid #2563eb;
+ background: rgba(37, 99, 235, 0.18);
+ color: white;
+}
+QFrame#frame_AppsIconPicker {
+ background: #0f172a;
+ border: 1px solid rgba(255, 255, 255, 0.14);
+ border-radius: 10px;
 }</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_DetailsPage">
@@ -79,13 +101,6 @@ QLineEdit#lineEdit_Apps_AppIcon {
        </property>
       </spacer>
      </item>
-     <item>
-      <widget class="QPushButton" name="pushButton_Apps_EditSave">
-       <property name="text">
-        <string>Edit</string>
-       </property>
-      </widget>
-     </item>
     </layout>
    </item>
    <item>
@@ -121,7 +136,7 @@ QLineEdit#lineEdit_Apps_AppIcon {
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="pushButton_Apps_AppIcon_Browse">
+       <widget class="QPushButton" name="pushButton_Apps_AppIcon_Browse">
          <property name="text">
           <string>Browse...</string>
          </property>
@@ -197,17 +212,73 @@ QLineEdit#lineEdit_Apps_AppIcon {
        </item>
        <item>
         <widget class="QLabel" name="label_Apps_AppIcon">
+         <property name="visible">
+          <bool>false</bool>
+         </property>
          <property name="text">
           <string>App Icon</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QLineEdit" name="lineEdit_Apps_AppIcon"/>
+        <widget class="QLineEdit" name="lineEdit_Apps_AppIcon">
+         <property name="visible">
+          <bool>false</bool>
+         </property>
+        </widget>
        </item>
       </layout>
      </item>
     </layout>
+   </item>
+   <item>
+    <widget class="QFrame" name="frame_AppsIconPicker">
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <property name="visible">
+      <bool>false</bool>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_AppsIconPicker">
+      <property name="spacing">
+       <number>8</number>
+      </property>
+      <item>
+       <widget class="QListWidget" name="listWidget_Apps_Icons">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>150</height>
+         </size>
+        </property>
+        <property name="viewMode">
+         <enum>QListView::IconMode</enum>
+        </property>
+        <property name="movement">
+         <enum>QListView::Static</enum>
+        </property>
+        <property name="flow">
+         <enum>QListView::LeftToRight</enum>
+        </property>
+        <property name="isWrapping" stdset="0">
+         <bool>true</bool>
+        </property>
+        <property name="resizeMode">
+         <enum>QListView::Adjust</enum>
+        </property>
+        <property name="selectionMode">
+         <enum>QAbstractItemView::SingleSelection</enum>
+        </property>
+        <property name="verticalScrollMode">
+         <enum>QAbstractItemView::ScrollPerPixel</enum>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
    </item>
    <item>
     <layout class="QFormLayout" name="formLayout_Metadata">

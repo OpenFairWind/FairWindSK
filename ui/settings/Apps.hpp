@@ -89,7 +89,6 @@ namespace fairwindsk::ui::settings {
     private slots:
         void onAvailableAppSelectionChanged();
         void onAvailableAppDoubleClicked(QListWidgetItem *listWidgetItem);
-        void onAppsEditSaveClicked();
         void onAppsDetailsFieldsTextChanged(const QString &text);
         void onAppsAppIconBrowse();
         void onAppsNameBrowse();
@@ -188,6 +187,7 @@ namespace fairwindsk::ui::settings {
         LauncherPageGridWidget *m_pageGrid = nullptr;
         AppDetailsWidget *m_appDetailsWidget = nullptr;
         PageDetailsWidget *m_pageDetailsWidget = nullptr;
+        QTimer *m_appDetailsSaveTimer = nullptr;
         QTimer *m_pageDetailsSaveTimer = nullptr;
     };
 } // fairwindsk::ui::settings

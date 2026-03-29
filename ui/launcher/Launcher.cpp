@@ -478,8 +478,7 @@ namespace fairwindsk::ui::launcher {
         const QString kLauncherFrameStyle = QStringLiteral(
             "QScrollArea {"
             " background: transparent;"
-            " border: 4px solid rgba(245, 245, 245, 0.95);"
-            " border-radius: 3px;"
+            " border: none;"
             " }");
     }
 
