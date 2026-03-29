@@ -47,9 +47,7 @@ namespace fairwindsk::ui::settings {
                 *statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
             }
 
-            const QByteArray payload = reply->readAll();
-            reply->deleteLater();
-            return payload;
+            return reply->readAll();
         }
     }
 
@@ -262,7 +260,13 @@ namespace fairwindsk::ui::settings {
     void Connection::onRequestToken() {
 
         // Get the signal k server url
-        const auto signalKServerUrl = ui->comboBox_signalkserverurl->currentText();
+        const QString signalKServerUrl = ui->comboBox_signalkserverurl->currentText().trimmed();
+        const QUrl baseUrl(signalKServerUrl);
+
+        if (signalKServerUrl.isEmpty() || !baseUrl.isValid() || baseUrl.scheme().isEmpty() || baseUrl.host().isEmpty()) {
+            appendMessage(tr("Please provide a valid Signal K server URL."));
+            return;
+        }
 
         // Set the URL for the application list
         const auto url = QUrl(signalKServerUrl + "/signalk/v1/access/requests");
@@ -294,6 +298,7 @@ namespace fairwindsk::ui::settings {
 
         int statusCode = -1;
         const QByteArray responsePayload = executeBlockingRequest(reply, &statusCode);
+        reply->deleteLater();
 
         // Check if the response has been successful
         if (statusCode == 202) {
@@ -367,7 +372,7 @@ namespace fairwindsk::ui::settings {
             }
         }
         // Check if the response failed due to a 400 error
-        else if(reply->attribute( QNetworkRequest::HttpStatusCodeAttribute ) == 400) {
+        else if (statusCode == 400) {
 
             // Enable the request token button
             ui->pushButton_requestToken->setEnabled(true);
@@ -420,7 +425,17 @@ namespace fairwindsk::ui::settings {
         if (!href.isEmpty()) {
 
             // Get the signal k server url
-            const auto signalKServerUrl = ui->comboBox_signalkserverurl->currentText();
+            const QString signalKServerUrl = ui->comboBox_signalkserverurl->currentText().trimmed();
+            const QUrl baseUrl(signalKServerUrl);
+
+            if (signalKServerUrl.isEmpty() || !baseUrl.isValid() || baseUrl.scheme().isEmpty() || baseUrl.host().isEmpty()) {
+                stopTokenTimer();
+                appendMessage(tr("Please provide a valid Signal K server URL."));
+                ui->webEngineView->setVisible(false);
+                ui->textEdit_message->setVisible(true);
+                ui->label_lblState->setText(tr("Invalid URL"));
+                return;
+            }
 
             // Set the URL for the request token application
             const auto url = QUrl(signalKServerUrl + href);
@@ -440,6 +455,7 @@ namespace fairwindsk::ui::settings {
 
             int statusCode = -1;
             const QByteArray responsePayload = executeBlockingRequest(reply, &statusCode);
+            reply->deleteLater();
 
             // Check if the response has been successful
             if (statusCode == 200) {
@@ -574,7 +590,6 @@ namespace fairwindsk::ui::settings {
                 }
             }
 
-            reply->deleteLater();
         }
     }
 
