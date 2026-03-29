@@ -1712,7 +1712,8 @@ namespace fairwindsk::ui::settings {
             const QString parentPageId = parentPageIdForNodeId(selectedPageId());
             if (const auto *nodes = launcherLayoutNodes()) {
                 if (const auto *parentNode = findNodeById(*nodes, parentPageId)) {
-                    return qMakePair(tr("Parent page"), pageIconPixmap(*parentNode));
+                    const QString parentTitle = defaultNodeTitle(*parentNode).trimmed();
+                    return qMakePair(parentTitle.isEmpty() ? tr("Parent page") : parentTitle, pageIconPixmap(*parentNode));
                 }
             }
             return qMakePair(tr("Parent page"), QPixmap(QLatin1String(kParentNavigationIconPath)));

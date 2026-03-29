@@ -27,7 +27,12 @@ QToolButton#toolButton_BackFromPageDetails:disabled {
  color: rgba(255,255,255,0.35);
  border-color: rgba(255,255,255,0.12);
 }
-QLineEdit#lineEdit_Page_Name,
+QLineEdit#lineEdit_Page_Name {
+ background: #f7f7f4;
+ color: #1f2937;
+ selection-background-color: #c7d2fe;
+ selection-color: #111827;
+}
 QListWidget#listWidget_Page_Icons {
  selection-background-color: transparent;
 }
