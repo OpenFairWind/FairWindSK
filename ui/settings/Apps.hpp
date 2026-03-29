@@ -12,6 +12,7 @@
 #include <QListWidget>
 #include <QMouseEvent>
 #include <QTableWidget>
+#include <QTimer>
 #include <QTreeWidget>
 #include <QWidget>
 #include <functional>
@@ -110,9 +111,7 @@ namespace fairwindsk::ui::settings {
         void onBackToLayoutClicked();
         void onShowSelectedPageDetails();
         void onShowSelectedGridItemDetails();
-        void onPageEditSaveClicked();
         void onPageDetailsFieldsTextChanged(const QString &text);
-        void onPageIconBrowse();
 
     private:
         bool eventFilter(QObject *object, QEvent *event) override;
@@ -189,6 +188,7 @@ namespace fairwindsk::ui::settings {
         LauncherPageGridWidget *m_pageGrid = nullptr;
         AppDetailsWidget *m_appDetailsWidget = nullptr;
         PageDetailsWidget *m_pageDetailsWidget = nullptr;
+        QTimer *m_pageDetailsSaveTimer = nullptr;
     };
 } // fairwindsk::ui::settings
 

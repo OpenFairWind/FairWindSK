@@ -5,6 +5,7 @@
 #ifndef FAIRWINDSK_PAGEDETAILSWIDGET_HPP
 #define FAIRWINDSK_PAGEDETAILSWIDGET_HPP
 
+#include <QPixmap>
 #include <QWidget>
 
 QT_BEGIN_NAMESPACE
@@ -19,6 +20,29 @@ namespace fairwindsk::ui::settings {
         explicit PageDetailsWidget(QWidget *parent = nullptr);
         ~PageDetailsWidget() override;
 
+        void setPageName(const QString &name) const;
+        QString pageName() const;
+        void setPageIconPath(const QString &path);
+        QString pageIconPath() const;
+        void showIconPicker();
+        void hideIconPicker();
+        static QString normalizedIconStoragePath(const QString &path);
+        static QString resolvedLocalIconPath(const QString &path);
+        static QPixmap iconPixmapForPath(const QString &path, int iconSize);
+
+    signals:
+        void iconPathSelected(const QString &path);
+
+    private:
+        void populateIconPicker();
+        void ensureIconEntry(const QString &path);
+        void updateIconPreview(const QString &path);
+        void updateSelectedIconPreview();
+
+    private:
+        QString m_currentIconPath;
+
+    public:
         ::Ui::PageDetailsWidget *ui = nullptr;
     };
 }
