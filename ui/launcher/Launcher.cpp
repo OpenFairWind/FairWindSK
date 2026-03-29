@@ -309,14 +309,28 @@ namespace fairwindsk::ui::launcher {
                                     continue;
                                 }
 
-                                auto *app = fairWindSK->getAppItemByHash(slot);
+                                const QString resolvedHash = fairWindSK->getAppHashById(slot);
+                                const QString appLookupKey = resolvedHash.isEmpty() ? slot : resolvedHash;
+                                auto *app = fairWindSK->getAppItemByHash(appLookupKey);
                                 if (app && app->getActive()) {
                                     entry.kind = TileKind::App;
                                     entry.app = app;
-                                    entry.id = slot;
+                                    entry.id = appLookupKey;
                                     entry.title = app->getDisplayName();
                                     entry.description = app->getDescription();
                                     entry.pixmap = app->getIcon();
+                                } else {
+                                    const int idx = configuration->findApp(slot);
+                                    if (idx != -1) {
+                                        AppItem configApp(configuration->getRoot()["apps"].at(idx));
+                                        if (configApp.getActive()) {
+                                            entry.kind = TileKind::App;
+                                            entry.id = appLookupKey.isEmpty() ? configApp.getName() : appLookupKey;
+                                            entry.title = configApp.getDisplayName();
+                                            entry.description = configApp.getDescription();
+                                            entry.pixmap = configApp.getIcon();
+                                        }
+                                    }
                                 }
                                 entries.append(entry);
                             }
