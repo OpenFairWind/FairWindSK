@@ -191,7 +191,7 @@ namespace fairwindsk {
     }
 
     int Configuration::getLauncherColumns() const {
-        return getInt("main", "launcherColumns", 3);
+        return getInt("main", "launcherColumns", 4);
     }
 
     void Configuration::setCoordinateFormat(const QString &value) {

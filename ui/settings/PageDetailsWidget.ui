@@ -34,6 +34,17 @@ QListWidget#listWidget_Page_Icons {
  selection-background-color: #c7d2fe;
  selection-color: #111827;
 }
+QListWidget#listWidget_Page_Icons::item {
+ border: 2px solid transparent;
+ border-radius: 8px;
+ padding: 4px;
+ margin: 2px;
+}
+QListWidget#listWidget_Page_Icons::item:selected {
+ border: 2px solid #2563eb;
+ background: #e5edff;
+ color: #111827;
+}
 QFrame#frame_PageIconPicker {
  background: rgba(255, 255, 255, 0.06);
  border: 1px solid rgba(255, 255, 255, 0.12);
@@ -177,37 +188,63 @@ QLabel#label_PageIconPickerTitle {
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_PageIconPicker">
       <property name="spacing">
-       <number>10</number>
+       <number>8</number>
       </property>
       <item>
-       <widget class="QLabel" name="label_PageIconPickerTitle">
-        <property name="text">
-         <string>Select page icon</string>
+       <layout class="QHBoxLayout" name="horizontalLayout_PageIconPickerHeader">
+        <property name="spacing">
+         <number>10</number>
         </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="label_Page_IconPickerPreview">
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>110</height>
-         </size>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
+        <item>
+         <widget class="QLabel" name="label_PageIconPickerTitle">
+          <property name="text">
+           <string>Select page icon</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_PageIconPickerHeader">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_Page_IconPickerPreview">
+          <property name="minimumSize">
+           <size>
+            <width>72</width>
+            <height>72</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>72</width>
+            <height>72</height>
+           </size>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
       <item>
        <widget class="QListWidget" name="listWidget_Page_Icons">
         <property name="minimumSize">
          <size>
           <width>0</width>
-          <height>250</height>
+          <height>170</height>
          </size>
         </property>
         <property name="viewMode">
@@ -245,8 +282,15 @@ QLabel#label_PageIconPickerTitle {
             <width>40</width>
             <height>20</height>
            </size>
+         </property>
+        </spacer>
+       </item>
+        <item>
+         <widget class="QLabel" name="label_PageIconPickerHint">
+          <property name="text">
+           <string>Double-click or double-tap an icon to select it.</string>
           </property>
-         </spacer>
+         </widget>
         </item>
         <item>
          <widget class="QPushButton" name="pushButton_Page_Icon_Select">

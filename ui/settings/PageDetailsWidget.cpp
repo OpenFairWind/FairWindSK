@@ -4,11 +4,14 @@
 
 #include "PageDetailsWidget.hpp"
 
+#include <QApplication>
 #include <QCoreApplication>
 #include <QDir>
 #include <QFileInfo>
 #include <QListWidget>
+#include <QMouseEvent>
 #include <QSet>
+#include <QTouchEvent>
 #include <algorithm>
 
 #include "FairWindSK.hpp"
@@ -110,29 +113,10 @@ namespace fairwindsk::ui::settings {
 
         connect(ui->pushButton_Page_Icon_Browse, &QPushButton::clicked, this, &PageDetailsWidget::showIconPicker);
         connect(ui->pushButton_Page_Icon_Cancel, &QPushButton::clicked, this, &PageDetailsWidget::hideIconPicker);
-        connect(ui->pushButton_Page_Icon_Select, &QPushButton::clicked, this, [this]() {
-            auto *item = ui->listWidget_Page_Icons ? ui->listWidget_Page_Icons->currentItem() : nullptr;
-            if (!item) {
-                hideIconPicker();
-                return;
-            }
-
-            const QString iconPath = normalizedIconStoragePath(item->data(Qt::UserRole).toString());
-            setPageIconPath(iconPath);
-            hideIconPicker();
-            emit iconPathSelected(iconPath);
-        });
+        connect(ui->pushButton_Page_Icon_Select, &QPushButton::clicked, this, &PageDetailsWidget::applySelectedIcon);
         connect(ui->listWidget_Page_Icons, &QListWidget::itemSelectionChanged, this, &PageDetailsWidget::updateSelectedIconPreview);
-        connect(ui->listWidget_Page_Icons, &QListWidget::itemDoubleClicked, this, [this](QListWidgetItem *item) {
-            if (!item) {
-                return;
-            }
-
-            const QString iconPath = normalizedIconStoragePath(item->data(Qt::UserRole).toString());
-            setPageIconPath(iconPath);
-            hideIconPicker();
-            emit iconPathSelected(iconPath);
-        });
+        connect(ui->listWidget_Page_Icons, &QListWidget::itemDoubleClicked, this, [this](QListWidgetItem *) { applySelectedIcon(); });
+        connect(ui->listWidget_Page_Icons, &QListWidget::itemActivated, this, [this](QListWidgetItem *) { applySelectedIcon(); });
     }
 
     PageDetailsWidget::~PageDetailsWidget() {
@@ -173,11 +157,60 @@ namespace fairwindsk::ui::settings {
     void PageDetailsWidget::showIconPicker() {
         ensureIconEntry(m_currentIconPath);
         ui->frame_PageIconPicker->setVisible(true);
+        ui->listWidget_Page_Icons->setFocus();
         updateSelectedIconPreview();
+        qApp->installEventFilter(this);
     }
 
     void PageDetailsWidget::hideIconPicker() {
         ui->frame_PageIconPicker->setVisible(false);
+        qApp->removeEventFilter(this);
+    }
+
+    bool PageDetailsWidget::eventFilter(QObject *watched, QEvent *event) {
+        Q_UNUSED(watched);
+        if (!ui->frame_PageIconPicker->isVisible()) {
+            return QWidget::eventFilter(watched, event);
+        }
+
+        QPoint globalPos;
+        bool hasGlobalPos = false;
+        if (event->type() == QEvent::MouseButtonPress) {
+            if (const auto *mouseEvent = static_cast<QMouseEvent *>(event)) {
+                globalPos = mouseEvent->globalPosition().toPoint();
+                hasGlobalPos = true;
+            }
+        } else if (event->type() == QEvent::TouchBegin) {
+            if (const auto *touchEvent = static_cast<QTouchEvent *>(event); !touchEvent->points().isEmpty()) {
+                globalPos = touchEvent->points().constFirst().globalPosition().toPoint();
+                hasGlobalPos = true;
+            }
+        }
+
+        if (!hasGlobalPos) {
+            return QWidget::eventFilter(watched, event);
+        }
+
+        const QRect pickerRect(ui->frame_PageIconPicker->mapToGlobal(QPoint(0, 0)), ui->frame_PageIconPicker->size());
+        const QRect browseRect(ui->pushButton_Page_Icon_Browse->mapToGlobal(QPoint(0, 0)), ui->pushButton_Page_Icon_Browse->size());
+        if (!pickerRect.contains(globalPos) && !browseRect.contains(globalPos)) {
+            hideIconPicker();
+        }
+
+        return QWidget::eventFilter(watched, event);
+    }
+
+    void PageDetailsWidget::applySelectedIcon() {
+        auto *item = ui->listWidget_Page_Icons ? ui->listWidget_Page_Icons->currentItem() : nullptr;
+        if (!item) {
+            hideIconPicker();
+            return;
+        }
+
+        const QString iconPath = normalizedIconStoragePath(item->data(Qt::UserRole).toString());
+        setPageIconPath(iconPath);
+        hideIconPicker();
+        emit iconPathSelected(iconPath);
     }
 
     void PageDetailsWidget::populateIconPicker() {
@@ -187,7 +220,7 @@ namespace fairwindsk::ui::settings {
 
         const int iconSize = iconPickerIconSize();
         ui->listWidget_Page_Icons->setIconSize(QSize(iconSize, iconSize));
-        ui->listWidget_Page_Icons->setGridSize(QSize(iconSize + 36, iconSize + 44));
+        ui->listWidget_Page_Icons->setGridSize(QSize(iconSize + 24, iconSize + 30));
 
         const QList<IconEntry> entries = availableIconEntries();
         for (const IconEntry &entry : entries) {
@@ -230,7 +263,7 @@ namespace fairwindsk::ui::settings {
             return;
         }
 
-        const int previewSize = std::max(96, iconPickerIconSize() + 24);
+        const int previewSize = 64;
         ui->label_Page_IconPickerPreview->setPixmap(iconPixmapForPath(item->data(Qt::UserRole).toString(), previewSize));
     }
 
