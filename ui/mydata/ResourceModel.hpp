@@ -54,6 +54,8 @@ namespace fairwindsk::ui::mydata {
         QList<QString> m_ids;
         QMap<QString, QJsonObject> m_resources;
         QTimer *m_reloadTimer = nullptr;
+        bool m_reloadInProgress = false;
+        bool m_reloadPending = false;
     };
 }
 

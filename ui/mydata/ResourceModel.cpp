@@ -414,6 +414,12 @@ namespace fairwindsk::ui::mydata {
     }
 
     void ResourceModel::reload(const bool force) {
+        if (m_reloadInProgress) {
+            m_reloadPending = m_reloadPending || force;
+            return;
+        }
+
+        m_reloadInProgress = true;
         const auto client = fairwindsk::FairWindSK::getInstance()->getSignalKClient();
         const auto resources = client->getResources(collection());
         QList<QString> ids = resources.keys();
@@ -423,6 +429,11 @@ namespace fairwindsk::ui::mydata {
         });
 
         if (!force && ids == m_ids && resources == m_resources) {
+            m_reloadInProgress = false;
+            if (m_reloadPending) {
+                m_reloadPending = false;
+                QTimer::singleShot(0, this, [this]() { reload(true); });
+            }
             return;
         }
 
@@ -430,6 +441,12 @@ namespace fairwindsk::ui::mydata {
         m_resources = resources;
         m_ids = ids;
         endResetModel();
+        m_reloadInProgress = false;
+
+        if (m_reloadPending) {
+            m_reloadPending = false;
+            QTimer::singleShot(0, this, [this]() { reload(true); });
+        }
     }
 
     QString ResourceModel::createResource(const QJsonObject &resource) {
