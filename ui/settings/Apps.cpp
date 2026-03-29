@@ -266,18 +266,21 @@ namespace fairwindsk::ui::settings {
         setDefaultDropAction(Qt::CopyAction);
         setAcceptDrops(false);
         setDropIndicatorShown(false);
-        setUniformItemSizes(true);
+        setUniformItemSizes(false);
         setResizeMode(QListView::Adjust);
+        setLayoutMode(QListView::Batched);
         setMovement(QListView::Static);
         setWrapping(true);
-        setWordWrap(true);
+        setWordWrap(false);
         setViewMode(QListView::IconMode);
         setFlow(QListView::LeftToRight);
-        setGridSize(QSize(110, 110));
-        setIconSize(QSize(64, 64));
-        setSpacing(8);
+        setGridSize(QSize(88, 96));
+        setIconSize(QSize(52, 52));
+        setSpacing(4);
         setAlternatingRowColors(false);
         setTextElideMode(Qt::ElideRight);
+        setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
     }
 
     void AvailableAppsListWidget::mousePressEvent(QMouseEvent *event) {
@@ -564,6 +567,11 @@ namespace fairwindsk::ui::settings {
 
         ui->splitter_Main->setStretchFactor(0, 1);
         ui->splitter_Main->setStretchFactor(1, 2);
+        ui->verticalLayout_LeftPane->setStretch(0, 3);
+        ui->verticalLayout_LeftPane->setStretch(1, 2);
+        ui->label_PageTitle->setStyleSheet(QStringLiteral("font-size: 18px; font-weight: 600;"));
+        ui->label_PageTitle->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+        ui->label_PageIcon->setAlignment(Qt::AlignCenter);
 
         m_availableAppsList = new AvailableAppsListWidget(this);
         auto *availableAppsLayout = new QVBoxLayout(ui->widget_AvailableAppsHost);
@@ -919,17 +927,26 @@ namespace fairwindsk::ui::settings {
         m_pageGrid->setGridSize(rows, columns);
 
         if (pageId.isEmpty()) {
-            ui->label_PageNameValue->setText(tr("Select a page"));
+            ui->label_PageTitle->setText(tr("Select a page"));
+            ui->label_PageIcon->setPixmap(QPixmap());
             m_pageGrid->setPageItems(emptyItems);
             refreshPageTreeActionButtons();
             return;
         }
 
         if (const auto *node = selectedNode()) {
-            ui->label_PageNameValue->setText(defaultNodeTitle(*node));
+            ui->label_PageTitle->setText(defaultNodeTitle(*node));
+            QPixmap pixmap = pageIconPixmap(*node);
+            if (!pixmap.isNull()) {
+                pixmap = pixmap.scaled(ui->label_PageIcon->size(),
+                                       Qt::KeepAspectRatio,
+                                       Qt::SmoothTransformation);
+            }
+            ui->label_PageIcon->setPixmap(pixmap);
             m_pageGrid->setPageItems(pageItemsFromNode(*node));
         } else {
-            ui->label_PageNameValue->setText(tr("Select a page"));
+            ui->label_PageTitle->setText(tr("Select a page"));
+            ui->label_PageIcon->setPixmap(QPixmap());
             m_pageGrid->setPageItems(emptyItems);
         }
 
