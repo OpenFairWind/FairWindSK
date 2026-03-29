@@ -20,6 +20,7 @@
 #include <QMimeData>
 #include <QPainter>
 #include <QPainterPath>
+#include <QScrollArea>
 #include <QSignalBlocker>
 #include <QStyledItemDelegate>
 #include <QVBoxLayout>
@@ -593,14 +594,24 @@ namespace fairwindsk::ui::settings {
         pageGridLayout->addWidget(m_pageGrid);
 
         m_appDetailsWidget = new AppDetailsWidget(this);
+        auto *appDetailsScrollArea = new QScrollArea(this);
+        appDetailsScrollArea->setWidgetResizable(true);
+        appDetailsScrollArea->setFrameShape(QFrame::NoFrame);
+        appDetailsScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        appDetailsScrollArea->setWidget(m_appDetailsWidget);
         auto *appDetailsLayout = new QVBoxLayout(ui->widget_AppDetailsHost);
         appDetailsLayout->setContentsMargins(0, 0, 0, 0);
-        appDetailsLayout->addWidget(m_appDetailsWidget);
+        appDetailsLayout->addWidget(appDetailsScrollArea);
 
         m_pageDetailsWidget = new PageDetailsWidget(this);
+        auto *pageDetailsScrollArea = new QScrollArea(this);
+        pageDetailsScrollArea->setWidgetResizable(true);
+        pageDetailsScrollArea->setFrameShape(QFrame::NoFrame);
+        pageDetailsScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        pageDetailsScrollArea->setWidget(m_pageDetailsWidget);
         auto *pageDetailsLayout = new QVBoxLayout(ui->widget_PageDetailsHost);
         pageDetailsLayout->setContentsMargins(0, 0, 0, 0);
-        pageDetailsLayout->addWidget(m_pageDetailsWidget);
+        pageDetailsLayout->addWidget(pageDetailsScrollArea);
         m_pageDetailsSaveTimer = new QTimer(this);
         m_pageDetailsSaveTimer->setSingleShot(true);
         m_pageDetailsSaveTimer->setInterval(300);
