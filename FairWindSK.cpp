@@ -785,17 +785,28 @@ namespace fairwindsk {
                             // Check if the app is present
                             if (idx != -1) {
 
+                                auto &configuredApp = m_configuration.getRoot()["apps"].at(idx);
+                                bool wasActive = false;
+                                if (configuredApp.contains("fairwind") &&
+                                    configuredApp["fairwind"].is_object() &&
+                                    configuredApp["fairwind"].contains("active") &&
+                                    configuredApp["fairwind"]["active"].is_boolean()) {
+                                    wasActive = configuredApp["fairwind"]["active"].get<bool>();
+                                }
+
                                 // Update the configuration
-                                m_configuration.getRoot()["apps"].at(idx)["fairwind"]["order"] = 10000+count;
+                                configuredApp["fairwind"]["order"] = 10000+count;
 
                                 // Set the application as inactive by default
-                                m_configuration.getRoot()["apps"].at(idx)["fairwind"]["active"] = false;
+                                configuredApp["fairwind"]["active"] = false;
 
                                 // Increase the caunter
                                 count++;
 
-                                // The app is not present on the Signal K server)
-                                qDebug() << "Deactivated (Signal K application present in the configuration file, but not on the Signal K server): " << QString::fromStdString(m_configuration.getRoot()["apps"].at(idx).dump(2));
+                                if (wasActive || m_debug) {
+                                    qDebug() << "Deactivated (Signal K application present in the configuration file, but not on the Signal K server): "
+                                             << QString::fromStdString(configuredApp.dump(2));
+                                }
 
                             } else {
                                 // Check if the debug is active

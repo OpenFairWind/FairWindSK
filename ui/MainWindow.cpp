@@ -364,8 +364,28 @@ namespace fairwindsk::ui {
             qDebug() << "MainWindow hash:" << hash;
         }
 
-        // Get the map containing all the loaded apps and pick the one that matches the provided hash
-        const auto appItem = fairWindSK->getAppItemByHash(hash);
+        QString resolvedHash = hash;
+        auto *appItem = fairWindSK->getAppItemByHash(resolvedHash);
+        if (!appItem) {
+            const QString candidateHash = fairWindSK->getAppHashById(hash);
+            if (!candidateHash.isEmpty()) {
+                resolvedHash = candidateHash;
+                appItem = fairWindSK->getAppItemByHash(resolvedHash);
+            }
+        }
+
+        bool ownsFallbackAppItem = false;
+        if (!appItem) {
+            int appIndex = fairWindSK->getConfiguration()->findApp(hash);
+            if (appIndex == -1 && resolvedHash != hash) {
+                appIndex = fairWindSK->getConfiguration()->findApp(resolvedHash);
+            }
+            if (appIndex != -1) {
+                appItem = new fairwindsk::AppItem(fairWindSK->getConfiguration()->getRoot()["apps"].at(appIndex));
+                resolvedHash = appItem->getName();
+                ownsFallbackAppItem = true;
+            }
+        }
 
         if (!appItem) {
             showLauncher();
@@ -376,10 +396,10 @@ namespace fairwindsk::ui {
         QWidget *widgetApp = nullptr;
 
         // Check if the requested app has been already launched by the user
-        if (m_mapHash2Widget.contains(hash)) {
+        if (m_mapHash2Widget.contains(resolvedHash)) {
 
             // If yes, get its widget from mapWidgets
-            widgetApp = m_mapHash2Widget[hash];
+            widgetApp = m_mapHash2Widget[resolvedHash];
         } else {
             // Check if the app is an executable
             if (appItem->getName().startsWith("file://")) {
@@ -418,6 +438,9 @@ namespace fairwindsk::ui {
                 process->start();
 
                 appItem->setProcess(process);
+                if (ownsFallbackAppItem) {
+                    appItem->deleteLater();
+                }
                 showLauncher();
                 return;
 #endif
@@ -425,6 +448,9 @@ namespace fairwindsk::ui {
             } else {
                 // Create a new web instance
                 const auto web = new web::Web(nullptr, appItem, fairWindSK->getWebEngineProfile());
+                if (ownsFallbackAppItem) {
+                    appItem->setParent(web);
+                }
 
                 // Connect the remove app signal to the onRemoveApp member
                 connect(web, &web::Web::removeApp, this, &MainWindow::onRemoveApp);
@@ -444,10 +470,10 @@ namespace fairwindsk::ui {
                 ui->stackedWidget_Center->addWidget(widgetApp);
 
                 // Store it in mapWidgets for future usage
-                m_mapHash2Widget.insert(hash, widgetApp);
+                m_mapHash2Widget.insert(resolvedHash, widgetApp);
 
                 // Add icon to the bottom bar
-                m_bottomBar->addApp(hash);
+                m_bottomBar->addApp(resolvedHash);
 
             }
         }
@@ -500,7 +526,10 @@ namespace fairwindsk::ui {
         // Get the widget
         const auto widgetApp = m_mapHash2Widget[hash];
 
-        if (m_currentApp == fairWindSK->getAppItemByHash(hash)) {
+        if (m_currentApp &&
+            (m_currentApp == fairWindSK->getAppItemByHash(hash) ||
+             m_currentApp->getName() == hash ||
+             m_currentApp->getName() == name)) {
             m_currentApp = nullptr;
             m_topBar->setCurrentApp(nullptr);
         }

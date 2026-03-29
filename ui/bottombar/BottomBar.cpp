@@ -238,26 +238,46 @@ namespace fairwindsk::ui::bottombar {
             auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
 
-            auto appItem = fairWindSK->getAppItemByHash(name);
+            QString resolvedHash = name;
+            auto appItem = fairWindSK->getAppItemByHash(resolvedHash);
+            if (!appItem) {
+                const QString candidateHash = fairWindSK->getAppHashById(name);
+                if (!candidateHash.isEmpty()) {
+                    resolvedHash = candidateHash;
+                    appItem = fairWindSK->getAppItemByHash(resolvedHash);
+                }
+            }
 
+            QString displayName;
+            QPixmap pixmap;
             if (appItem) {
+                displayName = appItem->getDisplayName();
+                pixmap = appItem->getIcon();
+            } else {
+                const int idx = fairWindSK->getConfiguration()->findApp(name);
+                if (idx != -1) {
+                    fairwindsk::AppItem configApp(fairWindSK->getConfiguration()->getRoot()["apps"].at(idx));
+                    displayName = configApp.getDisplayName();
+                    pixmap = configApp.getIcon();
+                    resolvedHash = configApp.getName();
+                }
+            }
+
+            if (!displayName.isEmpty()) {
 
                 // Create a new button
                 auto *button = new QToolButton(this);
 
                 // Set the app's hash value as the 's object name
-                button->setObjectName("toolbutton_" + name);
+                button->setObjectName("toolbutton_" + resolvedHash);
 
                 // Set the app's name as the button's text
                 //button->setText(appItem->getDisplayName());
 
                 // Set the tool tip
-                button->setToolTip(appItem->getDisplayName());
+                button->setToolTip(displayName);
                 button->setAutoRaise(true);
                 button->setStyleSheet(kChromeToolButtonStyle);
-
-                // Get the application icon
-                QPixmap pixmap = appItem->getIcon();
 
                 // Check if the icon is available
                 if (!pixmap.isNull()) {
@@ -281,7 +301,7 @@ namespace fairwindsk::ui::bottombar {
                 ui->horizontalLayoutApps->addWidget(button);
 
                 // Store in buttons in a map
-                m_buttons[name] = button;
+                m_buttons[resolvedHash] = button;
 
 
             }
