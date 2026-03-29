@@ -5,6 +5,8 @@
 #ifndef FAIRWINDSK_CONNECTION_HPP
 #define FAIRWINDSK_CONNECTION_HPP
 
+#include <QNetworkAccessManager>
+#include <QPointer>
 #include <QWidget>
 #include <QTimer>
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
@@ -34,6 +36,8 @@ namespace fairwindsk::ui::settings {
         void onCancelRequest();
         void onReadOnly();
         void onRemoveToken();
+        void handleTokenRequestReply();
+        void handleTokenStatusReply();
 
         void onUpdateSignalKServerUrl() const;
 
@@ -44,9 +48,18 @@ namespace fairwindsk::ui::settings {
 
 
     private:
+        QUrl currentSignalKServerUrl() const;
         void appendMessage(const QString &message) const;
         void stopTokenTimer();
+        void startTokenTimer();
         void syncTokenUiState();
+        void showConsole() const;
+        void showBrowserPage(const QUrl &url) const;
+        void abortActiveTokenReply();
+        void setPendingRequestHref(const QString &href) const;
+        void clearPendingRequest(bool clearToken) const;
+        void applyCompletedAccessRequest(const QJsonObject &accessRequest);
+        void finishTokenFlowWithError(const QString &state, const QString &message);
 
         Ui::Connection *ui = nullptr;
         Settings *m_settings = nullptr;
@@ -56,6 +69,8 @@ namespace fairwindsk::ui::settings {
 #endif
         QTimer *m_timer = nullptr;
         QWebEnginePage *m_page = nullptr;
+        QNetworkAccessManager *m_networkAccessManager = nullptr;
+        QPointer<QNetworkReply> m_activeTokenReply;
 
     };
 } // fairwindsk::ui::settings

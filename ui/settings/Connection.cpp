@@ -4,51 +4,80 @@
 
 // You may need to build the project (run Qt uic code generator) to get "ui_Connection.h" resolved
 
-#include <QThread>
-#include <QNetworkAccessManager>
-#include <QNetworkRequest>
-#include <QNetworkReply>
-#include <QWebEngineSettings>
 #include <QJsonDocument>
+#include <QJsonObject>
+#include <QNetworkReply>
+#include <QNetworkRequest>
 #include <QSettings>
-#include <QEventLoop>
-#include <QPointer>
+#include <QUuid>
+#include <QWebEngineSettings>
+
 #include "Connection.hpp"
 #include "ui_Connection.h"
 #include "FairWindSK.hpp"
 
 namespace fairwindsk::ui::settings {
     namespace {
-        constexpr int kBlockingRequestTimeoutMs = 5000;
+        constexpr int kTokenRequestTimeoutMs = 5000;
+        constexpr int kTokenPollIntervalMs = 1000;
 
-        QByteArray executeBlockingRequest(QNetworkReply *reply, int *statusCode = nullptr) {
-            if (statusCode) {
-                *statusCode = -1;
+        QString normalizedSignalKServerUrlText(const QString &rawText) {
+            QString normalized = rawText.trimmed();
+            while (normalized.endsWith('/')) {
+                normalized.chop(1);
             }
-            if (!reply) {
+            return normalized;
+        }
+
+        QUrl validatedSignalKServerUrl(const QString &rawText) {
+            const QString normalized = normalizedSignalKServerUrlText(rawText);
+            if (normalized.isEmpty()) {
                 return {};
             }
 
-            QEventLoop loop;
-            QTimer timeoutTimer;
-            timeoutTimer.setSingleShot(true);
-
-            QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
-            QObject::connect(&timeoutTimer, &QTimer::timeout, &loop, &QEventLoop::quit);
-
-            timeoutTimer.start(kBlockingRequestTimeoutMs);
-            loop.exec();
-
-            if (!reply->isFinished()) {
-                reply->abort();
+            const QUrl url(normalized);
+            if (!url.isValid() || url.host().isEmpty()) {
+                return {};
             }
 
-            if (statusCode) {
-                *statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+            const QString scheme = url.scheme().toLower();
+            if (scheme != "http" && scheme != "https") {
+                return {};
             }
 
-            return reply->readAll();
+            return url;
         }
+
+        QUrl buildSignalKUrl(const QUrl &baseUrl, const QString &path) {
+            if (!baseUrl.isValid()) {
+                return {};
+            }
+
+            return QUrl(normalizedSignalKServerUrlText(baseUrl.toString()) + path);
+        }
+
+        QString replyMessage(const QByteArray &payload, QNetworkReply *reply) {
+            const QJsonDocument document = QJsonDocument::fromJson(payload);
+            if (document.isObject()) {
+                const QJsonObject object = document.object();
+                if (object.contains("message") && object["message"].isString()) {
+                    return object["message"].toString();
+                }
+                if (object.contains("error") && object["error"].isString()) {
+                    return object["error"].toString();
+                }
+            }
+
+            if (reply && !reply->errorString().isEmpty()) {
+                return reply->errorString();
+            }
+
+            return QObject::tr("Error connecting the server.");
+        }
+    }
+
+    QUrl Connection::currentSignalKServerUrl() const {
+        return validatedSignalKServerUrl(ui->comboBox_signalkserverurl->currentText());
     }
 
     void Connection::appendMessage(const QString &message) const {
@@ -58,9 +87,53 @@ namespace fairwindsk::ui::settings {
     void Connection::stopTokenTimer() {
         if (m_timer) {
             m_timer->stop();
-            delete m_timer;
-            m_timer = nullptr;
         }
+    }
+
+    void Connection::startTokenTimer() {
+        if (m_timer) {
+            m_timer->start(kTokenPollIntervalMs);
+        }
+    }
+
+    void Connection::showConsole() const {
+        ui->webEngineView->setVisible(false);
+        ui->textEdit_message->setVisible(true);
+    }
+
+    void Connection::showBrowserPage(const QUrl &url) const {
+        ui->webEngineView->setUrl(url);
+        ui->webEngineView->setVisible(true);
+        ui->textEdit_message->setVisible(false);
+    }
+
+    void Connection::abortActiveTokenReply() {
+        if (!m_activeTokenReply) {
+            return;
+        }
+
+        disconnect(m_activeTokenReply, nullptr, this, nullptr);
+        m_activeTokenReply->abort();
+        m_activeTokenReply->deleteLater();
+        m_activeTokenReply = nullptr;
+    }
+
+    void Connection::setPendingRequestHref(const QString &href) const {
+        QSettings settings(Configuration::settingsFilename(), QSettings::IniFormat);
+        settings.setValue("href", href);
+        settings.setValue("token", "");
+        settings.setValue("expirationTime", "");
+        settings.sync();
+    }
+
+    void Connection::clearPendingRequest(const bool clearToken) const {
+        QSettings settings(Configuration::settingsFilename(), QSettings::IniFormat);
+        settings.remove("href");
+        if (clearToken) {
+            settings.remove("token");
+            settings.remove("expirationTime");
+        }
+        settings.sync();
     }
 
     void Connection::syncTokenUiState() {
@@ -71,19 +144,78 @@ namespace fairwindsk::ui::settings {
 
         const bool hasPendingRequest = !href.isEmpty();
         const bool hasToken = !token.isEmpty();
+        const bool isBusy = !m_activeTokenReply.isNull();
 
-        ui->pushButton_requestToken->setEnabled(!hasPendingRequest && !hasToken);
-        ui->pushButton_cancelRequest->setEnabled(hasPendingRequest);
-        ui->pushButton_readOnly->setEnabled(!hasPendingRequest);
-        ui->pushButton_removeToken->setEnabled(!hasPendingRequest && hasToken);
+        ui->comboBox_signalkserverurl->setEnabled(!hasPendingRequest && !isBusy);
+        ui->pushButton_requestToken->setEnabled(!hasPendingRequest && !hasToken && !isBusy);
+        ui->pushButton_cancelRequest->setEnabled(hasPendingRequest || isBusy);
+        ui->pushButton_readOnly->setEnabled(!hasPendingRequest && !isBusy);
+        ui->pushButton_removeToken->setEnabled(!hasPendingRequest && hasToken && !isBusy);
 
         if (hasToken) {
             ui->label_lblPermission->setText(tr("Approved"));
             ui->label_lblExpirationTime->setText(expirationTime);
-        } else if (!hasPendingRequest) {
+        } else if (!hasPendingRequest && !isBusy) {
             ui->label_lblPermission->clear();
             ui->label_lblExpirationTime->clear();
         }
+    }
+
+    void Connection::applyCompletedAccessRequest(const QJsonObject &accessRequest) {
+        const QString permission = accessRequest["permission"].toString();
+
+        clearPendingRequest(permission != "APPROVED");
+
+        QSettings settings(Configuration::settingsFilename(), QSettings::IniFormat);
+
+        if (permission == "DENIED") {
+            ui->label_lblPermission->setText(tr("Denied"));
+            ui->label_lblExpirationTime->clear();
+            settings.remove("token");
+            settings.remove("expirationTime");
+            settings.sync();
+        } else if (permission == "APPROVED") {
+            ui->label_lblPermission->setText(tr("Approved"));
+
+            if (accessRequest.contains("expirationTime") && accessRequest["expirationTime"].isString()) {
+                const QString expirationTime = accessRequest["expirationTime"].toString();
+                ui->label_lblExpirationTime->setText(expirationTime);
+                settings.setValue("expirationTime", expirationTime);
+            } else {
+                ui->label_lblExpirationTime->clear();
+                settings.remove("expirationTime");
+            }
+
+            if (accessRequest.contains("token") && accessRequest["token"].isString()) {
+                settings.setValue("token", accessRequest["token"].toString());
+            } else {
+                settings.remove("token");
+            }
+
+            settings.sync();
+            m_settings->markDirty(FairWindSK::RuntimeSignalKConnection, 0);
+        } else {
+            ui->label_lblPermission->setText(permission);
+            ui->label_lblExpirationTime->clear();
+            settings.remove("token");
+            settings.remove("expirationTime");
+            settings.sync();
+        }
+    }
+
+    void Connection::finishTokenFlowWithError(const QString &state, const QString &message) {
+        stopTokenTimer();
+        abortActiveTokenReply();
+        clearPendingRequest(false);
+
+        ui->label_lblState->setText(state);
+        showConsole();
+
+        if (!message.isEmpty()) {
+            appendMessage(message);
+        }
+
+        syncTokenUiState();
     }
 
 
@@ -91,17 +223,21 @@ namespace fairwindsk::ui::settings {
      * Connection
      * Class constructor
      */
-    Connection::Connection(Settings *settingsWidget, QWidget *parent) :
-            QWidget(parent), ui(new Ui::Connection) {
+    Connection::Connection(Settings *settingsWidget, QWidget *parent)
+        : QWidget(parent),
+          ui(new Ui::Connection) {
 
-	    // Set the settings widge
+        // Set the settings widge
         m_settings = settingsWidget;
 
-	    // Set the UI
+        // Set the UI
         ui->setupUi(this);
 
-	    // Set the timer pointer
-	    m_timer = nullptr;
+        m_timer = new QTimer(this);
+        m_timer->setInterval(kTokenPollIntervalMs);
+        connect(m_timer, &QTimer::timeout, this, &Connection::onCheckRequestToken);
+
+        m_networkAccessManager = new QNetworkAccessManager(this);
 
         // Set the current signal k server url
         ui->comboBox_signalkserverurl->setCurrentText(m_settings->getConfiguration()->getSignalKServerUrl());
@@ -127,78 +263,43 @@ namespace fairwindsk::ui::settings {
 
         // Initialize the QT managed settings
         const QSettings settings(Configuration::settingsFilename(), QSettings::IniFormat);
-
-        // Get the name of the FairWind++ configuration file
-        const auto href = settings.value("href", "").toString();
-
-        // Get the name of the FairWind++ configuration file
-        const auto token = settings.value("token", "").toString();
-
-        // Get the name of the FairWind++ configuration file
-        const auto expirationTime = settings.value("expirationTime", "").toString();
+        const QString href = settings.value("href", "").toString();
+        const QString expirationTime = settings.value("expirationTime", "").toString();
 
         if (FairWindSK::getInstance()->isDebug()) {
-            qDebug() << "href:" << href << "token:" << token << "expirationTime:" << expirationTime;
+            qDebug() << "href:" << href
+                     << "token:" << settings.value("token", "").toString()
+                     << "expirationTime:" << expirationTime;
         }
 
         syncTokenUiState();
 
-        // Check if the href is not empty
         if (!href.isEmpty()) {
-            // The href is not empty
+            ui->label_lblState->setText(tr("Pending..."));
+            startTokenTimer();
 
-            // Disable the request token button
-            ui->pushButton_requestToken->setEnabled(false);
-
-            // Enable the cancel request button
-            ui->pushButton_cancelRequest->setEnabled(true);
-
-            // Disable the remove token button
-            ui->pushButton_removeToken->setEnabled(false);
-
-            stopTokenTimer();
-            m_timer = new QTimer(this);
-            connect(m_timer, &QTimer::timeout, this, &Connection::onCheckRequestToken);
-            m_timer->start(1000);
-
-            // Set the url of the web page as the signal k server url
-            ui->webEngineView->setUrl(QUrl(ui->comboBox_signalkserverurl->currentText()));
-
-            // Make the web page visible
-            ui->webEngineView->setVisible(true);
-
-            // Hide the console
-            ui->textEdit_message->setVisible(false);
+            const QUrl signalKServerUrl = currentSignalKServerUrl();
+            if (signalKServerUrl.isValid()) {
+                showBrowserPage(buildSignalKUrl(signalKServerUrl, "/admin/#/security/access/requests"));
+            }
         }
 
         if (!expirationTime.isEmpty()) {
             ui->label_lblExpirationTime->setText(expirationTime);
         }
 
-        // Show the settings view when the user clicks on the Settings button inside the BottomBar object
         connect(ui->pushButton_requestToken, &QPushButton::clicked, this, &Connection::onRequestToken);
-
-        // Show the settings view when the user clicks on the Settings button inside the BottomBar object
         connect(ui->pushButton_cancelRequest, &QPushButton::clicked, this, &Connection::onCancelRequest);
-
-        // Set the current Signal K server URL in read-only mode
         connect(ui->pushButton_readOnly, &QPushButton::clicked, this, &Connection::onReadOnly);
-
-        // Show the settings view when the user clicks on the Settings button inside the BottomBar object
         connect(ui->pushButton_removeToken, &QPushButton::clicked, this, &Connection::onRemoveToken);
 
-        // Connect the signal k server url changed to the onUpdateSignalKServerUrl method
         connect(ui->comboBox_signalkserverurl, &QComboBox::currentIndexChanged, this, &Connection::onUpdateSignalKServerUrl);
         connect(ui->comboBox_signalkserverurl, &QComboBox::editTextChanged, this, &Connection::onUpdateSignalKServerUrl);
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
-        // Connect the zero conf serviceAdded signal to the addService method
         connect(&m_zeroConf, &QZeroConf::serviceAdded, this, &Connection::addService);
-
-        // Start the zero conf browser
         m_zeroConf.startBrowser("_http._tcp");
 
-        // Check if the browser exists
         if (m_zeroConf.browserExists()) {
             appendMessage(tr("Zero configuration active."));
         } else {
@@ -214,9 +315,7 @@ namespace fairwindsk::ui::settings {
      * Invoked when the signal k server url has changed
      */
     void Connection::onUpdateSignalKServerUrl() const {
-
-        // Set the signal k server url
-        m_settings->getConfiguration()->setSignalKServerUrl(ui->comboBox_signalkserverurl->currentText());
+        m_settings->getConfiguration()->setSignalKServerUrl(normalizedSignalKServerUrlText(ui->comboBox_signalkserverurl->currentText()));
         m_settings->markDirty(FairWindSK::RuntimeSignalKConnection, 400);
     }
 
@@ -225,7 +324,7 @@ namespace fairwindsk::ui::settings {
     * Invoked when zero conf find a new service
     */
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
-    void Connection::addService(const QZeroConfService& item) const {
+    void Connection::addService(const QZeroConfService &item) const {
 
         // Show a message on the console
         appendMessage(tr("Added service"));
@@ -237,7 +336,7 @@ namespace fairwindsk::ui::settings {
         appendMessage(tr("Port: %1").arg(item->port()));
 
         // Get the type of protocol
-        const auto type = item->type().split(".")[0].replace("_","");
+        const auto type = item->type().split(".")[0].replace("_", "");
 
         // Get the host
         const auto host = item->ip().toString();
@@ -249,7 +348,6 @@ namespace fairwindsk::ui::settings {
         if (ui->comboBox_signalkserverurl->findText(signalKServerUrl) == -1) {
             ui->comboBox_signalkserverurl->addItem(signalKServerUrl);
         }
-
     }
 #endif
 
@@ -258,152 +356,105 @@ namespace fairwindsk::ui::settings {
     * Invoked when the button request token is hit
     */
     void Connection::onRequestToken() {
+        if (m_activeTokenReply) {
+            return;
+        }
 
-        // Get the signal k server url
-        const QString signalKServerUrl = ui->comboBox_signalkserverurl->currentText().trimmed();
-        const QUrl baseUrl(signalKServerUrl);
-
-        if (signalKServerUrl.isEmpty() || !baseUrl.isValid() || baseUrl.scheme().isEmpty() || baseUrl.host().isEmpty()) {
+        const QUrl signalKServerUrl = currentSignalKServerUrl();
+        if (!signalKServerUrl.isValid()) {
             appendMessage(tr("Please provide a valid Signal K server URL."));
             return;
         }
 
-        // Set the URL for the application list
-        const auto url = QUrl(signalKServerUrl + "/signalk/v1/access/requests");
+        m_settings->getConfiguration()->setSignalKServerUrl(signalKServerUrl.toString());
+        m_settings->markDirty(FairWindSK::RuntimeSignalKConnection, 0);
 
-        // Create the network access manager
-        QNetworkAccessManager networkAccessManager;
+        clearPendingRequest(true);
+        stopTokenTimer();
 
-        // Create the network request
-        auto networkRequest = QNetworkRequest(url);
+        ui->label_lblState->setText(tr("Requesting..."));
+        ui->label_lblPermission->clear();
+        ui->label_lblExpirationTime->clear();
+        showConsole();
 
-        // Set the content type header as application/json
-        networkRequest.setHeader(QNetworkRequest::ContentTypeHeader,"application/json");
-        networkRequest.setTransferTimeout(kBlockingRequestTimeoutMs);
+        QNetworkRequest networkRequest(buildSignalKUrl(signalKServerUrl, "/signalk/v1/access/requests"));
+        networkRequest.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+        networkRequest.setTransferTimeout(kTokenRequestTimeoutMs);
 
-        // Create the client id string
-        auto clientId = QUuid::createUuid().toString().replace("{","").replace("}","");
+        const QString clientId = QUuid::createUuid().toString(QUuid::WithoutBraces);
+        const QJsonObject requestObject{
+            {"clientId", clientId},
+            {"description", "FairWindSK"}
+        };
 
-        // Create a message in json
-        const auto message = QString("{\n"
-                          "  \"clientId\": \"%1\",\n"
-                          "  \"description\": \"%2\""
-                          "}").arg(clientId, "FairWindSK");
+        m_activeTokenReply = m_networkAccessManager->post(networkRequest, QJsonDocument(requestObject).toJson(QJsonDocument::Compact));
+        connect(m_activeTokenReply, &QNetworkReply::finished, this, &Connection::handleTokenRequestReply);
+        syncTokenUiState();
+    }
 
-        // Get the message as byte array
-        const QByteArray data = message.toUtf8();
+    void Connection::handleTokenRequestReply() {
+        auto *reply = qobject_cast<QNetworkReply *>(sender());
+        if (!reply) {
+            return;
+        }
 
-        // Create the get request
-        QNetworkReply *reply = networkAccessManager.post(networkRequest,data);
+        const QByteArray responsePayload = reply->readAll();
+        const int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        const auto networkError = reply->error();
+        const QString networkErrorText = reply->errorString();
 
-        int statusCode = -1;
-        const QByteArray responsePayload = executeBlockingRequest(reply, &statusCode);
+        if (m_activeTokenReply == reply) {
+            m_activeTokenReply = nullptr;
+        }
         reply->deleteLater();
 
-        // Check if the response has been successful
+        if (networkError == QNetworkReply::OperationCanceledError) {
+            syncTokenUiState();
+            return;
+        }
+
+        const QUrl signalKServerUrl = currentSignalKServerUrl();
+
         if (statusCode == 202) {
-            // The response has been successful
+            const QJsonDocument document = QJsonDocument::fromJson(responsePayload);
+            const QJsonObject jsonObject = document.object();
+            const QString state = jsonObject["state"].toString();
+            const QString href = jsonObject["href"].toString();
 
-            // Get the json document
-            const auto doc = QJsonDocument::fromJson(responsePayload);
+            if (state == "PENDING" && !href.isEmpty()) {
+                setPendingRequestHref(href);
+                ui->label_lblState->setText(tr("Requested/pending"));
+                startTokenTimer();
+                syncTokenUiState();
 
-            // Get the json object
-            const auto jsonObject = doc.object();
-
-            // Check if the json object contains a state item as string
-            if (jsonObject.contains("state") && jsonObject["state"].isString()) {
-
-                // Get the state as a string
-                const auto state = jsonObject["state"].toString();
-
-                // Check if the state is pending
-                if ( state == "PENDING") {
-
-                    // Set the state as requested/pending
-                    ui->label_lblState->setText(tr("Requested/pending"));
-
-                    // Check if the json object contains a href item as string
-                    if (jsonObject.contains("href") && jsonObject["href"].isString()) {
-
-                        // Get the href as a string
-                        const auto href = jsonObject["href"].toString();
-
-                        // Initialize the QT managed settings
-                        QSettings settings(Configuration::settingsFilename(), QSettings::IniFormat);
-
-                        // Store the configuration in the settings
-                        settings.setValue("href", href);
-                        settings.sync();
-
-                        stopTokenTimer();
-                        m_timer = new QTimer(this);
-                        connect(m_timer, &QTimer::timeout, this, &Connection::onCheckRequestToken);
-                        m_timer->start(1000);
-
-                        // Disable the request token button
-                        ui->pushButton_requestToken->setEnabled(false);
-
-                        // Enable the cancel request button
-                        ui->pushButton_cancelRequest->setEnabled(true);
-
-                        // Disable the remove token button
-                        ui->pushButton_removeToken->setEnabled(false);
-
-                        // Set the web page url to the signal k server url for requests management
-                        ui->webEngineView->setUrl(QUrl(signalKServerUrl+"/admin/#/security/access/requests"));
-
-                        // Show the web page
-                        ui->webEngineView->setVisible(true);
-
-                        // Hide the console
-                        ui->textEdit_message->setVisible(false);
-
-                        // Check if debug mode
-                        if (FairWindSK::getInstance()->isDebug()) {
-
-                            // Show a message
-                            qDebug() << "Token requested, href: " << href;
-                        }
-                    }
-                } else {
-                    // If the state is different then PENDING, show the state
-                    ui->label_lblState->setText(state);
+                if (signalKServerUrl.isValid()) {
+                    showBrowserPage(buildSignalKUrl(signalKServerUrl, "/admin/#/security/access/requests"));
                 }
+
+                if (FairWindSK::getInstance()->isDebug()) {
+                    qDebug() << "Token requested, href:" << href;
+                }
+                return;
             }
-        }
-        // Check if the response failed due to a 400 error
-        else if (statusCode == 400) {
 
-            // Enable the request token button
-            ui->pushButton_requestToken->setEnabled(true);
-
-            // Disable the cancel request button
-            ui->pushButton_cancelRequest->setEnabled(false);
-
-            // Disable the remove token button
-            ui->pushButton_removeToken->setEnabled(false);
-
-            // Set the web page url as the signal k server login url
-            ui->webEngineView->setUrl(QUrl(signalKServerUrl+"/admin/#/login"));
-
-            // Set the web page visible
-            ui->webEngineView->setVisible(true);
-
-            // Hide the console
-            ui->textEdit_message->setVisible(false);
-        } else {
-            // For any other reason of failure
-
-            // Hide the web page
-            ui->webEngineView->setVisible(false);
-
-            // Show the console
-            ui->textEdit_message->setVisible(true);
-
-            // Write a message
-            appendMessage(tr("Error connecting the server."));
+            finishTokenFlowWithError(tr("Request failed"), replyMessage(responsePayload, reply));
+            return;
         }
 
+        if (statusCode == 400) {
+            ui->label_lblState->setText(tr("Login required"));
+            syncTokenUiState();
+
+            if (signalKServerUrl.isValid()) {
+                showBrowserPage(buildSignalKUrl(signalKServerUrl, "/admin/#/login"));
+            } else {
+                showConsole();
+            }
+            return;
+        }
+
+        const QString errorText = !networkErrorText.isEmpty() ? networkErrorText : replyMessage(responsePayload, reply);
+        finishTokenFlowWithError(tr("Request failed"), errorText);
     }
 
     /*
@@ -411,214 +462,110 @@ namespace fairwindsk::ui::settings {
     * Invoked by a timer each second
     */
     void Connection::onCheckRequestToken() {
-
-        // Get a pointer to the FairWindSK instance
-        auto fairWinSK = FairWindSK::getInstance();
-
-        // Initialize the QT managed settings
-        QSettings settings(Configuration::settingsFilename(), QSettings::IniFormat);
-
-        // Get the name of the FairWind++ configuration file
-        const auto href = settings.value("href", "").toString();
-
-        // Check if the href value is valied
-        if (!href.isEmpty()) {
-
-            // Get the signal k server url
-            const QString signalKServerUrl = ui->comboBox_signalkserverurl->currentText().trimmed();
-            const QUrl baseUrl(signalKServerUrl);
-
-            if (signalKServerUrl.isEmpty() || !baseUrl.isValid() || baseUrl.scheme().isEmpty() || baseUrl.host().isEmpty()) {
-                stopTokenTimer();
-                appendMessage(tr("Please provide a valid Signal K server URL."));
-                ui->webEngineView->setVisible(false);
-                ui->textEdit_message->setVisible(true);
-                ui->label_lblState->setText(tr("Invalid URL"));
-                return;
-            }
-
-            // Set the URL for the request token application
-            const auto url = QUrl(signalKServerUrl + href);
-
-            // Create the network access manager
-            QNetworkAccessManager networkAccessManager;
-
-            // Create a network request
-            auto networkRequest = QNetworkRequest(url);
-
-            // Set the Content Type handler to application/json
-            networkRequest.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-            networkRequest.setTransferTimeout(kBlockingRequestTimeoutMs);
-
-            // Create the get request
-            QNetworkReply *reply = networkAccessManager.get(networkRequest);
-
-            int statusCode = -1;
-            const QByteArray responsePayload = executeBlockingRequest(reply, &statusCode);
-            reply->deleteLater();
-
-            // Check if the response has been successful
-            if (statusCode == 200) {
-
-                // Get the result as a json document
-                const auto doc = QJsonDocument::fromJson(responsePayload);
-
-                // Get the content as a json object
-                const auto jsonObject = doc.object();
-
-                // Check if the json object as a state and the state is a string
-                if (jsonObject.contains("state") && jsonObject["state"].isString()) {
-
-                    // Get the stat as a string
-                    const auto state = jsonObject["state"].toString();
-
-                    // Check if the state is PENDING
-                    if (state == "PENDING") {
-
-                        // Set the message state as PENDING
-                        ui->label_lblState->setText(tr("Pending..."));
-
-                        // Check if the state is COMPLETETD
-                    } else if (state == "COMPLETED") {
-
-                        // Set the message state as COMPLETED
-                        ui->label_lblState->setText(tr("Completed"));
-
-                        stopTokenTimer();
-
-                        // Hide the web page
-                        ui->webEngineView->setVisible(false);
-
-                        // Show the console message
-                        ui->textEdit_message->setVisible(true);
-
-                        // Check if statusCode field exist and it is a double
-                        if (jsonObject.contains("statusCode") && jsonObject["statusCode"].isDouble()) {
-
-                            // Get the status code as an integer
-                            const auto statusCode = jsonObject["statusCode"].toInt();
-
-                            // Check if the status code il different by 200 (it is not fully ok)
-                            if (statusCode != 200) {
-
-                                // Check if the message field exists and if it is a string
-                                if (jsonObject.contains("message") && jsonObject["message"].isString()) {
-
-                                    // Get the message
-                                    const auto message = jsonObject["message"].toString();
-
-                                    // Set the console message
-                                    appendMessage(tr("Message: %1").arg(message));
-                                }
-                            }
-                            else {
-                                // The status code is ok
-
-                                // CHeck if the result contains accessRequest and accassRequest is an object
-                                if (jsonObject.contains("accessRequest") && jsonObject["accessRequest"].isObject()) {
-
-                                    // Get the accessRequest as a json object
-                                    const auto accessRequestJsonObject = jsonObject["accessRequest"].toObject();
-
-                                    // Check if the json request contains the permissions field and the permission is a string
-                                    if (accessRequestJsonObject.contains("permission") &&
-                                        accessRequestJsonObject["permission"].isString()) {
-
-                                        // Get the permission as a string
-                                        auto permission = accessRequestJsonObject["permission"].toString();
-
-                                        // Remove the href field from the settings
-                                        settings.remove("href");
-
-                                        // Check if the permission is DENIED
-                                        if (permission == "DENIED") {
-
-                                            // Set the message in the permission field
-                                            ui->label_lblPermission->setText(tr("Denied"));
-                                            ui->label_lblExpirationTime->clear();
-
-                                            // Check if the permission is APPROVED
-                                        } else if (permission == "APPROVED") {
-
-                                            // Set the message in the permission field
-                                            ui->label_lblPermission->setText(tr("Approved"));
-
-                                            // Check if the json request contains the expirationTime field and the expirationTime is a string
-                                            if (accessRequestJsonObject.contains("expirationTime") &&
-                                                accessRequestJsonObject["expirationTime"].isString()) {
-
-                                                // Get the expirationTime as a string
-                                                auto expirationTime = accessRequestJsonObject["expirationTime"].toString();
-
-                                                ui->label_lblExpirationTime->setText(expirationTime);
-
-                                                // Store the configuration in the settings
-                                                settings.setValue("expirationTime", expirationTime);
-
-                                            }
-
-                                                // Check if the json request contains the token field and the token is a string
-                                            if (accessRequestJsonObject.contains("token") &&
-                                                accessRequestJsonObject["token"].isString()) {
-
-                                                // Get the token as a string
-                                                const auto token = accessRequestJsonObject["token"].toString();
-
-                                                // Store the configuration in the settings
-                                                settings.setValue("token", token);
-                                            }
-
-                                            settings.sync();
-
-                                            // Hide the web page
-                                            ui->webEngineView->setVisible(false);
-
-                                        } else {
-
-                                            // Set the message in the permission field
-                                            ui->label_lblPermission->setText(permission);
-                                            settings.sync();
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        // Set the message in the state field
-                        ui->label_lblState->setText(state);
-                    }
-                }
-            }
-
+        if (m_activeTokenReply) {
+            return;
         }
+
+        const QSettings settings(Configuration::settingsFilename(), QSettings::IniFormat);
+        const QString href = settings.value("href", "").toString();
+        if (href.isEmpty()) {
+            stopTokenTimer();
+            syncTokenUiState();
+            return;
+        }
+
+        const QUrl signalKServerUrl = currentSignalKServerUrl();
+        if (!signalKServerUrl.isValid()) {
+            finishTokenFlowWithError(tr("Invalid URL"), tr("Please provide a valid Signal K server URL."));
+            return;
+        }
+
+        QNetworkRequest networkRequest(buildSignalKUrl(signalKServerUrl, href));
+        networkRequest.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+        networkRequest.setTransferTimeout(kTokenRequestTimeoutMs);
+
+        m_activeTokenReply = m_networkAccessManager->get(networkRequest);
+        connect(m_activeTokenReply, &QNetworkReply::finished, this, &Connection::handleTokenStatusReply);
+        syncTokenUiState();
     }
 
+    void Connection::handleTokenStatusReply() {
+        auto *reply = qobject_cast<QNetworkReply *>(sender());
+        if (!reply) {
+            return;
+        }
+
+        const QByteArray responsePayload = reply->readAll();
+        const int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        const auto networkError = reply->error();
+
+        if (m_activeTokenReply == reply) {
+            m_activeTokenReply = nullptr;
+        }
+        reply->deleteLater();
+
+        if (networkError == QNetworkReply::OperationCanceledError) {
+            syncTokenUiState();
+            return;
+        }
+
+        if (networkError != QNetworkReply::NoError && statusCode <= 0) {
+            ui->label_lblState->setText(tr("Pending..."));
+            syncTokenUiState();
+            return;
+        }
+
+        if (statusCode != 200) {
+            syncTokenUiState();
+            return;
+        }
+
+        const QJsonDocument document = QJsonDocument::fromJson(responsePayload);
+        const QJsonObject jsonObject = document.object();
+        const QString state = jsonObject["state"].toString();
+
+        if (state == "PENDING") {
+            ui->label_lblState->setText(tr("Pending..."));
+            syncTokenUiState();
+            return;
+        }
+
+        if (state != "COMPLETED") {
+            ui->label_lblState->setText(state);
+            syncTokenUiState();
+            return;
+        }
+
+        ui->label_lblState->setText(tr("Completed"));
+        stopTokenTimer();
+        showConsole();
+
+        const int requestStatusCode = jsonObject["statusCode"].toInt(-1);
+        if (requestStatusCode != 200) {
+            finishTokenFlowWithError(tr("Completed"), replyMessage(responsePayload, nullptr));
+            return;
+        }
+
+        if (!jsonObject.contains("accessRequest") || !jsonObject["accessRequest"].isObject()) {
+            finishTokenFlowWithError(tr("Completed"), tr("The access request response is incomplete."));
+            return;
+        }
+
+        applyCompletedAccessRequest(jsonObject["accessRequest"].toObject());
+        syncTokenUiState();
+    }
 
     /*
     * onCancelRequest
     * Invoked when the cancel request button has hit
     */
     void Connection::onCancelRequest() {
-
-        // Initialize the QT managed settings
-        QSettings settings(Configuration::settingsFilename(), QSettings::IniFormat);
-
+        abortActiveTokenReply();
         stopTokenTimer();
-
-        // Remove href
-        settings.remove("href");
-        settings.remove("expirationTime");
-        settings.sync();
-
+        clearPendingRequest(true);
         syncTokenUiState();
 
-        // Hide the web page
-        ui->webEngineView->setVisible(false);
-
-        // Show the console
-        ui->textEdit_message->setVisible(true);
-
-        // Set the state as CANCELED
+        showConsole();
         ui->label_lblState->setText(tr("Canceled"));
         ui->label_lblPermission->clear();
         ui->label_lblExpirationTime->clear();
@@ -629,33 +576,26 @@ namespace fairwindsk::ui::settings {
     * Invoked when the read only button has hit
     */
     void Connection::onReadOnly() {
-
-        const QString signalKServerUrl = ui->comboBox_signalkserverurl->currentText().trimmed();
-
-        if (signalKServerUrl.isEmpty()) {
-            appendMessage(tr("Please provide a Signal K server URL."));
+        const QUrl signalKServerUrl = currentSignalKServerUrl();
+        if (!signalKServerUrl.isValid()) {
+            appendMessage(tr("Please provide a valid Signal K server URL."));
             return;
         }
 
-        m_settings->getConfiguration()->setSignalKServerUrl(signalKServerUrl);
+        m_settings->getConfiguration()->setSignalKServerUrl(signalKServerUrl.toString());
         m_settings->markDirty(FairWindSK::RuntimeSignalKConnection, 0);
 
-        QSettings settings(Configuration::settingsFilename(), QSettings::IniFormat);
-        settings.remove("href");
-        settings.remove("token");
-        settings.remove("expirationTime");
-        settings.sync();
-
+        abortActiveTokenReply();
         stopTokenTimer();
+        clearPendingRequest(true);
         syncTokenUiState();
 
-        ui->webEngineView->setVisible(false);
-        ui->textEdit_message->setVisible(true);
+        showConsole();
         ui->label_lblState->setText(tr("Read only"));
         ui->label_lblPermission->setText(tr("No token"));
         ui->label_lblExpirationTime->clear();
 
-        appendMessage(tr("Configured %1 in read-only mode.").arg(signalKServerUrl));
+        appendMessage(tr("Configured %1 in read-only mode.").arg(signalKServerUrl.toString()));
     }
 
     /*
@@ -663,28 +603,12 @@ namespace fairwindsk::ui::settings {
     * Invoked when the remove token button has hit
     */
     void Connection::onRemoveToken() {
-
-        // Initialize the QT managed settings
-        QSettings settings(Configuration::settingsFilename(), QSettings::IniFormat);
-
-        // Store the configuration in the settings
-        settings.setValue("token", "");
-
-        // Store the configuration in the settings
-        settings.setValue("expirationTime", "");
-        settings.remove("href");
-        settings.sync();
-
+        abortActiveTokenReply();
         stopTokenTimer();
+        clearPendingRequest(true);
         syncTokenUiState();
 
-        // Hide the web page
-        ui->webEngineView->setVisible(false);
-
-        // Show the console
-        ui->textEdit_message->setVisible(true);
-
-        // Set the expiration time as removed
+        showConsole();
         ui->label_lblExpirationTime->setText(tr("Removed"));
         ui->label_lblPermission->clear();
         ui->label_lblState->setText(tr("Removed"));
@@ -696,11 +620,12 @@ namespace fairwindsk::ui::settings {
      */
     Connection::~Connection() {
 
-	    // Stop the zeroconf browser
+        // Stop the zeroconf browser
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         m_zeroConf.stopBrowser();
 #endif
 
+        abortActiveTokenReply();
         stopTokenTimer();
 
         // Check if the page has been allocated
