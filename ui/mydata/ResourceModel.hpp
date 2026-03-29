@@ -31,6 +31,7 @@ namespace fairwindsk::ui::mydata {
 
     public:
         explicit ResourceModel(ResourceKind kind, QObject *parent = nullptr);
+        ~ResourceModel() override;
 
         int rowCount(const QModelIndex &parent = QModelIndex()) const override;
         int columnCount(const QModelIndex &parent = QModelIndex()) const override;

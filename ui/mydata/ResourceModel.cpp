@@ -9,6 +9,7 @@
 #include <QDateTime>
 #include <QJsonArray>
 #include <QLocale>
+#include <QPointer>
 #include <QTimer>
 #include <QUuid>
 
@@ -259,6 +260,14 @@ namespace fairwindsk::ui::mydata {
         reload(true);
     }
 
+    ResourceModel::~ResourceModel() {
+        if (m_reloadTimer) {
+            m_reloadTimer->stop();
+        }
+        m_reloadInProgress = false;
+        m_reloadPending = false;
+    }
+
     int ResourceModel::rowCount(const QModelIndex &parent) const {
         return parent.isValid() ? 0 : m_ids.size();
     }
@@ -420,8 +429,13 @@ namespace fairwindsk::ui::mydata {
         }
 
         m_reloadInProgress = true;
+        const QPointer<ResourceModel> guard(this);
         const auto client = fairwindsk::FairWindSK::getInstance()->getSignalKClient();
-        const auto resources = client->getResources(collection());
+        const QString currentCollection = collection();
+        const auto resources = client->getResources(currentCollection);
+        if (!guard) {
+            return;
+        }
         QList<QString> ids = resources.keys();
 
         std::sort(ids.begin(), ids.end(), [&resources](const QString &left, const QString &right) {
