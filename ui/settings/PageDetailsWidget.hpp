@@ -40,7 +40,6 @@ namespace fairwindsk::ui::settings {
         void populateIconPicker();
         void ensureIconEntry(const QString &path);
         void updateIconPreview(const QString &path);
-        void updateSelectedIconPreview();
 
     private:
         QString m_currentIconPath;

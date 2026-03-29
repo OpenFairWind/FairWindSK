@@ -1029,6 +1029,10 @@ namespace fairwindsk::ui::settings {
         m_pageDetailsWidget->setPageIconPath(iconPath);
         m_pageDetailsWidget->hideIconPicker();
         ui->stackedWidget_RightPane->setCurrentWidget(ui->page_PageDetails);
+        m_pageDetailsWidget->ui->lineEdit_Page_Name->setEnabled(true);
+        m_pageDetailsWidget->ui->lineEdit_Page_Name->setReadOnly(false);
+        m_pageDetailsWidget->ui->pushButton_Page_Icon_Browse->setEnabled(true);
+        refreshDetailActionButtons();
     }
 
     void Apps::showLayoutEditor() {

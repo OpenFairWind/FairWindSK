@@ -112,11 +112,7 @@ namespace fairwindsk::ui::settings {
         hideIconPicker();
 
         connect(ui->pushButton_Page_Icon_Browse, &QPushButton::clicked, this, &PageDetailsWidget::showIconPicker);
-        connect(ui->pushButton_Page_Icon_Cancel, &QPushButton::clicked, this, &PageDetailsWidget::hideIconPicker);
-        connect(ui->pushButton_Page_Icon_Select, &QPushButton::clicked, this, &PageDetailsWidget::applySelectedIcon);
-        connect(ui->listWidget_Page_Icons, &QListWidget::itemSelectionChanged, this, &PageDetailsWidget::updateSelectedIconPreview);
         connect(ui->listWidget_Page_Icons, &QListWidget::itemDoubleClicked, this, [this](QListWidgetItem *) { applySelectedIcon(); });
-        connect(ui->listWidget_Page_Icons, &QListWidget::itemActivated, this, [this](QListWidgetItem *) { applySelectedIcon(); });
     }
 
     PageDetailsWidget::~PageDetailsWidget() {
@@ -147,7 +143,6 @@ namespace fairwindsk::ui::settings {
         }
 
         updateIconPreview(m_currentIconPath);
-        updateSelectedIconPreview();
     }
 
     QString PageDetailsWidget::pageIconPath() const {
@@ -158,7 +153,6 @@ namespace fairwindsk::ui::settings {
         ensureIconEntry(m_currentIconPath);
         ui->frame_PageIconPicker->setVisible(true);
         ui->listWidget_Page_Icons->setFocus();
-        updateSelectedIconPreview();
         qApp->installEventFilter(this);
     }
 
@@ -220,7 +214,7 @@ namespace fairwindsk::ui::settings {
 
         const int iconSize = iconPickerIconSize();
         ui->listWidget_Page_Icons->setIconSize(QSize(iconSize, iconSize));
-        ui->listWidget_Page_Icons->setGridSize(QSize(iconSize + 24, iconSize + 30));
+        ui->listWidget_Page_Icons->setGridSize(QSize(iconSize + 20, iconSize + 26));
 
         const QList<IconEntry> entries = availableIconEntries();
         for (const IconEntry &entry : entries) {
@@ -254,17 +248,6 @@ namespace fairwindsk::ui::settings {
         const int previewSize = 128;
         const QPixmap pixmap = iconPixmapForPath(path, previewSize);
         ui->label_Page_Icon->setPixmap(pixmap);
-    }
-
-    void PageDetailsWidget::updateSelectedIconPreview() {
-        auto *item = ui->listWidget_Page_Icons ? ui->listWidget_Page_Icons->currentItem() : nullptr;
-        if (!item) {
-            ui->label_Page_IconPickerPreview->clear();
-            return;
-        }
-
-        const int previewSize = 64;
-        ui->label_Page_IconPickerPreview->setPixmap(iconPixmapForPath(item->data(Qt::UserRole).toString(), previewSize));
     }
 
     QString PageDetailsWidget::normalizedIconStoragePath(const QString &path) {
