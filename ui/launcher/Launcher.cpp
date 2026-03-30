@@ -260,6 +260,14 @@ namespace fairwindsk::ui::launcher {
             return items;
         }
 
+        AppItem mergedLauncherAppItem(AppItem *liveApp, const nlohmann::json *configuredAppJson) {
+            nlohmann::json mergedJson = liveApp ? liveApp->asJson() : nlohmann::json::object();
+            if (configuredAppJson && configuredAppJson->is_object()) {
+                mergedJson.update(*configuredAppJson, true);
+            }
+            return AppItem(mergedJson);
+        }
+
         const nlohmann::json *resolveScopeNodes(const nlohmann::json &allNodes,
                                                 const QString &rootPageId,
                                                 nlohmann::json &scratchNodes) {
@@ -342,15 +350,18 @@ namespace fairwindsk::ui::launcher {
                                 const QString resolvedHash = fairWindSK->getAppHashById(slot);
                                 const QString appLookupKey = resolvedHash.isEmpty() ? slot : resolvedHash;
                                 auto *app = fairWindSK->getAppItemByHash(appLookupKey);
+                                const int idx = configuration->findApp(slot);
+                                const nlohmann::json *configuredAppJson =
+                                    idx != -1 ? &configuration->getRoot()["apps"].at(idx) : nullptr;
                                 if (app) {
+                                    AppItem presentationApp = mergedLauncherAppItem(app, configuredAppJson);
                                     entry.kind = TileKind::App;
                                     entry.app = app;
                                     entry.id = appLookupKey;
-                                    entry.title = app->getDisplayName();
-                                    entry.description = app->getDescription();
-                                    entry.pixmap = app->getIcon(false);
+                                    entry.title = presentationApp.getDisplayName();
+                                    entry.description = presentationApp.getDescription();
+                                    entry.pixmap = presentationApp.getIcon(false);
                                 } else {
-                                    const int idx = configuration->findApp(slot);
                                     if (idx != -1) {
                                         AppItem configApp(configuration->getRoot()["apps"].at(idx));
                                         entry.kind = TileKind::App;
