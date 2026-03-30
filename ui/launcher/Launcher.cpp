@@ -488,6 +488,9 @@ namespace fairwindsk::ui::launcher {
 
                 const QRectF tileRect = rect().adjusted(1, 1, -1, -1);
                 const qreal radius = 2.0;
+                const QRectF contentRect = tileRect.adjusted(1, 1, -1, -1);
+                const qreal titleBandHeight = 28.0;
+                const QRectF artworkRect = contentRect.adjusted(4, 4, -4, -(titleBandHeight + 4));
 
                 QPainterPath clipPath;
                 clipPath.addRoundedRect(tileRect, radius, radius);
@@ -495,8 +498,6 @@ namespace fairwindsk::ui::launcher {
 
                 painter.fillRect(tileRect, QColor(16, 22, 32));
                 if (!m_pixmap.isNull()) {
-                    const QRectF artworkRect = tileRect.adjusted(10, 10, -10, -34);
-                    painter.fillRect(artworkRect, QColor(255, 255, 255, 18));
                     const QPixmap scaled = m_pixmap.scaled(artworkRect.size().toSize(),
                                                            Qt::KeepAspectRatio,
                                                            Qt::SmoothTransformation);
@@ -521,7 +522,10 @@ namespace fairwindsk::ui::launcher {
                 }
                 painter.setFont(titleFont);
                 painter.setPen(QColor(248, 250, 252));
-                painter.drawText(tileRect.adjusted(10, 10, -10, -10).toRect(),
+                painter.drawText(QRectF(contentRect.left() + 8,
+                                        artworkRect.bottom() + 4,
+                                        contentRect.width() - 16,
+                                        titleBandHeight).toRect(),
                                  Qt::AlignLeft | Qt::AlignBottom | Qt::TextWordWrap,
                                  m_title);
             }
