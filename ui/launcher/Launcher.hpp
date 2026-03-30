@@ -42,6 +42,8 @@ namespace fairwindsk::ui::launcher {
     private:
         QString buildLayoutSignature() const;
         void rebuildTiles();
+        void scheduleDeferredIconRefresh();
+        void refreshDeferredIcons();
         void resize();
         void updateScrollButtons() const;
         int pageWidth() const;
@@ -59,6 +61,7 @@ namespace fairwindsk::ui::launcher {
         QString m_layoutSignature;
         QString m_currentRootPageId;
         QStringList m_navigationStack;
+        bool m_iconRefreshScheduled = false;
     };
 } // fairwindsk::ui
 

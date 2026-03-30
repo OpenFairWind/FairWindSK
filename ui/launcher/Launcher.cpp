@@ -420,6 +420,14 @@ namespace fairwindsk::ui::launcher {
                 return m_hash;
             }
 
+            QString title() const {
+                return m_title;
+            }
+
+            QString description() const {
+                return toolTip();
+            }
+
         protected:
             void enterEvent(QEnterEvent *event) override {
                 QFrame::enterEvent(event);
@@ -618,11 +626,51 @@ namespace fairwindsk::ui::launcher {
             m_layoutSignature = newLayoutSignature;
         }
 
+        scheduleDeferredIconRefresh();
+
         if (isVisible()) {
             QTimer::singleShot(0, this, [this]() { resize(); });
         }
         updateScrollButtons();
         emit pageContextChanged();
+    }
+
+    void Launcher::scheduleDeferredIconRefresh() {
+        if (m_iconRefreshScheduled) {
+            return;
+        }
+
+        m_iconRefreshScheduled = true;
+        QTimer::singleShot(0, this, [this]() { refreshDeferredIcons(); });
+    }
+
+    void Launcher::refreshDeferredIcons() {
+        m_iconRefreshScheduled = false;
+
+        const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+        for (auto *tileWidget : m_tiles) {
+            auto *tile = dynamic_cast<AppTile *>(tileWidget);
+            if (!tile) {
+                continue;
+            }
+
+            const QString hash = tile->appHash();
+            if (hash.isEmpty()) {
+                continue;
+            }
+
+            auto *app = fairWindSK->getAppItemByHash(hash);
+            if (!app) {
+                continue;
+            }
+
+            const QPixmap pixmap = app->getIcon();
+            if (pixmap.isNull()) {
+                continue;
+            }
+
+            tile->setAppData(hash, tile->title(), tile->description(), pixmap);
+        }
     }
 
     bool Launcher::eventFilter(QObject *watched, QEvent *event) {
