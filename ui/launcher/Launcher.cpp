@@ -12,6 +12,7 @@
 #include <QFileInfo>
 #include <QFrame>
 #include <QGridLayout>
+#include <QIcon>
 #include <QList>
 #include <QMouseEvent>
 #include <QPainter>
@@ -110,33 +111,52 @@ namespace fairwindsk::ui::launcher {
             return QLatin1String(kDefaultPageIconPath);
         }
 
-        QPixmap pageIconForPath(const QString &iconPath) {
+        QPixmap pageIconForPath(const QString &iconPath, const QSize &preferredSize = QSize(256, 256)) {
             const QString trimmed = iconPath.trimmed();
             if (trimmed.isEmpty()) {
-                return QPixmap(QLatin1String(kDefaultPageIconPath));
+                return QIcon(QLatin1String(kDefaultPageIconPath)).pixmap(preferredSize);
             }
+
+            auto loadResolvedIcon = [&preferredSize](const QString &path) -> QPixmap {
+                if (path.trimmed().isEmpty()) {
+                    return {};
+                }
+
+                QIcon icon(path);
+                const QPixmap iconPixmap = icon.pixmap(preferredSize);
+                if (!iconPixmap.isNull()) {
+                    return iconPixmap;
+                }
+
+                QPixmap pixmap(path);
+                if (!pixmap.isNull()) {
+                    return pixmap;
+                }
+
+                return {};
+            };
 
             if (trimmed.startsWith(QStringLiteral("file://"))) {
                 const QString localPath = trimmed.mid(QStringLiteral("file://").size());
                 const QFileInfo localInfo(localPath);
-                QPixmap pixmap(localPath);
+                QPixmap pixmap = loadResolvedIcon(localPath);
                 if (!pixmap.isNull()) {
                     return pixmap;
                 }
                 if (!localInfo.isAbsolute()) {
-                    pixmap.load(QDir(QCoreApplication::applicationDirPath()).absoluteFilePath(localPath));
+                    pixmap = loadResolvedIcon(QDir(QCoreApplication::applicationDirPath()).absoluteFilePath(localPath));
                     if (!pixmap.isNull()) {
                         return pixmap;
                     }
                 }
             }
 
-            QPixmap pixmap(trimmed);
+            QPixmap pixmap = loadResolvedIcon(trimmed);
             if (!pixmap.isNull()) {
                 return pixmap;
             }
 
-            return QPixmap(QLatin1String(kDefaultPageIconPath));
+            return QIcon(QLatin1String(kDefaultPageIconPath)).pixmap(preferredSize);
         }
 
         QString defaultNodeTitle(const nlohmann::json &node) {
@@ -475,14 +495,14 @@ namespace fairwindsk::ui::launcher {
 
                 painter.fillRect(tileRect, QColor(16, 22, 32));
                 if (!m_pixmap.isNull()) {
-                    const QPixmap scaled = m_pixmap.scaled(tileRect.size().toSize(),
-                                                           Qt::KeepAspectRatioByExpanding,
+                    const QRectF artworkRect = tileRect.adjusted(10, 10, -10, -34);
+                    painter.fillRect(artworkRect, QColor(255, 255, 255, 18));
+                    const QPixmap scaled = m_pixmap.scaled(artworkRect.size().toSize(),
+                                                           Qt::KeepAspectRatio,
                                                            Qt::SmoothTransformation);
-                    const QRect sourceRect((scaled.width() - int(tileRect.width())) / 2,
-                                           (scaled.height() - int(tileRect.height())) / 2,
-                                           int(tileRect.width()),
-                                           int(tileRect.height()));
-                    painter.drawPixmap(tileRect.toRect(), scaled, sourceRect);
+                    const QPoint topLeft(int(artworkRect.left() + ((artworkRect.width() - scaled.width()) / 2.0)),
+                                         int(artworkRect.top() + ((artworkRect.height() - scaled.height()) / 2.0)));
+                    painter.drawPixmap(topLeft, scaled);
                 }
 
                 QLinearGradient overlay(tileRect.topLeft(), QPointF(tileRect.left(), tileRect.bottom()));
