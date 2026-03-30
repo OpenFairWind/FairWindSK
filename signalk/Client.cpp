@@ -11,7 +11,8 @@
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QEventLoop>
-#include <QElapsedTimer>
+#include <QPointer>
+#include <QTimer>
 #include <QUrlQuery>
 
 #include "Client.hpp"
@@ -36,12 +37,14 @@ namespace fairwindsk::signalk {
         if (!guard) {
             return {};
         }
-        QElapsedTimer timer;
-        timer.start();
 
-        while (!guard->isFinished() && timer.elapsed() < kRequestTimeoutMs) {
-            QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
-        }
+        QEventLoop loop;
+        QTimer timeoutTimer;
+        timeoutTimer.setSingleShot(true);
+        QObject::connect(guard.data(), &QNetworkReply::finished, &loop, &QEventLoop::quit);
+        QObject::connect(&timeoutTimer, &QTimer::timeout, &loop, &QEventLoop::quit);
+        timeoutTimer.start(kRequestTimeoutMs);
+        loop.exec(QEventLoop::ExcludeUserInputEvents);
 
         if (!guard->isFinished()) {
             if (m_Debug) {
