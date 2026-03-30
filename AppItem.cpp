@@ -329,7 +329,7 @@ namespace fairwindsk {
      * getIcon
      * Returns the app's icon
      */
-    QPixmap AppItem::getIcon() {
+    QPixmap AppItem::getIcon(const bool allowRemoteFetch) {
         if (m_hasCachedIcon && !m_cachedIcon.isNull()) {
             return m_cachedIcon;
         }
@@ -351,7 +351,7 @@ namespace fairwindsk {
             return pixmap;
         }
 
-        if (appIcon.isEmpty()) {
+        if (appIcon.isEmpty() && allowRemoteFetch) {
             appIcon = iconFromLegacyCatalog(signalKServerUrl, getName());
         }
 
@@ -393,11 +393,23 @@ namespace fairwindsk {
                 return m_cachedIcon;
             }
 
+            if (!allowRemoteFetch) {
+                m_cachedIcon = pixmap;
+                m_hasCachedIcon = true;
+                return m_cachedIcon;
+            }
+
             QList<QUrl> candidateUrls;
             candidateUrls.append(QUrl(appUrl).resolved(QUrl(iconFilename)));
             candidateUrls.append(QUrl(signalKServerUrl + "/" + appName + "/" + iconFilename));
 
             m_cachedIcon = loadRemotePixmap(candidateUrls, pixmap);
+            m_hasCachedIcon = true;
+            return m_cachedIcon;
+        }
+
+        if (!allowRemoteFetch) {
+            m_cachedIcon = pixmap;
             m_hasCachedIcon = true;
             return m_cachedIcon;
         }

@@ -348,7 +348,7 @@ namespace fairwindsk::ui::launcher {
                                     entry.id = appLookupKey;
                                     entry.title = app->getDisplayName();
                                     entry.description = app->getDescription();
-                                    entry.pixmap = app->getIcon();
+                                    entry.pixmap = app->getIcon(false);
                                 } else {
                                     const int idx = configuration->findApp(slot);
                                     if (idx != -1) {
@@ -357,7 +357,7 @@ namespace fairwindsk::ui::launcher {
                                         entry.id = appLookupKey.isEmpty() ? configApp.getName() : appLookupKey;
                                         entry.title = configApp.getDisplayName();
                                         entry.description = configApp.getDescription();
-                                        entry.pixmap = configApp.getIcon();
+                                        entry.pixmap = configApp.getIcon(false);
                                     }
                                 }
                                 entries.append(entry);
@@ -377,7 +377,7 @@ namespace fairwindsk::ui::launcher {
                         entry.id = item.second;
                         entry.title = item.first->getDisplayName();
                         entry.description = item.first->getDescription();
-                        entry.pixmap = item.first->getIcon();
+                        entry.pixmap = item.first->getIcon(false);
                     }
                     entries.append(entry);
                 }

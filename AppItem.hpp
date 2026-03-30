@@ -56,7 +56,7 @@ namespace fairwindsk {
             QString getAuthor();
             QVector<QString> getContributors();
             QString getUrl();
-            QPixmap getIcon();
+            QPixmap getIcon(bool allowRemoteFetch = true);
             QString getAppIcon();
             void setAppIcon(const QString& appIcon);
 
