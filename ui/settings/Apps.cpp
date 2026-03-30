@@ -636,6 +636,7 @@ namespace fairwindsk::ui::settings {
             }
         });
         connect(ui->toolButton_AddPage, &QToolButton::clicked, this, &Apps::onAddPageClicked);
+        connect(ui->toolButton_AddSelectedAppToPage, &QToolButton::clicked, this, &Apps::onAddSelectedAppToPageClicked);
         connect(ui->toolButton_RemoveNode, &QToolButton::clicked, this, &Apps::onRemoveNodeClicked);
         connect(ui->toolButton_MoveNodeLeft, &QToolButton::clicked, this, &Apps::onMoveNodeLeftClicked);
         connect(ui->toolButton_MoveNodeRight, &QToolButton::clicked, this, &Apps::onMoveNodeRightClicked);
@@ -822,6 +823,7 @@ namespace fairwindsk::ui::settings {
         const bool hasSelection = m_availableAppsList && m_availableAppsList->currentItem();
         ui->toolButton_Remove->setEnabled(hasSelection);
         ui->toolButton_EditApp->setEnabled(hasSelection);
+        ui->toolButton_AddSelectedAppToPage->setEnabled(hasSelection && !selectedPageId().isEmpty());
     }
 
     void Apps::refreshPageTreeActionButtons() const {
@@ -833,6 +835,7 @@ namespace fairwindsk::ui::settings {
         ui->toolButton_MoveNodeUp->setEnabled(hasSelection);
         ui->toolButton_MoveNodeDown->setEnabled(hasSelection);
         ui->toolButton_PageDetails->setEnabled(hasSelection);
+        ui->toolButton_AddSelectedAppToPage->setEnabled(hasSelection && m_availableAppsList && m_availableAppsList->currentItem());
         ui->toolButton_ClearPageSlot->setEnabled(m_pageGrid && m_pageGrid->hasSelectedSlot() && !selectedPageId().isEmpty());
         ui->toolButton_SelectedSlotDetails->setEnabled(!selectedGridEntry().isEmpty());
     }
@@ -2010,6 +2013,47 @@ namespace fairwindsk::ui::settings {
         rebuildPageEditor();
         selectTreeItemById(m_selectedPageNodeId);
         showDetailsForPage(m_selectedPageNodeId, true);
+    }
+
+    void Apps::onAddSelectedAppToPageClicked() {
+        const QString pageId = selectedPageId();
+        if (pageId.isEmpty()) {
+            drawer::warning(this, tr("Applications"), tr("Select a target page first."));
+            return;
+        }
+
+        auto *currentItem = m_availableAppsList ? m_availableAppsList->currentItem() : nullptr;
+        if (!currentItem) {
+            drawer::warning(this, tr("Applications"), tr("Select an application first."));
+            return;
+        }
+
+        const QString appName = currentItem->data(Qt::UserRole).toString().trimmed();
+        if (appName.isEmpty()) {
+            return;
+        }
+
+        ensureLauncherLayout();
+        normalizeLauncherLayout();
+
+        if (auto *pageNode = findNodeById(*launcherLayoutNodes(), pageId); pageNode && isPageNode(*pageNode)) {
+            QStringList items = pageItemsFromNode(*pageNode);
+            const int slotIndex = firstAvailableSlot(items);
+            if (slotIndex != -1) {
+                items[slotIndex] = appName;
+                setPageItemsForNode(*pageNode, items);
+                normalizeParentReferenceForNode(*pageNode, parentPageIdForNodeId(pageId));
+            } else {
+                fillPageChainWithApps(pageId, QStringList{appName});
+            }
+        }
+
+        markSettingsDirty();
+        rebuildPageTree();
+        selectTreeItemById(pageId);
+        rebuildPageEditor();
+        refreshPageTreeActionButtons();
+        refreshAvailableAppActionButtons();
     }
 
     void Apps::onRemoveNodeClicked() {

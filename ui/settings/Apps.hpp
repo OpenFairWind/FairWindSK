@@ -96,6 +96,7 @@ namespace fairwindsk::ui::settings {
         void onAddAllAppsClicked();
         void onRemoveAppClicked();
         void onAddPageClicked();
+        void onAddSelectedAppToPageClicked();
         void onRemoveNodeClicked();
         void onMoveNodeLeftClicked();
         void onMoveNodeRightClicked();

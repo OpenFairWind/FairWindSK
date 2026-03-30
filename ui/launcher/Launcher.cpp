@@ -190,6 +190,36 @@ namespace fairwindsk::ui::launcher {
             return {};
         }
 
+        const nlohmann::json *findNodeById(const nlohmann::json &nodes, const QString &id);
+
+        QStringList pagePathTitles(const nlohmann::json &nodes, const QString &pageId) {
+            if (pageId.trimmed().isEmpty()) {
+                return QStringList{QObject::tr("Home")};
+            }
+
+            const auto *node = findNodeById(nodes, pageId);
+            if (!node) {
+                return QStringList{QObject::tr("Home")};
+            }
+
+            QStringList titles;
+            const QString parentPageId = parentPageIdForNodeId(nodes, pageId);
+            if (!parentPageId.isEmpty()) {
+                titles = pagePathTitles(nodes, parentPageId);
+            }
+
+            const QString title = defaultNodeTitle(*node).trimmed();
+            if (!title.isEmpty()) {
+                if (titles.isEmpty() || titles.last() != title) {
+                    titles.append(title);
+                }
+            } else if (titles.isEmpty()) {
+                titles.append(QObject::tr("Home"));
+            }
+
+            return titles;
+        }
+
         const nlohmann::json *findNodeById(const nlohmann::json &nodes, const QString &id) {
             if (!nodes.is_array()) {
                 return nullptr;
@@ -528,11 +558,9 @@ namespace fairwindsk::ui::launcher {
         if (root.contains(kLauncherLayoutKey) && root[kLauncherLayoutKey].is_object()) {
             const auto &layout = root[kLauncherLayoutKey];
             if (layout.contains(kLauncherNodesKey) && layout[kLauncherNodesKey].is_array()) {
-                if (const auto *node = findNodeById(layout[kLauncherNodesKey], m_currentRootPageId)) {
-                    const QString title = nodeName(*node).trimmed();
-                    if (!title.isEmpty()) {
-                        return title;
-                    }
+                const QStringList titles = pagePathTitles(layout[kLauncherNodesKey], m_currentRootPageId);
+                if (!titles.isEmpty()) {
+                    return titles.join(QStringLiteral(" - "));
                 }
             }
         }
