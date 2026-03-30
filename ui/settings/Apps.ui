@@ -110,98 +110,6 @@ QToolButton#toolButton_ClearPageSlot:disabled {
           </item>
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_AvailableAppButtons">
-           <item>
-             <widget class="QToolButton" name="toolButton_AddAllApps">
-              <property name="toolTip">
-               <string>Add all applications to pages</string>
-              </property>
-              <property name="icon">
-               <iconset>
-                <normaloff>:/resources/svg/OpenBridge/widget-add-google.svg</normaloff>:/resources/svg/OpenBridge/widget-add-google.svg</iconset>
-              </property>
-              <property name="iconSize">
-               <size>
-                <width>24</width>
-                <height>24</height>
-               </size>
-              </property>
-              <property name="toolButtonStyle">
-               <enum>Qt::ToolButtonIconOnly</enum>
-              </property>
-              <property name="text">
-               <string>Add All</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QToolButton" name="toolButton_Add">
-              <property name="toolTip">
-               <string>Add application</string>
-              </property>
-              <property name="icon">
-               <iconset>
-                <normaloff>:/resources/svg/OpenBridge/widget-add-google.svg</normaloff>:/resources/svg/OpenBridge/widget-add-google.svg</iconset>
-              </property>
-              <property name="iconSize">
-               <size>
-                <width>24</width>
-                <height>24</height>
-               </size>
-              </property>
-              <property name="toolButtonStyle">
-               <enum>Qt::ToolButtonIconOnly</enum>
-              </property>
-              <property name="text">
-               <string>Add</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QToolButton" name="toolButton_EditApp">
-              <property name="toolTip">
-               <string>Application details</string>
-              </property>
-              <property name="icon">
-               <iconset>
-                <normaloff>:/resources/svg/OpenBridge/info.svg</normaloff>:/resources/svg/OpenBridge/info.svg</iconset>
-              </property>
-              <property name="iconSize">
-               <size>
-                <width>24</width>
-                <height>24</height>
-               </size>
-              </property>
-              <property name="toolButtonStyle">
-               <enum>Qt::ToolButtonIconOnly</enum>
-              </property>
-              <property name="text">
-               <string>Details</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QToolButton" name="toolButton_Remove">
-              <property name="toolTip">
-               <string>Delete application</string>
-              </property>
-              <property name="icon">
-               <iconset>
-                <normaloff>:/resources/svg/OpenBridge/delete-google.svg</normaloff>:/resources/svg/OpenBridge/delete-google.svg</iconset>
-              </property>
-              <property name="iconSize">
-               <size>
-                <width>24</width>
-                <height>24</height>
-               </size>
-              </property>
-              <property name="toolButtonStyle">
-               <enum>Qt::ToolButtonIconOnly</enum>
-              </property>
-              <property name="text">
-               <string>Remove</string>
-              </property>
-             </widget>
-            </item>
             <item>
              <spacer name="horizontalSpacer_Available">
               <property name="orientation">
@@ -496,7 +404,7 @@ QToolButton#toolButton_ClearPageSlot:disabled {
                 </widget>
                </item>
                <item>
-                <widget class="QToolButton" name="toolButton_ClearPageSlot">
+               <widget class="QToolButton" name="toolButton_ClearPageSlot">
                  <property name="toolTip">
                   <string>Remove application from page</string>
                  </property>
@@ -515,6 +423,105 @@ QToolButton#toolButton_ClearPageSlot:disabled {
                  </property>
                  <property name="text">
                   <string>Remove Application</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="Line" name="line_PageHeaderSeparator">
+                 <property name="orientation">
+                  <enum>Qt::Vertical</enum>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QToolButton" name="toolButton_AddAllApps">
+                 <property name="toolTip">
+                  <string>Add all applications to pages</string>
+                 </property>
+                 <property name="icon">
+                  <iconset>
+                   <normaloff>:/resources/svg/OpenBridge/widget-add-google.svg</normaloff>:/resources/svg/OpenBridge/widget-add-google.svg</iconset>
+                 </property>
+                 <property name="iconSize">
+                  <size>
+                   <width>24</width>
+                   <height>24</height>
+                  </size>
+                 </property>
+                 <property name="toolButtonStyle">
+                  <enum>Qt::ToolButtonIconOnly</enum>
+                 </property>
+                 <property name="text">
+                  <string>Add All</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QToolButton" name="toolButton_Add">
+                 <property name="toolTip">
+                  <string>Add application</string>
+                 </property>
+                 <property name="icon">
+                  <iconset>
+                   <normaloff>:/resources/svg/OpenBridge/widget-add-google.svg</normaloff>:/resources/svg/OpenBridge/widget-add-google.svg</iconset>
+                 </property>
+                 <property name="iconSize">
+                  <size>
+                   <width>24</width>
+                   <height>24</height>
+                  </size>
+                 </property>
+                 <property name="toolButtonStyle">
+                  <enum>Qt::ToolButtonIconOnly</enum>
+                 </property>
+                 <property name="text">
+                  <string>Add</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QToolButton" name="toolButton_EditApp">
+                 <property name="toolTip">
+                  <string>Application details</string>
+                 </property>
+                 <property name="icon">
+                  <iconset>
+                   <normaloff>:/resources/svg/OpenBridge/info.svg</normaloff>:/resources/svg/OpenBridge/info.svg</iconset>
+                 </property>
+                 <property name="iconSize">
+                  <size>
+                   <width>24</width>
+                   <height>24</height>
+                  </size>
+                 </property>
+                 <property name="toolButtonStyle">
+                  <enum>Qt::ToolButtonIconOnly</enum>
+                 </property>
+                 <property name="text">
+                  <string>Details</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QToolButton" name="toolButton_Remove">
+                 <property name="toolTip">
+                  <string>Delete application</string>
+                 </property>
+                 <property name="icon">
+                  <iconset>
+                   <normaloff>:/resources/svg/OpenBridge/delete-google.svg</normaloff>:/resources/svg/OpenBridge/delete-google.svg</iconset>
+                 </property>
+                 <property name="iconSize">
+                  <size>
+                   <width>24</width>
+                   <height>24</height>
+                  </size>
+                 </property>
+                 <property name="toolButtonStyle">
+                  <enum>Qt::ToolButtonIconOnly</enum>
+                 </property>
+                 <property name="text">
+                  <string>Remove</string>
                  </property>
                 </widget>
                </item>
