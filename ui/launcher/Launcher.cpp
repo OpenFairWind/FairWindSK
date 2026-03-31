@@ -577,7 +577,7 @@ namespace fairwindsk::ui::launcher {
     Launcher::Launcher(QWidget *parent) : QWidget(parent), ui(new Ui::Launcher) {
         ui->setupUi(this);
 
-        m_layout = new QGridLayout(this);
+        m_layout = new QGridLayout();
         if (m_layout) {
             m_layout->setContentsMargins(10, 10, 10, 10);
             m_layout->setHorizontalSpacing(8);
@@ -605,6 +605,8 @@ namespace fairwindsk::ui::launcher {
     }
 
     Launcher::~Launcher() {
+        delete m_layout;
+        m_layout = nullptr;
         delete ui;
         ui = nullptr;
     }
