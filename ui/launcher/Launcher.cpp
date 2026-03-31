@@ -574,9 +574,9 @@ namespace fairwindsk::ui::launcher {
 
         m_layout = new QGridLayout(ui->scrollAreaWidgetContents);
         if (m_layout) {
-            m_layout->setContentsMargins(6, 6, 6, 6);
-            m_layout->setHorizontalSpacing(4);
-            m_layout->setVerticalSpacing(4);
+            m_layout->setContentsMargins(10, 10, 10, 10);
+            m_layout->setHorizontalSpacing(8);
+            m_layout->setVerticalSpacing(8);
             ui->toolButton_Left->setStyleSheet(kNavigationButtonStyle);
             ui->toolButton_Right->setStyleSheet(kNavigationButtonStyle);
             ui->toolButton_Left->setAutoRaise(true);
