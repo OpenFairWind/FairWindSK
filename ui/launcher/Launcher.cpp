@@ -339,11 +339,12 @@ namespace fairwindsk::ui::launcher {
                                 if (isParentReference(slot)) {
                                     entry.kind = TileKind::Parent;
                                     entry.id = parentPageIdForNodeId(allNodes, nodeId(node));
-                                    entry.title = QObject::tr("Parent page");
                                     entry.description = QObject::tr("Return to the parent page");
                                     if (const auto *parentNode = findNodeById(allNodes, entry.id)) {
+                                        entry.title = defaultNodeTitle(*parentNode);
                                         entry.pixmap = pageIconForPath(nodeIconPath(*parentNode));
                                     } else {
+                                        entry.title = QObject::tr("Home");
                                         entry.pixmap = QPixmap(QLatin1String(kParentNavigationIconPath));
                                     }
                                     entries.append(entry);
@@ -501,14 +502,15 @@ namespace fairwindsk::ui::launcher {
                 painter.fillRect(tileRect, QColor(16, 22, 32));
                 if (!m_pixmap.isNull()) {
                     if (m_kind == TileKind::App) {
-                        const QPixmap scaled = m_pixmap.scaled(artworkRect.size().toSize(),
+                        const QRect appRect = tileRect.toRect();
+                        const QPixmap scaled = m_pixmap.scaled(appRect.size(),
                                                                Qt::KeepAspectRatioByExpanding,
                                                                Qt::SmoothTransformation);
-                        const QRect sourceRect((scaled.width() - int(artworkRect.width())) / 2,
-                                               (scaled.height() - int(artworkRect.height())) / 2,
-                                               int(artworkRect.width()),
-                                               int(artworkRect.height()));
-                        painter.drawPixmap(artworkRect.toRect(), scaled, sourceRect);
+                        const QRect sourceRect((scaled.width() - appRect.width()) / 2,
+                                               (scaled.height() - appRect.height()) / 2,
+                                               appRect.width(),
+                                               appRect.height());
+                        painter.drawPixmap(appRect, scaled, sourceRect);
                     } else {
                         const QPixmap scaled = m_pixmap.scaled(artworkRect.size().toSize(),
                                                                Qt::KeepAspectRatio,
@@ -535,10 +537,13 @@ namespace fairwindsk::ui::launcher {
                 }
                 painter.setFont(titleFont);
                 painter.setPen(QColor(248, 250, 252));
-                painter.drawText(QRectF(contentRect.left() + 8,
-                                        artworkRect.bottom() + 4,
-                                        contentRect.width() - 16,
-                                        titleBandHeight).toRect(),
+                const QRect textRect = (m_kind == TileKind::App)
+                                           ? tileRect.adjusted(10, 10, -10, -10).toRect()
+                                           : QRectF(contentRect.left() + 8,
+                                                    artworkRect.bottom() + 4,
+                                                    contentRect.width() - 16,
+                                                    titleBandHeight).toRect();
+                painter.drawText(textRect,
                                  Qt::AlignLeft | Qt::AlignBottom | Qt::TextWordWrap,
                                  m_title);
             }
