@@ -735,8 +735,7 @@ namespace fairwindsk::ui::launcher {
             return;
         }
 
-        auto *layout = qobject_cast<QGridLayout *>(ui->scrollAreaWidgetContents->layout());
-        if (!layout) {
+        if (!m_layout) {
             return;
         }
 
@@ -745,29 +744,24 @@ namespace fairwindsk::ui::launcher {
             return;
         }
 
-        const int availableHeight = qMax(220, viewportSize.height() - layout->contentsMargins().top() - layout->contentsMargins().bottom());
-        const int availableWidth = qMax(320, viewportSize.width() - layout->contentsMargins().left() - layout->contentsMargins().right());
-        const int rowHeight = qMax(110, (availableHeight - ((m_rows - 1) * layout->verticalSpacing())) / qMax(1, m_rows));
-        const int columnWidth = qMax(140, (availableWidth - ((m_cols - 1) * layout->horizontalSpacing())) / qMax(1, m_cols));
+        const QMargins margins = m_layout->contentsMargins();
+        const int horizontalSpacing = m_layout->horizontalSpacing();
+        const int verticalSpacing = m_layout->verticalSpacing();
+        const int availableHeight = qMax(220, viewportSize.height() - margins.top() - margins.bottom());
+        const int availableWidth = qMax(320, viewportSize.width() - margins.left() - margins.right());
+        const int rowHeight = qMax(110, (availableHeight - ((m_rows - 1) * verticalSpacing)) / qMax(1, m_rows));
+        const int columnWidth = qMax(140, (availableWidth - ((m_cols - 1) * horizontalSpacing)) / qMax(1, m_cols));
         const int totalColumns = std::max(1, m_pageCount * m_cols);
         const int contentWidth = std::max(viewportSize.width(),
-                                          layout->contentsMargins().left() +
-                                          layout->contentsMargins().right() +
+                                          margins.left() +
+                                          margins.right() +
                                           (totalColumns * columnWidth) +
-                                          (std::max(0, totalColumns - 1) * layout->horizontalSpacing()));
+                                          (std::max(0, totalColumns - 1) * horizontalSpacing));
         const int contentHeight = std::max(viewportSize.height(),
-                                           layout->contentsMargins().top() +
-                                           layout->contentsMargins().bottom() +
+                                           margins.top() +
+                                           margins.bottom() +
                                            (m_rows * rowHeight) +
-                                           (std::max(0, m_rows - 1) * layout->verticalSpacing()));
-
-        for (int col = 0; col < totalColumns; ++col) {
-            layout->setColumnMinimumWidth(col, columnWidth);
-        }
-
-        for (int row = 0; row < m_rows; ++row) {
-            layout->setRowMinimumHeight(row, rowHeight);
-        }
+                                           (std::max(0, m_rows - 1) * verticalSpacing));
 
         for (auto *tileWidget : m_tiles) {
             auto *tile = dynamic_cast<AppTile *>(tileWidget);
@@ -781,7 +775,12 @@ namespace fairwindsk::ui::launcher {
                 font.setPointSizeF(std::max<qreal>(10.0, basePointSize));
                 tile->setFont(font);
             }
-            tile->setFixedSize(columnWidth, rowHeight);
+
+            const int row = tile->property("launcherRow").toInt();
+            const int col = tile->property("launcherCol").toInt();
+            const int x = margins.left() + (col * (columnWidth + horizontalSpacing));
+            const int y = margins.top() + (row * (rowHeight + verticalSpacing));
+            tile->setGeometry(x, y, columnWidth, rowHeight);
         }
 
         ui->scrollAreaWidgetContents->resize(contentWidth, contentHeight);
@@ -863,17 +862,9 @@ namespace fairwindsk::ui::launcher {
     }
 
     void Launcher::rebuildTiles() {
-        if (!m_layout) {
-            return;
-        }
-
         const int preservedPage = qBound(0, m_targetPage, std::max(0, m_pageCount - 1));
-        while (m_layout->count() > 0) {
-            auto *item = m_layout->takeAt(0);
-            if (auto *widget = item->widget()) {
-                delete widget;
-            }
-            delete item;
+        for (auto *tile : std::as_const(m_tiles)) {
+            delete tile;
         }
         m_tiles.clear();
 
@@ -937,7 +928,8 @@ namespace fairwindsk::ui::launcher {
                 });
             });
 
-            m_layout->addWidget(tile, row, col);
+            tile->setProperty("launcherRow", row);
+            tile->setProperty("launcherCol", col);
             m_tiles.append(tile);
             ++index;
         }
