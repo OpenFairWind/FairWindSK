@@ -572,7 +572,7 @@ namespace fairwindsk::ui::launcher {
     Launcher::Launcher(QWidget *parent) : QWidget(parent), ui(new Ui::Launcher) {
         ui->setupUi(this);
 
-        m_layout = new QGridLayout(ui->scrollAreaWidgetContents);
+        m_layout = new QGridLayout(this);
         if (m_layout) {
             m_layout->setContentsMargins(10, 10, 10, 10);
             m_layout->setHorizontalSpacing(8);
@@ -584,7 +584,6 @@ namespace fairwindsk::ui::launcher {
             ui->scrollArea->setFrameShape(QFrame::NoFrame);
             ui->scrollArea->setStyleSheet(kLauncherFrameStyle);
 
-            ui->scrollAreaWidgetContents->setLayout(m_layout);
             ui->scrollArea->setWidgetResizable(false);
             ui->scrollArea->horizontalScrollBar()->setVisible(false);
             ui->scrollArea->viewport()->installEventFilter(this);
@@ -930,6 +929,7 @@ namespace fairwindsk::ui::launcher {
 
             tile->setProperty("launcherRow", row);
             tile->setProperty("launcherCol", col);
+            tile->show();
             m_tiles.append(tile);
             ++index;
         }
