@@ -425,10 +425,12 @@ namespace fairwindsk::ui::launcher {
             }
 
             void setAppData(const QString &hash,
+                            const TileKind kind,
                             const QString &title,
                             const QString &description,
                             const QPixmap &pixmap) {
                 m_hash = hash;
+                m_kind = kind;
                 m_title = title;
                 m_pixmap = pixmap;
                 setToolTip(description);
@@ -498,12 +500,23 @@ namespace fairwindsk::ui::launcher {
 
                 painter.fillRect(tileRect, QColor(16, 22, 32));
                 if (!m_pixmap.isNull()) {
-                    const QPixmap scaled = m_pixmap.scaled(artworkRect.size().toSize(),
-                                                           Qt::KeepAspectRatio,
-                                                           Qt::SmoothTransformation);
-                    const QPoint topLeft(int(artworkRect.left() + ((artworkRect.width() - scaled.width()) / 2.0)),
-                                         int(artworkRect.top() + ((artworkRect.height() - scaled.height()) / 2.0)));
-                    painter.drawPixmap(topLeft, scaled);
+                    if (m_kind == TileKind::App) {
+                        const QPixmap scaled = m_pixmap.scaled(artworkRect.size().toSize(),
+                                                               Qt::KeepAspectRatioByExpanding,
+                                                               Qt::SmoothTransformation);
+                        const QRect sourceRect((scaled.width() - int(artworkRect.width())) / 2,
+                                               (scaled.height() - int(artworkRect.height())) / 2,
+                                               int(artworkRect.width()),
+                                               int(artworkRect.height()));
+                        painter.drawPixmap(artworkRect.toRect(), scaled, sourceRect);
+                    } else {
+                        const QPixmap scaled = m_pixmap.scaled(artworkRect.size().toSize(),
+                                                               Qt::KeepAspectRatio,
+                                                               Qt::SmoothTransformation);
+                        const QPoint topLeft(int(artworkRect.left() + ((artworkRect.width() - scaled.width()) / 2.0)),
+                                             int(artworkRect.top() + ((artworkRect.height() - scaled.height()) / 2.0)));
+                        painter.drawPixmap(topLeft, scaled);
+                    }
                 }
 
                 QLinearGradient overlay(tileRect.topLeft(), QPointF(tileRect.left(), tileRect.bottom()));
@@ -534,6 +547,7 @@ namespace fairwindsk::ui::launcher {
             QString m_hash;
             QString m_title;
             QPixmap m_pixmap;
+            TileKind m_kind = TileKind::Empty;
             qreal m_basePointSize = 0.0;
             bool m_hovered = false;
             std::function<void(const QString &)> m_onActivated;
@@ -704,7 +718,7 @@ namespace fairwindsk::ui::launcher {
                 continue;
             }
 
-            tile->setAppData(hash, tile->title(), tile->description(), pixmap);
+            tile->setAppData(hash, TileKind::App, tile->title(), tile->description(), pixmap);
         }
     }
 
@@ -886,7 +900,7 @@ namespace fairwindsk::ui::launcher {
 
             auto *tile = new AppTile(ui->scrollAreaWidgetContents);
             tile->setBasePointSize(tile->font().pointSizeF() + 1.0);
-            tile->setAppData(entry.id, entry.title, entry.description, entry.pixmap);
+            tile->setAppData(entry.id, entry.kind, entry.title, entry.description, entry.pixmap);
             const TileKind kind = entry.kind;
             tile->setActivateHandler([this, kind](const QString &hash) {
                 QTimer::singleShot(0, this, [this, kind, hash]() {
