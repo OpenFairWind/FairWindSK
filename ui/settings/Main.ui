@@ -20,12 +20,19 @@ QGroupBox {
 QLabel {
     color: rgb(245, 245, 245);
 }
-QLineEdit, QComboBox, QAbstractItemView, QScrollArea, QSpinBox {
+QLineEdit, QComboBox, QAbstractItemView, QScrollArea, TouchSpinBox {
     background-color: rgb(245, 245, 245);
     color: rgb(24, 24, 24);
     border: 1px solid rgb(120, 120, 120);
     selection-background-color: rgb(65, 107, 195);
     selection-color: rgb(255, 255, 255);
+}
+TouchSpinBox QPushButton {
+    background-color: rgb(245, 245, 245);
+    color: rgb(24, 24, 24);
+    border: 1px solid rgb(120, 120, 120);
+    min-width: 44px;
+    min-height: 44px;
 }</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_Root">
@@ -131,15 +138,15 @@ QLineEdit, QComboBox, QAbstractItemView, QScrollArea, QSpinBox {
            </widget>
           </item>
           <item row="3" column="1">
-           <widget class="QSpinBox" name="spinBox_launcherRows">
+           <widget class="fairwindsk::ui::widgets::TouchSpinBox" name="spinBox_launcherRows">
             <property name="minimum">
-             <number>1</number>
+             <double>1.000000000000000</double>
             </property>
             <property name="maximum">
-             <number>6</number>
+             <double>6.000000000000000</double>
             </property>
             <property name="value">
-             <number>2</number>
+             <double>2.000000000000000</double>
             </property>
             <property name="alignment">
              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -154,15 +161,15 @@ QLineEdit, QComboBox, QAbstractItemView, QScrollArea, QSpinBox {
            </widget>
           </item>
           <item row="4" column="1">
-           <widget class="QSpinBox" name="spinBox_launcherColumns">
+           <widget class="fairwindsk::ui::widgets::TouchSpinBox" name="spinBox_launcherColumns">
             <property name="minimum">
-             <number>1</number>
+             <double>1.000000000000000</double>
             </property>
             <property name="maximum">
-             <number>8</number>
+             <double>8.000000000000000</double>
             </property>
             <property name="value">
-             <number>3</number>
+             <double>3.000000000000000</double>
             </property>
             <property name="alignment">
              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -304,5 +311,12 @@ QLineEdit, QComboBox, QAbstractItemView, QScrollArea, QSpinBox {
   </layout>
  </widget>
  <resources/>
+ <customwidgets>
+  <customwidget>
+   <class>fairwindsk::ui::widgets::TouchSpinBox</class>
+   <extends>QWidget</extends>
+   <header>ui/widgets/TouchSpinBox.hpp</header>
+  </customwidget>
+ </customwidgets>
  <connections/>
 </ui>

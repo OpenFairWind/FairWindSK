@@ -6,12 +6,12 @@
 
 #include <QtWidgets/QComboBox>
 #include <QScreen>
-#include <QSpinBox>
 
 #include "Main.hpp"
 #include "ui_Main.h"
 #include "FairWindSK.hpp"
 #include "ui/GeoCoordinateUtils.hpp"
+#include "ui/widgets/TouchSpinBox.hpp"
 
 namespace fairwindsk::ui::settings {
     void Main::setWindowGeometryFieldsEnabled(const QString &windowMode) const {
@@ -108,8 +108,8 @@ namespace fairwindsk::ui::settings {
         connect(ui->lineEdit_width,&QLineEdit::textChanged,this, &Main::onWindowWidthTextChanged);
         connect(ui->lineEdit_height,&QLineEdit::textChanged,this, &Main::onWindowHeightTextChanged);
         connect(ui->comboBox_uiScalePreset, &QComboBox::currentIndexChanged, this, &Main::onUiScalePresetChanged);
-        connect(ui->spinBox_launcherRows, qOverload<int>(&QSpinBox::valueChanged), this, &Main::onLauncherRowsValueChanged);
-        connect(ui->spinBox_launcherColumns, qOverload<int>(&QSpinBox::valueChanged), this, &Main::onLauncherColumnsValueChanged);
+        connect(ui->spinBox_launcherRows, qOverload<int>(&fairwindsk::ui::widgets::TouchSpinBox::valueChanged), this, &Main::onLauncherRowsValueChanged);
+        connect(ui->spinBox_launcherColumns, qOverload<int>(&fairwindsk::ui::widgets::TouchSpinBox::valueChanged), this, &Main::onLauncherColumnsValueChanged);
         connect(ui->comboBox_coordinateFormat, &QComboBox::currentIndexChanged, this, &Main::onCoordinateFormatChanged);
 
     }
