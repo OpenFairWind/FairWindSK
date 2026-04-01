@@ -11,6 +11,7 @@
 #include "ui_Main.h"
 #include "FairWindSK.hpp"
 #include "ui/GeoCoordinateUtils.hpp"
+#include "ui/widgets/TouchCheckBox.hpp"
 #include "ui/widgets/TouchComboBox.hpp"
 #include "ui/widgets/TouchSpinBox.hpp"
 
@@ -82,10 +83,14 @@ namespace fairwindsk::ui::settings {
             ui->checkBox_virtualkeboard->setCheckState(Qt::Unchecked);
         }
 
-        connect(ui->checkBox_virtualkeboard, SIGNAL(stateChanged(int)),
-                this, SLOT(onVirtualKeyboardStateChanged(int)));
-        connect(ui->checkBox_autoUiScale, SIGNAL(stateChanged(int)),
-                this, SLOT(onUiScaleModeStateChanged(int)));
+        connect(ui->checkBox_virtualkeboard,
+                &fairwindsk::ui::widgets::TouchCheckBox::stateChanged,
+                this,
+                &Main::onVirtualKeyboardStateChanged);
+        connect(ui->checkBox_autoUiScale,
+                &fairwindsk::ui::widgets::TouchCheckBox::stateChanged,
+                this,
+                &Main::onUiScaleModeStateChanged);
 
         setWindowGeometryFieldsEnabled(windowMode);
 

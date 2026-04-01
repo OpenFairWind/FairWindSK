@@ -40,6 +40,13 @@ TouchComboBox QPushButton {
     border: 1px solid rgb(120, 120, 120);
     min-width: 44px;
     min-height: 44px;
+}
+TouchCheckBox QPushButton {
+    background-color: rgb(245, 245, 245);
+    color: rgb(24, 24, 24);
+    border: 1px solid rgb(120, 120, 120);
+    min-width: 44px;
+    min-height: 44px;
 }</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_Root">
@@ -131,7 +138,7 @@ TouchComboBox QPushButton {
            </widget>
           </item>
           <item row="2" column="1">
-           <widget class="QCheckBox" name="checkBox_autoUiScale">
+           <widget class="fairwindsk::ui::widgets::TouchCheckBox" name="checkBox_autoUiScale">
             <property name="text">
              <string/>
             </property>
@@ -302,7 +309,7 @@ TouchComboBox QPushButton {
            </widget>
           </item>
           <item row="0" column="1">
-           <widget class="QCheckBox" name="checkBox_virtualkeboard">
+           <widget class="fairwindsk::ui::widgets::TouchCheckBox" name="checkBox_virtualkeboard">
             <property name="text">
              <string/>
             </property>
@@ -323,6 +330,11 @@ TouchComboBox QPushButton {
    <class>fairwindsk::ui::widgets::TouchComboBox</class>
    <extends>QWidget</extends>
    <header>ui/widgets/TouchComboBox.hpp</header>
+  </customwidget>
+  <customwidget>
+   <class>fairwindsk::ui::widgets::TouchCheckBox</class>
+   <extends>QWidget</extends>
+   <header>ui/widgets/TouchCheckBox.hpp</header>
   </customwidget>
   <customwidget>
    <class>fairwindsk::ui::widgets::TouchSpinBox</class>
