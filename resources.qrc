@@ -26,6 +26,9 @@
         <file>resources/svg/OpenBridge/widget-add-google.svg</file>
         <file>resources/svg/OpenBridge/arrow-up-google.svg</file>
         <file>resources/svg/OpenBridge/arrow-down-google.svg</file>
+        <file>resources/svg/OpenBridge/combobox-open.svg</file>
+        <file>resources/svg/OpenBridge/spinbox-minus.svg</file>
+        <file>resources/svg/OpenBridge/spinbox-plus.svg</file>
         <file>resources/svg/OpenBridge/touch-checkbox-unchecked.svg</file>
         <file>resources/svg/OpenBridge/touch-checkbox-checked.svg</file>
         <file>resources/svg/OpenBridge/touch-checkbox-partial.svg</file>

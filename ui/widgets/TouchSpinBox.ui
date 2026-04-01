@@ -39,7 +39,7 @@
      </property>
      <property name="icon">
       <iconset resource="../../resources.qrc">
-       <normaloff>:/resources/svg/OpenBridge/unfold-less-google.svg</normaloff>:/resources/svg/OpenBridge/unfold-less-google.svg</iconset>
+       <normaloff>:/resources/svg/OpenBridge/spinbox-minus.svg</normaloff>:/resources/svg/OpenBridge/spinbox-minus.svg</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -75,7 +75,7 @@
      </property>
      <property name="icon">
       <iconset resource="../../resources.qrc">
-       <normaloff>:/resources/svg/OpenBridge/widget-add-google.svg</normaloff>:/resources/svg/OpenBridge/widget-add-google.svg</iconset>
+       <normaloff>:/resources/svg/OpenBridge/spinbox-plus.svg</normaloff>:/resources/svg/OpenBridge/spinbox-plus.svg</iconset>
      </property>
      <property name="iconSize">
       <size>

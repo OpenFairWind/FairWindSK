@@ -55,7 +55,7 @@
      </property>
      <property name="icon">
       <iconset resource="../../resources.qrc">
-       <normaloff>:/resources/svg/OpenBridge/arrow-down-google.svg</normaloff>:/resources/svg/OpenBridge/arrow-down-google.svg</iconset>
+       <normaloff>:/resources/svg/OpenBridge/combobox-open.svg</normaloff>:/resources/svg/OpenBridge/combobox-open.svg</iconset>
      </property>
      <property name="iconSize">
       <size>
