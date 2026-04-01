@@ -98,7 +98,7 @@
          <property name="childrenCollapsible">
           <bool>false</bool>
          </property>
-         <widget class="QScrollArea" name="scrollAreaDetailsForm">
+         <widget class="fairwindsk::ui::widgets::TouchScrollArea" name="scrollAreaDetailsForm">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -149,6 +149,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>fairwindsk::ui::widgets::TouchScrollArea</class>
+   <extends>QScrollArea</extends>
+   <header>ui/widgets/TouchScrollArea.hpp</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

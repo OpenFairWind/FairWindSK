@@ -35,7 +35,7 @@
     <number>0</number>
    </property>
    <item>
-    <widget class="QScrollArea" name="m_scrollArea">
+    <widget class="fairwindsk::ui::widgets::TouchScrollArea" name="m_scrollArea">
      <property name="styleSheet">
       <string notr="true">#m_scrollArea {
   margin: 2px;
@@ -99,6 +99,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>fairwindsk::ui::widgets::TouchScrollArea</class>
+   <extends>QScrollArea</extends>
+   <header>ui/widgets/TouchScrollArea.hpp</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

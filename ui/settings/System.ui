@@ -27,7 +27,7 @@
     <number>0</number>
    </property>
    <item>
-    <widget class="QScrollArea" name="scrollArea_System">
+    <widget class="fairwindsk::ui::widgets::TouchScrollArea" name="scrollArea_System">
      <property name="widgetResizable">
       <bool>true</bool>
      </property>
@@ -177,6 +177,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>fairwindsk::ui::widgets::TouchScrollArea</class>
+   <extends>QScrollArea</extends>
+   <header>ui/widgets/TouchScrollArea.hpp</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

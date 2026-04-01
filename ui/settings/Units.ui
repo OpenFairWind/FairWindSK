@@ -20,7 +20,7 @@ QGroupBox {
 QLabel {
     color: rgb(245, 245, 245);
 }
-QLineEdit, QAbstractItemView, QScrollArea, QSpinBox, QPushButton, TouchComboBox {
+QLineEdit, QAbstractItemView, QScrollArea, TouchScrollArea, QSpinBox, QPushButton, TouchComboBox {
     background-color: rgb(245, 245, 245);
     color: rgb(24, 24, 24);
     border: 1px solid rgb(120, 120, 120);
@@ -77,7 +77,7 @@ QLineEdit, QAbstractItemView, QScrollArea, QSpinBox, QPushButton, TouchComboBox 
     </widget>
    </item>
    <item>
-    <widget class="QScrollArea" name="scrollArea_Units">
+    <widget class="fairwindsk::ui::widgets::TouchScrollArea" name="scrollArea_Units">
      <property name="widgetResizable">
       <bool>true</bool>
      </property>
@@ -190,6 +190,18 @@ QLineEdit, QAbstractItemView, QScrollArea, QSpinBox, QPushButton, TouchComboBox 
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>fairwindsk::ui::widgets::TouchComboBox</class>
+   <extends>QWidget</extends>
+   <header>ui/widgets/TouchComboBox.hpp</header>
+  </customwidget>
+  <customwidget>
+   <class>fairwindsk::ui::widgets::TouchScrollArea</class>
+   <extends>QScrollArea</extends>
+   <header>ui/widgets/TouchScrollArea.hpp</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

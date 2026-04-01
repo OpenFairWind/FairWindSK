@@ -17,7 +17,7 @@
 QLabel {
     color: rgb(245, 245, 245);
 }
-QLineEdit, QAbstractItemView, QTextEdit, QScrollArea, TouchComboBox {
+QLineEdit, QAbstractItemView, QTextEdit, QScrollArea, TouchScrollArea, TouchComboBox {
     background-color: rgb(245, 245, 245);
     color: rgb(24, 24, 24);
     border: 1px solid rgb(120, 120, 120);
@@ -39,7 +39,7 @@ QLineEdit, QAbstractItemView, QTextEdit, QScrollArea, TouchComboBox {
     <number>0</number>
    </property>
    <item>
-    <widget class="QScrollArea" name="scrollArea_Connection">
+    <widget class="fairwindsk::ui::widgets::TouchScrollArea" name="scrollArea_Connection">
      <property name="widgetResizable">
       <bool>true</bool>
      </property>
@@ -223,6 +223,11 @@ QLineEdit, QAbstractItemView, QTextEdit, QScrollArea, TouchComboBox {
    <class>fairwindsk::ui::widgets::TouchComboBox</class>
    <extends>QWidget</extends>
    <header>ui/widgets/TouchComboBox.hpp</header>
+  </customwidget>
+  <customwidget>
+   <class>fairwindsk::ui::widgets::TouchScrollArea</class>
+   <extends>QScrollArea</extends>
+   <header>ui/widgets/TouchScrollArea.hpp</header>
   </customwidget>
   <customwidget>
    <class>QWebEngineView</class>

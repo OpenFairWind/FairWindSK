@@ -20,7 +20,6 @@
 #include <QMimeData>
 #include <QPainter>
 #include <QPainterPath>
-#include <QScrollArea>
 #include <QSignalBlocker>
 #include <QStyledItemDelegate>
 #include <QVBoxLayout>
@@ -31,6 +30,7 @@
 #include "AppDetailsWidget.hpp"
 #include "PageDetailsWidget.hpp"
 #include "ui/DrawerDialogHost.hpp"
+#include "ui/widgets/TouchScrollArea.hpp"
 #include "ui_AppDetailsWidget.h"
 #include "ui_Apps.h"
 #include "ui_PageDetailsWidget.h"
@@ -594,7 +594,7 @@ namespace fairwindsk::ui::settings {
         pageGridLayout->addWidget(m_pageGrid);
 
         m_appDetailsWidget = new AppDetailsWidget(this);
-        auto *appDetailsScrollArea = new QScrollArea(this);
+        auto *appDetailsScrollArea = new widgets::TouchScrollArea(this);
         appDetailsScrollArea->setWidgetResizable(true);
         appDetailsScrollArea->setFrameShape(QFrame::NoFrame);
         appDetailsScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -604,7 +604,7 @@ namespace fairwindsk::ui::settings {
         appDetailsLayout->addWidget(appDetailsScrollArea);
 
         m_pageDetailsWidget = new PageDetailsWidget(this);
-        auto *pageDetailsScrollArea = new QScrollArea(this);
+        auto *pageDetailsScrollArea = new widgets::TouchScrollArea(this);
         pageDetailsScrollArea->setWidgetResizable(true);
         pageDetailsScrollArea->setFrameShape(QFrame::NoFrame);
         pageDetailsScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);

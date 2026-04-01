@@ -154,7 +154,7 @@ color: rgb(65, 107, 195);</string>
           </widget>
          </item>
          <item>
-          <widget class="QScrollArea" name="scrollArea">
+          <widget class="fairwindsk::ui::widgets::TouchScrollArea" name="scrollArea">
            <property name="styleSheet">
             <string notr="true"/>
            </property>
@@ -404,5 +404,12 @@ border-bottom-color: rgb(83, 83, 84);</string>
  <resources>
   <include location="../../resources.qrc"/>
  </resources>
+ <customwidgets>
+  <customwidget>
+   <class>fairwindsk::ui::widgets::TouchScrollArea</class>
+   <extends>QScrollArea</extends>
+   <header>ui/widgets/TouchScrollArea.hpp</header>
+  </customwidget>
+ </customwidgets>
  <connections/>
 </ui>
