@@ -83,7 +83,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QComboBox" name="comboBox_currentPOB"/>
+            <widget class="fairwindsk::ui::widgets::TouchComboBox" name="comboBox_currentPOB"/>
            </item>
           </layout>
          </item>
@@ -267,6 +267,13 @@ border-bottom-color: rgb(83, 83, 84);</string>
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>fairwindsk::ui::widgets::TouchComboBox</class>
+   <extends>QWidget</extends>
+   <header>ui/widgets/TouchComboBox.hpp</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="../../resources.qrc"/>
  </resources>

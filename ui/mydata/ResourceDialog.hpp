@@ -12,7 +12,6 @@
 #include "ResourceModel.hpp"
 
 class QCheckBox;
-class QComboBox;
 class QDoubleSpinBox;
 class QLineEdit;
 class QPlainTextEdit;

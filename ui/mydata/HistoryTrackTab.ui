@@ -50,7 +50,7 @@
          <property name="spacing">
           <number>6</number>
          </property>
-         <item><widget class="QComboBox" name="comboBoxDuration"/></item>
+         <item><widget class="fairwindsk::ui::widgets::TouchComboBox" name="comboBoxDuration"/></item>
          <item><widget class="QToolButton" name="toolButtonRefresh"/></item>
          <item><widget class="QToolButton" name="toolButtonImport"/></item>
          <item><widget class="QToolButton" name="toolButtonExport"/></item>
@@ -133,6 +133,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>fairwindsk::ui::widgets::TouchComboBox</class>
+   <extends>QWidget</extends>
+   <header>ui/widgets/TouchComboBox.hpp</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

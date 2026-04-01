@@ -5,7 +5,6 @@
 #ifndef FAIRWINDSK_SETTINGS_UNITS_HPP
 #define FAIRWINDSK_SETTINGS_UNITS_HPP
 
-#include <QComboBox>
 #include <QLabel>
 #include <QMap>
 #include <QSet>
@@ -14,6 +13,7 @@
 #include "Settings.hpp"
 #include "../../Units.hpp"
 #include "../../signalk/Client.hpp"
+#include "../widgets/TouchComboBox.hpp"
 
 namespace fairwindsk::ui::settings {
     QT_BEGIN_NAMESPACE
@@ -36,7 +36,7 @@ namespace fairwindsk::ui::settings {
 
         struct UnitRowWidgets {
             QLabel *labelCategory = nullptr;
-            QComboBox *comboBoxUnit = nullptr;
+            fairwindsk::ui::widgets::TouchComboBox *comboBoxUnit = nullptr;
             QLabel *labelServerUnit = nullptr;
         };
 
@@ -44,7 +44,7 @@ namespace fairwindsk::ui::settings {
         void rebuildRows();
         void clearRows();
         void applyLocalOverride(const QString &category, const QString &serverTargetUnit, const QString &targetUnit);
-        int comboIndexForCategoryUnit(QComboBox *comboBox,
+        int comboIndexForCategoryUnit(fairwindsk::ui::widgets::TouchComboBox *comboBox,
                                       const fairwindsk::Units::UnitPreferenceItem &item,
                                       const QString &targetUnit,
                                       const QString &symbol) const;

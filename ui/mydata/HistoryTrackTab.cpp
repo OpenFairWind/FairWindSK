@@ -22,7 +22,6 @@
 #include <QTimer>
 #include <QToolButton>
 #include <QVBoxLayout>
-#include <QComboBox>
 #include <QSizePolicy>
 
 #include "GeoJsonPreviewWidget.hpp"
@@ -30,6 +29,7 @@
 #include "HistoryTrackModel.hpp"
 #include "JsonObjectEditorWidget.hpp"
 #include "ui/DrawerDialogHost.hpp"
+#include "ui/widgets/TouchComboBox.hpp"
 #include "ui_HistoryTrackTab.h"
 
 namespace {
@@ -77,7 +77,10 @@ namespace fairwindsk::ui::mydata {
         m_durationCombo->addItem(tr("Last 7 days"), "P7D");
         m_durationCombo->setMaximumHeight(28);
         m_durationCombo->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-        connect(m_durationCombo, qOverload<int>(&QComboBox::currentIndexChanged), this, &HistoryTrackTab::onDurationChanged);
+        connect(m_durationCombo,
+                qOverload<int>(&fairwindsk::ui::widgets::TouchComboBox::currentIndexChanged),
+                this,
+                &HistoryTrackTab::onDurationChanged);
 
         m_refreshButton->setIcon(QIcon(":/resources/svg/OpenBridge/refresh-google.svg"));
         m_refreshButton->setToolTip(tr("Refresh"));

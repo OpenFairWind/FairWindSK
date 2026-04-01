@@ -44,9 +44,6 @@ namespace {
         "QPlainTextEdit { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
     const QString kSpinBoxStyle = QStringLiteral(
         "QAbstractSpinBox { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
-    const QString kComboBoxStyle = QStringLiteral(
-        "QComboBox { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
-
     QJsonObject featureObject(const QJsonObject &resource) {
         return resource["feature"].toObject();
     }

@@ -17,7 +17,7 @@
   <property name="styleSheet">
    <string notr="true">background-color: rgb(26, 26, 26);
 color: rgb(255, 255, 255);
-QLineEdit, QComboBox, QListWidget, QAbstractItemView {
+QLineEdit, QListWidget, QAbstractItemView, TouchComboBox {
     background-color: rgb(24, 24, 24);
     color: rgb(255, 255, 255);
     border: 1px solid rgb(90, 90, 90);
@@ -31,7 +31,7 @@ QTextEdit, QPlainTextEdit {
     selection-background-color: rgb(65, 107, 195);
     selection-color: rgb(255, 255, 255);
 }
-QComboBox::drop-down {
+TouchComboBox QPushButton {
     border: 0px;
 }
 QTabWidget::pane {

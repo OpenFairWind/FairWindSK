@@ -18,6 +18,7 @@
 
 #include "FairWindSK.hpp"
 #include "ui/GeoCoordinateUtils.hpp"
+#include "ui/widgets/TouchComboBox.hpp"
 #include "ui_POBBar.h"
 
 namespace {
@@ -67,7 +68,10 @@ namespace fairwindsk::ui::bottombar {
         connect(ui->toolButton_Hide, &QToolButton::clicked, this, &POBBar::onHideClicked);
 
         // When the current POB has changed
-        connect(ui->comboBox_currentPOB, qOverload<int>(&QComboBox::currentIndexChanged), this, &POBBar::onCurrentIndexChanged);
+        connect(ui->comboBox_currentPOB,
+                qOverload<int>(&fairwindsk::ui::widgets::TouchComboBox::currentIndexChanged),
+                this,
+                &POBBar::onCurrentIndexChanged);
 
         // Not visible by default
         QWidget::setVisible(false);

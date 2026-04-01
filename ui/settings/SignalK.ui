@@ -11,7 +11,7 @@
   </rect>
  </property>
   <property name="styleSheet">
-   <string notr="true">QLineEdit, QComboBox, QAbstractItemView {
+   <string notr="true">QLineEdit, QAbstractItemView, TouchComboBox {
     background-color: rgb(245, 245, 245);
     color: rgb(24, 24, 24);
     border: 1px solid rgb(120, 120, 120);

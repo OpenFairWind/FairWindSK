@@ -2,7 +2,6 @@
 // Created by Codex on 27/03/26.
 //
 
-#include <QComboBox>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -178,7 +177,7 @@ namespace fairwindsk::ui::settings {
         return normalized;
     }
 
-    int Units::comboIndexForCategoryUnit(QComboBox *comboBox,
+    int Units::comboIndexForCategoryUnit(fairwindsk::ui::widgets::TouchComboBox *comboBox,
                                          const fairwindsk::Units::UnitPreferenceItem &item,
                                          const QString &targetUnit,
                                          const QString &symbol) const {
@@ -333,7 +332,7 @@ namespace fairwindsk::ui::settings {
         for (const auto &item : activeItems) {
             UnitRowWidgets rowWidgets;
             rowWidgets.labelCategory = new QLabel(displayLabelForCategory(item.category), this);
-            rowWidgets.comboBoxUnit = new QComboBox(this);
+            rowWidgets.comboBoxUnit = new fairwindsk::ui::widgets::TouchComboBox(this);
             rowWidgets.labelServerUnit = new QLabel(this);
 
             for (const auto &option : item.options) {
@@ -366,7 +365,7 @@ namespace fairwindsk::ui::settings {
             }
             rowWidgets.labelServerUnit->setText(serverUnitText);
 
-            connect(rowWidgets.comboBoxUnit, &QComboBox::currentIndexChanged, this,
+            connect(rowWidgets.comboBoxUnit, qOverload<int>(&fairwindsk::ui::widgets::TouchComboBox::currentIndexChanged), this,
                     [this, category = item.category, serverTargetUnit = presetTargetUnit.isEmpty() ? item.targetUnit : presetTargetUnit, comboBox = rowWidgets.comboBoxUnit](int) {
                         if (m_isUpdatingUi) {
                             return;

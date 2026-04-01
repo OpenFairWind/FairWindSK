@@ -1,6 +1,7 @@
 #include "GeoCoordinateEditorWidget.hpp"
 
 #include "GeoCoordinateUtils.hpp"
+#include "ui/widgets/TouchComboBox.hpp"
 #include "ui_GeoCoordinateEditorWidget.h"
 
 namespace fairwindsk::ui {
@@ -18,7 +19,7 @@ namespace fairwindsk::ui {
         ui->labelLongitude->setStyleSheet(QStringLiteral("QLabel { color: white; }"));
         ui->labelAltitude->setStyleSheet(QStringLiteral("QLabel { color: white; }"));
         ui->comboBoxFormat->setStyleSheet(
-            QStringLiteral("QComboBox { %1 } QComboBox QAbstractItemView { %1 }").arg(lightInputStyle));
+            QStringLiteral("TouchComboBox, TouchComboBox QListWidget { %1 }").arg(lightInputStyle));
         ui->lineEditLatitude->setStyleSheet(QStringLiteral("QLineEdit { %1 }").arg(lightInputStyle));
         ui->lineEditLongitude->setStyleSheet(QStringLiteral("QLineEdit { %1 }").arg(lightInputStyle));
         ui->lineEditAltitude->setStyleSheet(QStringLiteral("QLineEdit { %1 }").arg(lightInputStyle));
@@ -27,7 +28,10 @@ namespace fairwindsk::ui {
             ui->comboBoxFormat->addItem(option.label, option.id);
         }
 
-        connect(ui->comboBoxFormat, qOverload<int>(&QComboBox::currentIndexChanged), this, &GeoCoordinateEditorWidget::onFormatChanged);
+        connect(ui->comboBoxFormat,
+                qOverload<int>(&fairwindsk::ui::widgets::TouchComboBox::currentIndexChanged),
+                this,
+                &GeoCoordinateEditorWidget::onFormatChanged);
     }
 
     GeoCoordinateEditorWidget::~GeoCoordinateEditorWidget() {

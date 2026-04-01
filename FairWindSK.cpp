@@ -150,7 +150,7 @@ namespace fairwindsk {
         QString buildUiStyleSheet(const UiMetrics &metrics) {
             return QString(
                        "QWidget { font-size: %1pt; }"
-                       "QToolButton, QPushButton, QComboBox, QLineEdit, QTextEdit, QPlainTextEdit, "
+                       "QToolButton, QPushButton, TouchComboBox, QLineEdit, QTextEdit, QPlainTextEdit, "
                        "QSpinBox, QDoubleSpinBox, QDateTimeEdit { min-height: %2px; }"
                        "QToolButton, QPushButton {"
                        " background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #6b7280, stop:1 #4b5563);"

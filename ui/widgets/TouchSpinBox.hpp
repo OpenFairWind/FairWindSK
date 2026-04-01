@@ -8,11 +8,13 @@
 #include <QWidget>
 
 class QDoubleValidator;
-class QHBoxLayout;
 class QLineEdit;
-class QPushButton;
 
 namespace fairwindsk::ui::widgets {
+    QT_BEGIN_NAMESPACE
+    namespace Ui { class TouchSpinBox; }
+    QT_END_NAMESPACE
+
     class TouchSpinBox : public QWidget {
     Q_OBJECT
     Q_PROPERTY(double minimum READ minimum WRITE setMinimum)
@@ -24,6 +26,7 @@ namespace fairwindsk::ui::widgets {
 
     public:
         explicit TouchSpinBox(QWidget *parent = nullptr);
+        ~TouchSpinBox() override;
 
         double minimum() const;
         double maximum() const;
@@ -59,10 +62,8 @@ namespace fairwindsk::ui::widgets {
         double normalizedValue(double value) const;
         double parsedEditorValue(bool *ok = nullptr) const;
 
-        QHBoxLayout *m_layout = nullptr;
-        QPushButton *m_minusButton = nullptr;
+        Ui::TouchSpinBox *ui = nullptr;
         QLineEdit *m_editor = nullptr;
-        QPushButton *m_plusButton = nullptr;
         QDoubleValidator *m_validator = nullptr;
         double m_minimum = 0.0;
         double m_maximum = 99.0;

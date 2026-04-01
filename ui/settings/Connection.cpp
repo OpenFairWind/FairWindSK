@@ -15,6 +15,7 @@
 #include "Connection.hpp"
 #include "ui_Connection.h"
 #include "FairWindSK.hpp"
+#include "ui/widgets/TouchComboBox.hpp"
 
 namespace fairwindsk::ui::settings {
     namespace {
@@ -293,8 +294,14 @@ namespace fairwindsk::ui::settings {
         connect(ui->pushButton_readOnly, &QPushButton::clicked, this, &Connection::onReadOnly);
         connect(ui->pushButton_removeToken, &QPushButton::clicked, this, &Connection::onRemoveToken);
 
-        connect(ui->comboBox_signalkserverurl, &QComboBox::currentIndexChanged, this, &Connection::onUpdateSignalKServerUrl);
-        connect(ui->comboBox_signalkserverurl, &QComboBox::editTextChanged, this, &Connection::onUpdateSignalKServerUrl);
+        connect(ui->comboBox_signalkserverurl,
+                qOverload<int>(&fairwindsk::ui::widgets::TouchComboBox::currentIndexChanged),
+                this,
+                &Connection::onUpdateSignalKServerUrl);
+        connect(ui->comboBox_signalkserverurl,
+                &fairwindsk::ui::widgets::TouchComboBox::editTextChanged,
+                this,
+                &Connection::onUpdateSignalKServerUrl);
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         connect(&m_zeroConf, &QZeroConf::serviceAdded, this, &Connection::addService);

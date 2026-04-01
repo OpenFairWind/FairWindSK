@@ -6,52 +6,40 @@
 
 #include <QtMath>
 #include <QDoubleValidator>
-#include <QHBoxLayout>
 #include <QLineEdit>
-#include <QPushButton>
 #include <QSignalBlocker>
 
+#include "ui_TouchSpinBox.h"
+
 namespace fairwindsk::ui::widgets {
-    TouchSpinBox::TouchSpinBox(QWidget *parent) : QWidget(parent) {
-        m_layout = new QHBoxLayout(this);
-        m_layout->setContentsMargins(0, 0, 0, 0);
-        m_layout->setSpacing(4);
+    TouchSpinBox::TouchSpinBox(QWidget *parent)
+        : QWidget(parent),
+          ui(new Ui::TouchSpinBox) {
+        ui->setupUi(this);
 
-        m_minusButton = new QPushButton(this);
-        m_minusButton->setObjectName(QStringLiteral("pushButton_touchSpinBoxMinus"));
-        m_minusButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/unfold-less-google.svg")));
-        m_minusButton->setText(QStringLiteral("-"));
-        m_minusButton->setMinimumSize(44, 44);
-        m_minusButton->setIconSize(QSize(22, 22));
-
-        m_editor = new QLineEdit(this);
+        ui->pushButtonMinus->setObjectName(QStringLiteral("pushButton_touchSpinBoxMinus"));
+        ui->pushButtonPlus->setObjectName(QStringLiteral("pushButton_touchSpinBoxPlus"));
+        m_editor = ui->lineEditValue;
         m_editor->setObjectName(QStringLiteral("lineEdit_touchSpinBox"));
-        m_editor->setMinimumHeight(44);
         m_editor->setAlignment(m_alignment);
-
-        m_plusButton = new QPushButton(this);
-        m_plusButton->setObjectName(QStringLiteral("pushButton_touchSpinBoxPlus"));
-        m_plusButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/widget-add-google.svg")));
-        m_plusButton->setText(QStringLiteral("+"));
-        m_plusButton->setMinimumSize(44, 44);
-        m_plusButton->setIconSize(QSize(22, 22));
-
-        m_layout->addWidget(m_minusButton);
-        m_layout->addWidget(m_editor, 1);
-        m_layout->addWidget(m_plusButton);
 
         m_validator = new QDoubleValidator(this);
         m_validator->setNotation(QDoubleValidator::StandardNotation);
         m_editor->setValidator(m_validator);
 
-        connect(m_minusButton, &QPushButton::clicked, this, &TouchSpinBox::stepDown);
-        connect(m_plusButton, &QPushButton::clicked, this, &TouchSpinBox::stepUp);
+        connect(ui->pushButtonMinus, &QPushButton::clicked, this, &TouchSpinBox::stepDown);
+        connect(ui->pushButtonPlus, &QPushButton::clicked, this, &TouchSpinBox::stepUp);
         connect(m_editor, &QLineEdit::editingFinished, this, &TouchSpinBox::applyEditedValue);
 
         setRange(0.0, 99.0);
         setSingleStep(1.0);
         setDecimals(0);
         setValue(0.0);
+    }
+
+    TouchSpinBox::~TouchSpinBox() {
+        delete ui;
+        ui = nullptr;
     }
 
     double TouchSpinBox::minimum() const {
@@ -166,12 +154,12 @@ namespace fairwindsk::ui::widgets {
     }
 
     void TouchSpinBox::refreshButtonState() {
-        if (!m_minusButton || !m_plusButton) {
+        if (!ui || !ui->pushButtonMinus || !ui->pushButtonPlus) {
             return;
         }
 
-        m_minusButton->setEnabled(isEnabled() && (m_value > m_minimum || !qFuzzyCompare(m_value + 1.0, m_minimum + 1.0)));
-        m_plusButton->setEnabled(isEnabled() && (m_value < m_maximum || !qFuzzyCompare(m_value + 1.0, m_maximum + 1.0)));
+        ui->pushButtonMinus->setEnabled(isEnabled() && (m_value > m_minimum || !qFuzzyCompare(m_value + 1.0, m_minimum + 1.0)));
+        ui->pushButtonPlus->setEnabled(isEnabled() && (m_value < m_maximum || !qFuzzyCompare(m_value + 1.0, m_maximum + 1.0)));
     }
 
     void TouchSpinBox::refreshValidator() {

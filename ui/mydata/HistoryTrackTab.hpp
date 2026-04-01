@@ -9,13 +9,16 @@
 
 class QDateTimeEdit;
 class QLabel;
-class QComboBox;
 class QDoubleSpinBox;
 class QStackedWidget;
 class QTableWidget;
 class QToolButton;
 class QTimer;
 namespace Ui { class HistoryTrackTab; }
+
+namespace fairwindsk::ui::widgets {
+    class TouchComboBox;
+}
 
 namespace fairwindsk::ui::mydata {
 
@@ -74,7 +77,7 @@ namespace fairwindsk::ui::mydata {
         QLabel *m_statusLabel = nullptr;
         QLabel *m_titleLabel = nullptr;
         QLabel *m_indexValueLabel = nullptr;
-        QComboBox *m_durationCombo = nullptr;
+        fairwindsk::ui::widgets::TouchComboBox *m_durationCombo = nullptr;
         QTableWidget *m_tableWidget = nullptr;
         QToolButton *m_refreshButton = nullptr;
         QToolButton *m_importButton = nullptr;

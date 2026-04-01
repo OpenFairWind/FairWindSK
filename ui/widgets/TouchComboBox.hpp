@@ -9,17 +9,20 @@
 #include <QWidget>
 
 class QFrame;
-class QHBoxLayout;
 class QLineEdit;
 class QListWidget;
 class QListWidgetItem;
-class QPushButton;
 
 namespace fairwindsk::ui::widgets {
+    QT_BEGIN_NAMESPACE
+    namespace Ui { class TouchComboBox; }
+    QT_END_NAMESPACE
+
     class TouchComboBox : public QWidget {
     Q_OBJECT
     Q_PROPERTY(int currentIndex READ currentIndex WRITE setCurrentIndex)
-    Q_PROPERTY(QString currentText READ currentText)
+    Q_PROPERTY(QString currentText READ currentText WRITE setCurrentText)
+    Q_PROPERTY(bool editable READ isEditable WRITE setEditable)
 
     public:
         explicit TouchComboBox(QWidget *parent = nullptr);
@@ -31,17 +34,23 @@ namespace fairwindsk::ui::widgets {
         int currentIndex() const;
         QString currentText() const;
         QVariant currentData(int role = Qt::UserRole) const;
+        QVariant itemData(int index, int role = Qt::UserRole) const;
         int findData(const QVariant &data, int role = Qt::UserRole) const;
         int findText(const QString &text, Qt::MatchFlags flags = Qt::MatchExactly | Qt::MatchCaseSensitive) const;
+        bool isEditable() const;
 
     public slots:
         void setCurrentIndex(int index);
+        void setCurrentText(const QString &text);
+        void setEditable(bool editable);
         void setEnabled(bool enabled);
+        void removeItem(int index);
 
     signals:
         void currentIndexChanged(int index);
         void currentTextChanged(const QString &text);
         void activated(int index);
+        void editTextChanged(const QString &text);
 
     protected:
         bool eventFilter(QObject *watched, QEvent *event) override;
@@ -54,13 +63,15 @@ namespace fairwindsk::ui::widgets {
     private:
         void updateDisplay();
         void positionPopup();
+        void ensureCurrentItemVisible() const;
+        int popupHeightForItems() const;
 
-        QHBoxLayout *m_layout = nullptr;
+        Ui::TouchComboBox *ui = nullptr;
         QLineEdit *m_editor = nullptr;
-        QPushButton *m_button = nullptr;
         QFrame *m_popup = nullptr;
         QListWidget *m_listWidget = nullptr;
         int m_currentIndex = -1;
+        bool m_editable = false;
     };
 }
 
