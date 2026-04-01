@@ -16,6 +16,36 @@
 #include "ui_TouchComboBox.h"
 
 namespace fairwindsk::ui::widgets {
+    namespace {
+        const QString kTouchButtonStyle = QStringLiteral(
+            "QPushButton {"
+            " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
+            " stop:0 #fcfcfd, stop:0.45 #eef2f7, stop:1 #d7dde6);"
+            " border: 1px solid #7b8794;"
+            " border-top-color: #aeb8c4;"
+            " border-bottom-color: #5d6875;"
+            " border-radius: 8px;"
+            " padding: 4px;"
+            " }"
+            "QPushButton:hover {"
+            " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
+            " stop:0 #ffffff, stop:0.45 #f4f7fb, stop:1 #dfe5ee);"
+            " }"
+            "QPushButton:pressed, QPushButton:checked {"
+            " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
+            " stop:0 #c8d1dc, stop:0.5 #e3e8ef, stop:1 #f7f9fb);"
+            " border-top-color: #596473;"
+            " border-bottom-color: #a9b3bf;"
+            " padding-top: 5px;"
+            " padding-bottom: 3px;"
+            " }"
+            "QPushButton:disabled {"
+            " background: #d9dde3;"
+            " color: #9aa3ad;"
+            " border-color: #aab3bc;"
+            " }");
+    }
+
     TouchComboBox::TouchComboBox(QWidget *parent)
         : QWidget(parent),
           ui(new Ui::TouchComboBox) {
@@ -26,6 +56,7 @@ namespace fairwindsk::ui::widgets {
         m_editor->installEventFilter(this);
 
         ui->pushButtonPopup->setObjectName(QStringLiteral("pushButton_touchComboBox"));
+        ui->pushButtonPopup->setStyleSheet(kTouchButtonStyle);
 
         m_popup = new QFrame(nullptr, Qt::Popup | Qt::FramelessWindowHint);
         m_popup->setObjectName(QStringLiteral("frame_touchComboPopup"));
