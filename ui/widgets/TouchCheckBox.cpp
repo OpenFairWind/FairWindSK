@@ -47,7 +47,7 @@ namespace fairwindsk::ui::widgets {
 
         ui->pushButtonToggle->setObjectName(QStringLiteral("pushButton_touchCheckBox"));
         ui->pushButtonToggle->setCheckable(true);
-        ui->pushButtonToggle->setMinimumHeight(44);
+        ui->pushButtonToggle->setFixedSize(44, 44);
         ui->pushButtonToggle->setStyleSheet(kTouchToggleStyle);
         ui->pushButtonToggle->installEventFilter(this);
 
