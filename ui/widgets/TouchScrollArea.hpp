@@ -28,8 +28,6 @@ namespace fairwindsk::ui::widgets {
         void applyButtonStyle(QPushButton *button) const;
         void connectScrollBar(QScrollBar *scrollBar);
         void updateScrollControls();
-        int verticalControlExtent() const;
-        int horizontalControlExtent() const;
 
         QPointer<QPushButton> m_verticalUpButton;
         QPointer<QPushButton> m_verticalDownButton;

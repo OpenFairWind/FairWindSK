@@ -203,24 +203,6 @@ namespace fairwindsk::ui::widgets {
         updateScrollControls();
     }
 
-    int TouchScrollArea::verticalControlExtent() const {
-        if (!verticalScrollBar()) {
-            return 44;
-        }
-
-        const int extent = verticalScrollBar()->sizeHint().width();
-        return std::max(22, extent);
-    }
-
-    int TouchScrollArea::horizontalControlExtent() const {
-        if (!horizontalScrollBar()) {
-            return 44;
-        }
-
-        const int extent = horizontalScrollBar()->sizeHint().height();
-        return std::max(22, extent);
-    }
-
     void TouchScrollArea::updateScrollControls() {
         auto *vBar = verticalScrollBar();
         auto *hBar = horizontalScrollBar();
@@ -234,8 +216,8 @@ namespace fairwindsk::ui::widgets {
         const QRect vRect = vBar->geometry();
         const QRect hRect = hBar->geometry();
 
-        const int vExtent = verticalControlExtent();
-        const int hExtent = horizontalControlExtent();
+        const int vExtent = std::max(22, vRect.width());
+        const int hExtent = std::max(22, hRect.height());
 
         const QSize verticalIconSize(std::max(12, vExtent / 2), std::max(12, vExtent / 2));
         const QSize horizontalIconSize(std::max(12, hExtent / 2), std::max(12, hExtent / 2));
@@ -251,9 +233,8 @@ namespace fairwindsk::ui::widgets {
         m_horizontalRightButton->setIconSize(horizontalIconSize);
 
         if (showVertical) {
-            const int x = vRect.x() + (vRect.width() - vExtent) / 2;
-            m_verticalUpButton->setGeometry(x, vRect.top() - 1, vExtent, vExtent);
-            m_verticalDownButton->setGeometry(x, vRect.bottom() - vExtent + 1, vExtent, vExtent);
+            m_verticalUpButton->setGeometry(vRect.x(), vRect.top() - 1, vRect.width(), vExtent);
+            m_verticalDownButton->setGeometry(vRect.x(), vRect.bottom() - vExtent + 1, vRect.width(), vExtent);
             m_verticalUpButton->show();
             m_verticalDownButton->show();
             m_verticalUpButton->raise();
@@ -264,9 +245,8 @@ namespace fairwindsk::ui::widgets {
         }
 
         if (showHorizontal) {
-            const int y = hRect.y() + (hRect.height() - hExtent) / 2;
-            m_horizontalLeftButton->setGeometry(hRect.left() - 1, y, hExtent, hExtent);
-            m_horizontalRightButton->setGeometry(hRect.right() - hExtent + 1, y, hExtent, hExtent);
+            m_horizontalLeftButton->setGeometry(hRect.left() - 1, hRect.y(), hExtent, hRect.height());
+            m_horizontalRightButton->setGeometry(hRect.right() - hExtent + 1, hRect.y(), hExtent, hRect.height());
             m_horizontalLeftButton->show();
             m_horizontalRightButton->show();
             m_horizontalLeftButton->raise();
@@ -278,14 +258,14 @@ namespace fairwindsk::ui::widgets {
 
         if (showVertical && showHorizontal) {
             const QRect cornerRect(vRect.left(), hRect.top(), vRect.width(), hRect.height());
-            m_verticalDownButton->setGeometry(cornerRect.x() + (cornerRect.width() - vExtent) / 2,
+            m_verticalDownButton->setGeometry(cornerRect.x(),
                                               vRect.bottom() - vExtent + 1,
-                                              vExtent,
+                                              cornerRect.width(),
                                               vExtent);
             m_horizontalRightButton->setGeometry(hRect.right() - hExtent + 1,
-                                                 cornerRect.y() + (cornerRect.height() - hExtent) / 2,
+                                                 cornerRect.y(),
                                                  hExtent,
-                                                 hExtent);
+                                                 cornerRect.height());
         }
     }
 }
