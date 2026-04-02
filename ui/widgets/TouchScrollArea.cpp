@@ -16,6 +16,10 @@
 
 namespace fairwindsk::ui::widgets {
     namespace {
+        constexpr int kTouchScrollControlSize = 44;
+        constexpr int kTouchScrollControlSpacing = 4;
+        constexpr int kTouchScrollReservedExtent = kTouchScrollControlSize + kTouchScrollControlSpacing;
+
         const QString kTouchScrollButtonStyle = QStringLiteral(
             "QPushButton {"
             " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
@@ -51,18 +55,18 @@ namespace fairwindsk::ui::widgets {
             " }"
             "QScrollBar:vertical {"
             " background: #d7dde6;"
-            " width: 22px;"
-            " margin: 26px 4px 26px 0px;"
-            " border-radius: 10px;"
+            " width: 44px;"
+            " margin: 48px 4px 48px 0px;"
+            " border-radius: 12px;"
             " }"
             "QScrollBar::handle:vertical {"
             " background: qlineargradient(x1:0, y1:0, x2:1, y2:0,"
             " stop:0 #fdfefe, stop:0.35 #eef2f7, stop:1 #bac4cf);"
-            " min-height: 36px;"
+            " min-height: 44px;"
             " border: 1px solid #7b8794;"
             " border-top-color: #aeb8c4;"
             " border-bottom-color: #5d6875;"
-            " border-radius: 9px;"
+            " border-radius: 12px;"
             " }"
             "QScrollBar::handle:vertical:hover {"
             " background: qlineargradient(x1:0, y1:0, x2:1, y2:0,"
@@ -74,18 +78,18 @@ namespace fairwindsk::ui::widgets {
             " }"
             "QScrollBar:horizontal {"
             " background: #d7dde6;"
-            " height: 22px;"
-            " margin: 0px 26px 4px 26px;"
-            " border-radius: 10px;"
+            " height: 44px;"
+            " margin: 0px 48px 4px 48px;"
+            " border-radius: 12px;"
             " }"
             "QScrollBar::handle:horizontal {"
             " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
             " stop:0 #fdfefe, stop:0.35 #eef2f7, stop:1 #bac4cf);"
-            " min-width: 36px;"
+            " min-width: 44px;"
             " border: 1px solid #7b8794;"
             " border-top-color: #aeb8c4;"
             " border-bottom-color: #5d6875;"
-            " border-radius: 9px;"
+            " border-radius: 12px;"
             " }"
             "QScrollBar::handle:horizontal:hover {"
             " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
@@ -166,6 +170,7 @@ namespace fairwindsk::ui::widgets {
         button->setAutoRepeat(true);
         button->setAutoRepeatDelay(250);
         button->setAutoRepeatInterval(60);
+        button->setMinimumSize(kTouchScrollControlSize, kTouchScrollControlSize);
         button->hide();
     }
 
@@ -216,11 +221,11 @@ namespace fairwindsk::ui::widgets {
         const QRect vRect = vBar->geometry();
         const QRect hRect = hBar->geometry();
 
-        const int vExtent = std::max(22, vRect.width());
-        const int hExtent = std::max(22, hRect.height());
+        const int vExtent = showVertical ? std::max(kTouchScrollControlSize, vRect.width()) : kTouchScrollControlSize;
+        const int hExtent = showHorizontal ? std::max(kTouchScrollControlSize, hRect.height()) : kTouchScrollControlSize;
 
-        const QSize verticalIconSize(std::max(12, vExtent / 2), std::max(12, vExtent / 2));
-        const QSize horizontalIconSize(std::max(12, hExtent / 2), std::max(12, hExtent / 2));
+        const QSize verticalIconSize(vExtent / 2, vExtent / 2);
+        const QSize horizontalIconSize(hExtent / 2, hExtent / 2);
 
         m_verticalUpButton->setFixedSize(vExtent, vExtent);
         m_verticalDownButton->setFixedSize(vExtent, vExtent);
@@ -233,8 +238,8 @@ namespace fairwindsk::ui::widgets {
         m_horizontalRightButton->setIconSize(horizontalIconSize);
 
         if (showVertical) {
-            m_verticalUpButton->setGeometry(vRect.x(), vRect.top() - 1, vRect.width(), vExtent);
-            m_verticalDownButton->setGeometry(vRect.x(), vRect.bottom() - vExtent + 1, vRect.width(), vExtent);
+            m_verticalUpButton->setGeometry(vRect.x(), vRect.top() - kTouchScrollReservedExtent, vRect.width(), vExtent);
+            m_verticalDownButton->setGeometry(vRect.x(), vRect.bottom() + kTouchScrollControlSpacing, vRect.width(), vExtent);
             m_verticalUpButton->show();
             m_verticalDownButton->show();
             m_verticalUpButton->raise();
@@ -245,8 +250,8 @@ namespace fairwindsk::ui::widgets {
         }
 
         if (showHorizontal) {
-            m_horizontalLeftButton->setGeometry(hRect.left() - 1, hRect.y(), hExtent, hRect.height());
-            m_horizontalRightButton->setGeometry(hRect.right() - hExtent + 1, hRect.y(), hExtent, hRect.height());
+            m_horizontalLeftButton->setGeometry(hRect.left() - kTouchScrollReservedExtent, hRect.y(), hExtent, hRect.height());
+            m_horizontalRightButton->setGeometry(hRect.right() + kTouchScrollControlSpacing, hRect.y(), hExtent, hRect.height());
             m_horizontalLeftButton->show();
             m_horizontalRightButton->show();
             m_horizontalLeftButton->raise();
@@ -259,10 +264,10 @@ namespace fairwindsk::ui::widgets {
         if (showVertical && showHorizontal) {
             const QRect cornerRect(vRect.left(), hRect.top(), vRect.width(), hRect.height());
             m_verticalDownButton->setGeometry(cornerRect.x(),
-                                              vRect.bottom() - vExtent + 1,
+                                              vRect.bottom() + kTouchScrollControlSpacing,
                                               cornerRect.width(),
                                               vExtent);
-            m_horizontalRightButton->setGeometry(hRect.right() - hExtent + 1,
+            m_horizontalRightButton->setGeometry(hRect.right() + kTouchScrollControlSpacing,
                                                  cornerRect.y(),
                                                  hExtent,
                                                  cornerRect.height());
