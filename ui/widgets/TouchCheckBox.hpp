@@ -5,9 +5,12 @@
 #ifndef FAIRWINDSK_TOUCHCHECKBOX_HPP
 #define FAIRWINDSK_TOUCHCHECKBOX_HPP
 
-#include <QCheckBox>
+#include <QString>
+#include <QSize>
+#include <Qt>
 #include <QWidget>
 
+class QEvent;
 class QPushButton;
 
 namespace fairwindsk::ui::widgets {

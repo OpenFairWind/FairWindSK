@@ -7,6 +7,7 @@
 #include <QPluginLoader>
 #include <QDir>
 #include <QCoreApplication>
+#include <QEventLoop>
 #include <QSettings>
 #include <QScreen>
 #include <QToolButton>
@@ -557,8 +558,8 @@ namespace fairwindsk {
                     break;
                 }
 
-                // Process the events
-                QApplication::processEvents();
+                // Keep progress responsive without letting user input re-enter the startup flow.
+                QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
 
                 // Increase the number of retry
                 count++;

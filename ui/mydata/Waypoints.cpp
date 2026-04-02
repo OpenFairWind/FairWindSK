@@ -8,6 +8,8 @@
 #include <cmath>
 #include <QBrush>
 #include <QColor>
+#include <QCoreApplication>
+#include <QEventLoop>
 #include <QFile>
 #include <QFormLayout>
 #include <QHeaderView>
@@ -74,6 +76,10 @@ namespace {
         " }"
         "QToolButton:hover { background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ffffff, stop:1 #e5e7eb); }"
         "QToolButton:pressed { background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #cbd5e1, stop:1 #94a3b8); padding-top: 5px; padding-bottom: 3px; }");
+
+    void processWaypointUiEvents() {
+        QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+    }
 
     QJsonObject featureObject(const QJsonObject &resource) {
         return resource["feature"].toObject();
@@ -991,7 +997,7 @@ namespace fairwindsk::ui::mydata {
                 ++importedCount;
             }
             m_progressBar->setValue(index + 1);
-            QApplication::processEvents();
+            processWaypointUiEvents();
         }
         setBusy(false);
 
@@ -1040,7 +1046,7 @@ namespace fairwindsk::ui::mydata {
                 }
             }
             m_progressBar->setValue(index + 1);
-            QApplication::processEvents();
+            processWaypointUiEvents();
         }
 
         file.write(exportResourcesAsGeoJson(ResourceKind::Waypoint, resources).toJson(QJsonDocument::Indented));
@@ -1158,7 +1164,7 @@ namespace fairwindsk::ui::mydata {
                 ++removed;
             }
             m_progressBar->setValue(index + 1);
-            QApplication::processEvents();
+            processWaypointUiEvents();
         }
         setBusy(false);
         rebuildTable();
