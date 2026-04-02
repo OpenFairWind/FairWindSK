@@ -9,6 +9,8 @@
 #include <QToolButton>
 #include <QAbstractButton>
 #include <QFrame>
+#include <QScroller>
+#include <QScrollerProperties>
 #include <QVBoxLayout>
 #include "BottomBar.hpp"
 
@@ -42,6 +44,15 @@ namespace fairwindsk::ui::bottombar {
         ui->scrollArea_Port->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         ui->scrollArea_Port->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         ui->scrollArea_Port->setStyleSheet(QStringLiteral("QScrollArea { border: none; background: transparent; }"));
+        ui->scrollArea_Port->viewport()->setAttribute(Qt::WA_AcceptTouchEvents, true);
+        QScroller::grabGesture(ui->scrollArea_Port->viewport(), QScroller::TouchGesture);
+        QScroller::grabGesture(ui->scrollArea_Port->viewport(), QScroller::LeftMouseButtonGesture);
+        auto scrollerProperties = QScroller::scroller(ui->scrollArea_Port->viewport())->scrollerProperties();
+        scrollerProperties.setScrollMetric(QScrollerProperties::HorizontalOvershootPolicy, QScrollerProperties::OvershootAlwaysOff);
+        scrollerProperties.setScrollMetric(QScrollerProperties::VerticalOvershootPolicy, QScrollerProperties::OvershootAlwaysOff);
+        scrollerProperties.setScrollMetric(QScrollerProperties::AxisLockThreshold, 0.25);
+        scrollerProperties.setScrollMetric(QScrollerProperties::DragStartDistance, 0.005);
+        QScroller::scroller(ui->scrollArea_Port->viewport())->setScrollerProperties(scrollerProperties);
         ui->toolButton_MyData->setStyleSheet(kChromeToolButtonStyle);
         ui->toolButton_MyData->setAutoRaise(true);
         ui->toolButton_POB->setStyleSheet(kChromeToolButtonStyle);
