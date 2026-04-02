@@ -191,21 +191,39 @@ namespace fairwindsk::ui::widgets {
     }
 
     void TouchScrollArea::applyTouchStyle() {
+        if (m_isApplyingStyle) {
+            return;
+        }
+
+        m_isApplyingStyle = true;
         const QPalette activePalette = palette();
-        setStyleSheet(touchScrollAreaStyle(activePalette));
+        const QString scrollAreaStyle = touchScrollAreaStyle(activePalette);
+        if (styleSheet() != scrollAreaStyle) {
+            setStyleSheet(scrollAreaStyle);
+        }
+
         const QString buttonStyle = touchScrollButtonStyle(activePalette);
         if (m_verticalUpButton) {
-            m_verticalUpButton->setStyleSheet(buttonStyle);
+            if (m_verticalUpButton->styleSheet() != buttonStyle) {
+                m_verticalUpButton->setStyleSheet(buttonStyle);
+            }
         }
         if (m_verticalDownButton) {
-            m_verticalDownButton->setStyleSheet(buttonStyle);
+            if (m_verticalDownButton->styleSheet() != buttonStyle) {
+                m_verticalDownButton->setStyleSheet(buttonStyle);
+            }
         }
         if (m_horizontalLeftButton) {
-            m_horizontalLeftButton->setStyleSheet(buttonStyle);
+            if (m_horizontalLeftButton->styleSheet() != buttonStyle) {
+                m_horizontalLeftButton->setStyleSheet(buttonStyle);
+            }
         }
         if (m_horizontalRightButton) {
-            m_horizontalRightButton->setStyleSheet(buttonStyle);
+            if (m_horizontalRightButton->styleSheet() != buttonStyle) {
+                m_horizontalRightButton->setStyleSheet(buttonStyle);
+            }
         }
+        m_isApplyingStyle = false;
     }
 
     QPushButton *TouchScrollArea::createScrollButton(QScrollBar *parentScrollBar, const QString &iconPath) const {

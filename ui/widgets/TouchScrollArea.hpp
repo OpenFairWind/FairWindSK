@@ -36,6 +36,7 @@ namespace fairwindsk::ui::widgets {
         QPointer<QPushButton> m_verticalDownButton;
         QPointer<QPushButton> m_horizontalLeftButton;
         QPointer<QPushButton> m_horizontalRightButton;
+        bool m_isApplyingStyle = false;
     };
 }
 
