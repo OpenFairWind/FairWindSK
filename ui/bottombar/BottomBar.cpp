@@ -8,6 +8,7 @@
 #include <QGeoCoordinate>
 #include <QToolButton>
 #include <QAbstractButton>
+#include <QEasingCurve>
 #include <QFrame>
 #include <QScroller>
 #include <QScrollerProperties>
@@ -18,12 +19,16 @@
 
 namespace fairwindsk::ui::bottombar {
     namespace {
+        constexpr int kBottomBarIconSize = 56;
+        constexpr int kBottomBarButtonHeight = 78;
+        constexpr int kPortAreaHeight = 72;
+
         const QString kChromeToolButtonStyle = QStringLiteral(
             "QToolButton {"
             " background: transparent;"
             " color: #f9fafb;"
             " border: none;"
-            " padding: 6px;"
+            " padding: 2px 4px;"
             " }"
             "QToolButton:hover { background: rgba(255, 255, 255, 0.08); border-radius: 8px; }"
             "QToolButton:pressed { background: rgba(255, 255, 255, 0.14); border-radius: 8px; }");
@@ -36,14 +41,18 @@ namespace fairwindsk::ui::bottombar {
             QWidget(parent),
             ui(new Ui::BottomBar) {
 
-        m_iconSize = 64;
+        m_iconSize = kBottomBarIconSize;
 
         // Set the UI
         ui->setupUi(this);
+        setMaximumHeight(84);
+        setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+        ui->scrollArea_Port->setBorderless(true);
         ui->scrollArea_Port->setFrameShape(QFrame::NoFrame);
         ui->scrollArea_Port->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         ui->scrollArea_Port->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        ui->scrollArea_Port->setStyleSheet(QStringLiteral("QScrollArea { border: none; background: transparent; }"));
+        ui->scrollArea_Port->setFixedHeight(kPortAreaHeight);
+        ui->scrollArea_Port->viewport()->setAutoFillBackground(false);
         ui->scrollArea_Port->viewport()->setAttribute(Qt::WA_AcceptTouchEvents, true);
         QScroller::grabGesture(ui->scrollArea_Port->viewport(), QScroller::TouchGesture);
         QScroller::grabGesture(ui->scrollArea_Port->viewport(), QScroller::LeftMouseButtonGesture);
@@ -52,21 +61,30 @@ namespace fairwindsk::ui::bottombar {
         scrollerProperties.setScrollMetric(QScrollerProperties::VerticalOvershootPolicy, QScrollerProperties::OvershootAlwaysOff);
         scrollerProperties.setScrollMetric(QScrollerProperties::AxisLockThreshold, 0.25);
         scrollerProperties.setScrollMetric(QScrollerProperties::DragStartDistance, 0.005);
+        scrollerProperties.setScrollMetric(QScrollerProperties::MaximumVelocity, 0.55);
+        scrollerProperties.setScrollMetric(QScrollerProperties::ScrollingCurve, QEasingCurve(QEasingCurve::OutCubic));
         QScroller::scroller(ui->scrollArea_Port->viewport())->setScrollerProperties(scrollerProperties);
-        ui->toolButton_MyData->setStyleSheet(kChromeToolButtonStyle);
-        ui->toolButton_MyData->setAutoRaise(true);
-        ui->toolButton_POB->setStyleSheet(kChromeToolButtonStyle);
-        ui->toolButton_POB->setAutoRaise(true);
-        ui->toolButton_Autopilot->setStyleSheet(kChromeToolButtonStyle);
-        ui->toolButton_Autopilot->setAutoRaise(true);
-        ui->toolButton_Apps->setStyleSheet(kChromeToolButtonStyle);
-        ui->toolButton_Apps->setAutoRaise(true);
-        ui->toolButton_Anchor->setStyleSheet(kChromeToolButtonStyle);
-        ui->toolButton_Anchor->setAutoRaise(true);
-        ui->toolButton_Alarms->setStyleSheet(kChromeToolButtonStyle);
-        ui->toolButton_Alarms->setAutoRaise(true);
-        ui->toolButton_Settings->setStyleSheet(kChromeToolButtonStyle);
-        ui->toolButton_Settings->setAutoRaise(true);
+
+        const QList<QToolButton *> navigationButtons = {
+            ui->toolButton_MyData,
+            ui->toolButton_POB,
+            ui->toolButton_Autopilot,
+            ui->toolButton_Apps,
+            ui->toolButton_Anchor,
+            ui->toolButton_Alarms,
+            ui->toolButton_Settings
+        };
+        for (auto *button : navigationButtons) {
+            if (!button) {
+                continue;
+            }
+
+            button->setStyleSheet(kChromeToolButtonStyle);
+            button->setAutoRaise(true);
+            button->setIconSize(QSize(m_iconSize, m_iconSize));
+            button->setMinimumHeight(kBottomBarButtonHeight);
+            button->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+        }
 
         // Create the POB bar
         m_POBBar = new POBBar(this);
@@ -81,6 +99,7 @@ namespace fairwindsk::ui::bottombar {
         m_AlarmsBar = new AlarmsBar(this);
 
         m_signalKServerBox = new widgets::SignalKServerBox(this);
+        m_signalKServerBox->setMaximumHeight(kBottomBarButtonHeight);
         auto *starboardLayout = new QVBoxLayout(ui->widget_Starboard);
         starboardLayout->setContentsMargins(0, 0, 0, 0);
         starboardLayout->setSpacing(0);

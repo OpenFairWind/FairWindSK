@@ -16,12 +16,15 @@ class QScrollBar;
 namespace fairwindsk::ui::widgets {
     class TouchScrollArea : public QScrollArea {
         Q_OBJECT
+        Q_PROPERTY(bool borderless READ isBorderless WRITE setBorderless)
 
     public:
         explicit TouchScrollArea(QWidget *parent = nullptr);
         ~TouchScrollArea() override = default;
         static int controlExtent();
         static QString scrollBarStyleSheet();
+        bool isBorderless() const;
+        void setBorderless(bool borderless);
 
     private:
         bool event(QEvent *event) override;
@@ -37,6 +40,7 @@ namespace fairwindsk::ui::widgets {
         QPointer<QPushButton> m_horizontalLeftButton;
         QPointer<QPushButton> m_horizontalRightButton;
         bool m_isApplyingStyle = false;
+        bool m_borderless = false;
     };
 }
 

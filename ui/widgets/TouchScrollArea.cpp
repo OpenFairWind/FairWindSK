@@ -131,15 +131,26 @@ namespace fairwindsk::ui::widgets {
                      handle.darker(115).name(), handle.lighter(120).name());
         }
 
-        QString touchScrollAreaStyle(const QPalette &palette) {
-            return QStringLiteral(
-                "QScrollArea {"
-                " border: 1px solid %1;"
-                " border-radius: 8px;"
-                " background: %2;"
-                " }")
-                .arg(palette.color(QPalette::Mid).name(), palette.color(QPalette::Base).name())
-                + touchScrollBarStyle(palette);
+        QString touchScrollAreaStyle(const QPalette &palette, const bool borderless) {
+            const QString areaStyle = borderless
+                ? QStringLiteral(
+                    "QScrollArea {"
+                    " border: none;"
+                    " border-radius: 0px;"
+                    " background: transparent;"
+                    " }"
+                    "QScrollArea > QWidget > QWidget {"
+                    " background: transparent;"
+                    " }")
+                : QStringLiteral(
+                    "QScrollArea {"
+                    " border: 1px solid %1;"
+                    " border-radius: 8px;"
+                    " background: %2;"
+                    " }")
+                    .arg(palette.color(QPalette::Mid).name(), palette.color(QPalette::Base).name());
+
+            return areaStyle + touchScrollBarStyle(palette);
         }
     }
 
@@ -149,6 +160,19 @@ namespace fairwindsk::ui::widgets {
 
     QString TouchScrollArea::scrollBarStyleSheet() {
         return touchScrollBarStyle(QApplication::palette());
+    }
+
+    bool TouchScrollArea::isBorderless() const {
+        return m_borderless;
+    }
+
+    void TouchScrollArea::setBorderless(const bool borderless) {
+        if (m_borderless == borderless) {
+            return;
+        }
+
+        m_borderless = borderless;
+        applyTouchStyle();
     }
 
     TouchScrollArea::TouchScrollArea(QWidget *parent)
@@ -197,7 +221,7 @@ namespace fairwindsk::ui::widgets {
 
         m_isApplyingStyle = true;
         const QPalette activePalette = palette();
-        const QString scrollAreaStyle = touchScrollAreaStyle(activePalette);
+        const QString scrollAreaStyle = touchScrollAreaStyle(activePalette, m_borderless);
         if (styleSheet() != scrollAreaStyle) {
             setStyleSheet(scrollAreaStyle);
         }
