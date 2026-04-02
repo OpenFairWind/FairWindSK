@@ -202,8 +202,13 @@ namespace fairwindsk::ui::widgets {
     void TouchSpinBox::applyTouchStyle() {
         const QPalette activePalette = palette();
         const QString style = touchButtonStyle(activePalette);
-        ui->pushButtonMinus->setStyleSheet(style);
-        ui->pushButtonPlus->setStyleSheet(style);
+        if (m_buttonStyleSheet == style) {
+            return;
+        }
+
+        m_buttonStyleSheet = style;
+        ui->pushButtonMinus->setStyleSheet(m_buttonStyleSheet);
+        ui->pushButtonPlus->setStyleSheet(m_buttonStyleSheet);
     }
 
     void TouchSpinBox::refreshText() {

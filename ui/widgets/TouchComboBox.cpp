@@ -305,9 +305,18 @@ namespace fairwindsk::ui::widgets {
 
     void TouchComboBox::applyTouchStyle() {
         const QPalette activePalette = palette();
-        ui->pushButtonPopup->setStyleSheet(touchButtonStyle(activePalette));
+        const QString buttonStyle = touchButtonStyle(activePalette);
+        if (m_buttonStyleSheet != buttonStyle) {
+            m_buttonStyleSheet = buttonStyle;
+            ui->pushButtonPopup->setStyleSheet(m_buttonStyleSheet);
+        }
+
         if (m_popup) {
-            m_popup->setStyleSheet(popupStyle(activePalette));
+            const QString popupStyleSheet = popupStyle(activePalette);
+            if (m_popupStyleSheet != popupStyleSheet) {
+                m_popupStyleSheet = popupStyleSheet;
+                m_popup->setStyleSheet(m_popupStyleSheet);
+            }
         }
     }
 

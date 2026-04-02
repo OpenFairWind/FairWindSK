@@ -74,6 +74,7 @@ namespace fairwindsk::ui::widgets {
         double m_singleStep = 1.0;
         int m_decimals = 0;
         Qt::Alignment m_alignment = Qt::AlignRight | Qt::AlignVCenter;
+        QString m_buttonStyleSheet;
     };
 }
 

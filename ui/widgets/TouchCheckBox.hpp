@@ -72,6 +72,7 @@ namespace fairwindsk::ui::widgets {
         Ui::TouchCheckBox *ui = nullptr;
         Qt::CheckState m_checkState = Qt::Unchecked;
         bool m_tristate = false;
+        QString m_toggleStyleSheet;
     };
 }
 

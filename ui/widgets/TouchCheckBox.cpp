@@ -150,7 +150,13 @@ namespace fairwindsk::ui::widgets {
     }
 
     void TouchCheckBox::applyTouchStyle() {
-        ui->pushButtonToggle->setStyleSheet(touchToggleStyle(palette()));
+        const QString style = touchToggleStyle(palette());
+        if (m_toggleStyleSheet == style) {
+            return;
+        }
+
+        m_toggleStyleSheet = style;
+        ui->pushButtonToggle->setStyleSheet(m_toggleStyleSheet);
     }
 
     bool TouchCheckBox::eventFilter(QObject *watched, QEvent *event) {

@@ -78,6 +78,8 @@ namespace fairwindsk::ui::widgets {
         QAction *m_iconAction = nullptr;
         int m_currentIndex = -1;
         bool m_editable = false;
+        QString m_buttonStyleSheet;
+        QString m_popupStyleSheet;
     };
 }
 
