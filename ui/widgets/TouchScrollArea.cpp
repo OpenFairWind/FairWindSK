@@ -47,12 +47,7 @@ namespace fairwindsk::ui::widgets {
             " color: #9aa3ad;"
             " border-color: #aab3bc;"
             " }");
-        const QString kTouchScrollAreaStyle = QStringLiteral(
-            "QScrollArea {"
-            " border: 1px solid #7b8794;"
-            " border-radius: 8px;"
-            " background: #f5f5f2;"
-            " }"
+        const QString kTouchScrollBarStyle = QStringLiteral(
             "QScrollBar:vertical {"
             " background: #d7dde6;"
             " width: 44px;"
@@ -105,6 +100,20 @@ namespace fairwindsk::ui::widgets {
             " width: 0px;"
             " height: 0px;"
             " }");
+        const QString kTouchScrollAreaStyle = QStringLiteral(
+            "QScrollArea {"
+            " border: 1px solid #7b8794;"
+            " border-radius: 8px;"
+            " background: #f5f5f2;"
+            " }") + kTouchScrollBarStyle;
+    }
+
+    int TouchScrollArea::controlExtent() {
+        return kTouchScrollControlSize;
+    }
+
+    QString TouchScrollArea::scrollBarStyleSheet() {
+        return kTouchScrollBarStyle;
     }
 
     TouchScrollArea::TouchScrollArea(QWidget *parent)

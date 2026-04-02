@@ -20,6 +20,8 @@ namespace fairwindsk::ui::widgets {
     public:
         explicit TouchScrollArea(QWidget *parent = nullptr);
         ~TouchScrollArea() override = default;
+        static int controlExtent();
+        static QString scrollBarStyleSheet();
 
     private:
         QPushButton *createScrollButton(QScrollBar *parentScrollBar, const QString &iconPath) const;

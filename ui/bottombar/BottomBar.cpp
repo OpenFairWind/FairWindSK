@@ -9,6 +9,7 @@
 #include <QToolButton>
 #include <QAbstractButton>
 #include <QFrame>
+#include <QVBoxLayout>
 #include "BottomBar.hpp"
 
 #include <QtWidgets/QLabel>
@@ -39,6 +40,8 @@ namespace fairwindsk::ui::bottombar {
         ui->setupUi(this);
         ui->scrollArea_Port->setFrameShape(QFrame::NoFrame);
         ui->scrollArea_Port->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        ui->scrollArea_Port->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        ui->scrollArea_Port->setStyleSheet(QStringLiteral("QScrollArea { border: none; background: transparent; }"));
         ui->toolButton_MyData->setStyleSheet(kChromeToolButtonStyle);
         ui->toolButton_MyData->setAutoRaise(true);
         ui->toolButton_POB->setStyleSheet(kChromeToolButtonStyle);
@@ -65,6 +68,12 @@ namespace fairwindsk::ui::bottombar {
 
         // Create the alarms bar
         m_AlarmsBar = new AlarmsBar(this);
+
+        m_signalKServerBox = new widgets::SignalKServerBox(this);
+        auto *starboardLayout = new QVBoxLayout(ui->widget_Starboard);
+        starboardLayout->setContentsMargins(0, 0, 0, 0);
+        starboardLayout->setSpacing(0);
+        starboardLayout->addWidget(m_signalKServerBox);
 
         // Add the POB bar to the layout
         ui->gridLayout->addWidget(m_POBBar,0,0);
@@ -437,6 +446,11 @@ namespace fairwindsk::ui::bottombar {
 
             // Set the anchor bar pointer to null
             m_AnchorBar = nullptr;
+        }
+
+        if (m_signalKServerBox) {
+            delete m_signalKServerBox;
+            m_signalKServerBox = nullptr;
         }
 
         // Check if the UI is instanced

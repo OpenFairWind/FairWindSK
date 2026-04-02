@@ -32,8 +32,14 @@ namespace fairwindsk::signalk {
         return request;
     }
 
-    QByteArray Client::finishReply(QNetworkReply *reply, const bool updateCookie) const {
+    QByteArray Client::finishReply(QNetworkReply *reply, const bool updateCookie, bool *success, QString *message) const {
         const QScopedPointer<QNetworkReply> guard(reply);
+        if (success) {
+            *success = false;
+        }
+        if (message) {
+            message->clear();
+        }
         if (!guard) {
             return {};
         }
@@ -51,10 +57,16 @@ namespace fairwindsk::signalk {
                 qDebug() << Q_FUNC_INFO << "Timeout waiting for reply from" << guard->request().url();
             }
             guard->abort();
+            if (message) {
+                *message = tr("Timeout while contacting %1").arg(guard->request().url().toString());
+            }
         }
 
         if (guard->error() != QNetworkReply::NoError && m_Debug) {
             qDebug() << Q_FUNC_INFO << "Failure" << guard->errorString();
+        }
+        if (guard->error() != QNetworkReply::NoError && message && message->isEmpty()) {
+            *message = guard->errorString();
         }
 
         if (updateCookie) {
@@ -79,7 +91,53 @@ namespace fairwindsk::signalk {
             return {};
         }
 
+        if (success) {
+            *success = guard->error() == QNetworkReply::NoError;
+        }
         return guard->readAll();
+    }
+
+    void Client::beginRequest(const QString &method, const QUrl &url) {
+        ++m_activeRequests;
+        emit requestActivityChanged(m_activeRequests > 0);
+        emit requestCountChanged(m_activeRequests);
+
+        if (m_Debug) {
+            qDebug() << "SignalK request" << method << url;
+        }
+    }
+
+    void Client::endRequest(const bool success, const QString &message) {
+        m_activeRequests = std::max(0, m_activeRequests - 1);
+        emit requestActivityChanged(m_activeRequests > 0);
+        emit requestCountChanged(m_activeRequests);
+
+        if (!message.trimmed().isEmpty()) {
+            emit serverMessageChanged(message.trimmed());
+        }
+
+        if (!success && message.trimmed().isEmpty()) {
+            emit serverMessageChanged(tr("Signal K request failed"));
+        }
+    }
+
+    QString Client::discoveryMessage() const {
+        if (m_Server.contains("server") && m_Server["server"].isObject()) {
+            const auto serverObject = m_Server["server"].toObject();
+            const QString id = serverObject.value("id").toString();
+            const QString version = serverObject.value("version").toString();
+            if (!id.isEmpty() && !version.isEmpty()) {
+                return tr("%1 %2").arg(id, version);
+            }
+            if (!id.isEmpty()) {
+                return id;
+            }
+            if (!version.isEmpty()) {
+                return tr("Version %1").arg(version);
+            }
+        }
+
+        return tr("Signal K reachable");
     }
 
 /*
@@ -181,6 +239,8 @@ namespace fairwindsk::signalk {
             }
 
             if (!m_Server.isEmpty()) {
+                emit serverHealthChanged(true, tr("Signal K reachable"));
+                emit serverMessageChanged(discoveryMessage());
 
                 // Check if the token is empty
                 if (m_Token.isEmpty()) {
@@ -194,6 +254,7 @@ namespace fairwindsk::signalk {
                     m_Cookie = "JAUTHENTICATION=" + m_Token + "; Path=/; HttpOnly";
                 } else {
                     m_Cookie.clear();
+                    emit serverMessageChanged(tr("Connected in public mode"));
 
                     if (m_Debug) {
                         qDebug() << "Proceeding without token in read-only/public mode.";
@@ -208,10 +269,14 @@ namespace fairwindsk::signalk {
                     qDebug() << "No valid websocket endpoint available for" << m_Url;
                 }
             } else {
+                emit serverHealthChanged(false, tr("Signal K offline"));
+                emit serverMessageChanged(tr("Signal K server not available"));
                 if (m_Debug)
                     qDebug() << "Server: " << m_Url << " not available!";
             }
         }  else {
+            emit serverHealthChanged(false, tr("Signal K disabled"));
+            emit serverMessageChanged(tr("Signal K connection disabled"));
             if (m_Debug)
                     qDebug() << "Data connection not active!";
 
@@ -648,7 +713,13 @@ namespace fairwindsk::signalk {
  * Executes an http get request without payload
  */
     QByteArray Client::httpGet(const QUrl& url) {
-        return finishReply(m_NetworkAccessManager.get(createJsonRequest(url)));
+        beginRequest(QStringLiteral("GET"), url);
+        auto *reply = m_NetworkAccessManager.get(createJsonRequest(url));
+        bool success = false;
+        QString message;
+        const QByteArray data = finishReply(reply, false, &success, &message);
+        endRequest(success, message);
+        return data;
     }
 
     /*
@@ -658,8 +729,13 @@ namespace fairwindsk::signalk {
     QByteArray Client::httpGet(const QUrl& url, const QJsonObject& payload) {
         QJsonDocument jsonDocument;
         jsonDocument.setObject(payload);
-
-        return finishReply(m_NetworkAccessManager.sendCustomRequest(createJsonRequest(url), "GET", jsonDocument.toJson()));
+        beginRequest(QStringLiteral("GET"), url);
+        auto *reply = m_NetworkAccessManager.sendCustomRequest(createJsonRequest(url), "GET", jsonDocument.toJson());
+        bool success = false;
+        QString message;
+        const QByteArray data = finishReply(reply, false, &success, &message);
+        endRequest(success, message);
+        return data;
     }
 
     /*
@@ -678,7 +754,13 @@ namespace fairwindsk::signalk {
             qDebug() << "SignalKClient::httpPost cookie: " << m_Cookie.toLatin1();
         }
 
-        return finishReply(m_NetworkAccessManager.post(createJsonRequest(url), jsonDocument.toJson()), true);
+        beginRequest(QStringLiteral("POST"), url);
+        auto *reply = m_NetworkAccessManager.post(createJsonRequest(url), jsonDocument.toJson());
+        bool success = false;
+        QString message;
+        const QByteArray data = finishReply(reply, true, &success, &message);
+        endRequest(success, message);
+        return data;
     }
 
     /*
@@ -690,7 +772,13 @@ namespace fairwindsk::signalk {
         QJsonDocument jsonDocument;
         jsonDocument.setObject(payload);
 
-        return finishReply(m_NetworkAccessManager.put(createJsonRequest(url), jsonDocument.toJson()));
+        beginRequest(QStringLiteral("PUT"), url);
+        auto *reply = m_NetworkAccessManager.put(createJsonRequest(url), jsonDocument.toJson());
+        bool success = false;
+        QString message;
+        const QByteArray data = finishReply(reply, false, &success, &message);
+        endRequest(success, message);
+        return data;
     }
 
     /*
@@ -701,7 +789,13 @@ namespace fairwindsk::signalk {
         QJsonDocument jsonDocument;
         jsonDocument.setObject(payload);
 
-        return finishReply(m_NetworkAccessManager.sendCustomRequest(createJsonRequest(url), "DELETE", jsonDocument.toJson()));
+        beginRequest(QStringLiteral("DELETE"), url);
+        auto *reply = m_NetworkAccessManager.sendCustomRequest(createJsonRequest(url), "DELETE", jsonDocument.toJson());
+        bool success = false;
+        QString message;
+        const QByteArray data = finishReply(reply, false, &success, &message);
+        endRequest(success, message);
+        return data;
     }
 
     bool Client::login() {
@@ -761,6 +855,9 @@ namespace fairwindsk::signalk {
         if (m_Debug)
             qDebug() << "WebSocket connected";
 
+        emit serverHealthChanged(true, tr("Signal K online"));
+        emit serverMessageChanged(discoveryMessage());
+
         connect(&m_WebSocket, &QWebSocket::textMessageReceived,
                 this, &Client::onTextMessageReceived, Qt::UniqueConnection);
 
@@ -771,6 +868,9 @@ namespace fairwindsk::signalk {
     void Client::onDisconnected() {
         if (m_Debug)
             qDebug() << "WebSocket disconnected";
+
+        emit serverHealthChanged(false, tr("Signal K disconnected"));
+        emit serverMessageChanged(tr("Waiting for Signal K"));
     }
 //! [onDisconnected]
 

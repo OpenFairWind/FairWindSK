@@ -30,6 +30,7 @@ namespace fairwindsk::ui::settings {
         void onVirtualKeyboardStateChanged(int state);
         void onUiScaleModeStateChanged(int state);
         void onUiScalePresetChanged(int index);
+        void onComfortViewPresetChanged(int index);
         void onLauncherRowsValueChanged(int value);
         void onLauncherColumnsValueChanged(int value);
         void onCoordinateFormatChanged(int index);

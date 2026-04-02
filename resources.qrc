@@ -29,6 +29,12 @@
         <file>resources/svg/OpenBridge/combobox-open.svg</file>
         <file>resources/svg/OpenBridge/spinbox-minus.svg</file>
         <file>resources/svg/OpenBridge/spinbox-plus.svg</file>
+        <file>resources/svg/OpenBridge/comfort-dawn.svg</file>
+        <file>resources/svg/OpenBridge/comfort-sunrise.svg</file>
+        <file>resources/svg/OpenBridge/comfort-day.svg</file>
+        <file>resources/svg/OpenBridge/comfort-sunset.svg</file>
+        <file>resources/svg/OpenBridge/comfort-dusk.svg</file>
+        <file>resources/svg/OpenBridge/comfort-night.svg</file>
         <file>resources/svg/OpenBridge/touch-checkbox-unchecked.svg</file>
         <file>resources/svg/OpenBridge/touch-checkbox-checked.svg</file>
         <file>resources/svg/OpenBridge/touch-checkbox-partial.svg</file>
@@ -79,6 +85,7 @@
 
         <!-- FairWindSK icon -->
         <file>resources/images/mainwindow/fairwind_icon.png</file>
+        <file>resources/images/widgets/throbber_ajax_loader_metal_512.gif</file>
 
         <!-- Launcher icon -->
         <file>resources/images/icons/apps_icon.png</file>

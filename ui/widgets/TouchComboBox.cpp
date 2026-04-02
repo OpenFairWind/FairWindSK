@@ -6,6 +6,7 @@
 
 #include <QEvent>
 #include <QFrame>
+#include <QAction>
 #include <QLineEdit>
 #include <QListWidget>
 #include <QMouseEvent>
@@ -54,6 +55,8 @@ namespace fairwindsk::ui::widgets {
         m_editor = ui->lineEditValue;
         m_editor->setObjectName(QStringLiteral("lineEdit_touchComboBox"));
         m_editor->installEventFilter(this);
+        m_iconAction = m_editor->addAction(QIcon(), QLineEdit::LeadingPosition);
+        m_iconAction->setVisible(false);
 
         ui->pushButtonPopup->setObjectName(QStringLiteral("pushButton_touchComboBox"));
         ui->pushButtonPopup->setStyleSheet(kTouchButtonStyle);
@@ -93,7 +96,11 @@ namespace fairwindsk::ui::widgets {
     }
 
     void TouchComboBox::addItem(const QString &text, const QVariant &userData) {
-        auto *item = new QListWidgetItem(text, m_listWidget);
+        addItem(QIcon(), text, userData);
+    }
+
+    void TouchComboBox::addItem(const QIcon &icon, const QString &text, const QVariant &userData) {
+        auto *item = new QListWidgetItem(icon, text, m_listWidget);
         item->setData(Qt::UserRole, userData);
         item->setSizeHint(QSize(item->sizeHint().width(), 44));
 
@@ -300,6 +307,11 @@ namespace fairwindsk::ui::widgets {
         const auto *item = m_listWidget->item(m_currentIndex);
         if (!m_editable || item) {
             m_editor->setText(item ? item->text() : QString());
+        }
+        if (m_iconAction) {
+            const QIcon icon = item ? item->icon() : QIcon();
+            m_iconAction->setIcon(icon);
+            m_iconAction->setVisible(!icon.isNull());
         }
         if (item) {
             m_listWidget->setCurrentRow(m_currentIndex);

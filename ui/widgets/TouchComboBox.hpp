@@ -9,9 +9,11 @@
 #include <QWidget>
 
 class QFrame;
+class QIcon;
 class QLineEdit;
 class QListWidget;
 class QListWidgetItem;
+class QAction;
 
 namespace fairwindsk::ui::widgets {
     QT_BEGIN_NAMESPACE
@@ -29,6 +31,7 @@ namespace fairwindsk::ui::widgets {
         ~TouchComboBox() override;
 
         void addItem(const QString &text, const QVariant &userData = QVariant());
+        void addItem(const QIcon &icon, const QString &text, const QVariant &userData = QVariant());
         void clear();
         int count() const;
         int currentIndex() const;
@@ -70,6 +73,7 @@ namespace fairwindsk::ui::widgets {
         QLineEdit *m_editor = nullptr;
         QFrame *m_popup = nullptr;
         QListWidget *m_listWidget = nullptr;
+        QAction *m_iconAction = nullptr;
         int m_currentIndex = -1;
         bool m_editable = false;
     };

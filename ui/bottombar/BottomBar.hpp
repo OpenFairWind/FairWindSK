@@ -13,6 +13,7 @@
 #include "AlarmsBar.hpp"
 #include "AutopilotBar.hpp"
 #include "AnchorBar.hpp"
+#include "ui/widgets/SignalKServerBox.hpp"
 
 namespace Ui { class BottomBar; }
 
@@ -102,6 +103,8 @@ namespace fairwindsk::ui::bottombar {
 
         // Pointer to the anchor bar
         AnchorBar *m_AnchorBar = nullptr;
+
+        widgets::SignalKServerBox *m_signalKServerBox = nullptr;
 
         int m_iconSize;
         QMap<QString, QToolButton *> m_buttons;

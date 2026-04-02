@@ -178,6 +178,14 @@ namespace fairwindsk {
         return getString("main", "uiScalePreset", "normal");
     }
 
+    void Configuration::setComfortViewPreset(const QString &value) {
+        ensureObject("main")["comfortViewPreset"] = value.toStdString();
+    }
+
+    QString Configuration::getComfortViewPreset() const {
+        return getString("main", "comfortViewPreset", "day");
+    }
+
     void Configuration::setLauncherRows(const int value) {
         ensureObject("main")["launcherRows"] = std::max(1, value);
     }

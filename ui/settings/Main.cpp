@@ -6,6 +6,7 @@
 
 #include <QScreen>
 #include <QIntValidator>
+#include <QIcon>
 
 #include "Main.hpp"
 #include "ui_Main.h"
@@ -46,6 +47,12 @@ namespace fairwindsk::ui::settings {
         ui->comboBox_uiScalePreset->addItem(tr("Normal"), "normal");
         ui->comboBox_uiScalePreset->addItem(tr("Large"), "large");
         ui->comboBox_uiScalePreset->addItem(tr("Extra Large"), "xlarge");
+        ui->comboBox_comfortViewPreset->addItem(QIcon(QStringLiteral(":/resources/svg/OpenBridge/comfort-dawn.svg")), tr("Dawn"), "dawn");
+        ui->comboBox_comfortViewPreset->addItem(QIcon(QStringLiteral(":/resources/svg/OpenBridge/comfort-sunrise.svg")), tr("Sunrise"), "sunrise");
+        ui->comboBox_comfortViewPreset->addItem(QIcon(QStringLiteral(":/resources/svg/OpenBridge/comfort-day.svg")), tr("Day"), "day");
+        ui->comboBox_comfortViewPreset->addItem(QIcon(QStringLiteral(":/resources/svg/OpenBridge/comfort-sunset.svg")), tr("Sunset"), "sunset");
+        ui->comboBox_comfortViewPreset->addItem(QIcon(QStringLiteral(":/resources/svg/OpenBridge/comfort-dusk.svg")), tr("Dusk"), "dusk");
+        ui->comboBox_comfortViewPreset->addItem(QIcon(QStringLiteral(":/resources/svg/OpenBridge/comfort-night.svg")), tr("Night"), "night");
         for (const auto &option : fairwindsk::ui::geo::coordinateFormatOptions()) {
             ui->comboBox_coordinateFormat->addItem(option.label, option.id);
         }
@@ -72,6 +79,8 @@ namespace fairwindsk::ui::settings {
         const bool automaticUiScale = m_settings->getConfiguration()->getUiScaleMode() == "auto";
         ui->checkBox_autoUiScale->setCheckState(automaticUiScale ? Qt::Checked : Qt::Unchecked);
         setUiScaleFieldsEnabled(automaticUiScale);
+        const int comfortViewIndex = ui->comboBox_comfortViewPreset->findData(m_settings->getConfiguration()->getComfortViewPreset());
+        ui->comboBox_comfortViewPreset->setCurrentIndex(comfortViewIndex >= 0 ? comfortViewIndex : 2);
         ui->spinBox_launcherRows->setValue(m_settings->getConfiguration()->getLauncherRows());
         ui->spinBox_launcherColumns->setValue(m_settings->getConfiguration()->getLauncherColumns());
         const int coordinateFormatIndex = ui->comboBox_coordinateFormat->findData(m_settings->getConfiguration()->getCoordinateFormat());
@@ -120,6 +129,10 @@ namespace fairwindsk::ui::settings {
                 qOverload<int>(&fairwindsk::ui::widgets::TouchComboBox::currentIndexChanged),
                 this,
                 &Main::onUiScalePresetChanged);
+        connect(ui->comboBox_comfortViewPreset,
+                qOverload<int>(&fairwindsk::ui::widgets::TouchComboBox::currentIndexChanged),
+                this,
+                &Main::onComfortViewPresetChanged);
         connect(ui->spinBox_launcherRows, qOverload<int>(&fairwindsk::ui::widgets::TouchSpinBox::valueChanged), this, &Main::onLauncherRowsValueChanged);
         connect(ui->spinBox_launcherColumns, qOverload<int>(&fairwindsk::ui::widgets::TouchSpinBox::valueChanged), this, &Main::onLauncherColumnsValueChanged);
         connect(ui->comboBox_coordinateFormat,
@@ -152,6 +165,13 @@ namespace fairwindsk::ui::settings {
         Q_UNUSED(index);
 
         m_settings->getConfiguration()->setUiScalePreset(ui->comboBox_uiScalePreset->currentData().toString());
+        m_settings->markDirty(FairWindSK::RuntimeUi, 0);
+    }
+
+    void Main::onComfortViewPresetChanged(const int index) {
+        Q_UNUSED(index);
+
+        m_settings->getConfiguration()->setComfortViewPreset(ui->comboBox_comfortViewPreset->currentData().toString());
         m_settings->markDirty(FairWindSK::RuntimeUi, 0);
     }
 

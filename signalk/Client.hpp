@@ -111,6 +111,12 @@ namespace fairwindsk::signalk {
 
         void unsubscribe(QObject *receiver);
 
+    signals:
+        void requestActivityChanged(bool active);
+        void requestCountChanged(int activeRequests);
+        void serverHealthChanged(bool healthy, const QString &statusText);
+        void serverMessageChanged(const QString &message);
+
     private slots:
         void onConnected();
         void onDisconnected();
@@ -138,12 +144,15 @@ namespace fairwindsk::signalk {
         QString m_Label;
 
         QNetworkRequest createJsonRequest(const QUrl& url) const;
-        QByteArray finishReply(QNetworkReply *reply, bool updateCookie = false) const;
+        QByteArray finishReply(QNetworkReply *reply, bool updateCookie = false, bool *success = nullptr, QString *message = nullptr) const;
         QByteArray httpGet(const QUrl& url);
         QByteArray httpGet(const QUrl& url, const QJsonObject& payload);
         QByteArray httpPost(const QUrl& url, const QJsonObject& payload);
         QByteArray httpPut(const QUrl& url, const QJsonObject& payload);
         QByteArray httpDelete(const QUrl& url, const QJsonObject& payload);
+        void beginRequest(const QString &method, const QUrl &url);
+        void endRequest(bool success, const QString &message = QString());
+        QString discoveryMessage() const;
 
         QUrl getEndpointByProtocol(const QString &protocol, const QString& version = "v1");
         QJsonDocument getJsonDocument(const QUrl &url, const QJsonObject &payload = {});
@@ -154,6 +163,7 @@ namespace fairwindsk::signalk {
         QJsonObject m_Server;
 
         QList<Subscription> m_subscriptions;
+        int m_activeRequests = 0;
     };
 }
 

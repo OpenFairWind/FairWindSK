@@ -11,8 +11,26 @@
    </rect>
   </property>
   <layout class="QGridLayout" name="gridLayout">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <property name="verticalSpacing">
+    <number>2</number>
+   </property>
    <item row="4" column="0">
     <layout class="QHBoxLayout" name="horizontalLayoutButtons">
+     <property name="spacing">
+      <number>8</number>
+     </property>
      <item>
       <widget class="fairwindsk::ui::widgets::TouchScrollArea" name="scrollArea_Port">
        <property name="sizePolicy">
@@ -26,6 +44,9 @@
        </property>
        <property name="widgetResizable">
         <bool>true</bool>
+       </property>
+       <property name="minimumHeight">
+        <number>84</number>
        </property>
        <widget class="QWidget" name="scrollAreaWidgetContents_Port">
         <property name="geometry">
@@ -48,6 +69,9 @@
          </property>
          <property name="bottomMargin">
           <number>0</number>
+         </property>
+         <property name="spacing">
+          <number>8</number>
          </property>
         </layout>
        </widget>

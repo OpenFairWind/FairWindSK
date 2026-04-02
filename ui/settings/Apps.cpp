@@ -21,6 +21,7 @@
 #include <QPainter>
 #include <QPainterPath>
 #include <QSignalBlocker>
+#include <QScroller>
 #include <QStyledItemDelegate>
 #include <QVBoxLayout>
 
@@ -281,7 +282,10 @@ namespace fairwindsk::ui::settings {
         setAlternatingRowColors(false);
         setTextElideMode(Qt::ElideRight);
         setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+        QScroller::grabGesture(viewport(), QScroller::TouchGesture);
+        QScroller::grabGesture(viewport(), QScroller::LeftMouseButtonGesture);
     }
 
     void AvailableAppsListWidget::mousePressEvent(QMouseEvent *event) {
@@ -583,6 +587,11 @@ namespace fairwindsk::ui::settings {
         m_pageTree->setColumnCount(1);
         m_pageTree->setHeaderHidden(true);
         m_pageTree->setEditTriggers(QAbstractItemView::EditKeyPressed);
+        m_pageTree->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        m_pageTree->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        m_pageTree->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+        QScroller::grabGesture(m_pageTree->viewport(), QScroller::TouchGesture);
+        QScroller::grabGesture(m_pageTree->viewport(), QScroller::LeftMouseButtonGesture);
         auto *pageTreeLayout = new QVBoxLayout(ui->widget_PageTreeHost);
         pageTreeLayout->setContentsMargins(0, 0, 0, 0);
         pageTreeLayout->addWidget(m_pageTree);
