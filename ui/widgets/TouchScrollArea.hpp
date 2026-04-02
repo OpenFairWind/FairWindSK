@@ -22,10 +22,10 @@ namespace fairwindsk::ui::widgets {
         ~TouchScrollArea() override = default;
 
     private:
+        QPushButton *createScrollButton(QScrollBar *parentScrollBar, const QString &iconPath) const;
         bool eventFilter(QObject *watched, QEvent *event) override;
         void resizeEvent(QResizeEvent *event) override;
         void applyTouchStyle();
-        void applyButtonStyle(QPushButton *button) const;
         void connectScrollBar(QScrollBar *scrollBar);
         void updateScrollControls();
 

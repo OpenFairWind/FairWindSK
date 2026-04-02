@@ -114,20 +114,10 @@ namespace fairwindsk::ui::widgets {
         QScroller::grabGesture(viewport(), QScroller::TouchGesture);
         setFrameShape(QFrame::NoFrame);
 
-        m_verticalUpButton = new QPushButton(this);
-        m_verticalDownButton = new QPushButton(this);
-        m_horizontalLeftButton = new QPushButton(this);
-        m_horizontalRightButton = new QPushButton(this);
-
-        m_verticalUpButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/arrow-up-google.svg")));
-        m_verticalDownButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/arrow-down-google.svg")));
-        m_horizontalLeftButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/arrow-left-google.svg")));
-        m_horizontalRightButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/arrow-right-google.svg")));
-
-        applyButtonStyle(m_verticalUpButton);
-        applyButtonStyle(m_verticalDownButton);
-        applyButtonStyle(m_horizontalLeftButton);
-        applyButtonStyle(m_horizontalRightButton);
+        m_verticalUpButton = createScrollButton(verticalScrollBar(), QStringLiteral(":/resources/svg/OpenBridge/arrow-up-google.svg"));
+        m_verticalDownButton = createScrollButton(verticalScrollBar(), QStringLiteral(":/resources/svg/OpenBridge/arrow-down-google.svg"));
+        m_horizontalLeftButton = createScrollButton(horizontalScrollBar(), QStringLiteral(":/resources/svg/OpenBridge/arrow-left-google.svg"));
+        m_horizontalRightButton = createScrollButton(horizontalScrollBar(), QStringLiteral(":/resources/svg/OpenBridge/arrow-right-google.svg"));
 
         connect(m_verticalUpButton, &QPushButton::clicked, this, [this]() {
             if (verticalScrollBar()) {
@@ -160,11 +150,13 @@ namespace fairwindsk::ui::widgets {
         setStyleSheet(kTouchScrollAreaStyle);
     }
 
-    void TouchScrollArea::applyButtonStyle(QPushButton *button) const {
-        if (!button) {
-            return;
+    QPushButton *TouchScrollArea::createScrollButton(QScrollBar *parentScrollBar, const QString &iconPath) const {
+        if (!parentScrollBar) {
+            return nullptr;
         }
 
+        auto *button = new QPushButton(parentScrollBar);
+        button->setIcon(QIcon(iconPath));
         button->setStyleSheet(kTouchScrollButtonStyle);
         button->setFocusPolicy(Qt::NoFocus);
         button->setAutoRepeat(true);
@@ -172,6 +164,7 @@ namespace fairwindsk::ui::widgets {
         button->setAutoRepeatInterval(60);
         button->setMinimumSize(kTouchScrollControlSize, kTouchScrollControlSize);
         button->hide();
+        return button;
     }
 
     void TouchScrollArea::connectScrollBar(QScrollBar *scrollBar) {
@@ -227,50 +220,65 @@ namespace fairwindsk::ui::widgets {
         const QSize verticalIconSize(vExtent / 2, vExtent / 2);
         const QSize horizontalIconSize(hExtent / 2, hExtent / 2);
 
-        m_verticalUpButton->setFixedSize(vExtent, vExtent);
-        m_verticalDownButton->setFixedSize(vExtent, vExtent);
-        m_horizontalLeftButton->setFixedSize(hExtent, hExtent);
-        m_horizontalRightButton->setFixedSize(hExtent, hExtent);
-
-        m_verticalUpButton->setIconSize(verticalIconSize);
-        m_verticalDownButton->setIconSize(verticalIconSize);
-        m_horizontalLeftButton->setIconSize(horizontalIconSize);
-        m_horizontalRightButton->setIconSize(horizontalIconSize);
+        if (m_verticalUpButton) {
+            m_verticalUpButton->setFixedSize(vRect.width(), vExtent);
+            m_verticalUpButton->setIconSize(verticalIconSize);
+            m_verticalUpButton->setEnabled(vBar->value() > vBar->minimum());
+        }
+        if (m_verticalDownButton) {
+            m_verticalDownButton->setFixedSize(vRect.width(), vExtent);
+            m_verticalDownButton->setIconSize(verticalIconSize);
+            m_verticalDownButton->setEnabled(vBar->value() < vBar->maximum());
+        }
+        if (m_horizontalLeftButton) {
+            m_horizontalLeftButton->setFixedSize(hExtent, hRect.height());
+            m_horizontalLeftButton->setIconSize(horizontalIconSize);
+            m_horizontalLeftButton->setEnabled(hBar->value() > hBar->minimum());
+        }
+        if (m_horizontalRightButton) {
+            m_horizontalRightButton->setFixedSize(hExtent, hRect.height());
+            m_horizontalRightButton->setIconSize(horizontalIconSize);
+            m_horizontalRightButton->setEnabled(hBar->value() < hBar->maximum());
+        }
 
         if (showVertical) {
-            m_verticalUpButton->setGeometry(vRect.x(), vRect.y(), vRect.width(), vExtent);
-            m_verticalDownButton->setGeometry(vRect.x(), vRect.bottom() - vExtent + 1, vRect.width(), vExtent);
-            m_verticalUpButton->show();
-            m_verticalDownButton->show();
-            m_verticalUpButton->raise();
-            m_verticalDownButton->raise();
+            if (m_verticalUpButton) {
+                m_verticalUpButton->setGeometry(0, 0, vRect.width(), vExtent);
+                m_verticalUpButton->show();
+                m_verticalUpButton->raise();
+            }
+            if (m_verticalDownButton) {
+                m_verticalDownButton->setGeometry(0, vRect.height() - vExtent, vRect.width(), vExtent);
+                m_verticalDownButton->show();
+                m_verticalDownButton->raise();
+            }
         } else {
-            m_verticalUpButton->hide();
-            m_verticalDownButton->hide();
+            if (m_verticalUpButton) {
+                m_verticalUpButton->hide();
+            }
+            if (m_verticalDownButton) {
+                m_verticalDownButton->hide();
+            }
         }
 
         if (showHorizontal) {
-            m_horizontalLeftButton->setGeometry(hRect.x(), hRect.y(), hExtent, hRect.height());
-            m_horizontalRightButton->setGeometry(hRect.right() - hExtent + 1, hRect.y(), hExtent, hRect.height());
-            m_horizontalLeftButton->show();
-            m_horizontalRightButton->show();
-            m_horizontalLeftButton->raise();
-            m_horizontalRightButton->raise();
+            if (m_horizontalLeftButton) {
+                m_horizontalLeftButton->setGeometry(0, 0, hExtent, hRect.height());
+                m_horizontalLeftButton->show();
+                m_horizontalLeftButton->raise();
+            }
+            if (m_horizontalRightButton) {
+                m_horizontalRightButton->setGeometry(hRect.width() - hExtent, 0, hExtent, hRect.height());
+                m_horizontalRightButton->show();
+                m_horizontalRightButton->raise();
+            }
         } else {
-            m_horizontalLeftButton->hide();
-            m_horizontalRightButton->hide();
-        }
-
-        if (showVertical && showHorizontal) {
-            const QRect cornerRect(vRect.left(), hRect.top(), vRect.width(), hRect.height());
-            m_verticalDownButton->setGeometry(cornerRect.x(),
-                                              vRect.bottom() - vExtent + 1,
-                                              cornerRect.width(),
-                                              vExtent);
-            m_horizontalRightButton->setGeometry(hRect.right() - hExtent + 1,
-                                                 cornerRect.y(),
-                                                 hExtent,
-                                                 cornerRect.height());
+            if (m_horizontalLeftButton) {
+                m_horizontalLeftButton->hide();
+            }
+            if (m_horizontalRightButton) {
+                m_horizontalRightButton->hide();
+            }
         }
     }
 }
