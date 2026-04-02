@@ -6,6 +6,7 @@
 
 #include <QLabel>
 #include <QMovie>
+#include <QPlainTextEdit>
 
 #include "FairWindSK.hpp"
 #include "signalk/Client.hpp"
@@ -27,7 +28,10 @@ namespace fairwindsk::ui::widgets {
         ui->labelBusy->setFixedSize(kThrobberSize, kThrobberSize);
         ui->labelBusy->setScaledContents(true);
         ui->labelStatus->setText(tr("Signal K"));
-        ui->labelMessage->setText(tr("Waiting for server"));
+        ui->plainTextEditMessage->setPlainText(tr("Waiting for server"));
+        ui->plainTextEditMessage->setWordWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+        ui->plainTextEditMessage->document()->setDocumentMargin(0);
+        ui->plainTextEditMessage->setCenterOnScroll(false);
 
         m_throbber = new QMovie(QStringLiteral(":/resources/images/widgets/throbber_ajax_loader_metal_512.gif"), QByteArray(), this);
         m_throbber->setScaledSize(QSize(kThrobberSize, kThrobberSize));
@@ -71,8 +75,8 @@ namespace fairwindsk::ui::widgets {
 
     void SignalKServerBox::onServerMessageChanged(const QString &message) {
         const QString trimmed = message.trimmed();
-        ui->labelMessage->setText(trimmed.isEmpty() ? tr("Waiting for server") : trimmed);
-        ui->labelMessage->setToolTip(ui->labelMessage->text());
+        ui->plainTextEditMessage->setPlainText(trimmed.isEmpty() ? tr("Waiting for server") : trimmed);
+        ui->plainTextEditMessage->setToolTip(ui->plainTextEditMessage->toPlainText());
     }
 
     void SignalKServerBox::applyIndicatorColor(const QString &color) {

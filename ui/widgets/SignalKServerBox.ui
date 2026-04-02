@@ -7,10 +7,10 @@
     <x>0</x>
     <y>0</y>
     <width>260</width>
-    <height>40</height>
+    <height>64</height>
    </rect>
   </property>
-  <layout class="QHBoxLayout" name="horizontalLayout">
+  <layout class="QVBoxLayout" name="verticalLayout">
    <property name="leftMargin">
     <number>0</number>
    </property>
@@ -24,48 +24,85 @@
     <number>0</number>
    </property>
    <property name="spacing">
-    <number>6</number>
+    <number>4</number>
    </property>
    <item>
-    <widget class="QLabel" name="labelIndicator">
-     <property name="text">
-      <string/>
+    <layout class="QHBoxLayout" name="horizontalLayoutHeader">
+     <property name="spacing">
+      <number>6</number>
      </property>
-    </widget>
+     <item>
+      <widget class="QLabel" name="labelIndicator">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="labelBusy">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="labelStatus">
+       <property name="styleSheet">
+        <string notr="true">font-weight: 600;</string>
+       </property>
+       <property name="text">
+        <string>Signal K</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacerHeader">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
    </item>
    <item>
-    <widget class="QLabel" name="labelBusy">
-     <property name="text">
-      <string/>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QLabel" name="labelStatus">
-     <property name="styleSheet">
-      <string notr="true">font-weight: 600;</string>
-     </property>
-     <property name="text">
-      <string>Signal K</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QLabel" name="labelMessage">
+    <widget class="QPlainTextEdit" name="plainTextEditMessage">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
        <horstretch>1</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>34</height>
+      </size>
+     </property>
+     <property name="maximumBlockCount">
+      <number>8</number>
+     </property>
+     <property name="verticalScrollBarPolicy">
+      <enum>Qt::ScrollBarAlwaysOff</enum>
+     </property>
+     <property name="horizontalScrollBarPolicy">
+      <enum>Qt::ScrollBarAlwaysOff</enum>
+     </property>
      <property name="styleSheet">
-      <string notr="true">color: rgba(255,255,255,0.82);</string>
+      <string notr="true">color: rgba(255,255,255,0.82);
+background: transparent;
+border: none;</string>
      </property>
-     <property name="text">
+     <property name="readOnly">
+      <bool>true</bool>
+     </property>
+     <property name="plainText">
       <string>Waiting for server</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignLeft|Qt::AlignVCenter</set>
      </property>
     </widget>
    </item>
