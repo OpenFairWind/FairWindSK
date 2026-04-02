@@ -238,8 +238,8 @@ namespace fairwindsk::ui::widgets {
         m_horizontalRightButton->setIconSize(horizontalIconSize);
 
         if (showVertical) {
-            m_verticalUpButton->setGeometry(vRect.x(), vRect.top() - kTouchScrollReservedExtent, vRect.width(), vExtent);
-            m_verticalDownButton->setGeometry(vRect.x(), vRect.bottom() + kTouchScrollControlSpacing, vRect.width(), vExtent);
+            m_verticalUpButton->setGeometry(vRect.x(), vRect.y(), vRect.width(), vExtent);
+            m_verticalDownButton->setGeometry(vRect.x(), vRect.bottom() - vExtent + 1, vRect.width(), vExtent);
             m_verticalUpButton->show();
             m_verticalDownButton->show();
             m_verticalUpButton->raise();
@@ -250,8 +250,8 @@ namespace fairwindsk::ui::widgets {
         }
 
         if (showHorizontal) {
-            m_horizontalLeftButton->setGeometry(hRect.left() - kTouchScrollReservedExtent, hRect.y(), hExtent, hRect.height());
-            m_horizontalRightButton->setGeometry(hRect.right() + kTouchScrollControlSpacing, hRect.y(), hExtent, hRect.height());
+            m_horizontalLeftButton->setGeometry(hRect.x(), hRect.y(), hExtent, hRect.height());
+            m_horizontalRightButton->setGeometry(hRect.right() - hExtent + 1, hRect.y(), hExtent, hRect.height());
             m_horizontalLeftButton->show();
             m_horizontalRightButton->show();
             m_horizontalLeftButton->raise();
@@ -264,10 +264,10 @@ namespace fairwindsk::ui::widgets {
         if (showVertical && showHorizontal) {
             const QRect cornerRect(vRect.left(), hRect.top(), vRect.width(), hRect.height());
             m_verticalDownButton->setGeometry(cornerRect.x(),
-                                              vRect.bottom() + kTouchScrollControlSpacing,
+                                              vRect.bottom() - vExtent + 1,
                                               cornerRect.width(),
                                               vExtent);
-            m_horizontalRightButton->setGeometry(hRect.right() + kTouchScrollControlSpacing,
+            m_horizontalRightButton->setGeometry(hRect.right() - hExtent + 1,
                                                  cornerRect.y(),
                                                  hExtent,
                                                  cornerRect.height());
