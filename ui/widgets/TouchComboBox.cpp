@@ -10,6 +10,7 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QMouseEvent>
+#include <QPalette>
 #include <QPushButton>
 #include <QScreen>
 #include <QVBoxLayout>
@@ -18,33 +19,79 @@
 
 namespace fairwindsk::ui::widgets {
     namespace {
-        const QString kTouchButtonStyle = QStringLiteral(
-            "QPushButton {"
-            " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
-            " stop:0 #fcfcfd, stop:0.45 #eef2f7, stop:1 #d7dde6);"
-            " border: 1px solid #7b8794;"
-            " border-top-color: #aeb8c4;"
-            " border-bottom-color: #5d6875;"
-            " border-radius: 8px;"
-            " padding: 4px;"
-            " }"
-            "QPushButton:hover {"
-            " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
-            " stop:0 #ffffff, stop:0.45 #f4f7fb, stop:1 #dfe5ee);"
-            " }"
-            "QPushButton:pressed, QPushButton:checked {"
-            " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
-            " stop:0 #c8d1dc, stop:0.5 #e3e8ef, stop:1 #f7f9fb);"
-            " border-top-color: #596473;"
-            " border-bottom-color: #a9b3bf;"
-            " padding-top: 5px;"
-            " padding-bottom: 3px;"
-            " }"
-            "QPushButton:disabled {"
-            " background: #d9dde3;"
-            " color: #9aa3ad;"
-            " border-color: #aab3bc;"
-            " }");
+        QString touchButtonStyle(const QPalette &palette) {
+            const QColor base = palette.color(QPalette::Button);
+            const QColor text = palette.color(QPalette::ButtonText);
+            const QColor border = palette.color(QPalette::Mid);
+            const QColor light = base.lighter(145);
+            const QColor mid = base.lighter(118);
+            const QColor dark = base.darker(120);
+            const QColor disabled = palette.color(QPalette::AlternateBase);
+
+            return QStringLiteral(
+                "QPushButton {"
+                " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
+                " stop:0 %1, stop:0.45 %2, stop:1 %3);"
+                " color: %4;"
+                " border: 1px solid %5;"
+                " border-top-color: %6;"
+                " border-bottom-color: %7;"
+                " border-radius: 8px;"
+                " padding: 4px;"
+                " }"
+                "QPushButton:hover {"
+                " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
+                " stop:0 %8, stop:0.45 %9, stop:1 %10);"
+                " }"
+                "QPushButton:pressed, QPushButton:checked {"
+                " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
+                " stop:0 %11, stop:0.5 %2, stop:1 %12);"
+                " border-top-color: %7;"
+                " border-bottom-color: %6;"
+                " padding-top: 5px;"
+                " padding-bottom: 3px;"
+                " }"
+                "QPushButton:disabled {"
+                " background: %13;"
+                " color: %14;"
+                " border-color: %15;"
+                " }")
+                .arg(light.name(), mid.name(), dark.name(), text.name(), border.name(),
+                     light.darker(108).name(), dark.name(),
+                     light.lighter(110).name(), mid.lighter(108).name(), dark.lighter(108).name(),
+                     base.darker(115).name(), base.lighter(120).name(), disabled.name(),
+                     palette.color(QPalette::Disabled, QPalette::ButtonText).name(),
+                     palette.color(QPalette::Disabled, QPalette::Mid).name());
+        }
+
+        QString popupStyle(const QPalette &palette) {
+            return QStringLiteral(
+                "QFrame#frame_touchComboPopup {"
+                " background: %1;"
+                " border: 1px solid %2;"
+                " border-radius: 8px;"
+                " }"
+                "QListWidget#listWidget_touchComboBox {"
+                " background: %3;"
+                " color: %4;"
+                " border: none;"
+                " outline: none;"
+                " }"
+                "QListWidget#listWidget_touchComboBox::item {"
+                " min-height: 44px;"
+                " padding: 6px 10px;"
+                " }"
+                "QListWidget#listWidget_touchComboBox::item:selected {"
+                " background: %5;"
+                " color: %6;"
+                " }")
+                .arg(palette.color(QPalette::Window).name(),
+                     palette.color(QPalette::Mid).name(),
+                     palette.color(QPalette::Base).name(),
+                     palette.color(QPalette::Text).name(),
+                     palette.color(QPalette::Highlight).name(),
+                     palette.color(QPalette::HighlightedText).name());
+        }
     }
 
     TouchComboBox::TouchComboBox(QWidget *parent)
@@ -59,7 +106,6 @@ namespace fairwindsk::ui::widgets {
         m_iconAction->setVisible(false);
 
         ui->pushButtonPopup->setObjectName(QStringLiteral("pushButton_touchComboBox"));
-        ui->pushButtonPopup->setStyleSheet(kTouchButtonStyle);
 
         m_popup = new QFrame(nullptr, Qt::Popup | Qt::FramelessWindowHint);
         m_popup->setObjectName(QStringLiteral("frame_touchComboPopup"));
@@ -85,6 +131,7 @@ namespace fairwindsk::ui::widgets {
         connect(m_editor, &QLineEdit::textChanged, this, &TouchComboBox::editTextChanged);
 
         setFocusProxy(m_editor);
+        applyTouchStyle();
         updateDisplay();
     }
 
@@ -93,6 +140,13 @@ namespace fairwindsk::ui::widgets {
         m_popup = nullptr;
         delete ui;
         ui = nullptr;
+    }
+
+    bool TouchComboBox::event(QEvent *event) {
+        if (event && (event->type() == QEvent::PaletteChange || event->type() == QEvent::ApplicationPaletteChange)) {
+            applyTouchStyle();
+        }
+        return QWidget::event(event);
     }
 
     void TouchComboBox::addItem(const QString &text, const QVariant &userData) {
@@ -246,6 +300,14 @@ namespace fairwindsk::ui::widgets {
         } else if (m_currentIndex > index) {
             --m_currentIndex;
             updateDisplay();
+        }
+    }
+
+    void TouchComboBox::applyTouchStyle() {
+        const QPalette activePalette = palette();
+        ui->pushButtonPopup->setStyleSheet(touchButtonStyle(activePalette));
+        if (m_popup) {
+            m_popup->setStyleSheet(popupStyle(activePalette));
         }
     }
 

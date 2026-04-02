@@ -5,6 +5,7 @@
 #ifndef FAIRWINDSK_SIGNALKSERVERBOX_HPP
 #define FAIRWINDSK_SIGNALKSERVERBOX_HPP
 
+#include <QLabel>
 #include <QWidget>
 
 class QMovie;
@@ -23,11 +24,12 @@ namespace fairwindsk::ui::widgets {
 
     private slots:
         void onServerHealthChanged(bool healthy, const QString &statusText);
+        void onConnectivityChanged(bool restHealthy, bool streamHealthy, const QString &statusText);
         void onRequestActivityChanged(bool active);
         void onServerMessageChanged(const QString &message);
 
     private:
-        void applyIndicatorColor(const QString &color);
+        void applyIndicatorColor(QLabel *label, const QString &color);
 
         Ui::SignalKServerBox *ui = nullptr;
         QMovie *m_throbber = nullptr;

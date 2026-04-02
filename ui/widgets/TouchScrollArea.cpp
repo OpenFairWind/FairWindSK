@@ -6,7 +6,9 @@
 
 #include <algorithm>
 
+#include <QApplication>
 #include <QEvent>
+#include <QPalette>
 #include <QPushButton>
 #include <QResizeEvent>
 #include <QScroller>
@@ -20,92 +22,125 @@ namespace fairwindsk::ui::widgets {
         constexpr int kTouchScrollControlSpacing = 4;
         constexpr int kTouchScrollReservedExtent = kTouchScrollControlSize + kTouchScrollControlSpacing;
 
-        const QString kTouchScrollButtonStyle = QStringLiteral(
-            "QPushButton {"
-            " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
-            " stop:0 #ffffff, stop:0.42 #f8fafc, stop:1 #edf2f7);"
-            " border: 1px solid #7b8794;"
-            " border-top-color: #d4dbe3;"
-            " border-bottom-color: #5d6875;"
-            " border-radius: 8px;"
-            " padding: 2px;"
-            " }"
-            "QPushButton:hover {"
-            " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
-            " stop:0 #ffffff, stop:0.4 #fbfdff, stop:1 #f3f6fa);"
-            " }"
-            "QPushButton:pressed {"
-            " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
-            " stop:0 #d7dee7, stop:0.5 #edf2f7, stop:1 #ffffff);"
-            " border-top-color: #596473;"
-            " border-bottom-color: #a9b3bf;"
-            " padding-top: 3px;"
-            " padding-bottom: 1px;"
-            " }"
-            "QPushButton:disabled {"
-            " background: #d9dde3;"
-            " color: #9aa3ad;"
-            " border-color: #aab3bc;"
-            " }");
-        const QString kTouchScrollBarStyle = QStringLiteral(
-            "QScrollBar:vertical {"
-            " background: #d7dde6;"
-            " width: 44px;"
-            " margin: 48px 4px 48px 0px;"
-            " border-radius: 12px;"
-            " }"
-            "QScrollBar::handle:vertical {"
-            " background: qlineargradient(x1:0, y1:0, x2:1, y2:0,"
-            " stop:0 #fdfefe, stop:0.35 #eef2f7, stop:1 #bac4cf);"
-            " min-height: 44px;"
-            " border: 1px solid #7b8794;"
-            " border-top-color: #aeb8c4;"
-            " border-bottom-color: #5d6875;"
-            " border-radius: 12px;"
-            " }"
-            "QScrollBar::handle:vertical:hover {"
-            " background: qlineargradient(x1:0, y1:0, x2:1, y2:0,"
-            " stop:0 #ffffff, stop:0.35 #f4f7fb, stop:1 #c8d1dc);"
-            " }"
-            "QScrollBar::handle:vertical:pressed {"
-            " background: qlineargradient(x1:0, y1:0, x2:1, y2:0,"
-            " stop:0 #c8d1dc, stop:0.5 #e3e8ef, stop:1 #f7f9fb);"
-            " }"
-            "QScrollBar:horizontal {"
-            " background: #d7dde6;"
-            " height: 44px;"
-            " margin: 0px 48px 4px 48px;"
-            " border-radius: 12px;"
-            " }"
-            "QScrollBar::handle:horizontal {"
-            " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
-            " stop:0 #fdfefe, stop:0.35 #eef2f7, stop:1 #bac4cf);"
-            " min-width: 44px;"
-            " border: 1px solid #7b8794;"
-            " border-top-color: #aeb8c4;"
-            " border-bottom-color: #5d6875;"
-            " border-radius: 12px;"
-            " }"
-            "QScrollBar::handle:horizontal:hover {"
-            " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
-            " stop:0 #ffffff, stop:0.35 #f4f7fb, stop:1 #c8d1dc);"
-            " }"
-            "QScrollBar::handle:horizontal:pressed {"
-            " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
-            " stop:0 #c8d1dc, stop:0.5 #e3e8ef, stop:1 #f7f9fb);"
-            " }"
-            "QScrollBar::add-line, QScrollBar::sub-line, QScrollBar::add-page, QScrollBar::sub-page {"
-            " background: transparent;"
-            " border: none;"
-            " width: 0px;"
-            " height: 0px;"
-            " }");
-        const QString kTouchScrollAreaStyle = QStringLiteral(
-            "QScrollArea {"
-            " border: 1px solid #7b8794;"
-            " border-radius: 8px;"
-            " background: #f5f5f2;"
-            " }") + kTouchScrollBarStyle;
+        QString touchScrollButtonStyle(const QPalette &palette) {
+            const QColor base = palette.color(QPalette::Button);
+            const QColor border = palette.color(QPalette::Mid);
+            const QColor light = base.lighter(150);
+            const QColor mid = base.lighter(120);
+            const QColor dark = base.darker(120);
+            return QStringLiteral(
+                "QPushButton {"
+                " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
+                " stop:0 %1, stop:0.42 %2, stop:1 %3);"
+                " border: 1px solid %4;"
+                " border-top-color: %5;"
+                " border-bottom-color: %6;"
+                " border-radius: 8px;"
+                " padding: 2px;"
+                " }"
+                "QPushButton:hover {"
+                " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
+                " stop:0 %7, stop:0.4 %8, stop:1 %9);"
+                " }"
+                "QPushButton:pressed {"
+                " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
+                " stop:0 %10, stop:0.5 %2, stop:1 %11);"
+                " border-top-color: %6;"
+                " border-bottom-color: %5;"
+                " padding-top: 3px;"
+                " padding-bottom: 1px;"
+                " }"
+                "QPushButton:disabled {"
+                " background: %12;"
+                " color: %13;"
+                " border-color: %14;"
+                " }")
+                .arg(light.name(), mid.name(), dark.name(), border.name(),
+                     light.darker(108).name(), dark.name(),
+                     light.lighter(110).name(), mid.lighter(108).name(), dark.lighter(108).name(),
+                     base.darker(115).name(), base.lighter(120).name(),
+                     palette.color(QPalette::AlternateBase).name(),
+                     palette.color(QPalette::Disabled, QPalette::ButtonText).name(),
+                     palette.color(QPalette::Disabled, QPalette::Mid).name());
+        }
+
+        QString touchScrollBarStyle(const QPalette &palette) {
+            const QColor track = palette.color(QPalette::AlternateBase);
+            const QColor handle = palette.color(QPalette::Button);
+            const QColor border = palette.color(QPalette::Mid);
+            const QColor handleTop = handle.lighter(145);
+            const QColor handleMid = handle.lighter(118);
+            const QColor handleBottom = handle.darker(116);
+
+            return QStringLiteral(
+                "QScrollBar:vertical {"
+                " background: %1;"
+                " width: 44px;"
+                " margin: 48px 4px 48px 0px;"
+                " border-radius: 12px;"
+                " }"
+                "QScrollBar::handle:vertical {"
+                " background: qlineargradient(x1:0, y1:0, x2:1, y2:0,"
+                " stop:0 %2, stop:0.35 %3, stop:1 %4);"
+                " min-height: 44px;"
+                " border: 1px solid %5;"
+                " border-top-color: %6;"
+                " border-bottom-color: %7;"
+                " border-radius: 12px;"
+                " }"
+                "QScrollBar::handle:vertical:hover {"
+                " background: qlineargradient(x1:0, y1:0, x2:1, y2:0,"
+                " stop:0 %8, stop:0.35 %9, stop:1 %10);"
+                " }"
+                "QScrollBar::handle:vertical:pressed {"
+                " background: qlineargradient(x1:0, y1:0, x2:1, y2:0,"
+                " stop:0 %11, stop:0.5 %3, stop:1 %12);"
+                " }"
+                "QScrollBar:horizontal {"
+                " background: %1;"
+                " height: 44px;"
+                " margin: 0px 48px 4px 48px;"
+                " border-radius: 12px;"
+                " }"
+                "QScrollBar::handle:horizontal {"
+                " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
+                " stop:0 %2, stop:0.35 %3, stop:1 %4);"
+                " min-width: 44px;"
+                " border: 1px solid %5;"
+                " border-top-color: %6;"
+                " border-bottom-color: %7;"
+                " border-radius: 12px;"
+                " }"
+                "QScrollBar::handle:horizontal:hover {"
+                " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
+                " stop:0 %8, stop:0.35 %9, stop:1 %10);"
+                " }"
+                "QScrollBar::handle:horizontal:pressed {"
+                " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
+                " stop:0 %11, stop:0.5 %3, stop:1 %12);"
+                " }"
+                "QScrollBar::add-line, QScrollBar::sub-line, QScrollBar::add-page, QScrollBar::sub-page {"
+                " background: transparent;"
+                " border: none;"
+                " width: 0px;"
+                " height: 0px;"
+                " }")
+                .arg(track.name(), handleTop.name(), handleMid.name(), handleBottom.name(), border.name(),
+                     handleTop.darker(108).name(), handleBottom.name(),
+                     handleTop.lighter(110).name(), handleMid.lighter(108).name(), handleBottom.lighter(108).name(),
+                     handle.darker(115).name(), handle.lighter(120).name());
+        }
+
+        QString touchScrollAreaStyle(const QPalette &palette) {
+            return QStringLiteral(
+                "QScrollArea {"
+                " border: 1px solid %1;"
+                " border-radius: 8px;"
+                " background: %2;"
+                " }")
+                .arg(palette.color(QPalette::Mid).name(), palette.color(QPalette::Base).name())
+                + touchScrollBarStyle(palette);
+        }
     }
 
     int TouchScrollArea::controlExtent() {
@@ -113,7 +148,7 @@ namespace fairwindsk::ui::widgets {
     }
 
     QString TouchScrollArea::scrollBarStyleSheet() {
-        return kTouchScrollBarStyle;
+        return touchScrollBarStyle(QApplication::palette());
     }
 
     TouchScrollArea::TouchScrollArea(QWidget *parent)
@@ -156,7 +191,21 @@ namespace fairwindsk::ui::widgets {
     }
 
     void TouchScrollArea::applyTouchStyle() {
-        setStyleSheet(kTouchScrollAreaStyle);
+        const QPalette activePalette = palette();
+        setStyleSheet(touchScrollAreaStyle(activePalette));
+        const QString buttonStyle = touchScrollButtonStyle(activePalette);
+        if (m_verticalUpButton) {
+            m_verticalUpButton->setStyleSheet(buttonStyle);
+        }
+        if (m_verticalDownButton) {
+            m_verticalDownButton->setStyleSheet(buttonStyle);
+        }
+        if (m_horizontalLeftButton) {
+            m_horizontalLeftButton->setStyleSheet(buttonStyle);
+        }
+        if (m_horizontalRightButton) {
+            m_horizontalRightButton->setStyleSheet(buttonStyle);
+        }
     }
 
     QPushButton *TouchScrollArea::createScrollButton(QScrollBar *parentScrollBar, const QString &iconPath) const {
@@ -166,7 +215,6 @@ namespace fairwindsk::ui::widgets {
 
         auto *button = new QPushButton(parentScrollBar);
         button->setIcon(QIcon(iconPath));
-        button->setStyleSheet(kTouchScrollButtonStyle);
         button->setFocusPolicy(Qt::NoFocus);
         button->setAutoRepeat(true);
         button->setAutoRepeatDelay(250);
@@ -174,6 +222,13 @@ namespace fairwindsk::ui::widgets {
         button->setMinimumSize(kTouchScrollControlSize, kTouchScrollControlSize);
         button->hide();
         return button;
+    }
+
+    bool TouchScrollArea::event(QEvent *event) {
+        if (event && (event->type() == QEvent::PaletteChange || event->type() == QEvent::ApplicationPaletteChange)) {
+            applyTouchStyle();
+        }
+        return QScrollArea::event(event);
     }
 
     void TouchScrollArea::connectScrollBar(QScrollBar *scrollBar) {

@@ -8,6 +8,7 @@
 #include <QWidget>
 
 class QDoubleValidator;
+class QEvent;
 class QLineEdit;
 
 namespace fairwindsk::ui::widgets {
@@ -56,6 +57,8 @@ namespace fairwindsk::ui::widgets {
         void applyEditedValue();
 
     private:
+        bool event(QEvent *event) override;
+        void applyTouchStyle();
         void refreshText();
         void refreshButtonState();
         void refreshValidator();

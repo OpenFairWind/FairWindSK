@@ -20,6 +20,11 @@
 #include "Waypoint.hpp"
 
 namespace fairwindsk::signalk {
+    namespace {
+        constexpr int kStreamTimeoutMs = 30000;
+        constexpr int kStreamHealthCheckIntervalMs = 5000;
+    }
+
     QNetworkRequest Client::createJsonRequest(const QUrl& url) const {
         QNetworkRequest request(url);
         request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
@@ -32,13 +37,16 @@ namespace fairwindsk::signalk {
         return request;
     }
 
-    QByteArray Client::finishReply(QNetworkReply *reply, const bool updateCookie, bool *success, QString *message) const {
+    QByteArray Client::finishReply(QNetworkReply *reply, const bool updateCookie, bool *success, QString *message, int *httpStatus) const {
         const QScopedPointer<QNetworkReply> guard(reply);
         if (success) {
             *success = false;
         }
         if (message) {
             message->clear();
+        }
+        if (httpStatus) {
+            *httpStatus = 0;
         }
         if (!guard) {
             return {};
@@ -67,6 +75,10 @@ namespace fairwindsk::signalk {
         }
         if (guard->error() != QNetworkReply::NoError && message && message->isEmpty()) {
             *message = guard->errorString();
+        }
+
+        if (httpStatus) {
+            *httpStatus = guard->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
         }
 
         if (updateCookie) {
@@ -107,10 +119,24 @@ namespace fairwindsk::signalk {
         }
     }
 
-    void Client::endRequest(const bool success, const QString &message) {
+    void Client::endRequest(const bool success, const QUrl &url, const int httpStatus, const QString &message) {
         m_activeRequests = std::max(0, m_activeRequests - 1);
         emit requestActivityChanged(m_activeRequests > 0);
         emit requestCountChanged(m_activeRequests);
+
+        const bool suppressMessage = shouldSuppressServerMessage(url, httpStatus);
+        if (success) {
+            setRestHealth(true, tr("REST online"));
+        } else if (!suppressMessage && (httpStatus == 0 || httpStatus >= 500)) {
+            setRestHealth(false, tr("REST error"));
+        }
+
+        if (suppressMessage) {
+            if (m_Debug) {
+                qDebug() << "Suppressing Signal K message for unsupported endpoint" << httpStatus << url;
+            }
+            return;
+        }
 
         if (!message.trimmed().isEmpty()) {
             emit serverMessageChanged(message.trimmed());
@@ -119,6 +145,46 @@ namespace fairwindsk::signalk {
         if (!success && message.trimmed().isEmpty()) {
             emit serverMessageChanged(tr("Signal K request failed"));
         }
+    }
+
+    bool Client::shouldSuppressServerMessage(const QUrl &url, const int httpStatus) const {
+        return httpStatus == 501 && url.path().startsWith(QStringLiteral("/signalk/v2/api/history"));
+    }
+
+    void Client::setRestHealth(const bool healthy, const QString &statusText) {
+        m_restHealthy = healthy;
+        emitConnectivityState(statusText);
+    }
+
+    void Client::setStreamHealth(const bool healthy, const QString &statusText) {
+        m_streamHealthy = healthy;
+        emitConnectivityState(statusText);
+    }
+
+    void Client::emitConnectivityState(const QString &statusText) {
+        QString summary = statusText.trimmed();
+        if (summary.isEmpty()) {
+            if (m_restHealthy && m_streamHealthy) {
+                summary = tr("REST + Stream online");
+            } else if (m_restHealthy) {
+                summary = tr("REST online, stream offline");
+            } else if (m_streamHealthy) {
+                summary = tr("Stream online, REST offline");
+            } else {
+                summary = tr("Signal K offline");
+            }
+        }
+
+        emit serverHealthChanged(m_restHealthy && m_streamHealthy, summary);
+        emit connectivityChanged(m_restHealthy, m_streamHealthy, summary);
+    }
+
+    void Client::markStreamActivity(const QString &statusText) {
+        m_lastStreamActivity = QDateTime::currentDateTimeUtc();
+        if (!m_streamHealthTimer.isActive()) {
+            m_streamHealthTimer.start();
+        }
+        setStreamHealth(true, statusText);
     }
 
     QString Client::discoveryMessage() const {
@@ -155,6 +221,10 @@ namespace fairwindsk::signalk {
         m_Username = "";
         m_Password = "";
         m_Token = "";
+
+        m_streamHealthTimer.setInterval(kStreamHealthCheckIntervalMs);
+        m_streamHealthTimer.setSingleShot(false);
+        connect(&m_streamHealthTimer, &QTimer::timeout, this, &Client::onStreamHealthTimeout);
     }
 
 /*
@@ -239,7 +309,8 @@ namespace fairwindsk::signalk {
             }
 
             if (!m_Server.isEmpty()) {
-                emit serverHealthChanged(true, tr("Signal K reachable"));
+                setRestHealth(true, tr("REST online"));
+                setStreamHealth(false, tr("Connecting stream"));
                 emit serverMessageChanged(discoveryMessage());
 
                 // Check if the token is empty
@@ -269,13 +340,15 @@ namespace fairwindsk::signalk {
                     qDebug() << "No valid websocket endpoint available for" << m_Url;
                 }
             } else {
-                emit serverHealthChanged(false, tr("Signal K offline"));
+                setRestHealth(false, tr("Signal K offline"));
+                setStreamHealth(false, tr("Signal K offline"));
                 emit serverMessageChanged(tr("Signal K server not available"));
                 if (m_Debug)
                     qDebug() << "Server: " << m_Url << " not available!";
             }
         }  else {
-            emit serverHealthChanged(false, tr("Signal K disabled"));
+            setRestHealth(false, tr("Signal K disabled"));
+            setStreamHealth(false, tr("Signal K disabled"));
             emit serverMessageChanged(tr("Signal K connection disabled"));
             if (m_Debug)
                     qDebug() << "Data connection not active!";
@@ -717,8 +790,9 @@ namespace fairwindsk::signalk {
         auto *reply = m_NetworkAccessManager.get(createJsonRequest(url));
         bool success = false;
         QString message;
-        const QByteArray data = finishReply(reply, false, &success, &message);
-        endRequest(success, message);
+        int httpStatus = 0;
+        const QByteArray data = finishReply(reply, false, &success, &message, &httpStatus);
+        endRequest(success, url, httpStatus, message);
         return data;
     }
 
@@ -733,8 +807,9 @@ namespace fairwindsk::signalk {
         auto *reply = m_NetworkAccessManager.sendCustomRequest(createJsonRequest(url), "GET", jsonDocument.toJson());
         bool success = false;
         QString message;
-        const QByteArray data = finishReply(reply, false, &success, &message);
-        endRequest(success, message);
+        int httpStatus = 0;
+        const QByteArray data = finishReply(reply, false, &success, &message, &httpStatus);
+        endRequest(success, url, httpStatus, message);
         return data;
     }
 
@@ -758,8 +833,9 @@ namespace fairwindsk::signalk {
         auto *reply = m_NetworkAccessManager.post(createJsonRequest(url), jsonDocument.toJson());
         bool success = false;
         QString message;
-        const QByteArray data = finishReply(reply, true, &success, &message);
-        endRequest(success, message);
+        int httpStatus = 0;
+        const QByteArray data = finishReply(reply, true, &success, &message, &httpStatus);
+        endRequest(success, url, httpStatus, message);
         return data;
     }
 
@@ -776,8 +852,9 @@ namespace fairwindsk::signalk {
         auto *reply = m_NetworkAccessManager.put(createJsonRequest(url), jsonDocument.toJson());
         bool success = false;
         QString message;
-        const QByteArray data = finishReply(reply, false, &success, &message);
-        endRequest(success, message);
+        int httpStatus = 0;
+        const QByteArray data = finishReply(reply, false, &success, &message, &httpStatus);
+        endRequest(success, url, httpStatus, message);
         return data;
     }
 
@@ -793,8 +870,9 @@ namespace fairwindsk::signalk {
         auto *reply = m_NetworkAccessManager.sendCustomRequest(createJsonRequest(url), "DELETE", jsonDocument.toJson());
         bool success = false;
         QString message;
-        const QByteArray data = finishReply(reply, false, &success, &message);
-        endRequest(success, message);
+        int httpStatus = 0;
+        const QByteArray data = finishReply(reply, false, &success, &message, &httpStatus);
+        endRequest(success, url, httpStatus, message);
         return data;
     }
 
@@ -855,7 +933,7 @@ namespace fairwindsk::signalk {
         if (m_Debug)
             qDebug() << "WebSocket connected";
 
-        emit serverHealthChanged(true, tr("Signal K online"));
+        markStreamActivity(tr("Stream online"));
         emit serverMessageChanged(discoveryMessage());
 
         connect(&m_WebSocket, &QWebSocket::textMessageReceived,
@@ -869,14 +947,15 @@ namespace fairwindsk::signalk {
         if (m_Debug)
             qDebug() << "WebSocket disconnected";
 
-        emit serverHealthChanged(false, tr("Signal K disconnected"));
+        m_streamHealthTimer.stop();
+        setStreamHealth(false, tr("Stream disconnected"));
         emit serverMessageChanged(tr("Waiting for Signal K"));
     }
 //! [onDisconnected]
 
 //! [onTextMessageReceived]
     void Client::onTextMessageReceived(QString message) {
-
+        markStreamActivity(tr("Stream online"));
 
         QJsonDocument jsonDocument = QJsonDocument::fromJson(message.toUtf8());
 
@@ -905,6 +984,16 @@ namespace fairwindsk::signalk {
         }
     }
     //! [onTextMessageReceived]
+
+    void Client::onStreamHealthTimeout() {
+        if (m_lastStreamActivity.isNull()) {
+            return;
+        }
+
+        if (m_lastStreamActivity.msecsTo(QDateTime::currentDateTimeUtc()) > kStreamTimeoutMs) {
+            setStreamHealth(false, tr("Stream heartbeat missing"));
+        }
+    }
 
     QString Client::getToken() {
         return m_Token;
@@ -1092,6 +1181,27 @@ namespace fairwindsk::signalk {
         pathComponent.replace('.', '/');
 
         return signalkGet(QUrl(url().toString() + "/v1/api/" + normalizedContext + "/" + pathComponent + "/meta"));
+    }
+
+    bool Client::isRestHealthy() const {
+        return m_restHealthy;
+    }
+
+    bool Client::isStreamHealthy() const {
+        return m_streamHealthy;
+    }
+
+    QString Client::connectionStatusText() const {
+        if (m_restHealthy && m_streamHealthy) {
+            return tr("REST + Stream online");
+        }
+        if (m_restHealthy) {
+            return tr("REST online, stream offline");
+        }
+        if (m_streamHealthy) {
+            return tr("Stream online, REST offline");
+        }
+        return tr("Signal K offline");
     }
 
     QJsonObject Client::subscribe(const QString& path, QObject *receiver, const char *member, int period, const QString& policy, int minPeriod) {

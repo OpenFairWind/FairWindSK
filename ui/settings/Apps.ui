@@ -106,7 +106,7 @@ QToolButton#toolButton_ClearPageSlot:disabled {
        <item>
         <widget class="QGroupBox" name="groupBox_AvailableApps">
          <property name="title">
-          <string>Applications</string>
+          <string/>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_AvailableApps">
           <item>
@@ -135,7 +135,7 @@ QToolButton#toolButton_ClearPageSlot:disabled {
        <item>
         <widget class="QGroupBox" name="groupBox_PageTree">
          <property name="title">
-          <string>Pages</string>
+          <string/>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_PageTree">
           <item>

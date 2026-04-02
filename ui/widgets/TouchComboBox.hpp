@@ -56,6 +56,7 @@ namespace fairwindsk::ui::widgets {
         void editTextChanged(const QString &text);
 
     protected:
+        bool event(QEvent *event) override;
         bool eventFilter(QObject *watched, QEvent *event) override;
         void resizeEvent(QResizeEvent *event) override;
 
@@ -64,6 +65,7 @@ namespace fairwindsk::ui::widgets {
         void handleItemClicked(QListWidgetItem *item);
 
     private:
+        void applyTouchStyle();
         void updateDisplay();
         void positionPopup();
         void ensureCurrentItemVisible() const;

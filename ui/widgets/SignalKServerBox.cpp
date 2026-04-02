@@ -25,6 +25,8 @@ namespace fairwindsk::ui::widgets {
 
         setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
         ui->labelIndicator->setFixedSize(kIndicatorSize, kIndicatorSize);
+        ui->labelRestIndicator->setFixedSize(kIndicatorSize, kIndicatorSize);
+        ui->labelStreamIndicator->setFixedSize(kIndicatorSize, kIndicatorSize);
         ui->labelBusy->setFixedSize(kThrobberSize, kThrobberSize);
         ui->labelBusy->setScaledContents(true);
         ui->labelStatus->setText(tr("Signal K"));
@@ -38,15 +40,22 @@ namespace fairwindsk::ui::widgets {
         ui->labelBusy->setMovie(m_throbber);
         ui->labelBusy->setVisible(false);
 
-        applyIndicatorColor(QStringLiteral("#f59e0b"));
+        applyIndicatorColor(ui->labelIndicator, QStringLiteral("#f59e0b"));
+        applyIndicatorColor(ui->labelRestIndicator, QStringLiteral("#f59e0b"));
+        applyIndicatorColor(ui->labelStreamIndicator, QStringLiteral("#f59e0b"));
 
         if (auto *client = FairWindSK::getInstance()->getSignalKClient()) {
             connect(client, &fairwindsk::signalk::Client::serverHealthChanged,
                     this, &SignalKServerBox::onServerHealthChanged);
+            connect(client, &fairwindsk::signalk::Client::connectivityChanged,
+                    this, &SignalKServerBox::onConnectivityChanged);
             connect(client, &fairwindsk::signalk::Client::requestActivityChanged,
                     this, &SignalKServerBox::onRequestActivityChanged);
             connect(client, &fairwindsk::signalk::Client::serverMessageChanged,
                     this, &SignalKServerBox::onServerMessageChanged);
+
+            onConnectivityChanged(client->isRestHealthy(), client->isStreamHealthy(), client->connectionStatusText());
+            onServerHealthChanged(client->isRestHealthy() && client->isStreamHealthy(), client->connectionStatusText());
         }
     }
 
@@ -57,7 +66,13 @@ namespace fairwindsk::ui::widgets {
 
     void SignalKServerBox::onServerHealthChanged(const bool healthy, const QString &statusText) {
         ui->labelStatus->setText(statusText.trimmed().isEmpty() ? tr("Signal K") : statusText.trimmed());
-        applyIndicatorColor(healthy ? QStringLiteral("#22c55e") : QStringLiteral("#ef4444"));
+        applyIndicatorColor(ui->labelIndicator, healthy ? QStringLiteral("#22c55e") : QStringLiteral("#ef4444"));
+    }
+
+    void SignalKServerBox::onConnectivityChanged(const bool restHealthy, const bool streamHealthy, const QString &statusText) {
+        Q_UNUSED(statusText)
+        applyIndicatorColor(ui->labelRestIndicator, restHealthy ? QStringLiteral("#22c55e") : QStringLiteral("#ef4444"));
+        applyIndicatorColor(ui->labelStreamIndicator, streamHealthy ? QStringLiteral("#22c55e") : QStringLiteral("#ef4444"));
     }
 
     void SignalKServerBox::onRequestActivityChanged(const bool active) {
@@ -79,8 +94,12 @@ namespace fairwindsk::ui::widgets {
         ui->plainTextEditMessage->setToolTip(ui->plainTextEditMessage->toPlainText());
     }
 
-    void SignalKServerBox::applyIndicatorColor(const QString &color) {
-        ui->labelIndicator->setStyleSheet(QStringLiteral(
+    void SignalKServerBox::applyIndicatorColor(QLabel *label, const QString &color) {
+        if (!label) {
+            return;
+        }
+
+        label->setStyleSheet(QStringLiteral(
             "QLabel {"
             " background: %1;"
             " border: 1px solid rgba(255,255,255,0.35);"

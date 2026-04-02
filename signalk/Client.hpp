@@ -12,6 +12,8 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QDateTime>
+#include <QTimer>
 #include <QVariantMap>
 
 #include "Waypoint.hpp"
@@ -98,6 +100,9 @@ namespace fairwindsk::signalk {
         QJsonObject putUnitPreferencesCustomPreset(const QString &name, const QJsonObject &payload);
         bool deleteUnitPreferencesCustomPreset(const QString &name);
         QJsonObject getPathMeta(const QString &path, const QString &context = QStringLiteral("vessels/self"));
+        bool isRestHealthy() const;
+        bool isStreamHealthy() const;
+        QString connectionStatusText() const;
 
         static QString getStringFromUpdateByPath(const QJsonObject &update, const QString& path = "");
         static double getDoubleFromUpdateByPath(const QJsonObject &update, const QString& path = "");
@@ -115,12 +120,14 @@ namespace fairwindsk::signalk {
         void requestActivityChanged(bool active);
         void requestCountChanged(int activeRequests);
         void serverHealthChanged(bool healthy, const QString &statusText);
+        void connectivityChanged(bool restHealthy, bool streamHealthy, const QString &statusText);
         void serverMessageChanged(const QString &message);
 
     private slots:
         void onConnected();
         void onDisconnected();
         void onTextMessageReceived(QString message);
+        void onStreamHealthTimeout();
 
 
 
@@ -144,15 +151,20 @@ namespace fairwindsk::signalk {
         QString m_Label;
 
         QNetworkRequest createJsonRequest(const QUrl& url) const;
-        QByteArray finishReply(QNetworkReply *reply, bool updateCookie = false, bool *success = nullptr, QString *message = nullptr) const;
+        QByteArray finishReply(QNetworkReply *reply, bool updateCookie = false, bool *success = nullptr, QString *message = nullptr, int *httpStatus = nullptr) const;
         QByteArray httpGet(const QUrl& url);
         QByteArray httpGet(const QUrl& url, const QJsonObject& payload);
         QByteArray httpPost(const QUrl& url, const QJsonObject& payload);
         QByteArray httpPut(const QUrl& url, const QJsonObject& payload);
         QByteArray httpDelete(const QUrl& url, const QJsonObject& payload);
         void beginRequest(const QString &method, const QUrl &url);
-        void endRequest(bool success, const QString &message = QString());
+        void endRequest(bool success, const QUrl &url = {}, int httpStatus = 0, const QString &message = QString());
         QString discoveryMessage() const;
+        bool shouldSuppressServerMessage(const QUrl &url, int httpStatus) const;
+        void setRestHealth(bool healthy, const QString &statusText = QString());
+        void setStreamHealth(bool healthy, const QString &statusText = QString());
+        void emitConnectivityState(const QString &statusText = QString());
+        void markStreamActivity(const QString &statusText = QString());
 
         QUrl getEndpointByProtocol(const QString &protocol, const QString& version = "v1");
         QJsonDocument getJsonDocument(const QUrl &url, const QJsonObject &payload = {});
@@ -164,6 +176,10 @@ namespace fairwindsk::signalk {
 
         QList<Subscription> m_subscriptions;
         int m_activeRequests = 0;
+        bool m_restHealthy = false;
+        bool m_streamHealthy = false;
+        QDateTime m_lastStreamActivity;
+        QTimer m_streamHealthTimer;
     };
 }
 

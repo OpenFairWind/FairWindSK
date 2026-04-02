@@ -24,6 +24,7 @@ namespace fairwindsk::ui::widgets {
         static QString scrollBarStyleSheet();
 
     private:
+        bool event(QEvent *event) override;
         QPushButton *createScrollButton(QScrollBar *parentScrollBar, const QString &iconPath) const;
         bool eventFilter(QObject *watched, QEvent *event) override;
         void resizeEvent(QResizeEvent *event) override;

@@ -55,6 +55,7 @@ namespace fairwindsk::ui::widgets {
         void stateChanged(int state);
 
     protected:
+        bool event(QEvent *event) override;
         bool eventFilter(QObject *watched, QEvent *event) override;
 
     private slots:
@@ -63,6 +64,7 @@ namespace fairwindsk::ui::widgets {
         void onButtonReleased();
 
     private:
+        void applyTouchStyle();
         void advanceState();
         void applyState(Qt::CheckState state, bool emitSignals);
         void refreshAppearance();
