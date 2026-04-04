@@ -31,6 +31,33 @@
  */
 
 namespace fairwindsk::signalk {
+    namespace {
+        QString featurePropertyString(const QJsonObject &waypoint, const QString &key) {
+            if (!waypoint.contains("feature") || !waypoint.value("feature").isObject()) {
+                return {};
+            }
+
+            const QJsonObject feature = waypoint.value("feature").toObject();
+            if (!feature.contains("properties") || !feature.value("properties").isObject()) {
+                return {};
+            }
+
+            return feature.value("properties").toObject().value(key).toString();
+        }
+
+        void setFeatureProperty(QJsonObject *waypoint, const QString &key, const QString &value) {
+            if (!waypoint) {
+                return;
+            }
+
+            QJsonObject feature = waypoint->value("feature").toObject();
+            QJsonObject properties = feature.value("properties").toObject();
+            properties.insert(key, value);
+            feature.insert("properties", properties);
+            waypoint->insert("feature", feature);
+        }
+    }
+
     Waypoint::Waypoint(const QString &id, const QString &name, const QString &description, const QString &type,
                        const QGeoCoordinate &coordinate) {
         QJsonObject pos;
@@ -75,15 +102,18 @@ namespace fairwindsk::signalk {
     };
 
     QString Waypoint::getName()  {
-        return this->operator[]("name").toString();
+        const QString name = this->operator[]("name").toString();
+        return name.isEmpty() ? featurePropertyString(*this, QStringLiteral("name")) : name;
     };
 
     QString Waypoint::getDescription() {
-        return this->operator[]("description").toString();
+        const QString description = this->operator[]("description").toString();
+        return description.isEmpty() ? featurePropertyString(*this, QStringLiteral("description")) : description;
     };
 
     QString Waypoint::getType() {
-        return this->operator[]("type").toString();
+        const QString type = this->operator[]("type").toString();
+        return type.isEmpty() ? featurePropertyString(*this, QStringLiteral("type")) : type;
     };
 
     QDateTime Waypoint::getTimestamp() {
@@ -116,10 +146,12 @@ namespace fairwindsk::signalk {
 
     void Waypoint::setName(const QString& name) {
         this->operator[]("name") = name;
+        setFeatureProperty(this, QStringLiteral("name"), name);
 
     }
     void Waypoint::setDescription(const QString& description) {
         this->operator[]("description") = description;
+        setFeatureProperty(this, QStringLiteral("description"), description);
     }
 
     Waypoint::Waypoint(const QJsonObject &jsonObject) : QJsonObject(jsonObject) {

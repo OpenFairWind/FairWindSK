@@ -37,7 +37,7 @@ namespace fairwindsk::signalk {
     }
 
     void Note::setValueStringByKeyIfAny(QString key, QString value) {
-        if (value != nullptr && !value.isEmpty()) {
+        if (!value.isEmpty()) {
             this->operator[](key) = value;
         }
     }
@@ -58,7 +58,14 @@ namespace fairwindsk::signalk {
 
     QString Note::source() { return getValueStringByKeyOrEmpty("source"); }
 
-    QDateTime Note::timestamp() { return QDateTime::fromString(getValueStringByKeyOrEmpty("timestamp"), "%FT%TZ"); }
+    QDateTime Note::timestamp() {
+        const QString value = getValueStringByKeyOrEmpty("timestamp");
+        QDateTime result = QDateTime::fromString(value, Qt::ISODateWithMs);
+        if (!result.isValid()) {
+            result = QDateTime::fromString(value, Qt::ISODate);
+        }
+        return result;
+    }
 
     QStringList Note::authors() {
         QStringList authors;
