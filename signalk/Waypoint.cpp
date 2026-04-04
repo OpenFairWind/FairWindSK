@@ -2,7 +2,9 @@
 // Created by Raffaele Montella on 01/03/22.
 //
 
-#include <QJsonDocument>
+#include <cmath>
+
+#include <QDateTime>
 #include <QJsonObject>
 
 #include "Waypoint.hpp"
@@ -34,20 +36,37 @@ namespace fairwindsk::signalk {
         QJsonObject pos;
         pos["latitude"] = coordinate.latitude();
         pos["longitude"] = coordinate.longitude();
-        pos["altitude"] = coordinate.altitude();
+        if (!std::isnan(coordinate.altitude())) {
+            pos["altitude"] = coordinate.altitude();
+        }
 
-        QString featureString;
-        featureString = QString(
-                R"({"id": "%1","type": "Feature","properties": { "name": "%2", "description": "%3", "type":"%4"}, "geometry": { "type": "Point", "coordinates": [ %5, %6, %7 ] }})")
-                .arg(id)
-                .arg(name)
-                .arg(description)
-                .arg(type)
-                .arg(coordinate.longitude()).arg(coordinate.latitude()).arg(coordinate.altitude());
+        QJsonObject properties;
+        properties["name"] = name;
+        properties["description"] = description;
+        properties["type"] = type;
 
+        QJsonArray coordinates;
+        coordinates.append(coordinate.longitude());
+        coordinates.append(coordinate.latitude());
+        if (!std::isnan(coordinate.altitude())) {
+            coordinates.append(coordinate.altitude());
+        }
 
-        qDebug() << "Waypoint::Waypoint :" << featureString;
-        this->operator[]("feature") = QJsonDocument::fromJson(featureString.toLatin1()).object();
+        QJsonObject geometry;
+        geometry["type"] = QStringLiteral("Point");
+        geometry["coordinates"] = coordinates;
+
+        QJsonObject feature;
+        feature["id"] = id;
+        feature["type"] = QStringLiteral("Feature");
+        feature["properties"] = properties;
+        feature["geometry"] = geometry;
+
+        this->operator[]("name") = name;
+        this->operator[]("description") = description;
+        this->operator[]("type") = type;
+        this->operator[]("timestamp") = QDateTime::currentDateTimeUtc().toString(Qt::ISODate);
+        this->operator[]("feature") = feature;
         this->operator[]("position") = pos;
     }
 
@@ -80,9 +99,15 @@ namespace fairwindsk::signalk {
                 const auto geometryJson = geoJson["geometry"].toObject();
                 if (geometryJson.contains("coordinates") && geometryJson["coordinates"].isArray()) {
                     const auto coordinatesJsonArray = geometryJson["coordinates"].toArray();
-                    result.setLongitude(coordinatesJsonArray[0].toDouble());
-                    result.setLatitude(coordinatesJsonArray[1].toDouble());
-                    result.setAltitude(coordinatesJsonArray[2].toDouble());
+                    if (coordinatesJsonArray.size() > 0 && coordinatesJsonArray.at(0).isDouble()) {
+                        result.setLongitude(coordinatesJsonArray.at(0).toDouble());
+                    }
+                    if (coordinatesJsonArray.size() > 1 && coordinatesJsonArray.at(1).isDouble()) {
+                        result.setLatitude(coordinatesJsonArray.at(1).toDouble());
+                    }
+                    if (coordinatesJsonArray.size() > 2 && coordinatesJsonArray.at(2).isDouble()) {
+                        result.setAltitude(coordinatesJsonArray.at(2).toDouble());
+                    }
                 }
             }
         }

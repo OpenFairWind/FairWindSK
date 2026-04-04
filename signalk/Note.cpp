@@ -140,6 +140,9 @@ namespace fairwindsk::signalk {
             if (!isnan(position.altitude())) {
                 jsonObjectPosition["altitude"] = position.altitude();
             }
+            this->operator[]("position") = jsonObjectPosition;
+        } else {
+            remove("position");
         }
     }
 }
