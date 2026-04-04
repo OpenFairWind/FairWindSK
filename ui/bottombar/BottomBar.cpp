@@ -22,6 +22,7 @@ namespace fairwindsk::ui::bottombar {
         constexpr int kBottomBarIconSize = 56;
         constexpr int kBottomBarButtonHeight = 78;
         constexpr int kPortAreaHeight = 72;
+        constexpr int kStarboardWidth = 280;
 
         const QString kChromeToolButtonStyle = QStringLiteral(
             "QToolButton {"
@@ -99,7 +100,9 @@ namespace fairwindsk::ui::bottombar {
         m_AlarmsBar = new AlarmsBar(this);
 
         m_signalKServerBox = new widgets::SignalKServerBox(this);
+        ui->widget_Starboard->setFixedWidth(kStarboardWidth);
         m_signalKServerBox->setMaximumHeight(kBottomBarButtonHeight);
+        m_signalKServerBox->setFixedWidth(kStarboardWidth);
         auto *starboardLayout = new QVBoxLayout(ui->widget_Starboard);
         starboardLayout->setContentsMargins(0, 0, 0, 0);
         starboardLayout->setSpacing(0);

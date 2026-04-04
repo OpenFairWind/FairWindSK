@@ -5,8 +5,10 @@
 #include "SignalKServerBox.hpp"
 
 #include <QLabel>
+#include <QFontMetrics>
 #include <QMovie>
 #include <QPlainTextEdit>
+#include <QTextOption>
 
 #include "FairWindSK.hpp"
 #include "signalk/Client.hpp"
@@ -14,8 +16,10 @@
 
 namespace fairwindsk::ui::widgets {
     namespace {
-        constexpr int kIndicatorSize = 12;
+        constexpr int kIndicatorSize = 10;
         constexpr int kThrobberSize = 18;
+        constexpr int kServerBoxWidth = 280;
+        constexpr int kServerBoxHeight = 58;
     }
 
     SignalKServerBox::SignalKServerBox(QWidget *parent)
@@ -23,26 +27,33 @@ namespace fairwindsk::ui::widgets {
           ui(new Ui::SignalKServerBox) {
         ui->setupUi(this);
 
-        setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        setFixedSize(kServerBoxWidth, kServerBoxHeight);
+        setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         ui->labelIndicator->setFixedSize(kIndicatorSize, kIndicatorSize);
-        ui->labelRestIndicator->setFixedSize(kIndicatorSize, kIndicatorSize);
-        ui->labelStreamIndicator->setFixedSize(kIndicatorSize, kIndicatorSize);
         ui->labelBusy->setFixedSize(kThrobberSize, kThrobberSize);
         ui->labelBusy->setScaledContents(true);
-        ui->labelStatus->setText(tr("Signal K"));
+        ui->labelRestCaption->hide();
+        ui->labelStreamCaption->hide();
+        ui->plainTextEditMessage->setFixedHeight(28);
         ui->plainTextEditMessage->setPlainText(tr("Waiting for server"));
         ui->plainTextEditMessage->setWordWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+        ui->plainTextEditMessage->setLineWrapMode(QPlainTextEdit::WidgetWidth);
         ui->plainTextEditMessage->document()->setDocumentMargin(0);
         ui->plainTextEditMessage->setCenterOnScroll(false);
+        ui->plainTextEditMessage->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        updateStatusLabel(tr("Signal K"));
 
         m_throbber = new QMovie(QStringLiteral(":/resources/images/widgets/throbber_ajax_loader_metal_512.gif"), QByteArray(), this);
         m_throbber->setScaledSize(QSize(kThrobberSize, kThrobberSize));
         ui->labelBusy->setMovie(m_throbber);
-        ui->labelBusy->setVisible(false);
+        m_idleBusyPixmap = QPixmap(kThrobberSize, kThrobberSize);
+        m_idleBusyPixmap.fill(Qt::transparent);
+        ui->labelBusy->setPixmap(m_idleBusyPixmap);
+        ui->labelBusy->setVisible(true);
 
         applyIndicatorColor(ui->labelIndicator, QStringLiteral("#f59e0b"));
-        applyIndicatorColor(ui->labelRestIndicator, QStringLiteral("#f59e0b"));
-        applyIndicatorColor(ui->labelStreamIndicator, QStringLiteral("#f59e0b"));
+        applyStatusBadge(ui->labelRestIndicator, tr("REST"), QStringLiteral("#7c2d12"), QStringLiteral("#fed7aa"));
+        applyStatusBadge(ui->labelStreamIndicator, tr("STR"), QStringLiteral("#7f1d1d"), QStringLiteral("#fecaca"));
 
         if (auto *client = FairWindSK::getInstance()->getSignalKClient()) {
             connect(client, &fairwindsk::signalk::Client::serverHealthChanged,
@@ -65,27 +76,32 @@ namespace fairwindsk::ui::widgets {
     }
 
     void SignalKServerBox::onServerHealthChanged(const bool healthy, const QString &statusText) {
-        ui->labelStatus->setText(statusText.trimmed().isEmpty() ? tr("Signal K") : statusText.trimmed());
-        applyIndicatorColor(ui->labelIndicator, healthy ? QStringLiteral("#22c55e") : QStringLiteral("#ef4444"));
+        updateStatusLabel(statusText.trimmed().isEmpty() ? tr("Signal K") : statusText.trimmed());
+        applyIndicatorColor(ui->labelIndicator, healthy ? QStringLiteral("#22c55e") : QStringLiteral("#f59e0b"));
     }
 
     void SignalKServerBox::onConnectivityChanged(const bool restHealthy, const bool streamHealthy, const QString &statusText) {
         Q_UNUSED(statusText)
-        applyIndicatorColor(ui->labelRestIndicator, restHealthy ? QStringLiteral("#22c55e") : QStringLiteral("#ef4444"));
-        applyIndicatorColor(ui->labelStreamIndicator, streamHealthy ? QStringLiteral("#22c55e") : QStringLiteral("#ef4444"));
+        applyStatusBadge(ui->labelRestIndicator,
+                         tr("REST"),
+                         restHealthy ? QStringLiteral("#14532d") : QStringLiteral("#7f1d1d"),
+                         restHealthy ? QStringLiteral("#dcfce7") : QStringLiteral("#fecaca"));
+        applyStatusBadge(ui->labelStreamIndicator,
+                         tr("STR"),
+                         streamHealthy ? QStringLiteral("#14532d") : QStringLiteral("#7f1d1d"),
+                         streamHealthy ? QStringLiteral("#dcfce7") : QStringLiteral("#fecaca"));
+
+        if (restHealthy && streamHealthy) {
+            applyIndicatorColor(ui->labelIndicator, QStringLiteral("#22c55e"));
+        } else if (restHealthy || streamHealthy) {
+            applyIndicatorColor(ui->labelIndicator, QStringLiteral("#f59e0b"));
+        } else {
+            applyIndicatorColor(ui->labelIndicator, QStringLiteral("#ef4444"));
+        }
     }
 
     void SignalKServerBox::onRequestActivityChanged(const bool active) {
-        ui->labelBusy->setVisible(active);
-        if (!m_throbber) {
-            return;
-        }
-
-        if (active) {
-            m_throbber->start();
-        } else {
-            m_throbber->stop();
-        }
+        setBusyVisible(active);
     }
 
     void SignalKServerBox::onServerMessageChanged(const QString &message) {
@@ -103,7 +119,62 @@ namespace fairwindsk::ui::widgets {
             "QLabel {"
             " background: %1;"
             " border: 1px solid rgba(255,255,255,0.35);"
-            " border-radius: 6px;"
+            " border-radius: 5px;"
             " }").arg(color));
+    }
+
+    void SignalKServerBox::applyStatusBadge(QLabel *label, const QString &text, const QString &fillColor, const QString &textColor) {
+        if (!label) {
+            return;
+        }
+
+        label->setAlignment(Qt::AlignCenter);
+        label->setText(text);
+        label->setStyleSheet(QStringLiteral(
+            "QLabel {"
+            " background: %1;"
+            " color: %2;"
+            " border: 1px solid rgba(255,255,255,0.18);"
+            " border-radius: 9px;"
+            " font-size: 10px;"
+            " font-weight: 700;"
+            " padding: 0px 4px;"
+            " }").arg(fillColor, textColor));
+    }
+
+    void SignalKServerBox::updateStatusLabel(const QString &text) {
+        if (!ui || !ui->labelStatus) {
+            return;
+        }
+
+        const QString normalized = text.trimmed().isEmpty() ? tr("Signal K") : text.trimmed();
+        const QString elided = ui->labelStatus->fontMetrics().elidedText(normalized, Qt::ElideRight, ui->labelStatus->width());
+        ui->labelStatus->setText(elided);
+        ui->labelStatus->setToolTip(normalized);
+    }
+
+    void SignalKServerBox::setBusyVisible(const bool active) {
+        if (!ui || !ui->labelBusy) {
+            return;
+        }
+
+        ui->labelBusy->setVisible(true);
+        if (!m_throbber) {
+            ui->labelBusy->setPixmap(m_idleBusyPixmap);
+            return;
+        }
+
+        if (active) {
+            ui->labelBusy->setMovie(m_throbber);
+            if (m_throbber->state() != QMovie::Running) {
+                m_throbber->start();
+            }
+        } else {
+            if (m_throbber->state() == QMovie::Running) {
+                m_throbber->stop();
+            }
+            ui->labelBusy->setMovie(nullptr);
+            ui->labelBusy->setPixmap(m_idleBusyPixmap);
+        }
     }
 }

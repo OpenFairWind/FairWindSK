@@ -590,6 +590,8 @@ namespace fairwindsk::ui::launcher {
             ui->scrollArea->setStyleSheet(kLauncherFrameStyle);
 
             ui->scrollArea->setWidgetResizable(false);
+            ui->scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+            ui->scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
             ui->scrollArea->horizontalScrollBar()->setVisible(false);
             ui->scrollArea->viewport()->installEventFilter(this);
 

@@ -6,6 +6,7 @@
 #define FAIRWINDSK_SIGNALKSERVERBOX_HPP
 
 #include <QLabel>
+#include <QPixmap>
 #include <QWidget>
 
 class QMovie;
@@ -30,9 +31,13 @@ namespace fairwindsk::ui::widgets {
 
     private:
         void applyIndicatorColor(QLabel *label, const QString &color);
+        void applyStatusBadge(QLabel *label, const QString &text, const QString &fillColor, const QString &textColor);
+        void updateStatusLabel(const QString &text);
+        void setBusyVisible(bool active);
 
         Ui::SignalKServerBox *ui = nullptr;
         QMovie *m_throbber = nullptr;
+        QPixmap m_idleBusyPixmap;
     };
 }
 
