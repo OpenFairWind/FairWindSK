@@ -3,6 +3,8 @@
         "virtualKeyboard": false,
         "uiScaleMode": "auto",
         "uiScalePreset": "normal",
+        "comfortViewMode": "manual",
+        "comfortViewPreset": "day",
         "launcherRows": 2,
         "launcherColumns": 3,
         "coordinateFormat": "dm_symbols_decimal",

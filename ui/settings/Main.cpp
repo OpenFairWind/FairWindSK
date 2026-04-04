@@ -31,6 +31,10 @@ namespace fairwindsk::ui::settings {
         ui->comboBox_uiScalePreset->setEnabled(!automatic);
     }
 
+    void Main::setComfortViewFieldsEnabled(const bool automatic) const {
+        ui->comboBox_comfortViewPreset->setEnabled(!automatic);
+    }
+
     Main::Main(Settings *settings, QWidget *parent) :
             QWidget(parent), ui(new Ui::Main) {
 
@@ -48,7 +52,6 @@ namespace fairwindsk::ui::settings {
         ui->comboBox_uiScalePreset->addItem(tr("Large"), "large");
         ui->comboBox_uiScalePreset->addItem(tr("Extra Large"), "xlarge");
         ui->comboBox_comfortViewPreset->addItem(QIcon(QStringLiteral(":/resources/svg/OpenBridge/comfort-dawn.svg")), tr("Dawn"), "dawn");
-        ui->comboBox_comfortViewPreset->addItem(QIcon(QStringLiteral(":/resources/svg/OpenBridge/comfort-sunrise.svg")), tr("Sunrise"), "sunrise");
         ui->comboBox_comfortViewPreset->addItem(QIcon(QStringLiteral(":/resources/svg/OpenBridge/comfort-day.svg")), tr("Day"), "day");
         ui->comboBox_comfortViewPreset->addItem(QIcon(QStringLiteral(":/resources/svg/OpenBridge/comfort-sunset.svg")), tr("Sunset"), "sunset");
         ui->comboBox_comfortViewPreset->addItem(QIcon(QStringLiteral(":/resources/svg/OpenBridge/comfort-dusk.svg")), tr("Dusk"), "dusk");
@@ -79,8 +82,17 @@ namespace fairwindsk::ui::settings {
         const bool automaticUiScale = m_settings->getConfiguration()->getUiScaleMode() == "auto";
         ui->checkBox_autoUiScale->setCheckState(automaticUiScale ? Qt::Checked : Qt::Unchecked);
         setUiScaleFieldsEnabled(automaticUiScale);
-        const int comfortViewIndex = ui->comboBox_comfortViewPreset->findData(m_settings->getConfiguration()->getComfortViewPreset());
-        ui->comboBox_comfortViewPreset->setCurrentIndex(comfortViewIndex >= 0 ? comfortViewIndex : 2);
+
+        const bool automaticComfortView = m_settings->getConfiguration()->getComfortViewMode() == "auto";
+        ui->checkBox_autoComfortView->setCheckState(automaticComfortView ? Qt::Checked : Qt::Unchecked);
+        setComfortViewFieldsEnabled(automaticComfortView);
+
+        QString comfortPreset = m_settings->getConfiguration()->getComfortViewPreset();
+        if (comfortPreset == "sunrise") {
+            comfortPreset = "dawn";
+        }
+        const int comfortViewIndex = ui->comboBox_comfortViewPreset->findData(comfortPreset);
+        ui->comboBox_comfortViewPreset->setCurrentIndex(comfortViewIndex >= 0 ? comfortViewIndex : 1);
         ui->spinBox_launcherRows->setValue(m_settings->getConfiguration()->getLauncherRows());
         ui->spinBox_launcherColumns->setValue(m_settings->getConfiguration()->getLauncherColumns());
         const int coordinateFormatIndex = ui->comboBox_coordinateFormat->findData(m_settings->getConfiguration()->getCoordinateFormat());
@@ -100,6 +112,10 @@ namespace fairwindsk::ui::settings {
                 &fairwindsk::ui::widgets::TouchCheckBox::stateChanged,
                 this,
                 &Main::onUiScaleModeStateChanged);
+        connect(ui->checkBox_autoComfortView,
+                &fairwindsk::ui::widgets::TouchCheckBox::stateChanged,
+                this,
+                &Main::onComfortViewModeStateChanged);
 
         setWindowGeometryFieldsEnabled(windowMode);
 
@@ -165,6 +181,13 @@ namespace fairwindsk::ui::settings {
         Q_UNUSED(index);
 
         m_settings->getConfiguration()->setUiScalePreset(ui->comboBox_uiScalePreset->currentData().toString());
+        m_settings->markDirty(FairWindSK::RuntimeUi, 0);
+    }
+
+    void Main::onComfortViewModeStateChanged(const int state) {
+        const bool automatic = state == Qt::Checked;
+        m_settings->getConfiguration()->setComfortViewMode(automatic ? "auto" : "manual");
+        setComfortViewFieldsEnabled(automatic);
         m_settings->markDirty(FairWindSK::RuntimeUi, 0);
     }
 

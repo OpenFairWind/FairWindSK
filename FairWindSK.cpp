@@ -13,6 +13,7 @@
 #include <QToolButton>
 #include <QPushButton>
 #include <QStandardPaths>
+#include <QFile>
 
 
 #include <QLoggingCategory>
@@ -26,6 +27,7 @@
 #include <QUrl>
 #include <QPointer>
 #include <QTimer>
+#include <QTime>
 #include <algorithm>
 
 #include "Units.hpp"
@@ -174,225 +176,215 @@ namespace fairwindsk {
             return "normal";
         }
 
+        QString normalizedComfortViewPreset(QString preset) {
+            preset = preset.trimmed().toLower();
+            if (preset == "sunrise") {
+                return QStringLiteral("dawn");
+            }
+            if (preset != "dawn" && preset != "day" && preset != "sunset" && preset != "dusk" && preset != "night") {
+                return QStringLiteral("day");
+            }
+            return preset;
+        }
+
+        QString resolvedComfortViewPreset(const Configuration &configuration) {
+            if (configuration.getComfortViewMode() != "auto") {
+                return normalizedComfortViewPreset(configuration.getComfortViewPreset());
+            }
+
+            const QTime now = QTime::currentTime();
+            if (now >= QTime(5, 30) && now < QTime(7, 0)) {
+                return QStringLiteral("dawn");
+            }
+            if (now >= QTime(7, 0) && now < QTime(17, 30)) {
+                return QStringLiteral("day");
+            }
+            if (now >= QTime(17, 30) && now < QTime(19, 0)) {
+                return QStringLiteral("sunset");
+            }
+            if (now >= QTime(19, 0) && now < QTime(20, 30)) {
+                return QStringLiteral("dusk");
+            }
+            return QStringLiteral("night");
+        }
+
+        QString comfortThemeResourcePath(const QString &preset) {
+            return QStringLiteral(":/resources/stylesheets/%1.qss").arg(normalizedComfortViewPreset(preset));
+        }
+
+        QString loadComfortThemeStyleSheet(const QString &preset) {
+            QFile file(comfortThemeResourcePath(preset));
+            if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+                return QString();
+            }
+
+            return QString::fromUtf8(file.readAll());
+        }
+
         UiComfortPalette uiComfortPaletteForPreset(const QString &preset) {
             UiComfortPalette palette;
 
-            if (preset == "dawn") {
-                palette.window = "#0b1220";
-                palette.panel = "#1a2333";
-                palette.buttonTop = "#75829a";
-                palette.buttonBottom = "#4f5d74";
-                palette.buttonHoverTop = "#8694ad";
-                palette.buttonHoverBottom = "#5d6c84";
-                palette.accentTop = "#f0b278";
-                palette.accentBottom = "#d78d4d";
-                palette.accentBorder = "#f6c591";
-                palette.scrollTrack = "#cfd8e3";
-            } else if (preset == "sunrise") {
-                palette.window = "#140f18";
-                palette.panel = "#2a1f29";
-                palette.buttonTop = "#8b7b86";
-                palette.buttonBottom = "#5d4b56";
-                palette.buttonHoverTop = "#a08e9a";
-                palette.buttonHoverBottom = "#715f6b";
-                palette.accentTop = "#ffb347";
-                palette.accentBottom = "#f97316";
-                palette.accentBorder = "#ffd08a";
-                palette.scrollTrack = "#dfd4d8";
-            } else if (preset == "sunset") {
-                palette.window = "#160b12";
-                palette.panel = "#321520";
-                palette.buttonTop = "#91747f";
-                palette.buttonBottom = "#684b56";
-                palette.buttonHoverTop = "#a78a95";
-                palette.buttonHoverBottom = "#7d5f6a";
-                palette.accentTop = "#fb923c";
-                palette.accentBottom = "#dc2626";
-                palette.accentBorder = "#fdba74";
-                palette.scrollTrack = "#e0d6dc";
-            } else if (preset == "dusk") {
-                palette.window = "#090d17";
-                palette.panel = "#171d2e";
-                palette.buttonTop = "#7680a0";
-                palette.buttonBottom = "#505a78";
-                palette.buttonHoverTop = "#8792b4";
-                palette.buttonHoverBottom = "#616c8b";
-                palette.accentTop = "#818cf8";
-                palette.accentBottom = "#4f46e5";
-                palette.accentBorder = "#a5b4fc";
-                palette.scrollTrack = "#d4daeb";
-            } else if (preset == "night") {
+            const QString normalizedPreset = normalizedComfortViewPreset(preset);
+
+            if (normalizedPreset == "dawn") {
+                palette.window = "#101a2a";
+                palette.panel = "#162338";
+                palette.base = "#f6e2b6";
+                palette.alternateBase = "#ead2a1";
+                palette.buttonTop = "#ffe3a3";
+                palette.buttonBottom = "#d8b56f";
+                palette.buttonHoverTop = "#ffebb7";
+                palette.buttonHoverBottom = "#e2c17f";
+                palette.buttonPressedTop = "#c59653";
+                palette.buttonPressedBottom = "#8e6734";
+                palette.accentTop = "#ffd37a";
+                palette.accentBottom = "#f2a93b";
+                palette.accentBorder = "#ffe7ac";
+                palette.text = "#f7f3e8";
+                palette.subduedText = "#d8d7d0";
+                palette.fieldText = "#1f2c3a";
+                palette.border = "#c7b07a";
+                palette.borderStrong = "#35506d";
+                palette.scrollTrack = "#d4c29d";
+                palette.scrollHandleTop = "#fff0bf";
+                palette.scrollHandleMid = "#edd49d";
+                palette.scrollHandleBottom = "#b69056";
+            } else if (normalizedPreset == "sunset") {
+                palette.window = "#1b1210";
+                palette.panel = "#2a1a17";
+                palette.base = "#f0d2a2";
+                palette.alternateBase = "#e4bb7c";
+                palette.buttonTop = "#ffd39a";
+                palette.buttonBottom = "#cf8d4d";
+                palette.buttonHoverTop = "#ffdeaf";
+                palette.buttonHoverBottom = "#daa063";
+                palette.buttonPressedTop = "#c1693b";
+                palette.buttonPressedBottom = "#7f3b1f";
+                palette.accentTop = "#ffb45f";
+                palette.accentBottom = "#ef6b2e";
+                palette.accentBorder = "#ffd29d";
+                palette.text = "#fff1df";
+                palette.subduedText = "#e6c3aa";
+                palette.fieldText = "#2b1d18";
+                palette.border = "#d19965";
+                palette.borderStrong = "#6f3e27";
+                palette.scrollTrack = "#d1b08e";
+                palette.scrollHandleTop = "#ffe4bb";
+                palette.scrollHandleMid = "#e8bd8c";
+                palette.scrollHandleBottom = "#ad7240";
+            } else if (normalizedPreset == "dusk") {
+                palette.window = "#07111d";
+                palette.panel = "#0d1b2c";
+                palette.base = "#bcc9d8";
+                palette.alternateBase = "#96a6ba";
+                palette.buttonTop = "#b7c7db";
+                palette.buttonBottom = "#627a95";
+                palette.buttonHoverTop = "#c7d4e4";
+                palette.buttonHoverBottom = "#748ca6";
+                palette.buttonPressedTop = "#4f6480";
+                palette.buttonPressedBottom = "#2a3b4f";
+                palette.accentTop = "#86a8d7";
+                palette.accentBottom = "#4a6f9d";
+                palette.accentBorder = "#b9d0ee";
+                palette.text = "#e7eef7";
+                palette.subduedText = "#b7c5d6";
+                palette.fieldText = "#102236";
+                palette.border = "#6d88a6";
+                palette.borderStrong = "#38516d";
+                palette.scrollTrack = "#98a7ba";
+                palette.scrollHandleTop = "#d6e1ee";
+                palette.scrollHandleMid = "#9eb0c6";
+                palette.scrollHandleBottom = "#5c7390";
+            } else if (normalizedPreset == "night") {
                 palette.window = "#050304";
-                palette.panel = "#18070a";
-                palette.base = "#2a0f14";
-                palette.alternateBase = "#45141d";
-                palette.buttonTop = "#6f3d46";
-                palette.buttonBottom = "#3b1018";
-                palette.buttonHoverTop = "#83515b";
-                palette.buttonHoverBottom = "#4b1922";
+                palette.panel = "#120608";
+                palette.base = "#1b0b0e";
+                palette.alternateBase = "#2b1014";
+                palette.buttonTop = "#7b2e39";
+                palette.buttonBottom = "#3b0a10";
+                palette.buttonHoverTop = "#96404d";
+                palette.buttonHoverBottom = "#53111a";
                 palette.buttonPressedTop = "#2b0b11";
                 palette.buttonPressedBottom = "#120507";
-                palette.accentTop = "#ff8a65";
-                palette.accentBottom = "#b91c1c";
-                palette.accentBorder = "#ffb4a0";
-                palette.text = "#ffe6dd";
-                palette.subduedText = "#ffc3b5";
-                palette.fieldText = "#ffe6dd";
-                palette.border = "#c08497";
+                palette.accentTop = "#ff4d4d";
+                palette.accentBottom = "#a61218";
+                palette.accentBorder = "#ff8a8a";
+                palette.text = "#ffb3b3";
+                palette.subduedText = "#d78c8c";
+                palette.fieldText = "#ffb3b3";
+                palette.border = "#8d3741";
                 palette.borderStrong = "#7f1d1d";
-                palette.scrollTrack = "#5a2a32";
-                palette.scrollHandleTop = "#ffd9cf";
-                palette.scrollHandleMid = "#f7b5a3";
-                palette.scrollHandleBottom = "#cf7e6a";
+                palette.scrollTrack = "#341417";
+                palette.scrollHandleTop = "#b84a57";
+                palette.scrollHandleMid = "#822430";
+                palette.scrollHandleBottom = "#501118";
+            } else {
+                palette.window = "#f6f2df";
+                palette.panel = "#fff7dc";
+                palette.base = "#fffdf5";
+                palette.alternateBase = "#f4efcf";
+                palette.buttonTop = "#fff9d7";
+                palette.buttonBottom = "#d8ca76";
+                palette.buttonHoverTop = "#fffbe4";
+                palette.buttonHoverBottom = "#e4d487";
+                palette.buttonPressedTop = "#c5b85c";
+                palette.buttonPressedBottom = "#8c7f2b";
+                palette.accentTop = "#2f5fb7";
+                palette.accentBottom = "#1e4387";
+                palette.accentBorder = "#4c7bd1";
+                palette.text = "#111111";
+                palette.subduedText = "#4a4f55";
+                palette.fieldText = "#111111";
+                palette.border = "#9c9160";
+                palette.borderStrong = "#4f5d72";
+                palette.scrollTrack = "#ece4bf";
+                palette.scrollHandleTop = "#fffdf1";
+                palette.scrollHandleMid = "#efe6b8";
+                palette.scrollHandleBottom = "#c4b56a";
             }
 
             return palette;
         }
 
-        QString buildUiStyleSheet(const UiMetrics &metrics, const UiComfortPalette &palette) {
+        QString buildUiMetricsStyleSheet(const UiMetrics &metrics) {
             return QString(
                        "QWidget { font-size: %1pt; }"
-                       "QWidget { color: %13; }"
-                       "QMainWindow, QDialog, QWidget, QFrame, QStackedWidget, QSplitter, QScrollArea, QAbstractScrollArea { background: %2; }"
-                       "QMenuBar, QMenu, QStatusBar, QToolTip { background: %2; color: %13; }"
-                       "QToolTip { border: 1px solid %10; padding: %14px; }"
-                       "QAbstractScrollArea { background: %2; border: 1px solid %10; border-radius: 6px; }"
-                       "QLineEdit, QTextEdit, QPlainTextEdit, QListView, QListWidget, QTreeView, QTreeWidget, QTableView, QTableWidget {"
-                       " background: %3;"
-                       " color: %4;"
-                       " border: 1px solid %10;"
-                       " border-radius: 6px;"
-                       " selection-background-color: %12;"
-                       " selection-color: %13;"
-                       " }"
-                       "QListView::item, QListWidget::item, QTreeView::item, QTreeWidget::item, QTableView::item, QTableWidget::item { color: %4; }"
                        "QToolButton, QPushButton, TouchComboBox, QLineEdit, QTextEdit, QPlainTextEdit, "
-                       "QSpinBox, QDoubleSpinBox, QDateTimeEdit { min-height: %5px; }"
-                       "QComboBox, QAbstractSpinBox, QDateTimeEdit {"
-                       " background: %3;"
-                       " color: %4;"
-                       " border: 1px solid %10;"
-                       " border-radius: 6px;"
-                       " padding: %14px %15px;"
-                       " }"
-                       "QComboBox::drop-down { border: none; width: %5px; }"
-                       "QComboBox QAbstractItemView {"
-                       " background: %3;"
-                       " color: %4;"
-                       " border: 1px solid %10;"
-                       " selection-background-color: %12;"
-                       " selection-color: %13;"
-                       " }"
-                       "QToolButton, QPushButton {"
-                       " background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %6, stop:1 %7);"
-                       " color: %13;"
-                       " border: 1px solid %10;"
-                       " border-radius: 6px;"
-                       " padding: %14px %15px;"
-                       " }"
-                       "QToolButton:hover, QPushButton:hover {"
-                       " background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %8, stop:1 %9);"
-                       " }"
+                       "QSpinBox, QDoubleSpinBox, QDateTimeEdit { min-height: %2px; }"
+                       "QComboBox, QAbstractSpinBox, QDateTimeEdit { padding: %3px %4px; }"
+                       "QComboBox::drop-down { border: none; width: %2px; }"
+                       "QToolButton, QPushButton { padding: %3px %4px; }"
                        "QToolButton:pressed, QPushButton:pressed,"
-                       "QToolButton:checked, QPushButton:checked {"
-                       " background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %16, stop:1 %17);"
-                       " padding-top: %18px;"
-                       " padding-bottom: %19px;"
-                       " }"
-                       "QTabWidget::pane { border: 1px solid %11; top: -1px; }"
+                       "QToolButton:checked, QPushButton:checked { padding-top: %5px; padding-bottom: %6px; }"
                        "QTabBar::tab {"
-                       " min-height: %20px;"
-                       " padding: %14px %15px;"
-                       " color: %13;"
-                       " background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %6, stop:1 %7);"
-                       " border: 1px solid %10;"
-                       " border-bottom-color: %11;"
+                       " min-height: %7px;"
+                       " padding: %3px %4px;"
                        " border-top-left-radius: 6px;"
                        " border-top-right-radius: 6px;"
                        " margin-right: 2px;"
                        " }"
-                       "QTabBar::tab:selected {"
-                       " background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %12, stop:1 %21);"
-                       " color: %22;"
-                       " border-color: %23;"
-                       " padding-top: %18px;"
-                       " padding-bottom: %19px;"
-                       " }"
-                       "QTabBar::tab:hover:!selected {"
-                       " background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %8, stop:1 %9);"
-                       " }"
-                       "QCheckBox, QLabel, QGroupBox { spacing: %15px; color: %13; }"
-                       "QLabel { background: transparent; }"
+                       "QTabBar::tab:selected { padding-top: %5px; padding-bottom: %6px; }"
+                       "QCheckBox, QLabel, QGroupBox { spacing: %4px; }"
                        "QGroupBox {"
-                       " background: transparent;"
-                       " border: 1px solid %10;"
                        " border-radius: 8px;"
-                       " margin-top: %20px;"
-                       " padding-top: %20px;"
-                       " }"
-                       "QGroupBox::title {"
-                       " subcontrol-origin: margin;"
-                       " left: %15px;"
-                       " padding: 0 %14px;"
-                       " color: %22;"
+                       " margin-top: %7px;"
+                       " padding-top: %7px;"
                        " }"
                        "QCheckBox::indicator {"
-                       " width: %24px;"
-                       " height: %25px;"
-                       " border-radius: %26px;"
-                       " border: 1px solid %10;"
-                       " background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %6, stop:1 %7);"
+                       " width: %8px;"
+                       " height: %9px;"
+                       " border-radius: %10px;"
                        " }"
-                       "QCheckBox::indicator:checked {"
-                       " border-color: %23;"
-                       " background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %12, stop:1 %21);"
-                       " }"
-                       "QCheckBox::indicator:unchecked:hover, QCheckBox::indicator:checked:hover {"
-                       " border-color: %22;"
-                       " }"
-                       "QHeaderView::section, QTableCornerButton::section {"
-                       " background: %2;"
-                       " color: %13;"
-                       " border: 1px solid %10;"
-                       " }"
-                       "QHeaderView::section { font-size: %1pt; padding: %14px %15px; }"
-                       "QSplitter::handle { background: %10; }"
-                       "QProgressBar {"
-                       " border: 1px solid %10;"
-                       " border-radius: 6px;"
-                       " background: %2;"
-                       " color: %13;"
-                       " text-align: center;"
-                       " }"
-                       "QProgressBar::chunk {"
-                       " background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %12, stop:1 %21);"
-                       " border-radius: 5px;"
-                       " }"
-                       "QMenu::item { padding: %14px %27px; }"
-                       "%28")
+                       "QHeaderView::section { font-size: %1pt; padding: %3px %4px; }"
+                       "QMenu::item { padding: %3px %11px; }"
+                       "%12")
                 .arg(metrics.fontPointSize)
-                .arg(palette.panel)
-                .arg(palette.base)
-                .arg(palette.fieldText)
                 .arg(metrics.controlHeight)
-                .arg(palette.buttonTop)
-                .arg(palette.buttonBottom)
-                .arg(palette.buttonHoverTop)
-                .arg(palette.buttonHoverBottom)
-                .arg(palette.border)
-                .arg(palette.borderStrong)
-                .arg(palette.accentTop)
-                .arg(palette.text)
                 .arg(metrics.verticalPadding)
                 .arg(metrics.horizontalPadding)
-                .arg(palette.buttonPressedTop)
-                .arg(palette.buttonPressedBottom)
                 .arg(std::max(1, metrics.verticalPadding - 1))
                 .arg(metrics.verticalPadding + 1)
                 .arg(metrics.tabHeight)
-                .arg(palette.accentBottom)
-                .arg(QStringLiteral("#eff6ff"))
-                .arg(palette.accentBorder)
                 .arg(metrics.toggleWidth)
                 .arg(metrics.toggleHeight)
                 .arg(metrics.toggleHeight / 2)
@@ -500,9 +492,6 @@ namespace fairwindsk {
  * the singleton design pattern
  */
     FairWindSK::FairWindSK() {
-
-
-
         // Se the default configuration file name
         m_configFilename = defaultConfigFilename();
 
@@ -515,6 +504,10 @@ namespace fairwindsk {
         if (qApp) {
             qApp->installEventFilter(this);
         }
+
+        m_autoComfortTimer = new QTimer(this);
+        m_autoComfortTimer->setInterval(60000);
+        connect(m_autoComfortTimer, &QTimer::timeout, this, &FairWindSK::refreshAutomaticComfortView);
 
         updateWebProfileCookie();
     }
@@ -611,7 +604,9 @@ namespace fairwindsk {
         const Configuration &effectiveConfiguration = configuration ? *configuration : m_configuration;
         const auto preset = resolvedUiScalePreset(effectiveConfiguration);
         const auto metrics = uiMetricsForPreset(preset);
-        const auto comfortPalette = uiComfortPaletteForPreset(effectiveConfiguration.getComfortViewPreset());
+        const QString comfortPreset = resolvedComfortViewPreset(effectiveConfiguration);
+        const auto comfortPalette = uiComfortPaletteForPreset(comfortPreset);
+        const QString combinedStyleSheet = buildUiMetricsStyleSheet(metrics) + loadComfortThemeStyleSheet(comfortPreset);
 
         QFont appFont = qApp->font();
         appFont.setPointSize(metrics.fontPointSize);
@@ -627,7 +622,21 @@ namespace fairwindsk {
         appPalette.setColor(QPalette::Highlight, QColor(comfortPalette.accentTop));
         appPalette.setColor(QPalette::HighlightedText, QColor(QStringLiteral("#eff6ff")));
         qApp->setPalette(appPalette);
-        qApp->setStyleSheet(buildUiStyleSheet(metrics, comfortPalette));
+        if (qApp->styleSheet() != combinedStyleSheet) {
+            qApp->setStyleSheet(combinedStyleSheet);
+        }
+
+        m_activeComfortViewPreset = comfortPreset;
+
+        if (m_autoComfortTimer) {
+            if (effectiveConfiguration.getComfortViewMode() == "auto") {
+                if (!m_autoComfortTimer->isActive()) {
+                    m_autoComfortTimer->start();
+                }
+            } else {
+                m_autoComfortTimer->stop();
+            }
+        }
 
         const auto widgets = QApplication::allWidgets();
         for (auto *widget : widgets) {
@@ -638,6 +647,20 @@ namespace fairwindsk {
             applyIconMetrics(widget, metrics);
             widget->updateGeometry();
             widget->update();
+        }
+    }
+
+    void FairWindSK::refreshAutomaticComfortView() {
+        if (m_configuration.getComfortViewMode() != "auto") {
+            if (m_autoComfortTimer) {
+                m_autoComfortTimer->stop();
+            }
+            return;
+        }
+
+        const QString resolvedPreset = resolvedComfortViewPreset(m_configuration);
+        if (resolvedPreset != m_activeComfortViewPreset) {
+            applyUiPreferences();
         }
     }
 

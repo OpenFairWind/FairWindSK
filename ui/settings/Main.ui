@@ -10,45 +10,6 @@
     <height>483</height>
    </rect>
   </property>
-  <property name="styleSheet">
-   <string notr="true">QWidget {
-    color: rgb(245, 245, 245);
-}
-QGroupBox {
-    color: rgb(245, 245, 245);
-}
-QLabel {
-    color: rgb(245, 245, 245);
-}
-QLineEdit, QAbstractItemView, QScrollArea, TouchScrollArea, TouchSpinBox, TouchComboBox {
-    background-color: rgb(245, 245, 245);
-    color: rgb(24, 24, 24);
-    border: 1px solid rgb(120, 120, 120);
-    selection-background-color: rgb(65, 107, 195);
-    selection-color: rgb(255, 255, 255);
-}
-TouchSpinBox QPushButton {
-    background-color: rgb(245, 245, 245);
-    color: rgb(24, 24, 24);
-    border: 1px solid rgb(120, 120, 120);
-    min-width: 44px;
-    min-height: 44px;
-}
-TouchComboBox QPushButton {
-    background-color: rgb(245, 245, 245);
-    color: rgb(24, 24, 24);
-    border: 1px solid rgb(120, 120, 120);
-    min-width: 44px;
-    min-height: 44px;
-}
-TouchCheckBox QPushButton {
-    background-color: rgb(245, 245, 245);
-    color: rgb(24, 24, 24);
-    border: 1px solid rgb(120, 120, 120);
-    min-width: 44px;
-    min-height: 44px;
-}</string>
-  </property>
   <layout class="QVBoxLayout" name="verticalLayout_Root">
    <property name="leftMargin">
     <number>0</number>
@@ -155,13 +116,27 @@ TouchCheckBox QPushButton {
            <widget class="fairwindsk::ui::widgets::TouchComboBox" name="comboBox_comfortViewPreset"/>
           </item>
           <item row="4" column="0">
+           <widget class="QLabel" name="label_autoComfortView">
+            <property name="text">
+             <string>Automatic comfortable view</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <widget class="fairwindsk::ui::widgets::TouchCheckBox" name="checkBox_autoComfortView">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="0">
            <widget class="QLabel" name="label_launcherRows">
             <property name="text">
              <string>Launcher rows</string>
             </property>
            </widget>
           </item>
-          <item row="4" column="1">
+          <item row="5" column="1">
            <widget class="fairwindsk::ui::widgets::TouchSpinBox" name="spinBox_launcherRows">
             <property name="minimum">
              <double>1.000000000000000</double>
@@ -177,14 +152,14 @@ TouchCheckBox QPushButton {
             </property>
            </widget>
           </item>
-          <item row="5" column="0">
+          <item row="6" column="0">
            <widget class="QLabel" name="label_launcherColumns">
             <property name="text">
              <string>Launcher columns</string>
             </property>
            </widget>
           </item>
-          <item row="5" column="1">
+          <item row="6" column="1">
            <widget class="fairwindsk::ui::widgets::TouchSpinBox" name="spinBox_launcherColumns">
             <property name="minimum">
              <double>1.000000000000000</double>
@@ -200,24 +175,24 @@ TouchCheckBox QPushButton {
             </property>
            </widget>
           </item>
-          <item row="6" column="0">
+          <item row="7" column="0">
            <widget class="QLabel" name="label_coordinateFormat">
             <property name="text">
              <string>Coordinate format</string>
             </property>
            </widget>
           </item>
-          <item row="6" column="1">
+          <item row="7" column="1">
            <widget class="fairwindsk::ui::widgets::TouchComboBox" name="comboBox_coordinateFormat"/>
           </item>
-          <item row="7" column="0">
+          <item row="8" column="0">
            <widget class="QLabel" name="label_windowLeft">
             <property name="text">
              <string>Window left</string>
             </property>
            </widget>
           </item>
-          <item row="7" column="1">
+          <item row="8" column="1">
            <widget class="QLineEdit" name="lineEdit_left">
             <property name="enabled">
              <bool>false</bool>
@@ -230,14 +205,14 @@ TouchCheckBox QPushButton {
             </property>
            </widget>
           </item>
-          <item row="8" column="0">
+          <item row="9" column="0">
            <widget class="QLabel" name="label_windowTop">
             <property name="text">
              <string>Window top</string>
             </property>
            </widget>
           </item>
-          <item row="8" column="1">
+          <item row="9" column="1">
            <widget class="QLineEdit" name="lineEdit_top">
             <property name="enabled">
              <bool>false</bool>
@@ -250,14 +225,14 @@ TouchCheckBox QPushButton {
             </property>
            </widget>
           </item>
-          <item row="9" column="0">
+          <item row="10" column="0">
            <widget class="QLabel" name="label_windowWidth">
             <property name="text">
              <string>Window width</string>
             </property>
            </widget>
           </item>
-          <item row="9" column="1">
+          <item row="10" column="1">
            <widget class="QLineEdit" name="lineEdit_width">
             <property name="enabled">
              <bool>false</bool>
@@ -270,14 +245,14 @@ TouchCheckBox QPushButton {
             </property>
            </widget>
           </item>
-          <item row="10" column="0">
+          <item row="11" column="0">
            <widget class="QLabel" name="label_windowHeight">
             <property name="text">
              <string>Window height</string>
             </property>
            </widget>
           </item>
-          <item row="10" column="1">
+          <item row="11" column="1">
            <widget class="QLineEdit" name="lineEdit_height">
             <property name="enabled">
              <bool>false</bool>

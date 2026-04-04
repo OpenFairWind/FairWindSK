@@ -30,6 +30,7 @@ namespace fairwindsk::ui::settings {
         void onVirtualKeyboardStateChanged(int state);
         void onUiScaleModeStateChanged(int state);
         void onUiScalePresetChanged(int index);
+        void onComfortViewModeStateChanged(int state);
         void onComfortViewPresetChanged(int index);
         void onLauncherRowsValueChanged(int value);
         void onLauncherColumnsValueChanged(int value);
@@ -38,6 +39,7 @@ namespace fairwindsk::ui::settings {
     private:
         void setWindowGeometryFieldsEnabled(const QString &windowMode) const;
         void setUiScaleFieldsEnabled(bool automatic) const;
+        void setComfortViewFieldsEnabled(bool automatic) const;
         void applyUiPreview() const;
 
         Ui::Main *ui;

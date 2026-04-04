@@ -10,6 +10,7 @@
 #include <QMap>
 #include <QString>
 #include <QEvent>
+#include <QTimer>
 #include <nlohmann/json.hpp>
 #include <QWebEngineProfile>
 
@@ -87,6 +88,7 @@ namespace fairwindsk {
     private:
         bool eventFilter(QObject *watched, QEvent *event) override;
         void updateWebProfileCookie();
+        void refreshAutomaticComfortView();
 
         // The private constructor
         FairWindSK();
@@ -120,6 +122,9 @@ namespace fairwindsk {
 
         // The debug flag
         bool m_debug = false;
+
+        QTimer *m_autoComfortTimer = nullptr;
+        QString m_activeComfortViewPreset;
 
     };
 }
