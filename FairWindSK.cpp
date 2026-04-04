@@ -443,18 +443,19 @@ namespace fairwindsk {
             QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
             QObject::connect(&timeoutTimer, &QTimer::timeout, &loop, &QEventLoop::quit);
             timeoutTimer.start(kAppsRequestTimeoutMs);
-            loop.exec();
+            loop.exec(QEventLoop::ExcludeUserInputEvents);
 
             if (!reply) {
                 return {};
             }
 
-            if (!reply->isFinished()) {
+            const bool timedOut = !reply->isFinished();
+            if (timedOut) {
                 reply->abort();
             }
 
             const auto statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-            if (!reply->isOpen()) {
+            if (timedOut || !reply->isOpen() || reply->error() != QNetworkReply::NoError) {
                 reply->deleteLater();
                 return {};
             }
