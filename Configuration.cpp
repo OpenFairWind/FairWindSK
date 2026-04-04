@@ -117,6 +117,10 @@ namespace fairwindsk {
         return getString("connection", "server");
     }
 
+    QString Configuration::getSignalKPath(const QString &key) const {
+        return getString("signalk", key, QString());
+    }
+
     QString Configuration::getToken() {
         // Initialize the QT managed settings
         QSettings settings(settingsFilename(), QSettings::IniFormat);

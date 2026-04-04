@@ -85,6 +85,7 @@
         "anchor.actions.radius": "plugins.anchoralarm.setRadius",
         "anchor.actions.rode": "plugins.anchoralarm.setRodeLength",
         "anchor.actions.set": "plugins.anchoralarm.setManualAnchor",
+        "environment.sun": "environment.sun",
         "pob.startTime": "navigation.courseGreatCircle.activeRoute.startTime",
         "pob.bearing": "navigation.course.calcValues.bearingTrue",
         "pob.distance": "navigation.course.calcValues.distance",

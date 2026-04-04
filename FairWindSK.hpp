@@ -66,6 +66,8 @@ namespace fairwindsk {
 
         // Return true if the debug is set in the fairwindsk.ini file
         [[nodiscard]] bool isDebug() const;
+        bool isAutomaticComfortViewConfigured(const Configuration *configuration = nullptr) const;
+        bool isAutomaticComfortViewAvailable(const Configuration *configuration = nullptr) const;
 
         // Get the Signal K client
         signalk::Client *getSignalKClient();
@@ -89,6 +91,7 @@ namespace fairwindsk {
         bool eventFilter(QObject *watched, QEvent *event) override;
         void updateWebProfileCookie();
         void refreshAutomaticComfortView();
+        void refreshAutomaticComfortViewAvailability(const Configuration *configuration = nullptr);
 
         // The private constructor
         FairWindSK();
@@ -125,6 +128,7 @@ namespace fairwindsk {
 
         QTimer *m_autoComfortTimer = nullptr;
         QString m_activeComfortViewPreset;
+        bool m_automaticComfortViewAvailable = false;
 
     };
 }

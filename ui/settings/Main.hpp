@@ -40,6 +40,7 @@ namespace fairwindsk::ui::settings {
         void setWindowGeometryFieldsEnabled(const QString &windowMode) const;
         void setUiScaleFieldsEnabled(bool automatic) const;
         void setComfortViewFieldsEnabled(bool automatic) const;
+        void updateComfortViewAvailability();
         void applyUiPreview() const;
 
         Ui::Main *ui;

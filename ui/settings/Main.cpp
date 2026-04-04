@@ -35,6 +35,26 @@ namespace fairwindsk::ui::settings {
         ui->comboBox_comfortViewPreset->setEnabled(!automatic);
     }
 
+    void Main::updateComfortViewAvailability() {
+        const auto *fairWindSK = FairWindSK::getInstance();
+        const bool automaticConfigured = fairWindSK->isAutomaticComfortViewConfigured(m_settings->getConfiguration());
+        const bool automaticAvailable = fairWindSK->isAutomaticComfortViewAvailable(m_settings->getConfiguration());
+        const bool allowAutomaticComfortView = automaticConfigured && automaticAvailable;
+
+        ui->checkBox_autoComfortView->setEnabled(allowAutomaticComfortView);
+
+        QString toolTip;
+        if (!automaticConfigured) {
+            toolTip = tr("Configure the Signal K path for environment.sun to enable automatic comfortable view.");
+        } else if (!automaticAvailable) {
+            toolTip = tr("Automatic comfortable view requires live Signal K derived data on the configured environment.sun path.");
+        }
+
+        ui->checkBox_autoComfortView->setToolTip(toolTip);
+        ui->label_autoComfortView->setToolTip(toolTip);
+        ui->comboBox_comfortViewPreset->setToolTip(toolTip);
+    }
+
     Main::Main(Settings *settings, QWidget *parent) :
             QWidget(parent), ui(new Ui::Main) {
 
@@ -83,7 +103,11 @@ namespace fairwindsk::ui::settings {
         ui->checkBox_autoUiScale->setCheckState(automaticUiScale ? Qt::Checked : Qt::Unchecked);
         setUiScaleFieldsEnabled(automaticUiScale);
 
-        const bool automaticComfortView = m_settings->getConfiguration()->getComfortViewMode() == "auto";
+        updateComfortViewAvailability();
+
+        const bool automaticComfortView =
+            m_settings->getConfiguration()->getComfortViewMode() == "auto" &&
+            FairWindSK::getInstance()->isAutomaticComfortViewAvailable(m_settings->getConfiguration());
         ui->checkBox_autoComfortView->setCheckState(automaticComfortView ? Qt::Checked : Qt::Unchecked);
         setComfortViewFieldsEnabled(automaticComfortView);
 
@@ -186,6 +210,11 @@ namespace fairwindsk::ui::settings {
 
     void Main::onComfortViewModeStateChanged(const int state) {
         const bool automatic = state == Qt::Checked;
+        if (automatic && !FairWindSK::getInstance()->isAutomaticComfortViewAvailable(m_settings->getConfiguration())) {
+            ui->checkBox_autoComfortView->setCheckState(Qt::Unchecked);
+            setComfortViewFieldsEnabled(false);
+            return;
+        }
         m_settings->getConfiguration()->setComfortViewMode(automatic ? "auto" : "manual");
         setComfortViewFieldsEnabled(automatic);
         m_settings->markDirty(FairWindSK::RuntimeUi, 0);

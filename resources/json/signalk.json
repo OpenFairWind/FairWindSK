@@ -40,6 +40,7 @@
     "anchor.actions.radius": "Anchor set radius",
     "anchor.actions.rode": "Anchor set rode length",
     "anchor.actions.set": "Anchor set parameters",
+    "environment.sun": "Sun derived data",
     "pob.startTime": "POB Start time",
     "pob.bearing": "POB Bearing",
     "pob.distance": "POB Distance",

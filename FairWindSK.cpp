@@ -221,6 +221,15 @@ namespace fairwindsk {
             return QString::fromUtf8(file.readAll());
         }
 
+        bool isAutomaticComfortViewSupported(const Configuration &configuration, signalk::Client *client) {
+            const QString configuredSunPath = configuration.getSignalKPath(QStringLiteral("environment.sun")).trimmed();
+            if (configuredSunPath.isEmpty() || client == nullptr || client->url().isEmpty() || !client->isRestHealthy()) {
+                return false;
+            }
+
+            return !client->signalkGet(configuredSunPath).isEmpty();
+        }
+
         UiComfortPalette uiComfortPaletteForPreset(const QString &preset) {
             UiComfortPalette palette;
 
@@ -592,8 +601,19 @@ namespace fairwindsk {
         }
 
         updateWebProfileCookie();
+        refreshAutomaticComfortViewAvailability();
         applyUiPreferences();
 
+    }
+
+    bool FairWindSK::isAutomaticComfortViewConfigured(const Configuration *configuration) const {
+        const Configuration &effectiveConfiguration = configuration ? *configuration : m_configuration;
+        return !effectiveConfiguration.getSignalKPath(QStringLiteral("environment.sun")).trimmed().isEmpty();
+    }
+
+    bool FairWindSK::isAutomaticComfortViewAvailable(const Configuration *configuration) const {
+        Q_UNUSED(configuration);
+        return isAutomaticComfortViewConfigured(configuration) && m_automaticComfortViewAvailable;
     }
 
     void FairWindSK::applyUiPreferences(const Configuration *configuration) {
@@ -604,7 +624,10 @@ namespace fairwindsk {
         const Configuration &effectiveConfiguration = configuration ? *configuration : m_configuration;
         const auto preset = resolvedUiScalePreset(effectiveConfiguration);
         const auto metrics = uiMetricsForPreset(preset);
-        const QString comfortPreset = resolvedComfortViewPreset(effectiveConfiguration);
+        const QString comfortPreset =
+            effectiveConfiguration.getComfortViewMode() == "auto" && !isAutomaticComfortViewAvailable(&effectiveConfiguration)
+                ? normalizedComfortViewPreset(effectiveConfiguration.getComfortViewPreset())
+                : resolvedComfortViewPreset(effectiveConfiguration);
         const auto comfortPalette = uiComfortPaletteForPreset(comfortPreset);
         const QString combinedStyleSheet = buildUiMetricsStyleSheet(metrics) + loadComfortThemeStyleSheet(comfortPreset);
 
@@ -629,7 +652,7 @@ namespace fairwindsk {
         m_activeComfortViewPreset = comfortPreset;
 
         if (m_autoComfortTimer) {
-            if (effectiveConfiguration.getComfortViewMode() == "auto") {
+            if (effectiveConfiguration.getComfortViewMode() == "auto" && isAutomaticComfortViewAvailable(&effectiveConfiguration)) {
                 if (!m_autoComfortTimer->isActive()) {
                     m_autoComfortTimer->start();
                 }
@@ -651,7 +674,9 @@ namespace fairwindsk {
     }
 
     void FairWindSK::refreshAutomaticComfortView() {
-        if (m_configuration.getComfortViewMode() != "auto") {
+        refreshAutomaticComfortViewAvailability();
+
+        if (m_configuration.getComfortViewMode() != "auto" || !isAutomaticComfortViewAvailable()) {
             if (m_autoComfortTimer) {
                 m_autoComfortTimer->stop();
             }
@@ -664,7 +689,14 @@ namespace fairwindsk {
         }
     }
 
+    void FairWindSK::refreshAutomaticComfortViewAvailability(const Configuration *configuration) {
+        const Configuration &effectiveConfiguration = configuration ? *configuration : m_configuration;
+        m_automaticComfortViewAvailable = isAutomaticComfortViewSupported(effectiveConfiguration, &m_signalkClient);
+    }
+
     void FairWindSK::reconfigureRuntime(const quint32 runtimeChanges) {
+        const bool signalKSettingsChanged = (runtimeChanges & (RuntimeSignalKConnection | RuntimeSignalKPaths)) != 0;
+
         if (runtimeChanges & RuntimeSignalKConnection) {
             updateWebProfileCookie();
         }
@@ -673,12 +705,16 @@ namespace fairwindsk {
             Units::getInstance()->refreshSignalKPreferences();
         }
 
-        if (runtimeChanges & RuntimeUi) {
-            applyUiPreferences();
+        if (signalKSettingsChanged && !m_configuration.getSignalKServerUrl().isEmpty()) {
+            startSignalK();
         }
 
-        if ((runtimeChanges & (RuntimeSignalKConnection | RuntimeSignalKPaths)) && !m_configuration.getSignalKServerUrl().isEmpty()) {
-            startSignalK();
+        if (signalKSettingsChanged) {
+            refreshAutomaticComfortViewAvailability();
+        }
+
+        if ((runtimeChanges & RuntimeUi) || signalKSettingsChanged) {
+            applyUiPreferences();
         }
 
         if (runtimeChanges & RuntimeApps) {
@@ -768,6 +804,10 @@ namespace fairwindsk {
                     fairwindsk::Configuration::setToken(m_signalkClient.getToken());
                     updateWebProfileCookie();
                     Units::getInstance()->refreshSignalKPreferences();
+                    refreshAutomaticComfortViewAvailability();
+                    if (m_configuration.getComfortViewMode() == "auto") {
+                        applyUiPreferences();
+                    }
 
                     // Exit the loop
                     break;
