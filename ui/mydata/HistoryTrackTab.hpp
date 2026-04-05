@@ -34,6 +34,9 @@ namespace fairwindsk::ui::mydata {
         explicit HistoryTrackTab(QWidget *parent = nullptr);
         ~HistoryTrackTab() override;
 
+    protected:
+        void changeEvent(QEvent *event) override;
+
     private slots:
         void onRefreshClicked();
         void onDurationChanged();
@@ -52,6 +55,7 @@ namespace fairwindsk::ui::mydata {
         void onDeleteClicked();
 
     private:
+        void retintToolButtons() const;
         int selectedSourceRow() const;
         void rebuildTable();
         void styleTable();

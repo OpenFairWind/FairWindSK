@@ -134,23 +134,7 @@ namespace fairwindsk::ui::mydata {
         m_deleteButton->setToolTip(tr("Delete"));
         connect(m_deleteButton, &QToolButton::clicked, this, &HistoryTrackTab::onDeleteClicked);
 
-        const QColor buttonIconColor = fairwindsk::ui::bestContrastingColor(
-            palette().color(QPalette::Button),
-            {palette().color(QPalette::Text),
-             palette().color(QPalette::ButtonText),
-             palette().color(QPalette::WindowText)});
-        for (auto *button : {
-                 m_refreshButton,
-                 m_newButton,
-                 m_backButton,
-                 detailsNewButton,
-                 m_editButton,
-                 m_saveButton,
-                 m_cancelButton,
-                 m_deleteButton
-             }) {
-            fairwindsk::ui::applyTintedButtonIcon(button, buttonIconColor, QSize(28, 28));
-        }
+        retintToolButtons();
 
         m_titleLabel->setStyleSheet("font-size: 20px; font-weight: bold;");
         auto *formLayout = new QFormLayout(ui->widgetFormHost);
@@ -532,6 +516,33 @@ namespace fairwindsk::ui::mydata {
 
     void HistoryTrackTab::onBackClicked() {
         showListPage();
+    }
+
+    void HistoryTrackTab::changeEvent(QEvent *event) {
+        QWidget::changeEvent(event);
+        if (event->type() == QEvent::PaletteChange || event->type() == QEvent::ApplicationPaletteChange) {
+            retintToolButtons();
+        }
+    }
+
+    void HistoryTrackTab::retintToolButtons() const {
+        const QColor buttonIconColor = fairwindsk::ui::bestContrastingColor(
+            palette().color(QPalette::Button),
+            {palette().color(QPalette::Text),
+             palette().color(QPalette::ButtonText),
+             palette().color(QPalette::WindowText)});
+        for (auto *button : {
+                 m_refreshButton,
+                 m_newButton,
+                 m_backButton,
+                 ui->toolButtonNewDetails,
+                 m_editButton,
+                 m_saveButton,
+                 m_cancelButton,
+                 m_deleteButton
+             }) {
+            fairwindsk::ui::applyTintedButtonIcon(button, buttonIconColor, QSize(28, 28));
+        }
     }
 
     void HistoryTrackTab::onAddClicked() {

@@ -59,6 +59,9 @@ public:
                                     bool copyAndRemove,
                                     bool overwriteExistingFiles);
 
+protected:
+    void changeEvent(QEvent *event) override;
+
     public slots:
 
         void onFileViewerCloseClicked();
@@ -99,6 +102,7 @@ public:
     void searchProgressValueChanged(int progress);
 
 private:
+    void retintToolButtons() const;
     Ui::Files *ui;
 
     //QList<QString> m_visitedPaths;

@@ -40,6 +40,7 @@ namespace fairwindsk::ui::mydata {
 
     protected:
         void resizeEvent(QResizeEvent *event) override;
+        void changeEvent(QEvent *event) override;
 
     private slots:
         void onSearchTextChanged(const QString &text);
@@ -64,6 +65,7 @@ namespace fairwindsk::ui::mydata {
         void onCancelClicked();
 
     private:
+        void retintToolButtons() const;
         QString currentWaypointIdFromSelection() const;
         void rebuildTable();
         void appendTableBatch();

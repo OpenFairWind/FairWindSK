@@ -673,7 +673,6 @@ namespace fairwindsk {
                 ? normalizedComfortViewPreset(effectiveConfiguration.getComfortViewPreset())
                 : resolvedComfortViewPreset(effectiveConfiguration);
         const auto comfortPalette = uiComfortPaletteForPreset(comfortPreset);
-        const QString combinedStyleSheet = buildUiMetricsStyleSheet(metrics) + loadComfortThemeStyleSheet(comfortPreset);
 
         QFont appFont = qApp->font();
         appFont.setPointSize(metrics.fontPointSize);
@@ -689,6 +688,7 @@ namespace fairwindsk {
         appPalette.setColor(QPalette::Highlight, QColor(comfortPalette.accentTop));
         appPalette.setColor(QPalette::HighlightedText, QColor(QStringLiteral("#eff6ff")));
         qApp->setPalette(appPalette);
+        const QString combinedStyleSheet = buildUiMetricsStyleSheet(metrics) + loadComfortThemeStyleSheet(comfortPreset);
         if (qApp->styleSheet() != combinedStyleSheet) {
             qApp->setStyleSheet(combinedStyleSheet);
         }

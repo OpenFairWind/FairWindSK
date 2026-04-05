@@ -700,14 +700,7 @@ namespace fairwindsk::ui::settings {
         normalizeLauncherLayout();
         rebuildAvailableAppsList();
 
-        const QColor buttonIconColor = fairwindsk::ui::bestContrastingColor(
-            palette().color(QPalette::Button),
-            {palette().color(QPalette::Text),
-             palette().color(QPalette::ButtonText),
-             palette().color(QPalette::WindowText)});
-        for (auto *button : findChildren<QToolButton *>()) {
-            fairwindsk::ui::applyTintedButtonIcon(button, buttonIconColor, QSize(24, 24));
-        }
+        retintToolButtons();
         rebuildPageTree();
         showLayoutEditor();
         refreshAvailableAppActionButtons();
@@ -727,6 +720,25 @@ namespace fairwindsk::ui::settings {
         rebuildAvailableAppsList();
         rebuildPageTree();
         rebuildPageEditor();
+        retintToolButtons();
+    }
+
+    void Apps::changeEvent(QEvent *event) {
+        QWidget::changeEvent(event);
+        if (event->type() == QEvent::PaletteChange || event->type() == QEvent::ApplicationPaletteChange) {
+            retintToolButtons();
+        }
+    }
+
+    void Apps::retintToolButtons() {
+        const QColor buttonIconColor = fairwindsk::ui::bestContrastingColor(
+            palette().color(QPalette::Button),
+            {palette().color(QPalette::Text),
+             palette().color(QPalette::ButtonText),
+             palette().color(QPalette::WindowText)});
+        for (auto *button : findChildren<QToolButton *>()) {
+            fairwindsk::ui::applyTintedButtonIcon(button, buttonIconColor, QSize(24, 24));
+        }
     }
 
     bool Apps::eventFilter(QObject *object, QEvent *event) {

@@ -10,6 +10,8 @@
 #include <QFormLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
+#include <QJsonObject>
+#include <QJsonValue>
 #include <QLabel>
 #include <QProgressBar>
 #include <QUrl>
@@ -36,6 +38,27 @@
 namespace fairwindsk::ui::settings {
     namespace {
         constexpr auto kRpiApiRoot = "/v1/api/vessels/self/environment/rpi/";
+
+        QJsonValue rpiMetricValue(const QJsonObject &root, const QString &path) {
+            if (root.isEmpty()) {
+                return {};
+            }
+
+            const QStringList parts = path.split(QLatin1Char('/'), Qt::SkipEmptyParts);
+            QJsonValue current(root);
+            for (const QString &part : parts) {
+                if (!current.isObject()) {
+                    return {};
+                }
+                current = current.toObject().value(part);
+            }
+
+            if (current.isObject()) {
+                return current.toObject().value(QStringLiteral("value"));
+            }
+
+            return current;
+        }
     }
 
     System::System(Settings *settings, QWidget *parent) : QWidget(parent), ui(new Ui::System), m_settings(settings) {
@@ -199,31 +222,20 @@ namespace fairwindsk::ui::settings {
         ui->verticalLayout_Diagnostics->addWidget(m_rpiGroupBox);
     }
 
-    double System::fetchSignalKRpiMetric(const QString &path, bool *available) const {
+    double System::fetchSignalKRpiMetric(const QJsonObject &root, const QString &path, bool *available) const {
         if (available) {
             *available = false;
         }
 
-        auto *client = FairWindSK::getInstance()->getSignalKClient();
-        if (!client || client->url().isEmpty() || !client->isRestHealthy()) {
+        const QJsonValue metricValue = rpiMetricValue(root, path);
+        if (!metricValue.isDouble()) {
             return std::numeric_limits<double>::quiet_NaN();
-        }
-
-        const QUrl metricUrl(client->url().toString() + QString::fromLatin1(kRpiApiRoot) + path);
-        const QJsonObject update = client->signalkGet(metricUrl);
-        if (update.isEmpty()) {
-            return std::numeric_limits<double>::quiet_NaN();
-        }
-
-        const double value = signalk::Client::getDoubleFromUpdateByPath(update);
-        if (std::isnan(value)) {
-            return value;
         }
 
         if (available) {
             *available = true;
         }
-        return value;
+        return metricValue.toDouble(std::numeric_limits<double>::quiet_NaN());
     }
 
     void System::setRpiMetricValue(const QString &path, const QString &text) {
@@ -244,22 +256,29 @@ namespace fairwindsk::ui::settings {
         }
         m_lastRpiRefresh = now;
 
+        auto *client = FairWindSK::getInstance()->getSignalKClient();
+        QJsonObject rpiRoot;
+        if (client && !client->url().isEmpty() && client->isRestHealthy()) {
+            const QUrl rootUrl(client->url().toString() + QString::fromLatin1(kRpiApiRoot));
+            rpiRoot = client->signalkGet(rootUrl);
+        }
+
         bool hasAnyMetric = false;
 
-        auto applyTemperature = [this, &hasAnyMetric](const QString &path) {
+        auto applyTemperature = [this, &hasAnyMetric, &rpiRoot](const QString &path) {
             bool available = false;
-            const double value = fetchSignalKRpiMetric(path, &available);
+            const double value = fetchSignalKRpiMetric(rpiRoot, path, &available);
             if (available) {
                 hasAnyMetric = true;
-                setRpiMetricValue(path, tr("%1 °C").arg(QString::number(value, 'f', 1)));
+                setRpiMetricValue(path, tr("%1 °C").arg(QString::number(value - 273.15, 'f', 1)));
             } else {
                 setRpiMetricValue(path, tr("Unavailable"));
             }
         };
 
-        auto applyPercent = [this, &hasAnyMetric](const QString &path) {
+        auto applyPercent = [this, &hasAnyMetric, &rpiRoot](const QString &path) {
             bool available = false;
-            const double value = fetchSignalKRpiMetric(path, &available);
+            const double value = fetchSignalKRpiMetric(rpiRoot, path, &available);
             if (available) {
                 hasAnyMetric = true;
                 const double percentage = value <= 1.0 ? value * 100.0 : value;

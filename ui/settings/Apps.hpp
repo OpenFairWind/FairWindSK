@@ -86,6 +86,9 @@ namespace fairwindsk::ui::settings {
         ~Apps() override;
         void refreshFromConfiguration();
 
+    protected:
+        void changeEvent(QEvent *event) override;
+
     private slots:
         void onAvailableAppSelectionChanged();
         void onAvailableAppDoubleClicked(QListWidgetItem *listWidgetItem);
@@ -115,6 +118,7 @@ namespace fairwindsk::ui::settings {
 
     private:
         bool eventFilter(QObject *object, QEvent *event) override;
+        void retintToolButtons();
         void setAppsEditMode(bool appsEditMode);
         void setPageEditMode(bool pageEditMode);
         void saveAppsDetails();

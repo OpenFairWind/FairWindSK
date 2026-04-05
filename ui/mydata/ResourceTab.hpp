@@ -34,6 +34,9 @@ namespace fairwindsk::ui::mydata {
         explicit ResourceTab(ResourceKind kind, QWidget *parent = nullptr);
         ~ResourceTab() override;
 
+    protected:
+        void changeEvent(QEvent *event) override;
+
     private slots:
         void onAddClicked();
         void onOpenClicked();
@@ -53,6 +56,7 @@ namespace fairwindsk::ui::mydata {
         void onCancelClicked();
 
     private:
+        void retintToolButtons() const;
         QString currentResourceIdFromSelection() const;
         void rebuildTable();
         void styleTable();

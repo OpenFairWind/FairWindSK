@@ -44,6 +44,9 @@ namespace fairwindsk::ui::bottombar {
         // Destructor
         ~BottomBar() override;
 
+    protected:
+        void changeEvent(QEvent *event) override;
+
     public
         slots:
 
@@ -86,6 +89,7 @@ namespace fairwindsk::ui::bottombar {
         void foregroundAppChanged(QString name);
 
     private:
+        void applyNavigationButtonIcons() const;
         void setPanelVisibility(QWidget *panel, bool visible) const;
         void hideTransientPanels(QWidget *except = nullptr) const;
 

@@ -385,27 +385,7 @@ namespace fairwindsk::ui::mydata {
         positionLayout->insertWidget(1, m_coordinateEditButton);
         connect(m_coordinateEditButton, &QToolButton::clicked, this, &Waypoints::onCoordinateEditClicked);
 
-        const QColor buttonIconColor = fairwindsk::ui::bestContrastingColor(
-            palette().color(QPalette::Button),
-            {palette().color(QPalette::Text),
-             palette().color(QPalette::ButtonText),
-             palette().color(QPalette::WindowText)});
-        for (auto *button : {
-                 m_refreshButton,
-                 m_addButton,
-                 m_selectAllButton,
-                 m_bulkRemoveButton,
-                 m_backButton,
-                 m_newButton,
-                 m_navigateButton,
-                 m_editButton,
-                 m_saveButton,
-                 m_cancelButton,
-                 m_deleteButton,
-                 m_coordinateEditButton
-             }) {
-            fairwindsk::ui::applyTintedButtonIcon(button, buttonIconColor, QSize(28, 28));
-        }
+        retintToolButtons();
 
         showListPage();
 
@@ -427,6 +407,37 @@ namespace fairwindsk::ui::mydata {
     void Waypoints::resizeEvent(QResizeEvent *event) {
         QWidget::resizeEvent(event);
         applyDetailSplitterRatio();
+    }
+
+    void Waypoints::changeEvent(QEvent *event) {
+        QWidget::changeEvent(event);
+        if (event->type() == QEvent::PaletteChange || event->type() == QEvent::ApplicationPaletteChange) {
+            retintToolButtons();
+        }
+    }
+
+    void Waypoints::retintToolButtons() const {
+        const QColor buttonIconColor = fairwindsk::ui::bestContrastingColor(
+            palette().color(QPalette::Button),
+            {palette().color(QPalette::Text),
+             palette().color(QPalette::ButtonText),
+             palette().color(QPalette::WindowText)});
+        for (auto *button : {
+                 m_refreshButton,
+                 m_addButton,
+                 m_selectAllButton,
+                 m_bulkRemoveButton,
+                 m_backButton,
+                 m_newButton,
+                 m_navigateButton,
+                 m_editButton,
+                 m_saveButton,
+                 m_cancelButton,
+                 m_deleteButton,
+                 m_coordinateEditButton
+             }) {
+            fairwindsk::ui::applyTintedButtonIcon(button, buttonIconColor, QSize(28, 28));
+        }
     }
 
     void Waypoints::styleTable() {

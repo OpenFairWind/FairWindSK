@@ -43,6 +43,9 @@
            <property name="pixmap">
             <pixmap resource="../../resources.qrc">:/resources/images/other/splash_logo.png</pixmap>
            </property>
+           <property name="scaledContents">
+            <bool>false</bool>
+           </property>
            <property name="alignment">
             <set>Qt::AlignmentFlag::AlignCenter</set>
            </property>
@@ -83,7 +86,7 @@
          <item>
           <widget class="QLabel" name="label_2">
            <property name="text">
-            <string>University of Naples &quot;Parthenope&quot; - Department of Science and Technology - High Performance Scientific Computing Smart Laboratory</string>
+            <string>University of Naples &quot;Parthenope&quot; - Department of Science and Technology - High Performance Scientific Computing Laboratory</string>
            </property>
            <property name="wordWrap">
             <bool>true</bool>
@@ -102,7 +105,7 @@
             <string notr="true">background-color: rgba(255, 255, 255, 0);</string>
            </property>
            <property name="text">
-            <string>http://fairwind.uniparthenope.it</string>
+            <string>https://hpsclab.uniparthenope.it</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignmentFlag::AlignCenter</set>

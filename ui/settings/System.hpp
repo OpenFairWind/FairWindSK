@@ -42,7 +42,7 @@ namespace fairwindsk::ui::settings {
         void ensureCoreWidgets(int coreCount);
         void ensureRpiDiagnosticsWidgets();
         void refreshRpiDiagnostics();
-        double fetchSignalKRpiMetric(const QString &path, bool *available = nullptr) const;
+        double fetchSignalKRpiMetric(const QJsonObject &root, const QString &path, bool *available = nullptr) const;
         void setRpiMetricValue(const QString &path, const QString &text);
         QString formatBytes(quint64 bytes) const;
         quint64 processResidentMemoryBytes() const;

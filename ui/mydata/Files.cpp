@@ -96,6 +96,19 @@ namespace fairwindsk::ui::mydata {
         QScroller::grabGesture(ui->tableView_Search->viewport(), QScroller::TouchGesture);
         QScroller::grabGesture(ui->tableView_Search->viewport(), QScroller::LeftMouseButtonGesture);
 
+        retintToolButtons();
+		
+		onHome();
+	}
+
+    void Files::changeEvent(QEvent *event) {
+        QWidget::changeEvent(event);
+        if (event->type() == QEvent::PaletteChange || event->type() == QEvent::ApplicationPaletteChange) {
+            retintToolButtons();
+        }
+    }
+
+    void Files::retintToolButtons() const {
         const QColor buttonIconColor = fairwindsk::ui::bestContrastingColor(
             palette().color(QPalette::Button),
             {palette().color(QPalette::Text),
@@ -104,9 +117,7 @@ namespace fairwindsk::ui::mydata {
         for (auto *button : findChildren<QToolButton *>()) {
             fairwindsk::ui::applyTintedButtonIcon(button, buttonIconColor, QSize(32, 32));
         }
-		
-		onHome();
-	}
+    }
 
 
 

@@ -189,24 +189,7 @@ namespace fairwindsk::ui::mydata {
         m_coordinateEditButton->setIcon(QIcon(":/resources/svg/OpenBridge/edit-google.svg"));
         m_coordinateEditButton->setToolTip(tr("Edit coordinates"));
 
-        const QColor buttonIconColor = fairwindsk::ui::bestContrastingColor(
-            palette().color(QPalette::Button),
-            {palette().color(QPalette::Text),
-             palette().color(QPalette::ButtonText),
-             palette().color(QPalette::WindowText)});
-        for (auto *button : {
-                 m_refreshButton,
-                 m_addButton,
-                 m_backButton,
-                 m_newButton,
-                 m_editButton,
-                 m_saveButton,
-                 m_cancelButton,
-                 m_deleteButton,
-                 m_coordinateEditButton
-             }) {
-            fairwindsk::ui::applyTintedButtonIcon(button, buttonIconColor, QSize(28, 28));
-        }
+        retintToolButtons();
 
         if (m_kind == ResourceKind::Route) {
             m_detailTabs = new QTabWidget(ui->widgetPreviewHost);
@@ -1013,6 +996,34 @@ namespace fairwindsk::ui::mydata {
         }
 
         showListPage();
+    }
+
+    void ResourceTab::changeEvent(QEvent *event) {
+        QWidget::changeEvent(event);
+        if (event->type() == QEvent::PaletteChange || event->type() == QEvent::ApplicationPaletteChange) {
+            retintToolButtons();
+        }
+    }
+
+    void ResourceTab::retintToolButtons() const {
+        const QColor buttonIconColor = fairwindsk::ui::bestContrastingColor(
+            palette().color(QPalette::Button),
+            {palette().color(QPalette::Text),
+             palette().color(QPalette::ButtonText),
+             palette().color(QPalette::WindowText)});
+        for (auto *button : {
+                 m_refreshButton,
+                 m_addButton,
+                 m_backButton,
+                 m_newButton,
+                 m_editButton,
+                 m_saveButton,
+                 m_cancelButton,
+                 m_deleteButton,
+                 m_coordinateEditButton
+             }) {
+            fairwindsk::ui::applyTintedButtonIcon(button, buttonIconColor, QSize(28, 28));
+        }
     }
 
     void ResourceTab::onImportClicked() {

@@ -20,6 +20,8 @@
 
 namespace fairwindsk::ui::widgets {
     namespace {
+        constexpr int kRawIconRole = Qt::UserRole + 1;
+
         QString touchButtonStyle(const QPalette &palette) {
             const QColor base = palette.color(QPalette::Button);
             const QColor text = palette.color(QPalette::ButtonText);
@@ -93,6 +95,14 @@ namespace fairwindsk::ui::widgets {
                      palette.color(QPalette::Highlight).name(),
                      palette.color(QPalette::HighlightedText).name());
         }
+
+        QColor comboForegroundColor(const QPalette &palette) {
+            return fairwindsk::ui::bestContrastingColor(
+                palette.color(QPalette::Base),
+                {palette.color(QPalette::Text),
+                 palette.color(QPalette::ButtonText),
+                 palette.color(QPalette::WindowText)});
+        }
     }
 
     TouchComboBox::TouchComboBox(QWidget *parent)
@@ -157,10 +167,13 @@ namespace fairwindsk::ui::widgets {
     void TouchComboBox::addItem(const QIcon &icon, const QString &text, const QVariant &userData) {
         auto *item = new QListWidgetItem(icon, text, m_listWidget);
         item->setData(Qt::UserRole, userData);
+        item->setData(kRawIconRole, icon);
         item->setSizeHint(QSize(item->sizeHint().width(), 44));
 
         if (m_currentIndex < 0) {
             setCurrentIndex(0);
+        } else {
+            applyTouchStyle();
         }
     }
 
@@ -326,6 +339,21 @@ namespace fairwindsk::ui::widgets {
                 m_popup->setStyleSheet(m_popupStyleSheet);
             }
         }
+
+        const QColor iconColor = comboForegroundColor(activePalette);
+        for (int i = 0; i < m_listWidget->count(); ++i) {
+            auto *item = m_listWidget->item(i);
+            if (!item) {
+                continue;
+            }
+
+            const QIcon rawIcon = qvariant_cast<QIcon>(item->data(kRawIconRole));
+            if (!rawIcon.isNull()) {
+                item->setIcon(fairwindsk::ui::tintedIcon(rawIcon, iconColor, QSize(24, 24)));
+            }
+        }
+
+        updateDisplay();
     }
 
     bool TouchComboBox::eventFilter(QObject *watched, QEvent *event) {
@@ -388,7 +416,14 @@ namespace fairwindsk::ui::widgets {
             m_editor->setText(item ? item->text() : QString());
         }
         if (m_iconAction) {
-            const QIcon icon = item ? item->icon() : QIcon();
+            const QPalette activePalette = palette();
+            const QColor iconColor = comboForegroundColor(activePalette);
+            const QIcon icon = item
+                ? fairwindsk::ui::tintedIcon(
+                    qvariant_cast<QIcon>(item->data(kRawIconRole)),
+                    iconColor,
+                    QSize(24, 24))
+                : QIcon();
             m_iconAction->setIcon(icon);
             m_iconAction->setVisible(!icon.isNull());
         }
