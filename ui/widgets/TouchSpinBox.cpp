@@ -11,6 +11,7 @@
 #include <QPalette>
 #include <QSignalBlocker>
 
+#include "ui/IconUtils.hpp"
 #include "ui_TouchSpinBox.h"
 
 namespace fairwindsk::ui::widgets {
@@ -202,13 +203,14 @@ namespace fairwindsk::ui::widgets {
     void TouchSpinBox::applyTouchStyle() {
         const QPalette activePalette = palette();
         const QString style = touchButtonStyle(activePalette);
-        if (m_buttonStyleSheet == style) {
-            return;
+        if (m_buttonStyleSheet != style) {
+            m_buttonStyleSheet = style;
+            ui->pushButtonMinus->setStyleSheet(m_buttonStyleSheet);
+            ui->pushButtonPlus->setStyleSheet(m_buttonStyleSheet);
         }
 
-        m_buttonStyleSheet = style;
-        ui->pushButtonMinus->setStyleSheet(m_buttonStyleSheet);
-        ui->pushButtonPlus->setStyleSheet(m_buttonStyleSheet);
+        fairwindsk::ui::applyTintedButtonIcon(ui->pushButtonMinus, activePalette.color(QPalette::ButtonText));
+        fairwindsk::ui::applyTintedButtonIcon(ui->pushButtonPlus, activePalette.color(QPalette::ButtonText));
     }
 
     void TouchSpinBox::refreshText() {

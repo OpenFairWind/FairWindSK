@@ -17,6 +17,8 @@
 
 #include <QtWidgets/QLabel>
 
+#include "ui/IconUtils.hpp"
+
 namespace fairwindsk::ui::bottombar {
     namespace {
         constexpr int kBottomBarIconSize = 56;
@@ -85,6 +87,13 @@ namespace fairwindsk::ui::bottombar {
             button->setMinimumHeight(kBottomBarButtonHeight);
             button->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
         }
+
+        const QColor navigationIconColor = palette().color(QPalette::Text);
+        fairwindsk::ui::applyTintedButtonIcon(ui->toolButton_MyData, navigationIconColor, QSize(m_iconSize, m_iconSize));
+        fairwindsk::ui::applyTintedButtonIcon(ui->toolButton_Autopilot, navigationIconColor, QSize(m_iconSize, m_iconSize));
+        fairwindsk::ui::applyTintedButtonIcon(ui->toolButton_Apps, navigationIconColor, QSize(m_iconSize, m_iconSize));
+        fairwindsk::ui::applyTintedButtonIcon(ui->toolButton_Anchor, navigationIconColor, QSize(m_iconSize, m_iconSize));
+        fairwindsk::ui::applyTintedButtonIcon(ui->toolButton_Settings, navigationIconColor, QSize(m_iconSize, m_iconSize));
 
         // Create the POB bar
         m_POBBar = new POBBar(this);

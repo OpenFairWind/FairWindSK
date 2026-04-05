@@ -15,6 +15,7 @@
 #include <QScreen>
 #include <QVBoxLayout>
 
+#include "ui/IconUtils.hpp"
 #include "ui_TouchComboBox.h"
 
 namespace fairwindsk::ui::widgets {
@@ -310,6 +311,7 @@ namespace fairwindsk::ui::widgets {
             m_buttonStyleSheet = buttonStyle;
             ui->pushButtonPopup->setStyleSheet(m_buttonStyleSheet);
         }
+        fairwindsk::ui::applyTintedButtonIcon(ui->pushButtonPopup, activePalette.color(QPalette::ButtonText));
 
         if (m_popup) {
             const QString popupStyleSheet = popupStyle(activePalette);

@@ -28,6 +28,7 @@
 #include "HistoryTrackModel.hpp"
 #include "JsonObjectEditorWidget.hpp"
 #include "ui/DrawerDialogHost.hpp"
+#include "ui/IconUtils.hpp"
 #include "ui/widgets/TouchComboBox.hpp"
 #include "ui_HistoryTrackTab.h"
 
@@ -133,6 +134,20 @@ namespace fairwindsk::ui::mydata {
         m_deleteButton->setToolTip(tr("Delete"));
         connect(m_deleteButton, &QToolButton::clicked, this, &HistoryTrackTab::onDeleteClicked);
 
+        const QColor buttonIconColor = palette().color(QPalette::ButtonText);
+        for (auto *button : {
+                 m_refreshButton,
+                 m_newButton,
+                 m_backButton,
+                 detailsNewButton,
+                 m_editButton,
+                 m_saveButton,
+                 m_cancelButton,
+                 m_deleteButton
+             }) {
+            fairwindsk::ui::applyTintedButtonIcon(button, buttonIconColor, QSize(28, 28));
+        }
+
         m_titleLabel->setStyleSheet("font-size: 20px; font-weight: bold;");
         auto *formLayout = new QFormLayout(ui->widgetFormHost);
         ui->verticalLayoutPreviewHost->addWidget(m_previewWidget);
@@ -211,6 +226,7 @@ namespace fairwindsk::ui::mydata {
             auto *navigateButton = new QToolButton(actionsWidget);
             navigateButton->setAutoRaise(true);
             navigateButton->setIcon(QIcon(":/resources/svg/OpenBridge/navigation-route.svg"));
+            fairwindsk::ui::applyTintedButtonIcon(navigateButton, m_tableWidget->palette().color(QPalette::ButtonText), QSize(22, 22));
             navigateButton->setToolTip(tr("Navigate is not available for track samples"));
             navigateButton->setEnabled(false);
             navigateButton->setProperty("trackRow", row);
@@ -220,6 +236,7 @@ namespace fairwindsk::ui::mydata {
             auto *editButton = new QToolButton(actionsWidget);
             editButton->setAutoRaise(true);
             editButton->setIcon(QIcon(":/resources/svg/OpenBridge/edit-google.svg"));
+            fairwindsk::ui::applyTintedButtonIcon(editButton, m_tableWidget->palette().color(QPalette::ButtonText), QSize(22, 22));
             editButton->setToolTip(tr("Edit track sample"));
             editButton->setProperty("trackRow", row);
             connect(editButton, &QToolButton::clicked, this, &HistoryTrackTab::onEditRowClicked);
@@ -228,6 +245,7 @@ namespace fairwindsk::ui::mydata {
             auto *removeButton = new QToolButton(actionsWidget);
             removeButton->setAutoRaise(true);
             removeButton->setIcon(QIcon(":/resources/svg/OpenBridge/delete-google.svg"));
+            fairwindsk::ui::applyTintedButtonIcon(removeButton, m_tableWidget->palette().color(QPalette::ButtonText), QSize(22, 22));
             removeButton->setToolTip(tr("Remove track sample"));
             removeButton->setProperty("trackRow", row);
             connect(removeButton, &QToolButton::clicked, this, &HistoryTrackTab::onRemoveRowClicked);

@@ -16,6 +16,8 @@
 #include <QStyle>
 #include <QTimer>
 
+#include "ui/IconUtils.hpp"
+
 namespace fairwindsk::ui::widgets {
     namespace {
         constexpr int kTouchScrollControlSize = 44;
@@ -231,21 +233,25 @@ namespace fairwindsk::ui::widgets {
             if (m_verticalUpButton->styleSheet() != buttonStyle) {
                 m_verticalUpButton->setStyleSheet(buttonStyle);
             }
+            fairwindsk::ui::applyTintedButtonIcon(m_verticalUpButton, activePalette.color(QPalette::ButtonText));
         }
         if (m_verticalDownButton) {
             if (m_verticalDownButton->styleSheet() != buttonStyle) {
                 m_verticalDownButton->setStyleSheet(buttonStyle);
             }
+            fairwindsk::ui::applyTintedButtonIcon(m_verticalDownButton, activePalette.color(QPalette::ButtonText));
         }
         if (m_horizontalLeftButton) {
             if (m_horizontalLeftButton->styleSheet() != buttonStyle) {
                 m_horizontalLeftButton->setStyleSheet(buttonStyle);
             }
+            fairwindsk::ui::applyTintedButtonIcon(m_horizontalLeftButton, activePalette.color(QPalette::ButtonText));
         }
         if (m_horizontalRightButton) {
             if (m_horizontalRightButton->styleSheet() != buttonStyle) {
                 m_horizontalRightButton->setStyleSheet(buttonStyle);
             }
+            fairwindsk::ui::applyTintedButtonIcon(m_horizontalRightButton, activePalette.color(QPalette::ButtonText));
         }
         m_isApplyingStyle = false;
     }

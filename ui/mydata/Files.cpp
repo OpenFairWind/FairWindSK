@@ -17,6 +17,7 @@
 #include <QStorageInfo>
 
 #include "FileInfoListModel.hpp"
+#include "ui/IconUtils.hpp"
 #include "ui/DrawerDialogHost.hpp"
 
 
@@ -88,8 +89,17 @@ namespace fairwindsk::ui::mydata {
 		connect(ui->tableView_Search, &QAbstractItemView::doubleClicked, this, &Files::onSearchViewItemDoubleClicked);
 		connect(ui->tableView_Search, &QAbstractItemView::clicked, this, &Files::onSearchViewItemClicked);
 
-		ui->listView_Files->setAttribute(Qt::WA_AcceptTouchEvents,true);
+	    ui->listView_Files->setAttribute(Qt::WA_AcceptTouchEvents,true);
 		ui->tableView_Search->setAttribute(Qt::WA_AcceptTouchEvents,true);
+        QScroller::grabGesture(ui->listView_Files->viewport(), QScroller::TouchGesture);
+        QScroller::grabGesture(ui->listView_Files->viewport(), QScroller::LeftMouseButtonGesture);
+        QScroller::grabGesture(ui->tableView_Search->viewport(), QScroller::TouchGesture);
+        QScroller::grabGesture(ui->tableView_Search->viewport(), QScroller::LeftMouseButtonGesture);
+
+        const QColor buttonIconColor = palette().color(QPalette::ButtonText);
+        for (auto *button : findChildren<QToolButton *>()) {
+            fairwindsk::ui::applyTintedButtonIcon(button, buttonIconColor, QSize(32, 32));
+        }
 		
 		onHome();
 	}

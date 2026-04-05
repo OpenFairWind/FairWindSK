@@ -31,6 +31,7 @@
 #include "AppDetailsWidget.hpp"
 #include "PageDetailsWidget.hpp"
 #include "ui/DrawerDialogHost.hpp"
+#include "ui/IconUtils.hpp"
 #include "ui/widgets/TouchScrollArea.hpp"
 #include "ui_AppDetailsWidget.h"
 #include "ui_Apps.h"
@@ -698,6 +699,11 @@ namespace fairwindsk::ui::settings {
         ensureLauncherLayout();
         normalizeLauncherLayout();
         rebuildAvailableAppsList();
+
+        const QColor buttonIconColor = palette().color(QPalette::ButtonText);
+        for (auto *button : findChildren<QToolButton *>()) {
+            fairwindsk::ui::applyTintedButtonIcon(button, buttonIconColor, QSize(24, 24));
+        }
         rebuildPageTree();
         showLayoutEditor();
         refreshAvailableAppActionButtons();

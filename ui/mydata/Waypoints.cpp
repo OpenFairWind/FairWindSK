@@ -39,6 +39,7 @@
 #include "JsonObjectEditorWidget.hpp"
 #include "ui/DrawerDialogHost.hpp"
 #include "ui/GeoCoordinateUtils.hpp"
+#include "ui/IconUtils.hpp"
 #include "ui/web/SignalKAppView.hpp"
 #include "ui_Waypoints.h"
 
@@ -384,6 +385,24 @@ namespace fairwindsk::ui::mydata {
         positionLayout->insertWidget(1, m_coordinateEditButton);
         connect(m_coordinateEditButton, &QToolButton::clicked, this, &Waypoints::onCoordinateEditClicked);
 
+        const QColor buttonIconColor = palette().color(QPalette::ButtonText);
+        for (auto *button : {
+                 m_refreshButton,
+                 m_addButton,
+                 m_selectAllButton,
+                 m_bulkRemoveButton,
+                 m_backButton,
+                 m_newButton,
+                 m_navigateButton,
+                 m_editButton,
+                 m_saveButton,
+                 m_cancelButton,
+                 m_deleteButton,
+                 m_coordinateEditButton
+             }) {
+            fairwindsk::ui::applyTintedButtonIcon(button, buttonIconColor, QSize(28, 28));
+        }
+
         showListPage();
 
         connect(m_model, &QAbstractItemModel::modelReset, this, &Waypoints::rebuildTable);
@@ -531,6 +550,7 @@ namespace fairwindsk::ui::mydata {
         navigateButton->setProperty("waypointId", id);
         navigateButton->setStyleSheet(kActionButtonStyle);
         navigateButton->setIconSize(QSize(20, 20));
+        fairwindsk::ui::applyTintedButtonIcon(navigateButton, m_tableWidget->palette().color(QPalette::ButtonText), QSize(20, 20));
         connect(navigateButton, &QToolButton::clicked, this, &Waypoints::onNavigateRowClicked);
         actionsLayout->addWidget(navigateButton);
 
@@ -540,6 +560,7 @@ namespace fairwindsk::ui::mydata {
         detailsButton->setProperty("waypointId", id);
         detailsButton->setStyleSheet(kActionButtonStyle);
         detailsButton->setIconSize(QSize(20, 20));
+        fairwindsk::ui::applyTintedButtonIcon(detailsButton, m_tableWidget->palette().color(QPalette::ButtonText), QSize(20, 20));
         connect(detailsButton, &QToolButton::clicked, this, &Waypoints::onDetailsRowClicked);
         actionsLayout->addWidget(detailsButton);
 
@@ -549,6 +570,7 @@ namespace fairwindsk::ui::mydata {
         editButton->setProperty("waypointId", id);
         editButton->setStyleSheet(kActionButtonStyle);
         editButton->setIconSize(QSize(20, 20));
+        fairwindsk::ui::applyTintedButtonIcon(editButton, m_tableWidget->palette().color(QPalette::ButtonText), QSize(20, 20));
         connect(editButton, &QToolButton::clicked, this, &Waypoints::onEditRowClicked);
         actionsLayout->addWidget(editButton);
 
@@ -558,6 +580,7 @@ namespace fairwindsk::ui::mydata {
         removeButton->setProperty("waypointId", id);
         removeButton->setStyleSheet(kActionButtonStyle);
         removeButton->setIconSize(QSize(20, 20));
+        fairwindsk::ui::applyTintedButtonIcon(removeButton, m_tableWidget->palette().color(QPalette::ButtonText), QSize(20, 20));
         connect(removeButton, &QToolButton::clicked, this, &Waypoints::onRemoveRowClicked);
         actionsLayout->addWidget(removeButton);
 

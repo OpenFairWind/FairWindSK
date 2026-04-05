@@ -8,6 +8,7 @@
 #include <QPalette>
 #include <QPushButton>
 
+#include "ui/IconUtils.hpp"
 #include "ui_TouchCheckBox.h"
 
 namespace fairwindsk::ui::widgets {
@@ -152,11 +153,13 @@ namespace fairwindsk::ui::widgets {
     void TouchCheckBox::applyTouchStyle() {
         const QString style = touchToggleStyle(palette());
         if (m_toggleStyleSheet == style) {
+            refreshAppearance();
             return;
         }
 
         m_toggleStyleSheet = style;
         ui->pushButtonToggle->setStyleSheet(m_toggleStyleSheet);
+        refreshAppearance();
     }
 
     bool TouchCheckBox::eventFilter(QObject *watched, QEvent *event) {
@@ -225,6 +228,9 @@ namespace fairwindsk::ui::widgets {
         }
 
         ui->pushButtonToggle->setChecked(m_checkState != Qt::Unchecked);
-        ui->pushButtonToggle->setIcon(QIcon(iconPath));
+        ui->pushButtonToggle->setIcon(
+            fairwindsk::ui::tintedIcon(QIcon(iconPath),
+                                       palette().color(QPalette::ButtonText),
+                                       ui->pushButtonToggle->iconSize()));
     }
 }
