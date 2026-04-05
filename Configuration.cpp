@@ -220,6 +220,56 @@ namespace fairwindsk {
         m_jsonData["comfortViewThemes"].erase(normalizedPreset.toStdString());
     }
 
+    void Configuration::setComfortBackgroundImagePath(const QString &preset, const QString &area, const QString &path) {
+        const QString normalizedPreset = preset.trimmed().toLower();
+        const QString normalizedArea = area.trimmed().toLower();
+        if (normalizedPreset.isEmpty() || normalizedArea.isEmpty()) {
+            return;
+        }
+
+        ensureObject("comfortViewBackgrounds")[normalizedPreset.toStdString()][normalizedArea.toStdString()] = path.toStdString();
+    }
+
+    QString Configuration::getComfortBackgroundImagePath(const QString &preset, const QString &area) const {
+        const QString normalizedPreset = preset.trimmed().toLower();
+        const QString normalizedArea = area.trimmed().toLower();
+        if (normalizedPreset.isEmpty() || normalizedArea.isEmpty()) {
+            return QString();
+        }
+
+        if (!m_jsonData.contains("comfortViewBackgrounds") || !m_jsonData["comfortViewBackgrounds"].is_object()) {
+            return QString();
+        }
+
+        const auto &backgrounds = m_jsonData["comfortViewBackgrounds"];
+        if (!backgrounds.contains(normalizedPreset.toStdString()) || !backgrounds[normalizedPreset.toStdString()].is_object()) {
+            return QString();
+        }
+
+        const auto &presetObject = backgrounds[normalizedPreset.toStdString()];
+        if (!presetObject.contains(normalizedArea.toStdString()) || !presetObject[normalizedArea.toStdString()].is_string()) {
+            return QString();
+        }
+
+        return QString::fromStdString(presetObject[normalizedArea.toStdString()].get<std::string>());
+    }
+
+    void Configuration::clearComfortBackgroundImagePath(const QString &preset, const QString &area) {
+        const QString normalizedPreset = preset.trimmed().toLower();
+        const QString normalizedArea = area.trimmed().toLower();
+        if (normalizedPreset.isEmpty() || normalizedArea.isEmpty() ||
+            !m_jsonData.contains("comfortViewBackgrounds") || !m_jsonData["comfortViewBackgrounds"].is_object()) {
+            return;
+        }
+
+        auto &backgrounds = m_jsonData["comfortViewBackgrounds"];
+        if (!backgrounds.contains(normalizedPreset.toStdString()) || !backgrounds[normalizedPreset.toStdString()].is_object()) {
+            return;
+        }
+
+        backgrounds[normalizedPreset.toStdString()].erase(normalizedArea.toStdString());
+    }
+
     void Configuration::setLauncherRows(const int value) {
         ensureObject("main")["launcherRows"] = std::max(1, value);
     }

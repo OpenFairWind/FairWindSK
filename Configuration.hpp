@@ -59,6 +59,9 @@ namespace fairwindsk {
         void setComfortThemeStyleSheet(const QString &preset, const QString &styleSheet);
         QString getComfortThemeStyleSheet(const QString &preset) const;
         void clearComfortThemeStyleSheet(const QString &preset);
+        void setComfortBackgroundImagePath(const QString &preset, const QString &area, const QString &path);
+        QString getComfortBackgroundImagePath(const QString &preset, const QString &area) const;
+        void clearComfortBackgroundImagePath(const QString &preset, const QString &area);
         void setLauncherRows(int value);
         int getLauncherRows() const;
         void setLauncherColumns(int value);

@@ -6,11 +6,12 @@
 
 #include <QEvent>
 #include <QFrame>
-#include <QAction>
+#include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
 #include <QMouseEvent>
 #include <QPalette>
+#include <QPixmap>
 #include <QPushButton>
 #include <QScreen>
 #include <QVBoxLayout>
@@ -22,7 +23,9 @@ namespace fairwindsk::ui::widgets {
     namespace {
         constexpr int kRawIconRole = Qt::UserRole + 1;
         constexpr int kComboIconSize = 30;
-        constexpr int kComboItemHeight = 56;
+        constexpr int kSelectedIconSize = 34;
+        constexpr int kSelectedIconPadding = 10;
+        constexpr int kComboItemHeight = 60;
 
         QString touchButtonStyle(const QPalette &palette) {
             const QColor base = palette.color(QPalette::Button);
@@ -115,8 +118,10 @@ namespace fairwindsk::ui::widgets {
         m_editor = ui->lineEditValue;
         m_editor->setObjectName(QStringLiteral("lineEdit_touchComboBox"));
         m_editor->installEventFilter(this);
-        m_iconAction = m_editor->addAction(QIcon(), QLineEdit::LeadingPosition);
-        m_iconAction->setVisible(false);
+        m_iconLabel = new QLabel(m_editor);
+        m_iconLabel->setFixedSize(kSelectedIconSize, kSelectedIconSize);
+        m_iconLabel->setAlignment(Qt::AlignCenter);
+        m_iconLabel->hide();
 
         ui->pushButtonPopup->setObjectName(QStringLiteral("pushButton_touchComboBox"));
 
@@ -377,6 +382,10 @@ namespace fairwindsk::ui::widgets {
 
     void TouchComboBox::resizeEvent(QResizeEvent *event) {
         QWidget::resizeEvent(event);
+        if (m_editor && m_iconLabel) {
+            const int y = qMax(0, (m_editor->height() - m_iconLabel->height()) / 2);
+            m_iconLabel->move(kSelectedIconPadding, y);
+        }
         if (m_popup && m_popup->isVisible()) {
             positionPopup();
         }
@@ -418,17 +427,24 @@ namespace fairwindsk::ui::widgets {
         if (!m_editable || item) {
             m_editor->setText(item ? item->text() : QString());
         }
-        if (m_iconAction) {
+        if (m_iconLabel) {
             const QPalette activePalette = palette();
             const QColor iconColor = comboForegroundColor(activePalette);
             const QIcon icon = item
                 ? fairwindsk::ui::tintedIcon(
                     qvariant_cast<QIcon>(item->data(kRawIconRole)),
                     iconColor,
-                    QSize(kComboIconSize, kComboIconSize))
+                    QSize(kSelectedIconSize, kSelectedIconSize))
                 : QIcon();
-            m_iconAction->setIcon(icon);
-            m_iconAction->setVisible(!icon.isNull());
+            if (!icon.isNull()) {
+                m_iconLabel->setPixmap(icon.pixmap(QSize(kSelectedIconSize, kSelectedIconSize)));
+                m_iconLabel->show();
+                m_editor->setTextMargins(kSelectedIconSize + (2 * kSelectedIconPadding), 0, 8, 0);
+            } else {
+                m_iconLabel->clear();
+                m_iconLabel->hide();
+                m_editor->setTextMargins(8, 0, 8, 0);
+            }
         }
         if (item) {
             m_listWidget->setCurrentRow(m_currentIndex);

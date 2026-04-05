@@ -10,10 +10,10 @@
 
 class QFrame;
 class QIcon;
+class QLabel;
 class QLineEdit;
 class QListWidget;
 class QListWidgetItem;
-class QAction;
 
 namespace fairwindsk::ui::widgets {
     QT_BEGIN_NAMESPACE
@@ -75,7 +75,7 @@ namespace fairwindsk::ui::widgets {
         QLineEdit *m_editor = nullptr;
         QFrame *m_popup = nullptr;
         QListWidget *m_listWidget = nullptr;
-        QAction *m_iconAction = nullptr;
+        QLabel *m_iconLabel = nullptr;
         int m_currentIndex = -1;
         bool m_editable = false;
         QString m_buttonStyleSheet;

@@ -28,6 +28,7 @@
 #include <QPointer>
 #include <QTimer>
 #include <QTime>
+#include <QUrl>
 #include <algorithm>
 
 #include "Units.hpp"
@@ -228,6 +229,26 @@ namespace fairwindsk {
             }
 
             return loadDefaultComfortThemeStyleSheet(preset);
+        }
+
+        QString loadComfortBackgroundStyleSheet(const Configuration &configuration, const QString &preset) {
+            const auto buildRule = [&configuration, &preset](const QString &area, const QString &objectName) {
+                const QString imagePath = configuration.getComfortBackgroundImagePath(preset, area).trimmed();
+                if (imagePath.isEmpty()) {
+                    return QString();
+                }
+
+                return QStringLiteral(
+                    "QWidget#%1 {"
+                    " border-image: url(\"%2\") 0 0 0 0 stretch stretch;"
+                    " background-position: center;"
+                    " }")
+                    .arg(objectName, QUrl::fromLocalFile(imagePath).toString());
+            };
+
+            return buildRule(QStringLiteral("topbar"), QStringLiteral("TopBar"))
+                + buildRule(QStringLiteral("launcher"), QStringLiteral("Launcher"))
+                + buildRule(QStringLiteral("bottombar"), QStringLiteral("BottomBar"));
         }
 
         bool isAutomaticComfortViewSupported(const Configuration &configuration, signalk::Client *client) {
@@ -697,7 +718,10 @@ namespace fairwindsk {
         appPalette.setColor(QPalette::Highlight, QColor(comfortPalette.accentTop));
         appPalette.setColor(QPalette::HighlightedText, QColor(QStringLiteral("#eff6ff")));
         qApp->setPalette(appPalette);
-        const QString combinedStyleSheet = buildUiMetricsStyleSheet(metrics) + loadComfortThemeStyleSheet(effectiveConfiguration, comfortPreset);
+        const QString combinedStyleSheet =
+            buildUiMetricsStyleSheet(metrics)
+            + loadComfortThemeStyleSheet(effectiveConfiguration, comfortPreset)
+            + loadComfortBackgroundStyleSheet(effectiveConfiguration, comfortPreset);
         if (qApp->styleSheet() != combinedStyleSheet) {
             qApp->setStyleSheet(combinedStyleSheet);
         }

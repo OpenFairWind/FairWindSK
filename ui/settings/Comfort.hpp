@@ -5,11 +5,15 @@
 #ifndef FAIRWINDSK_UI_SETTINGS_COMFORT_HPP
 #define FAIRWINDSK_UI_SETTINGS_COMFORT_HPP
 
+#include <QColor>
+#include <QMap>
 #include <QWidget>
 
 class QLabel;
 class QPlainTextEdit;
 class QPushButton;
+class QTabWidget;
+class QGridLayout;
 
 namespace fairwindsk::ui::widgets {
     class TouchComboBox;
@@ -36,8 +40,28 @@ namespace fairwindsk::ui::settings {
         QString selectedPreset() const;
         QString defaultStyleSheetForPreset(const QString &preset) const;
         QString effectiveStyleSheetForPreset(const QString &preset) const;
+        QString effectiveBackgroundStyleSheetForPreset(const QString &preset) const;
+        void buildUi();
+        void createColorControl(const QString &key, const QString &labelText, QWidget *parent, QGridLayout *layout, int row);
+        void createBackgroundImageControl(const QString &area, const QString &labelText, QWidget *parent, QGridLayout *layout, int row);
         void loadPresetEditor();
         void updateStatusLabel();
+        void updatePreview();
+        void updateColorButtons();
+        void updateBackgroundImageLabels();
+        void pickColor(const QString &key);
+        void browseBackgroundImage(const QString &area);
+        void clearBackgroundImage(const QString &area);
+        void applyVisualThemeOverride();
+        void syncVisualControlsFromStyleSheet();
+        QString buildVisualOverrideBlock() const;
+        QString styleSheetWithVisualOverride() const;
+        QColor colorValue(const QString &key) const;
+        QColor extractColor(const QString &styleSheet, const QString &pattern, const QColor &fallback) const;
+        QString extractCapturedValue(const QString &styleSheet, const QString &pattern, const QString &fallback = QString()) const;
+        static QString generatedOverrideStartMarker();
+        static QString generatedOverrideEndMarker();
+        static QString removeGeneratedOverrideBlock(QString styleSheet);
 
         Settings *m_settings = nullptr;
         fairwindsk::ui::widgets::TouchComboBox *m_presetComboBox = nullptr;
@@ -46,7 +70,15 @@ namespace fairwindsk::ui::settings {
         QPushButton *m_importButton = nullptr;
         QPushButton *m_exportButton = nullptr;
         QPushButton *m_resetButton = nullptr;
+        QMap<QString, QColor> m_visualColors;
+        QMap<QString, QPushButton *> m_colorButtons;
+        QMap<QString, QLabel *> m_backgroundPathLabels;
+        QWidget *m_previewTopBar = nullptr;
+        QWidget *m_previewLauncher = nullptr;
+        QWidget *m_previewBottomBar = nullptr;
+        QTabWidget *m_previewTabs = nullptr;
         bool m_isUpdating = false;
+        bool m_isSyncingVisualControls = false;
     };
 }
 
