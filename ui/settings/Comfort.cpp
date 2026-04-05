@@ -417,6 +417,7 @@ namespace fairwindsk::ui::settings {
         m_settings->getConfiguration()->setComfortThemeStyleSheet(preset, m_styleEditor->toPlainText());
         if (!m_isSyncingVisualControls) {
             syncVisualControlsFromStyleSheet();
+            persistVisualColorsToConfiguration();
         }
         updateColorButtons();
         updateBackgroundImageLabels();
@@ -523,13 +524,22 @@ namespace fairwindsk::ui::settings {
         }
 
         const QString preset = selectedPreset();
+        const QString styleSheet = effectiveStyleSheetForPreset(preset);
         {
             const QSignalBlocker blocker(m_styleEditor);
             m_isUpdating = true;
-            m_styleEditor->setPlainText(effectiveStyleSheetForPreset(preset));
+            m_styleEditor->setPlainText(styleSheet);
             m_isUpdating = false;
         }
-        if (!loadVisualColorsFromConfiguration()) {
+
+        const bool hasGeneratedOverrideBlock =
+            styleSheet.contains(generatedOverrideStartMarker(), Qt::CaseInsensitive) &&
+            styleSheet.contains(generatedOverrideEndMarker(), Qt::CaseInsensitive);
+
+        if (hasGeneratedOverrideBlock) {
+            syncVisualControlsFromStyleSheet();
+            persistVisualColorsToConfiguration();
+        } else if (!loadVisualColorsFromConfiguration()) {
             syncVisualControlsFromStyleSheet();
             persistVisualColorsToConfiguration();
         }
