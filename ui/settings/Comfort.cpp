@@ -6,33 +6,27 @@
 
 #include <QFile>
 #include <QFileInfo>
-#include <QFrame>
-#include <QDialog>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QIcon>
 #include <QLabel>
 #include <QLineEdit>
-#include <QMouseEvent>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QCheckBox>
 #include <QRegularExpression>
 #include <QSignalBlocker>
-#include <QSlider>
 #include <QTabWidget>
 #include <QTextStream>
-#include <QToolButton>
 #include <QUrl>
 #include <QVBoxLayout>
-#include <QPointer>
-#include <functional>
 
 #include "FairWindSK.hpp"
 #include "Settings.hpp"
 #include "ui/DrawerDialogHost.hpp"
 #include "ui/launcher/Launcher.hpp"
+#include "ui/widgets/TouchColorPicker.hpp"
 #include "ui/widgets/TouchComboBox.hpp"
 #include "ui/widgets/TouchScrollArea.hpp"
 
@@ -126,266 +120,6 @@ namespace fairwindsk::ui::settings {
             };
         }
 
-        class ColorPreviewFrame final : public QFrame {
-        public:
-            using QFrame::QFrame;
-
-            std::function<void()> onDoubleActivated;
-
-        protected:
-            void mouseDoubleClickEvent(QMouseEvent *event) override {
-                if (event->button() == Qt::LeftButton && onDoubleActivated) {
-                    onDoubleActivated();
-                    event->accept();
-                    return;
-                }
-                QFrame::mouseDoubleClickEvent(event);
-            }
-        };
-
-        class ColorSwatchButton final : public QToolButton {
-        public:
-            explicit ColorSwatchButton(const QColor &swatch, QWidget *parent = nullptr)
-                : QToolButton(parent),
-                  m_swatch(swatch) {
-            }
-
-            std::function<void(const QColor &, bool)> onActivated;
-
-        protected:
-            void mouseReleaseEvent(QMouseEvent *event) override {
-                QToolButton::mouseReleaseEvent(event);
-                if (event->button() == Qt::LeftButton && rect().contains(event->pos()) && onActivated) {
-                    onActivated(m_swatch, false);
-                }
-            }
-
-            void mouseDoubleClickEvent(QMouseEvent *event) override {
-                if (event->button() == Qt::LeftButton && onActivated) {
-                    onActivated(m_swatch, true);
-                    event->accept();
-                    return;
-                }
-                QToolButton::mouseDoubleClickEvent(event);
-            }
-
-        private:
-            QColor m_swatch;
-        };
-
-        class DrawerColorPickerWidget final : public QWidget {
-        public:
-            explicit DrawerColorPickerWidget(const QString &label, const QColor &initialColor, QWidget *parent = nullptr)
-                : QWidget(parent) {
-                auto *rootLayout = new QVBoxLayout(this);
-                rootLayout->setContentsMargins(0, 0, 0, 0);
-                rootLayout->setSpacing(14);
-
-                auto *titleLabel = new QLabel(tr("Adjust %1 with swatches or RGB sliders. Double-tap a color to use it.").arg(label), this);
-                titleLabel->setWordWrap(true);
-                rootLayout->addWidget(titleLabel);
-
-                auto *headerLayout = new QHBoxLayout();
-                headerLayout->setContentsMargins(0, 0, 0, 0);
-                headerLayout->setSpacing(12);
-                rootLayout->addLayout(headerLayout);
-
-                m_preview = new ColorPreviewFrame(this);
-                m_preview->setMinimumSize(140, 104);
-                m_preview->setFrameShape(QFrame::StyledPanel);
-                m_preview->onDoubleActivated = [this]() {
-                    if (onColorAccepted) {
-                        onColorAccepted(m_color);
-                    }
-                };
-                headerLayout->addWidget(m_preview, 0);
-
-                auto *valueLayout = new QVBoxLayout();
-                valueLayout->setContentsMargins(0, 0, 0, 0);
-                valueLayout->setSpacing(4);
-                headerLayout->addLayout(valueLayout, 1);
-
-                m_hexLabel = new QLabel(this);
-                valueLayout->addWidget(m_hexLabel);
-
-                m_rgbaLabel = new QLabel(this);
-                valueLayout->addWidget(m_rgbaLabel);
-                valueLayout->addStretch(1);
-
-                auto *swatchesLayout = new QHBoxLayout();
-                swatchesLayout->setContentsMargins(0, 0, 0, 0);
-                swatchesLayout->setSpacing(8);
-                rootLayout->addLayout(swatchesLayout);
-
-                const QList<QColor> swatches = {
-                    QColor(QStringLiteral("#f7f2d9")),
-                    QColor(QStringLiteral("#fbf6e3")),
-                    QColor(QStringLiteral("#fffdf3")),
-                    QColor(QStringLiteral("#2d5ea6")),
-                    QColor(QStringLiteral("#1f447a")),
-                    QColor(QStringLiteral("#10233a")),
-                    QColor(QStringLiteral("#6f7683")),
-                    QColor(QStringLiteral("#d05b3f"))
-                };
-                for (const QColor &swatch : swatches) {
-                    auto *button = new ColorSwatchButton(swatch, this);
-                    button->setAutoRaise(false);
-                    button->setMinimumSize(52, 52);
-                    button->setStyleSheet(QStringLiteral(
-                                              "QToolButton {"
-                                              " border: 1px solid %1;"
-                                              " border-radius: 8px;"
-                                              " background: %2;"
-                                              " }")
-                                              .arg(swatch.darker(135).name(), swatch.name(QColor::HexArgb)));
-                    button->onActivated = [this](const QColor &selected, const bool accept) {
-                        setColor(selected);
-                        if (accept && onColorAccepted) {
-                            onColorAccepted(m_color);
-                        }
-                    };
-                    swatchesLayout->addWidget(button);
-                }
-                swatchesLayout->addStretch(1);
-
-                addSlider(rootLayout, tr("Red"), &m_redSlider);
-                addSlider(rootLayout, tr("Green"), &m_greenSlider);
-                addSlider(rootLayout, tr("Blue"), &m_blueSlider);
-
-                setMinimumHeight(460);
-                setColor(initialColor.isValid() ? initialColor : QColor(QStringLiteral("#ffffff")));
-            }
-
-            QColor color() const {
-                return m_color;
-            }
-
-            std::function<void(const QColor &)> onColorAccepted;
-
-        private:
-            void addSlider(QVBoxLayout *layout, const QString &label, QSlider **sliderPtr) {
-                auto *rowLayout = new QHBoxLayout();
-                rowLayout->setContentsMargins(0, 0, 0, 0);
-                rowLayout->setSpacing(10);
-
-                auto *textLabel = new QLabel(label, this);
-                textLabel->setMinimumWidth(70);
-                rowLayout->addWidget(textLabel);
-
-                auto *slider = new QSlider(Qt::Horizontal, this);
-                slider->setRange(0, 255);
-                slider->setPageStep(16);
-                slider->setSingleStep(1);
-                slider->setMinimumHeight(56);
-                rowLayout->addWidget(slider, 1);
-
-                auto *valueLabel = new QLabel(this);
-                valueLabel->setMinimumWidth(36);
-                rowLayout->addWidget(valueLabel);
-
-                layout->addLayout(rowLayout);
-
-                m_valueLabels.insert(slider, valueLabel);
-                connect(slider, &QSlider::valueChanged, this, [this]() {
-                    syncFromSliders();
-                });
-                *sliderPtr = slider;
-            }
-
-            void setColor(const QColor &color) {
-                const QSignalBlocker redBlocker(m_redSlider);
-                const QSignalBlocker greenBlocker(m_greenSlider);
-                const QSignalBlocker blueBlocker(m_blueSlider);
-                m_redSlider->setValue(color.red());
-                m_greenSlider->setValue(color.green());
-                m_blueSlider->setValue(color.blue());
-                m_color = QColor(color.red(), color.green(), color.blue());
-                updatePreview();
-            }
-
-            void syncFromSliders() {
-                m_color = QColor(
-                    m_redSlider->value(),
-                    m_greenSlider->value(),
-                    m_blueSlider->value());
-                updatePreview();
-            }
-
-            void updatePreview() {
-                m_preview->setStyleSheet(QStringLiteral(
-                                             "QFrame {"
-                                             " border: 1px solid %1;"
-                                             " border-radius: 10px;"
-                                             " background: %2;"
-                                             " }")
-                                             .arg(m_color.darker(150).name(), m_color.name(QColor::HexArgb)));
-                m_hexLabel->setText(tr("HEX: %1").arg(m_color.name(QColor::HexRgb).toUpper()));
-                m_rgbaLabel->setText(tr("RGB: %1, %2, %3")
-                                         .arg(m_color.red())
-                                         .arg(m_color.green())
-                                         .arg(m_color.blue()));
-
-                for (auto it = m_valueLabels.cbegin(); it != m_valueLabels.cend(); ++it) {
-                    it.value()->setText(QString::number(it.key()->value()));
-                }
-            }
-
-            QColor m_color;
-            ColorPreviewFrame *m_preview = nullptr;
-            QLabel *m_hexLabel = nullptr;
-            QLabel *m_rgbaLabel = nullptr;
-            QSlider *m_redSlider = nullptr;
-            QSlider *m_greenSlider = nullptr;
-            QSlider *m_blueSlider = nullptr;
-            QMap<QSlider *, QLabel *> m_valueLabels;
-        };
-
-        class DrawerColorPickerDialog final : public QDialog {
-        public:
-            DrawerColorPickerDialog(QWidget *parent, const QString &title, const QColor &initialColor)
-                : QDialog(parent, Qt::Popup | Qt::FramelessWindowHint) {
-                setAttribute(Qt::WA_DeleteOnClose, false);
-                setModal(true);
-
-                auto *rootLayout = new QVBoxLayout(this);
-                rootLayout->setContentsMargins(14, 14, 14, 14);
-                rootLayout->setSpacing(10);
-
-                auto *titleLabel = new QLabel(title, this);
-                rootLayout->addWidget(titleLabel);
-
-                m_picker = new DrawerColorPickerWidget(title, initialColor, this);
-                m_picker->onColorAccepted = [this](const QColor &acceptedColor) {
-                    m_selectedColor = acceptedColor;
-                    accept();
-                };
-                rootLayout->addWidget(m_picker);
-
-                setMinimumHeight(560);
-                setMinimumWidth(640);
-            }
-
-            QColor selectedColor() const {
-                return m_selectedColor.isValid() && m_selectedColor.alpha() > 0 ? m_selectedColor : (m_picker ? m_picker->color() : QColor());
-            }
-
-            void openNear(QWidget *anchor) {
-                QWidget *windowWidget = anchor ? anchor->window() : nullptr;
-                if (!windowWidget) {
-                    return;
-                }
-
-                const QSize targetSize(qMax(640, windowWidget->width() - 24), qMax(560, windowWidget->height() / 2));
-                resize(targetSize);
-                const QPoint topLeft = windowWidget->mapToGlobal(
-                    QPoint((windowWidget->width() - width()) / 2, qMax(12, windowWidget->height() - height() - 12)));
-                move(topLeft);
-            }
-
-        private:
-            DrawerColorPickerWidget *m_picker = nullptr;
-            QColor m_selectedColor;
-        };
     }
 
     Comfort::Comfort(Settings *settings, QWidget *parent)
@@ -837,13 +571,18 @@ namespace fairwindsk::ui::settings {
     }
 
     void Comfort::pickColor(const QString &key) {
-        auto dialog = DrawerColorPickerDialog(this, tr("Choose %1").arg(colorLabel(key)), colorValue(key));
-        dialog.openNear(this);
-        if (dialog.exec() != QDialog::Accepted) {
+        bool accepted = false;
+        const QColor color = fairwindsk::ui::widgets::TouchColorPickerDialog::getColor(
+            this,
+            tr("Choose %1").arg(colorLabel(key)),
+            colorValue(key),
+            &accepted,
+            false);
+        if (!accepted) {
             return;
         }
 
-        m_visualColors.insert(key, dialog.selectedColor());
+        m_visualColors.insert(key, color);
         applyVisualThemeOverride();
     }
 

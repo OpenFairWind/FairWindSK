@@ -201,6 +201,7 @@ set(FAIRWINDSK_SOURCES
         ui/GeoCoordinateEditorWidget.cpp ui/GeoCoordinateEditorWidget.hpp ui/GeoCoordinateEditorWidget.ui
         ui/widgets/TouchComboBox.cpp ui/widgets/TouchComboBox.hpp ui/widgets/TouchComboBox.ui
         ui/widgets/TouchCheckBox.cpp ui/widgets/TouchCheckBox.hpp ui/widgets/TouchCheckBox.ui
+        ui/widgets/TouchColorPicker.cpp ui/widgets/TouchColorPicker.hpp
         ui/widgets/TouchScrollArea.cpp ui/widgets/TouchScrollArea.hpp
         ui/widgets/TouchSpinBox.cpp ui/widgets/TouchSpinBox.hpp ui/widgets/TouchSpinBox.ui
         ui/widgets/SignalKServerBox.cpp ui/widgets/SignalKServerBox.hpp ui/widgets/SignalKServerBox.ui
