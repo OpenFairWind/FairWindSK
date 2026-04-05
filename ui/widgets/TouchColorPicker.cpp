@@ -5,7 +5,6 @@
 #include "TouchColorPicker.hpp"
 
 #include <QFrame>
-#include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
@@ -103,6 +102,10 @@ namespace fairwindsk::ui::widgets {
         rootLayout->setContentsMargins(0, 0, 0, 0);
         rootLayout->setSpacing(16);
 
+        auto *hintLabel = new QLabel(tr("Drag the sliders, type a hex value, or double-tap a swatch to use the current color."), this);
+        hintLabel->setWordWrap(true);
+        rootLayout->addWidget(hintLabel);
+
         auto *headerLayout = new QHBoxLayout();
         headerLayout->setContentsMargins(0, 0, 0, 0);
         headerLayout->setSpacing(14);
@@ -136,6 +139,9 @@ namespace fairwindsk::ui::widgets {
         m_hsvLabel = new QLabel(this);
         summaryLayout->addWidget(m_hsvLabel);
         summaryLayout->addStretch(1);
+
+        auto *quickColorsLabel = new QLabel(tr("Quick Colors"), this);
+        rootLayout->addWidget(quickColorsLabel);
 
         auto *swatchesLayout = new QHBoxLayout();
         swatchesLayout->setContentsMargins(0, 0, 0, 0);
@@ -174,15 +180,16 @@ namespace fairwindsk::ui::widgets {
         }
         swatchesLayout->addStretch(1);
 
-        auto *slidersLayout = new QGridLayout();
-        slidersLayout->setContentsMargins(0, 0, 0, 0);
-        slidersLayout->setHorizontalSpacing(12);
-        slidersLayout->setVerticalSpacing(10);
-        rootLayout->addLayout(slidersLayout);
+        auto *hsvLabel = new QLabel(tr("Color Balance"), this);
+        rootLayout->addWidget(hsvLabel);
 
         addSliderRow(tr("Hue"), &m_hueSlider, &m_hueValueLabel);
         addSliderRow(tr("Saturation"), &m_saturationSlider, &m_saturationValueLabel);
         addSliderRow(tr("Brightness"), &m_valueSlider, &m_valueValueLabel);
+
+        auto *rgbLabel = new QLabel(tr("RGB Fine Tuning"), this);
+        rootLayout->addWidget(rgbLabel);
+
         addSliderRow(tr("Red"), &m_redSlider, &m_redValueLabel);
         addSliderRow(tr("Green"), &m_greenSlider, &m_greenValueLabel);
         addSliderRow(tr("Blue"), &m_blueSlider, &m_blueValueLabel);
@@ -404,13 +411,14 @@ namespace fairwindsk::ui::widgets {
         m_closeButton->setIconSize(QSize(28, 28));
         m_closeButton->setStyleSheet(QStringLiteral(
             "QPushButton {"
-            " border: 0px;"
+            " border: 1px solid rgba(255, 255, 255, 0.20);"
             " border-radius: 10px;"
             " background: transparent;"
             " padding: 4px;"
             " }"
             "QPushButton:hover, QPushButton:pressed {"
             " background: rgba(255, 255, 255, 0.16);"
+            " border-color: rgba(255, 255, 255, 0.32);"
             " }"));
         headerLayout->addWidget(m_closeButton, 0, Qt::AlignTop);
 

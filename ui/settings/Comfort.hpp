@@ -49,6 +49,7 @@ namespace fairwindsk::ui::settings {
         void buildUi();
         void createColorControl(const QString &key, const QString &labelText, QWidget *parent, QGridLayout *layout, int row);
         void createBackgroundImageControl(const QString &area, const QString &labelText, QWidget *parent, QGridLayout *layout, int row);
+        QGroupBox *createImageGroup(const QString &title, QWidget *parent, const QList<QPair<QString, QString>> &entries);
         void loadPresetEditor();
         void updateStatusLabel();
         void updatePreview();

@@ -6,6 +6,7 @@
 
 #include <QFile>
 #include <QFileInfo>
+#include <QFormLayout>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
@@ -147,7 +148,7 @@ namespace fairwindsk::ui::settings {
         scrollArea->setWidget(content);
 
         auto *contentLayout = new QVBoxLayout(content);
-        contentLayout->setContentsMargins(0, 0, 0, 0);
+        contentLayout->setContentsMargins(6, 6, 6, 6);
         contentLayout->setSpacing(12);
 
         auto *titleLabel = new QLabel(tr("Comfort Theme Presets"), content);
@@ -188,7 +189,16 @@ namespace fairwindsk::ui::settings {
         m_statusLabel = new QLabel(content);
         m_statusLabel->hide();
 
-        m_visualEditorWidget = new QWidget(content);
+        auto *paletteGroup = new QGroupBox(tr("Palette"), content);
+        auto *paletteGroupLayout = new QVBoxLayout(paletteGroup);
+        paletteGroupLayout->setContentsMargins(8, 8, 8, 8);
+        paletteGroupLayout->setSpacing(8);
+
+        auto *paletteHint = new QLabel(tr("Tap a swatch to adjust the saved colors for the selected comfort preset."), paletteGroup);
+        paletteHint->setWordWrap(true);
+        paletteGroupLayout->addWidget(paletteHint);
+
+        m_visualEditorWidget = new QWidget(paletteGroup);
         auto *visualLayout = new QGridLayout(m_visualEditorWidget);
         visualLayout->setContentsMargins(0, 0, 0, 0);
         visualLayout->setHorizontalSpacing(12);
@@ -204,22 +214,38 @@ namespace fairwindsk::ui::settings {
         createColorControl(QString::fromLatin1(kColorAccentTop), tr("Accent top"), m_visualEditorWidget, visualLayout, 8);
         createColorControl(QString::fromLatin1(kColorAccentBottom), tr("Accent bottom"), m_visualEditorWidget, visualLayout, 9);
         createColorControl(QString::fromLatin1(kColorAccentText), tr("Accent text"), m_visualEditorWidget, visualLayout, 10);
-        contentLayout->addWidget(m_visualEditorWidget);
+        paletteGroupLayout->addWidget(m_visualEditorWidget);
+        contentLayout->addWidget(paletteGroup);
 
-        auto *backgroundGroup = new QGroupBox(tr("Background Images"), content);
-        auto *backgroundLayout = new QGridLayout(backgroundGroup);
-        backgroundLayout->setHorizontalSpacing(12);
-        backgroundLayout->setVerticalSpacing(8);
-        createBackgroundImageControl(QStringLiteral("topbar"), tr("Top bar"), backgroundGroup, backgroundLayout, 0);
-        createBackgroundImageControl(QStringLiteral("launcher"), tr("Launcher"), backgroundGroup, backgroundLayout, 1);
-        createBackgroundImageControl(QStringLiteral("bottombar"), tr("Bottom bar"), backgroundGroup, backgroundLayout, 2);
-        createBackgroundImageControl(QStringLiteral("buttons-default"), tr("Buttons"), backgroundGroup, backgroundLayout, 3);
-        createBackgroundImageControl(QStringLiteral("buttons-selected"), tr("Buttons selected"), backgroundGroup, backgroundLayout, 4);
-        createBackgroundImageControl(QStringLiteral("tabs-default"), tr("Tabs"), backgroundGroup, backgroundLayout, 5);
-        createBackgroundImageControl(QStringLiteral("tabs-selected"), tr("Tabs selected"), backgroundGroup, backgroundLayout, 6);
-        createBackgroundImageControl(QStringLiteral("checkbox-default"), tr("Checkbox"), backgroundGroup, backgroundLayout, 7);
-        createBackgroundImageControl(QStringLiteral("checkbox-selected"), tr("Checkbox selected"), backgroundGroup, backgroundLayout, 8);
-        contentLayout->addWidget(backgroundGroup);
+        auto *imagesGroup = new QGroupBox(tr("Theme Images"), content);
+        auto *imagesLayout = new QVBoxLayout(imagesGroup);
+        imagesLayout->setContentsMargins(8, 8, 8, 8);
+        imagesLayout->setSpacing(10);
+
+        auto *imagesHint = new QLabel(tr("Choose optional images for major surfaces and control states. Clear any entry to fall back to the QSS colors."), imagesGroup);
+        imagesHint->setWordWrap(true);
+        imagesLayout->addWidget(imagesHint);
+
+        imagesLayout->addWidget(createImageGroup(
+            tr("Surface Images"),
+            imagesGroup,
+            {
+                {QStringLiteral("topbar"), tr("Top bar")},
+                {QStringLiteral("launcher"), tr("Launcher")},
+                {QStringLiteral("bottombar"), tr("Bottom bar")}
+            }));
+        imagesLayout->addWidget(createImageGroup(
+            tr("Control Images"),
+            imagesGroup,
+            {
+                {QStringLiteral("buttons-default"), tr("Buttons")},
+                {QStringLiteral("buttons-selected"), tr("Buttons selected")},
+                {QStringLiteral("tabs-default"), tr("Tabs")},
+                {QStringLiteral("tabs-selected"), tr("Tabs selected")},
+                {QStringLiteral("checkbox-default"), tr("Checkbox")},
+                {QStringLiteral("checkbox-selected"), tr("Checkbox selected")}
+            }));
+        contentLayout->addWidget(imagesGroup);
 
         auto *previewGroup = new QGroupBox(tr("Live Preview"), content);
         auto *previewLayout = new QVBoxLayout(previewGroup);
@@ -244,7 +270,7 @@ namespace fairwindsk::ui::settings {
 
         m_previewLauncher = new fairwindsk::ui::launcher::Launcher(previewGroup);
         m_previewLauncher->setAttribute(Qt::WA_TransparentForMouseEvents, true);
-        m_previewLauncher->setMinimumHeight(260);
+        m_previewLauncher->setMinimumHeight(220);
         m_previewLauncher->refreshFromConfiguration(true);
         previewLayout->addWidget(m_previewLauncher);
 
@@ -361,6 +387,21 @@ namespace fairwindsk::ui::settings {
         connect(clearButton, &QPushButton::clicked, this, [this, area]() {
             clearBackgroundImage(area);
         });
+    }
+
+    QGroupBox *Comfort::createImageGroup(const QString &title, QWidget *parent, const QList<QPair<QString, QString>> &entries) {
+        auto *group = new QGroupBox(title, parent);
+        auto *layout = new QGridLayout(group);
+        layout->setHorizontalSpacing(12);
+        layout->setVerticalSpacing(8);
+
+        int row = 0;
+        for (const auto &entry : entries) {
+            createBackgroundImageControl(entry.first, entry.second, group, layout, row);
+            ++row;
+        }
+
+        return group;
     }
 
     void Comfort::onPresetChanged(const int) {
