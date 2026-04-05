@@ -12,6 +12,7 @@
 class QFrame;
 class QLineEdit;
 class QLabel;
+class QPushButton;
 class QSlider;
 class QWidget;
 
@@ -87,6 +88,7 @@ namespace fairwindsk::ui::widgets {
 
     private:
         QLabel *m_titleLabel = nullptr;
+        QPushButton *m_closeButton = nullptr;
         TouchColorPicker *m_picker = nullptr;
     };
 }

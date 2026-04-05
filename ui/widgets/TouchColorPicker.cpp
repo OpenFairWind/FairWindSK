@@ -10,11 +10,13 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QMouseEvent>
+#include <QPushButton>
 #include <QRegularExpression>
 #include <QSignalBlocker>
 #include <QSlider>
 #include <QToolButton>
 #include <QVBoxLayout>
+#include <QIcon>
 #include <functional>
 
 namespace fairwindsk::ui::widgets {
@@ -387,13 +389,38 @@ namespace fairwindsk::ui::widgets {
         rootLayout->setContentsMargins(16, 16, 16, 16);
         rootLayout->setSpacing(12);
 
+        auto *headerLayout = new QHBoxLayout();
+        headerLayout->setContentsMargins(0, 0, 0, 0);
+        headerLayout->setSpacing(8);
+        rootLayout->addLayout(headerLayout);
+
         m_titleLabel = new QLabel(this);
-        rootLayout->addWidget(m_titleLabel);
+        headerLayout->addWidget(m_titleLabel, 1);
+
+        m_closeButton = new QPushButton(this);
+        m_closeButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/close-google.svg")));
+        m_closeButton->setToolTip(tr("Use current color"));
+        m_closeButton->setMinimumSize(46, 46);
+        m_closeButton->setIconSize(QSize(28, 28));
+        m_closeButton->setStyleSheet(QStringLiteral(
+            "QPushButton {"
+            " border: 0px;"
+            " border-radius: 10px;"
+            " background: transparent;"
+            " padding: 4px;"
+            " }"
+            "QPushButton:hover, QPushButton:pressed {"
+            " background: rgba(255, 255, 255, 0.16);"
+            " }"));
+        headerLayout->addWidget(m_closeButton, 0, Qt::AlignTop);
 
         m_picker = new TouchColorPicker(this);
         rootLayout->addWidget(m_picker);
 
         connect(m_picker, &TouchColorPicker::colorActivated, this, [this](const QColor &) {
+            accept();
+        });
+        connect(m_closeButton, &QPushButton::clicked, this, [this]() {
             accept();
         });
     }
