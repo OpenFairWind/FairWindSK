@@ -20,6 +20,12 @@ using namespace Qt::StringLiterals;
 
 #if defined(Q_OS_LINUX)
 namespace {
+    void appendChromiumFlagIfMissing(QStringList &flags, const QString &flag) {
+        if (!flags.contains(flag)) {
+            flags.append(flag);
+        }
+    }
+
     QString qtPlatformPluginDirectory() {
         const QStringList candidatePaths = {
             QLibraryInfo::path(QLibraryInfo::PluginsPath)
@@ -84,6 +90,23 @@ namespace {
             qputenv("QT_QPA_PLATFORM", QByteArrayLiteral("xcb"));
         }
     }
+
+    void configureLinuxWebEngineFallback() {
+#if defined(__arm__) || defined(__aarch64__)
+        if (qEnvironmentVariableIsEmpty("QT_OPENGL")) {
+            qputenv("QT_OPENGL", QByteArrayLiteral("software"));
+        }
+
+        QStringList chromiumFlags = qEnvironmentVariable("QTWEBENGINE_CHROMIUM_FLAGS")
+                                        .split(u' ', Qt::SkipEmptyParts);
+        appendChromiumFlagIfMissing(chromiumFlags, QStringLiteral("--disable-gpu"));
+        appendChromiumFlagIfMissing(chromiumFlags, QStringLiteral("--disable-gpu-compositing"));
+        appendChromiumFlagIfMissing(chromiumFlags, QStringLiteral("--disable-gpu-rasterization"));
+        appendChromiumFlagIfMissing(chromiumFlags, QStringLiteral("--disable-software-rasterizer"));
+        appendChromiumFlagIfMissing(chromiumFlags, QStringLiteral("--disable-features=Vulkan"));
+        qputenv("QTWEBENGINE_CHROMIUM_FLAGS", chromiumFlags.join(u' ').toUtf8());
+#endif
+    }
 }
 #endif
 
@@ -101,6 +124,7 @@ int main(int argc, char *argv[]) {
 
 #if defined(Q_OS_LINUX)
     configureLinuxQtPlatformFallback();
+    configureLinuxWebEngineFallback();
 #endif
 
     // The QT application
@@ -136,12 +160,14 @@ int main(int argc, char *argv[]) {
 #endif
 
     // Set web profile options
-    QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::Accelerated2dCanvasEnabled, true);
-    QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
-    QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::DnsPrefetchEnabled,true);
-
     // Create a new MainWindow object
     fairwindsk::ui::MainWindow w;
+
+    if (auto *profile = fairWindSK->getWebEngineProfile()) {
+        profile->settings()->setAttribute(QWebEngineSettings::Accelerated2dCanvasEnabled, true);
+        profile->settings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
+        profile->settings()->setAttribute(QWebEngineSettings::DnsPrefetchEnabled, true);
+    }
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
     // Close the splash screen presenting the MainWindow UI
