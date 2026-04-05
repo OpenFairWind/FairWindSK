@@ -28,6 +28,7 @@
 #include "FairWindSK.hpp"
 #include "Settings.hpp"
 #include "ui/DrawerDialogHost.hpp"
+#include "ui/launcher/Launcher.hpp"
 #include "ui/widgets/TouchComboBox.hpp"
 #include "ui/widgets/TouchScrollArea.hpp"
 
@@ -295,9 +296,12 @@ namespace fairwindsk::ui::settings {
 
         m_importButton = new QPushButton(tr("Import QSS"), content);
         m_exportButton = new QPushButton(tr("Export QSS"), content);
+        m_editorButton = new QPushButton(tr("Editor"), content);
+        m_editorButton->setCheckable(true);
         m_resetButton = new QPushButton(tr("Reset Preset"), content);
         buttonRow->addWidget(m_importButton);
         buttonRow->addWidget(m_exportButton);
+        buttonRow->addWidget(m_editorButton);
         buttonRow->addWidget(m_resetButton);
         buttonRow->addStretch(1);
 
@@ -352,19 +356,10 @@ namespace fairwindsk::ui::settings {
         topBarLayout->addWidget(rightStatus);
         previewLayout->addWidget(m_previewTopBar);
 
-        m_previewLauncher = new QWidget(previewGroup);
-        m_previewLauncher->setObjectName(QStringLiteral("Launcher"));
-        auto *launcherLayout = new QGridLayout(m_previewLauncher);
-        launcherLayout->setContentsMargins(12, 12, 12, 12);
-        launcherLayout->setHorizontalSpacing(10);
-        launcherLayout->setVerticalSpacing(10);
-        for (int row = 0; row < 2; ++row) {
-            for (int column = 0; column < 3; ++column) {
-                auto *tile = new QPushButton(tr("Tile %1").arg((row * 3) + column + 1), m_previewLauncher);
-                tile->setMinimumHeight(56);
-                launcherLayout->addWidget(tile, row, column);
-            }
-        }
+        m_previewLauncher = new fairwindsk::ui::launcher::Launcher(previewGroup);
+        m_previewLauncher->setAttribute(Qt::WA_TransparentForMouseEvents, true);
+        m_previewLauncher->setMinimumHeight(260);
+        m_previewLauncher->refreshFromConfiguration(true);
         previewLayout->addWidget(m_previewLauncher);
 
         m_previewTabs = new QTabWidget(previewGroup);
@@ -415,15 +410,16 @@ namespace fairwindsk::ui::settings {
 
         contentLayout->addWidget(previewGroup);
 
-        auto *advancedGroup = new QGroupBox(tr("Advanced QSS"), content);
-        auto *advancedLayout = new QVBoxLayout(advancedGroup);
+        m_advancedGroup = new QGroupBox(tr("Advanced QSS"), content);
+        m_advancedGroup->setVisible(false);
+        auto *advancedLayout = new QVBoxLayout(m_advancedGroup);
         advancedLayout->setContentsMargins(8, 8, 8, 8);
         advancedLayout->setSpacing(8);
-        m_styleEditor = new QPlainTextEdit(advancedGroup);
+        m_styleEditor = new QPlainTextEdit(m_advancedGroup);
         m_styleEditor->setPlaceholderText(tr("Edit the full QSS for the selected comfort preset."));
         m_styleEditor->setMinimumHeight(320);
         advancedLayout->addWidget(m_styleEditor);
-        contentLayout->addWidget(advancedGroup, 1);
+        contentLayout->addWidget(m_advancedGroup, 1);
 
         connect(m_presetComboBox,
                 qOverload<int>(&fairwindsk::ui::widgets::TouchComboBox::currentIndexChanged),
@@ -432,6 +428,11 @@ namespace fairwindsk::ui::settings {
         connect(m_styleEditor, &QPlainTextEdit::textChanged, this, &Comfort::onStyleSheetChanged);
         connect(m_importButton, &QPushButton::clicked, this, &Comfort::importStyleSheet);
         connect(m_exportButton, &QPushButton::clicked, this, &Comfort::exportStyleSheet);
+        connect(m_editorButton, &QPushButton::toggled, this, [this](const bool checked) {
+            if (m_advancedGroup) {
+                m_advancedGroup->setVisible(checked);
+            }
+        });
         connect(m_resetButton, &QPushButton::clicked, this, &Comfort::resetPreset);
     }
 
@@ -604,7 +605,7 @@ namespace fairwindsk::ui::settings {
             + buildVisualOverrideBlock()
             + effectiveBackgroundStyleSheetForPreset(preset);
 
-        for (QWidget *widget : {m_previewTopBar, m_previewLauncher, static_cast<QWidget *>(m_previewTabs), m_previewBottomBar}) {
+        for (QWidget *widget : {m_previewTopBar, static_cast<QWidget *>(m_previewLauncher), static_cast<QWidget *>(m_previewTabs), m_previewBottomBar}) {
             if (widget) {
                 widget->setStyleSheet(previewStyleSheet);
             }

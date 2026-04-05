@@ -94,6 +94,8 @@ namespace fairwindsk::ui::bottombar {
         connect(ui->toolButton_NextWPT, &QToolButton::clicked, this, &AutopilotBar::onNextWPTClicked);
         connect(ui->toolButton_Dodge, &QToolButton::clicked, this, &AutopilotBar::onDodgeClicked);
         connect(ui->toolButton_Auto, &QToolButton::clicked, this, &AutopilotBar::onAutoClicked);
+        ui->label_Port->hide();
+        ui->label_Starboard->hide();
 
 
 
@@ -159,13 +161,14 @@ namespace fairwindsk::ui::bottombar {
     }
 
     void AutopilotBar::applyComfortStyle() const {
-        const QColor buttonColor = palette().color(QPalette::Button);
+        const QColor buttonColor = palette().color(QPalette::Highlight);
         const QColor borderColor = buttonColor.darker(140);
         const QColor hoverColor = buttonColor.lighter(110);
         const QColor pressedColor = buttonColor.darker(118);
         const QColor iconColor = fairwindsk::ui::bestContrastingColor(
             buttonColor,
-            {palette().color(QPalette::ButtonText),
+            {palette().color(QPalette::HighlightedText),
+             palette().color(QPalette::ButtonText),
              palette().color(QPalette::WindowText),
              palette().color(QPalette::Text),
              QColor(QStringLiteral("#f8f8f8")),

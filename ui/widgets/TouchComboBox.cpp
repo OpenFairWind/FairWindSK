@@ -27,9 +27,9 @@ namespace fairwindsk::ui::widgets {
         constexpr int kSelectedIconPadding = 10;
         constexpr int kComboItemHeight = 60;
 
-        QString touchButtonStyle(const QPalette &palette) {
-            const QColor base = palette.color(QPalette::Button);
-            const QColor text = palette.color(QPalette::ButtonText);
+        QString touchButtonStyle(const QPalette &palette, const bool accentButton) {
+            const QColor base = accentButton ? palette.color(QPalette::Highlight) : palette.color(QPalette::Button);
+            const QColor text = accentButton ? palette.color(QPalette::HighlightedText) : palette.color(QPalette::ButtonText);
             const QColor border = palette.color(QPalette::Mid);
             const QColor light = base.lighter(145);
             const QColor mid = base.lighter(118);
@@ -243,6 +243,10 @@ namespace fairwindsk::ui::widgets {
         return m_editable;
     }
 
+    bool TouchComboBox::accentButton() const {
+        return m_accentButton;
+    }
+
     void TouchComboBox::setCurrentIndex(const int index) {
         if (index < 0 || index >= m_listWidget->count()) {
             if (m_currentIndex != -1) {
@@ -292,6 +296,14 @@ namespace fairwindsk::ui::widgets {
         }
     }
 
+    void TouchComboBox::setAccentButton(const bool accent) {
+        if (m_accentButton == accent) {
+            return;
+        }
+        m_accentButton = accent;
+        applyTouchStyle();
+    }
+
     void TouchComboBox::setEnabled(const bool enabled) {
         QWidget::setEnabled(enabled);
         if (m_editor) {
@@ -327,7 +339,7 @@ namespace fairwindsk::ui::widgets {
 
     void TouchComboBox::applyTouchStyle() {
         const QPalette activePalette = palette();
-        const QString buttonStyle = touchButtonStyle(activePalette);
+        const QString buttonStyle = touchButtonStyle(activePalette, m_accentButton);
         if (m_buttonStyleSheet != buttonStyle) {
             m_buttonStyleSheet = buttonStyle;
             ui->pushButtonPopup->setStyleSheet(m_buttonStyleSheet);
@@ -335,8 +347,8 @@ namespace fairwindsk::ui::widgets {
         fairwindsk::ui::applyTintedButtonIcon(
             ui->pushButtonPopup,
             fairwindsk::ui::bestContrastingColor(
-                activePalette.color(QPalette::Button),
-                {activePalette.color(QPalette::Text),
+                m_accentButton ? activePalette.color(QPalette::Highlight) : activePalette.color(QPalette::Button),
+                {m_accentButton ? activePalette.color(QPalette::HighlightedText) : activePalette.color(QPalette::Text),
                  activePalette.color(QPalette::ButtonText),
                  activePalette.color(QPalette::WindowText)}));
 

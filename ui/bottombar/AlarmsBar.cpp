@@ -79,7 +79,7 @@ namespace fairwindsk::ui::bottombar {
         const QColor buttonColor = palette().color(QPalette::Button);
         const QColor borderColor = buttonColor.darker(140);
         const QColor hoverColor = buttonColor.lighter(110);
-        const QColor pressedColor = buttonColor.darker(118);
+        const QColor pressedColor = palette().color(QPalette::Highlight);
         const QColor iconColor = fairwindsk::ui::bestContrastingColor(
             buttonColor,
             {palette().color(QPalette::ButtonText),
@@ -96,8 +96,18 @@ namespace fairwindsk::ui::bottombar {
             " color: %3;"
             " }"
             "QToolButton:hover { background: %4; }"
-            "QToolButton:pressed, QToolButton:checked { background: %5; color: %3; }")
-            .arg(borderColor.name(), buttonColor.name(), iconColor.name(), hoverColor.name(), pressedColor.name());
+            "QToolButton:pressed, QToolButton:checked { background: %5; color: %6; border-color: %5; }")
+            .arg(borderColor.name(),
+                 buttonColor.name(),
+                 iconColor.name(),
+                 hoverColor.name(),
+                 pressedColor.name(),
+                 fairwindsk::ui::bestContrastingColor(
+                     pressedColor,
+                     {palette().color(QPalette::HighlightedText),
+                      palette().color(QPalette::WindowText),
+                      QColor(QStringLiteral("#f8f8f8")),
+                      QColor(QStringLiteral("#111111"))}).name());
 
         for (auto *button : findChildren<QToolButton *>()) {
             button->setAutoRaise(false);

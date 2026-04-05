@@ -41,11 +41,13 @@ namespace fairwindsk::ui::widgets {
         int findData(const QVariant &data, int role = Qt::UserRole) const;
         int findText(const QString &text, Qt::MatchFlags flags = Qt::MatchExactly | Qt::MatchCaseSensitive) const;
         bool isEditable() const;
+        bool accentButton() const;
 
     public slots:
         void setCurrentIndex(int index);
         void setCurrentText(const QString &text);
         void setEditable(bool editable);
+        void setAccentButton(bool accent);
         void setEnabled(bool enabled);
         void removeItem(int index);
 
@@ -78,6 +80,7 @@ namespace fairwindsk::ui::widgets {
         QLabel *m_iconLabel = nullptr;
         int m_currentIndex = -1;
         bool m_editable = false;
+        bool m_accentButton = false;
         QString m_buttonStyleSheet;
         QString m_popupStyleSheet;
     };

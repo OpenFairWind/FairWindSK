@@ -78,7 +78,7 @@
              </property>
              <property name="icon">
               <iconset>
-               <normaloff>:/resources/images/bottombar/anchor_drop.png</normaloff>:/resources/images/bottombar/anchor_drop.png</iconset>
+               <normaloff>:/resources/svg/OpenBridge/anchor-drop.svg</normaloff>:/resources/svg/OpenBridge/anchor-drop.svg</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -102,7 +102,7 @@
              </property>
              <property name="icon">
               <iconset>
-               <normaloff>:/resources/images/bottombar/anchor_up.png</normaloff>:/resources/images/bottombar/anchor_up.png</iconset>
+               <normaloff>:/resources/svg/OpenBridge/anchor-up.svg</normaloff>:/resources/svg/OpenBridge/anchor-up.svg</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -256,7 +256,7 @@
              </property>
              <property name="icon">
               <iconset>
-               <normaloff>:/resources/images/bottombar/anchor_raise.png</normaloff>:/resources/images/bottombar/anchor_raise.png</iconset>
+               <normaloff>:/resources/svg/OpenBridge/anchor-raise.svg</normaloff>:/resources/svg/OpenBridge/anchor-raise.svg</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -364,7 +364,7 @@
              </property>
              <property name="icon">
               <iconset>
-               <normaloff>:/resources/images/bottombar/anchor_down.png</normaloff>:/resources/images/bottombar/anchor_down.png</iconset>
+               <normaloff>:/resources/svg/OpenBridge/anchor-down.svg</normaloff>:/resources/svg/OpenBridge/anchor-down.svg</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -391,7 +391,7 @@
              </property>
              <property name="icon">
               <iconset>
-               <normaloff>:/resources/images/bottombar/anchor_reset.png</normaloff>:/resources/images/bottombar/anchor_reset.png</iconset>
+               <normaloff>:/resources/svg/OpenBridge/anchor-reset.svg</normaloff>:/resources/svg/OpenBridge/anchor-reset.svg</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -557,7 +557,7 @@
              </property>
              <property name="icon">
               <iconset>
-               <normaloff>:/resources/images/bottombar/anchor_release.png</normaloff>:/resources/images/bottombar/anchor_release.png</iconset>
+               <normaloff>:/resources/svg/OpenBridge/anchor-release.svg</normaloff>:/resources/svg/OpenBridge/anchor-release.svg</iconset>
              </property>
              <property name="iconSize">
               <size>

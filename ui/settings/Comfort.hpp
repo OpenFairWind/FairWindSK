@@ -14,9 +14,14 @@ class QPlainTextEdit;
 class QPushButton;
 class QTabWidget;
 class QGridLayout;
+class QGroupBox;
 
 namespace fairwindsk::ui::widgets {
     class TouchComboBox;
+}
+
+namespace fairwindsk::ui::launcher {
+    class Launcher;
 }
 
 namespace fairwindsk::ui::settings {
@@ -70,14 +75,16 @@ namespace fairwindsk::ui::settings {
         QLabel *m_statusLabel = nullptr;
         QPushButton *m_importButton = nullptr;
         QPushButton *m_exportButton = nullptr;
+        QPushButton *m_editorButton = nullptr;
         QPushButton *m_resetButton = nullptr;
         QMap<QString, QColor> m_visualColors;
         QMap<QString, QPushButton *> m_colorButtons;
         QMap<QString, QLabel *> m_backgroundPathLabels;
         QWidget *m_previewTopBar = nullptr;
-        QWidget *m_previewLauncher = nullptr;
+        fairwindsk::ui::launcher::Launcher *m_previewLauncher = nullptr;
         QWidget *m_previewBottomBar = nullptr;
         QTabWidget *m_previewTabs = nullptr;
+        QGroupBox *m_advancedGroup = nullptr;
         bool m_isUpdating = false;
         bool m_isSyncingVisualControls = false;
     };

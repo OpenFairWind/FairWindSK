@@ -173,6 +173,7 @@ namespace fairwindsk::ui::bottombar {
         for (auto *button : findChildren<QToolButton *>()) {
             button->setAutoRaise(false);
             button->setStyleSheet(style);
+            button->setToolTip(button->text());
             if (!button->iconSize().isValid()) {
                 button->setIconSize(QSize(32, 32));
             }

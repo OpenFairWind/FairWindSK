@@ -68,6 +68,7 @@ namespace fairwindsk::ui::bottombar {
                 qOverload<int>(&fairwindsk::ui::widgets::TouchComboBox::currentIndexChanged),
                 this,
                 &POBBar::onCurrentIndexChanged);
+        ui->comboBox_currentPOB->setAccentButton(true);
 
         // Not visible by default
         QWidget::setVisible(false);
@@ -109,13 +110,14 @@ namespace fairwindsk::ui::bottombar {
     }
 
     void POBBar::applyComfortStyle() const {
-        const QColor buttonColor = palette().color(QPalette::Button);
+        const QColor buttonColor = palette().color(QPalette::Highlight);
         const QColor borderColor = buttonColor.darker(140);
         const QColor hoverColor = buttonColor.lighter(110);
         const QColor pressedColor = buttonColor.darker(118);
         const QColor iconColor = fairwindsk::ui::bestContrastingColor(
             buttonColor,
-            {palette().color(QPalette::ButtonText),
+            {palette().color(QPalette::HighlightedText),
+             palette().color(QPalette::ButtonText),
              palette().color(QPalette::WindowText),
              palette().color(QPalette::Text),
              QColor(QStringLiteral("#f8f8f8")),
@@ -139,6 +141,10 @@ namespace fairwindsk::ui::bottombar {
                 button->setIconSize(QSize(32, 32));
             }
             fairwindsk::ui::applyTintedButtonIcon(button, iconColor, QSize(32, 32));
+        }
+
+        if (ui->comboBox_currentPOB) {
+            ui->comboBox_currentPOB->setAccentButton(true);
         }
     }
 

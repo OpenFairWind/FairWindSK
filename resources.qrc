@@ -51,6 +51,12 @@
         <file>resources/svg/OpenBridge/settings-iec.svg</file>
         <file>resources/svg/OpenBridge/alarm-general.svg</file>
         <file>resources/svg/OpenBridge/anchor-iec.svg</file>
+        <file>resources/svg/OpenBridge/anchor-down.svg</file>
+        <file>resources/svg/OpenBridge/anchor-drop.svg</file>
+        <file>resources/svg/OpenBridge/anchor-raise.svg</file>
+        <file>resources/svg/OpenBridge/anchor-release.svg</file>
+        <file>resources/svg/OpenBridge/anchor-reset.svg</file>
+        <file>resources/svg/OpenBridge/anchor-up.svg</file>
         <file>resources/svg/OpenBridge/alarm-pob.svg</file>
 
         <!-- Alarms and alerts icons from OpenBridge -->
