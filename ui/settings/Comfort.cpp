@@ -7,14 +7,17 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QFrame>
+#include <QDialog>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QIcon>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMouseEvent>
 #include <QPlainTextEdit>
 #include <QPushButton>
+#include <QCheckBox>
 #include <QRegularExpression>
 #include <QSignalBlocker>
 #include <QSlider>
@@ -24,6 +27,7 @@
 #include <QUrl>
 #include <QVBoxLayout>
 #include <QPointer>
+#include <functional>
 
 #include "FairWindSK.hpp"
 #include "Settings.hpp"
@@ -78,15 +82,106 @@ namespace fairwindsk::ui::settings {
                 .arg(objectName, QUrl::fromLocalFile(imagePath).toString());
         }
 
+        QString buildSelectorBorderImageRule(const QString &selector, const QString &imagePath) {
+            if (imagePath.trimmed().isEmpty()) {
+                return QString();
+            }
+
+            return QStringLiteral(
+                "%1 {"
+                " border-image: url(\"%2\") 0 0 0 0 stretch stretch;"
+                " background: transparent;"
+                " border: 0px;"
+                " }")
+                .arg(selector, QUrl::fromLocalFile(imagePath).toString());
+        }
+
+        QString buildCheckboxIndicatorRule(const QString &selector, const QString &imagePath) {
+            if (imagePath.trimmed().isEmpty()) {
+                return QString();
+            }
+
+            return QStringLiteral(
+                "%1 {"
+                " image: url(\"%2\");"
+                " border: 0px;"
+                " background: transparent;"
+                " width: 28px;"
+                " height: 28px;"
+                " }")
+                .arg(selector, QUrl::fromLocalFile(imagePath).toString());
+        }
+
+        QStringList comfortBackgroundAreas() {
+            return {
+                QStringLiteral("topbar"),
+                QStringLiteral("launcher"),
+                QStringLiteral("bottombar"),
+                QStringLiteral("buttons-default"),
+                QStringLiteral("buttons-selected"),
+                QStringLiteral("tabs-default"),
+                QStringLiteral("tabs-selected"),
+                QStringLiteral("checkbox-default"),
+                QStringLiteral("checkbox-selected")
+            };
+        }
+
+        class ColorPreviewFrame final : public QFrame {
+        public:
+            using QFrame::QFrame;
+
+            std::function<void()> onDoubleActivated;
+
+        protected:
+            void mouseDoubleClickEvent(QMouseEvent *event) override {
+                if (event->button() == Qt::LeftButton && onDoubleActivated) {
+                    onDoubleActivated();
+                    event->accept();
+                    return;
+                }
+                QFrame::mouseDoubleClickEvent(event);
+            }
+        };
+
+        class ColorSwatchButton final : public QToolButton {
+        public:
+            explicit ColorSwatchButton(const QColor &swatch, QWidget *parent = nullptr)
+                : QToolButton(parent),
+                  m_swatch(swatch) {
+            }
+
+            std::function<void(const QColor &, bool)> onActivated;
+
+        protected:
+            void mouseReleaseEvent(QMouseEvent *event) override {
+                QToolButton::mouseReleaseEvent(event);
+                if (event->button() == Qt::LeftButton && rect().contains(event->pos()) && onActivated) {
+                    onActivated(m_swatch, false);
+                }
+            }
+
+            void mouseDoubleClickEvent(QMouseEvent *event) override {
+                if (event->button() == Qt::LeftButton && onActivated) {
+                    onActivated(m_swatch, true);
+                    event->accept();
+                    return;
+                }
+                QToolButton::mouseDoubleClickEvent(event);
+            }
+
+        private:
+            QColor m_swatch;
+        };
+
         class DrawerColorPickerWidget final : public QWidget {
         public:
             explicit DrawerColorPickerWidget(const QString &label, const QColor &initialColor, QWidget *parent = nullptr)
                 : QWidget(parent) {
                 auto *rootLayout = new QVBoxLayout(this);
                 rootLayout->setContentsMargins(0, 0, 0, 0);
-                rootLayout->setSpacing(10);
+                rootLayout->setSpacing(14);
 
-                auto *titleLabel = new QLabel(tr("Adjust %1 using touch-friendly controls.").arg(label), this);
+                auto *titleLabel = new QLabel(tr("Adjust %1 with swatches or RGB sliders. Double-tap a color to use it.").arg(label), this);
                 titleLabel->setWordWrap(true);
                 rootLayout->addWidget(titleLabel);
 
@@ -95,9 +190,14 @@ namespace fairwindsk::ui::settings {
                 headerLayout->setSpacing(12);
                 rootLayout->addLayout(headerLayout);
 
-                m_preview = new QFrame(this);
-                m_preview->setMinimumSize(96, 72);
+                m_preview = new ColorPreviewFrame(this);
+                m_preview->setMinimumSize(140, 104);
                 m_preview->setFrameShape(QFrame::StyledPanel);
+                m_preview->onDoubleActivated = [this]() {
+                    if (onColorAccepted) {
+                        onColorAccepted(m_color);
+                    }
+                };
                 headerLayout->addWidget(m_preview, 0);
 
                 auto *valueLayout = new QVBoxLayout();
@@ -128,7 +228,7 @@ namespace fairwindsk::ui::settings {
                     QColor(QStringLiteral("#d05b3f"))
                 };
                 for (const QColor &swatch : swatches) {
-                    auto *button = new QToolButton(this);
+                    auto *button = new ColorSwatchButton(swatch, this);
                     button->setAutoRaise(false);
                     button->setMinimumSize(52, 52);
                     button->setStyleSheet(QStringLiteral(
@@ -138,9 +238,12 @@ namespace fairwindsk::ui::settings {
                                               " background: %2;"
                                               " }")
                                               .arg(swatch.darker(135).name(), swatch.name(QColor::HexArgb)));
-                    connect(button, &QToolButton::clicked, this, [this, swatch]() {
-                        setColor(swatch);
-                    });
+                    button->onActivated = [this](const QColor &selected, const bool accept) {
+                        setColor(selected);
+                        if (accept && onColorAccepted) {
+                            onColorAccepted(m_color);
+                        }
+                    };
                     swatchesLayout->addWidget(button);
                 }
                 swatchesLayout->addStretch(1);
@@ -148,15 +251,16 @@ namespace fairwindsk::ui::settings {
                 addSlider(rootLayout, tr("Red"), &m_redSlider);
                 addSlider(rootLayout, tr("Green"), &m_greenSlider);
                 addSlider(rootLayout, tr("Blue"), &m_blueSlider);
-                addSlider(rootLayout, tr("Opacity"), &m_alphaSlider);
 
-                setMinimumHeight(360);
+                setMinimumHeight(460);
                 setColor(initialColor.isValid() ? initialColor : QColor(QStringLiteral("#ffffff")));
             }
 
             QColor color() const {
                 return m_color;
             }
+
+            std::function<void(const QColor &)> onColorAccepted;
 
         private:
             void addSlider(QVBoxLayout *layout, const QString &label, QSlider **sliderPtr) {
@@ -172,7 +276,7 @@ namespace fairwindsk::ui::settings {
                 slider->setRange(0, 255);
                 slider->setPageStep(16);
                 slider->setSingleStep(1);
-                slider->setMinimumHeight(44);
+                slider->setMinimumHeight(56);
                 rowLayout->addWidget(slider, 1);
 
                 auto *valueLabel = new QLabel(this);
@@ -192,12 +296,10 @@ namespace fairwindsk::ui::settings {
                 const QSignalBlocker redBlocker(m_redSlider);
                 const QSignalBlocker greenBlocker(m_greenSlider);
                 const QSignalBlocker blueBlocker(m_blueSlider);
-                const QSignalBlocker alphaBlocker(m_alphaSlider);
                 m_redSlider->setValue(color.red());
                 m_greenSlider->setValue(color.green());
                 m_blueSlider->setValue(color.blue());
-                m_alphaSlider->setValue(color.alpha());
-                m_color = color;
+                m_color = QColor(color.red(), color.green(), color.blue());
                 updatePreview();
             }
 
@@ -205,8 +307,7 @@ namespace fairwindsk::ui::settings {
                 m_color = QColor(
                     m_redSlider->value(),
                     m_greenSlider->value(),
-                    m_blueSlider->value(),
-                    m_alphaSlider->value());
+                    m_blueSlider->value());
                 updatePreview();
             }
 
@@ -218,12 +319,11 @@ namespace fairwindsk::ui::settings {
                                              " background: %2;"
                                              " }")
                                              .arg(m_color.darker(150).name(), m_color.name(QColor::HexArgb)));
-                m_hexLabel->setText(tr("HEX: %1").arg(m_color.name(QColor::HexArgb).toUpper()));
-                m_rgbaLabel->setText(tr("RGBA: %1, %2, %3, %4")
+                m_hexLabel->setText(tr("HEX: %1").arg(m_color.name(QColor::HexRgb).toUpper()));
+                m_rgbaLabel->setText(tr("RGB: %1, %2, %3")
                                          .arg(m_color.red())
                                          .arg(m_color.green())
-                                         .arg(m_color.blue())
-                                         .arg(m_color.alpha()));
+                                         .arg(m_color.blue()));
 
                 for (auto it = m_valueLabels.cbegin(); it != m_valueLabels.cend(); ++it) {
                     it.value()->setText(QString::number(it.key()->value()));
@@ -231,14 +331,60 @@ namespace fairwindsk::ui::settings {
             }
 
             QColor m_color;
-            QFrame *m_preview = nullptr;
+            ColorPreviewFrame *m_preview = nullptr;
             QLabel *m_hexLabel = nullptr;
             QLabel *m_rgbaLabel = nullptr;
             QSlider *m_redSlider = nullptr;
             QSlider *m_greenSlider = nullptr;
             QSlider *m_blueSlider = nullptr;
-            QSlider *m_alphaSlider = nullptr;
             QMap<QSlider *, QLabel *> m_valueLabels;
+        };
+
+        class DrawerColorPickerDialog final : public QDialog {
+        public:
+            DrawerColorPickerDialog(QWidget *parent, const QString &title, const QColor &initialColor)
+                : QDialog(parent, Qt::Popup | Qt::FramelessWindowHint) {
+                setAttribute(Qt::WA_DeleteOnClose, false);
+                setModal(true);
+
+                auto *rootLayout = new QVBoxLayout(this);
+                rootLayout->setContentsMargins(14, 14, 14, 14);
+                rootLayout->setSpacing(10);
+
+                auto *titleLabel = new QLabel(title, this);
+                rootLayout->addWidget(titleLabel);
+
+                m_picker = new DrawerColorPickerWidget(title, initialColor, this);
+                m_picker->onColorAccepted = [this](const QColor &acceptedColor) {
+                    m_selectedColor = acceptedColor;
+                    accept();
+                };
+                rootLayout->addWidget(m_picker);
+
+                setMinimumHeight(560);
+                setMinimumWidth(640);
+            }
+
+            QColor selectedColor() const {
+                return m_selectedColor.isValid() && m_selectedColor.alpha() > 0 ? m_selectedColor : (m_picker ? m_picker->color() : QColor());
+            }
+
+            void openNear(QWidget *anchor) {
+                QWidget *windowWidget = anchor ? anchor->window() : nullptr;
+                if (!windowWidget) {
+                    return;
+                }
+
+                const QSize targetSize(qMax(640, windowWidget->width() - 24), qMax(560, windowWidget->height() / 2));
+                resize(targetSize);
+                const QPoint topLeft = windowWidget->mapToGlobal(
+                    QPoint((windowWidget->width() - width()) / 2, qMax(12, windowWidget->height() - height() - 12)));
+                move(topLeft);
+            }
+
+        private:
+            DrawerColorPickerWidget *m_picker = nullptr;
+            QColor m_selectedColor;
         };
     }
 
@@ -333,6 +479,12 @@ namespace fairwindsk::ui::settings {
         createBackgroundImageControl(QStringLiteral("topbar"), tr("Top bar"), backgroundGroup, backgroundLayout, 0);
         createBackgroundImageControl(QStringLiteral("launcher"), tr("Launcher"), backgroundGroup, backgroundLayout, 1);
         createBackgroundImageControl(QStringLiteral("bottombar"), tr("Bottom bar"), backgroundGroup, backgroundLayout, 2);
+        createBackgroundImageControl(QStringLiteral("buttons-default"), tr("Buttons"), backgroundGroup, backgroundLayout, 3);
+        createBackgroundImageControl(QStringLiteral("buttons-selected"), tr("Buttons selected"), backgroundGroup, backgroundLayout, 4);
+        createBackgroundImageControl(QStringLiteral("tabs-default"), tr("Tabs"), backgroundGroup, backgroundLayout, 5);
+        createBackgroundImageControl(QStringLiteral("tabs-selected"), tr("Tabs selected"), backgroundGroup, backgroundLayout, 6);
+        createBackgroundImageControl(QStringLiteral("checkbox-default"), tr("Checkbox"), backgroundGroup, backgroundLayout, 7);
+        createBackgroundImageControl(QStringLiteral("checkbox-selected"), tr("Checkbox selected"), backgroundGroup, backgroundLayout, 8);
         contentLayout->addWidget(backgroundGroup);
 
         auto *previewGroup = new QGroupBox(tr("Live Preview"), content);
@@ -369,6 +521,7 @@ namespace fairwindsk::ui::settings {
         mainLayout->setSpacing(8);
         auto *fieldLabel = new QLabel(tr("Field preview"), mainPage);
         auto *sampleField = new QLineEdit(QStringLiteral("Sample data"), mainPage);
+        auto *sampleCheckBox = new QCheckBox(tr("Sample checkbox"), mainPage);
         auto *buttonRowPreview = new QHBoxLayout();
         auto *primaryButton = new QPushButton(tr("Primary"), mainPage);
         auto *secondaryButton = new QPushButton(tr("Secondary"), mainPage);
@@ -376,6 +529,7 @@ namespace fairwindsk::ui::settings {
         buttonRowPreview->addWidget(secondaryButton);
         mainLayout->addWidget(fieldLabel);
         mainLayout->addWidget(sampleField);
+        mainLayout->addWidget(sampleCheckBox);
         mainLayout->addLayout(buttonRowPreview);
 
         auto *settingsPage = new QWidget(m_previewTabs);
@@ -537,7 +691,7 @@ namespace fairwindsk::ui::settings {
     void Comfort::resetPreset() {
         const QString preset = selectedPreset();
         m_settings->getConfiguration()->clearComfortThemeStyleSheet(preset);
-        for (const QString &area : {QStringLiteral("topbar"), QStringLiteral("launcher"), QStringLiteral("bottombar")}) {
+        for (const QString &area : comfortBackgroundAreas()) {
             m_settings->getConfiguration()->clearComfortBackgroundImagePath(preset, area);
         }
         loadPresetEditor();
@@ -566,7 +720,25 @@ namespace fairwindsk::ui::settings {
         const auto *configuration = m_settings->getConfiguration();
         return buildBackgroundRule(QStringLiteral("TopBar"), configuration->getComfortBackgroundImagePath(preset, QStringLiteral("topbar")))
             + buildBackgroundRule(QStringLiteral("Launcher"), configuration->getComfortBackgroundImagePath(preset, QStringLiteral("launcher")))
-            + buildBackgroundRule(QStringLiteral("BottomBar"), configuration->getComfortBackgroundImagePath(preset, QStringLiteral("bottombar")));
+            + buildBackgroundRule(QStringLiteral("BottomBar"), configuration->getComfortBackgroundImagePath(preset, QStringLiteral("bottombar")))
+            + buildSelectorBorderImageRule(
+                QStringLiteral("QToolButton, QPushButton"),
+                configuration->getComfortBackgroundImagePath(preset, QStringLiteral("buttons-default")))
+            + buildSelectorBorderImageRule(
+                QStringLiteral("QToolButton:pressed, QPushButton:pressed, QToolButton:checked, QPushButton:checked"),
+                configuration->getComfortBackgroundImagePath(preset, QStringLiteral("buttons-selected")))
+            + buildSelectorBorderImageRule(
+                QStringLiteral("QTabBar::tab"),
+                configuration->getComfortBackgroundImagePath(preset, QStringLiteral("tabs-default")))
+            + buildSelectorBorderImageRule(
+                QStringLiteral("QTabBar::tab:selected"),
+                configuration->getComfortBackgroundImagePath(preset, QStringLiteral("tabs-selected")))
+            + buildCheckboxIndicatorRule(
+                QStringLiteral("QCheckBox::indicator:unchecked"),
+                configuration->getComfortBackgroundImagePath(preset, QStringLiteral("checkbox-default")))
+            + buildCheckboxIndicatorRule(
+                QStringLiteral("QCheckBox::indicator:checked"),
+                configuration->getComfortBackgroundImagePath(preset, QStringLiteral("checkbox-selected")));
     }
 
     void Comfort::loadPresetEditor() {
@@ -665,22 +837,13 @@ namespace fairwindsk::ui::settings {
     }
 
     void Comfort::pickColor(const QString &key) {
-        auto *picker = new DrawerColorPickerWidget(colorLabel(key), colorValue(key));
-        QPointer<DrawerColorPickerWidget> pickerGuard(picker);
-        const int result = fairwindsk::ui::drawer::execDrawer(
-            this,
-            tr("Choose %1").arg(colorLabel(key)),
-            picker,
-            {
-                {tr("Apply"), int(QMessageBox::Apply), true},
-                {tr("Cancel"), int(QMessageBox::Cancel), false}
-            },
-            int(QMessageBox::Cancel));
-        if (!pickerGuard || result != QMessageBox::Apply) {
+        auto dialog = DrawerColorPickerDialog(this, tr("Choose %1").arg(colorLabel(key)), colorValue(key));
+        dialog.openNear(this);
+        if (dialog.exec() != QDialog::Accepted) {
             return;
         }
 
-        m_visualColors.insert(key, pickerGuard->color());
+        m_visualColors.insert(key, dialog.selectedColor());
         applyVisualThemeOverride();
     }
 

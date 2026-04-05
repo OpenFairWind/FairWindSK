@@ -246,9 +246,59 @@ namespace fairwindsk {
                     .arg(objectName, QUrl::fromLocalFile(imagePath).toString());
             };
 
+            const auto buildSelectorBorderImageRule = [&configuration, &preset](const QString &area, const QString &selector) {
+                const QString imagePath = configuration.getComfortBackgroundImagePath(preset, area).trimmed();
+                if (imagePath.isEmpty()) {
+                    return QString();
+                }
+
+                return QStringLiteral(
+                    "%1 {"
+                    " border-image: url(\"%2\") 0 0 0 0 stretch stretch;"
+                    " background: transparent;"
+                    " border: 0px;"
+                    " }")
+                    .arg(selector, QUrl::fromLocalFile(imagePath).toString());
+            };
+
+            const auto buildCheckboxRule = [&configuration, &preset](const QString &area, const QString &selector) {
+                const QString imagePath = configuration.getComfortBackgroundImagePath(preset, area).trimmed();
+                if (imagePath.isEmpty()) {
+                    return QString();
+                }
+
+                return QStringLiteral(
+                    "%1 {"
+                    " image: url(\"%2\");"
+                    " border: 0px;"
+                    " background: transparent;"
+                    " width: 28px;"
+                    " height: 28px;"
+                    " }")
+                    .arg(selector, QUrl::fromLocalFile(imagePath).toString());
+            };
+
             return buildRule(QStringLiteral("topbar"), QStringLiteral("TopBar"))
                 + buildRule(QStringLiteral("launcher"), QStringLiteral("Launcher"))
-                + buildRule(QStringLiteral("bottombar"), QStringLiteral("BottomBar"));
+                + buildRule(QStringLiteral("bottombar"), QStringLiteral("BottomBar"))
+                + buildSelectorBorderImageRule(
+                    QStringLiteral("buttons-default"),
+                    QStringLiteral("QToolButton, QPushButton"))
+                + buildSelectorBorderImageRule(
+                    QStringLiteral("buttons-selected"),
+                    QStringLiteral("QToolButton:pressed, QPushButton:pressed, QToolButton:checked, QPushButton:checked"))
+                + buildSelectorBorderImageRule(
+                    QStringLiteral("tabs-default"),
+                    QStringLiteral("QTabBar::tab"))
+                + buildSelectorBorderImageRule(
+                    QStringLiteral("tabs-selected"),
+                    QStringLiteral("QTabBar::tab:selected"))
+                + buildCheckboxRule(
+                    QStringLiteral("checkbox-default"),
+                    QStringLiteral("QCheckBox::indicator:unchecked"))
+                + buildCheckboxRule(
+                    QStringLiteral("checkbox-selected"),
+                    QStringLiteral("QCheckBox::indicator:checked"));
         }
 
         bool isAutomaticComfortViewSupported(const Configuration &configuration, signalk::Client *client) {

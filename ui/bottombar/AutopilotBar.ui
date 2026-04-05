@@ -448,7 +448,7 @@ border-bottom-color: rgb(83, 83, 84);</string>
         <widget class="QToolButton" name="toolButton_Hide">
          <property name="icon">
           <iconset>
-           <normaloff>:/resources/svg/OpenBridge/unfold-less-google.svg</normaloff>:/resources/svg/OpenBridge/unfold-less-google.svg</iconset>
+           <normaloff>:/resources/svg/OpenBridge/close-google.svg</normaloff>:/resources/svg/OpenBridge/close-google.svg</iconset>
          </property>
          <property name="iconSize">
           <size>

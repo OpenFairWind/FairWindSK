@@ -151,11 +151,19 @@ namespace fairwindsk::ui::bottombar {
         const QColor borderColor = buttonColor.darker(140);
         const QColor hoverColor = buttonColor.lighter(110);
         const QColor pressedColor = buttonColor.darker(118);
+        const QColor transparentHover = QColor(buttonColor.red(), buttonColor.green(), buttonColor.blue(), 48);
         const QColor iconColor = fairwindsk::ui::bestContrastingColor(
             buttonColor,
             {palette().color(QPalette::ButtonText),
              palette().color(QPalette::WindowText),
              palette().color(QPalette::Text),
+             QColor(QStringLiteral("#f8f8f8")),
+             QColor(QStringLiteral("#111111"))});
+        const QColor transparentIconColor = fairwindsk::ui::bestContrastingColor(
+            palette().color(QPalette::Window),
+            {palette().color(QPalette::WindowText),
+             palette().color(QPalette::Text),
+             palette().color(QPalette::ButtonText),
              QColor(QStringLiteral("#f8f8f8")),
              QColor(QStringLiteral("#111111"))});
         const QString style = QStringLiteral(
@@ -169,15 +177,33 @@ namespace fairwindsk::ui::bottombar {
             "QToolButton:hover { background: %4; }"
             "QToolButton:pressed, QToolButton:checked { background: %5; color: %3; }")
             .arg(borderColor.name(), buttonColor.name(), iconColor.name(), hoverColor.name(), pressedColor.name());
+        const QString transparentStyle = QStringLiteral(
+            "QToolButton {"
+            " border: 0px;"
+            " padding: 6px;"
+            " background: transparent;"
+            " color: %1;"
+            " }"
+            "QToolButton:hover, QToolButton:pressed, QToolButton:checked {"
+            " background: %2;"
+            " border: 0px;"
+            " color: %1;"
+            " }")
+            .arg(transparentIconColor.name(), transparentHover.name(QColor::HexArgb));
 
         for (auto *button : findChildren<QToolButton *>()) {
             button->setAutoRaise(false);
-            button->setStyleSheet(style);
+            const bool isTransparentIconButton =
+                button == ui->toolButton_Anchor || button == ui->toolButton_Hide;
+            button->setStyleSheet(isTransparentIconButton ? transparentStyle : style);
             button->setToolTip(button->text());
             if (!button->iconSize().isValid()) {
                 button->setIconSize(QSize(32, 32));
             }
-            fairwindsk::ui::applyTintedButtonIcon(button, iconColor, QSize(32, 32));
+            fairwindsk::ui::applyTintedButtonIcon(
+                button,
+                isTransparentIconButton ? transparentIconColor : iconColor,
+                QSize(32, 32));
         }
     }
 

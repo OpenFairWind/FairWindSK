@@ -331,8 +331,8 @@
         <widget class="QToolButton" name="toolButton_Hide">
          <property name="icon">
           <iconset>
-           <normaloff>:/resources/svg/OpenBridge/unfold-less-google.svg</normaloff>
-           <normalon>:/resources/svg/OpenBridge/unfold-less-google.svg</normalon></iconset>
+           <normaloff>:/resources/svg/OpenBridge/close-google.svg</normaloff>
+           <normalon>:/resources/svg/OpenBridge/close-google.svg</normalon></iconset>
          </property>
          <property name="iconSize">
           <size>
