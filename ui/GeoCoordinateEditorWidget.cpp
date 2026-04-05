@@ -11,19 +11,6 @@ namespace fairwindsk::ui {
           ui(new ::Ui::GeoCoordinateEditorWidget) {
         ui->setupUi(this);
 
-        const QString lightInputStyle = QStringLiteral(
-            "background: #f7f7f4; color: #1f2937; border: 1px solid #d1d5db; selection-background-color: #c7d2fe; selection-color: #111827;");
-
-        ui->labelFormat->setStyleSheet(QStringLiteral("QLabel { color: white; }"));
-        ui->labelLatitude->setStyleSheet(QStringLiteral("QLabel { color: white; }"));
-        ui->labelLongitude->setStyleSheet(QStringLiteral("QLabel { color: white; }"));
-        ui->labelAltitude->setStyleSheet(QStringLiteral("QLabel { color: white; }"));
-        ui->comboBoxFormat->setStyleSheet(
-            QStringLiteral("TouchComboBox, TouchComboBox QListWidget { %1 }").arg(lightInputStyle));
-        ui->lineEditLatitude->setStyleSheet(QStringLiteral("QLineEdit { %1 }").arg(lightInputStyle));
-        ui->lineEditLongitude->setStyleSheet(QStringLiteral("QLineEdit { %1 }").arg(lightInputStyle));
-        ui->lineEditAltitude->setStyleSheet(QStringLiteral("QLineEdit { %1 }").arg(lightInputStyle));
-
         for (const auto &option : geo::coordinateFormatOptions()) {
             ui->comboBoxFormat->addItem(option.label, option.id);
         }

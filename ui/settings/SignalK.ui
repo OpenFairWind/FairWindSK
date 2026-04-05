@@ -10,15 +10,6 @@
    <height>444</height>
   </rect>
  </property>
-  <property name="styleSheet">
-   <string notr="true">QLineEdit, QAbstractItemView, TouchComboBox {
-    background-color: rgb(245, 245, 245);
-    color: rgb(24, 24, 24);
-    border: 1px solid rgb(120, 120, 120);
-    selection-background-color: rgb(65, 107, 195);
-    selection-color: rgb(255, 255, 255);
-}</string>
-  </property>
   <layout class="QGridLayout" name="gridLayout_SignalK">
    <property name="leftMargin">
     <number>0</number>

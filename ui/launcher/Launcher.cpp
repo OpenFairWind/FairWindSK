@@ -561,12 +561,11 @@ namespace fairwindsk::ui::launcher {
         const QString kNavigationButtonStyle = QStringLiteral(
             "QToolButton {"
             " background: transparent;"
-            " color: #f9fafb;"
             " border: none;"
             " padding: 8px;"
             " }"
-            "QToolButton:hover { background: rgba(255, 255, 255, 0.08); border-radius: 8px; }"
-            "QToolButton:pressed { background: rgba(255, 255, 255, 0.14); border-radius: 8px; }");
+            "QToolButton:hover { background: rgba(127, 127, 127, 0.18); border-radius: 8px; }"
+            "QToolButton:pressed { background: rgba(127, 127, 127, 0.28); border-radius: 8px; }");
         const QString kLauncherFrameStyle = QStringLiteral(
             "QScrollArea {"
             " background: transparent;"

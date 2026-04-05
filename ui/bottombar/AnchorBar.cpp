@@ -24,8 +24,8 @@ namespace fairwindsk::ui::bottombar {
             " background: transparent;"
             " padding: 4px;"
             " }"
-            "QToolButton:hover { background: rgba(255, 255, 255, 0.08); border-radius: 6px; }"
-            "QToolButton:pressed { background: rgba(255, 255, 255, 0.14); border-radius: 6px; }");
+            "QToolButton:hover { background: rgba(127, 127, 127, 0.18); border-radius: 6px; }"
+            "QToolButton:pressed { background: rgba(127, 127, 127, 0.28); border-radius: 6px; }");
     }
 
     AnchorBar::AnchorBar(QWidget *parent) :

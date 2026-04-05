@@ -20,12 +20,11 @@ namespace fairwindsk::ui::topbar {
         const QString kChromeToolButtonStyle = QStringLiteral(
             "QToolButton {"
             " background: transparent;"
-            " color: #f9fafb;"
             " border: none;"
             " padding: 6px;"
             " }"
-            "QToolButton:hover { background: rgba(255, 255, 255, 0.08); border-radius: 8px; }"
-            "QToolButton:pressed { background: rgba(255, 255, 255, 0.14); border-radius: 8px; }");
+            "QToolButton:hover { background: rgba(127, 127, 127, 0.18); border-radius: 8px; }"
+            "QToolButton:pressed { background: rgba(127, 127, 127, 0.28); border-radius: 8px; }");
     }
 
     void TopBar::refreshMetricLabelWidths() const {

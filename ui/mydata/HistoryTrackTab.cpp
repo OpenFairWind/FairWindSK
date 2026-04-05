@@ -5,7 +5,6 @@
 #include "HistoryTrackTab.hpp"
 
 #include <QBrush>
-#include <QColor>
 #include <QDateTimeEdit>
 #include <QDoubleSpinBox>
 #include <QFile>
@@ -32,11 +31,7 @@
 #include "ui/widgets/TouchComboBox.hpp"
 #include "ui_HistoryTrackTab.h"
 
-namespace {
-    const QString kTrackTableStyle = QStringLiteral(
-        "QTableWidget { background: #f7f7f4; color: #1f2937; gridline-color: #d1d5db; selection-background-color: #c7d2fe; selection-color: #111827; }"
-        "QTableCornerButton::section, QHeaderView::section { background: #e5e7eb; color: #111827; border: 1px solid #d1d5db; padding: 4px; }");
-}
+namespace {}
 
 namespace fairwindsk::ui::mydata {
 
@@ -152,12 +147,6 @@ namespace fairwindsk::ui::mydata {
         m_longitudeSpinBox->setDecimals(8);
         m_altitudeSpinBox->setRange(-100000.0, 100000.0);
         m_altitudeSpinBox->setDecimals(2);
-        const QString inputStyle =
-            QStringLiteral("QAbstractSpinBox { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
-        m_timestampEdit->setStyleSheet(inputStyle);
-        m_latitudeSpinBox->setStyleSheet(inputStyle);
-        m_longitudeSpinBox->setStyleSheet(inputStyle);
-        m_altitudeSpinBox->setStyleSheet(inputStyle);
         m_propertiesEditor->setLabels(tr("Properties Tree"), tr("Properties JSON"));
 
         formLayout->addRow(tr("Sample"), m_indexValueLabel);
@@ -182,7 +171,6 @@ namespace fairwindsk::ui::mydata {
     }
 
     void HistoryTrackTab::styleTable() {
-        m_tableWidget->setStyleSheet(kTrackTableStyle);
         m_tableWidget->verticalHeader()->setVisible(false);
     }
 
@@ -205,8 +193,8 @@ namespace fairwindsk::ui::mydata {
             m_visibleRows.append(row);
             for (int column = 0; column < m_model->columnCount(); ++column) {
                 auto *item = new QTableWidgetItem(m_model->data(m_model->index(row, column), Qt::DisplayRole).toString());
-                item->setForeground(QBrush(QColor("#1f2937")));
-                item->setBackground(QBrush(QColor("#f7f7f4")));
+                item->setForeground(QBrush(m_tableWidget->palette().color(QPalette::Text)));
+                item->setBackground(QBrush(m_tableWidget->palette().color(QPalette::Base)));
                 item->setFlags(item->flags() & ~Qt::ItemIsEditable);
                 const auto alignment = m_model->data(m_model->index(row, column), Qt::TextAlignmentRole);
                 if (alignment.isValid()) {

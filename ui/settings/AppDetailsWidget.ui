@@ -10,55 +10,6 @@
     <height>520</height>
    </rect>
   </property>
-  <property name="styleSheet">
-   <string notr="true">QToolButton#toolButton_BackToLayout {
- background: transparent;
- border: 1px solid rgba(255, 255, 255, 0.24);
- border-radius: 6px;
- padding: 8px;
-}
-QToolButton#toolButton_BackToLayout:hover {
- background: rgba(255, 255, 255, 0.08);
-}
-QToolButton#toolButton_BackToLayout:pressed {
- background: rgba(255, 255, 255, 0.14);
-}
-QToolButton#toolButton_BackToLayout:disabled {
- color: rgba(255,255,255,0.35);
- border-color: rgba(255,255,255,0.12);
-}
-QLineEdit#lineEdit_Apps_Name,
-QLineEdit#lineEdit_Apps_Description,
-QLineEdit#lineEdit_Apps_DisplayName {
- background: #f7f7f4;
- color: #1f2937;
- selection-background-color: #c7d2fe;
- selection-color: #111827;
-}
-QListWidget#listWidget_Apps_Icons {
- selection-background-color: transparent;
- background: #0f172a;
- color: white;
- border: none;
-}
-QListWidget#listWidget_Apps_Icons::item {
- border: 2px solid transparent;
- border-radius: 8px;
- padding: 4px;
- margin: 2px;
- color: white;
-}
-QListWidget#listWidget_Apps_Icons::item:selected {
- border: 2px solid #2563eb;
- background: rgba(37, 99, 235, 0.18);
- color: white;
-}
-QFrame#frame_AppsIconPicker {
- background: #0f172a;
- border: 1px solid rgba(255, 255, 255, 0.14);
- border-radius: 10px;
-}</string>
-  </property>
   <layout class="QVBoxLayout" name="verticalLayout_DetailsPage">
    <property name="spacing">
     <number>12</number>

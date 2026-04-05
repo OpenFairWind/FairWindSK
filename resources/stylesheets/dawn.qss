@@ -108,3 +108,37 @@ QProgressBar::chunk {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ffd37a, stop:1 #f2a93b);
     border-radius: 5px;
 }
+QFrame#frameDialogDrawer,
+QFrame#frame_AppsIconPicker,
+QFrame#frame_PageIconPicker {
+    background: #162338;
+    border: 1px solid #c7b07a;
+    border-radius: 10px;
+}
+QPlainTextEdit#plainTextEditMessage {
+    background: transparent;
+    border: none;
+    color: #ead7b3;
+}
+QListWidget#listWidget_Apps_Icons,
+QListWidget#listWidget_Page_Icons {
+    selection-background-color: transparent;
+    background: #22344d;
+    color: #f7f3e8;
+    border: none;
+}
+QListWidget#listWidget_Apps_Icons::item,
+QListWidget#listWidget_Page_Icons::item {
+    border: 2px solid transparent;
+    border-radius: 8px;
+    padding: 4px;
+    margin: 2px;
+    background: transparent;
+    color: #f7f3e8;
+}
+QListWidget#listWidget_Apps_Icons::item:selected,
+QListWidget#listWidget_Page_Icons::item:selected {
+    border: 2px solid #ffd37a;
+    background: rgba(255, 211, 122, 0.18);
+    color: #fff9ef;
+}

@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <cmath>
 #include <QBrush>
-#include <QColor>
 #include <QCoreApplication>
 #include <QEventLoop>
 #include <QFile>
@@ -52,20 +51,10 @@ namespace {
     constexpr int kWaypointLongitudeColumn = 4;
     constexpr int kWaypointTimestampColumn = 5;
 
-    const QString kLineEditStyle = QStringLiteral(
-        "QLineEdit { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
-    const QString kPlainTextStyle = QStringLiteral(
-        "QPlainTextEdit { background: #f7f7f4; color: #1f2937; border: 1px solid #d1d5db; selection-background-color: #c7d2fe; selection-color: #111827; }");
-    const QString kSpinBoxStyle = QStringLiteral(
-        "QAbstractSpinBox { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
-    const QString kTableStyle = QStringLiteral(
-        "QTableWidget { background: #f7f7f4; color: #1f2937; gridline-color: #d1d5db; selection-background-color: #c7d2fe; selection-color: #111827; }"
-        "QTableCornerButton::section, QHeaderView::section { background: #e5e7eb; color: #111827; border: 1px solid #d1d5db; padding: 4px; }");
     const QString kActionButtonStyle = QStringLiteral(
         "QToolButton {"
-        " background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #f8fafc, stop:1 #d1d5db);"
-        " color: #111827;"
-        " border: 1px solid #9ca3af;"
+        " background: transparent;"
+        " border: 1px solid rgba(127, 127, 127, 0.35);"
         " border-radius: 6px;"
         " padding: 4px;"
         " min-width: 40px;"
@@ -74,8 +63,8 @@ namespace {
         " max-height: 40px;"
         " margin: 0px;"
         " }"
-        "QToolButton:hover { background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ffffff, stop:1 #e5e7eb); }"
-        "QToolButton:pressed { background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #cbd5e1, stop:1 #94a3b8); padding-top: 5px; padding-bottom: 3px; }");
+        "QToolButton:hover { background: rgba(127, 127, 127, 0.18); }"
+        "QToolButton:pressed { background: rgba(127, 127, 127, 0.28); padding-top: 5px; padding-bottom: 3px; }");
 
     void processWaypointUiEvents() {
         QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
@@ -355,22 +344,13 @@ namespace fairwindsk::ui::mydata {
         m_seaFloorWidget->setVisible(false);
         m_slipsWidget->setVisible(false);
         m_contactsEdit->setMaximumHeight(84);
-        m_searchEdit->setStyleSheet(kLineEditStyle);
-        m_nameEdit->setStyleSheet(kLineEditStyle);
         m_nameEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-        m_descriptionEdit->setStyleSheet(kPlainTextStyle);
         m_descriptionEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-        m_typeEdit->setStyleSheet(kLineEditStyle);
         m_typeEdit->setMaximumWidth(180);
-        m_coordinateDisplayEdit->setStyleSheet(kLineEditStyle);
         m_coordinateDisplayEdit->setReadOnly(true);
         m_coordinateDisplayEdit->setPlaceholderText(tr("No position"));
         m_coordinateEditButton->setIcon(QIcon(":/resources/svg/OpenBridge/edit-google.svg"));
         m_coordinateEditButton->setToolTip(tr("Edit coordinates"));
-        m_latitudeSpinBox->setStyleSheet(kSpinBoxStyle);
-        m_longitudeSpinBox->setStyleSheet(kSpinBoxStyle);
-        m_altitudeSpinBox->setStyleSheet(kSpinBoxStyle);
-        m_contactsEdit->setStyleSheet(kPlainTextStyle);
         m_contactsEdit->setMaximumHeight(72);
         m_propertiesEditor->setLabels(tr("Properties Tree"), tr("Properties JSON"));
         m_propertiesEditor->setHiddenKeys({QStringLiteral("name"), QStringLiteral("description"), QStringLiteral("contacts"), QStringLiteral("seaFloor"), QStringLiteral("slips")});
@@ -382,7 +362,6 @@ namespace fairwindsk::ui::mydata {
         m_propertiesEditor->setTabBarVisible(false);
         m_geoJsonDetailsEdit->setReadOnly(true);
         m_geoJsonDetailsEdit->setLineWrapMode(QPlainTextEdit::NoWrap);
-        m_geoJsonDetailsEdit->setStyleSheet(kPlainTextStyle);
         connect(m_previewAppView, &fairwindsk::ui::web::SignalKAppView::loadFinished, this, [this](const bool ok) {
             if (ok) {
                 schedulePreviewFocus();
@@ -428,7 +407,6 @@ namespace fairwindsk::ui::mydata {
     }
 
     void Waypoints::styleTable() {
-        m_tableWidget->setStyleSheet(kTableStyle);
         m_tableWidget->verticalHeader()->setVisible(false);
         m_tableWidget->verticalHeader()->setDefaultSectionSize(62);
     }
@@ -527,8 +505,8 @@ namespace fairwindsk::ui::mydata {
             haystack += " " + displayText;
 
             auto *item = new QTableWidgetItem(displayText);
-            item->setForeground(QBrush(QColor("#1f2937")));
-            item->setBackground(QBrush(QColor("#f7f7f4")));
+            item->setForeground(QBrush(m_tableWidget->palette().color(QPalette::Text)));
+            item->setBackground(QBrush(m_tableWidget->palette().color(QPalette::Base)));
             item->setFlags(item->flags() & ~Qt::ItemIsEditable);
             const auto alignment = m_model->data(modelIndex, Qt::TextAlignmentRole);
             if (alignment.isValid()) {
@@ -656,7 +634,7 @@ namespace fairwindsk::ui::mydata {
                 iconLabel->setPixmap(QIcon(iconPath).pixmap(18, 18));
             } else {
                 iconLabel->setText(label.left(1).toUpper());
-                iconLabel->setStyleSheet("QLabel { background: #f3f4f6; color: #111827; border: 1px solid #d1d5db; border-radius: 9px; min-width: 18px; min-height: 18px; padding: 0 4px; }");
+                iconLabel->setStyleSheet("QLabel { border: 1px solid rgba(127, 127, 127, 0.35); border-radius: 9px; min-width: 18px; min-height: 18px; padding: 0 4px; }");
                 iconLabel->setAlignment(Qt::AlignCenter);
             }
             iconLabel->setToolTip(label);

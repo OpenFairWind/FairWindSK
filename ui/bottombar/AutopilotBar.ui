@@ -429,11 +429,7 @@ border-bottom-color: rgb(83, 83, 84);</string>
           <enum>QLayout::SizeConstraint::SetFixedSize</enum>
          </property>
          <item>
-          <widget class="QWidget" name="widget_Rudder" native="true">
-           <property name="styleSheet">
-            <string notr="true">background-color: rgb(255, 255, 255);
-color: rgb(0,0,0);</string>
-           </property>
+         <widget class="QWidget" name="widget_Rudder" native="true">
           </widget>
          </item>
         </layout>

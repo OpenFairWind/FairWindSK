@@ -19,16 +19,6 @@
   <property name="windowTitle">
    <string>FairWindSK</string>
   </property>
-  <property name="styleSheet">
-   <string notr="true">background-color: rgb(0, 0, 0);
-color: rgb(255, 255, 255);
-QTextEdit, QPlainTextEdit {
-    background-color: rgb(24, 24, 24);
-    color: rgb(255, 255, 255);
-    selection-background-color: rgb(65, 107, 195);
-    selection-color: rgb(255, 255, 255);
-}</string>
-  </property>
   <property name="tabShape">
    <enum>QTabWidget::TabShape::Rounded</enum>
   </property>
@@ -83,12 +73,6 @@ QTextEdit, QPlainTextEdit {
         <property name="visible">
          <bool>false</bool>
         </property>
-        <property name="styleSheet">
-         <string notr="true">#frameDialogDrawer { background: #0b0b0b; border-top: 1px solid #232323; }
-#frameDialogDrawer QLabel { color: white; }
-#frameDialogDrawer QPushButton { background: #f3f4f6; color: #111827; border: 1px solid #d1d5db; border-radius: 4px; padding: 6px 12px; }
-#frameDialogDrawer QPushButton:hover { background: #e5e7eb; }</string>
-        </property>
         <property name="frameShape">
          <enum>QFrame::StyledPanel</enum>
         </property>
@@ -114,7 +98,7 @@ QTextEdit, QPlainTextEdit {
          <item>
           <widget class="QLabel" name="labelDialogDrawerTitle">
            <property name="styleSheet">
-            <string notr="true">QLabel { font-size: 16px; font-weight: 700; color: white; }</string>
+            <string notr="true">QLabel { font-size: 16px; font-weight: 700; }</string>
            </property>
            <property name="text">
             <string>Dialog</string>

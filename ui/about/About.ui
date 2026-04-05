@@ -19,10 +19,6 @@
   <property name="windowTitle">
    <string>About...</string>
   </property>
-  <property name="styleSheet">
-   <string notr="true">background-color: rgba(26, 26, 26, 191);
-color: rgb(250, 255, 255);</string>
-  </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="0">
     <layout class="QVBoxLayout" name="verticalLayout">
@@ -103,8 +99,7 @@ color: rgb(250, 255, 255);</string>
             </font>
            </property>
            <property name="styleSheet">
-            <string notr="true">background-color: rgba(255, 255, 255, 0);
-color: rgb(65, 107, 195);</string>
+            <string notr="true">background-color: rgba(255, 255, 255, 0);</string>
            </property>
            <property name="text">
             <string>http://fairwind.uniparthenope.it</string>

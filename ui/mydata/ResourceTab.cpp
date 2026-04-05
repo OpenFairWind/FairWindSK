@@ -6,7 +6,6 @@
 
 #include <QBrush>
 #include <QCheckBox>
-#include <QColor>
 #include <QFile>
 #include <QFormLayout>
 #include <QHeaderView>
@@ -38,12 +37,6 @@
 #include "ui_ResourceTab.h"
 
 namespace {
-    const QString kLineEditStyle = QStringLiteral(
-        "QLineEdit { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
-    const QString kPlainTextStyle = QStringLiteral(
-        "QPlainTextEdit { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
-    const QString kSpinBoxStyle = QStringLiteral(
-        "QAbstractSpinBox { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
     QJsonObject featureObject(const QJsonObject &resource) {
         return resource["feature"].toObject();
     }
@@ -59,9 +52,6 @@ namespace {
     QJsonArray coordinateArray(const QJsonObject &resource) {
         return geometryObject(resource)["coordinates"].toArray();
     }
-    const QString kTableStyle = QStringLiteral(
-        "QTableWidget { background: #f7f7f4; color: #1f2937; gridline-color: #d1d5db; selection-background-color: #c7d2fe; selection-color: #111827; }"
-        "QTableCornerButton::section, QHeaderView::section { background: #e5e7eb; color: #111827; border: 1px solid #d1d5db; padding: 4px; }");
 }
 
 namespace fairwindsk::ui::mydata {
@@ -193,30 +183,10 @@ namespace fairwindsk::ui::mydata {
         m_geometryEdit->setPlaceholderText("{\n  \"type\": \"Polygon\",\n  \"coordinates\": [[[12.4, 41.9], [12.5, 41.9], [12.5, 42.0], [12.4, 41.9]]]\n}");
         m_chartLayersEdit->setPlaceholderText("base,depth");
         m_chartBoundsEdit->setPlaceholderText("[[12.0, 41.0], [13.0, 42.0]]");
-        m_searchEdit->setStyleSheet(kLineEditStyle);
-        m_nameEdit->setStyleSheet(kLineEditStyle);
-        m_descriptionEdit->setStyleSheet(kLineEditStyle);
-        m_typeEdit->setStyleSheet(kLineEditStyle);
-        m_hrefEdit->setStyleSheet(kLineEditStyle);
-        m_mimeTypeEdit->setStyleSheet(kLineEditStyle);
-        m_identifierEdit->setStyleSheet(kLineEditStyle);
-        m_chartFormatEdit->setStyleSheet(kLineEditStyle);
-        m_chartUrlEdit->setStyleSheet(kLineEditStyle);
-        m_tilemapUrlEdit->setStyleSheet(kLineEditStyle);
-        m_chartRegionEdit->setStyleSheet(kLineEditStyle);
-        m_chartLayersEdit->setStyleSheet(kLineEditStyle);
-        m_latitudeSpinBox->setStyleSheet(kSpinBoxStyle);
-        m_longitudeSpinBox->setStyleSheet(kSpinBoxStyle);
-        m_altitudeSpinBox->setStyleSheet(kSpinBoxStyle);
-        m_coordinateDisplayEdit->setStyleSheet(kLineEditStyle);
         m_coordinateDisplayEdit->setReadOnly(true);
         m_coordinateDisplayEdit->setPlaceholderText(tr("No position"));
         m_coordinateEditButton->setIcon(QIcon(":/resources/svg/OpenBridge/edit-google.svg"));
         m_coordinateEditButton->setToolTip(tr("Edit coordinates"));
-        m_chartScaleSpinBox->setStyleSheet(kSpinBoxStyle);
-        m_coordinatesEdit->setStyleSheet(kPlainTextStyle);
-        m_geometryEdit->setStyleSheet(kPlainTextStyle);
-        m_chartBoundsEdit->setStyleSheet(kPlainTextStyle);
 
         if (m_kind == ResourceKind::Route) {
             m_detailTabs = new QTabWidget(ui->widgetPreviewHost);
@@ -310,7 +280,6 @@ namespace fairwindsk::ui::mydata {
     }
 
     void ResourceTab::styleTable() {
-        m_tableWidget->setStyleSheet(kTableStyle);
         m_tableWidget->verticalHeader()->setVisible(false);
     }
 
@@ -366,8 +335,8 @@ namespace fairwindsk::ui::mydata {
 
             for (int column = 0; column < m_model->columnCount(); ++column) {
                 auto *item = new QTableWidgetItem(m_model->data(m_model->index(row, column), Qt::DisplayRole).toString());
-                item->setForeground(QBrush(QColor("#1f2937")));
-                item->setBackground(QBrush(QColor("#f7f7f4")));
+                item->setForeground(QBrush(m_tableWidget->palette().color(QPalette::Text)));
+                item->setBackground(QBrush(m_tableWidget->palette().color(QPalette::Base)));
                 item->setFlags(item->flags() & ~Qt::ItemIsEditable);
                 const auto alignment = m_model->data(m_model->index(row, column), Qt::TextAlignmentRole);
                 if (alignment.isValid()) {

@@ -144,8 +144,6 @@ namespace fairwindsk::ui::drawer {
                 toolbarLayout->addWidget(m_upButton);
 
                 m_pathEdit = new QLineEdit(this);
-                m_pathEdit->setStyleSheet(
-                    "QLineEdit { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
                 toolbarLayout->addWidget(m_pathEdit, 1);
 
                 layout->addLayout(toolbarLayout);
@@ -158,19 +156,13 @@ namespace fairwindsk::ui::drawer {
                 m_view->setUniformRowHeights(true);
                 m_view->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
                 m_view->sortByColumn(0, Qt::AscendingOrder);
-                m_view->setStyleSheet(
-                    "QTreeView { background: #111827; color: white; alternate-background-color: #0f172a; }"
-                    "QTreeView::item:selected { background: #1d4ed8; color: white; }");
                 layout->addWidget(m_view, 1);
 
                 if (m_mode == FileBrowserMode::SaveFile) {
                     auto *nameLabel = new QLabel(tr("File name"), this);
-                    nameLabel->setStyleSheet("QLabel { color: white; }");
                     layout->addWidget(nameLabel);
 
                     m_nameEdit = new QLineEdit(this);
-                    m_nameEdit->setStyleSheet(
-                        "QLineEdit { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
                     m_nameEdit->setText(fileName);
                     layout->addWidget(m_nameEdit);
                 }
@@ -587,13 +579,12 @@ namespace fairwindsk::ui::drawer {
             iconLabel->setAlignment(Qt::AlignCenter);
             iconLabel->setFixedSize(30, 30);
             iconLabel->setStyleSheet(
-                "QLabel { background: #f3f4f6; color: #111827; border: 1px solid #d1d5db; border-radius: 15px; font-size: 18px; font-weight: 700; }");
+                "QLabel { border: 1px solid rgba(127, 127, 127, 0.35); border-radius: 15px; font-size: 18px; font-weight: 700; }");
             layout->addWidget(iconLabel, 0, Qt::AlignTop);
         }
 
         auto *textLabel = new QLabel(text, content);
         textLabel->setWordWrap(true);
-        textLabel->setStyleSheet("QLabel { color: white; }");
         layout->addWidget(textLabel, 1);
 
         QList<ButtonSpec> specs;
@@ -634,14 +625,11 @@ namespace fairwindsk::ui::drawer {
 
         auto *labelWidget = new QLabel(label, content);
         labelWidget->setWordWrap(true);
-        labelWidget->setStyleSheet("QLabel { color: white; }");
         layout->addWidget(labelWidget);
 
         auto *lineEdit = new QLineEdit(content);
         lineEdit->setEchoMode(echo);
         lineEdit->setText(text);
-        lineEdit->setStyleSheet(
-            "QLineEdit { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
         layout->addWidget(lineEdit);
 
         const QList<DrawerButtonSpec> drawerSpecs = {

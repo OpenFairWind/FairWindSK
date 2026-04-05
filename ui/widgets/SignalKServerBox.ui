@@ -175,11 +175,6 @@
      <property name="horizontalScrollBarPolicy">
       <enum>Qt::ScrollBarAlwaysOff</enum>
      </property>
-     <property name="styleSheet">
-      <string notr="true">color: rgba(255,255,255,0.82);
-background: transparent;
-border: none;</string>
-     </property>
      <property name="readOnly">
       <bool>true</bool>
      </property>

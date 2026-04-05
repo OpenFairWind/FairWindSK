@@ -118,7 +118,7 @@ namespace fairwindsk::ui::widgets {
         label->setStyleSheet(QStringLiteral(
             "QLabel {"
             " background: %1;"
-            " border: 1px solid rgba(255,255,255,0.35);"
+            " border: 1px solid rgba(127,127,127,0.45);"
             " border-radius: 5px;"
             " }").arg(color));
     }
@@ -134,7 +134,7 @@ namespace fairwindsk::ui::widgets {
             "QLabel {"
             " background: %1;"
             " color: %2;"
-            " border: 1px solid rgba(255,255,255,0.18);"
+            " border: 1px solid rgba(127,127,127,0.35);"
             " border-radius: 9px;"
             " font-size: 10px;"
             " font-weight: 700;"
