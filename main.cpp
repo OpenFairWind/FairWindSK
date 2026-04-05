@@ -5,6 +5,7 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QLibraryInfo>
+#include <QStandardPaths>
 #include <QTimer>
 #include <QTranslator>
 
@@ -20,6 +21,13 @@ using namespace Qt::StringLiterals;
 
 #if defined(Q_OS_LINUX)
 namespace {
+    bool hasOwnerOnlyPermissions(const QFileInfo &fileInfo) {
+        const QFileDevice::Permissions permissions = fileInfo.permissions();
+        const QFileDevice::Permissions allowed =
+                QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ExeOwner;
+        return (permissions & allowed) == allowed && (permissions & ~allowed) == QFileDevice::Permissions();
+    }
+
     void appendChromiumFlagIfMissing(QStringList &flags, const QString &flag) {
         if (!flags.contains(flag)) {
             flags.append(flag);
@@ -91,6 +99,28 @@ namespace {
         }
     }
 
+    void configureLinuxRuntimeDirectory() {
+        const QString configuredRuntimeDir = qEnvironmentVariable("XDG_RUNTIME_DIR").trimmed();
+        QFileInfo runtimeInfo(configuredRuntimeDir);
+        if (!configuredRuntimeDir.isEmpty() && runtimeInfo.exists() && runtimeInfo.isDir() && hasOwnerOnlyPermissions(runtimeInfo)) {
+            return;
+        }
+
+        QString fallbackBase = QStandardPaths::writableLocation(QStandardPaths::TempLocation);
+        if (fallbackBase.trimmed().isEmpty()) {
+            fallbackBase = QDir::tempPath();
+        }
+
+        const QString userName = qEnvironmentVariable("USER").trimmed().isEmpty()
+                ? QStringLiteral("user")
+                : qEnvironmentVariable("USER").trimmed();
+        const QString fallbackRuntimeDir = QDir(fallbackBase).filePath(QStringLiteral("fairwindsk-runtime-%1").arg(userName));
+        QDir().mkpath(fallbackRuntimeDir);
+        QFile::setPermissions(fallbackRuntimeDir,
+                              QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ExeOwner);
+        qputenv("XDG_RUNTIME_DIR", fallbackRuntimeDir.toUtf8());
+    }
+
     void configureLinuxWebEngineFallback() {
 #if defined(__arm__) || defined(__aarch64__)
         if (qEnvironmentVariableIsEmpty("QT_OPENGL")) {
@@ -102,7 +132,6 @@ namespace {
         appendChromiumFlagIfMissing(chromiumFlags, QStringLiteral("--disable-gpu"));
         appendChromiumFlagIfMissing(chromiumFlags, QStringLiteral("--disable-gpu-compositing"));
         appendChromiumFlagIfMissing(chromiumFlags, QStringLiteral("--disable-gpu-rasterization"));
-        appendChromiumFlagIfMissing(chromiumFlags, QStringLiteral("--disable-software-rasterizer"));
         appendChromiumFlagIfMissing(chromiumFlags, QStringLiteral("--disable-features=Vulkan"));
         qputenv("QTWEBENGINE_CHROMIUM_FLAGS", chromiumFlags.join(u' ').toUtf8());
 #endif
@@ -123,6 +152,7 @@ int main(int argc, char *argv[]) {
     QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts );
 
 #if defined(Q_OS_LINUX)
+    configureLinuxRuntimeDirectory();
     configureLinuxQtPlatformFallback();
     configureLinuxWebEngineFallback();
 #endif
