@@ -209,8 +209,13 @@ namespace fairwindsk::ui::widgets {
             ui->pushButtonPlus->setStyleSheet(m_buttonStyleSheet);
         }
 
-        fairwindsk::ui::applyTintedButtonIcon(ui->pushButtonMinus, activePalette.color(QPalette::ButtonText));
-        fairwindsk::ui::applyTintedButtonIcon(ui->pushButtonPlus, activePalette.color(QPalette::ButtonText));
+        const QColor iconColor = fairwindsk::ui::bestContrastingColor(
+            activePalette.color(QPalette::Button),
+            {activePalette.color(QPalette::Text),
+             activePalette.color(QPalette::ButtonText),
+             activePalette.color(QPalette::WindowText)});
+        fairwindsk::ui::applyTintedButtonIcon(ui->pushButtonMinus, iconColor);
+        fairwindsk::ui::applyTintedButtonIcon(ui->pushButtonPlus, iconColor);
     }
 
     void TouchSpinBox::refreshText() {

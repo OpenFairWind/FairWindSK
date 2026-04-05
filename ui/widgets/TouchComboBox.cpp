@@ -311,7 +311,13 @@ namespace fairwindsk::ui::widgets {
             m_buttonStyleSheet = buttonStyle;
             ui->pushButtonPopup->setStyleSheet(m_buttonStyleSheet);
         }
-        fairwindsk::ui::applyTintedButtonIcon(ui->pushButtonPopup, activePalette.color(QPalette::ButtonText));
+        fairwindsk::ui::applyTintedButtonIcon(
+            ui->pushButtonPopup,
+            fairwindsk::ui::bestContrastingColor(
+                activePalette.color(QPalette::Button),
+                {activePalette.color(QPalette::Text),
+                 activePalette.color(QPalette::ButtonText),
+                 activePalette.color(QPalette::WindowText)}));
 
         if (m_popup) {
             const QString popupStyleSheet = popupStyle(activePalette);

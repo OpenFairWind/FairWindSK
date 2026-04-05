@@ -229,8 +229,13 @@ namespace fairwindsk::ui::widgets {
 
         ui->pushButtonToggle->setChecked(m_checkState != Qt::Unchecked);
         ui->pushButtonToggle->setIcon(
-            fairwindsk::ui::tintedIcon(QIcon(iconPath),
-                                       palette().color(QPalette::ButtonText),
-                                       ui->pushButtonToggle->iconSize()));
+            fairwindsk::ui::tintedIcon(
+                QIcon(iconPath),
+                fairwindsk::ui::bestContrastingColor(
+                    palette().color(QPalette::Button),
+                    {palette().color(QPalette::Text),
+                     palette().color(QPalette::ButtonText),
+                     palette().color(QPalette::WindowText)}),
+                ui->pushButtonToggle->iconSize()));
     }
 }

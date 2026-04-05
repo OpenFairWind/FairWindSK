@@ -700,7 +700,11 @@ namespace fairwindsk::ui::settings {
         normalizeLauncherLayout();
         rebuildAvailableAppsList();
 
-        const QColor buttonIconColor = palette().color(QPalette::ButtonText);
+        const QColor buttonIconColor = fairwindsk::ui::bestContrastingColor(
+            palette().color(QPalette::Button),
+            {palette().color(QPalette::Text),
+             palette().color(QPalette::ButtonText),
+             palette().color(QPalette::WindowText)});
         for (auto *button : findChildren<QToolButton *>()) {
             fairwindsk::ui::applyTintedButtonIcon(button, buttonIconColor, QSize(24, 24));
         }

@@ -5,13 +5,46 @@
 #ifndef FAIRWINDSK_UI_ICONUTILS_HPP
 #define FAIRWINDSK_UI_ICONUTILS_HPP
 
+#include <algorithm>
+#include <cmath>
 #include <QAbstractButton>
 #include <QColor>
 #include <QIcon>
 #include <QPainter>
 #include <QPixmap>
+#include <QVector>
 
 namespace fairwindsk::ui {
+    inline double relativeLuminance(const QColor &color) {
+        const auto channel = [](double value) {
+            value /= 255.0;
+            return value <= 0.03928 ? value / 12.92 : std::pow((value + 0.055) / 1.055, 2.4);
+        };
+
+        return (0.2126 * channel(color.red()))
+            + (0.7152 * channel(color.green()))
+            + (0.0722 * channel(color.blue()));
+    }
+
+    inline QColor bestContrastingColor(const QColor &background, const std::initializer_list<QColor> &candidates) {
+        QColor best = background;
+        double bestContrast = -1.0;
+
+        const double backgroundLuminance = relativeLuminance(background);
+        for (const QColor &candidate : candidates) {
+            const double candidateLuminance = relativeLuminance(candidate);
+            const double contrast =
+                (std::max(backgroundLuminance, candidateLuminance) + 0.05)
+                / (std::min(backgroundLuminance, candidateLuminance) + 0.05);
+            if (contrast > bestContrast) {
+                bestContrast = contrast;
+                best = candidate;
+            }
+        }
+
+        return best;
+    }
+
     inline QPixmap tintedPixmap(const QPixmap &source, const QColor &color) {
         if (source.isNull()) {
             return {};

@@ -385,7 +385,11 @@ namespace fairwindsk::ui::mydata {
         positionLayout->insertWidget(1, m_coordinateEditButton);
         connect(m_coordinateEditButton, &QToolButton::clicked, this, &Waypoints::onCoordinateEditClicked);
 
-        const QColor buttonIconColor = palette().color(QPalette::ButtonText);
+        const QColor buttonIconColor = fairwindsk::ui::bestContrastingColor(
+            palette().color(QPalette::Button),
+            {palette().color(QPalette::Text),
+             palette().color(QPalette::ButtonText),
+             palette().color(QPalette::WindowText)});
         for (auto *button : {
                  m_refreshButton,
                  m_addButton,
@@ -550,7 +554,14 @@ namespace fairwindsk::ui::mydata {
         navigateButton->setProperty("waypointId", id);
         navigateButton->setStyleSheet(kActionButtonStyle);
         navigateButton->setIconSize(QSize(20, 20));
-        fairwindsk::ui::applyTintedButtonIcon(navigateButton, m_tableWidget->palette().color(QPalette::ButtonText), QSize(20, 20));
+        fairwindsk::ui::applyTintedButtonIcon(
+            navigateButton,
+            fairwindsk::ui::bestContrastingColor(
+                m_tableWidget->palette().color(QPalette::Base),
+                {m_tableWidget->palette().color(QPalette::Text),
+                 m_tableWidget->palette().color(QPalette::ButtonText),
+                 m_tableWidget->palette().color(QPalette::WindowText)}),
+            QSize(20, 20));
         connect(navigateButton, &QToolButton::clicked, this, &Waypoints::onNavigateRowClicked);
         actionsLayout->addWidget(navigateButton);
 
@@ -560,7 +571,14 @@ namespace fairwindsk::ui::mydata {
         detailsButton->setProperty("waypointId", id);
         detailsButton->setStyleSheet(kActionButtonStyle);
         detailsButton->setIconSize(QSize(20, 20));
-        fairwindsk::ui::applyTintedButtonIcon(detailsButton, m_tableWidget->palette().color(QPalette::ButtonText), QSize(20, 20));
+        fairwindsk::ui::applyTintedButtonIcon(
+            detailsButton,
+            fairwindsk::ui::bestContrastingColor(
+                m_tableWidget->palette().color(QPalette::Base),
+                {m_tableWidget->palette().color(QPalette::Text),
+                 m_tableWidget->palette().color(QPalette::ButtonText),
+                 m_tableWidget->palette().color(QPalette::WindowText)}),
+            QSize(20, 20));
         connect(detailsButton, &QToolButton::clicked, this, &Waypoints::onDetailsRowClicked);
         actionsLayout->addWidget(detailsButton);
 
@@ -570,7 +588,14 @@ namespace fairwindsk::ui::mydata {
         editButton->setProperty("waypointId", id);
         editButton->setStyleSheet(kActionButtonStyle);
         editButton->setIconSize(QSize(20, 20));
-        fairwindsk::ui::applyTintedButtonIcon(editButton, m_tableWidget->palette().color(QPalette::ButtonText), QSize(20, 20));
+        fairwindsk::ui::applyTintedButtonIcon(
+            editButton,
+            fairwindsk::ui::bestContrastingColor(
+                m_tableWidget->palette().color(QPalette::Base),
+                {m_tableWidget->palette().color(QPalette::Text),
+                 m_tableWidget->palette().color(QPalette::ButtonText),
+                 m_tableWidget->palette().color(QPalette::WindowText)}),
+            QSize(20, 20));
         connect(editButton, &QToolButton::clicked, this, &Waypoints::onEditRowClicked);
         actionsLayout->addWidget(editButton);
 
@@ -580,7 +605,14 @@ namespace fairwindsk::ui::mydata {
         removeButton->setProperty("waypointId", id);
         removeButton->setStyleSheet(kActionButtonStyle);
         removeButton->setIconSize(QSize(20, 20));
-        fairwindsk::ui::applyTintedButtonIcon(removeButton, m_tableWidget->palette().color(QPalette::ButtonText), QSize(20, 20));
+        fairwindsk::ui::applyTintedButtonIcon(
+            removeButton,
+            fairwindsk::ui::bestContrastingColor(
+                m_tableWidget->palette().color(QPalette::Base),
+                {m_tableWidget->palette().color(QPalette::Text),
+                 m_tableWidget->palette().color(QPalette::ButtonText),
+                 m_tableWidget->palette().color(QPalette::WindowText)}),
+            QSize(20, 20));
         connect(removeButton, &QToolButton::clicked, this, &Waypoints::onRemoveRowClicked);
         actionsLayout->addWidget(removeButton);
 

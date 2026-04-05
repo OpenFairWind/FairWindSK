@@ -13,6 +13,7 @@
 
 #include "TopBar.hpp"
 #include "../web/Web.hpp"
+#include "ui/IconUtils.hpp"
 #include "ui/GeoCoordinateUtils.hpp"
 #include <signalk/Waypoint.hpp>
 
@@ -376,10 +377,13 @@ namespace fairwindsk::ui::topbar {
 
         const auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
         const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset() : QStringLiteral("day");
-        const QPixmap pixmap(comfortViewIconPath(preset));
-        ui->label_ComfortViewIcon->setPixmap(pixmap.scaled(ui->label_ComfortViewIcon->size(),
-                                                           Qt::KeepAspectRatio,
-                                                           Qt::SmoothTransformation));
+        const QColor iconColor = fairwindsk::ui::bestContrastingColor(
+            palette().color(QPalette::Window),
+            {palette().color(QPalette::WindowText),
+             palette().color(QPalette::ButtonText),
+             palette().color(QPalette::Text)});
+        const QIcon icon = fairwindsk::ui::tintedIcon(QIcon(comfortViewIconPath(preset)), iconColor, ui->label_ComfortViewIcon->size());
+        ui->label_ComfortViewIcon->setPixmap(icon.pixmap(ui->label_ComfortViewIcon->size()));
         ui->label_ComfortViewIcon->setToolTip(tr("Comfort view: %1").arg(preset));
     }
 

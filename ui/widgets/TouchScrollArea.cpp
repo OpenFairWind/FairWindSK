@@ -233,25 +233,49 @@ namespace fairwindsk::ui::widgets {
             if (m_verticalUpButton->styleSheet() != buttonStyle) {
                 m_verticalUpButton->setStyleSheet(buttonStyle);
             }
-            fairwindsk::ui::applyTintedButtonIcon(m_verticalUpButton, activePalette.color(QPalette::ButtonText));
+            fairwindsk::ui::applyTintedButtonIcon(
+                m_verticalUpButton,
+                fairwindsk::ui::bestContrastingColor(
+                    activePalette.color(QPalette::Button),
+                    {activePalette.color(QPalette::Text),
+                     activePalette.color(QPalette::ButtonText),
+                     activePalette.color(QPalette::WindowText)}));
         }
         if (m_verticalDownButton) {
             if (m_verticalDownButton->styleSheet() != buttonStyle) {
                 m_verticalDownButton->setStyleSheet(buttonStyle);
             }
-            fairwindsk::ui::applyTintedButtonIcon(m_verticalDownButton, activePalette.color(QPalette::ButtonText));
+            fairwindsk::ui::applyTintedButtonIcon(
+                m_verticalDownButton,
+                fairwindsk::ui::bestContrastingColor(
+                    activePalette.color(QPalette::Button),
+                    {activePalette.color(QPalette::Text),
+                     activePalette.color(QPalette::ButtonText),
+                     activePalette.color(QPalette::WindowText)}));
         }
         if (m_horizontalLeftButton) {
             if (m_horizontalLeftButton->styleSheet() != buttonStyle) {
                 m_horizontalLeftButton->setStyleSheet(buttonStyle);
             }
-            fairwindsk::ui::applyTintedButtonIcon(m_horizontalLeftButton, activePalette.color(QPalette::ButtonText));
+            fairwindsk::ui::applyTintedButtonIcon(
+                m_horizontalLeftButton,
+                fairwindsk::ui::bestContrastingColor(
+                    activePalette.color(QPalette::Button),
+                    {activePalette.color(QPalette::Text),
+                     activePalette.color(QPalette::ButtonText),
+                     activePalette.color(QPalette::WindowText)}));
         }
         if (m_horizontalRightButton) {
             if (m_horizontalRightButton->styleSheet() != buttonStyle) {
                 m_horizontalRightButton->setStyleSheet(buttonStyle);
             }
-            fairwindsk::ui::applyTintedButtonIcon(m_horizontalRightButton, activePalette.color(QPalette::ButtonText));
+            fairwindsk::ui::applyTintedButtonIcon(
+                m_horizontalRightButton,
+                fairwindsk::ui::bestContrastingColor(
+                    activePalette.color(QPalette::Button),
+                    {activePalette.color(QPalette::Text),
+                     activePalette.color(QPalette::ButtonText),
+                     activePalette.color(QPalette::WindowText)}));
         }
         m_isApplyingStyle = false;
     }
