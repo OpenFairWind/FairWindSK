@@ -12,6 +12,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QProgressBar>
+#include <QUrl>
 #include <QTimer>
 #include <QVBoxLayout>
 
@@ -33,6 +34,10 @@
 #endif
 
 namespace fairwindsk::ui::settings {
+    namespace {
+        constexpr auto kRpiApiRoot = "/v1/api/vessels/self/environment/rpi/";
+    }
+
     System::System(Settings *settings, QWidget *parent) : QWidget(parent), ui(new Ui::System), m_settings(settings) {
         ui->setupUi(this);
 
@@ -177,11 +182,11 @@ namespace fairwindsk::ui::settings {
         m_rpiFormLayout->setSpacing(8);
 
         const QList<QPair<QString, QString>> metrics = {
-            {QStringLiteral("environment.rpi.cpu.temperature"), tr("CPU temperature")},
-            {QStringLiteral("environment.rpi.gpu.temperature"), tr("GPU temperature")},
-            {QStringLiteral("environment.rpi.cpu.utilisation"), tr("CPU utilisation")},
-            {QStringLiteral("environment.rpi.memory.utilisation"), tr("Memory utilisation")},
-            {QStringLiteral("environment.rpi.sd.utilisation"), tr("SD utilisation")}
+            {QStringLiteral("cpu/temperature"), tr("CPU temperature")},
+            {QStringLiteral("gpu/temperature"), tr("GPU temperature")},
+            {QStringLiteral("cpu/utilisation"), tr("CPU utilisation")},
+            {QStringLiteral("memory/utilisation"), tr("Memory utilisation")},
+            {QStringLiteral("sd/utilisation"), tr("SD utilisation")}
         };
 
         for (const auto &metric : metrics) {
@@ -204,12 +209,13 @@ namespace fairwindsk::ui::settings {
             return std::numeric_limits<double>::quiet_NaN();
         }
 
-        const QJsonObject update = client->signalkGet(path);
+        const QUrl metricUrl(client->url().toString() + QString::fromLatin1(kRpiApiRoot) + path);
+        const QJsonObject update = client->signalkGet(metricUrl);
         if (update.isEmpty()) {
             return std::numeric_limits<double>::quiet_NaN();
         }
 
-        const double value = signalk::Client::getDoubleFromUpdateByPath(update, path);
+        const double value = signalk::Client::getDoubleFromUpdateByPath(update);
         if (std::isnan(value)) {
             return value;
         }
@@ -263,11 +269,11 @@ namespace fairwindsk::ui::settings {
             }
         };
 
-        applyTemperature(QStringLiteral("environment.rpi.cpu.temperature"));
-        applyTemperature(QStringLiteral("environment.rpi.gpu.temperature"));
-        applyPercent(QStringLiteral("environment.rpi.cpu.utilisation"));
-        applyPercent(QStringLiteral("environment.rpi.memory.utilisation"));
-        applyPercent(QStringLiteral("environment.rpi.sd.utilisation"));
+        applyTemperature(QStringLiteral("cpu/temperature"));
+        applyTemperature(QStringLiteral("gpu/temperature"));
+        applyPercent(QStringLiteral("cpu/utilisation"));
+        applyPercent(QStringLiteral("memory/utilisation"));
+        applyPercent(QStringLiteral("sd/utilisation"));
 
         m_hasRpiMetrics = hasAnyMetric;
         m_rpiGroupBox->setVisible(m_hasRpiMetrics);

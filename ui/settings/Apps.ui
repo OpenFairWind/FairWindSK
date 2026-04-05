@@ -33,20 +33,65 @@
      </property>
      <widget class="QWidget" name="widget_LeftPane">
       <layout class="QVBoxLayout" name="verticalLayout_LeftPane">
+       <property name="spacing">
+        <number>6</number>
+       </property>
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
        <item>
         <widget class="QGroupBox" name="groupBox_AvailableApps">
          <property name="flat">
           <bool>true</bool>
          </property>
+         <property name="styleSheet">
+          <string notr="true">QGroupBox#groupBox_AvailableApps { border: none; margin-top: 0px; padding-top: 0px; }</string>
+         </property>
          <property name="title">
           <string/>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_AvailableApps">
+          <property name="spacing">
+           <number>4</number>
+          </property>
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
           <item>
            <widget class="QWidget" name="widget_AvailableAppsHost" native="true"/>
           </item>
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_AvailableAppButtons">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
             <item>
              <spacer name="horizontalSpacer_Available">
               <property name="orientation">
@@ -70,15 +115,45 @@
          <property name="flat">
           <bool>true</bool>
          </property>
+         <property name="styleSheet">
+          <string notr="true">QGroupBox#groupBox_PageTree { border: none; margin-top: 0px; padding-top: 0px; }</string>
+         </property>
          <property name="title">
           <string/>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_PageTree">
+          <property name="spacing">
+           <number>4</number>
+          </property>
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
           <item>
            <widget class="QWidget" name="widget_PageTreeHost" native="true"/>
           </item>
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_PageButtons">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
             <item>
              <widget class="QToolButton" name="toolButton_MoveNodeLeft">
               <property name="toolTip">
