@@ -220,6 +220,53 @@ namespace fairwindsk {
         m_jsonData["comfortViewThemes"].erase(normalizedPreset.toStdString());
     }
 
+    void Configuration::setComfortThemeColor(const QString &preset, const QString &key, const QColor &color) {
+        const QString normalizedPreset = preset.trimmed().toLower();
+        const QString normalizedKey = key.trimmed();
+        if (normalizedPreset.isEmpty() || normalizedKey.isEmpty() || !color.isValid()) {
+            return;
+        }
+
+        ensureObject("comfortViewPalette")[normalizedPreset.toStdString()][normalizedKey.toStdString()] =
+            color.name(QColor::HexArgb).toStdString();
+    }
+
+    QColor Configuration::getComfortThemeColor(const QString &preset, const QString &key, const QColor &fallback) const {
+        const QString normalizedPreset = preset.trimmed().toLower();
+        const QString normalizedKey = key.trimmed();
+        if (normalizedPreset.isEmpty() || normalizedKey.isEmpty()) {
+            return fallback;
+        }
+
+        if (!m_jsonData.contains("comfortViewPalette") || !m_jsonData["comfortViewPalette"].is_object()) {
+            return fallback;
+        }
+
+        const auto &palettes = m_jsonData["comfortViewPalette"];
+        const std::string presetKey = normalizedPreset.toStdString();
+        if (!palettes.contains(presetKey) || !palettes[presetKey].is_object()) {
+            return fallback;
+        }
+
+        const auto &palette = palettes[presetKey];
+        const std::string colorKey = normalizedKey.toStdString();
+        if (!palette.contains(colorKey) || !palette[colorKey].is_string()) {
+            return fallback;
+        }
+
+        const QColor color(QString::fromStdString(palette[colorKey].get<std::string>()));
+        return color.isValid() ? color : fallback;
+    }
+
+    void Configuration::clearComfortThemeColors(const QString &preset) {
+        const QString normalizedPreset = preset.trimmed().toLower();
+        if (normalizedPreset.isEmpty() || !m_jsonData.contains("comfortViewPalette") || !m_jsonData["comfortViewPalette"].is_object()) {
+            return;
+        }
+
+        m_jsonData["comfortViewPalette"].erase(normalizedPreset.toStdString());
+    }
+
     void Configuration::setComfortBackgroundImagePath(const QString &preset, const QString &area, const QString &path) {
         const QString normalizedPreset = preset.trimmed().toLower();
         const QString normalizedArea = area.trimmed().toLower();

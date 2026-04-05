@@ -466,6 +466,7 @@ namespace fairwindsk::ui::settings {
     void Comfort::resetPreset() {
         const QString preset = selectedPreset();
         m_settings->getConfiguration()->clearComfortThemeStyleSheet(preset);
+        m_settings->getConfiguration()->clearComfortThemeColors(preset);
         for (const QString &area : comfortBackgroundAreas()) {
             m_settings->getConfiguration()->clearComfortBackgroundImagePath(preset, area);
         }
@@ -521,13 +522,17 @@ namespace fairwindsk::ui::settings {
             return;
         }
 
+        const QString preset = selectedPreset();
         {
             const QSignalBlocker blocker(m_styleEditor);
             m_isUpdating = true;
-            m_styleEditor->setPlainText(effectiveStyleSheetForPreset(selectedPreset()));
+            m_styleEditor->setPlainText(effectiveStyleSheetForPreset(preset));
             m_isUpdating = false;
         }
-        syncVisualControlsFromStyleSheet();
+        if (!loadVisualColorsFromConfiguration()) {
+            syncVisualControlsFromStyleSheet();
+            persistVisualColorsToConfiguration();
+        }
         updateColorButtons();
         updateBackgroundImageLabels();
         updatePreview();
@@ -651,6 +656,7 @@ namespace fairwindsk::ui::settings {
     }
 
     void Comfort::applyVisualThemeOverride() {
+        const QString preset = selectedPreset();
         const QString updatedStyleSheet = styleSheetWithVisualOverride();
         {
             const QSignalBlocker blocker(m_styleEditor);
@@ -659,11 +665,68 @@ namespace fairwindsk::ui::settings {
             m_isUpdating = false;
         }
 
-        m_settings->getConfiguration()->setComfortThemeStyleSheet(selectedPreset(), updatedStyleSheet);
+        auto *configuration = m_settings->getConfiguration();
+        configuration->setComfortThemeStyleSheet(preset, updatedStyleSheet);
+        for (auto it = m_visualColors.cbegin(); it != m_visualColors.cend(); ++it) {
+            configuration->setComfortThemeColor(preset, it.key(), it.value());
+        }
         updateColorButtons();
         updatePreview();
         updateStatusLabel();
         m_settings->markDirty(FairWindSK::RuntimeUi, 250);
+    }
+
+    bool Comfort::loadVisualColorsFromConfiguration() {
+        const QString preset = selectedPreset();
+        auto *configuration = m_settings ? m_settings->getConfiguration() : nullptr;
+        if (!configuration) {
+            return false;
+        }
+
+        const QList<QPair<QString, QColor>> defaults = {
+            {QString::fromLatin1(kColorWindow), QColor(QStringLiteral("#f7f2d9"))},
+            {QString::fromLatin1(kColorPanel), QColor(QStringLiteral("#fbf6e3"))},
+            {QString::fromLatin1(kColorBase), QColor(QStringLiteral("#fffdf3"))},
+            {QString::fromLatin1(kColorText), QColor(QStringLiteral("#10233a"))},
+            {QString::fromLatin1(kColorButtonText), QColor(QStringLiteral("#10233a"))},
+            {QString::fromLatin1(kColorButtonTop), QColor(QStringLiteral("#fff7c4"))},
+            {QString::fromLatin1(kColorButtonBottom), QColor(QStringLiteral("#dbc66c"))},
+            {QString::fromLatin1(kColorBorder), QColor(QStringLiteral("#8b7f4e"))},
+            {QString::fromLatin1(kColorAccentTop), QColor(QStringLiteral("#2d5ea6"))},
+            {QString::fromLatin1(kColorAccentBottom), QColor(QStringLiteral("#1f447a"))},
+            {QString::fromLatin1(kColorAccentText), QColor(QStringLiteral("#f7fbff"))}
+        };
+
+        bool hasConfiguredColors = false;
+        QMap<QString, QColor> restoredColors;
+        for (const auto &entry : defaults) {
+            const QColor storedColor = configuration->getComfortThemeColor(preset, entry.first, QColor());
+            if (storedColor.isValid()) {
+                restoredColors.insert(entry.first, storedColor);
+                hasConfiguredColors = true;
+            } else {
+                restoredColors.insert(entry.first, entry.second);
+            }
+        }
+
+        if (!hasConfiguredColors) {
+            return false;
+        }
+
+        m_visualColors = restoredColors;
+        return true;
+    }
+
+    void Comfort::persistVisualColorsToConfiguration() const {
+        auto *configuration = m_settings ? m_settings->getConfiguration() : nullptr;
+        if (!configuration) {
+            return;
+        }
+
+        const QString preset = selectedPreset();
+        for (auto it = m_visualColors.cbegin(); it != m_visualColors.cend(); ++it) {
+            configuration->setComfortThemeColor(preset, it.key(), it.value());
+        }
     }
 
     void Comfort::syncVisualControlsFromStyleSheet() {

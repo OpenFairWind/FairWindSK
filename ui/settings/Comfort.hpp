@@ -60,6 +60,8 @@ namespace fairwindsk::ui::settings {
         void browseBackgroundImage(const QString &area);
         void clearBackgroundImage(const QString &area);
         void applyVisualThemeOverride();
+        bool loadVisualColorsFromConfiguration();
+        void persistVisualColorsToConfiguration() const;
         void syncVisualControlsFromStyleSheet();
         QString buildVisualOverrideBlock() const;
         QString styleSheetWithVisualOverride() const;

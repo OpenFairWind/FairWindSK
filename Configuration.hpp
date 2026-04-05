@@ -6,6 +6,7 @@
 #define FAIRWINDSK_CONFIGURATION_HPP
 
 #include <QObject>
+#include <QColor>
 #include <QString>
 #include <QSettings>
 #include <nlohmann/json.hpp>
@@ -59,6 +60,9 @@ namespace fairwindsk {
         void setComfortThemeStyleSheet(const QString &preset, const QString &styleSheet);
         QString getComfortThemeStyleSheet(const QString &preset) const;
         void clearComfortThemeStyleSheet(const QString &preset);
+        void setComfortThemeColor(const QString &preset, const QString &key, const QColor &color);
+        QColor getComfortThemeColor(const QString &preset, const QString &key, const QColor &fallback = QColor()) const;
+        void clearComfortThemeColors(const QString &preset);
         void setComfortBackgroundImagePath(const QString &preset, const QString &area, const QString &path);
         QString getComfortBackgroundImagePath(const QString &preset, const QString &area) const;
         void clearComfortBackgroundImagePath(const QString &preset, const QString &area);
