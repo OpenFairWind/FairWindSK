@@ -22,8 +22,7 @@ using namespace Qt::StringLiterals;
 namespace {
     QString qtPlatformPluginDirectory() {
         const QStringList candidatePaths = {
-            QLibraryInfo::path(QLibraryInfo::PluginsPath),
-            QLibraryInfo::location(QLibraryInfo::PluginsPath)
+            QLibraryInfo::path(QLibraryInfo::PluginsPath)
         };
 
         for (const QString &path : candidatePaths) {
