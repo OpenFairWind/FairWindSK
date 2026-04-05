@@ -49,6 +49,7 @@ namespace fairwindsk::ui::settings {
         void updatePreview();
         void updateColorButtons();
         void updateBackgroundImageLabels();
+        QString colorLabel(const QString &key) const;
         void pickColor(const QString &key);
         void browseBackgroundImage(const QString &area);
         void clearBackgroundImage(const QString &area);

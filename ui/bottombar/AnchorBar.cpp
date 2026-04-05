@@ -13,29 +13,14 @@
 
 #include "FairWindSK.hpp"
 #include "ui/GeoCoordinateUtils.hpp"
+#include "ui/IconUtils.hpp"
 #include "ui_AnchorBar.h"
 
 
 namespace fairwindsk::ui::bottombar {
-    namespace {
-        const QString kDrawerToolButtonStyle = QStringLiteral(
-            "QToolButton {"
-            " border: none;"
-            " background: transparent;"
-            " padding: 4px;"
-            " }"
-            "QToolButton:hover { background: rgba(127, 127, 127, 0.18); border-radius: 6px; }"
-            "QToolButton:pressed { background: rgba(127, 127, 127, 0.28); border-radius: 6px; }");
-    }
-
     AnchorBar::AnchorBar(QWidget *parent) :
             QWidget(parent), ui(new Ui::AnchorBar) {
         ui->setupUi(this);
-
-        for (auto *button : findChildren<QToolButton *>()) {
-            button->setAutoRaise(true);
-            button->setStyleSheet(kDrawerToolButtonStyle);
-        }
 
         // Get the FairWind singleton
         const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
@@ -151,6 +136,48 @@ namespace fairwindsk::ui::bottombar {
         connect(ui->toolButton_Down, &QToolButton::released, this, &AnchorBar::onDownReleased);
         connect(ui->toolButton_Release, &QToolButton::clicked, this, &AnchorBar::onReleaseClicked);
 
+        applyComfortStyle();
+    }
+
+    void AnchorBar::changeEvent(QEvent *event) {
+        QWidget::changeEvent(event);
+        if (event->type() == QEvent::PaletteChange || event->type() == QEvent::ApplicationPaletteChange) {
+            applyComfortStyle();
+        }
+    }
+
+    void AnchorBar::applyComfortStyle() const {
+        const QColor buttonColor = palette().color(QPalette::Button);
+        const QColor borderColor = buttonColor.darker(140);
+        const QColor hoverColor = buttonColor.lighter(110);
+        const QColor pressedColor = buttonColor.darker(118);
+        const QColor iconColor = fairwindsk::ui::bestContrastingColor(
+            buttonColor,
+            {palette().color(QPalette::ButtonText),
+             palette().color(QPalette::WindowText),
+             palette().color(QPalette::Text),
+             QColor(QStringLiteral("#f8f8f8")),
+             QColor(QStringLiteral("#111111"))});
+        const QString style = QStringLiteral(
+            "QToolButton {"
+            " border: 1px solid %1;"
+            " border-radius: 8px;"
+            " padding: 6px;"
+            " background: %2;"
+            " color: %3;"
+            " }"
+            "QToolButton:hover { background: %4; }"
+            "QToolButton:pressed, QToolButton:checked { background: %5; color: %3; }")
+            .arg(borderColor.name(), buttonColor.name(), iconColor.name(), hoverColor.name(), pressedColor.name());
+
+        for (auto *button : findChildren<QToolButton *>()) {
+            button->setAutoRaise(false);
+            button->setStyleSheet(style);
+            if (!button->iconSize().isValid()) {
+                button->setIconSize(QSize(32, 32));
+            }
+            fairwindsk::ui::applyTintedButtonIcon(button, iconColor, QSize(32, 32));
+        }
     }
 
     void AnchorBar::updateUnitLabels() const {
@@ -194,6 +221,7 @@ namespace fairwindsk::ui::bottombar {
     }
 
     void AnchorBar::refreshFromConfiguration() {
+        applyComfortStyle();
         updateUnitLabels();
         updatePosition(m_lastPositionUpdate);
         updateDepth(m_lastDepthUpdate);

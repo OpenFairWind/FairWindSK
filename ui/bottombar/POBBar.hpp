@@ -11,6 +11,7 @@
 #include <QHash>
 #include <QSet>
 #include <QTimer>
+#include <QEvent>
 #include <QWidget>
 
 #include "Units.hpp"
@@ -48,6 +49,8 @@ namespace fairwindsk::ui::bottombar {
         void hidden();
 
     private:
+        void changeEvent(QEvent *event) override;
+        void applyComfortStyle() const;
         QString configuredPath(const char *key) const;
         QString pobNotificationPath() const;
         QString pobNotificationApiKey() const;

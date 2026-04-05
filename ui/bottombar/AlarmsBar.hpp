@@ -7,6 +7,7 @@
 
 #include <QWidget>
 #include <QToolButton>
+#include <QEvent>
 
 namespace Ui { class AlarmsBar; }
 
@@ -19,6 +20,7 @@ namespace fairwindsk::ui::bottombar {
         explicit AlarmsBar(QWidget *parent = nullptr);
 
         ~AlarmsBar() override;
+        void refreshFromConfiguration();
 
     public
         slots:
@@ -38,10 +40,12 @@ namespace fairwindsk::ui::bottombar {
         void alarmed(QString alarm, bool status);
 
     private:
+        void changeEvent(QEvent *event) override;
         void onAlarm(const QString& alarm);
         QString alarmApiKey(const QString &alarm) const;
         QString alarmUiKey(const QString &apiKey) const;
         void setAlarmState(const QString &apiKey, bool active);
+        void applyComfortStyle() const;
 
 
     private:

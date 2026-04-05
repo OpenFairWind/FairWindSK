@@ -8,6 +8,7 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <QWidget>
+#include <QEvent>
 #include <QSlider>
 #include "Units.hpp"
 
@@ -24,6 +25,7 @@ namespace fairwindsk::ui::bottombar {
         explicit AutopilotBar(QWidget *parent = nullptr);
 
         ~AutopilotBar() override;
+        void refreshFromConfiguration();
 
     public slots:
 
@@ -51,6 +53,8 @@ namespace fairwindsk::ui::bottombar {
         void hidden();
 
     private:
+        void changeEvent(QEvent *event) override;
+        void applyComfortStyle() const;
         QString autopilotBasePath() const;
         QUrl autopilotUrl(const QString &suffix = QString()) const;
         void refreshAutopilotOptions();

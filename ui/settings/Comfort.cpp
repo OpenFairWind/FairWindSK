@@ -4,10 +4,9 @@
 
 #include "Comfort.hpp"
 
-#include <QColorDialog>
 #include <QFile>
-#include <QFileDialog>
 #include <QFileInfo>
+#include <QFrame>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
@@ -18,14 +17,17 @@
 #include <QPushButton>
 #include <QRegularExpression>
 #include <QSignalBlocker>
+#include <QSlider>
 #include <QTabWidget>
 #include <QTextStream>
 #include <QToolButton>
 #include <QUrl>
 #include <QVBoxLayout>
+#include <QPointer>
 
 #include "FairWindSK.hpp"
 #include "Settings.hpp"
+#include "ui/DrawerDialogHost.hpp"
 #include "ui/widgets/TouchComboBox.hpp"
 #include "ui/widgets/TouchScrollArea.hpp"
 
@@ -74,6 +76,169 @@ namespace fairwindsk::ui::settings {
                 " }")
                 .arg(objectName, QUrl::fromLocalFile(imagePath).toString());
         }
+
+        class DrawerColorPickerWidget final : public QWidget {
+        public:
+            explicit DrawerColorPickerWidget(const QString &label, const QColor &initialColor, QWidget *parent = nullptr)
+                : QWidget(parent) {
+                auto *rootLayout = new QVBoxLayout(this);
+                rootLayout->setContentsMargins(0, 0, 0, 0);
+                rootLayout->setSpacing(10);
+
+                auto *titleLabel = new QLabel(tr("Adjust %1 using touch-friendly controls.").arg(label), this);
+                titleLabel->setWordWrap(true);
+                rootLayout->addWidget(titleLabel);
+
+                auto *headerLayout = new QHBoxLayout();
+                headerLayout->setContentsMargins(0, 0, 0, 0);
+                headerLayout->setSpacing(12);
+                rootLayout->addLayout(headerLayout);
+
+                m_preview = new QFrame(this);
+                m_preview->setMinimumSize(96, 72);
+                m_preview->setFrameShape(QFrame::StyledPanel);
+                headerLayout->addWidget(m_preview, 0);
+
+                auto *valueLayout = new QVBoxLayout();
+                valueLayout->setContentsMargins(0, 0, 0, 0);
+                valueLayout->setSpacing(4);
+                headerLayout->addLayout(valueLayout, 1);
+
+                m_hexLabel = new QLabel(this);
+                valueLayout->addWidget(m_hexLabel);
+
+                m_rgbaLabel = new QLabel(this);
+                valueLayout->addWidget(m_rgbaLabel);
+                valueLayout->addStretch(1);
+
+                auto *swatchesLayout = new QHBoxLayout();
+                swatchesLayout->setContentsMargins(0, 0, 0, 0);
+                swatchesLayout->setSpacing(8);
+                rootLayout->addLayout(swatchesLayout);
+
+                const QList<QColor> swatches = {
+                    QColor(QStringLiteral("#f7f2d9")),
+                    QColor(QStringLiteral("#fbf6e3")),
+                    QColor(QStringLiteral("#fffdf3")),
+                    QColor(QStringLiteral("#2d5ea6")),
+                    QColor(QStringLiteral("#1f447a")),
+                    QColor(QStringLiteral("#10233a")),
+                    QColor(QStringLiteral("#6f7683")),
+                    QColor(QStringLiteral("#d05b3f"))
+                };
+                for (const QColor &swatch : swatches) {
+                    auto *button = new QToolButton(this);
+                    button->setAutoRaise(false);
+                    button->setMinimumSize(52, 52);
+                    button->setStyleSheet(QStringLiteral(
+                                              "QToolButton {"
+                                              " border: 1px solid %1;"
+                                              " border-radius: 8px;"
+                                              " background: %2;"
+                                              " }")
+                                              .arg(swatch.darker(135).name(), swatch.name(QColor::HexArgb)));
+                    connect(button, &QToolButton::clicked, this, [this, swatch]() {
+                        setColor(swatch);
+                    });
+                    swatchesLayout->addWidget(button);
+                }
+                swatchesLayout->addStretch(1);
+
+                addSlider(rootLayout, tr("Red"), &m_redSlider);
+                addSlider(rootLayout, tr("Green"), &m_greenSlider);
+                addSlider(rootLayout, tr("Blue"), &m_blueSlider);
+                addSlider(rootLayout, tr("Opacity"), &m_alphaSlider);
+
+                setMinimumHeight(360);
+                setColor(initialColor.isValid() ? initialColor : QColor(QStringLiteral("#ffffff")));
+            }
+
+            QColor color() const {
+                return m_color;
+            }
+
+        private:
+            void addSlider(QVBoxLayout *layout, const QString &label, QSlider **sliderPtr) {
+                auto *rowLayout = new QHBoxLayout();
+                rowLayout->setContentsMargins(0, 0, 0, 0);
+                rowLayout->setSpacing(10);
+
+                auto *textLabel = new QLabel(label, this);
+                textLabel->setMinimumWidth(70);
+                rowLayout->addWidget(textLabel);
+
+                auto *slider = new QSlider(Qt::Horizontal, this);
+                slider->setRange(0, 255);
+                slider->setPageStep(16);
+                slider->setSingleStep(1);
+                slider->setMinimumHeight(44);
+                rowLayout->addWidget(slider, 1);
+
+                auto *valueLabel = new QLabel(this);
+                valueLabel->setMinimumWidth(36);
+                rowLayout->addWidget(valueLabel);
+
+                layout->addLayout(rowLayout);
+
+                m_valueLabels.insert(slider, valueLabel);
+                connect(slider, &QSlider::valueChanged, this, [this]() {
+                    syncFromSliders();
+                });
+                *sliderPtr = slider;
+            }
+
+            void setColor(const QColor &color) {
+                const QSignalBlocker redBlocker(m_redSlider);
+                const QSignalBlocker greenBlocker(m_greenSlider);
+                const QSignalBlocker blueBlocker(m_blueSlider);
+                const QSignalBlocker alphaBlocker(m_alphaSlider);
+                m_redSlider->setValue(color.red());
+                m_greenSlider->setValue(color.green());
+                m_blueSlider->setValue(color.blue());
+                m_alphaSlider->setValue(color.alpha());
+                m_color = color;
+                updatePreview();
+            }
+
+            void syncFromSliders() {
+                m_color = QColor(
+                    m_redSlider->value(),
+                    m_greenSlider->value(),
+                    m_blueSlider->value(),
+                    m_alphaSlider->value());
+                updatePreview();
+            }
+
+            void updatePreview() {
+                m_preview->setStyleSheet(QStringLiteral(
+                                             "QFrame {"
+                                             " border: 1px solid %1;"
+                                             " border-radius: 10px;"
+                                             " background: %2;"
+                                             " }")
+                                             .arg(m_color.darker(150).name(), m_color.name(QColor::HexArgb)));
+                m_hexLabel->setText(tr("HEX: %1").arg(m_color.name(QColor::HexArgb).toUpper()));
+                m_rgbaLabel->setText(tr("RGBA: %1, %2, %3, %4")
+                                         .arg(m_color.red())
+                                         .arg(m_color.green())
+                                         .arg(m_color.blue())
+                                         .arg(m_color.alpha()));
+
+                for (auto it = m_valueLabels.cbegin(); it != m_valueLabels.cend(); ++it) {
+                    it.value()->setText(QString::number(it.key()->value()));
+                }
+            }
+
+            QColor m_color;
+            QFrame *m_preview = nullptr;
+            QLabel *m_hexLabel = nullptr;
+            QLabel *m_rgbaLabel = nullptr;
+            QSlider *m_redSlider = nullptr;
+            QSlider *m_greenSlider = nullptr;
+            QSlider *m_blueSlider = nullptr;
+            QSlider *m_alphaSlider = nullptr;
+            QMap<QSlider *, QLabel *> m_valueLabels;
+        };
     }
 
     Comfort::Comfort(Settings *settings, QWidget *parent)
@@ -328,7 +493,7 @@ namespace fairwindsk::ui::settings {
     }
 
     void Comfort::importStyleSheet() {
-        const QString fileName = QFileDialog::getOpenFileName(
+        const QString fileName = fairwindsk::ui::drawer::getOpenFilePath(
             this,
             tr("Import Comfort Theme"),
             QString(),
@@ -347,7 +512,7 @@ namespace fairwindsk::ui::settings {
 
     void Comfort::exportStyleSheet() {
         const QString preset = selectedPreset();
-        const QString fileName = QFileDialog::getSaveFileName(
+        const QString fileName = fairwindsk::ui::drawer::getSaveFilePath(
             this,
             tr("Export Comfort Theme"),
             QStringLiteral("%1.qss").arg(preset),
@@ -481,18 +646,50 @@ namespace fairwindsk::ui::settings {
         }
     }
 
+    QString Comfort::colorLabel(const QString &key) const {
+        if (!m_colorButtons.contains(key) || !m_colorButtons.value(key)) {
+            return key;
+        }
+
+        const auto *layout = qobject_cast<QGridLayout *>(
+            m_colorButtons.value(key)->parentWidget() ? m_colorButtons.value(key)->parentWidget()->layout() : nullptr);
+        if (!layout) {
+            return key;
+        }
+
+        for (int row = 0; row < layout->rowCount(); ++row) {
+            if (layout->itemAtPosition(row, 1) && layout->itemAtPosition(row, 1)->widget() == m_colorButtons.value(key)) {
+                if (auto *label = qobject_cast<QLabel *>(layout->itemAtPosition(row, 0)->widget())) {
+                    return label->text();
+                }
+            }
+        }
+
+        return key;
+    }
+
     void Comfort::pickColor(const QString &key) {
-        const QColor selected = QColorDialog::getColor(colorValue(key), this, tr("Choose Color"), QColorDialog::ShowAlphaChannel);
-        if (!selected.isValid()) {
+        auto *picker = new DrawerColorPickerWidget(colorLabel(key), colorValue(key));
+        QPointer<DrawerColorPickerWidget> pickerGuard(picker);
+        const int result = fairwindsk::ui::drawer::execDrawer(
+            this,
+            tr("Choose %1").arg(colorLabel(key)),
+            picker,
+            {
+                {tr("Apply"), int(QMessageBox::Apply), true},
+                {tr("Cancel"), int(QMessageBox::Cancel), false}
+            },
+            int(QMessageBox::Cancel));
+        if (!pickerGuard || result != QMessageBox::Apply) {
             return;
         }
 
-        m_visualColors.insert(key, selected);
+        m_visualColors.insert(key, pickerGuard->color());
         applyVisualThemeOverride();
     }
 
     void Comfort::browseBackgroundImage(const QString &area) {
-        const QString fileName = QFileDialog::getOpenFileName(
+        const QString fileName = fairwindsk::ui::drawer::getOpenFilePath(
             this,
             tr("Choose Background Image"),
             QString(),

@@ -7,6 +7,7 @@
 
 #include <QWidget>
 #include <QJsonObject>
+#include <QEvent>
 #include <nlohmann/json.hpp>
 #include "Units.hpp"
 
@@ -62,6 +63,8 @@ namespace fairwindsk::ui::bottombar {
 
 
     private:
+        void changeEvent(QEvent *event) override;
+        void applyComfortStyle() const;
         void updateUnitLabels() const;
 
         Ui::AnchorBar *ui;

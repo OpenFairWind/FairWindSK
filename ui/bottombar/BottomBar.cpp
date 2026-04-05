@@ -190,6 +190,12 @@ namespace fairwindsk::ui::bottombar {
         if (m_POBBar) {
             m_POBBar->refreshFromConfiguration();
         }
+        if (m_AlarmsBar) {
+            m_AlarmsBar->refreshFromConfiguration();
+        }
+        if (m_AutopilotBar) {
+            m_AutopilotBar->refreshFromConfiguration();
+        }
         if (m_AnchorBar) {
             m_AnchorBar->refreshFromConfiguration();
         }

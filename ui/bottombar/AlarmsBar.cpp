@@ -9,6 +9,7 @@
 #include "AlarmsBar.hpp"
 
 #include "FairWindSK.hpp"
+#include "ui/IconUtils.hpp"
 #include "ui_AlarmsBar.h"
 
 namespace fairwindsk::ui::bottombar {
@@ -16,11 +17,6 @@ namespace fairwindsk::ui::bottombar {
     AlarmsBar::AlarmsBar(QWidget *parent) : QWidget(parent), ui(new Ui::AlarmsBar) {
 
         ui->setupUi(this);
-
-        for (auto *button : findChildren<QToolButton *>()) {
-            button->setAutoRaise(true);
-            button->setStyleSheet("QToolButton { border: none; background: transparent; }");
-        }
 
         m_alarmToolButtons["abandon"] = ui->toolButton_Abandon;
         m_alarmToolButtons["adrift"] = ui->toolButton_Adrift;
@@ -41,7 +37,19 @@ namespace fairwindsk::ui::bottombar {
         connect(ui->toolButton_Adrift, &QPushButton::clicked, this, &AlarmsBar::onAdriftClicked);
         connect(ui->toolButton_Hide, &QPushButton::clicked, this, &AlarmsBar::onHideClicked);
 
+        applyComfortStyle();
         QWidget::setVisible(false);
+    }
+
+    void AlarmsBar::refreshFromConfiguration() {
+        applyComfortStyle();
+    }
+
+    void AlarmsBar::changeEvent(QEvent *event) {
+        QWidget::changeEvent(event);
+        if (event->type() == QEvent::PaletteChange || event->type() == QEvent::ApplicationPaletteChange) {
+            applyComfortStyle();
+        }
     }
 
     QString AlarmsBar::alarmApiKey(const QString &alarm) const {
@@ -65,6 +73,40 @@ namespace fairwindsk::ui::bottombar {
 
         m_alarmToolButtons[apiKey]->setChecked(active);
         emit alarmed(alarmUiKey(apiKey), active);
+    }
+
+    void AlarmsBar::applyComfortStyle() const {
+        const QColor buttonColor = palette().color(QPalette::Button);
+        const QColor borderColor = buttonColor.darker(140);
+        const QColor hoverColor = buttonColor.lighter(110);
+        const QColor pressedColor = buttonColor.darker(118);
+        const QColor iconColor = fairwindsk::ui::bestContrastingColor(
+            buttonColor,
+            {palette().color(QPalette::ButtonText),
+             palette().color(QPalette::WindowText),
+             palette().color(QPalette::Text),
+             QColor(QStringLiteral("#f8f8f8")),
+             QColor(QStringLiteral("#111111"))});
+        const QString style = QStringLiteral(
+            "QToolButton {"
+            " border: 1px solid %1;"
+            " border-radius: 8px;"
+            " padding: 6px;"
+            " background: %2;"
+            " color: %3;"
+            " }"
+            "QToolButton:hover { background: %4; }"
+            "QToolButton:pressed, QToolButton:checked { background: %5; color: %3; }")
+            .arg(borderColor.name(), buttonColor.name(), iconColor.name(), hoverColor.name(), pressedColor.name());
+
+        for (auto *button : findChildren<QToolButton *>()) {
+            button->setAutoRaise(false);
+            button->setStyleSheet(style);
+            if (!button->iconSize().isValid()) {
+                button->setIconSize(QSize(32, 32));
+            }
+            fairwindsk::ui::applyTintedButtonIcon(button, iconColor, QSize(32, 32));
+        }
     }
 
     void AlarmsBar::onHideClicked() {
