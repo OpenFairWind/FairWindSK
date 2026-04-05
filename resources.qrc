@@ -61,8 +61,11 @@
 
         <!-- Alarms and alerts icons from OpenBridge -->
         <file>resources/svg/OpenBridge/alarm-abandon.svg</file>
+        <file>resources/svg/OpenBridge/alarm-adrift.svg</file>
         <file>resources/svg/OpenBridge/alarm-aground.svg</file>
         <file>resources/svg/OpenBridge/alarm-fire.svg</file>
+        <file>resources/svg/OpenBridge/alarm-piracy.svg</file>
+        <file>resources/svg/OpenBridge/alarm-sinking.svg</file>
 
         <!-- Navigation bar icons from OpenBridge -->
         <file>resources/svg/OpenBridge/arrow-left-google.svg</file>

@@ -78,8 +78,8 @@
              </property>
              <property name="icon">
               <iconset>
-               <normaloff>:/resources/images/bottombar/alarm_piracy.png</normaloff>
-               <normalon>:/resources/images/bottombar/alarm_alarm.png</normalon>:/resources/images/bottombar/alarm_piracy.png</iconset>
+               <normaloff>:/resources/svg/OpenBridge/alarm-piracy.svg</normaloff>
+               <normalon>:/resources/images/bottombar/alarm_alarm.png</normalon>:/resources/svg/OpenBridge/alarm-piracy.svg</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -106,8 +106,8 @@
              </property>
              <property name="icon">
               <iconset>
-               <normaloff>:/resources/images/bottombar/alarm_abandon.png</normaloff>
-               <normalon>:/resources/images/bottombar/alarm_alarm.png</normalon>:/resources/images/bottombar/alarm_abandon.png</iconset>
+               <normaloff>:/resources/svg/OpenBridge/alarm-abandon.svg</normaloff>
+               <normalon>:/resources/images/bottombar/alarm_alarm.png</normalon>:/resources/svg/OpenBridge/alarm-abandon.svg</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -147,8 +147,8 @@
              </property>
              <property name="icon">
               <iconset>
-               <normaloff>:/resources/images/bottombar/alarm_adrift.png</normaloff>
-               <normalon>:/resources/images/bottombar/alarm_alarm.png</normalon>:/resources/images/bottombar/alarm_adrift.png</iconset>
+               <normaloff>:/resources/svg/OpenBridge/alarm-adrift.svg</normaloff>
+               <normalon>:/resources/images/bottombar/alarm_alarm.png</normalon>:/resources/svg/OpenBridge/alarm-adrift.svg</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -175,8 +175,8 @@
              </property>
              <property name="icon">
               <iconset>
-               <normaloff>:/resources/images/bottombar/alarm_sinking.png</normaloff>
-               <normalon>:/resources/images/bottombar/alarm_alarm.png</normalon>:/resources/images/bottombar/alarm_sinking.png</iconset>
+               <normaloff>:/resources/svg/OpenBridge/alarm-sinking.svg</normaloff>
+               <normalon>:/resources/images/bottombar/alarm_alarm.png</normalon>:/resources/svg/OpenBridge/alarm-sinking.svg</iconset>
              </property>
              <property name="iconSize">
               <size>
@@ -203,8 +203,8 @@
              </property>
              <property name="icon">
               <iconset>
-               <normaloff>:/resources/images/bottombar/alarm_fire.png</normaloff>
-               <normalon>:/resources/images/bottombar/alarm_alarm.png</normalon>:/resources/images/bottombar/alarm_fire.png</iconset>
+               <normaloff>:/resources/svg/OpenBridge/alarm-fire.svg</normaloff>
+               <normalon>:/resources/images/bottombar/alarm_alarm.png</normalon>:/resources/svg/OpenBridge/alarm-fire.svg</iconset>
              </property>
              <property name="iconSize">
               <size>

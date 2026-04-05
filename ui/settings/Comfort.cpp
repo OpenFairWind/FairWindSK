@@ -306,25 +306,25 @@ namespace fairwindsk::ui::settings {
         buttonRow->addStretch(1);
 
         m_statusLabel = new QLabel(content);
-        m_statusLabel->setWordWrap(true);
-        contentLayout->addWidget(m_statusLabel);
+        m_statusLabel->hide();
 
-        auto *visualGroup = new QGroupBox(tr("Visual Editor"), content);
-        auto *visualLayout = new QGridLayout(visualGroup);
+        m_visualEditorWidget = new QWidget(content);
+        auto *visualLayout = new QGridLayout(m_visualEditorWidget);
+        visualLayout->setContentsMargins(0, 0, 0, 0);
         visualLayout->setHorizontalSpacing(12);
         visualLayout->setVerticalSpacing(8);
-        createColorControl(QString::fromLatin1(kColorWindow), tr("Window"), visualGroup, visualLayout, 0);
-        createColorControl(QString::fromLatin1(kColorPanel), tr("Panel"), visualGroup, visualLayout, 1);
-        createColorControl(QString::fromLatin1(kColorBase), tr("Fields"), visualGroup, visualLayout, 2);
-        createColorControl(QString::fromLatin1(kColorText), tr("Text"), visualGroup, visualLayout, 3);
-        createColorControl(QString::fromLatin1(kColorButtonText), tr("Button text"), visualGroup, visualLayout, 4);
-        createColorControl(QString::fromLatin1(kColorButtonTop), tr("Button top"), visualGroup, visualLayout, 5);
-        createColorControl(QString::fromLatin1(kColorButtonBottom), tr("Button bottom"), visualGroup, visualLayout, 6);
-        createColorControl(QString::fromLatin1(kColorBorder), tr("Borders"), visualGroup, visualLayout, 7);
-        createColorControl(QString::fromLatin1(kColorAccentTop), tr("Accent top"), visualGroup, visualLayout, 8);
-        createColorControl(QString::fromLatin1(kColorAccentBottom), tr("Accent bottom"), visualGroup, visualLayout, 9);
-        createColorControl(QString::fromLatin1(kColorAccentText), tr("Accent text"), visualGroup, visualLayout, 10);
-        contentLayout->addWidget(visualGroup);
+        createColorControl(QString::fromLatin1(kColorWindow), tr("Window"), m_visualEditorWidget, visualLayout, 0);
+        createColorControl(QString::fromLatin1(kColorPanel), tr("Panel"), m_visualEditorWidget, visualLayout, 1);
+        createColorControl(QString::fromLatin1(kColorBase), tr("Fields"), m_visualEditorWidget, visualLayout, 2);
+        createColorControl(QString::fromLatin1(kColorText), tr("Text"), m_visualEditorWidget, visualLayout, 3);
+        createColorControl(QString::fromLatin1(kColorButtonText), tr("Button text"), m_visualEditorWidget, visualLayout, 4);
+        createColorControl(QString::fromLatin1(kColorButtonTop), tr("Button top"), m_visualEditorWidget, visualLayout, 5);
+        createColorControl(QString::fromLatin1(kColorButtonBottom), tr("Button bottom"), m_visualEditorWidget, visualLayout, 6);
+        createColorControl(QString::fromLatin1(kColorBorder), tr("Borders"), m_visualEditorWidget, visualLayout, 7);
+        createColorControl(QString::fromLatin1(kColorAccentTop), tr("Accent top"), m_visualEditorWidget, visualLayout, 8);
+        createColorControl(QString::fromLatin1(kColorAccentBottom), tr("Accent bottom"), m_visualEditorWidget, visualLayout, 9);
+        createColorControl(QString::fromLatin1(kColorAccentText), tr("Accent text"), m_visualEditorWidget, visualLayout, 10);
+        contentLayout->addWidget(m_visualEditorWidget);
 
         auto *backgroundGroup = new QGroupBox(tr("Background Images"), content);
         auto *backgroundLayout = new QGridLayout(backgroundGroup);
@@ -431,6 +431,9 @@ namespace fairwindsk::ui::settings {
         connect(m_editorButton, &QPushButton::toggled, this, [this](const bool checked) {
             if (m_advancedGroup) {
                 m_advancedGroup->setVisible(checked);
+            }
+            if (m_visualEditorWidget) {
+                m_visualEditorWidget->setVisible(!checked);
             }
         });
         connect(m_resetButton, &QPushButton::clicked, this, &Comfort::resetPreset);
@@ -585,18 +588,10 @@ namespace fairwindsk::ui::settings {
     }
 
     void Comfort::updateStatusLabel() {
-        if (!m_statusLabel) {
-            return;
+        if (m_statusLabel) {
+            m_statusLabel->clear();
+            m_statusLabel->hide();
         }
-
-        const QString preset = selectedPreset();
-        const bool hasOverride = !m_settings->getConfiguration()->getComfortThemeStyleSheet(preset).isEmpty();
-        m_statusLabel->setText(
-            hasOverride
-                ? tr("Editing the saved override for the %1 preset. Color and image changes are stored in fairwindsk.json and applied live.")
-                      .arg(preset)
-                : tr("Editing the default %1 preset. Any visual changes you make here will be saved as an override in fairwindsk.json.")
-                      .arg(preset));
     }
 
     void Comfort::updatePreview() {

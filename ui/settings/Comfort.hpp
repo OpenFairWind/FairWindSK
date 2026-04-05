@@ -80,6 +80,7 @@ namespace fairwindsk::ui::settings {
         QMap<QString, QColor> m_visualColors;
         QMap<QString, QPushButton *> m_colorButtons;
         QMap<QString, QLabel *> m_backgroundPathLabels;
+        QWidget *m_visualEditorWidget = nullptr;
         QWidget *m_previewTopBar = nullptr;
         fairwindsk::ui::launcher::Launcher *m_previewLauncher = nullptr;
         QWidget *m_previewBottomBar = nullptr;
