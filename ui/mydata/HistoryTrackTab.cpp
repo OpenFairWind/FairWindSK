@@ -170,6 +170,12 @@ namespace fairwindsk::ui::mydata {
     }
 
     HistoryTrackTab::~HistoryTrackTab() {
+        m_isShuttingDown = true;
+        if (m_refreshTimer) {
+            m_refreshTimer->stop();
+            disconnect(m_refreshTimer, nullptr, this, nullptr);
+        }
+        disconnect(m_model, nullptr, this, nullptr);
         delete ui;
     }
 
@@ -394,6 +400,10 @@ namespace fairwindsk::ui::mydata {
     }
 
     void HistoryTrackTab::onRefreshClicked() {
+        if (m_isShuttingDown || !m_model) {
+            return;
+        }
+
         QString message;
         m_model->reload(currentDuration(), currentResolution(), &message);
         updateStatus(message);

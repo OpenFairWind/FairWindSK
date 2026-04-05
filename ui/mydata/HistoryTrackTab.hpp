@@ -103,6 +103,7 @@ namespace fairwindsk::ui::mydata {
         int m_currentRow = -1;
         bool m_isEditing = false;
         bool m_isCreating = false;
+        bool m_isShuttingDown = false;
     };
 }
 

@@ -81,8 +81,19 @@ namespace fairwindsk::ui::mydata {
     }
 
     void MyData::refreshFromConfiguration() {
-        const int currentIndex = ui->tabWidget ? ui->tabWidget->currentIndex() : 0;
-        initTabs(std::max(0, currentIndex));
+        if (!ui || !ui->tabWidget) {
+            return;
+        }
+
+        for (int index = 0; index < ui->tabWidget->count(); ++index) {
+            if (QWidget *page = ui->tabWidget->widget(index)) {
+                page->updateGeometry();
+                page->update();
+            }
+        }
+
+        ui->tabWidget->updateGeometry();
+        ui->tabWidget->update();
     }
 
     MyData::~MyData() {
