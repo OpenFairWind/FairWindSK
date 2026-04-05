@@ -231,15 +231,13 @@ namespace fairwindsk::ui::bottombar {
  */
     void BottomBar::pob_clicked() {
         hideTransientPanels(m_POBBar);
-        // Emit the signal to tell the MainWindow to update the UI and show the settings screen
         m_POBBar->POB();
+        setPanelVisibility(m_POBBar, true);
     }
 
     void BottomBar::autopilot_clicked() {
-        // Check if the autopilot bar is available
         if (m_AutopilotBar) {
-            const bool shouldShow = !m_AutopilotBar->isVisible();
-            setPanelVisibility(m_AutopilotBar, shouldShow);
+            setPanelVisibility(m_AutopilotBar, true);
         }
     }
 
@@ -256,10 +254,8 @@ namespace fairwindsk::ui::bottombar {
 
 
     void BottomBar::anchor_clicked() {
-        // Check if the autopilot bar is available
         if (m_AnchorBar) {
-            const bool shouldShow = !m_AnchorBar->isVisible();
-            setPanelVisibility(m_AnchorBar, shouldShow);
+            setPanelVisibility(m_AnchorBar, true);
         }
 
     }
@@ -269,11 +265,8 @@ namespace fairwindsk::ui::bottombar {
  * Method called when the user wants to view the alarms screen
  */
     void BottomBar::alarms_clicked() {
-
-        // Check if the alarms bar is available
         if (m_AlarmsBar) {
-            const bool shouldShow = !m_AlarmsBar->isVisible();
-            setPanelVisibility(m_AlarmsBar, shouldShow);
+            setPanelVisibility(m_AlarmsBar, true);
         }
     }
 
@@ -434,6 +427,26 @@ namespace fairwindsk::ui::bottombar {
         emit foregroundAppChanged(hash);
     }
 
+    void BottomBar::setRegularBarVisible(const bool visible) const {
+        const QList<QWidget *> regularWidgets = {
+            ui->scrollArea_Port,
+            ui->toolButton_MyData,
+            ui->toolButton_POB,
+            ui->toolButton_Autopilot,
+            ui->toolButton_Apps,
+            ui->toolButton_Anchor,
+            ui->toolButton_Alarms,
+            ui->toolButton_Settings,
+            ui->widget_Starboard
+        };
+
+        for (auto *widget : regularWidgets) {
+            if (widget) {
+                widget->setVisible(visible);
+            }
+        }
+    }
+
     void BottomBar::setPanelVisibility(QWidget *panel, const bool visible) const {
         if (!panel) {
             return;
@@ -441,6 +454,19 @@ namespace fairwindsk::ui::bottombar {
 
         if (visible) {
             hideTransientPanels(panel);
+            setRegularBarVisible(false);
+            panel->raise();
+        } else {
+            const QList<QWidget *> panels = {m_POBBar, m_AutopilotBar, m_AnchorBar, m_AlarmsBar};
+            const bool anotherPanelVisible = std::any_of(
+                panels.cbegin(),
+                panels.cend(),
+                [panel](const QWidget *candidate) {
+                    return candidate && candidate != panel && candidate->isVisible();
+                });
+            if (!anotherPanelVisible) {
+                setRegularBarVisible(true);
+            }
         }
 
         panel->setVisible(visible);
@@ -452,6 +478,10 @@ namespace fairwindsk::ui::bottombar {
             if (panel && panel != except) {
                 panel->setVisible(false);
             }
+        }
+
+        if (!except) {
+            setRegularBarVisible(true);
         }
     }
 

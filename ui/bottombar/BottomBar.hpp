@@ -90,6 +90,7 @@ namespace fairwindsk::ui::bottombar {
 
     private:
         void applyNavigationButtonIcons() const;
+        void setRegularBarVisible(bool visible) const;
         void setPanelVisibility(QWidget *panel, bool visible) const;
         void hideTransientPanels(QWidget *except = nullptr) const;
 
