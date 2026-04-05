@@ -2,6 +2,9 @@
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
 #include <QSplashScreen>
 #endif
+#include <QDir>
+#include <QFileInfo>
+#include <QLibraryInfo>
 #include <QTimer>
 #include <QTranslator>
 
@@ -15,6 +18,76 @@
 
 using namespace Qt::StringLiterals;
 
+#if defined(Q_OS_LINUX)
+namespace {
+    QString qtPlatformPluginDirectory() {
+        const QStringList candidatePaths = {
+            QLibraryInfo::path(QLibraryInfo::PluginsPath),
+            QLibraryInfo::location(QLibraryInfo::PluginsPath)
+        };
+
+        for (const QString &path : candidatePaths) {
+            if (path.trimmed().isEmpty()) {
+                continue;
+            }
+
+            const QString platformPath = QDir(path).filePath(QStringLiteral("platforms"));
+            if (QFileInfo::exists(platformPath)) {
+                return platformPath;
+            }
+        }
+
+        return QString();
+    }
+
+    bool hasPlatformPlugin(const QString &platformPath, const QString &pluginBaseName) {
+        if (platformPath.trimmed().isEmpty() || pluginBaseName.trimmed().isEmpty()) {
+            return false;
+        }
+
+        const QStringList candidates = {
+            QDir(platformPath).filePath(QStringLiteral("libq%1.so").arg(pluginBaseName)),
+            QDir(platformPath).filePath(QStringLiteral("q%1.dll").arg(pluginBaseName)),
+            QDir(platformPath).filePath(QStringLiteral("q%1.dylib").arg(pluginBaseName))
+        };
+
+        return std::any_of(candidates.cbegin(), candidates.cend(), [](const QString &candidate) {
+            return QFileInfo::exists(candidate);
+        });
+    }
+
+    void configureLinuxQtPlatformFallback() {
+        if (!qEnvironmentVariableIsEmpty("QT_QPA_PLATFORM")) {
+            return;
+        }
+
+        const QString platformPath = qtPlatformPluginDirectory();
+        const bool hasWayland = hasPlatformPlugin(platformPath, QStringLiteral("wayland"));
+        const bool hasXcb = hasPlatformPlugin(platformPath, QStringLiteral("xcb"));
+        const bool hasEglfs = hasPlatformPlugin(platformPath, QStringLiteral("eglfs"));
+        const bool hasLinuxFb = hasPlatformPlugin(platformPath, QStringLiteral("linuxfb"));
+
+        const QByteArray sessionType = qgetenv("XDG_SESSION_TYPE").trimmed().toLower();
+        const bool waylandSession = sessionType == "wayland";
+
+        if (waylandSession && !hasWayland) {
+            if (hasXcb) {
+                qputenv("QT_QPA_PLATFORM", QByteArrayLiteral("xcb"));
+            } else if (hasEglfs) {
+                qputenv("QT_QPA_PLATFORM", QByteArrayLiteral("eglfs"));
+            } else if (hasLinuxFb) {
+                qputenv("QT_QPA_PLATFORM", QByteArrayLiteral("linuxfb"));
+            }
+            return;
+        }
+
+        if (!waylandSession && hasXcb) {
+            qputenv("QT_QPA_PLATFORM", QByteArrayLiteral("xcb"));
+        }
+    }
+}
+#endif
+
 int main(int argc, char *argv[]) {
 
     // The translator
@@ -26,6 +99,10 @@ int main(int argc, char *argv[]) {
 
     // Enable OpenGL shared contexts
     QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts );
+
+#if defined(Q_OS_LINUX)
+    configureLinuxQtPlatformFallback();
+#endif
 
     // The QT application
     QApplication app(argc, argv);
