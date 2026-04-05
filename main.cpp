@@ -57,20 +57,7 @@ int main(int argc, char *argv[]) {
     fairWindSK->loadConfig();
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
-    // Show message
-    splash.showMessage(QObject::tr("Connecting to the Signal K Server..."), 500, Qt::white);
 #endif
-
-    // Connect to the Signal K server...
-    fairWindSK->startSignalK();
-
-#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
-    // Show message
-    splash.showMessage(QObject::tr("Loading applications..."), 500, Qt::white);
-#endif
-
-    // Load the apps inside the FairWind singleton itself
-    fairWindSK->loadApps();
 
     // Set web profile options
     QWebEngineProfile::defaultProfile()->settings()->setAttribute(QWebEngineSettings::Accelerated2dCanvasEnabled, true);
@@ -84,6 +71,14 @@ int main(int argc, char *argv[]) {
     // Close the splash screen presenting the MainWindow UI
     splash.finish((QWidget *) &w);
 #endif
+
+    QTimer::singleShot(0, &w, [fairWindSK]() {
+        fairWindSK->startSignalK();
+        fairWindSK->loadApps();
+        if (auto *mainWindow = fairwindsk::ui::MainWindow::instance()) {
+            mainWindow->applyRuntimeConfiguration();
+        }
+    });
 
     // Run the application. Let Qt tear down the QObject tree on process exit so
     // the shared WebEngine profile is not destroyed before the remaining pages.
