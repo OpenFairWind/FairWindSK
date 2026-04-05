@@ -198,6 +198,28 @@ namespace fairwindsk {
         return getString("main", "comfortViewPreset", "day");
     }
 
+    void Configuration::setComfortThemeStyleSheet(const QString &preset, const QString &styleSheet) {
+        const QString normalizedPreset = preset.trimmed().toLower();
+        if (normalizedPreset.isEmpty()) {
+            return;
+        }
+
+        ensureObject("comfortViewThemes")[normalizedPreset.toStdString()] = styleSheet.toStdString();
+    }
+
+    QString Configuration::getComfortThemeStyleSheet(const QString &preset) const {
+        return getString("comfortViewThemes", preset.trimmed().toLower(), QString());
+    }
+
+    void Configuration::clearComfortThemeStyleSheet(const QString &preset) {
+        const QString normalizedPreset = preset.trimmed().toLower();
+        if (normalizedPreset.isEmpty() || !m_jsonData.contains("comfortViewThemes") || !m_jsonData["comfortViewThemes"].is_object()) {
+            return;
+        }
+
+        m_jsonData["comfortViewThemes"].erase(normalizedPreset.toStdString());
+    }
+
     void Configuration::setLauncherRows(const int value) {
         ensureObject("main")["launcherRows"] = std::max(1, value);
     }

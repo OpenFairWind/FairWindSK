@@ -216,6 +216,7 @@ set(FAIRWINDSK_SOURCES
         ui/settings/AppDetailsWidget.cpp ui/settings/AppDetailsWidget.hpp ui/settings/AppDetailsWidget.ui
         ui/settings/PageDetailsWidget.cpp ui/settings/PageDetailsWidget.hpp ui/settings/PageDetailsWidget.ui
         ui/settings/Main.cpp ui/settings/Main.hpp ui/settings/Main.ui
+        ui/settings/Comfort.cpp ui/settings/Comfort.hpp
         ui/settings/Connection.cpp ui/settings/Connection.hpp ui/settings/Connection.ui
         ui/settings/SignalK.cpp ui/settings/SignalK.hpp ui/settings/SignalK.ui
         ui/settings/Units.cpp ui/settings/Units.hpp ui/settings/Units.ui

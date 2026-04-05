@@ -67,7 +67,7 @@ namespace fairwindsk::ui::widgets {
         }
 
         QString touchScrollBarStyle(const QPalette &palette) {
-            const QColor track = palette.color(QPalette::AlternateBase);
+            const QColor track = palette.color(QPalette::Button);
             const QColor handle = palette.color(QPalette::Button);
             const QColor border = palette.color(QPalette::Mid);
             const QColor handleTop = handle.lighter(145);

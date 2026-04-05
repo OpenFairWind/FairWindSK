@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>220</width>
-    <height>44</height>
+    <height>52</height>
    </rect>
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout">
@@ -29,9 +29,9 @@
    <item>
     <widget class="QLineEdit" name="lineEditValue">
      <property name="minimumSize">
-      <size>
+     <size>
        <width>0</width>
-       <height>44</height>
+       <height>52</height>
       </size>
      </property>
      <property name="readOnly">
@@ -45,9 +45,9 @@
    <item>
     <widget class="QPushButton" name="pushButtonPopup">
      <property name="minimumSize">
-      <size>
-       <width>44</width>
-       <height>44</height>
+     <size>
+       <width>52</width>
+       <height>52</height>
       </size>
      </property>
      <property name="text">
@@ -58,9 +58,9 @@
        <normaloff>:/resources/svg/OpenBridge/combobox-open.svg</normaloff>:/resources/svg/OpenBridge/combobox-open.svg</iconset>
      </property>
      <property name="iconSize">
-      <size>
-       <width>22</width>
-       <height>22</height>
+     <size>
+       <width>26</width>
+       <height>26</height>
       </size>
      </property>
     </widget>

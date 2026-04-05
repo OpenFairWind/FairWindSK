@@ -14,6 +14,7 @@
 #include "Units.hpp"
 
 #include "Main.hpp"
+#include "Comfort.hpp"
 #include "Connection.hpp"
 #include "SignalK.hpp"
 #include "Apps.hpp"
@@ -75,7 +76,7 @@ namespace fairwindsk::ui::settings {
         if (m_configuration.getSignalKServerUrl().isEmpty()) {
 
             // Set the tab index to the connection tab
-            currentIndex = 1;
+            currentIndex = 2;
         }
 
         // Initialize the tabs
@@ -137,8 +138,8 @@ namespace fairwindsk::ui::settings {
         // Remove tabs if present
         removeTabs();
 
-        m_tabPages = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
-        for (const auto &tabTitle : {tr("Main"), tr("Connection"), tr("Signal K"), tr("Units"), tr("Applications"), tr("System")}) {
+        m_tabPages = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+        for (const auto &tabTitle : {tr("Main"), tr("Comfort"), tr("Connection"), tr("Signal K"), tr("Units"), tr("Applications"), tr("System")}) {
             auto *container = new QWidget(ui->tabWidget);
             auto *layout = new QVBoxLayout(container);
             layout->setContentsMargins(0, 0, 0, 0);
@@ -158,14 +159,16 @@ namespace fairwindsk::ui::settings {
             case 0:
                 return new Main(this);
             case 1:
-                return new Connection(this);
+                return new Comfort(this);
             case 2:
-                return new SignalK(this);
+                return new Connection(this);
             case 3:
-                return new Units(this);
+                return new SignalK(this);
             case 4:
-                return new Apps(this);
+                return new Units(this);
             case 5:
+                return new Apps(this);
+            case 6:
                 return new System(this);
             default:
                 return new QWidget(this);

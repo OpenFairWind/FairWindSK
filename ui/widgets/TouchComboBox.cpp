@@ -21,6 +21,8 @@
 namespace fairwindsk::ui::widgets {
     namespace {
         constexpr int kRawIconRole = Qt::UserRole + 1;
+        constexpr int kComboIconSize = 30;
+        constexpr int kComboItemHeight = 56;
 
         QString touchButtonStyle(const QPalette &palette) {
             const QColor base = palette.color(QPalette::Button);
@@ -81,8 +83,8 @@ namespace fairwindsk::ui::widgets {
                 " outline: none;"
                 " }"
                 "QListWidget#listWidget_touchComboBox::item {"
-                " min-height: 44px;"
-                " padding: 6px 10px;"
+                " min-height: 52px;"
+                " padding: 8px 12px;"
                 " }"
                 "QListWidget#listWidget_touchComboBox::item:selected {"
                 " background: %5;"
@@ -134,7 +136,8 @@ namespace fairwindsk::ui::widgets {
         m_listWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
         m_listWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         m_listWidget->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-        m_listWidget->setSpacing(2);
+        m_listWidget->setIconSize(QSize(kComboIconSize, kComboIconSize));
+        m_listWidget->setSpacing(4);
         popupLayout->addWidget(m_listWidget);
 
         connect(ui->pushButtonPopup, &QPushButton::clicked, this, &TouchComboBox::togglePopup);
@@ -168,7 +171,7 @@ namespace fairwindsk::ui::widgets {
         auto *item = new QListWidgetItem(icon, text, m_listWidget);
         item->setData(Qt::UserRole, userData);
         item->setData(kRawIconRole, icon);
-        item->setSizeHint(QSize(item->sizeHint().width(), 44));
+        item->setSizeHint(QSize(item->sizeHint().width(), kComboItemHeight));
 
         if (m_currentIndex < 0) {
             setCurrentIndex(0);
@@ -349,7 +352,7 @@ namespace fairwindsk::ui::widgets {
 
             const QIcon rawIcon = qvariant_cast<QIcon>(item->data(kRawIconRole));
             if (!rawIcon.isNull()) {
-                item->setIcon(fairwindsk::ui::tintedIcon(rawIcon, iconColor, QSize(24, 24)));
+                item->setIcon(fairwindsk::ui::tintedIcon(rawIcon, iconColor, QSize(kComboIconSize, kComboIconSize)));
             }
         }
 
@@ -422,7 +425,7 @@ namespace fairwindsk::ui::widgets {
                 ? fairwindsk::ui::tintedIcon(
                     qvariant_cast<QIcon>(item->data(kRawIconRole)),
                     iconColor,
-                    QSize(24, 24))
+                    QSize(kComboIconSize, kComboIconSize))
                 : QIcon();
             m_iconAction->setIcon(icon);
             m_iconAction->setVisible(!icon.isNull());

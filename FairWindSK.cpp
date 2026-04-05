@@ -212,13 +212,22 @@ namespace fairwindsk {
             return QStringLiteral(":/resources/stylesheets/%1.qss").arg(normalizedComfortViewPreset(preset));
         }
 
-        QString loadComfortThemeStyleSheet(const QString &preset) {
+        QString loadDefaultComfortThemeStyleSheet(const QString &preset) {
             QFile file(comfortThemeResourcePath(preset));
             if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
                 return QString();
             }
 
             return QString::fromUtf8(file.readAll());
+        }
+
+        QString loadComfortThemeStyleSheet(const Configuration &configuration, const QString &preset) {
+            const QString configuredStyleSheet = configuration.getComfortThemeStyleSheet(preset);
+            if (!configuredStyleSheet.trimmed().isEmpty()) {
+                return configuredStyleSheet;
+            }
+
+            return loadDefaultComfortThemeStyleSheet(preset);
         }
 
         bool isAutomaticComfortViewSupported(const Configuration &configuration, signalk::Client *client) {
@@ -688,7 +697,7 @@ namespace fairwindsk {
         appPalette.setColor(QPalette::Highlight, QColor(comfortPalette.accentTop));
         appPalette.setColor(QPalette::HighlightedText, QColor(QStringLiteral("#eff6ff")));
         qApp->setPalette(appPalette);
-        const QString combinedStyleSheet = buildUiMetricsStyleSheet(metrics) + loadComfortThemeStyleSheet(comfortPreset);
+        const QString combinedStyleSheet = buildUiMetricsStyleSheet(metrics) + loadComfortThemeStyleSheet(effectiveConfiguration, comfortPreset);
         if (qApp->styleSheet() != combinedStyleSheet) {
             qApp->setStyleSheet(combinedStyleSheet);
         }
