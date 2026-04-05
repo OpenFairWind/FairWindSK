@@ -68,6 +68,7 @@ namespace fairwindsk {
         [[nodiscard]] bool isDebug() const;
         bool isAutomaticComfortViewConfigured(const Configuration *configuration = nullptr) const;
         bool isAutomaticComfortViewAvailable(const Configuration *configuration = nullptr) const;
+        QString getActiveComfortViewPreset(const Configuration *configuration = nullptr) const;
 
         // Get the Signal K client
         signalk::Client *getSignalKClient();

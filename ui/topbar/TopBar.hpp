@@ -60,6 +60,7 @@ namespace fairwindsk::ui::topbar {
 
     private:
         void changeEvent(QEvent *event) override;
+        void updateComfortViewIcon() const;
         void updateDistanceLabels() const;
         void updateSpeedLabels() const;
         void refreshMetricLabelWidths() const;

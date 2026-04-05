@@ -616,6 +616,50 @@ namespace fairwindsk {
         return isAutomaticComfortViewConfigured(configuration) && m_automaticComfortViewAvailable;
     }
 
+    QString FairWindSK::getActiveComfortViewPreset(const Configuration *configuration) const {
+        if (!m_activeComfortViewPreset.trimmed().isEmpty()) {
+            return m_activeComfortViewPreset;
+        }
+
+        const Configuration &effectiveConfiguration = configuration ? *configuration : m_configuration;
+        if (effectiveConfiguration.getComfortViewMode() == "auto" && !isAutomaticComfortViewAvailable(&effectiveConfiguration)) {
+            QString preset = effectiveConfiguration.getComfortViewPreset().trimmed().toLower();
+            if (preset == "sunrise") {
+                preset = QStringLiteral("dawn");
+            }
+            if (preset != "dawn" && preset != "day" && preset != "sunset" && preset != "dusk" && preset != "night") {
+                preset = QStringLiteral("day");
+            }
+            return preset;
+        }
+
+        if (effectiveConfiguration.getComfortViewMode() != "auto") {
+            QString preset = effectiveConfiguration.getComfortViewPreset().trimmed().toLower();
+            if (preset == "sunrise") {
+                preset = QStringLiteral("dawn");
+            }
+            if (preset != "dawn" && preset != "day" && preset != "sunset" && preset != "dusk" && preset != "night") {
+                preset = QStringLiteral("day");
+            }
+            return preset;
+        }
+
+        const QTime now = QTime::currentTime();
+        if (now >= QTime(5, 30) && now < QTime(7, 0)) {
+            return QStringLiteral("dawn");
+        }
+        if (now >= QTime(7, 0) && now < QTime(17, 30)) {
+            return QStringLiteral("day");
+        }
+        if (now >= QTime(17, 30) && now < QTime(19, 0)) {
+            return QStringLiteral("sunset");
+        }
+        if (now >= QTime(19, 0) && now < QTime(20, 30)) {
+            return QStringLiteral("dusk");
+        }
+        return QStringLiteral("night");
+    }
+
     void FairWindSK::applyUiPreferences(const Configuration *configuration) {
         if (!qApp) {
             return;

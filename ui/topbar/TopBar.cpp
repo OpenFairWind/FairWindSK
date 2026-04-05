@@ -8,6 +8,7 @@
 #include <QToolButton>
 #include <QString>
 #include <QFontMetrics>
+#include <QPixmap>
 #include <nlohmann/json.hpp>
 
 #include "TopBar.hpp"
@@ -25,6 +26,23 @@ namespace fairwindsk::ui::topbar {
             " }"
             "QToolButton:hover { background: rgba(127, 127, 127, 0.18); border-radius: 8px; }"
             "QToolButton:pressed { background: rgba(127, 127, 127, 0.28); border-radius: 8px; }");
+
+        QString comfortViewIconPath(QString preset) {
+            preset = preset.trimmed().toLower();
+            if (preset == "dawn") {
+                return QStringLiteral(":/resources/svg/OpenBridge/comfort-dawn.svg");
+            }
+            if (preset == "sunset") {
+                return QStringLiteral(":/resources/svg/OpenBridge/comfort-sunset.svg");
+            }
+            if (preset == "dusk") {
+                return QStringLiteral(":/resources/svg/OpenBridge/comfort-dusk.svg");
+            }
+            if (preset == "night") {
+                return QStringLiteral(":/resources/svg/OpenBridge/comfort-night.svg");
+            }
+            return QStringLiteral(":/resources/svg/OpenBridge/comfort-day.svg");
+        }
     }
 
     void TopBar::refreshMetricLabelWidths() const {
@@ -130,6 +148,7 @@ namespace fairwindsk::ui::topbar {
         // Start the timer
         m_timer->start(1000);
         updateTime();
+        updateComfortViewIcon();
         resetCurrentAppPresentation();
 
         // Get the configuration json object
@@ -344,6 +363,24 @@ namespace fairwindsk::ui::topbar {
         if (event && event->type() == QEvent::FontChange) {
             refreshMetricLabelWidths();
         }
+
+        if (event && (event->type() == QEvent::PaletteChange || event->type() == QEvent::StyleChange)) {
+            updateComfortViewIcon();
+        }
+    }
+
+    void TopBar::updateComfortViewIcon() const {
+        if (!ui || !ui->label_ComfortViewIcon) {
+            return;
+        }
+
+        const auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset() : QStringLiteral("day");
+        const QPixmap pixmap(comfortViewIconPath(preset));
+        ui->label_ComfortViewIcon->setPixmap(pixmap.scaled(ui->label_ComfortViewIcon->size(),
+                                                           Qt::KeepAspectRatio,
+                                                           Qt::SmoothTransformation));
+        ui->label_ComfortViewIcon->setToolTip(tr("Comfort view: %1").arg(preset));
     }
 
 /*
@@ -367,6 +404,7 @@ namespace fairwindsk::ui::topbar {
         text = dateTime.toString("dd-MM-yyyy");
         // Set the date label from the UI to the formatted date
         ui->label_Date->setText(text);
+        updateComfortViewIcon();
     }
 
 /*
