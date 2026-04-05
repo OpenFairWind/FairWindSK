@@ -388,22 +388,14 @@ namespace fairwindsk::ui::topbar {
  * Method called to update the current datetime
  */
     void TopBar::updateTime() {
-        // Get the current time
-        QTime time = QTime::currentTime();
-        // Get the current time in hh:mm format
-        QString text = time.toString("hh:mm");
+        const QDateTime dateTime = QDateTime::currentDateTime();
+        QString text = dateTime.toString(QStringLiteral("dd-MM-yyyy hh:mm"));
 
-        if ((time.second() % 2) == 0)
-            text[2] = ' ';
-        // Set the time label from the UI to the formatted time
-        ui->label_Time->setText(text);
+        if ((dateTime.time().second() % 2) == 0 && text.size() >= 13) {
+            text[13] = QChar(' ');
+        }
 
-        // Get the current date
-        QDateTime dateTime = QDateTime::currentDateTime();
-        // Get the current date in dd-MM-yyy format
-        text = dateTime.toString("dd-MM-yyyy");
-        // Set the date label from the UI to the formatted date
-        ui->label_Date->setText(text);
+        ui->label_DateTime->setText(text);
         updateComfortViewIcon();
     }
 

@@ -6,7 +6,13 @@
 #define FAIRWINDSK_UI_SETTINGS_SYSTEM_HPP
 
 #include <QWidget>
+#include <QDateTime>
+#include <QMap>
 #include <QVector>
+
+class QLabel;
+class QFormLayout;
+class QGroupBox;
 
 namespace fairwindsk::ui::settings {
     class Settings;
@@ -34,6 +40,10 @@ namespace fairwindsk::ui::settings {
         };
 
         void ensureCoreWidgets(int coreCount);
+        void ensureRpiDiagnosticsWidgets();
+        void refreshRpiDiagnostics();
+        double fetchSignalKRpiMetric(const QString &path, bool *available = nullptr) const;
+        void setRpiMetricValue(const QString &path, const QString &text);
         QString formatBytes(quint64 bytes) const;
         quint64 processResidentMemoryBytes() const;
         quint64 totalMemoryBytes() const;
@@ -44,6 +54,11 @@ namespace fairwindsk::ui::settings {
         Settings *m_settings = nullptr;
         QVector<QWidget *> m_coreRows;
         QVector<CpuSnapshot> m_previousCpuStats;
+        QGroupBox *m_rpiGroupBox = nullptr;
+        QFormLayout *m_rpiFormLayout = nullptr;
+        QMap<QString, QLabel *> m_rpiMetricValues;
+        QDateTime m_lastRpiRefresh;
+        bool m_hasRpiMetrics = false;
     };
 }
 

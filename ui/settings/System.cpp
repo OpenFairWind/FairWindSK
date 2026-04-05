@@ -5,13 +5,19 @@
 #include "System.hpp"
 
 #include <algorithm>
+#include <cmath>
+#include <limits>
+#include <QFormLayout>
+#include <QGroupBox>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QProgressBar>
 #include <QTimer>
 #include <QVBoxLayout>
 
+#include "FairWindSK.hpp"
 #include "Settings.hpp"
+#include "signalk/Client.hpp"
 #include "ui_System.h"
 
 #if defined(Q_OS_MACOS)
@@ -128,6 +134,7 @@ namespace fairwindsk::ui::settings {
         }
 
         m_previousCpuStats = currentCpuStats;
+        refreshRpiDiagnostics();
     }
 
     void System::ensureCoreWidgets(const int coreCount) {
@@ -157,6 +164,113 @@ namespace fairwindsk::ui::settings {
         if (layout->count() == m_coreRows.size()) {
             layout->addStretch(1);
         }
+    }
+
+    void System::ensureRpiDiagnosticsWidgets() {
+        if (m_rpiGroupBox) {
+            return;
+        }
+
+        m_rpiGroupBox = new QGroupBox(tr("Raspberry Pi"), this);
+        m_rpiFormLayout = new QFormLayout(m_rpiGroupBox);
+        m_rpiFormLayout->setContentsMargins(0, 0, 0, 0);
+        m_rpiFormLayout->setSpacing(8);
+
+        const QList<QPair<QString, QString>> metrics = {
+            {QStringLiteral("environment.rpi.cpu.temperature"), tr("CPU temperature")},
+            {QStringLiteral("environment.rpi.gpu.temperature"), tr("GPU temperature")},
+            {QStringLiteral("environment.rpi.cpu.utilisation"), tr("CPU utilisation")},
+            {QStringLiteral("environment.rpi.memory.utilisation"), tr("Memory utilisation")},
+            {QStringLiteral("environment.rpi.sd.utilisation"), tr("SD utilisation")}
+        };
+
+        for (const auto &metric : metrics) {
+            auto *valueLabel = new QLabel(tr("Unavailable"), m_rpiGroupBox);
+            m_rpiFormLayout->addRow(metric.second, valueLabel);
+            m_rpiMetricValues.insert(metric.first, valueLabel);
+        }
+
+        m_rpiGroupBox->setVisible(false);
+        ui->verticalLayout_Diagnostics->addWidget(m_rpiGroupBox);
+    }
+
+    double System::fetchSignalKRpiMetric(const QString &path, bool *available) const {
+        if (available) {
+            *available = false;
+        }
+
+        auto *client = FairWindSK::getInstance()->getSignalKClient();
+        if (!client || client->url().isEmpty() || !client->isRestHealthy()) {
+            return std::numeric_limits<double>::quiet_NaN();
+        }
+
+        const QJsonObject update = client->signalkGet(path);
+        if (update.isEmpty()) {
+            return std::numeric_limits<double>::quiet_NaN();
+        }
+
+        const double value = signalk::Client::getDoubleFromUpdateByPath(update, path);
+        if (std::isnan(value)) {
+            return value;
+        }
+
+        if (available) {
+            *available = true;
+        }
+        return value;
+    }
+
+    void System::setRpiMetricValue(const QString &path, const QString &text) {
+        if (auto *label = m_rpiMetricValues.value(path, nullptr)) {
+            label->setText(text);
+        }
+    }
+
+    void System::refreshRpiDiagnostics() {
+        ensureRpiDiagnosticsWidgets();
+        if (!m_rpiGroupBox) {
+            return;
+        }
+
+        const QDateTime now = QDateTime::currentDateTimeUtc();
+        if (m_lastRpiRefresh.isValid() && m_lastRpiRefresh.msecsTo(now) < 5000) {
+            return;
+        }
+        m_lastRpiRefresh = now;
+
+        bool hasAnyMetric = false;
+
+        auto applyTemperature = [this, &hasAnyMetric](const QString &path) {
+            bool available = false;
+            const double value = fetchSignalKRpiMetric(path, &available);
+            if (available) {
+                hasAnyMetric = true;
+                setRpiMetricValue(path, tr("%1 °C").arg(QString::number(value, 'f', 1)));
+            } else {
+                setRpiMetricValue(path, tr("Unavailable"));
+            }
+        };
+
+        auto applyPercent = [this, &hasAnyMetric](const QString &path) {
+            bool available = false;
+            const double value = fetchSignalKRpiMetric(path, &available);
+            if (available) {
+                hasAnyMetric = true;
+                const double percentage = value <= 1.0 ? value * 100.0 : value;
+                setRpiMetricValue(path, tr("%1%").arg(QString::number(percentage, 'f', 0)));
+            } else {
+                setRpiMetricValue(path, tr("Unavailable"));
+            }
+        };
+
+        applyTemperature(QStringLiteral("environment.rpi.cpu.temperature"));
+        applyTemperature(QStringLiteral("environment.rpi.gpu.temperature"));
+        applyPercent(QStringLiteral("environment.rpi.cpu.utilisation"));
+        applyPercent(QStringLiteral("environment.rpi.memory.utilisation"));
+        applyPercent(QStringLiteral("environment.rpi.sd.utilisation"));
+
+        m_hasRpiMetrics = hasAnyMetric;
+        m_rpiGroupBox->setVisible(m_hasRpiMetrics);
     }
 
     QString System::formatBytes(const quint64 bytes) const {

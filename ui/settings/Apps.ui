@@ -35,6 +35,9 @@
       <layout class="QVBoxLayout" name="verticalLayout_LeftPane">
        <item>
         <widget class="QGroupBox" name="groupBox_AvailableApps">
+         <property name="flat">
+          <bool>true</bool>
+         </property>
          <property name="title">
           <string/>
          </property>
@@ -64,6 +67,9 @@
        </item>
        <item>
         <widget class="QGroupBox" name="groupBox_PageTree">
+         <property name="flat">
+          <bool>true</bool>
+         </property>
          <property name="title">
           <string/>
          </property>
