@@ -44,6 +44,9 @@
      </item>
      <item>
       <widget class="fairwindsk::ui::widgets::TouchScrollArea" name="scrollArea">
+       <property name="borderless" stdset="0">
+        <bool>true</bool>
+       </property>
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
          <horstretch>0</horstretch>

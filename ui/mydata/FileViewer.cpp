@@ -17,11 +17,20 @@
 #include <QUrl>
 
 #include "ui/DrawerDialogHost.hpp"
+#include "ui/IconUtils.hpp"
 
 namespace fairwindsk::ui::mydata {
 
     FileViewer::FileViewer(const QString& path, QWidget *parent): QWidget(parent), ui(new Ui::FileViewer), m_path(path) {
         ui->setupUi(this);
+
+        fairwindsk::ui::applyTintedButtonIcon(
+            ui->toolButton_Close,
+            fairwindsk::ui::bestContrastingColor(
+                palette().color(QPalette::Button),
+                {palette().color(QPalette::Text),
+                 palette().color(QPalette::ButtonText),
+                 palette().color(QPalette::WindowText)}));
 
         connect(ui->toolButton_Close, &QToolButton::clicked, this, &FileViewer::onCloseClicked);
         connect(ui->toolButton_Save, &QToolButton::clicked, this, &FileViewer::onSaveClicked);

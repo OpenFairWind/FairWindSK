@@ -51,7 +51,7 @@ QTabWidget::pane {
     top: -1px;
 }
 QTabBar::tab {
-    color: #fff1df;
+    color: #2b1d18;
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ffd39a, stop:1 #cf8d4d);
     border: 1px solid #d19965;
     border-bottom-color: #6f3e27;
