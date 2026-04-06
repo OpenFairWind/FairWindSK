@@ -238,15 +238,20 @@ namespace fairwindsk::signalk {
  */
     bool Client::init(QMap<QString, QVariant> params) {
         bool result = false;
+        qInfo() << "SignalK::Client::init entered";
 
         // Get the FairWindSK instance
         auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+        Q_UNUSED(fairWindSK);
 
         // Connect the on connected event
         connect(&m_WebSocket, &QWebSocket::connected, this, &Client::onConnected, Qt::UniqueConnection);
 
         // Connect the on disconnected event
         connect(&m_WebSocket, &QWebSocket::disconnected, this, &Client::onDisconnected, Qt::UniqueConnection);
+        connect(&m_WebSocket, &QWebSocket::errorOccurred, this, [this](QAbstractSocket::SocketError error) {
+            qWarning() << "SignalK::Client websocket error" << error << m_WebSocket.errorString();
+        }, Qt::UniqueConnection);
 
         // Check if the url is present in parameters
         if (params.contains("url")) {
@@ -254,6 +259,7 @@ namespace fairwindsk::signalk {
             // Set the url
             m_Url = params["url"].toString();
         }
+        qInfo() << "SignalK::Client::init url =" << m_Url;
 
         // Check if the label is present in parameters
         if (params.contains("label")) {
@@ -275,6 +281,7 @@ namespace fairwindsk::signalk {
             // Set the debug
             m_Debug = params["debug"].toBool();
         }
+        qInfo() << "SignalK::Client::init active/debug =" << m_Active << m_Debug;
 
         // Check if the token is present in parameters
         if (params.contains("token")) {
@@ -301,14 +308,17 @@ namespace fairwindsk::signalk {
             qDebug() << "SignalKAPIClient::onInit(" << params << ")";
 
         if (m_Active) {
+            qInfo() << "SignalK::Client::init requesting server discovery from" << m_Url;
 
             m_Server = signalkGet(m_Url);
+            qInfo() << "SignalK::Client::init discovery reply keys =" << m_Server.keys();
 
             if (m_Debug) {
                 qDebug() << "Server: " << m_Server;
             }
 
             if (!m_Server.isEmpty()) {
+                qInfo() << "SignalK::Client::init discovery succeeded";
                 setRestHealth(true, tr("REST online"));
                 setStreamHealth(false, tr("Connecting stream"));
                 emit serverMessageChanged(discoveryMessage());
@@ -318,7 +328,9 @@ namespace fairwindsk::signalk {
 
                     // Perform the login if credentials are available. A public/read-only
                     // Signal K server can still be used without a token.
+                    qInfo() << "SignalK::Client::init token missing, attempting login";
                     login();
+                    qInfo() << "SignalK::Client::init login finished; token present =" << !m_Token.isEmpty();
                 }
 
                 if (!m_Token.isEmpty()) {
@@ -333,13 +345,17 @@ namespace fairwindsk::signalk {
                 }
 
                 const auto webSocketUrl = QUrl(ws().toString() + "?subscribe=none");
+                qInfo() << "SignalK::Client::init websocket URL =" << webSocketUrl;
                 if (webSocketUrl.isValid() && !webSocketUrl.isEmpty()) {
+                    qInfo() << "SignalK::Client::init opening websocket";
                     m_WebSocket.open(webSocketUrl);
+                    qInfo() << "SignalK::Client::init websocket open issued";
                     result = true;
                 } else if (m_Debug) {
                     qDebug() << "No valid websocket endpoint available for" << m_Url;
                 }
             } else {
+                qWarning() << "SignalK::Client::init discovery returned empty payload";
                 setRestHealth(false, tr("Signal K offline"));
                 setStreamHealth(false, tr("Signal K offline"));
                 emit serverMessageChanged(tr("Signal K server not available"));
@@ -347,6 +363,7 @@ namespace fairwindsk::signalk {
                     qDebug() << "Server: " << m_Url << " not available!";
             }
         }  else {
+            qInfo() << "SignalK::Client::init skipped because client is inactive";
             setRestHealth(false, tr("Signal K disabled"));
             setStreamHealth(false, tr("Signal K disabled"));
             emit serverMessageChanged(tr("Signal K connection disabled"));
@@ -355,6 +372,7 @@ namespace fairwindsk::signalk {
 
         }
 
+        qInfo() << "SignalK::Client::init exiting with result" << result;
         return result;
     }
 
@@ -878,10 +896,12 @@ namespace fairwindsk::signalk {
 
     bool Client::login() {
         bool result = false;
+        qInfo() << "SignalK::Client::login entered";
         QJsonObject payload;
         payload["username"] = m_Username;
         payload["password"] = m_Password;
         QJsonObject data = signalkPost( QUrl(m_Url.toString() + "/v1/auth/login"), payload);
+        qInfo() << "SignalK::Client::login reply keys =" << data.keys();
 
         if (m_Debug)
             qDebug() << "SignalKClient::login : " << data;
@@ -899,6 +919,7 @@ namespace fairwindsk::signalk {
                 qDebug() << data["message"].toString();
         }
 
+        qInfo() << "SignalK::Client::login exiting with result" << result;
         return result;
     }
 
@@ -921,10 +942,13 @@ namespace fairwindsk::signalk {
                 auto jsonObjectVersion = jsonObjectEndponts[version].toObject();
                 if (jsonObjectVersion.contains("signalk-" + protocol) &&
                     jsonObjectVersion["signalk-" + protocol].isString()) {
+                    qInfo() << "SignalK::Client::getEndpointByProtocol" << protocol << version
+                            << "->" << jsonObjectVersion["signalk-" + protocol].toString();
                     return jsonObjectVersion["signalk-" + protocol].toString();
                 }
             }
         }
+        qWarning() << "SignalK::Client::getEndpointByProtocol missing endpoint for" << protocol << version;
         return {};
     }
 

@@ -874,12 +874,14 @@ namespace fairwindsk {
      * Starts the Signal K client
      */
     bool FairWindSK::startSignalK() {
+        qInfo() << "FairWindSK::startSignalK entered";
 
         // Set the result as false
         bool result = false;
 
         // Get the Signal K server URL
         auto signalKServerUrl = m_configuration.getSignalKServerUrl();
+        qInfo() << "FairWindSK::startSignalK server URL =" << signalKServerUrl;
 
         // Check if the Signal K URL is not empty
         if (!signalKServerUrl.isEmpty()) {
@@ -911,6 +913,7 @@ namespace fairwindsk {
 
             // Start the connection
             do {
+                qInfo() << "FairWindSK::startSignalK attempt" << count << "of" << m_nRetry;
 
                 // Check if the debug is active
                 if (isDebug()) {
@@ -922,7 +925,9 @@ namespace fairwindsk {
                 }
 
                 // Try to connect
+                qInfo() << "FairWindSK::startSignalK calling Client::init";
                 result = m_signalkClient.init(params);
+                qInfo() << "FairWindSK::startSignalK Client::init returned" << result;
 
                 // Check if the connection is successful
                 if (result) {
@@ -935,6 +940,7 @@ namespace fairwindsk {
                     if (m_configuration.getComfortViewMode() == "auto") {
                         applyUiPreferences();
                     }
+                    qInfo() << "FairWindSK::startSignalK connected successfully";
 
                     // Exit the loop
                     break;
@@ -966,9 +972,12 @@ namespace fairwindsk {
                     qDebug() << "No response from the " << signalKServerUrl << " Signal K server!";
                 }
             }
+        } else {
+            qWarning() << "FairWindSK::startSignalK skipped because server URL is empty";
         }
 
         // Return the result
+        qInfo() << "FairWindSK::startSignalK exiting with result" << result;
         return result;
     }
 
