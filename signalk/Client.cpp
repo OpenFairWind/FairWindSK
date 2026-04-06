@@ -52,6 +52,8 @@ namespace fairwindsk::signalk {
             return {};
         }
 
+        qInfo() << "SignalK::Client::finishReply waiting for" << guard->request().url();
+
         QEventLoop loop;
         QTimer timeoutTimer;
         timeoutTimer.setSingleShot(true);
@@ -59,6 +61,8 @@ namespace fairwindsk::signalk {
         QObject::connect(&timeoutTimer, &QTimer::timeout, &loop, &QEventLoop::quit);
         timeoutTimer.start(kRequestTimeoutMs);
         loop.exec(QEventLoop::ExcludeUserInputEvents);
+        qInfo() << "SignalK::Client::finishReply loop exited for" << guard->request().url()
+                << "finished =" << guard->isFinished();
 
         if (!guard->isFinished()) {
             if (m_Debug) {
@@ -100,12 +104,16 @@ namespace fairwindsk::signalk {
         }
 
         if (!guard->isOpen()) {
+            qWarning() << "SignalK::Client::finishReply reply is not open for" << guard->request().url();
             return {};
         }
 
         if (success) {
             *success = guard->error() == QNetworkReply::NoError;
         }
+        qInfo() << "SignalK::Client::finishReply returning data for" << guard->request().url()
+                << "httpStatus =" << guard->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt()
+                << "error =" << guard->error();
         return guard->readAll();
     }
 
@@ -244,6 +252,9 @@ namespace fairwindsk::signalk {
         auto fairWindSK = fairwindsk::FairWindSK::getInstance();
         Q_UNUSED(fairWindSK);
 
+        // Reset websocket signal wiring before reconnecting.
+        disconnect(&m_WebSocket, nullptr, this, nullptr);
+
         // Connect the on connected event
         connect(&m_WebSocket, &QWebSocket::connected, this, &Client::onConnected, Qt::UniqueConnection);
 
@@ -251,7 +262,7 @@ namespace fairwindsk::signalk {
         connect(&m_WebSocket, &QWebSocket::disconnected, this, &Client::onDisconnected, Qt::UniqueConnection);
         connect(&m_WebSocket, qOverload<QAbstractSocket::SocketError>(&QWebSocket::error), this, [this](QAbstractSocket::SocketError error) {
             qWarning() << "SignalK::Client websocket error" << error << m_WebSocket.errorString();
-        }, Qt::UniqueConnection);
+        });
 
         // Check if the url is present in parameters
         if (params.contains("url")) {
@@ -499,8 +510,8 @@ namespace fairwindsk::signalk {
             qDebug() << "SignalKClient::signalkGet payload: " << payload;
         }
 
-        // Invoke the http method
-        auto data = httpGet(url, payload);
+        // Invoke the http method. Plain GET is safer when no request body is needed.
+        auto data = payload.isEmpty() ? httpGet(url) : httpGet(url, payload);
 
         // Get the results as JSON object
         return QJsonDocument::fromJson(data).object();
