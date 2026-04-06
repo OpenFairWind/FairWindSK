@@ -8,12 +8,13 @@
 
 #include <QDateTime>
 #include <QJsonArray>
+#include <QJsonValue>
 #include <QLocale>
 #include <QPointer>
-#include <QTimer>
 #include <QUuid>
 
 #include "FairWindSK.hpp"
+#include "signalk/Client.hpp"
 #include "ui/GeoCoordinateUtils.hpp"
 
 namespace {
@@ -196,6 +197,34 @@ namespace {
         entries.append({QString(), object});
         return entries;
     }
+
+    QStringList sortedResourceIds(const QMap<QString, QJsonObject> &resources) {
+        QList<QString> ids = resources.keys();
+        std::sort(ids.begin(), ids.end(), [&resources](const QString &left, const QString &right) {
+            return displayNameForResource(resources.value(left)).toLower() < displayNameForResource(resources.value(right)).toLower();
+        });
+        return ids;
+    }
+
+    QJsonValue applyJsonValuePath(const QJsonValue &currentValue, const QStringList &segments, const int index, const QJsonValue &newValue) {
+        if (index >= segments.size()) {
+            return newValue;
+        }
+
+        QJsonObject object = currentValue.isObject() ? currentValue.toObject() : QJsonObject{};
+        const QString key = segments.at(index);
+        if (index == segments.size() - 1) {
+            if (newValue.isNull() || newValue.isUndefined()) {
+                object.remove(key);
+            } else {
+                object.insert(key, newValue);
+            }
+            return object;
+        }
+
+        object.insert(key, applyJsonValuePath(object.value(key), segments, index + 1, newValue));
+        return object;
+    }
 }
 
 namespace fairwindsk::ui::mydata {
@@ -252,17 +281,18 @@ namespace fairwindsk::ui::mydata {
 
     ResourceModel::ResourceModel(const ResourceKind kind, QObject *parent)
         : QAbstractTableModel(parent),
-          m_kind(kind),
-          m_reloadTimer(new QTimer(this)) {
-        m_reloadTimer->setInterval(5000);
-        connect(m_reloadTimer, &QTimer::timeout, this, [this]() { reload(false); });
+          m_kind(kind) {
+        m_subscriptionPath = collection() + ".*";
         reload(true);
+        fairwindsk::FairWindSK::getInstance()->getSignalKClient()->subscribeStream(
+            "resources",
+            m_subscriptionPath,
+            this,
+            SLOT(onResourceUpdate(QJsonObject)));
     }
 
     ResourceModel::~ResourceModel() {
-        if (m_reloadTimer) {
-            m_reloadTimer->stop();
-        }
+        fairwindsk::FairWindSK::getInstance()->getSignalKClient()->removeSubscription(m_subscriptionPath, this);
         m_reloadInProgress = false;
         m_reloadPending = false;
     }
@@ -435,30 +465,23 @@ namespace fairwindsk::ui::mydata {
         if (!guard) {
             return;
         }
-        QList<QString> ids = resources.keys();
-
-        std::sort(ids.begin(), ids.end(), [&resources](const QString &left, const QString &right) {
-            return displayNameForResource(resources.value(left)).toLower() < displayNameForResource(resources.value(right)).toLower();
-        });
+        const QStringList ids = sortedResourceIds(resources);
 
         if (!force && ids == m_ids && resources == m_resources) {
             m_reloadInProgress = false;
             if (m_reloadPending) {
                 m_reloadPending = false;
-                QTimer::singleShot(0, this, [this]() { reload(true); });
+                reload(true);
             }
             return;
         }
 
-        beginResetModel();
-        m_resources = resources;
-        m_ids = ids;
-        endResetModel();
+        applyResources(resources);
         m_reloadInProgress = false;
 
         if (m_reloadPending) {
             m_reloadPending = false;
-            QTimer::singleShot(0, this, [this]() { reload(true); });
+            reload(true);
         }
     }
 
@@ -558,5 +581,69 @@ namespace fairwindsk::ui::mydata {
 
     QString ResourceModel::collection() const {
         return resourceKindToCollection(m_kind);
+    }
+
+    void ResourceModel::onResourceUpdate(const QJsonObject &update) {
+        QMap<QString, QJsonObject> nextResources = m_resources;
+        bool changed = false;
+        const QString collectionPrefix = collection() + ".";
+
+        const QJsonArray updates = update["updates"].toArray();
+        for (const auto &updateItem : updates) {
+            const QJsonArray values = updateItem.toObject()["values"].toArray();
+            for (const auto &valueItem : values) {
+                const QJsonObject valueObject = valueItem.toObject();
+                const QString path = valueObject["path"].toString();
+                if (!path.startsWith(collectionPrefix)) {
+                    continue;
+                }
+
+                const QStringList parts = path.split('.', Qt::SkipEmptyParts);
+                if (parts.size() < 2) {
+                    continue;
+                }
+
+                const QString resourceId = parts.at(1);
+                const QStringList nestedPath = parts.mid(2);
+                const QJsonValue value = valueObject.value("value");
+
+                if (nestedPath.isEmpty()) {
+                    if (value.isNull() || value.isUndefined()) {
+                        changed = nextResources.remove(resourceId) > 0 || changed;
+                        continue;
+                    }
+                    if (value.isObject()) {
+                        if (nextResources.value(resourceId) != value.toObject()) {
+                            nextResources.insert(resourceId, value.toObject());
+                            changed = true;
+                        }
+                    }
+                    continue;
+                }
+
+                QJsonObject resource = nextResources.value(resourceId);
+                const QJsonValue updatedValue = applyJsonValuePath(resource, nestedPath, 0, value);
+                if (!updatedValue.isObject()) {
+                    continue;
+                }
+
+                const QJsonObject updatedResource = updatedValue.toObject();
+                if (resource != updatedResource) {
+                    nextResources.insert(resourceId, updatedResource);
+                    changed = true;
+                }
+            }
+        }
+
+        if (changed) {
+            applyResources(nextResources);
+        }
+    }
+
+    void ResourceModel::applyResources(const QMap<QString, QJsonObject> &resources) {
+        beginResetModel();
+        m_resources = resources;
+        m_ids = sortedResourceIds(resources);
+        endResetModel();
     }
 }

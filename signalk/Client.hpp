@@ -35,6 +35,7 @@ namespace fairwindsk::signalk {
 
         QJsonObject subscribe(const QString& path, QObject *receiver, const char *member, int period = 1000, const QString& policy = "ideal", int minPeriod = 200);
         QJsonObject subscribe(const QString& context, const QString& path, QObject *receiver, const char *member, int period = 1000, const QString& policy = "ideal", int minPeriod = 200);
+        void subscribeStream(const QString& context, const QString& path, QObject *receiver, const char *member, int period = 1000, const QString& policy = "ideal", int minPeriod = 200);
         void removeSubscription(const QString& path, QObject *receiver);
 
         QString getSelf();
@@ -165,6 +166,8 @@ namespace fairwindsk::signalk {
         void setStreamHealth(bool healthy, const QString &statusText = QString());
         void emitConnectivityState(const QString &statusText = QString());
         void markStreamActivity(const QString &statusText = QString());
+        QString normalizedSubscriptionContext(const QString &context) const;
+        QString subscriptionMessage(const QString &context, const QString &path, int period, const QString &policy, int minPeriod) const;
 
         QUrl getEndpointByProtocol(const QString &protocol, const QString& version = "v1");
         QJsonDocument getJsonDocument(const QUrl &url, const QJsonObject &payload = {});

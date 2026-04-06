@@ -1034,6 +1034,29 @@ namespace fairwindsk::signalk {
         return m_Token;
     }
 
+    QString Client::normalizedSubscriptionContext(const QString &context) const {
+        if (context == "vessels.self") {
+            return const_cast<Client *>(this)->getSelf();
+        }
+
+        return context;
+    }
+
+    QString Client::subscriptionMessage(const QString &context, const QString &path, const int period, const QString &policy, const int minPeriod) const {
+        return QString("{\n"
+                       "  \"context\": \"%1\",\n"
+                       "  \"subscribe\": [\n"
+                       "    {\n"
+                       "      \"path\": \"%2\",\n"
+                       "      \"period\": %3,\n"
+                       "      \"format\": \"delta\",\n"
+                       "      \"policy\": \"%4\",\n"
+                       "      \"minPeriod\": %5\n"
+                       "    }\n"
+                       "  ]\n"
+                       "}").arg(context, path, QString::number(period), policy, QString::number(minPeriod));
+    }
+
     signalk::Waypoint Client::getWaypointByHref(const QString &href) {
 
         auto data = httpGet(QUrl(m_Url.toString() + "/v2/api" + href));
@@ -1243,27 +1266,10 @@ namespace fairwindsk::signalk {
         return(subscribe("vessels.self", path, receiver, member, period, policy, minPeriod));
     }
     QJsonObject Client::subscribe(const QString& context, const QString& path, QObject *receiver, const char *member, int period, const QString& policy, int minPeriod) {
-
-        auto contextEx = context;
-        if (contextEx == "vessels.self") {
-            contextEx = getSelf();
-        }
-
-        auto const message = QString("{\n"
-                          "  \"context\": \"%1\",\n"
-                          "  \"subscribe\": [\n"
-                          "    {\n"
-                          "      \"path\": \"%2\",\n"
-                          "      \"period\": %3,\n"
-                          "      \"format\": \"delta\",\n"
-                          "      \"policy\": \"%4\",\n"
-                          "      \"minPeriod\": %5\n"
-                          "    }\n"
-                          "  ]\n"
-                          "}").arg(contextEx).arg(path).arg(period).arg(policy).arg(minPeriod);
+        const auto contextEx = normalizedSubscriptionContext(context);
+        const auto message = subscriptionMessage(contextEx, path, period, policy, minPeriod);
 
         m_WebSocket.sendTextMessage(message);
-
 
         Subscription subscription(contextEx, path, receiver, member);
         m_subscriptions.append(subscription);
@@ -1275,6 +1281,21 @@ namespace fairwindsk::signalk {
             qDebug() << "subscribe: " << message << " result: " << result;
         }
         return result;
+    }
+
+    void Client::subscribeStream(const QString& context, const QString& path, QObject *receiver, const char *member, int period, const QString& policy, int minPeriod) {
+        const auto contextEx = normalizedSubscriptionContext(context);
+        const auto message = subscriptionMessage(contextEx, path, period, policy, minPeriod);
+
+        m_WebSocket.sendTextMessage(message);
+
+        Subscription subscription(contextEx, path, receiver, member);
+        m_subscriptions.append(subscription);
+        connect(receiver, &QObject::destroyed, this, &Client::unsubscribe);
+
+        if (m_Debug) {
+            qDebug() << "subscribeStream:" << message;
+        }
     }
 
     void Client::removeSubscription(const QString& path, QObject *receiver) {

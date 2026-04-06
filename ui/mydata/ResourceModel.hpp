@@ -10,8 +10,6 @@
 #include <QJsonObject>
 #include <QString>
 
-class QTimer;
-
 namespace fairwindsk::ui::mydata {
 
     enum class ResourceKind {
@@ -50,13 +48,18 @@ namespace fairwindsk::ui::mydata {
         ResourceKind kind() const;
         QString collection() const;
 
+    private slots:
+        void onResourceUpdate(const QJsonObject &update);
+
     private:
+        void applyResources(const QMap<QString, QJsonObject> &resources);
+
         ResourceKind m_kind;
         QList<QString> m_ids;
         QMap<QString, QJsonObject> m_resources;
-        QTimer *m_reloadTimer = nullptr;
         bool m_reloadInProgress = false;
         bool m_reloadPending = false;
+        QString m_subscriptionPath;
     };
 }
 
