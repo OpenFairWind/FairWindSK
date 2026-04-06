@@ -256,7 +256,6 @@ namespace fairwindsk::ui::mydata {
           m_reloadTimer(new QTimer(this)) {
         m_reloadTimer->setInterval(5000);
         connect(m_reloadTimer, &QTimer::timeout, this, [this]() { reload(false); });
-        m_reloadTimer->start();
         reload(true);
     }
 

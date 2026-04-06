@@ -335,11 +335,19 @@ namespace fairwindsk::ui::mydata {
             const int visibleRow = m_tableWidget->rowCount();
             m_tableWidget->insertRow(visibleRow);
             m_visibleResourceIds.append(id);
+            const QColor baseColor = m_tableWidget->palette().color(QPalette::Base);
+            const QColor textColor = fairwindsk::ui::bestContrastingColor(
+                baseColor,
+                {m_tableWidget->palette().color(QPalette::Text),
+                 m_tableWidget->palette().color(QPalette::WindowText),
+                 m_tableWidget->palette().color(QPalette::ButtonText),
+                 QColor(Qt::black),
+                 QColor(Qt::white)});
 
             for (int column = 0; column < m_model->columnCount(); ++column) {
                 auto *item = new QTableWidgetItem(m_model->data(m_model->index(row, column), Qt::DisplayRole).toString());
-                item->setForeground(QBrush(m_tableWidget->palette().color(QPalette::Text)));
-                item->setBackground(QBrush(m_tableWidget->palette().color(QPalette::Base)));
+                item->setForeground(QBrush(textColor));
+                item->setBackground(QBrush(baseColor));
                 item->setFlags(item->flags() & ~Qt::ItemIsEditable);
                 const auto alignment = m_model->data(m_model->index(row, column), Qt::TextAlignmentRole);
                 if (alignment.isValid()) {
