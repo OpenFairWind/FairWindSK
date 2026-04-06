@@ -128,7 +128,6 @@ namespace fairwindsk::ui {
         // Set the window size
         setSize();
 
-        QTimer::singleShot(0, this, &MainWindow::prewarmPersistentPages);
         QTimer::singleShot(750, this, [this]() {
             ensureSettingsPage(m_launcher);
         });
@@ -626,6 +625,10 @@ namespace fairwindsk::ui {
         if (currentWidget && ui->stackedWidget_Center->indexOf(currentWidget) >= 0) {
             ui->stackedWidget_Center->setCurrentWidget(currentWidget);
         }
+    }
+
+    void MainWindow::prewarmPersistentPagesAfterStartup() {
+        QTimer::singleShot(0, this, &MainWindow::prewarmPersistentPages);
     }
 
     void MainWindow::setSize() {

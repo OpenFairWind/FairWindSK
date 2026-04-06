@@ -313,6 +313,8 @@ int main(int argc, char *argv[]) {
         if (auto *mainWindow = fairwindsk::ui::MainWindow::instance()) {
             mainWindow->applyRuntimeConfiguration();
             qInfo() << "Runtime configuration applied";
+            mainWindow->prewarmPersistentPagesAfterStartup();
+            qInfo() << "Post-startup page prewarm scheduled";
         }
     });
     qInfo() << "Deferred startup tasks scheduled";

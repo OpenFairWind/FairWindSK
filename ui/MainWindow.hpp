@@ -97,6 +97,7 @@ namespace fairwindsk::ui {
         static WId getWIdByPId(qint64 pId);
 
     public slots:
+        void prewarmPersistentPagesAfterStartup();
 
         // Set foreground application by hash
         void setForegroundApp(const QString& hash);
