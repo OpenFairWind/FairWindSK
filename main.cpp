@@ -2,11 +2,16 @@
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
 #include <QSplashScreen>
 #endif
+#include <QDateTime>
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QLibraryInfo>
+#include <QMutex>
+#include <QMutexLocker>
 #include <QStandardPaths>
 #include <QTimer>
+#include <QTextStream>
 #include <QTranslator>
 
 #include <QWebEngineProfile>
@@ -18,6 +23,70 @@
 
 
 using namespace Qt::StringLiterals;
+
+namespace {
+    QMutex g_startupLogMutex;
+    QFile *g_startupLogFile = nullptr;
+
+    QString startupLogFilePath() {
+        QString logDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+        if (logDir.trimmed().isEmpty()) {
+            logDir = QDir::homePath();
+        }
+
+        QDir().mkpath(logDir);
+        return QDir(logDir).filePath(QStringLiteral("startup.log"));
+    }
+
+    void fairWindMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &message) {
+        const QString level = [&]() {
+            switch (type) {
+                case QtDebugMsg: return QStringLiteral("DEBUG");
+                case QtInfoMsg: return QStringLiteral("INFO");
+                case QtWarningMsg: return QStringLiteral("WARN");
+                case QtCriticalMsg: return QStringLiteral("CRIT");
+                case QtFatalMsg: return QStringLiteral("FATAL");
+            }
+            return QStringLiteral("LOG");
+        }();
+
+        QString formatted = QStringLiteral("%1 [%2] %3")
+                .arg(QDateTime::currentDateTime().toString(Qt::ISODateWithMs), level, message);
+        if (context.file && *context.file) {
+            formatted.append(QStringLiteral(" (%1:%2)").arg(QString::fromUtf8(context.file)).arg(context.line));
+        }
+
+        {
+            QMutexLocker locker(&g_startupLogMutex);
+            QTextStream(stderr) << formatted << Qt::endl;
+            if (g_startupLogFile && g_startupLogFile->isOpen()) {
+                QTextStream stream(g_startupLogFile);
+                stream << formatted << Qt::endl;
+                stream.flush();
+            }
+        }
+
+        if (type == QtFatalMsg) {
+            abort();
+        }
+    }
+
+    void initializeStartupLogging() {
+        if (g_startupLogFile) {
+            return;
+        }
+
+        auto *logFile = new QFile(startupLogFilePath());
+        if (logFile->open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
+            g_startupLogFile = logFile;
+        } else {
+            delete logFile;
+        }
+
+        qInstallMessageHandler(fairWindMessageHandler);
+        qInfo() << "Startup logging initialized at" << startupLogFilePath();
+    }
+}
 
 #if defined(Q_OS_LINUX)
 namespace {
@@ -147,24 +216,37 @@ int main(int argc, char *argv[]) {
     // Set the organization name
     QCoreApplication::setOrganizationName("uniparthenope.it");
     QCoreApplication::setApplicationName("FairWindSK");
+    initializeStartupLogging();
+    qInfo() << "FairWindSK bootstrap start";
+    qInfo() << "Arguments:" << QCoreApplication::arguments();
 
     // Enable OpenGL shared contexts
     QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts );
+    qInfo() << "AA_ShareOpenGLContexts enabled";
 
 #if defined(Q_OS_LINUX)
     configureLinuxRuntimeDirectory();
     configureLinuxQtPlatformFallback();
     configureLinuxWebEngineFallback();
+    qInfo() << "Linux startup environment"
+            << "XDG_SESSION_TYPE=" << qEnvironmentVariable("XDG_SESSION_TYPE")
+            << "XDG_RUNTIME_DIR=" << qEnvironmentVariable("XDG_RUNTIME_DIR")
+            << "QT_QPA_PLATFORM=" << qEnvironmentVariable("QT_QPA_PLATFORM")
+            << "QT_OPENGL=" << qEnvironmentVariable("QT_OPENGL")
+            << "QTWEBENGINE_CHROMIUM_FLAGS=" << qEnvironmentVariable("QTWEBENGINE_CHROMIUM_FLAGS");
 #endif
 
     // The QT application
     QApplication app(argc, argv);
+    qInfo() << "QApplication created";
 
     // Install the translator
     QApplication::installTranslator(&translator);
+    qInfo() << "Translator installed";
 
     // Set the window icon
     QApplication::setWindowIcon(QIcon(QPixmap::fromImage(QImage(":/resources/images/mainwindow/fairwind_icon.png"))));
+    qInfo() << "Application icon set";
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
     // Get the splash screen logo
@@ -182,9 +264,11 @@ int main(int argc, char *argv[]) {
 
     // Get the FairWind singleton
     const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+    qInfo() << "FairWindSK singleton created";
 
     // Load the configuration inside the FairWind singleton itself
     fairWindSK->loadConfig();
+    qInfo() << "Configuration loaded";
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
 #endif
@@ -192,11 +276,15 @@ int main(int argc, char *argv[]) {
     // Set web profile options
     // Create a new MainWindow object
     fairwindsk::ui::MainWindow w;
+    qInfo() << "MainWindow created";
 
     if (auto *profile = fairWindSK->getWebEngineProfile()) {
         profile->settings()->setAttribute(QWebEngineSettings::Accelerated2dCanvasEnabled, true);
         profile->settings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
         profile->settings()->setAttribute(QWebEngineSettings::DnsPrefetchEnabled, true);
+        qInfo() << "WebEngine profile configured";
+    } else {
+        qWarning() << "WebEngine profile is null during startup";
     }
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
@@ -205,14 +293,19 @@ int main(int argc, char *argv[]) {
 #endif
 
     QTimer::singleShot(0, &w, [fairWindSK]() {
+        qInfo() << "Deferred startup tasks begin";
         fairWindSK->startSignalK();
+        qInfo() << "Signal K startup completed";
         fairWindSK->loadApps();
+        qInfo() << "App loading completed";
         if (auto *mainWindow = fairwindsk::ui::MainWindow::instance()) {
             mainWindow->applyRuntimeConfiguration();
+            qInfo() << "Runtime configuration applied";
         }
     });
 
     // Run the application. Let Qt tear down the QObject tree on process exit so
     // the shared WebEngine profile is not destroyed before the remaining pages.
+    qInfo() << "Entering QApplication event loop";
     return QApplication::exec();
 }
