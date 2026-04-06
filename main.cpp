@@ -218,7 +218,10 @@ int main(int argc, char *argv[]) {
     QCoreApplication::setApplicationName("FairWindSK");
     initializeStartupLogging();
     qInfo() << "FairWindSK bootstrap start";
-    qInfo() << "Arguments:" << QCoreApplication::arguments();
+    qInfo() << "argc=" << argc;
+    for (int index = 0; index < argc; ++index) {
+        qInfo() << "argv[" << index << "]=" << (argv[index] ? argv[index] : "<null>");
+    }
 
     // Enable OpenGL shared contexts
     QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts );
@@ -289,9 +292,12 @@ int main(int argc, char *argv[]) {
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
     // Close the splash screen presenting the MainWindow UI
+    qInfo() << "About to finish splash screen";
     splash.finish((QWidget *) &w);
+    qInfo() << "Splash screen finished";
 #endif
 
+    qInfo() << "Scheduling deferred startup tasks";
     QTimer::singleShot(0, &w, [fairWindSK]() {
         qInfo() << "Deferred startup tasks begin";
         fairWindSK->startSignalK();
@@ -303,6 +309,7 @@ int main(int argc, char *argv[]) {
             qInfo() << "Runtime configuration applied";
         }
     });
+    qInfo() << "Deferred startup tasks scheduled";
 
     // Run the application. Let Qt tear down the QObject tree on process exit so
     // the shared WebEngine profile is not destroyed before the remaining pages.
