@@ -621,7 +621,11 @@ namespace fairwindsk::ui {
     void MainWindow::prewarmPersistentPages() {
         QWidget *currentWidget = ui->stackedWidget_Center->currentWidget();
         ensureAboutPage(m_launcher);
+#if defined(Q_OS_LINUX) && defined(Q_PROCESSOR_ARM)
+        qInfo() << "Skipping MyData prewarm on Linux ARM";
+#else
         ensureMyDataPage(m_launcher);
+#endif
         if (currentWidget && ui->stackedWidget_Center->indexOf(currentWidget) >= 0) {
             ui->stackedWidget_Center->setCurrentWidget(currentWidget);
         }
