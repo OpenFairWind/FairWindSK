@@ -292,9 +292,15 @@ int main(int argc, char *argv[]) {
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
     // Close the splash screen presenting the MainWindow UI
-    qInfo() << "About to finish splash screen";
+    qInfo() << "About to close splash screen";
+#if defined(Q_OS_LINUX)
+    splash.hide();
+    splash.close();
+    qInfo() << "Splash screen closed with Linux-safe path";
+#else
     splash.finish((QWidget *) &w);
     qInfo() << "Splash screen finished";
+#endif
 #endif
 
     qInfo() << "Scheduling deferred startup tasks";
