@@ -249,7 +249,7 @@ namespace fairwindsk::signalk {
 
         // Connect the on disconnected event
         connect(&m_WebSocket, &QWebSocket::disconnected, this, &Client::onDisconnected, Qt::UniqueConnection);
-        connect(&m_WebSocket, &QWebSocket::errorOccurred, this, [this](QAbstractSocket::SocketError error) {
+        connect(&m_WebSocket, qOverload<QAbstractSocket::SocketError>(&QWebSocket::error), this, [this](QAbstractSocket::SocketError error) {
             qWarning() << "SignalK::Client websocket error" << error << m_WebSocket.errorString();
         }, Qt::UniqueConnection);
 
