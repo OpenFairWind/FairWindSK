@@ -71,7 +71,7 @@ namespace fairwindsk::ui::settings {
         ui->comboBox_uiScalePreset->addItem(tr("Normal"), "normal");
         ui->comboBox_uiScalePreset->addItem(tr("Large"), "large");
         ui->comboBox_uiScalePreset->addItem(tr("Extra Large"), "xlarge");
-        ui->comboBox_comfortViewPreset->addItem(QIcon(QStringLiteral(":/resources/svg/OpenBridge/comfort-day.svg")), tr("Default"), "default");
+        ui->comboBox_comfortViewPreset->addItem(QIcon(QStringLiteral(":/resources/svg/OpenBridge/comfort-default.svg")), tr("Default"), "default");
         ui->comboBox_comfortViewPreset->addItem(QIcon(QStringLiteral(":/resources/svg/OpenBridge/comfort-dawn.svg")), tr("Dawn"), "dawn");
         ui->comboBox_comfortViewPreset->addItem(QIcon(QStringLiteral(":/resources/svg/OpenBridge/comfort-day.svg")), tr("Day"), "day");
         ui->comboBox_comfortViewPreset->addItem(QIcon(QStringLiteral(":/resources/svg/OpenBridge/comfort-sunset.svg")), tr("Sunset"), "sunset");

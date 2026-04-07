@@ -547,23 +547,14 @@ namespace fairwindsk::ui::launcher {
 
                 painter.fillRect(tileRect, QColor(16, 22, 32));
                 if (!m_pixmap.isNull()) {
-                    if (m_kind == TileKind::App) {
-                        const QPixmap scaled = m_pixmap.scaled(tileRect.size(),
-                                                               Qt::KeepAspectRatioByExpanding,
-                                                               Qt::SmoothTransformation);
-                        const QRect sourceRect((scaled.width() - tileRect.width()) / 2,
-                                               (scaled.height() - tileRect.height()) / 2,
-                                               tileRect.width(),
-                                               tileRect.height());
-                        painter.drawPixmap(tileRect, scaled, sourceRect);
-                    } else {
-                        const QPixmap scaled = m_pixmap.scaled(artworkRect.size().toSize(),
-                                                               Qt::KeepAspectRatio,
-                                                               Qt::SmoothTransformation);
-                        const QPoint topLeft(int(artworkRect.left() + ((artworkRect.width() - scaled.width()) / 2.0)),
-                                             int(artworkRect.top() + ((artworkRect.height() - scaled.height()) / 2.0)));
-                        painter.drawPixmap(topLeft, scaled);
-                    }
+                    const QPixmap scaled = m_pixmap.scaled(tileRect.size(),
+                                                           Qt::KeepAspectRatioByExpanding,
+                                                           Qt::SmoothTransformation);
+                    const QRect sourceRect((scaled.width() - tileRect.width()) / 2,
+                                           (scaled.height() - tileRect.height()) / 2,
+                                           tileRect.width(),
+                                           tileRect.height());
+                    painter.drawPixmap(tileRect, scaled, sourceRect);
                 }
 
                 QLinearGradient overlay(tileRect.topLeft(), QPointF(tileRect.left(), tileRect.bottom()));
