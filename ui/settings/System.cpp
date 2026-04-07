@@ -6,7 +6,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <QDesktopServices>
 #include <limits>
 #include <QFileInfo>
 #include <QFormLayout>
@@ -215,9 +214,10 @@ namespace fairwindsk::ui::settings {
         m_loggingGroupBox = new QGroupBox(tr("Logging"), this);
         m_loggingFormLayout = new QFormLayout(m_loggingGroupBox);
         m_loggingFormLayout->setContentsMargins(0, 0, 0, 0);
-        m_loggingFormLayout->setSpacing(10);
+        m_loggingFormLayout->setSpacing(12);
         m_loggingFormLayout->setHorizontalSpacing(14);
         m_loggingFormLayout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
+        m_loggingFormLayout->setRowWrapPolicy(QFormLayout::WrapLongRows);
 
         m_logLevelComboBox = new fairwindsk::ui::widgets::TouchComboBox(m_loggingGroupBox);
         m_logLevelComboBox->setMinimumWidth(320);
@@ -267,21 +267,28 @@ namespace fairwindsk::ui::settings {
         m_diagnosticsSubjectValue->setTextInteractionFlags(Qt::TextSelectableByMouse);
         m_loggingFormLayout->addRow(tr("Diagnostics subject"), m_diagnosticsSubjectValue);
 
-        m_logDirectoryValue = new QLabel(m_loggingGroupBox);
+        auto *loggingDetailsWidget = new QWidget(m_loggingGroupBox);
+        m_loggingDetailsLayout = new QVBoxLayout(loggingDetailsWidget);
+        m_loggingDetailsLayout->setContentsMargins(0, 0, 0, 0);
+        m_loggingDetailsLayout->setSpacing(8);
+
+        m_logDirectoryValue = new QLabel(loggingDetailsWidget);
         m_logDirectoryValue->setWordWrap(true);
         m_logDirectoryValue->setTextInteractionFlags(Qt::TextSelectableByMouse);
-        auto *logsRowWidget = new QWidget(m_loggingGroupBox);
-        auto *logsRowLayout = new QHBoxLayout(logsRowWidget);
-        logsRowLayout->setContentsMargins(0, 0, 0, 0);
-        logsRowLayout->setSpacing(8);
-        logsRowLayout->addWidget(m_logDirectoryValue, 1);
-        m_viewLogsButton = new QPushButton(tr("View logs"), logsRowWidget);
+        m_loggingDetailsLayout->addWidget(m_logDirectoryValue);
+
+        auto *loggingActionRow = new QWidget(loggingDetailsWidget);
+        auto *loggingActionLayout = new QHBoxLayout(loggingActionRow);
+        loggingActionLayout->setContentsMargins(0, 0, 0, 0);
+        loggingActionLayout->setSpacing(8);
+
+        m_viewLogsButton = new QPushButton(tr("View logs"), loggingActionRow);
         m_viewLogsButton->setMinimumHeight(40);
-        logsRowLayout->addWidget(m_viewLogsButton, 0);
-        m_openLogsButton = new QPushButton(tr("Open logs"), logsRowWidget);
-        m_openLogsButton->setMinimumHeight(40);
-        logsRowLayout->addWidget(m_openLogsButton, 0);
-        m_loggingFormLayout->addRow(tr("Logs directory"), logsRowWidget);
+        loggingActionLayout->addWidget(m_viewLogsButton, 0);
+        loggingActionLayout->addStretch(1);
+        m_loggingDetailsLayout->addWidget(loggingActionRow);
+
+        m_loggingFormLayout->addRow(tr("Logs directory"), loggingDetailsWidget);
 
         ui->verticalLayout_Diagnostics->insertWidget(0, m_loggingGroupBox);
 
@@ -320,9 +327,6 @@ namespace fairwindsk::ui::settings {
             fairwindsk::ui::drawer::exploreLogs(this,
                                                 tr("Persistent Logs"),
                                                 fairwindsk::runtime::persistentLogsDirectoryPath());
-        });
-        connect(m_openLogsButton, &QPushButton::clicked, this, []() {
-            QDesktopServices::openUrl(QUrl::fromLocalFile(fairwindsk::runtime::persistentLogsDirectoryPath()));
         });
     }
 
@@ -394,9 +398,6 @@ namespace fairwindsk::ui::settings {
         m_logDirectoryValue->setText(fairwindsk::runtime::persistentLogsDirectoryPath());
         if (m_viewLogsButton) {
             m_viewLogsButton->setEnabled(QFileInfo::exists(fairwindsk::runtime::persistentLogsDirectoryPath()));
-        }
-        if (m_openLogsButton) {
-            m_openLogsButton->setEnabled(QFileInfo::exists(fairwindsk::runtime::persistentLogsDirectoryPath()));
         }
     }
 

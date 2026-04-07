@@ -15,6 +15,7 @@ class QFormLayout;
 class QGroupBox;
 class QLineEdit;
 class QPushButton;
+class QVBoxLayout;
 
 namespace fairwindsk::ui::widgets {
     class TouchCheckBox;
@@ -74,7 +75,7 @@ namespace fairwindsk::ui::settings {
         QLabel *m_logDirectoryValue = nullptr;
         QLabel *m_diagnosticsSubjectValue = nullptr;
         QPushButton *m_viewLogsButton = nullptr;
-        QPushButton *m_openLogsButton = nullptr;
+        QVBoxLayout *m_loggingDetailsLayout = nullptr;
         QDateTime m_lastRpiRefresh;
         bool m_hasRpiMetrics = false;
     };

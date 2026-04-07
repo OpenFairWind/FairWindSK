@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <QFrame>
+#include <QGridLayout>
 #include <QHBoxLayout>
 #include <QIcon>
 #include <QImage>
@@ -16,6 +17,7 @@
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QRegularExpression>
+#include <QScrollArea>
 #include <QSettings>
 #include <QSignalBlocker>
 #include <QSlider>
@@ -30,7 +32,7 @@ namespace fairwindsk::ui::widgets {
     public:
         explicit TouchColorShadeSelector(QWidget *parent = nullptr)
             : QWidget(parent) {
-            setMinimumSize(260, 220);
+            setMinimumSize(220, 180);
             setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
             setAttribute(Qt::WA_OpaquePaintEvent, true);
         }
@@ -229,13 +231,15 @@ namespace fairwindsk::ui::widgets {
         bool sameStoredColor(const QColor &left, const QColor &right) {
             return normalizedStoredColor(left).rgba() == normalizedStoredColor(right).rgba();
         }
+
+        constexpr int kSwatchColumns = 4;
     }
 
     TouchColorPicker::TouchColorPicker(QWidget *parent)
         : QWidget(parent) {
         auto *rootLayout = new QVBoxLayout(this);
         rootLayout->setContentsMargins(0, 0, 0, 0);
-        rootLayout->setSpacing(16);
+        rootLayout->setSpacing(12);
 
         auto *hintLabel = new QLabel(
             tr("Tap or drag in the shade area, use the sliders, type a hex value, or manage custom swatches for quick touch selection."),
@@ -245,11 +249,11 @@ namespace fairwindsk::ui::widgets {
 
         auto *headerLayout = new QHBoxLayout();
         headerLayout->setContentsMargins(0, 0, 0, 0);
-        headerLayout->setSpacing(14);
+        headerLayout->setSpacing(12);
         rootLayout->addLayout(headerLayout);
 
         auto *preview = new PreviewFrame(this);
-        preview->setMinimumSize(168, 132);
+        preview->setMinimumSize(132, 108);
         preview->setFrameShape(QFrame::StyledPanel);
         preview->onActivated = [this]() {
             emit colorActivated(m_color);
@@ -286,10 +290,12 @@ namespace fairwindsk::ui::widgets {
         auto *quickColorsLabel = new QLabel(tr("Quick Colors"), this);
         rootLayout->addWidget(quickColorsLabel);
 
-        auto *swatchesLayout = new QHBoxLayout();
-        swatchesLayout->setContentsMargins(0, 0, 0, 0);
-        swatchesLayout->setSpacing(10);
-        rootLayout->addLayout(swatchesLayout);
+        auto *quickSwatchesHost = new QWidget(this);
+        m_quickSwatchesLayout = new QGridLayout(quickSwatchesHost);
+        m_quickSwatchesLayout->setContentsMargins(0, 0, 0, 0);
+        m_quickSwatchesLayout->setHorizontalSpacing(10);
+        m_quickSwatchesLayout->setVerticalSpacing(10);
+        rootLayout->addWidget(quickSwatchesHost);
 
         const QList<QColor> swatches = {
             QColor(QStringLiteral("#ffffff")),
@@ -302,7 +308,8 @@ namespace fairwindsk::ui::widgets {
             QColor(QStringLiteral("#000000"))
         };
 
-        for (const QColor &swatch : swatches) {
+        for (int i = 0; i < swatches.size(); ++i) {
+            const QColor &swatch = swatches.at(i);
             auto *button = new SwatchButton(swatch, this);
             button->setStyleSheet(QStringLiteral(
                                       "QToolButton {"
@@ -321,9 +328,8 @@ namespace fairwindsk::ui::widgets {
                     emit colorActivated(m_color);
                 }
             };
-            swatchesLayout->addWidget(button);
+            m_quickSwatchesLayout->addWidget(button, i / kSwatchColumns, i % kSwatchColumns);
         }
-        swatchesLayout->addStretch(1);
 
         auto *customHeaderLayout = new QHBoxLayout();
         customHeaderLayout->setContentsMargins(0, 0, 0, 0);
@@ -344,9 +350,10 @@ namespace fairwindsk::ui::widgets {
         customHeaderLayout->addWidget(m_removeCustomColorButton);
 
         m_customSwatchesHost = new QWidget(this);
-        m_customSwatchesLayout = new QHBoxLayout(m_customSwatchesHost);
+        m_customSwatchesLayout = new QGridLayout(m_customSwatchesHost);
         m_customSwatchesLayout->setContentsMargins(0, 0, 0, 0);
-        m_customSwatchesLayout->setSpacing(10);
+        m_customSwatchesLayout->setHorizontalSpacing(10);
+        m_customSwatchesLayout->setVerticalSpacing(10);
         rootLayout->addWidget(m_customSwatchesHost);
 
         auto *hsvLabel = new QLabel(tr("Color Balance"), this);
@@ -487,7 +494,8 @@ namespace fairwindsk::ui::widgets {
             delete item;
         }
 
-        for (const QColor &swatch : m_customColors) {
+        for (int i = 0; i < m_customColors.size(); ++i) {
+            const QColor &swatch = m_customColors.at(i);
             auto *button = new SwatchButton(swatch, m_customSwatchesHost);
             button->setChecked(sameStoredColor(swatch, m_color));
             button->setStyleSheet(QStringLiteral(
@@ -507,9 +515,8 @@ namespace fairwindsk::ui::widgets {
                     emit colorActivated(m_color);
                 }
             };
-            m_customSwatchesLayout->addWidget(button);
+            m_customSwatchesLayout->addWidget(button, i / kSwatchColumns, i % kSwatchColumns);
         }
-        m_customSwatchesLayout->addStretch(1);
         updatePreview();
     }
 
@@ -533,10 +540,10 @@ namespace fairwindsk::ui::widgets {
         auto *rowWidget = new QWidget(this);
         auto *rowLayout = new QHBoxLayout(rowWidget);
         rowLayout->setContentsMargins(0, 0, 0, 0);
-        rowLayout->setSpacing(12);
+        rowLayout->setSpacing(10);
 
         auto *label = new QLabel(labelText, this);
-        label->setMinimumWidth(94);
+        label->setMinimumWidth(82);
         rowLayout->addWidget(label);
 
         auto *slider = new QSlider(Qt::Horizontal, this);
@@ -728,8 +735,14 @@ namespace fairwindsk::ui::widgets {
             " }"));
         headerLayout->addWidget(m_closeButton, 0, Qt::AlignTop);
 
+        m_scrollArea = new QScrollArea(this);
+        m_scrollArea->setWidgetResizable(true);
+        m_scrollArea->setFrameShape(QFrame::NoFrame);
+        m_scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        rootLayout->addWidget(m_scrollArea, 1);
+
         m_picker = new TouchColorPicker(this);
-        rootLayout->addWidget(m_picker);
+        m_scrollArea->setWidget(m_picker);
 
         connect(m_picker, &TouchColorPicker::colorActivated, this, [this](const QColor &) {
             accept();
@@ -767,10 +780,14 @@ namespace fairwindsk::ui::widgets {
             return;
         }
 
-        const QSize targetSize(qMax(760, windowWidget->width() - 24), qMax(760, (windowWidget->height() * 3) / 4));
+        const int horizontalMargin = 20;
+        const int verticalMargin = 12;
+        const int availableWidth = qMax(360, windowWidget->width() - (horizontalMargin * 2));
+        const int availableHeight = qMax(320, windowWidget->height() - (verticalMargin * 3));
+        const QSize targetSize(qMin(760, availableWidth), qMin(availableHeight, qMax(420, (windowWidget->height() * 2) / 3)));
         resize(targetSize);
         const QPoint topLeft = windowWidget->mapToGlobal(
-            QPoint((windowWidget->width() - width()) / 2, qMax(12, windowWidget->height() - height() - 12)));
+            QPoint((windowWidget->width() - width()) / 2, qMax(verticalMargin, windowWidget->height() - height() - verticalMargin)));
         move(topLeft);
     }
 

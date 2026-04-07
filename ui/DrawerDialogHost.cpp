@@ -572,29 +572,30 @@ namespace fairwindsk::ui::drawer {
                 m_refreshButton = new QPushButton(tr("Refresh"), this);
                 m_refreshButton->setMinimumHeight(42);
                 toolbarLayout->addWidget(m_refreshButton, 0);
+                toolbarLayout->addStretch(1);
 
                 auto *hintLabel = new QLabel(tr("Select a log file to inspect it inside the drawer."), this);
                 hintLabel->setWordWrap(true);
-                toolbarLayout->addWidget(hintLabel, 1);
+                layout->addWidget(hintLabel);
 
                 auto *splitter = new QSplitter(Qt::Horizontal, this);
                 splitter->setChildrenCollapsible(false);
                 layout->addWidget(splitter, 1);
 
                 m_logList = new QListWidget(splitter);
-                m_logList->setMinimumWidth(260);
+                m_logList->setMinimumWidth(220);
                 m_logList->setAlternatingRowColors(true);
                 m_logList->setSelectionMode(QAbstractItemView::SingleSelection);
                 m_logList->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
 
                 m_logView = new QPlainTextEdit(splitter);
                 m_logView->setReadOnly(true);
-                m_logView->setLineWrapMode(QPlainTextEdit::NoWrap);
-                m_logView->setMinimumWidth(420);
+                m_logView->setLineWrapMode(QPlainTextEdit::WidgetWidth);
+                m_logView->setMinimumWidth(280);
 
                 splitter->setStretchFactor(0, 0);
                 splitter->setStretchFactor(1, 1);
-                splitter->setSizes({320, 840});
+                splitter->setSizes({260, 520});
 
                 connect(m_refreshButton, &QPushButton::clicked, this, [this]() { reloadLogs(); });
                 connect(m_logList, &QListWidget::currentItemChanged, this, [this](QListWidgetItem *current) {
