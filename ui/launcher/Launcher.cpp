@@ -38,6 +38,7 @@ namespace fairwindsk::ui::launcher {
             TileKind kind = TileKind::Empty;
             AppItem *app = nullptr;
             QString id;
+            QString appId;
             QString title;
             QString description;
             QPixmap pixmap;
@@ -288,6 +289,42 @@ namespace fairwindsk::ui::launcher {
             return AppItem(mergedJson);
         }
 
+        QPair<QString, QPixmap> resolveLauncherAppPresentation(const QString &appId, const QString &appHash) {
+            const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+            auto *configuration = fairWindSK->getConfiguration();
+
+            AppItem *liveApp = nullptr;
+            if (!appHash.trimmed().isEmpty()) {
+                liveApp = fairWindSK->getAppItemByHash(appHash);
+            }
+            if (!liveApp && !appId.trimmed().isEmpty()) {
+                const QString resolvedHash = fairWindSK->getAppHashById(appId);
+                if (!resolvedHash.isEmpty()) {
+                    liveApp = fairWindSK->getAppItemByHash(resolvedHash);
+                }
+            }
+
+            const int idx = !appId.trimmed().isEmpty() ? configuration->findApp(appId) : -1;
+            const nlohmann::json *configuredAppJson =
+                idx != -1 ? &configuration->getRoot()["apps"].at(idx) : nullptr;
+
+            if (liveApp) {
+                AppItem presentationApp = mergedLauncherAppItem(liveApp, configuredAppJson);
+                return qMakePair(presentationApp.getDisplayName(), presentationApp.getIcon());
+            }
+
+            if (configuredAppJson) {
+                AppItem configApp(*configuredAppJson);
+                return qMakePair(configApp.getDisplayName(), configApp.getIcon());
+            }
+
+            if (!appId.trimmed().isEmpty()) {
+                return qMakePair(appId, QPixmap::fromImage(QImage(":/resources/images/icons/webapp-256x256.png")));
+            }
+
+            return qMakePair(QString(), QPixmap());
+        }
+
         const nlohmann::json *resolveScopeNodes(const nlohmann::json &allNodes,
                                                 const QString &rootPageId,
                                                 nlohmann::json &scratchNodes) {
@@ -379,17 +416,19 @@ namespace fairwindsk::ui::launcher {
                                     entry.kind = TileKind::App;
                                     entry.app = app;
                                     entry.id = appLookupKey;
+                                    entry.appId = slot;
                                     entry.title = presentationApp.getDisplayName();
                                     entry.description = presentationApp.getDescription();
-                                    entry.pixmap = presentationApp.getIcon(false);
+                                    entry.pixmap = presentationApp.getIcon();
                                 } else {
                                     if (idx != -1) {
                                         AppItem configApp(configuration->getRoot()["apps"].at(idx));
                                         entry.kind = TileKind::App;
                                         entry.id = appLookupKey.isEmpty() ? configApp.getName() : appLookupKey;
+                                        entry.appId = configApp.getName();
                                         entry.title = configApp.getDisplayName();
                                         entry.description = configApp.getDescription();
-                                        entry.pixmap = configApp.getIcon(false);
+                                        entry.pixmap = configApp.getIcon();
                                     }
                                 }
                                 entries.append(entry);
@@ -407,9 +446,10 @@ namespace fairwindsk::ui::launcher {
                         entry.kind = TileKind::App;
                         entry.app = item.first;
                         entry.id = item.second;
+                        entry.appId = item.first->getName();
                         entry.title = item.first->getDisplayName();
                         entry.description = item.first->getDescription();
-                        entry.pixmap = item.first->getIcon(false);
+                        entry.pixmap = item.first->getIcon();
                     }
                     entries.append(entry);
                 }
@@ -426,11 +466,13 @@ namespace fairwindsk::ui::launcher {
             }
 
             void setAppData(const QString &hash,
+                            const QString &appId,
                             const TileKind kind,
                             const QString &title,
                             const QString &description,
                             const QPixmap &pixmap) {
                 m_hash = hash;
+                m_appId = appId;
                 m_kind = kind;
                 m_title = title;
                 m_pixmap = pixmap;
@@ -452,6 +494,10 @@ namespace fairwindsk::ui::launcher {
 
             QString appHash() const {
                 return m_hash;
+            }
+
+            QString appId() const {
+                return m_appId;
             }
 
             QString title() const {
@@ -550,6 +596,7 @@ namespace fairwindsk::ui::launcher {
 
         private:
             QString m_hash;
+            QString m_appId;
             QString m_title;
             QPixmap m_pixmap;
             TileKind m_kind = TileKind::Empty;
@@ -711,21 +758,17 @@ namespace fairwindsk::ui::launcher {
             }
 
             const QString hash = tile->appHash();
-            if (hash.isEmpty()) {
+            const QString appId = tile->appId();
+            if (hash.isEmpty() && appId.isEmpty()) {
                 continue;
             }
 
-            auto *app = fairWindSK->getAppItemByHash(hash);
-            if (!app) {
+            const auto presentation = resolveLauncherAppPresentation(appId, hash);
+            if (presentation.second.isNull()) {
                 continue;
             }
 
-            const QPixmap pixmap = app->getIcon();
-            if (pixmap.isNull()) {
-                continue;
-            }
-
-            tile->setAppData(hash, TileKind::App, tile->title(), tile->description(), pixmap);
+            tile->setAppData(hash, appId, TileKind::App, presentation.first, tile->description(), presentation.second);
         }
     }
 
@@ -898,7 +941,7 @@ namespace fairwindsk::ui::launcher {
 
             auto *tile = new AppTile(ui->scrollAreaWidgetContents);
             tile->setBasePointSize(tile->font().pointSizeF() + 1.0);
-            tile->setAppData(entry.id, entry.kind, entry.title, entry.description, entry.pixmap);
+            tile->setAppData(entry.id, entry.appId, entry.kind, entry.title, entry.description, entry.pixmap);
             const TileKind kind = entry.kind;
             tile->setActivateHandler([this, kind](const QString &hash) {
                 QTimer::singleShot(0, this, [this, kind, hash]() {
