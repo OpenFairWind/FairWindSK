@@ -310,13 +310,6 @@
              <item>
               <layout class="QHBoxLayout" name="horizontalLayout_PageHeaderCenter">
                <item>
-                <widget class="QLabel" name="label_PageActions">
-                 <property name="text">
-                  <string>Page actions</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
                 <widget class="QToolButton" name="toolButton_AddPage">
                  <property name="toolTip">
                   <string>Add page</string>
@@ -512,16 +505,9 @@
                 </widget>
                </item>
                <item>
-                <widget class="Line" name="line_PagePaletteSeparator">
+               <widget class="Line" name="line_PagePaletteSeparator">
                  <property name="orientation">
                   <enum>Qt::Vertical</enum>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QLabel" name="label_PaletteActions">
-                 <property name="text">
-                  <string>Palette actions</string>
                  </property>
                 </widget>
                </item>
