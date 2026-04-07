@@ -16,7 +16,11 @@ namespace fairwindsk::signalk {
     public:
         Subscription() = default;
 
-        Subscription(const QString &context, const QString &path, QObject *receiver, const char *member);
+        Subscription(const QString &requestedContext,
+                     const QString &context,
+                     const QString &path,
+                     QObject *receiver,
+                     const char *member);
 
         Subscription(Subscription const &other);
 
@@ -26,16 +30,21 @@ namespace fairwindsk::signalk {
 
         bool checkReceiver(QObject *);
 
-        QString getPath();
-        QString getContext();
-        QRegularExpression getRegex();
+        QString getPath() const;
+        QString getContext() const;
+        QString getRequestedContext() const;
+        QRegularExpression getRegex() const;
         QObject *getReceiver() const;
+        void retargetContext(const QString &context);
 
     private:
+        void rebuildRegularExpression();
+
         QRegularExpression m_regularExpression;
         QObject *m_receiver = nullptr;
         QString m_memberName;
         QString m_path;
+        QString m_requestedContext;
         QString m_context;
 
     };

@@ -103,6 +103,28 @@ These mappings drive UI bars (autopilot, anchor, alarms, POB) and instrument rea
 - `virtualKeyboard`: Enables the Qt virtual keyboard module if available.
 - `autopilot`: Default autopilot identifier for widgets that target a specific device.
 
+## Diagnostics and logging
+
+```jsonc
+{
+  "diagnostics": {
+    "logLevel": "off",
+    "persistentLogs": true,
+    "email": "hpsclab@uniparthenope.it",
+    "subject": "FairWindSK diagnostics"
+  }
+}
+```
+
+- `logLevel`: Logging verbosity. Supported values are `off`, `critical`, `warning`, `info`, and `debug`. The default is `off` (`No logging` in the UI).
+- `persistentLogs`: When true, FairWindSK stores per-run message logs in the per-user application data directory. This is enabled by default.
+- `email`: Target email address used when FairWindSK detects that the previous run did not end gracefully.
+- `subject`: Subject line used for the diagnostics report email flow.
+
+At startup, FairWindSK checks whether the previous run ended gracefully. If it did not, it prepares a report with the logs between the latest two starts plus platform details such as operating system, CPU architecture, Qt version, host information, and primary screen configuration, then opens the platform email composer with the configured destination and subject.
+
+The **Settings > System** tab exposes the same diagnostics options in the touch-friendly UI and shows the persistent log directory currently used by the application.
+
 ## Authentication and tokens
 
 Authentication tokens are stored in `fairwindsk.ini` under the `token` key and injected into the shared `QWebEngineProfile` cookie store as `JAUTHENTICATION`. This keeps sensitive credentials out of the JSON configuration. To reset authentication, remove the token from `fairwindsk.ini` and relaunch.
@@ -110,3 +132,5 @@ Authentication tokens are stored in `fairwindsk.ini` under the `token` key and i
 ## Debugging
 
 Set `debug=true` in `fairwindsk.ini` to enable verbose logging from the Signal K client, configuration loader, and application discovery routines. Debug mode also enables additional Qt WebEngine logging categories.
+
+Independent of `debug=true`, the application now keeps its own diagnostics log lifecycle based on the `diagnostics` section above.

@@ -13,6 +13,7 @@ FairWindSK is a browser with steroids designed to host SK applications.
 It is written in C++ 17 and QT6.
 It now has a single CMake-based desktop build path for macOS, Linux, Raspberry Pi OS, and Windows.
 Android and iOS are not currently supported build targets because the application depends on Qt WebEngine Widgets and desktop-style widget flows.
+The runtime now supervises Signal K restarts as well: if the server drops and comes back, FairWindSK re-discovers the server, reconnects the websocket stream, restores subscriptions, and refreshes server-backed resources so the UI stays consistent with the restarted backend.
 
 ## Documentation
 
@@ -32,6 +33,7 @@ Android and iOS are not currently supported build targets because the applicatio
 * The QT virtual keyboard
 * Signal K paths
 * Signal K Applications
+* Automatic Signal K restart detection and reconnect consistency recovery
 * The autopilot bar
 * POB (Person over board) bar
 * Anchor bar

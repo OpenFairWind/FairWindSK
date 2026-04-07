@@ -597,6 +597,22 @@ namespace fairwindsk {
         m_autoComfortTimer = new QTimer(this);
         m_autoComfortTimer->setInterval(60000);
         connect(m_autoComfortTimer, &QTimer::timeout, this, &FairWindSK::refreshAutomaticComfortView);
+        connect(&m_signalkClient, &signalk::Client::serverStateResynchronized, this, [this](const bool recoveredFromDisconnect) {
+            if (!recoveredFromDisconnect) {
+                return;
+            }
+
+            qInfo() << "FairWindSK detected Signal K recovery; resynchronizing runtime state";
+            Units::getInstance()->refreshSignalKPreferences();
+            loadApps();
+            refreshAutomaticComfortViewAvailability();
+            if (m_configuration.getComfortViewMode() == "auto") {
+                applyUiPreferences();
+            }
+            if (auto *mainWindow = fairwindsk::ui::MainWindow::instance()) {
+                mainWindow->applyRuntimeConfiguration();
+            }
+        });
 
         updateWebProfileCookie();
     }

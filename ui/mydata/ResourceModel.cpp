@@ -282,13 +282,19 @@ namespace fairwindsk::ui::mydata {
     ResourceModel::ResourceModel(const ResourceKind kind, QObject *parent)
         : QAbstractTableModel(parent),
           m_kind(kind) {
+        const auto client = fairwindsk::FairWindSK::getInstance()->getSignalKClient();
         m_subscriptionPath = collection() + ".*";
         reload(true);
-        fairwindsk::FairWindSK::getInstance()->getSignalKClient()->subscribeStream(
+        client->subscribeStream(
             "resources",
             m_subscriptionPath,
             this,
             SLOT(onResourceUpdate(QJsonObject)));
+        connect(client, &fairwindsk::signalk::Client::serverStateResynchronized, this, [this](const bool recoveredFromDisconnect) {
+            if (recoveredFromDisconnect) {
+                reload(true);
+            }
+        });
     }
 
     ResourceModel::~ResourceModel() {

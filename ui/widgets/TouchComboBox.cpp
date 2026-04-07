@@ -25,7 +25,7 @@ namespace fairwindsk::ui::widgets {
         constexpr int kComboIconSize = 30;
         constexpr int kSelectedIconSize = 34;
         constexpr int kSelectedIconPadding = 10;
-        constexpr int kComboItemHeight = 60;
+        constexpr int kMinimumComboItemHeight = 60;
 
         QString touchButtonStyle(const QPalette &palette, const bool accentButton) {
             const QColor base = accentButton ? palette.color(QPalette::Highlight) : palette.color(QPalette::Button);
@@ -108,6 +108,11 @@ namespace fairwindsk::ui::widgets {
                  palette.color(QPalette::ButtonText),
                  palette.color(QPalette::WindowText)});
         }
+
+        int comboItemHeightForFont(const QFont &font) {
+            const QFontMetrics metrics(font);
+            return qMax(kMinimumComboItemHeight, metrics.height() + 26);
+        }
     }
 
     TouchComboBox::TouchComboBox(QWidget *parent)
@@ -162,7 +167,10 @@ namespace fairwindsk::ui::widgets {
     }
 
     bool TouchComboBox::event(QEvent *event) {
-        if (event && (event->type() == QEvent::PaletteChange || event->type() == QEvent::ApplicationPaletteChange)) {
+        if (event && (event->type() == QEvent::PaletteChange
+                      || event->type() == QEvent::ApplicationPaletteChange
+                      || event->type() == QEvent::FontChange
+                      || event->type() == QEvent::ApplicationFontChange)) {
             applyTouchStyle();
         }
         return QWidget::event(event);
@@ -176,7 +184,7 @@ namespace fairwindsk::ui::widgets {
         auto *item = new QListWidgetItem(icon, text, m_listWidget);
         item->setData(Qt::UserRole, userData);
         item->setData(kRawIconRole, icon);
-        item->setSizeHint(QSize(item->sizeHint().width(), kComboItemHeight));
+        item->setSizeHint(QSize(item->sizeHint().width(), comboItemHeightForFont(font())));
 
         if (m_currentIndex < 0) {
             setCurrentIndex(0);
@@ -360,6 +368,10 @@ namespace fairwindsk::ui::widgets {
             }
         }
 
+        const QFont popupFont = m_editor ? m_editor->font() : font();
+        m_listWidget->setFont(popupFont);
+        m_listWidget->setIconSize(QSize(kComboIconSize, kComboIconSize));
+
         const QColor iconColor = comboForegroundColor(activePalette);
         for (int i = 0; i < m_listWidget->count(); ++i) {
             auto *item = m_listWidget->item(i);
@@ -368,6 +380,7 @@ namespace fairwindsk::ui::widgets {
             }
 
             const QIcon rawIcon = qvariant_cast<QIcon>(item->data(kRawIconRole));
+            item->setSizeHint(QSize(item->sizeHint().width(), comboItemHeightForFont(popupFont)));
             if (!rawIcon.isNull()) {
                 item->setIcon(fairwindsk::ui::tintedIcon(rawIcon, iconColor, QSize(kComboIconSize, kComboIconSize)));
             }

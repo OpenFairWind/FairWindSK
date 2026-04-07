@@ -23,10 +23,20 @@ Availability of these bars depends on the configured plugin identifiers (`applic
 
 - The settings pane reads from `fairwindsk.json` to manage the application list, ordering, and activation. Server-discovered apps are merged with local overrides, and changes are saved back to the configuration.
 - Unit selection, window sizing, and virtual keyboard toggles are reflected in the `main` and `units` sections of the configuration.
+- The **System** tab now includes touch-friendly diagnostics controls for:
+  - logging level (`No logging`, `Critical`, `Warning`, `Info`, `Debug`)
+  - persistent message log storage
+  - diagnostics email destination
+  - the effective diagnostics subject and persistent log directory
 
 ## Splash and status messages
 
 - On desktop targets, a splash screen shows progress as the application loads configuration, connects to Signal K, and fetches the web app catalog. Messages mirror the lifecycle in `main.cpp`.
+- If the Signal K server restarts while FairWindSK is running, the status widgets now show the reconnect cycle and the UI refreshes once the server has been rediscovered and the stream is resynchronized.
+
+## Web dialogs
+
+- Web `alert`, `confirm`, and `prompt` popups are now routed through the shared BottomBar horizontal drawer instead of native modal dialogs, so embedded web apps stay visually consistent with the rest of the FairWindSK interface.
 
 ## Accessibility and input
 

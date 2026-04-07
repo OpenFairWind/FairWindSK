@@ -123,12 +123,14 @@ namespace fairwindsk::signalk {
         void serverHealthChanged(bool healthy, const QString &statusText);
         void connectivityChanged(bool restHealthy, bool streamHealthy, const QString &statusText);
         void serverMessageChanged(const QString &message);
+        void serverStateResynchronized(bool recoveredFromDisconnect);
 
     private slots:
         void onConnected();
         void onDisconnected();
         void onTextMessageReceived(QString message);
         void onStreamHealthTimeout();
+        void attemptReconnect();
 
 
 
@@ -168,6 +170,14 @@ namespace fairwindsk::signalk {
         void markStreamActivity(const QString &statusText = QString());
         QString normalizedSubscriptionContext(const QString &context) const;
         QString subscriptionMessage(const QString &context, const QString &path, int period, const QString &policy, int minPeriod) const;
+        bool refreshServerDiscovery();
+        void refreshAuthenticationState();
+        void openWebSocket();
+        void scheduleReconnect(int delayMs = 2000);
+        bool hasSubscription(const QString &requestedContext, const QString &path, QObject *receiver) const;
+        void resubscribeAll(bool hydrateSnapshots);
+        QString serverFingerprint(const QJsonObject &server) const;
+        QJsonObject buildDeltaUpdate(const QString &context, const QString &path, const QJsonValue &value) const;
 
         QUrl getEndpointByProtocol(const QString &protocol, const QString& version = "v1");
         QJsonDocument getJsonDocument(const QUrl &url, const QJsonObject &payload = {});
@@ -183,6 +193,11 @@ namespace fairwindsk::signalk {
         bool m_streamHealthy = false;
         QDateTime m_lastStreamActivity;
         QTimer m_streamHealthTimer;
+        QTimer m_reconnectTimer;
+        QMap<QString, QVariant> m_connectionParams;
+        QString m_serverFingerprintValue;
+        bool m_hadStreamConnection = false;
+        bool m_reconnectRecoveryPending = false;
     };
 }
 

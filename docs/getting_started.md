@@ -28,6 +28,7 @@ Platform-specific dependencies, Qt kit selection, Windows deployment, Raspberry 
 3. Point the client at your Signal K server by editing the `connection.server` field in `fairwindsk.json` or by letting a platform integration layer provide the file.
 4. FairWindSK connects to the server, negotiates a token if available, and persists the token in `fairwindsk.ini` for subsequent launches.
 5. Discovered Signal K web applications are merged into the local configuration, preserving local overrides (ordering, activation state, and custom icons). Web apps appear on all targets; `file://` desktop-native app entries are desktop-only.
+6. If the Signal K server restarts later, FairWindSK now attempts to recover automatically by rediscovering the server, reconnecting the websocket stream, restoring subscriptions, and refreshing server-backed resources.
 
 ## Running the desktop
 
@@ -40,4 +41,5 @@ Platform-specific dependencies, Qt kit selection, Windows deployment, Raspberry 
 
 - If no applications appear, verify the `connection.server` URL and that the Signal K server exposes `/signalk/v1/apps/list` or the legacy `/skServer/webapps` endpoint.
 - Enable debug logging by setting `debug=true` in `fairwindsk.ini` before launching. Logs include connection attempts and application discovery details.
+- For diagnostics, the **Settings > System** tab lets you choose the FairWindSK log level, keep per-run message logs in a persistent directory, and configure the diagnostics email destination used after an unclean shutdown.
 - Check that your platform has Qt WebEngine acceleration enabled; `QWebEngineSettings::Accelerated2dCanvasEnabled` is turned on by default at runtime.

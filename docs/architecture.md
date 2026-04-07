@@ -8,7 +8,7 @@ FairWindSK is a Qt6 shell that launches Signal K web applications and exposes na
 - **Singleton core (`FairWindSK`)**: Central orchestrator that loads configuration, negotiates the Signal K connection, synchronizes installed web apps, and exposes global services (the shared `QWebEngineProfile`, the `signalk::Client`, and the app registry).
 - **Configuration management (`Configuration`)**: Loads and saves `fairwindsk.json`, seeds defaults from `resources/json/configuration.json`, and persists user choices (window geometry, unit preferences, application list, and plugin-specific settings). Token storage lives in `fairwindsk.ini` via `QSettings`.
 - **Application registry (`AppItem`)**: Represents a web or local application, including metadata (name, description, icon), activation state, ordering, and optional settings/help/about URLs. Items are refreshed from the Signal K server’s Apps API (`/signalk/v1/apps/list`) and merged with local overrides. Desktop builds can launch local `file://` applications.
-- **Signal K client (`signalk::Client`)**: Manages websocket communication with the server using URLs derived from `connection.server` plus `/signalk`, including authentication tokens shared through the WebEngine cookie store.
+- **Signal K client (`signalk::Client`)**: Manages REST and websocket communication with the server using URLs derived from `connection.server` plus `/signalk`, including authentication tokens shared through the WebEngine cookie store. The client now re-discovers the server after disconnects, reopens the stream, re-sends subscriptions, and hydrates current values so widgets recover cleanly after a Signal K restart.
 - **UI layers (`ui/` directory)**: Implements the Qt widgets for the desktop, top/bottom bars, settings panels, and embedded web views. Bars read the `Configuration` paths (e.g., `navigation.anchor.*`, autopilot targets) to bind to Signal K data.
 
 ## Data and configuration flow
@@ -17,6 +17,14 @@ FairWindSK is a Qt6 shell that launches Signal K web applications and exposes na
 2. **Server connection**: `FairWindSK::startSignalK()` builds parameters from the configuration and attempts websocket connectivity, persisting any returned token back to `fairwindsk.ini`.
 3. **Application discovery**: `FairWindSK::loadApps()` requests `/signalk/v1/apps/list` from the configured server and falls back to the legacy `/skServer/webapps` path if needed. Each returned web app becomes an `AppItem`. Local apps in `fairwindsk.json` are merged, preserving order and activation. Inactive or missing server apps are demoted but retained.
 4. **UI initialization**: The main window consumes the `AppItem` registry to populate the desktop. Bars subscribe to Signal K paths defined in `resources/json/configuration.json`, matching autopilot, anchor, POB, and alarm data fields.
+
+## Restart and reconnect recovery
+
+- When the websocket disconnects unexpectedly, the Signal K client schedules an automatic recovery attempt instead of staying passive.
+- Recovery performs a fresh server discovery request before reopening the websocket, so endpoint or capability changes caused by a server restart are picked up.
+- Existing subscriptions are re-sent after reconnect. Exact-path subscriptions are also hydrated with a fresh snapshot, which keeps native bars and status widgets consistent even if no new delta arrives immediately.
+- REST-backed models such as MyData resource collections listen for the reconnect resynchronization event and reload their data after the stream recovers.
+- `FairWindSK` itself refreshes unit preferences, app discovery, and automatic comfort-view availability after a recovered connection so the overall runtime state matches the restarted server.
 
 ## Authentication model
 

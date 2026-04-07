@@ -233,6 +233,10 @@ namespace fairwindsk::signalk {
         m_streamHealthTimer.setInterval(kStreamHealthCheckIntervalMs);
         m_streamHealthTimer.setSingleShot(false);
         connect(&m_streamHealthTimer, &QTimer::timeout, this, &Client::onStreamHealthTimeout);
+
+        m_reconnectTimer.setInterval(2000);
+        m_reconnectTimer.setSingleShot(true);
+        connect(&m_reconnectTimer, &QTimer::timeout, this, &Client::attemptReconnect);
     }
 
 /*
@@ -247,6 +251,8 @@ namespace fairwindsk::signalk {
     bool Client::init(QMap<QString, QVariant> params) {
         bool result = false;
         qInfo() << "SignalK::Client::init entered";
+        m_connectionParams = params;
+        m_reconnectTimer.stop();
 
         // Get the FairWindSK instance
         auto fairWindSK = fairwindsk::FairWindSK::getInstance();
@@ -254,6 +260,10 @@ namespace fairwindsk::signalk {
 
         // Reset websocket signal wiring before reconnecting.
         disconnect(&m_WebSocket, nullptr, this, nullptr);
+        if (m_WebSocket.state() != QAbstractSocket::UnconnectedState) {
+            m_WebSocket.abort();
+            m_WebSocket.close();
+        }
 
         // Connect the on connected event
         connect(&m_WebSocket, &QWebSocket::connected, this, &Client::onConnected, Qt::UniqueConnection);
@@ -319,52 +329,10 @@ namespace fairwindsk::signalk {
             qDebug() << "SignalKAPIClient::onInit(" << params << ")";
 
         if (m_Active) {
-            qInfo() << "SignalK::Client::init requesting server discovery from" << m_Url;
-
-            m_Server = signalkGet(m_Url);
-            qInfo() << "SignalK::Client::init discovery reply keys =" << m_Server.keys();
-
-            if (m_Debug) {
-                qDebug() << "Server: " << m_Server;
-            }
-
-            if (!m_Server.isEmpty()) {
-                qInfo() << "SignalK::Client::init discovery succeeded";
-                setRestHealth(true, tr("REST online"));
-                setStreamHealth(false, tr("Connecting stream"));
-                emit serverMessageChanged(discoveryMessage());
-
-                // Check if the token is empty
-                if (m_Token.isEmpty()) {
-
-                    // Perform the login if credentials are available. A public/read-only
-                    // Signal K server can still be used without a token.
-                    qInfo() << "SignalK::Client::init token missing, attempting login";
-                    login();
-                    qInfo() << "SignalK::Client::init login finished; token present =" << !m_Token.isEmpty();
-                }
-
-                if (!m_Token.isEmpty()) {
-                    m_Cookie = "JAUTHENTICATION=" + m_Token + "; Path=/; HttpOnly";
-                } else {
-                    m_Cookie.clear();
-                    emit serverMessageChanged(tr("Connected in public mode"));
-
-                    if (m_Debug) {
-                        qDebug() << "Proceeding without token in read-only/public mode.";
-                    }
-                }
-
-                const auto webSocketUrl = QUrl(ws().toString() + "?subscribe=none");
-                qInfo() << "SignalK::Client::init websocket URL =" << webSocketUrl;
-                if (webSocketUrl.isValid() && !webSocketUrl.isEmpty()) {
-                    qInfo() << "SignalK::Client::init opening websocket";
-                    m_WebSocket.open(webSocketUrl);
-                    qInfo() << "SignalK::Client::init websocket open issued";
-                    result = true;
-                } else if (m_Debug) {
-                    qDebug() << "No valid websocket endpoint available for" << m_Url;
-                }
+            if (refreshServerDiscovery()) {
+                refreshAuthenticationState();
+                openWebSocket();
+                result = true;
             } else {
                 qWarning() << "SignalK::Client::init discovery returned empty payload";
                 setRestHealth(false, tr("Signal K offline"));
@@ -968,11 +936,18 @@ namespace fairwindsk::signalk {
         if (m_Debug)
             qDebug() << "WebSocket connected";
 
+        m_reconnectTimer.stop();
         markStreamActivity(tr("Stream online"));
         emit serverMessageChanged(discoveryMessage());
 
         connect(&m_WebSocket, &QWebSocket::textMessageReceived,
                 this, &Client::onTextMessageReceived, Qt::UniqueConnection);
+
+        const bool recoveredFromDisconnect = m_reconnectRecoveryPending;
+        resubscribeAll(recoveredFromDisconnect);
+        m_hadStreamConnection = true;
+        m_reconnectRecoveryPending = false;
+        emit serverStateResynchronized(recoveredFromDisconnect);
 
     }
 //! [onConnected]
@@ -985,6 +960,10 @@ namespace fairwindsk::signalk {
         m_streamHealthTimer.stop();
         setStreamHealth(false, tr("Stream disconnected"));
         emit serverMessageChanged(tr("Waiting for Signal K"));
+        if (m_Active && !m_Url.isEmpty()) {
+            m_reconnectRecoveryPending = m_hadStreamConnection || m_reconnectRecoveryPending;
+            scheduleReconnect();
+        }
     }
 //! [onDisconnected]
 
@@ -1055,6 +1034,161 @@ namespace fairwindsk::signalk {
                        "    }\n"
                        "  ]\n"
                        "}").arg(context, path, QString::number(period), policy, QString::number(minPeriod));
+    }
+
+    bool Client::refreshServerDiscovery() {
+        qInfo() << "SignalK::Client requesting server discovery from" << m_Url;
+        const QJsonObject discoveredServer = signalkGet(m_Url);
+        qInfo() << "SignalK::Client discovery reply keys =" << discoveredServer.keys();
+
+        if (m_Debug) {
+            qDebug() << "Server:" << discoveredServer;
+        }
+
+        if (discoveredServer.isEmpty()) {
+            return false;
+        }
+
+        const QString newFingerprint = serverFingerprint(discoveredServer);
+        if (!m_serverFingerprintValue.isEmpty()
+            && !newFingerprint.isEmpty()
+            && m_serverFingerprintValue != newFingerprint) {
+            m_reconnectRecoveryPending = true;
+        }
+
+        m_Server = discoveredServer;
+        m_serverFingerprintValue = newFingerprint;
+        setRestHealth(true, tr("REST online"));
+        setStreamHealth(false, tr("Connecting stream"));
+        emit serverMessageChanged(discoveryMessage());
+        return true;
+    }
+
+    void Client::refreshAuthenticationState() {
+        if (m_Token.isEmpty()) {
+            qInfo() << "SignalK::Client token missing, attempting login";
+            login();
+            qInfo() << "SignalK::Client login finished; token present =" << !m_Token.isEmpty();
+        }
+
+        if (!m_Token.isEmpty()) {
+            m_Cookie = "JAUTHENTICATION=" + m_Token + "; Path=/; HttpOnly";
+        } else {
+            m_Cookie.clear();
+            emit serverMessageChanged(tr("Connected in public mode"));
+
+            if (m_Debug) {
+                qDebug() << "Proceeding without token in read-only/public mode.";
+            }
+        }
+    }
+
+    void Client::openWebSocket() {
+        const auto webSocketUrl = QUrl(ws().toString() + "?subscribe=none");
+        qInfo() << "SignalK::Client websocket URL =" << webSocketUrl;
+        if (webSocketUrl.isValid() && !webSocketUrl.isEmpty()) {
+            qInfo() << "SignalK::Client opening websocket";
+            m_WebSocket.open(webSocketUrl);
+            qInfo() << "SignalK::Client websocket open issued";
+        } else if (m_Debug) {
+            qDebug() << "No valid websocket endpoint available for" << m_Url;
+        }
+    }
+
+    void Client::scheduleReconnect(const int delayMs) {
+        if (m_reconnectTimer.isActive()) {
+            return;
+        }
+
+        setStreamHealth(false, tr("Reconnecting stream"));
+        emit serverMessageChanged(tr("Reconnecting to Signal K"));
+        m_reconnectTimer.start(std::max(0, delayMs));
+    }
+
+    bool Client::hasSubscription(const QString &requestedContext, const QString &path, QObject *receiver) const {
+        for (const auto &subscription : m_subscriptions) {
+            if (subscription.getReceiver() == receiver
+                && subscription.getRequestedContext() == requestedContext
+                && subscription.getPath() == path) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    void Client::resubscribeAll(const bool hydrateSnapshots) {
+        QMutableListIterator<Subscription> iterator(m_subscriptions);
+        while (iterator.hasNext()) {
+            auto &subscription = iterator.next();
+            if (!subscription.getReceiver()) {
+                iterator.remove();
+                continue;
+            }
+
+            const QString effectiveContext = normalizedSubscriptionContext(subscription.getRequestedContext());
+            subscription.retargetContext(effectiveContext);
+            m_WebSocket.sendTextMessage(subscriptionMessage(effectiveContext,
+                                                           subscription.getPath(),
+                                                           1000,
+                                                           QStringLiteral("ideal"),
+                                                           200));
+
+            if (!hydrateSnapshots || subscription.getPath().contains('*')) {
+                continue;
+            }
+
+            const QJsonObject snapshot = signalkGet(effectiveContext + "." + subscription.getPath());
+            if (!snapshot.isEmpty()) {
+                const QJsonObject update = buildDeltaUpdate(effectiveContext, subscription.getPath(), snapshot);
+                subscription.match(effectiveContext + "." + subscription.getPath(), update);
+            }
+        }
+    }
+
+    QString Client::serverFingerprint(const QJsonObject &server) const {
+        if (server.isEmpty()) {
+            return {};
+        }
+
+        return QString::fromUtf8(QJsonDocument(server).toJson(QJsonDocument::Compact));
+    }
+
+    QJsonObject Client::buildDeltaUpdate(const QString &context, const QString &path, const QJsonValue &value) const {
+        QJsonObject valueObject;
+        valueObject.insert(QStringLiteral("path"), path);
+        valueObject.insert(QStringLiteral("value"), value);
+
+        QJsonObject updateEntry;
+        updateEntry.insert(QStringLiteral("values"), QJsonArray{valueObject});
+
+        QJsonObject update;
+        update.insert(QStringLiteral("context"), context);
+        update.insert(QStringLiteral("updates"), QJsonArray{updateEntry});
+        return update;
+    }
+
+    void Client::attemptReconnect() {
+        if (!m_Active || m_Url.isEmpty()) {
+            return;
+        }
+
+        if (m_WebSocket.state() == QAbstractSocket::ConnectedState
+            || m_WebSocket.state() == QAbstractSocket::ConnectingState) {
+            return;
+        }
+
+        qInfo() << "SignalK::Client::attemptReconnect entered";
+        if (!refreshServerDiscovery()) {
+            setRestHealth(false, tr("Signal K offline"));
+            emit serverMessageChanged(tr("Signal K server not available"));
+            scheduleReconnect();
+            return;
+        }
+
+        refreshAuthenticationState();
+        m_reconnectRecoveryPending = true;
+        openWebSocket();
     }
 
     signalk::Waypoint Client::getWaypointByHref(const QString &href) {
@@ -1271,9 +1405,11 @@ namespace fairwindsk::signalk {
 
         m_WebSocket.sendTextMessage(message);
 
-        Subscription subscription(contextEx, path, receiver, member);
-        m_subscriptions.append(subscription);
-        connect(receiver, &QObject::destroyed, this, &Client::unsubscribe);
+        if (!hasSubscription(context, path, receiver)) {
+            Subscription subscription(context, contextEx, path, receiver, member);
+            m_subscriptions.append(subscription);
+            connect(receiver, &QObject::destroyed, this, &Client::unsubscribe, Qt::UniqueConnection);
+        }
 
         auto result = signalkGet(contextEx + "." + path);
 
@@ -1289,9 +1425,11 @@ namespace fairwindsk::signalk {
 
         m_WebSocket.sendTextMessage(message);
 
-        Subscription subscription(contextEx, path, receiver, member);
-        m_subscriptions.append(subscription);
-        connect(receiver, &QObject::destroyed, this, &Client::unsubscribe);
+        if (!hasSubscription(context, path, receiver)) {
+            Subscription subscription(context, contextEx, path, receiver, member);
+            m_subscriptions.append(subscription);
+            connect(receiver, &QObject::destroyed, this, &Client::unsubscribe, Qt::UniqueConnection);
+        }
 
         if (m_Debug) {
             qDebug() << "subscribeStream:" << message;
