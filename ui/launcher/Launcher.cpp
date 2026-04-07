@@ -535,9 +535,9 @@ namespace fairwindsk::ui::launcher {
                 painter.setRenderHint(QPainter::Antialiasing, true);
                 painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
 
-                const QRectF tileRect = rect().adjusted(1, 1, -1, -1);
+                const QRect tileRect = rect().adjusted(3, 3, -3, -3);
                 const qreal radius = 2.0;
-                const QRectF contentRect = tileRect.adjusted(1, 1, -1, -1);
+                const QRectF contentRect = QRectF(tileRect).adjusted(1, 1, -1, -1);
                 const qreal titleBandHeight = 28.0;
                 const QRectF artworkRect = contentRect.adjusted(4, 4, -4, -(titleBandHeight + 4));
 
@@ -548,15 +548,14 @@ namespace fairwindsk::ui::launcher {
                 painter.fillRect(tileRect, QColor(16, 22, 32));
                 if (!m_pixmap.isNull()) {
                     if (m_kind == TileKind::App) {
-                        const QRect appRect = tileRect.toRect();
-                        const QPixmap scaled = m_pixmap.scaled(appRect.size(),
+                        const QPixmap scaled = m_pixmap.scaled(tileRect.size(),
                                                                Qt::KeepAspectRatioByExpanding,
                                                                Qt::SmoothTransformation);
-                        const QRect sourceRect((scaled.width() - appRect.width()) / 2,
-                                               (scaled.height() - appRect.height()) / 2,
-                                               appRect.width(),
-                                               appRect.height());
-                        painter.drawPixmap(appRect, scaled, sourceRect);
+                        const QRect sourceRect((scaled.width() - tileRect.width()) / 2,
+                                               (scaled.height() - tileRect.height()) / 2,
+                                               tileRect.width(),
+                                               tileRect.height());
+                        painter.drawPixmap(tileRect, scaled, sourceRect);
                     } else {
                         const QPixmap scaled = m_pixmap.scaled(artworkRect.size().toSize(),
                                                                Qt::KeepAspectRatio,
@@ -581,10 +580,11 @@ namespace fairwindsk::ui::launcher {
                 if (m_basePointSize > 0.0) {
                     titleFont.setPointSizeF(m_basePointSize);
                 }
+                titleFont.setPointSizeF(std::max<qreal>(10.0, titleFont.pointSizeF()));
                 painter.setFont(titleFont);
                 painter.setPen(QColor(248, 250, 252));
                 const QRect textRect = (m_kind == TileKind::App)
-                                           ? tileRect.adjusted(10, 10, -10, -10).toRect()
+                                           ? tileRect.adjusted(10, 10, -10, -10)
                                            : QRectF(contentRect.left() + 8,
                                                     artworkRect.bottom() + 4,
                                                     contentRect.width() - 16,
