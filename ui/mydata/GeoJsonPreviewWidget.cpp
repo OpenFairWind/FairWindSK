@@ -4,16 +4,17 @@
 
 #include "GeoJsonPreviewWidget.hpp"
 
+#include <algorithm>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QByteArray>
 #include <QTimer>
 #include <QUrl>
-#include <QWebEngineSettings>
-#include <QWebEngineView>
+#include <QVBoxLayout>
 
 #include "AppItem.hpp"
 #include "FairWindSK.hpp"
+#include "ui/web/WebView.hpp"
 #include "ui_GeoJsonPreviewWidget.h"
 
 namespace fairwindsk::ui::mydata {
@@ -85,19 +86,21 @@ namespace fairwindsk::ui::mydata {
     GeoJsonPreviewWidget::GeoJsonPreviewWidget(QWidget *parent)
         : QWidget(parent),
           ui(new Ui::GeoJsonPreviewWidget),
-          m_freeboardView(new QWebEngineView(this)),
+          m_freeboardView(new fairwindsk::ui::web::WebView(FairWindSK::getInstance() ? FairWindSK::getInstance()->getWebEngineProfile() : nullptr, this)),
           m_textView(nullptr) {
         ui->setupUi(this);
         m_tabWidget = ui->tabWidget;
-        m_view = ui->webEngineViewPreview;
+        auto *previewLayout = new QVBoxLayout(ui->widgetPreviewHost);
+        previewLayout->setContentsMargins(0, 0, 0, 0);
+        previewLayout->setSpacing(0);
+        m_view = new fairwindsk::ui::web::WebView(FairWindSK::getInstance() ? FairWindSK::getInstance()->getWebEngineProfile() : nullptr, ui->widgetPreviewHost);
+        previewLayout->addWidget(m_view);
         m_textView = ui->plainTextEditGeoJson;
-        m_view->settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
-        m_freeboardView->settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
         m_textView->setReadOnly(true);
         m_textView->setLineWrapMode(QPlainTextEdit::NoWrap);
         m_textView->setStyleSheet("QPlainTextEdit { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
         setMinimumSize(320, 240);
-        connect(m_freeboardView, &QWebEngineView::loadFinished, this, [this](const bool ok) {
+        connect(m_freeboardView, &fairwindsk::ui::web::WebView::loadFinished, this, [this](const bool ok) {
             if (ok) {
                 scheduleFreeboardFocus();
             }
@@ -309,7 +312,7 @@ info.textContent = %1[0];
     }
 
     void GeoJsonPreviewWidget::applyFreeboardFocus() {
-        if (!m_hasFocusCoordinate || !m_freeboardView || !m_freeboardView->page()) {
+        if (!m_hasFocusCoordinate || !m_freeboardView) {
             return;
         }
 
@@ -402,7 +405,7 @@ info.textContent = %1[0];
             .arg(m_maxLongitude, 0, 'f', 8)
             .arg(m_maxLatitude, 0, 'f', 8);
 
-        m_freeboardView->page()->runJavaScript(script);
+        m_freeboardView->runJavaScript(script);
     }
 
     QString GeoJsonPreviewWidget::htmlForContent(const QString &bodyScript) {

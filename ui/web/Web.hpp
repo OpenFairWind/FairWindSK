@@ -12,7 +12,9 @@
 #include "ui_Web.h"
 
 #include "WebView.hpp"
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
 #include "DownloadManagerWidget.hpp"
+#endif
 #include "NavigationBar.hpp"
 
 namespace Ui { class Web; }
@@ -25,13 +27,15 @@ namespace fairwindsk::ui::web {
     Q_OBJECT
 
     public:
-        explicit Web(QWidget *parent = nullptr, fairwindsk::AppItem *appItem = nullptr, QWebEngineProfile *profile= nullptr);
+        explicit Web(QWidget *parent = nullptr, fairwindsk::AppItem *appItem = nullptr, fairwindsk::WebProfileHandle *profile = nullptr);
 
         ~Web() override;
 
         void toggleNavigationBar();
 
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         DownloadManagerWidget &downloadManagerWidget() { return m_downloadManagerWidget; }
+#endif
 
         signals:
         void removeApp(QString name);
@@ -57,7 +61,9 @@ namespace fairwindsk::ui::web {
         fairwindsk::AppItem *m_appItem = nullptr;
 
         NavigationBar *m_NavigationBar = nullptr;
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         DownloadManagerWidget m_downloadManagerWidget;
+#endif
 
 
         QProgressBar *m_progressBar = nullptr;

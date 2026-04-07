@@ -10,8 +10,12 @@
 #include <QTimer>
 #include <QTranslator>
 
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
 #include <QWebEngineProfile>
 #include <QWebEngineSettings>
+#else
+#include <QtWebView/QtWebView>
+#endif
 
 #include "FairWindSK.hpp"
 #include "runtime/DiagnosticsSupport.hpp"
@@ -156,6 +160,11 @@ int main(int argc, char *argv[]) {
     QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts );
     qInfo() << "AA_ShareOpenGLContexts enabled";
 
+#if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
+    QtWebView::initialize();
+    qInfo() << "Qt WebView initialized for mobile build";
+#endif
+
 #if defined(Q_OS_LINUX)
     configureLinuxRuntimeDirectory();
     configureLinuxQtPlatformFallback();
@@ -214,6 +223,7 @@ int main(int argc, char *argv[]) {
     fairwindsk::ui::MainWindow w;
     qInfo() << "MainWindow created";
 
+ #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
     if (auto *profile = fairWindSK->getWebEngineProfile()) {
         profile->settings()->setAttribute(QWebEngineSettings::Accelerated2dCanvasEnabled, true);
         profile->settings()->setAttribute(QWebEngineSettings::PluginsEnabled, true);
@@ -222,6 +232,9 @@ int main(int argc, char *argv[]) {
     } else {
         qWarning() << "WebEngine profile is null during startup";
     }
+#else
+    qInfo() << "Mobile web profile uses Qt WebView backend";
+#endif
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
     // Close the splash screen presenting the MainWindow UI

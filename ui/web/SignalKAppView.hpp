@@ -9,7 +9,6 @@
 #include <QWidget>
 
 class QProgressBar;
-class QWebEnginePage;
 namespace Ui { class SignalKAppView; }
 
 namespace fairwindsk::ui::web {
@@ -29,7 +28,6 @@ namespace fairwindsk::ui::web {
         void setHtml(const QString &html, const QUrl &baseUrl = QUrl());
         void clear();
         void runJavaScript(const QString &script);
-        QWebEnginePage *page() const;
         QUrl url() const;
 
     signals:

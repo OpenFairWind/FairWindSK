@@ -2,53 +2,266 @@
 // Created by Raffaele Montella on 28/03/21.
 //
 
-//#include "Browser.hpp"
-//#include "BrowserWindow.hpp"
-
-#include "WebPage.hpp"
-#include "WebPopupWindow.hpp"
 #include "WebView.hpp"
 
+#include <QVBoxLayout>
 
-#include <QContextMenuEvent>
-#include <QDebug>
-#include <QMenu>
-#include <QMessageBox>
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
 #include <QAuthenticator>
+#include <QDialog>
+#include <QMessageBox>
 #include <QTimer>
 #include <QStyle>
+#include <QWebEngineHistory>
+#include <QWebEngineView>
+#include <QWebEngineCertificateError>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+#include <QWebEnginePermission>
+#endif
+#if QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
+#include <QWebEngineFileSystemAccessRequest>
+#endif
+#include <QWebEngineRegisterProtocolHandlerRequest>
 
+#include "WebPage.hpp"
 #include "ui/DrawerDialogHost.hpp"
-
-using namespace Qt::StringLiterals;
+#include "ui_CertificateErrorDialog.h"
+#include "ui_PasswordDialog.h"
+#else
+#include <QQuickItem>
+#include <QQuickWidget>
+#include <QQmlContext>
+#include <QMetaObject>
+#include <QVariant>
+#endif
 
 namespace fairwindsk::ui::web {
-    /*
-     * WebView
-     * Constructor
-     */
-    WebView::WebView(QWebEngineProfile *profile, QWidget *parent): QWebEngineView(parent)
-    {
-        // Set the load progress to 0 when load started
-        connect(this, &QWebEngineView::loadStarted, [this]() {
+    namespace {
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+#if QT_VERSION < QT_VERSION_CHECK(6, 8, 0)
+        QString questionForFeature(const QWebEnginePage::Feature feature) {
+            switch (feature) {
+                case QWebEnginePage::Geolocation:
+                    return QObject::tr("Allow %1 to access your location information?");
+                case QWebEnginePage::MediaAudioCapture:
+                    return QObject::tr("Allow %1 to access your microphone?");
+                case QWebEnginePage::MediaVideoCapture:
+                    return QObject::tr("Allow %1 to access your webcam?");
+                case QWebEnginePage::MediaAudioVideoCapture:
+                    return QObject::tr("Allow %1 to access your microphone and webcam?");
+                case QWebEnginePage::MouseLock:
+                    return QObject::tr("Allow %1 to lock your mouse cursor?");
+                case QWebEnginePage::DesktopVideoCapture:
+                    return QObject::tr("Allow %1 to capture video of your desktop?");
+                case QWebEnginePage::DesktopAudioVideoCapture:
+                    return QObject::tr("Allow %1 to capture audio and video of your desktop?");
+                case QWebEnginePage::Notifications:
+                    return QObject::tr("Allow %1 to show notification on your desktop?");
+                default:
+                    break;
+            }
+            return {};
+        }
+#endif
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+        QString questionForPermission(const QWebEnginePermission::PermissionType permissionType) {
+            switch (permissionType) {
+                case QWebEnginePermission::PermissionType::Geolocation:
+                    return QObject::tr("Allow %1 to access your location information?");
+                case QWebEnginePermission::PermissionType::MediaAudioCapture:
+                    return QObject::tr("Allow %1 to access your microphone?");
+                case QWebEnginePermission::PermissionType::MediaVideoCapture:
+                    return QObject::tr("Allow %1 to access your webcam?");
+                case QWebEnginePermission::PermissionType::MediaAudioVideoCapture:
+                    return QObject::tr("Allow %1 to access your microphone and webcam?");
+                case QWebEnginePermission::PermissionType::MouseLock:
+                    return QObject::tr("Allow %1 to lock your mouse cursor?");
+                case QWebEnginePermission::PermissionType::DesktopVideoCapture:
+                    return QObject::tr("Allow %1 to capture video of your desktop?");
+                case QWebEnginePermission::PermissionType::DesktopAudioVideoCapture:
+                    return QObject::tr("Allow %1 to capture audio and video of your desktop?");
+                case QWebEnginePermission::PermissionType::Notifications:
+                    return QObject::tr("Allow %1 to show notification on your desktop?");
+                case QWebEnginePermission::PermissionType::ClipboardReadWrite:
+                    return QObject::tr("Allow %1 to read and write your clipboard?");
+                case QWebEnginePermission::PermissionType::LocalFontsAccess:
+                    return QObject::tr("Allow %1 to access your local fonts?");
+                case QWebEnginePermission::PermissionType::Unsupported:
+                    break;
+            }
+            return {};
+        }
+#endif
+
+        QString mobileDataUrlForHtml(const QString &html) {
+            return QStringLiteral("data:text/html;charset=UTF-8,%1").arg(QString::fromUtf8(QUrl::toPercentEncoding(html)));
+        }
+#endif
+    }
+
+    WebView::WebView(fairwindsk::WebProfileHandle *profile, QWidget *parent)
+        : QWidget(parent) {
+        auto *layout = new QVBoxLayout(this);
+        layout->setContentsMargins(0, 0, 0, 0);
+        layout->setSpacing(0);
+
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+        initializeDesktop(profile);
+#else
+        Q_UNUSED(profile);
+        initializeMobile();
+#endif
+
+        if (m_viewWidget) {
+            m_viewWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+            layout->addWidget(m_viewWidget);
+        }
+    }
+
+    WebView::~WebView() = default;
+
+    void WebView::load(const QUrl &url) {
+        setUrl(url);
+    }
+
+    void WebView::setUrl(const QUrl &url) {
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+        if (m_desktopView) {
+            m_desktopView->setUrl(url);
+        }
+#else
+        if (m_quickRoot) {
+            QMetaObject::invokeMethod(m_quickRoot, "loadUrl", Q_ARG(QVariant, url.toString()));
+        }
+#endif
+    }
+
+    QUrl WebView::url() const {
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+        return m_desktopView ? m_desktopView->url() : QUrl();
+#else
+        if (m_quickRoot) {
+            const QVariant value = m_quickRoot->property("currentUrl");
+            if (value.canConvert<QUrl>()) {
+                return value.toUrl();
+            }
+            return QUrl::fromUserInput(value.toString());
+        }
+        return m_currentUrl;
+#endif
+    }
+
+    void WebView::setHtml(const QString &html, const QUrl &baseUrl) {
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+        if (m_desktopView) {
+            m_desktopView->setHtml(html, baseUrl);
+        }
+#else
+        Q_UNUSED(baseUrl);
+        if (m_quickRoot) {
+            QMetaObject::invokeMethod(m_quickRoot, "setHtmlContent", Q_ARG(QVariant, html), Q_ARG(QVariant, baseUrl.toString()));
+        }
+#endif
+    }
+
+    void WebView::reload() {
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+        if (m_desktopView) {
+            m_desktopView->reload();
+        }
+#else
+        if (m_quickRoot) {
+            QMetaObject::invokeMethod(m_quickRoot, "reloadPage");
+        }
+#endif
+    }
+
+    void WebView::stop() {
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+        if (m_desktopView) {
+            m_desktopView->stop();
+        }
+#else
+        if (m_quickRoot) {
+            QMetaObject::invokeMethod(m_quickRoot, "stopLoading");
+        }
+#endif
+    }
+
+    void WebView::back() {
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+        if (m_desktopView) {
+            m_desktopView->back();
+        }
+#else
+        if (m_quickRoot) {
+            QMetaObject::invokeMethod(m_quickRoot, "goBack");
+        }
+#endif
+    }
+
+    void WebView::forward() {
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+        if (m_desktopView) {
+            m_desktopView->forward();
+        }
+#else
+        if (m_quickRoot) {
+            QMetaObject::invokeMethod(m_quickRoot, "goForward");
+        }
+#endif
+    }
+
+    bool WebView::canGoBack() const {
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+        return m_desktopView && m_desktopView->history() && m_desktopView->history()->canGoBack();
+#else
+        return m_quickRoot ? m_quickRoot->property("canGoBack").toBool() : m_canGoBack;
+#endif
+    }
+
+    bool WebView::canGoForward() const {
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+        return m_desktopView && m_desktopView->history() && m_desktopView->history()->canGoForward();
+#else
+        return m_quickRoot ? m_quickRoot->property("canGoForward").toBool() : m_canGoForward;
+#endif
+    }
+
+    void WebView::runJavaScript(const QString &script) {
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+        if (m_desktopView && m_desktopView->page()) {
+            m_desktopView->page()->runJavaScript(script);
+        }
+#else
+        if (m_quickRoot) {
+            QMetaObject::invokeMethod(m_quickRoot, "runScript", Q_ARG(QVariant, script));
+        }
+#endif
+    }
+
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+    void WebView::initializeDesktop(fairwindsk::WebProfileHandle *profile) {
+        m_desktopView = new QWebEngineView(this);
+        m_viewWidget = m_desktopView;
+
+        connect(m_desktopView, &QWebEngineView::loadStarted, this, [this]() {
             m_loadProgress = 0;
+            emit loadStarted();
         });
-
-        // Set load progress to the parameter
-        connect(this, &QWebEngineView::loadProgress, [this](int progress) {
+        connect(m_desktopView, &QWebEngineView::loadProgress, this, [this](const int progress) {
             m_loadProgress = progress;
+            emit loadProgress(progress);
         });
-
-        // Check when the load process ended
-        connect(this, &QWebEngineView::loadFinished, [this](bool success) {
+        connect(m_desktopView, &QWebEngineView::loadFinished, this, [this](const bool success) {
             m_loadProgress = success ? 100 : -1;
+            emit loadFinished(success);
         });
-
-
-
-        // Handle the rendering termination
-        connect(this, &QWebEngineView::renderProcessTerminated,
-                [this](QWebEnginePage::RenderProcessTerminationStatus termStatus, int statusCode) {
+        connect(m_desktopView, &QWebEngineView::urlChanged, this, &WebView::urlChanged);
+        connect(m_desktopView, &QWebEngineView::titleChanged, this, &WebView::titleChanged);
+        connect(m_desktopView, &QWebEngineView::renderProcessTerminated, this,
+                [this](QWebEnginePage::RenderProcessTerminationStatus termStatus, const int statusCode) {
                     QString status;
                     switch (termStatus) {
                         case QWebEnginePage::NormalTerminationStatus:
@@ -64,292 +277,244 @@ namespace fairwindsk::ui::web {
                             status = tr("Render process killed");
                             break;
                     }
-                    const QMessageBox::StandardButton btn = drawer::question(window(), status,
-                                                                            tr("Render process exited with code: %1\n"
-                                                                               "Do you want to reload the page ?").arg(statusCode),
+                    const QMessageBox::StandardButton btn = drawer::question(window(),
+                                                                            status,
+                                                                            tr("Render process exited with code: %1\nDo you want to reload the page ?").arg(statusCode),
                                                                             QMessageBox::Yes | QMessageBox::No,
                                                                             QMessageBox::No);
-                    if (btn == QMessageBox::Yes)
+                    if (btn == QMessageBox::Yes) {
                         QTimer::singleShot(0, this, &WebView::reload);
+                    }
                 });
 
-        // Create the web page
-        m_webPage = new WebPage(profile);
-
-        // Set the web page
-        setPage(m_webPage);
+        m_webPage = new WebPage(profile, m_desktopView);
+        setDesktopPage(m_webPage);
     }
 
-#if QT_VERSION < QT_VERSION_CHECK(6, 8, 0)
-    inline QString questionForFeature(QWebEnginePage::Feature feature) {
-        switch (feature) {
-            case QWebEnginePage::Geolocation:
-                return QObject::tr("Allow %1 to access your location information?");
-            case QWebEnginePage::MediaAudioCapture:
-                return QObject::tr("Allow %1 to access your microphone?");
-            case QWebEnginePage::MediaVideoCapture:
-                return QObject::tr("Allow %1 to access your webcam?");
-            case QWebEnginePage::MediaAudioVideoCapture:
-                return QObject::tr("Allow %1 to access your microphone and webcam?");
-            case QWebEnginePage::MouseLock:
-                return QObject::tr("Allow %1 to lock your mouse cursor?");
-            case QWebEnginePage::DesktopVideoCapture:
-                return QObject::tr("Allow %1 to capture video of your desktop?");
-            case QWebEnginePage::DesktopAudioVideoCapture:
-                return QObject::tr("Allow %1 to capture audio and video of your desktop?");
-            case QWebEnginePage::Notifications:
-                return QObject::tr("Allow %1 to show notification on your desktop?");
-            default: ;
-        }
-        return {};
-    }
-#endif
-
-#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
-    inline QString questionForPermission(QWebEnginePermission::PermissionType permissionType) {
-        switch (permissionType) {
-            case QWebEnginePermission::PermissionType::Geolocation:
-                return QObject::tr("Allow %1 to access your location information?");
-            case QWebEnginePermission::PermissionType::MediaAudioCapture:
-                return QObject::tr("Allow %1 to access your microphone?");
-            case QWebEnginePermission::PermissionType::MediaVideoCapture:
-                return QObject::tr("Allow %1 to access your webcam?");
-            case QWebEnginePermission::PermissionType::MediaAudioVideoCapture:
-                return QObject::tr("Allow %1 to access your microphone and webcam?");
-            case QWebEnginePermission::PermissionType::MouseLock:
-                return QObject::tr("Allow %1 to lock your mouse cursor?");
-            case QWebEnginePermission::PermissionType::DesktopVideoCapture:
-                return QObject::tr("Allow %1 to capture video of your desktop?");
-            case QWebEnginePermission::PermissionType::DesktopAudioVideoCapture:
-                return QObject::tr("Allow %1 to capture audio and video of your desktop?");
-            case QWebEnginePermission::PermissionType::Notifications:
-                return QObject::tr("Allow %1 to show notification on your desktop?");
-            case QWebEnginePermission::PermissionType::ClipboardReadWrite:
-                return QObject::tr("Allow %1 to read and write your clipboard?");
-            case QWebEnginePermission::PermissionType::LocalFontsAccess:
-                return QObject::tr("Allow %1 to access your local fonts?");
-            case QWebEnginePermission::PermissionType::Unsupported:
-                break;
-        }
-        return {};
-    }
-#endif
-
-    void WebView::setPage(WebPage *page)
-    {
-        auto oldPage = qobject_cast<WebPage *>(QWebEngineView::page());
+    void WebView::setDesktopPage(WebPage *page) {
+        auto *oldPage = qobject_cast<WebPage *>(m_desktopView ? m_desktopView->page() : nullptr);
         if (oldPage) {
-            disconnect(oldPage, &WebPage::createCertificateErrorDialog, this,
-                       &WebView::handleCertificateError);
-            disconnect(oldPage, &QWebEnginePage::authenticationRequired, this,
-                       &WebView::handleAuthenticationRequired);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
-            disconnect(oldPage, &QWebEnginePage::permissionRequested, this,
-                       &WebView::handlePermissionRequested);
-#else
-            disconnect(oldPage, &QWebEnginePage::featurePermissionRequested, this,
-                       &WebView::handleFeaturePermissionRequested);
-#endif
-            disconnect(oldPage, &QWebEnginePage::proxyAuthenticationRequired, this,
-                       &WebView::handleProxyAuthenticationRequired);
-            disconnect(oldPage, &QWebEnginePage::registerProtocolHandlerRequested, this,
-                       &WebView::handleRegisterProtocolHandlerRequested);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
-            disconnect(oldPage, &QWebEnginePage::fileSystemAccessRequested, this,
-                       &WebView::handleFileSystemAccessRequested);
-#endif
+            disconnect(oldPage, nullptr, this, nullptr);
         }
 
-        QWebEngineView::setPage(page);
+        if (m_desktopView) {
+            m_desktopView->setPage(page);
+        }
         m_webPage = page;
 
-        if (oldPage && oldPage != page) {
-            oldPage->deleteLater();
-        }
-
-        connect(page, &WebPage::createCertificateErrorDialog, this, &WebView::handleCertificateError);
-        connect(page, &QWebEnginePage::authenticationRequired, this,
-                &WebView::handleAuthenticationRequired);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
-        connect(page, &QWebEnginePage::permissionRequested, this,
-                &WebView::handlePermissionRequested);
-#else
-        connect(page, &QWebEnginePage::featurePermissionRequested, this,
-                &WebView::handleFeaturePermissionRequested);
-#endif
-        connect(page, &QWebEnginePage::proxyAuthenticationRequired, this,
-                &WebView::handleProxyAuthenticationRequired);
-        connect(page, &QWebEnginePage::registerProtocolHandlerRequested, this,
-                &WebView::handleRegisterProtocolHandlerRequested);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
-        connect(page, &QWebEnginePage::fileSystemAccessRequested, this,
-                &WebView::handleFileSystemAccessRequested);
-#endif
-    }
-
-    int WebView::loadProgress() const {
-        return m_loadProgress;
-    }
-
-
-    void WebView::handleCertificateError(QWebEngineCertificateError error) {
-        auto *dialog = new QDialog(window());
-        dialog->setWindowFlags(dialog->windowFlags() & ~Qt::WindowContextHelpButtonHint);
-
-        Ui::CertificateErrorDialog certificateDialog;
-        certificateDialog.setupUi(dialog);
-        certificateDialog.buttonBox->hide();
-        certificateDialog.m_iconLabel->setText(QString());
-        const QIcon icon(window()->style()->standardIcon(QStyle::SP_MessageBoxWarning, 0, window()));
-        certificateDialog.m_iconLabel->setPixmap(icon.pixmap(32, 32));
-        certificateDialog.m_errorLabel->setText(error.description());
-        dialog->setWindowTitle(tr("Certificate Error"));
-
-        if (drawer::execDrawer(this, tr("Certificate Error"), dialog,
-                               {{tr("Continue"), QDialog::Accepted, false},
-                                {tr("Cancel"), QDialog::Rejected, true}},
-                               QDialog::Rejected) == QDialog::Accepted)
-            error.acceptCertificate();
-        else
-            error.rejectCertificate();
-    }
-
-    void WebView::handleAuthenticationRequired(const QUrl &requestUrl, QAuthenticator *auth) {
-        auto *dialog = new QDialog(window());
-        dialog->setWindowFlags(dialog->windowFlags() & ~Qt::WindowContextHelpButtonHint);
-
-        Ui::PasswordDialog passwordDialog;
-        passwordDialog.setupUi(dialog);
-        passwordDialog.buttonBox->hide();
-
-        passwordDialog.m_iconLabel->setText(QString());
-        const QIcon icon(window()->style()->standardIcon(QStyle::SP_MessageBoxQuestion, 0, window()));
-        passwordDialog.m_iconLabel->setPixmap(icon.pixmap(32, 32));
-
-        QString introMessage(tr("Enter username and password for \"%1\" at %2")
-                                     .arg(auth->realm(),
-                                          requestUrl.toString().toHtmlEscaped()));
-        passwordDialog.m_infoLabel->setText(introMessage);
-        passwordDialog.m_infoLabel->setWordWrap(true);
-
-        if (drawer::execDrawer(this, tr("Authentication Required"), dialog,
-                               {{tr("OK"), QDialog::Accepted, true},
-                                {tr("Cancel"), QDialog::Rejected, false}},
-                               QDialog::Rejected) == QDialog::Accepted) {
-            auth->setUser(passwordDialog.m_userNameLineEdit->text());
-            auth->setPassword(passwordDialog.m_passwordLineEdit->text());
-        } else {
-            // Set authenticator null if dialog is cancelled
-            *auth = QAuthenticator();
-        }
-    }
-
-#if QT_VERSION < QT_VERSION_CHECK(6, 8, 0)
-    void WebView::handleFeaturePermissionRequested(const QUrl &securityOrigin, QWebEnginePage::Feature feature) {
-        const QString title = tr("Permission Request");
-        if (const QString question = questionForFeature(feature).arg(securityOrigin.host()); !question.isEmpty()
-            && drawer::question(window(), title, question, QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes)
-            page()->setFeaturePermission(securityOrigin, feature,
-                                         QWebEnginePage::PermissionGrantedByUser);
-        else
-            page()->setFeaturePermission(securityOrigin, feature,
-                                         QWebEnginePage::PermissionDeniedByUser);
-    }
-#endif
-
-#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
-    void WebView::handlePermissionRequested(QWebEnginePermission permission) {
-        if (!permission.isValid()) {
+        if (!page) {
             return;
         }
 
-        const QString title = tr("Permission Request");
-        const QString question = questionForPermission(permission.permissionType()).arg(permission.origin().host());
-        if (!question.isEmpty() && drawer::question(window(), title, question, QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes) {
-            permission.grant();
-        } else {
-            permission.deny();
-        }
-    }
+        connect(page, &WebPage::createCertificateErrorDialog, this, [this](QWebEngineCertificateError error) {
+            auto *dialog = new QDialog(window());
+            dialog->setWindowFlags(dialog->windowFlags() & ~Qt::WindowContextHelpButtonHint);
+
+            Ui::CertificateErrorDialog certificateDialog;
+            certificateDialog.setupUi(dialog);
+            certificateDialog.buttonBox->hide();
+            certificateDialog.m_iconLabel->setText(QString());
+            const QIcon icon(window()->style()->standardIcon(QStyle::SP_MessageBoxWarning, nullptr, window()));
+            certificateDialog.m_iconLabel->setPixmap(icon.pixmap(32, 32));
+            certificateDialog.m_errorLabel->setText(error.description());
+            dialog->setWindowTitle(tr("Certificate Error"));
+
+            if (drawer::execDrawer(this,
+                                   tr("Certificate Error"),
+                                   dialog,
+                                   {{tr("Continue"), QDialog::Accepted, false},
+                                    {tr("Cancel"), QDialog::Rejected, true}},
+                                   QDialog::Rejected) == QDialog::Accepted) {
+                error.acceptCertificate();
+            } else {
+                error.rejectCertificate();
+            }
+        });
+
+        connect(page, &QWebEnginePage::authenticationRequired, this,
+                [this](const QUrl &requestUrl, QAuthenticator *auth) {
+                    auto *dialog = new QDialog(window());
+                    dialog->setWindowFlags(dialog->windowFlags() & ~Qt::WindowContextHelpButtonHint);
+
+                    Ui::PasswordDialog passwordDialog;
+                    passwordDialog.setupUi(dialog);
+                    passwordDialog.buttonBox->hide();
+
+                    passwordDialog.m_iconLabel->setText(QString());
+                    const QIcon icon(window()->style()->standardIcon(QStyle::SP_MessageBoxQuestion, nullptr, window()));
+                    passwordDialog.m_iconLabel->setPixmap(icon.pixmap(32, 32));
+
+                    passwordDialog.m_infoLabel->setText(
+                        tr("Enter username and password for \"%1\" at %2").arg(auth->realm(),
+                                                                                requestUrl.toString().toHtmlEscaped()));
+                    passwordDialog.m_infoLabel->setWordWrap(true);
+
+                    if (drawer::execDrawer(this,
+                                           tr("Authentication Required"),
+                                           dialog,
+                                           {{tr("OK"), QDialog::Accepted, true},
+                                            {tr("Cancel"), QDialog::Rejected, false}},
+                                           QDialog::Rejected) == QDialog::Accepted) {
+                        auth->setUser(passwordDialog.m_userNameLineEdit->text());
+                        auth->setPassword(passwordDialog.m_passwordLineEdit->text());
+                    } else {
+                        *auth = QAuthenticator();
+                    }
+                });
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+        connect(page, &QWebEnginePage::permissionRequested, this, [this](QWebEnginePermission permission) {
+            if (!permission.isValid()) {
+                return;
+            }
+
+            const QString question = questionForPermission(permission.permissionType()).arg(permission.origin().host());
+            if (!question.isEmpty()
+                && drawer::question(window(),
+                                    tr("Permission Request"),
+                                    question,
+                                    QMessageBox::Yes | QMessageBox::No,
+                                    QMessageBox::No) == QMessageBox::Yes) {
+                permission.grant();
+            } else {
+                permission.deny();
+            }
+        });
+#else
+        connect(page, &QWebEnginePage::featurePermissionRequested, this,
+                [this](const QUrl &securityOrigin, QWebEnginePage::Feature feature) {
+                    const QString question = questionForFeature(feature).arg(securityOrigin.host());
+                    if (!question.isEmpty()
+                        && drawer::question(window(),
+                                            tr("Permission Request"),
+                                            question,
+                                            QMessageBox::Yes | QMessageBox::No,
+                                            QMessageBox::No) == QMessageBox::Yes) {
+                        page->setFeaturePermission(securityOrigin, feature, QWebEnginePage::PermissionGrantedByUser);
+                    } else {
+                        page->setFeaturePermission(securityOrigin, feature, QWebEnginePage::PermissionDeniedByUser);
+                    }
+                });
 #endif
 
-    void WebView::handleProxyAuthenticationRequired(const QUrl &, QAuthenticator *auth, const QString &proxyHost) {
-        auto *dialog = new QDialog(window());
-        dialog->setWindowFlags(dialog->windowFlags() & ~Qt::WindowContextHelpButtonHint);
+        connect(page, &QWebEnginePage::proxyAuthenticationRequired, this,
+                [this](const QUrl &, QAuthenticator *auth, const QString &proxyHost) {
+                    auto *dialog = new QDialog(window());
+                    dialog->setWindowFlags(dialog->windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
-        Ui::PasswordDialog passwordDialog;
-        passwordDialog.setupUi(dialog);
-        passwordDialog.buttonBox->hide();
+                    Ui::PasswordDialog passwordDialog;
+                    passwordDialog.setupUi(dialog);
+                    passwordDialog.buttonBox->hide();
 
-        passwordDialog.m_iconLabel->setText(QString());
-        QIcon icon(window()->style()->standardIcon(QStyle::SP_MessageBoxQuestion, 0, window()));
-        passwordDialog.m_iconLabel->setPixmap(icon.pixmap(32, 32));
+                    passwordDialog.m_iconLabel->setText(QString());
+                    const QIcon icon(window()->style()->standardIcon(QStyle::SP_MessageBoxQuestion, nullptr, window()));
+                    passwordDialog.m_iconLabel->setPixmap(icon.pixmap(32, 32));
+                    passwordDialog.m_infoLabel->setText(tr("Connect to proxy \"%1\" using:").arg(proxyHost.toHtmlEscaped()));
+                    passwordDialog.m_infoLabel->setWordWrap(true);
 
-        QString introMessage = tr("Connect to proxy \"%1\" using:");
-        introMessage = introMessage.arg(proxyHost.toHtmlEscaped());
-        passwordDialog.m_infoLabel->setText(introMessage);
-        passwordDialog.m_infoLabel->setWordWrap(true);
+                    if (drawer::execDrawer(this,
+                                           tr("Proxy Authentication Required"),
+                                           dialog,
+                                           {{tr("OK"), QDialog::Accepted, true},
+                                            {tr("Cancel"), QDialog::Rejected, false}},
+                                           QDialog::Rejected) == QDialog::Accepted) {
+                        auth->setUser(passwordDialog.m_userNameLineEdit->text());
+                        auth->setPassword(passwordDialog.m_passwordLineEdit->text());
+                    } else {
+                        *auth = QAuthenticator();
+                    }
+                });
 
-        if (drawer::execDrawer(this, tr("Proxy Authentication Required"), dialog,
-                               {{tr("OK"), QDialog::Accepted, true},
-                                {tr("Cancel"), QDialog::Rejected, false}},
-                               QDialog::Rejected) == QDialog::Accepted) {
-            auth->setUser(passwordDialog.m_userNameLineEdit->text());
-            auth->setPassword(passwordDialog.m_passwordLineEdit->text());
-        } else {
-            // Set authenticator null if dialog is cancelled
-            *auth = QAuthenticator();
-        }
-    }
-
-//! [registerProtocolHandlerRequested]
-    void WebView::handleRegisterProtocolHandlerRequested(QWebEngineRegisterProtocolHandlerRequest request) {
-        const auto answer = drawer::question(window(), tr("Permission Request"),
-                                             tr("Allow %1 to open all %2 links?")
-                                                     .arg(request.origin().host(), request.scheme()),
-                                             QMessageBox::Yes | QMessageBox::No,
-                                             QMessageBox::No);
-        if (answer == QMessageBox::Yes)
-            request.accept();
-        else
-            request.reject();
-    }
-//! [registerProtocolHandlerRequested]
+        connect(page, &QWebEnginePage::registerProtocolHandlerRequested, this,
+                [this](QWebEngineRegisterProtocolHandlerRequest request) {
+                    const auto answer = drawer::question(window(),
+                                                         tr("Permission Request"),
+                                                         tr("Allow %1 to open all %2 links?").arg(request.origin().host(), request.scheme()),
+                                                         QMessageBox::Yes | QMessageBox::No,
+                                                         QMessageBox::No);
+                    if (answer == QMessageBox::Yes) {
+                        request.accept();
+                    } else {
+                        request.reject();
+                    }
+                });
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
-    void WebView::handleFileSystemAccessRequested(QWebEngineFileSystemAccessRequest request) {
-        QString accessType;
-        switch (request.accessFlags()) {
-            case QWebEngineFileSystemAccessRequest::Read:
-                accessType = "read";
-                break;
-            case QWebEngineFileSystemAccessRequest::Write:
-                accessType = "write";
-                break;
-            case QWebEngineFileSystemAccessRequest::Read | QWebEngineFileSystemAccessRequest::Write:
-                accessType = "read and write";
-                break;
-            default:
-                Q_UNREACHABLE();
+        connect(page, &QWebEnginePage::fileSystemAccessRequested, this,
+                [this](QWebEngineFileSystemAccessRequest request) {
+                    QString accessType;
+                    switch (request.accessFlags()) {
+                        case QWebEngineFileSystemAccessRequest::Read:
+                            accessType = tr("read");
+                            break;
+                        case QWebEngineFileSystemAccessRequest::Write:
+                            accessType = tr("write");
+                            break;
+                        case QWebEngineFileSystemAccessRequest::Read | QWebEngineFileSystemAccessRequest::Write:
+                            accessType = tr("read and write");
+                            break;
+                        default:
+                            accessType = tr("access");
+                            break;
+                    }
+
+                    const auto answer = drawer::question(window(),
+                                                         tr("File system access request"),
+                                                         tr("Give %1 %2 access to %3?")
+                                                             .arg(request.origin().host(), accessType, request.filePath().toString()),
+                                                         QMessageBox::Yes | QMessageBox::No,
+                                                         QMessageBox::No);
+                    if (answer == QMessageBox::Yes) {
+                        request.accept();
+                    } else {
+                        request.reject();
+                    }
+                });
+#endif
+
+        connect(page, &QWebEnginePage::geometryChangeRequested, this, &WebView::geometryChangeRequested);
+        connect(page, &QWebEnginePage::windowCloseRequested, this, &WebView::windowCloseRequested);
+    }
+#else
+    void WebView::initializeMobile() {
+        m_quickView = new QQuickWidget(this);
+        m_quickView->setResizeMode(QQuickWidget::SizeRootObjectToView);
+        m_quickView->setClearColor(Qt::transparent);
+        m_quickView->setFocusPolicy(Qt::StrongFocus);
+        m_quickView->setSource(QUrl(QStringLiteral("qrc:/ui/web/MobileWebView.qml")));
+        m_quickRoot = m_quickView->rootObject();
+        m_viewWidget = m_quickView;
+
+        if (!m_quickRoot) {
+            return;
         }
 
-        const auto answer = drawer::question(window(), tr("File system access request"),
-                                             tr("Give %1 %2 access to %3?")
-                                                     .arg(request.origin().host(), accessType, request.filePath().toString()),
-                                             QMessageBox::Yes | QMessageBox::No,
-                                             QMessageBox::No);
-        if (answer == QMessageBox::Yes)
-            request.accept();
-        else
-            request.reject();
+        connect(m_quickRoot, SIGNAL(loadStarted()), this, SIGNAL(loadStarted()));
+        connect(m_quickRoot, SIGNAL(loadProgressChanged(int)), this, SLOT(handleMobileLoadProgressChanged(int)));
+        connect(m_quickRoot, SIGNAL(loadFinished(bool)), this, SLOT(handleMobileLoadFinished(bool)));
+        connect(m_quickRoot, SIGNAL(currentUrlNotified(QString)), this, SLOT(handleMobileCurrentUrlNotified(QString)));
+        connect(m_quickRoot, SIGNAL(titleChanged(QString)), this, SLOT(handleMobileTitleChanged(QString)));
     }
 
-    WebView::~WebView() {
-        if (m_webPage) {
-            delete m_webPage;
-            m_webPage = nullptr;
-        }
+    void WebView::handleMobileLoadProgressChanged(const int progress) {
+        m_loadProgress = progress;
+        emit loadProgress(progress);
     }
 
-#endif // QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
+    void WebView::handleMobileLoadFinished(const bool ok) {
+        m_loadProgress = ok ? 100 : -1;
+        emit loadFinished(ok);
+    }
+
+    void WebView::handleMobileCurrentUrlNotified(const QString &urlText) {
+        m_currentUrl = QUrl::fromUserInput(urlText);
+        m_canGoBack = canGoBack();
+        m_canGoForward = canGoForward();
+        emit urlChanged(m_currentUrl);
+    }
+
+    void WebView::handleMobileTitleChanged(const QString &titleText) {
+        emit titleChanged(titleText);
+    }
+#endif
 }

@@ -992,7 +992,7 @@ namespace fairwindsk::ui::mydata {
     }
 
     void Waypoints::applyPreviewFocus() {
-        if (!m_previewAppView || !m_previewAppView->page() || m_detailTabs->currentIndex() != 0) {
+        if (!m_previewAppView || m_detailTabs->currentIndex() != 0) {
             return;
         }
 

@@ -36,10 +36,6 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(FAIRWINDSK_MOBILE FALSE)
 if(ANDROID OR IOS)
     set(FAIRWINDSK_MOBILE TRUE)
-    message(FATAL_ERROR
-            "FairWindSK currently requires Qt WebEngine Widgets and desktop-oriented UI flows that are not supported "
-            "by this project on Android or iOS. Supported build targets are macOS, Linux, Raspberry Pi OS, and Windows. "
-            "See docs/building.md for the current platform support matrix.")
 endif()
 
 find_package(Qt6 REQUIRED COMPONENTS
@@ -53,9 +49,18 @@ find_package(Qt6 REQUIRED COMPONENTS
         Xml
         Svg
         Positioning
-        WebEngineWidgets
         VirtualKeyboard
 )
+
+if(FAIRWINDSK_MOBILE)
+    find_package(Qt6 REQUIRED COMPONENTS
+            Quick
+            QuickWidgets
+            WebView
+    )
+else()
+    find_package(Qt6 REQUIRED COMPONENTS WebEngineWidgets)
+endif()
 
 set(EXTERNAL_INSTALL_LOCATION ${CMAKE_BINARY_DIR}/external)
 include_directories(SYSTEM ${EXTERNAL_INSTALL_LOCATION}/include)
@@ -72,9 +77,17 @@ set(FAIRWINDSK_LINK_LIBRARIES
         Qt::Xml
         Qt::Svg
         Qt::Positioning
-        Qt::WebEngineWidgets
         Qt::VirtualKeyboard
 )
+
+if(FAIRWINDSK_MOBILE)
+    list(APPEND FAIRWINDSK_LINK_LIBRARIES
+            Qt::Quick
+            Qt::QuickWidgets
+            Qt::WebView)
+else()
+    list(APPEND FAIRWINDSK_LINK_LIBRARIES Qt::WebEngineWidgets)
+endif()
 
 set(FAIRWINDSK_POST_BUILD_COMMANDS)
 
@@ -207,12 +220,8 @@ set(FAIRWINDSK_SOURCES
         ui/widgets/TouchSpinBox.cpp ui/widgets/TouchSpinBox.hpp ui/widgets/TouchSpinBox.ui
         ui/widgets/SignalKServerBox.cpp ui/widgets/SignalKServerBox.hpp ui/widgets/SignalKServerBox.ui
         ui/web/Web.cpp ui/web/Web.hpp ui/web/Web.ui
-        ui/web/WebPage.cpp ui/web/WebPage.hpp
-        ui/web/WebPopupWindow.cpp ui/web/WebPopupWindow.hpp
         ui/web/WebView.cpp ui/web/WebView.hpp
         ui/web/SignalKAppView.cpp ui/web/SignalKAppView.hpp ui/web/SignalKAppView.ui
-        ui/web/DownloadManagerWidget.cpp ui/web/DownloadManagerWidget.hpp ui/web/DownloadManagerWidget.ui
-        ui/web/DownloadWidget.cpp ui/web/DownloadWidget.hpp ui/web/DownloadWidget.ui
         resources.qrc
         ui/settings/Apps.cpp ui/settings/Apps.hpp ui/settings/Apps.ui
         ui/settings/AppDetailsWidget.cpp ui/settings/AppDetailsWidget.hpp ui/settings/AppDetailsWidget.ui
@@ -244,6 +253,15 @@ set(FAIRWINDSK_SOURCES
         ui/mydata/FileInfoListModel.cpp ui/mydata/FileInfoListModel.hpp
         ui/mydata/FileViewer.cpp ui/mydata/FileViewer.hpp ui/mydata/FileViewer.ui
 )
+
+if(NOT FAIRWINDSK_MOBILE)
+    list(APPEND FAIRWINDSK_SOURCES
+            ui/web/WebPage.cpp ui/web/WebPage.hpp
+            ui/web/WebPopupWindow.cpp ui/web/WebPopupWindow.hpp
+            ui/web/DownloadManagerWidget.cpp ui/web/DownloadManagerWidget.hpp ui/web/DownloadManagerWidget.ui
+            ui/web/DownloadWidget.cpp ui/web/DownloadWidget.hpp ui/web/DownloadWidget.ui
+    )
+endif()
 
 qt_add_executable(${PROJECT_NAME}
         MANUAL_FINALIZATION

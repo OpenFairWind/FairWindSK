@@ -1,8 +1,6 @@
 # Building FairWindSK
 
-FairWindSK currently targets desktop Qt kits. The project builds and runs on macOS, Linux, Raspberry Pi OS, and Windows from the same CMake codebase.
-
-Android and iOS are not currently supported build targets. The application depends on Qt WebEngine Widgets and desktop-style widget flows, and the project now fails fast at CMake configure time on those mobile targets instead of advertising a broken path.
+FairWindSK uses a single Qt/CMake codebase across desktop and mobile builds. Desktop targets keep the existing Qt WebEngine Widgets stack, while Android and iOS build through an alternate Qt WebView based implementation that preserves the surrounding widget UI.
 
 ## Support matrix
 
@@ -12,8 +10,8 @@ Android and iOS are not currently supported build targets. The application depen
 | Linux | Supported | Full desktop feature set. |
 | Raspberry Pi OS | Supported | Same desktop feature set, plus kiosk/autostart helpers in `extras/`. |
 | Windows | Supported | Full desktop feature set, with `windeployqt` recommended after building. |
-| Android | Not supported | Blocked by the current Qt WebEngine Widgets based UI architecture. |
-| iOS | Not supported | Blocked by the current Qt WebEngine Widgets based UI architecture. |
+| Android | Supported | Uses the alternate Qt WebView based mobile implementation instead of Qt WebEngine Widgets. |
+| iOS | Supported | Uses the alternate Qt WebView based mobile implementation instead of Qt WebEngine Widgets. |
 
 ## Common desktop requirements
 
@@ -41,6 +39,27 @@ Android and iOS are not currently supported build targets. The application depen
 If internet access is restricted, install `nlohmann_json` from your platform package manager first so CMake can use the system header instead of downloading it.
 
 The desktop dependency revisions are now pinned in CMake for reproducible builds.
+
+## Common mobile requirements
+
+- CMake 3.16 or newer
+- A Qt 6 mobile kit with:
+  - `Core`
+  - `Gui`
+  - `Widgets`
+  - `Qml`
+  - `Quick`
+  - `QuickWidgets`
+  - `WebView`
+  - `Concurrent`
+  - `Network`
+  - `WebSockets`
+  - `Xml`
+  - `Svg`
+  - `Positioning`
+  - `VirtualKeyboard`
+
+The mobile build does not pull in the desktop-only external dependencies (`QtZeroConf`, `QHotkey`, `PrintSupport`, or `QtWebEngineWidgets`).
 
 ## Generic desktop workflow
 
@@ -173,27 +192,21 @@ Notes:
 
 ## Android
 
-Android is not currently a supported target for this project.
+Android builds use the mobile web implementation based on `Qt::WebView` hosted inside `QQuickWidget` containers, while the surrounding application shell stays widget-based.
 
-Reason:
+Notes:
 
-- The codebase depends on `QtWebEngineWidgets` and several desktop-widget based flows that are not maintained here as an Android-compatible UI stack.
-
-Current behavior:
-
-- CMake stops during configure with an explicit error instead of pretending the build is supported.
+- Desktop-only integrations such as `QHotkey`, Zeroconf browser discovery, desktop-native `file://` launcher apps, and the shared `QWebEngineProfile` cookie path remain disabled on Android.
+- Embedded previews and web apps still load inside the application, but advanced desktop WebEngine-specific hooks are intentionally not compiled into the Android target.
 
 ## iOS
 
-iOS is not currently a supported target for this project.
+iOS builds use the same alternate mobile web implementation as Android: `Qt::WebView` inside `QQuickWidget` hosts, with the rest of the widget shell preserved.
 
-Reason:
+Notes:
 
-- The codebase depends on `QtWebEngineWidgets` and desktop-style widget flows that are not maintained here as an iOS-compatible UI stack.
-
-Current behavior:
-
-- CMake stops during configure with an explicit error instead of pretending the build is supported.
+- Desktop-only integrations such as `QHotkey`, Zeroconf browser discovery, desktop-native `file://` launcher apps, and the shared `QWebEngineProfile` cookie path remain disabled on iOS.
+- Embedded previews and web apps still load inside the application, but advanced desktop WebEngine-specific hooks are intentionally not compiled into the iOS target.
 
 ## Runtime and deployment notes
 

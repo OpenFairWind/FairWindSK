@@ -8,6 +8,7 @@
 
 #include "ui_FileViewer.h"
 
+#include "FairWindSK.hpp"
 #include <QFile>
 #include <QFileInfo>
 #include <QMessageBox>
@@ -15,9 +16,11 @@
 #include <QSaveFile>
 #include <QSet>
 #include <QUrl>
+#include <QVBoxLayout>
 
 #include "ui/DrawerDialogHost.hpp"
 #include "ui/IconUtils.hpp"
+#include "ui/web/WebView.hpp"
 
 namespace fairwindsk::ui::mydata {
 
@@ -37,6 +40,14 @@ namespace fairwindsk::ui::mydata {
 
         ui->label_filePath->setText(path);
         ui->plainTextEdit->setLineWrapMode(QPlainTextEdit::NoWrap);
+
+        auto *previewLayout = new QVBoxLayout(ui->widgetPreviewHost);
+        previewLayout->setContentsMargins(0, 0, 0, 0);
+        previewLayout->setSpacing(0);
+        m_previewView = new fairwindsk::ui::web::WebView(
+            FairWindSK::getInstance() ? FairWindSK::getInstance()->getWebEngineProfile() : nullptr,
+            ui->widgetPreviewHost);
+        previewLayout->addWidget(m_previewView);
 
         loadFile();
     }
@@ -70,7 +81,9 @@ namespace fairwindsk::ui::mydata {
     void FileViewer::loadPreview() {
         ui->toolButton_Save->setVisible(false);
         ui->stackedWidget->setCurrentWidget(ui->page_Preview);
-        ui->webEngineView->load(QUrl::fromLocalFile(m_path));
+        if (m_previewView) {
+            m_previewView->load(QUrl::fromLocalFile(m_path));
+        }
     }
 
     bool FileViewer::isEditableTextFile(const QMimeType &mimeType) const {

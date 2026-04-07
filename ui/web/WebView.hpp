@@ -6,88 +6,75 @@
 #define FAIRWINDSK_WEBVIEW_HPP
 
 #include <QIcon>
-#include <QWebEngineView>
-#include <QWebEngineCertificateError>
-#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
-#include <QWebEnginePermission>
-#endif
-#if QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
-#include <QWebEngineFileSystemAccessRequest>
-#endif
+#include <QRect>
+#include <QUrl>
+#include <QWidget>
 
+#include "FairWindSK.hpp"
 
-#include <QWebEngineRegisterProtocolHandlerRequest>
-
-#include "ui_CertificateErrorDialog.h"
-#include "ui_PasswordDialog.h"
-#include "WebPage.hpp"
-
+class QWebEngineView;
+class QQuickWidget;
 
 namespace fairwindsk::ui::web {
 
-    class WebView : public QWebEngineView {
-    Q_OBJECT
+    class WebView : public QWidget {
+        Q_OBJECT
 
     public:
-        // Constructor
-        explicit WebView(QWebEngineProfile *profile, QWidget *parent = nullptr);
-
-        // Set the web page pointer
-        void setPage(WebPage *page);
-
-        // Get the load progress
-        int loadProgress() const;
-
-        // Destructor
+        explicit WebView(fairwindsk::WebProfileHandle *profile, QWidget *parent = nullptr);
         ~WebView() override;
 
-    protected:
-
+        void load(const QUrl &url);
+        void setUrl(const QUrl &url);
+        QUrl url() const;
+        void setHtml(const QString &html, const QUrl &baseUrl = QUrl());
+        void reload();
+        void stop();
+        void back();
+        void forward();
+        bool canGoBack() const;
+        bool canGoForward() const;
+        void runJavaScript(const QString &script);
 
     signals:
-
-
+        void loadStarted();
+        void loadProgress(int progress);
+        void loadFinished(bool ok);
+        void urlChanged(const QUrl &url);
+        void titleChanged(const QString &title);
+        void geometryChangeRequested(const QRect &newGeometry);
+        void windowCloseRequested();
 
     private slots:
-
-        // Certificate error handler
-        void handleCertificateError(QWebEngineCertificateError error);
-
-        // Authentication required handler
-        void handleAuthenticationRequired(const QUrl &requestUrl, QAuthenticator *auth);
-
-#if QT_VERSION < QT_VERSION_CHECK(6, 8, 0)
-        // Feature Permission Requested handler
-        void handleFeaturePermissionRequested(const QUrl &securityOrigin, QWebEnginePage::Feature feature);
-#endif
-
-#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
-        // Permission Requested handler
-        void handlePermissionRequested(QWebEnginePermission permission);
-#endif
-
-        // Proxy Authentication Required handler
-        void handleProxyAuthenticationRequired(const QUrl &requestUrl, QAuthenticator *auth, const QString &proxyHost);
-
-        // Register Protocol Handler Requested handler
-        void handleRegisterProtocolHandlerRequested(QWebEngineRegisterProtocolHandlerRequest request);
-
-#if QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
-
-        // File System Access Requested handler
-        void handleFileSystemAccessRequested(QWebEngineFileSystemAccessRequest request);
-
+#if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
+        void handleMobileLoadProgressChanged(int progress);
+        void handleMobileLoadFinished(bool ok);
+        void handleMobileCurrentUrlNotified(const QString &url);
+        void handleMobileTitleChanged(const QString &title);
 #endif
 
     private:
+        void initializeDesktop(fairwindsk::WebProfileHandle *profile);
+        void initializeMobile();
 
-    private:
-        // Load progress (0-100)
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+        void setDesktopPage(class WebPage *page);
+#endif
+
         int m_loadProgress = 100;
+        QWidget *m_viewWidget = nullptr;
 
-        // Web page pointer
-        WebPage *m_webPage = nullptr;
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+        QWebEngineView *m_desktopView = nullptr;
+        class WebPage *m_webPage = nullptr;
+#else
+        QQuickWidget *m_quickView = nullptr;
+        QObject *m_quickRoot = nullptr;
+        QUrl m_currentUrl;
+        bool m_canGoBack = false;
+        bool m_canGoForward = false;
+#endif
     };
 }
 
-#endif //FAIRWINDSK_WEBVIEW_HPP
+#endif // FAIRWINDSK_WEBVIEW_HPP

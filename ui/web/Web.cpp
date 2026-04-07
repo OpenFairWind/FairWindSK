@@ -5,11 +5,8 @@
 // You may need to build the project (run Qt uic code generator) to get "ui_MainPage.h" resolved
 
 #include <QPushButton>
-#include <QWebEngineProfile>
-#include <QWebEngineHistory>
 
 #include "Web.hpp"
-#include "WebPage.hpp"
 #include "ui/topbar/TopBar.hpp"
 
 
@@ -19,7 +16,7 @@ namespace fairwindsk::ui::web {
      * Web
      * Constructor
      */
-    Web::Web(QWidget *parent, fairwindsk::AppItem *appItem, QWebEngineProfile *profile): QWidget(parent), ui(new Ui::Web) {
+    Web::Web(QWidget *parent, fairwindsk::AppItem *appItem, fairwindsk::WebProfileHandle *profile): QWidget(parent), ui(new Ui::Web) {
 
         // Set the application pointer
         m_appItem = appItem;
@@ -70,10 +67,10 @@ namespace fairwindsk::ui::web {
         m_progressBar->setVisible(false);
         ui->verticalLayout_WebView->insertWidget(0, m_progressBar);
 
-        connect(m_webView, &QWebEngineView::loadStarted, this, &Web::handleLoadStarted);
-        connect(m_webView, &QWebEngineView::loadProgress, this, &Web::handleWebViewLoadProgress);
-        connect(m_webView, &QWebEngineView::loadFinished, this, &Web::handleLoadFinished);
-        connect(m_webView, &QWebEngineView::urlChanged, this, [this]() { syncNavigationState(); });
+        connect(m_webView, &WebView::loadStarted, this, &Web::handleLoadStarted);
+        connect(m_webView, &WebView::loadProgress, this, &Web::handleWebViewLoadProgress);
+        connect(m_webView, &WebView::loadFinished, this, &Web::handleLoadFinished);
+        connect(m_webView, &WebView::urlChanged, this, [this]() { syncNavigationState(); });
 
         syncNavigationState();
 
@@ -287,8 +284,8 @@ namespace fairwindsk::ui::web {
             return;
         }
 
-        m_NavigationBar->setBackEnabled(m_webView->history() && m_webView->history()->canGoBack());
-        m_NavigationBar->setForwardEnabled(m_webView->history() && m_webView->history()->canGoForward());
+        m_NavigationBar->setBackEnabled(m_webView->canGoBack());
+        m_NavigationBar->setForwardEnabled(m_webView->canGoForward());
         m_NavigationBar->setHomeEnabled(m_appItem != nullptr && !m_appItem->getUrl().isEmpty());
         m_NavigationBar->setSettingsEnabled(m_appItem != nullptr && !m_appItem->getSettingsUrl(FairWindSK::getInstance()->getConfiguration()->getSignalKServerUrl()+"/admin/#/serverConfiguration/plugins/").isEmpty());
     }

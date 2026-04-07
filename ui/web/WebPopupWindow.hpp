@@ -7,11 +7,10 @@
 
 
 #include <QWidget>
+#include "FairWindSK.hpp"
 
 QT_BEGIN_NAMESPACE
 class QLineEdit;
-class QWebEngineProfile;
-class QWebEngineView;
 QT_END_NAMESPACE
 
 namespace fairwindsk::ui::web {
@@ -22,7 +21,7 @@ namespace fairwindsk::ui::web {
     Q_OBJECT
 
     public:
-        explicit WebPopupWindow(QWebEngineProfile *profile);
+        explicit WebPopupWindow(fairwindsk::WebProfileHandle *profile);
         WebView *view() const;
 
 

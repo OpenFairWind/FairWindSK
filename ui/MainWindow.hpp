@@ -10,7 +10,6 @@
 #include <QDebug>
 #include <QCloseEvent>
 #include <QEventLoop>
-#include <QWebEngineProfile>
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
 #include <QHotkey>

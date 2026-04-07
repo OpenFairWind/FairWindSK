@@ -1,6 +1,6 @@
 # Graphical user interface overview
 
-FairWindSK presents a desktop-style grid of applications backed by Qt6 widgets and Qt WebEngine views. Native bars along the top and bottom provide quick vessel controls and status.
+FairWindSK presents a grid of applications backed by Qt6 widgets. Desktop builds render embedded web content with Qt WebEngine Widgets, while Android and iOS use a Qt WebView based widget host behind the same application-facing classes. Native bars along the top and bottom provide quick vessel controls and status.
 
 ## Desktop and navigation
 

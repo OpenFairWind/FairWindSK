@@ -10,7 +10,7 @@
 #include <QNetworkRequest>
 #include <QSettings>
 #include <QUuid>
-#include <QWebEngineSettings>
+#include <QVBoxLayout>
 
 #include "Connection.hpp"
 #include "ui_Connection.h"
@@ -98,13 +98,17 @@ namespace fairwindsk::ui::settings {
     }
 
     void Connection::showConsole() const {
-        ui->webEngineView->setVisible(false);
+        if (m_browserView) {
+            m_browserView->setVisible(false);
+        }
         ui->textEdit_message->setVisible(true);
     }
 
     void Connection::showBrowserPage(const QUrl &url) const {
-        ui->webEngineView->setUrl(url);
-        ui->webEngineView->setVisible(true);
+        if (m_browserView) {
+            m_browserView->setUrl(url);
+            m_browserView->setVisible(true);
+        }
         ui->textEdit_message->setVisible(false);
     }
 
@@ -247,17 +251,13 @@ namespace fairwindsk::ui::settings {
             ui->comboBox_signalkserverurl->addItem("https://demo.signalk.org");
         }
 
-        // Get the web engine profile
-        const auto profile = FairWindSK::getInstance()->getWebEngineProfile();
-
-        // Create a web page
-        m_page = new QWebEnginePage(profile);
-
-        // Set the page of the web engine view
-        ui->webEngineView->setPage(m_page);
-
-        // Hide the web engine view
-        ui->webEngineView->setVisible(false);
+        auto *browserLayout = new QVBoxLayout(ui->widgetBrowserHost);
+        browserLayout->setContentsMargins(0, 0, 0, 0);
+        browserLayout->setSpacing(0);
+        m_browserView = new fairwindsk::ui::web::WebView(FairWindSK::getInstance()->getWebEngineProfile(),
+                                                         ui->widgetBrowserHost);
+        browserLayout->addWidget(m_browserView);
+        m_browserView->setVisible(false);
 
         // Show the console
         ui->textEdit_message->setVisible(true);
@@ -634,16 +634,6 @@ namespace fairwindsk::ui::settings {
 
         abortActiveTokenReply();
         stopTokenTimer();
-
-        // Check if the page has been allocated
-        if (m_page) {
-
-            // Delete the page
-            delete m_page;
-
-            // Set the pointer to null
-            m_page = nullptr;
-        }
 
         // Check if the UI is valid
         if (ui) {

@@ -6,7 +6,6 @@
 
 #include <QProgressBar>
 #include <QVBoxLayout>
-#include <QWebEnginePage>
 
 #include "AppItem.hpp"
 #include "FairWindSK.hpp"
@@ -62,14 +61,14 @@ namespace fairwindsk::ui::web {
         m_webView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         layout->addWidget(m_webView);
 
-        connect(m_webView, &QWebEngineView::loadStarted, this, [this]() {
+        connect(m_webView, &WebView::loadStarted, this, [this]() {
             m_progressBar->setValue(0);
             m_progressBar->setVisible(true);
         });
-        connect(m_webView, &QWebEngineView::loadProgress, this, [this](const int progress) {
+        connect(m_webView, &WebView::loadProgress, this, [this](const int progress) {
             m_progressBar->setValue(progress);
         });
-        connect(m_webView, &QWebEngineView::loadFinished, this, [this](const bool ok) {
+        connect(m_webView, &WebView::loadFinished, this, [this](const bool ok) {
             m_progressBar->setVisible(false);
             emit loadFinished(ok);
         });
@@ -119,13 +118,9 @@ namespace fairwindsk::ui::web {
     }
 
     void SignalKAppView::runJavaScript(const QString &script) {
-        if (m_webView && m_webView->page()) {
-            m_webView->page()->runJavaScript(script);
+        if (m_webView) {
+            m_webView->runJavaScript(script);
         }
-    }
-
-    QWebEnginePage *SignalKAppView::page() const {
-        return m_webView ? m_webView->page() : nullptr;
     }
 
     QUrl SignalKAppView::url() const {

@@ -23,7 +23,9 @@
 #include <QNetworkReply>
 #include <utility>
 #include <QNetworkCookie>
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
 #include <QWebEngineCookieStore>
+#endif
 #include <QUrl>
 #include <QPointer>
 #include <QTimer>
@@ -584,11 +586,13 @@ namespace fairwindsk {
         // Se the default configuration file name
         m_configFilename = defaultConfigFilename();
 
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         // Create the WebEngine profile file name
         auto profileName = QString::fromLatin1("FairWindSK.%1").arg(qWebEngineChromiumVersion());
 
         // Create the WebEngine profile
         m_profile = new QWebEngineProfile(profileName, this);
+#endif
 
         if (qApp) {
             qApp->installEventFilter(this);
@@ -655,7 +659,11 @@ namespace fairwindsk {
         if (isDebug()) {
 
             // Write a message
-            qDebug() << "QWebEngineProfile " << m_profile->isOffTheRecord() << " data store: " << m_profile->persistentStoragePath();
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+            if (m_profile) {
+                qDebug() << "QWebEngineProfile " << m_profile->isOffTheRecord() << " data store: " << m_profile->persistentStoragePath();
+            }
+#endif
 
 
             // Write a message
@@ -870,6 +878,9 @@ namespace fairwindsk {
     }
 
     void FairWindSK::updateWebProfileCookie() {
+#if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
+        return;
+#else
         if (!m_profile) {
             return;
         }
@@ -883,6 +894,7 @@ namespace fairwindsk {
         auto authenticationCookie = QNetworkCookie("JAUTHENTICATION", token.toUtf8());
         authenticationCookie.setPath("/");
         m_profile->cookieStore()->setCookie(authenticationCookie, QUrl(serverUrl));
+#endif
     }
 
     /*
@@ -1305,7 +1317,7 @@ namespace fairwindsk {
         return &m_signalkClient;
     }
 
-    QWebEngineProfile *FairWindSK::getWebEngineProfile() {
+    WebProfileHandle *FairWindSK::getWebEngineProfile() {
         return m_profile;
     }
 

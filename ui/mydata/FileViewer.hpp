@@ -8,6 +8,8 @@
 #include <QWidget>
 #include <QMimeType>
 
+namespace fairwindsk::ui::web { class WebView; }
+
 namespace fairwindsk::ui::mydata
 {
     QT_BEGIN_NAMESPACE
@@ -37,6 +39,7 @@ namespace fairwindsk::ui::mydata
 
         Ui::FileViewer *ui;
         QString m_path;
+        fairwindsk::ui::web::WebView *m_previewView = nullptr;
     };
 }
 

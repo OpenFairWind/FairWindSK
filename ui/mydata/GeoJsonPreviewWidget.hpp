@@ -10,11 +10,10 @@
 
 class QPlainTextEdit;
 class QTabWidget;
-class QWebEngineView;
 namespace Ui { class GeoJsonPreviewWidget; }
+namespace fairwindsk::ui::web { class WebView; }
 
 namespace fairwindsk::ui::mydata {
-
     class GeoJsonPreviewWidget final : public QWidget {
         Q_OBJECT
 
@@ -40,8 +39,8 @@ namespace fairwindsk::ui::mydata {
 
         ::Ui::GeoJsonPreviewWidget *ui = nullptr;
         QTabWidget *m_tabWidget = nullptr;
-        QWebEngineView *m_view = nullptr;
-        QWebEngineView *m_freeboardView = nullptr;
+        fairwindsk::ui::web::WebView *m_view = nullptr;
+        fairwindsk::ui::web::WebView *m_freeboardView = nullptr;
         QPlainTextEdit *m_textView = nullptr;
         bool m_hasFocusCoordinate = false;
         bool m_freeboardEnabled = true;

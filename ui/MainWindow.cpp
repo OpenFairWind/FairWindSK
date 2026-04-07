@@ -5,7 +5,6 @@
 #include <QTimer>
 #include <QToolButton>
 #include <QNetworkCookie>
-#include <QWebEngineCookieStore>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QFrame>

@@ -2,7 +2,6 @@
 // Created by Raffaele Montella on 28/03/21.
 //
 
-#include "WebPage.hpp"
 #include "WebPopupWindow.hpp"
 #include "WebView.hpp"
 #include <QAction>
@@ -12,7 +11,7 @@
 #include <QWindow>
 
 namespace fairwindsk::ui::web {
-    WebPopupWindow::WebPopupWindow(QWebEngineProfile *profile)
+    WebPopupWindow::WebPopupWindow(fairwindsk::WebProfileHandle *profile)
             : m_urlLineEdit(new QLineEdit(this))
             , m_favAction(new QAction(this))
             , m_view(new WebView(profile,this))
@@ -36,8 +35,8 @@ namespace fairwindsk::ui::web {
             m_urlLineEdit->setText(url.toDisplayString());
         });
 
-        connect(m_view->page(), &WebPage::geometryChangeRequested, this, &WebPopupWindow::handleGeometryChangeRequested);
-        connect(m_view->page(), &WebPage::windowCloseRequested, this, &QWidget::close);
+        connect(m_view, &WebView::geometryChangeRequested, this, &WebPopupWindow::handleGeometryChangeRequested);
+        connect(m_view, &WebView::windowCloseRequested, this, &QWidget::close);
     }
 
     WebView *WebPopupWindow::view() const

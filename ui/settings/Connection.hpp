@@ -13,7 +13,7 @@
 #include <QtZeroConf/qzeroconf.h>
 #endif
 #include "Settings.hpp"
-#include "ui/web/Web.hpp"
+#include "ui/web/WebView.hpp"
 
 namespace fairwindsk::ui::settings {
     QT_BEGIN_NAMESPACE
@@ -68,7 +68,7 @@ namespace fairwindsk::ui::settings {
         QZeroConf m_zeroConf;
 #endif
         QTimer *m_timer = nullptr;
-        QWebEnginePage *m_page = nullptr;
+        fairwindsk::ui::web::WebView *m_browserView = nullptr;
         QNetworkAccessManager *m_networkAccessManager = nullptr;
         QPointer<QNetworkReply> m_activeTokenReply;
 

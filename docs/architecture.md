@@ -4,12 +4,12 @@ FairWindSK is a Qt6 shell that launches Signal K web applications and exposes na
 
 ## High-level components
 
-- **Application bootstrap (`main.cpp`)**: Initializes Qt, installs translations, shows the splash screen on desktop targets, and hands control to the `FairWindSK` singleton before opening the main window. It sets up default WebEngine features such as accelerated canvas and plugin support.
-- **Singleton core (`FairWindSK`)**: Central orchestrator that loads configuration, negotiates the Signal K connection, synchronizes installed web apps, and exposes global services (the shared `QWebEngineProfile`, the `signalk::Client`, and the app registry).
+- **Application bootstrap (`main.cpp`)**: Initializes Qt, installs translations, shows the splash screen on desktop targets, and hands control to the `FairWindSK` singleton before opening the main window. Desktop builds also configure WebEngine features such as accelerated canvas and plugin support, while mobile builds initialize Qt WebView.
+- **Singleton core (`FairWindSK`)**: Central orchestrator that loads configuration, negotiates the Signal K connection, synchronizes installed web apps, and exposes global services (the shared desktop `QWebEngineProfile` when available, the `signalk::Client`, and the app registry).
 - **Configuration management (`Configuration`)**: Loads and saves `fairwindsk.json`, seeds defaults from `resources/json/configuration.json`, and persists user choices (window geometry, unit preferences, application list, and plugin-specific settings). Token storage lives in `fairwindsk.ini` via `QSettings`.
 - **Application registry (`AppItem`)**: Represents a web or local application, including metadata (name, description, icon), activation state, ordering, and optional settings/help/about URLs. Items are refreshed from the Signal K server’s Apps API (`/signalk/v1/apps/list`) and merged with local overrides. Desktop builds can launch local `file://` applications.
 - **Signal K client (`signalk::Client`)**: Manages REST and websocket communication with the server using URLs derived from `connection.server` plus `/signalk`, including authentication tokens shared through the WebEngine cookie store. The client now re-discovers the server after disconnects, reopens the stream, re-sends subscriptions, and hydrates current values so widgets recover cleanly after a Signal K restart.
-- **UI layers (`ui/` directory)**: Implements the Qt widgets for the desktop, top/bottom bars, settings panels, and embedded web views. Bars read the `Configuration` paths (e.g., `navigation.anchor.*`, autopilot targets) to bind to Signal K data.
+- **UI layers (`ui/` directory)**: Implements the Qt widgets for the desktop, top/bottom bars, settings panels, and embedded web views. A shared `ui/web/WebView` facade keeps the desktop `QWebEngineView` path and the mobile Qt WebView path behind the same widget-oriented API so the higher-level UI classes do not fork.
 
 ## Data and configuration flow
 
@@ -28,10 +28,10 @@ FairWindSK is a Qt6 shell that launches Signal K web applications and exposes na
 
 ## Authentication model
 
-Tokens are stored outside the main JSON configuration to avoid accidental check-in. `Configuration::getToken()` and `setToken()` read/write `fairwindsk.ini`, while `FairWindSK` injects the token into the shared `QWebEngineProfile` cookie store as `JAUTHENTICATION`. Web apps launched through the profile reuse this authentication context.
+Tokens are stored outside the main JSON configuration to avoid accidental check-in. `Configuration::getToken()` and `setToken()` read/write `fairwindsk.ini`. On desktop builds, `FairWindSK` injects the token into the shared `QWebEngineProfile` cookie store as `JAUTHENTICATION`, so embedded web apps reuse that authentication context. Mobile builds use the alternate Qt WebView backend and therefore have a narrower shared-cookie integration surface than desktop.
 
 ## Extending the application
 
 - **Adding custom web apps**: Insert entries under `apps` in `fairwindsk.json` with `name` pointing to an HTTPS, HTTP, or `file://` URL. Provide `signalk.appIcon` and `signalk.displayName` to control the tile presentation.
 - **Integrating native features**: Bars and custom widgets should consume data paths already listed under the `signalk` block in `resources/json/configuration.json` or add new keys that map to Signal K paths.
-- **Platform adaptations**: The singleton exposes window sizing and mode fields (fullscreen vs. windowed). Desktop-only integrations such as `QHotkey`, ZeroConf discovery, and native `file://` application launching remain part of the supported desktop builds. Android and iOS are not currently supported targets for this codebase.
+- **Platform adaptations**: The singleton exposes window sizing and mode fields (fullscreen vs. windowed). Desktop-only integrations such as `QHotkey`, ZeroConf discovery, and native `file://` application launching remain part of the desktop builds, while Android and iOS now rely on the alternate Qt WebView based rendering path and keep those desktop-specific integrations disabled.

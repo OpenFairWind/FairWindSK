@@ -12,13 +12,23 @@
 #include <QEvent>
 #include <QTimer>
 #include <nlohmann/json.hpp>
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
 #include <QWebEngineProfile>
+#else
+class QObject;
+#endif
 
 #include "AppItem.hpp"
 #include "signalk/Client.hpp"
 #include "Configuration.hpp"
 
 namespace fairwindsk {
+
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+    using WebProfileHandle = QWebEngineProfile;
+#else
+    using WebProfileHandle = QObject;
+#endif
 
     class AppItem;
 
@@ -62,7 +72,7 @@ namespace fairwindsk {
         QList<QString> getAppsHashes();
 
         // Get the WebEngine profile
-        QWebEngineProfile *getWebEngineProfile();
+        WebProfileHandle *getWebEngineProfile();
 
         // Return true if the debug is set in the fairwindsk.ini file
         [[nodiscard]] bool isDebug() const;
@@ -98,7 +108,7 @@ namespace fairwindsk {
         FairWindSK();
 
         // Pointer to the WebEngine profile
-        QWebEngineProfile *m_profile = nullptr;
+        WebProfileHandle *m_profile = nullptr;
 
         // The hash/item map
         QMap<QString, AppItem *> m_mapHash2AppItem;

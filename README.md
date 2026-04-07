@@ -11,8 +11,7 @@ open-source and open-data.
 
 FairWindSK is a browser with steroids designed to host SK applications.
 It is written in C++ 17 and QT6.
-It now has a single CMake-based desktop build path for macOS, Linux, Raspberry Pi OS, and Windows.
-Android and iOS are not currently supported build targets because the application depends on Qt WebEngine Widgets and desktop-style widget flows.
+It now has a single CMake-based cross-platform build path: desktop targets keep the existing Qt WebEngine Widgets implementation, while Android and iOS use a mobile-safe Qt WebView based alternative behind the same source interfaces.
 The runtime now supervises Signal K restarts as well: if the server drops and comes back, FairWindSK re-discovers the server, reconnects the websocket stream, restores subscriptions, and refreshes server-backed resources so the UI stays consistent with the restarted backend.
 
 ## Documentation
@@ -65,8 +64,8 @@ The full platform guide now lives in [docs/building.md](docs/building.md).
 
 Quick summary:
 
-- macOS, Linux, Raspberry Pi OS, and Windows are desktop targets.
-- Android and iOS are currently unsupported and are rejected at CMake configure time with a clear message.
+- macOS, Linux, Raspberry Pi OS, and Windows keep the desktop Qt WebEngine Widgets implementation.
+- Android and iOS now build through an alternate mobile web layer based on Qt WebView and QQuickWidget hosts.
 - Desktop targets download `nlohmann/json`, `QtZeroConf`, and `QHotkey` during the first clean build.
 
 Generic workflow:
@@ -78,7 +77,7 @@ cmake -S . -B build
 cmake --build build --parallel
 ```
 
-For platform-specific package lists, Qt kit selection, Windows deployment, Raspberry Pi notes, and mobile caveats, see [docs/building.md](docs/building.md).
+For platform-specific package lists, Qt kit selection, Windows deployment, Raspberry Pi notes, and the current desktop/mobile feature notes, see [docs/building.md](docs/building.md).
 
 # Signal K server on Docker
 
