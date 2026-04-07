@@ -194,19 +194,112 @@ Notes:
 
 Android builds use the mobile web implementation based on `Qt::WebView` hosted inside `QQuickWidget` containers, while the surrounding application shell stays widget-based.
 
+### Step-by-step Android build guide
+
+1. Install the Android toolchain prerequisites:
+   - Qt 6 with the Android kit you plan to use
+   - Android Studio or the Android command-line SDK tools
+   - A matching Android NDK supported by your Qt release
+   - CMake and Ninja
+   - Java JDK, if it is not already provided by Android Studio
+2. Open Android Studio once and install:
+   - an Android SDK platform
+   - Android SDK Platform-Tools
+   - Android SDK Build-Tools
+   - the NDK version recommended by your Qt kit
+3. In Qt Maintenance Tool, install the Android Qt components that match your desktop host and target ABI.
+4. In Qt Creator, go to `Preferences` -> `Devices` -> `Android` and verify that the SDK, NDK, JDK, and platform paths are detected correctly.
+5. Clone the repository:
+
+```bash
+git clone https://github.com/OpenFairWind/FairWindSK.git
+cd FairWindSK
+```
+
+6. Open `FairWindSK/CMakeLists.txt` in Qt Creator as a CMake project.
+7. When Qt Creator asks for kits, select an Android kit such as `Android Qt 6.x.x Clang arm64-v8a`.
+8. Let Qt Creator configure the project. The mobile configuration should:
+   - use `Qt::WebView`, `Qt::Quick`, and `Qt::QuickWidgets`
+   - skip desktop-only dependencies such as `QtZeroConf`, `QHotkey`, `PrintSupport`, and `QtWebEngineWidgets`
+9. Build the application from Qt Creator with `Build` -> `Build Project`.
+10. Connect an Android device with developer mode enabled, or start an Android emulator.
+11. Deploy with `Build` -> `Run`, or use `Projects` -> `Run` to select the target device first.
+12. On first launch, confirm that embedded web content opens inside the app and that the main widget shell scales correctly on the device.
+
+### Optional command-line Android configure example
+
+If you prefer configuring outside Qt Creator, use the Android kit paths supplied by your Qt installation and Android SDK:
+
+```bash
+cmake -S . -B build-android -G Ninja \
+  -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK/build/cmake/android.toolchain.cmake" \
+  -DANDROID_ABI=arm64-v8a \
+  -DANDROID_PLATFORM=android-24 \
+  -DCMAKE_PREFIX_PATH="/path/to/Qt/6.x.x/android_arm64_v8a"
+cmake --build build-android --parallel
+```
+
+Qt Creator is still the recommended path for packaging and deployment because it manages the Android manifest, APK signing flow, and device deployment more smoothly.
+
 Notes:
 
 - Desktop-only integrations such as `QHotkey`, Zeroconf browser discovery, desktop-native `file://` launcher apps, and the shared `QWebEngineProfile` cookie path remain disabled on Android.
 - Embedded previews and web apps still load inside the application, but advanced desktop WebEngine-specific hooks are intentionally not compiled into the Android target.
 
-## iOS
+## iOS / iPadOS
 
-iOS builds use the same alternate mobile web implementation as Android: `Qt::WebView` inside `QQuickWidget` hosts, with the rest of the widget shell preserved.
+iOS and iPadOS builds use the same alternate mobile web implementation as Android: `Qt::WebView` inside `QQuickWidget` hosts, with the rest of the widget shell preserved.
+
+### Step-by-step iOS / iPadOS build guide
+
+1. Use a macOS machine with:
+   - Xcode installed
+   - Xcode command line tools installed
+   - Qt 6 with the iOS kit
+   - CMake and Ninja
+2. Open Xcode at least once and accept the license if needed.
+3. In Qt Maintenance Tool, install the iOS Qt components that match your desktop Qt release.
+4. If you plan to deploy to physical hardware, make sure your Apple developer signing identities and provisioning profiles are available in Xcode.
+5. Clone the repository:
+
+```bash
+git clone https://github.com/OpenFairWind/FairWindSK.git
+cd FairWindSK
+```
+
+6. Open `FairWindSK/CMakeLists.txt` in Qt Creator as a CMake project.
+7. Select an iOS kit such as the Qt 6 iPhoneOS kit during kit selection.
+8. Let Qt Creator configure the project for the chosen Apple mobile target.
+9. Build the application from Qt Creator with `Build` -> `Build Project`.
+10. For simulator testing:
+   - choose an iOS Simulator run target
+   - start the app with `Build` -> `Run`
+11. For device deployment:
+   - connect the iPhone or iPad
+   - select the physical device in the run target chooser
+   - verify signing settings if Qt Creator prompts for them
+   - run the project from Qt Creator
+12. Validate that the main widget shell, drawers, and embedded web content behave correctly on both compact phone layouts and larger iPad layouts.
+
+### Optional command-line iOS configure example
+
+Command-line iOS builds are possible, but Qt Creator remains the recommended workflow because Apple signing, simulator/device selection, and bundle deployment are easier there. A typical configure pattern is:
+
+```bash
+cmake -S . -B build-ios -G Ninja \
+  -DCMAKE_SYSTEM_NAME=iOS \
+  -DCMAKE_OSX_SYSROOT=iphoneos \
+  -DCMAKE_OSX_ARCHITECTURES=arm64 \
+  -DCMAKE_PREFIX_PATH="/path/to/Qt/6.x.x/ios"
+cmake --build build-ios --parallel
+```
+
+For simulator-only builds, use the simulator SDK and matching architecture values instead of `iphoneos`.
 
 Notes:
 
-- Desktop-only integrations such as `QHotkey`, Zeroconf browser discovery, desktop-native `file://` launcher apps, and the shared `QWebEngineProfile` cookie path remain disabled on iOS.
-- Embedded previews and web apps still load inside the application, but advanced desktop WebEngine-specific hooks are intentionally not compiled into the iOS target.
+- Desktop-only integrations such as `QHotkey`, Zeroconf browser discovery, desktop-native `file://` launcher apps, and the shared `QWebEngineProfile` cookie path remain disabled on iOS and iPadOS.
+- Embedded previews and web apps still load inside the application, but advanced desktop WebEngine-specific hooks are intentionally not compiled into the Apple mobile targets.
 
 ## Runtime and deployment notes
 
