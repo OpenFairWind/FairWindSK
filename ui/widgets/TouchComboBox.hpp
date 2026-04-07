@@ -14,6 +14,7 @@ class QLabel;
 class QLineEdit;
 class QListWidget;
 class QListWidgetItem;
+class QStyledItemDelegate;
 
 namespace fairwindsk::ui::widgets {
     QT_BEGIN_NAMESPACE
@@ -77,6 +78,7 @@ namespace fairwindsk::ui::widgets {
         QLineEdit *m_editor = nullptr;
         QFrame *m_popup = nullptr;
         QListWidget *m_listWidget = nullptr;
+        QStyledItemDelegate *m_popupDelegate = nullptr;
         QLabel *m_iconLabel = nullptr;
         int m_currentIndex = -1;
         bool m_editable = false;

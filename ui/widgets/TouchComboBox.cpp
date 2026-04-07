@@ -14,6 +14,8 @@
 #include <QPixmap>
 #include <QPushButton>
 #include <QScreen>
+#include <QStyledItemDelegate>
+#include <QStyleOptionViewItem>
 #include <QVBoxLayout>
 
 #include "ui/IconUtils.hpp"
@@ -113,6 +115,34 @@ namespace fairwindsk::ui::widgets {
             const QFontMetrics metrics(font);
             return qMax(kMinimumComboItemHeight, metrics.height() + 26);
         }
+
+        class PopupItemDelegate final : public QStyledItemDelegate {
+        public:
+            explicit PopupItemDelegate(QObject *parent = nullptr)
+                : QStyledItemDelegate(parent) {
+            }
+
+            void setPopupFont(const QFont &font) {
+                m_popupFont = font;
+            }
+
+            [[nodiscard]] QSize sizeHint(const QStyleOptionViewItem &option,
+                                         const QModelIndex &index) const override {
+                QSize hint = QStyledItemDelegate::sizeHint(option, index);
+                hint.setHeight(qMax(hint.height(), comboItemHeightForFont(m_popupFont)));
+                return hint;
+            }
+
+        protected:
+            void initStyleOption(QStyleOptionViewItem *option, const QModelIndex &index) const override {
+                QStyledItemDelegate::initStyleOption(option, index);
+                option->font = m_popupFont;
+                option->fontMetrics = QFontMetrics(m_popupFont);
+            }
+
+        private:
+            QFont m_popupFont;
+        };
     }
 
     TouchComboBox::TouchComboBox(QWidget *parent)
@@ -148,6 +178,8 @@ namespace fairwindsk::ui::widgets {
         m_listWidget->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
         m_listWidget->setIconSize(QSize(kComboIconSize, kComboIconSize));
         m_listWidget->setSpacing(4);
+        m_popupDelegate = new PopupItemDelegate(m_listWidget);
+        m_listWidget->setItemDelegate(m_popupDelegate);
         popupLayout->addWidget(m_listWidget);
 
         connect(ui->pushButtonPopup, &QPushButton::clicked, this, &TouchComboBox::togglePopup);
@@ -184,7 +216,9 @@ namespace fairwindsk::ui::widgets {
         auto *item = new QListWidgetItem(icon, text, m_listWidget);
         item->setData(Qt::UserRole, userData);
         item->setData(kRawIconRole, icon);
-        item->setSizeHint(QSize(item->sizeHint().width(), comboItemHeightForFont(font())));
+        const QFont popupFont = m_editor ? m_editor->font() : font();
+        item->setFont(popupFont);
+        item->setSizeHint(QSize(item->sizeHint().width(), comboItemHeightForFont(popupFont)));
 
         if (m_currentIndex < 0) {
             setCurrentIndex(0);
@@ -371,6 +405,9 @@ namespace fairwindsk::ui::widgets {
         const QFont popupFont = m_editor ? m_editor->font() : font();
         m_listWidget->setFont(popupFont);
         m_listWidget->setIconSize(QSize(kComboIconSize, kComboIconSize));
+        if (auto *delegate = static_cast<PopupItemDelegate *>(m_popupDelegate)) {
+            delegate->setPopupFont(popupFont);
+        }
 
         const QColor iconColor = comboForegroundColor(activePalette);
         for (int i = 0; i < m_listWidget->count(); ++i) {
@@ -380,6 +417,7 @@ namespace fairwindsk::ui::widgets {
             }
 
             const QIcon rawIcon = qvariant_cast<QIcon>(item->data(kRawIconRole));
+            item->setFont(popupFont);
             item->setSizeHint(QSize(item->sizeHint().width(), comboItemHeightForFont(popupFont)));
             if (!rawIcon.isNull()) {
                 item->setIcon(fairwindsk::ui::tintedIcon(rawIcon, iconColor, QSize(kComboIconSize, kComboIconSize)));
