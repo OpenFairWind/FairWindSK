@@ -184,8 +184,8 @@ namespace fairwindsk {
             if (preset == "sunrise") {
                 return QStringLiteral("dawn");
             }
-            if (preset != "dawn" && preset != "day" && preset != "sunset" && preset != "dusk" && preset != "night") {
-                return QStringLiteral("day");
+            if (preset != "default" && preset != "dawn" && preset != "day" && preset != "sunset" && preset != "dusk" && preset != "night") {
+                return QStringLiteral("default");
             }
             return preset;
         }
@@ -731,8 +731,8 @@ namespace fairwindsk {
             if (preset == "sunrise") {
                 preset = QStringLiteral("dawn");
             }
-            if (preset != "dawn" && preset != "day" && preset != "sunset" && preset != "dusk" && preset != "night") {
-                preset = QStringLiteral("day");
+            if (preset != "default" && preset != "dawn" && preset != "day" && preset != "sunset" && preset != "dusk" && preset != "night") {
+                preset = QStringLiteral("default");
             }
             return preset;
         }
@@ -742,8 +742,8 @@ namespace fairwindsk {
             if (preset == "sunrise") {
                 preset = QStringLiteral("dawn");
             }
-            if (preset != "dawn" && preset != "day" && preset != "sunset" && preset != "dusk" && preset != "night") {
-                preset = QStringLiteral("day");
+            if (preset != "default" && preset != "dawn" && preset != "day" && preset != "sunset" && preset != "dusk" && preset != "night") {
+                preset = QStringLiteral("default");
             }
             return preset;
         }
@@ -753,7 +753,7 @@ namespace fairwindsk {
             return QStringLiteral("dawn");
         }
         if (now >= QTime(7, 0) && now < QTime(17, 30)) {
-            return QStringLiteral("day");
+            return QStringLiteral("default");
         }
         if (now >= QTime(17, 30) && now < QTime(19, 0)) {
             return QStringLiteral("sunset");

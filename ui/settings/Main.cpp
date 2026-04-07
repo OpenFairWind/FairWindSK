@@ -71,6 +71,7 @@ namespace fairwindsk::ui::settings {
         ui->comboBox_uiScalePreset->addItem(tr("Normal"), "normal");
         ui->comboBox_uiScalePreset->addItem(tr("Large"), "large");
         ui->comboBox_uiScalePreset->addItem(tr("Extra Large"), "xlarge");
+        ui->comboBox_comfortViewPreset->addItem(QIcon(QStringLiteral(":/resources/svg/OpenBridge/comfort-day.svg")), tr("Default"), "default");
         ui->comboBox_comfortViewPreset->addItem(QIcon(QStringLiteral(":/resources/svg/OpenBridge/comfort-dawn.svg")), tr("Dawn"), "dawn");
         ui->comboBox_comfortViewPreset->addItem(QIcon(QStringLiteral(":/resources/svg/OpenBridge/comfort-day.svg")), tr("Day"), "day");
         ui->comboBox_comfortViewPreset->addItem(QIcon(QStringLiteral(":/resources/svg/OpenBridge/comfort-sunset.svg")), tr("Sunset"), "sunset");
@@ -116,7 +117,7 @@ namespace fairwindsk::ui::settings {
             comfortPreset = "dawn";
         }
         const int comfortViewIndex = ui->comboBox_comfortViewPreset->findData(comfortPreset);
-        ui->comboBox_comfortViewPreset->setCurrentIndex(comfortViewIndex >= 0 ? comfortViewIndex : 1);
+        ui->comboBox_comfortViewPreset->setCurrentIndex(comfortViewIndex >= 0 ? comfortViewIndex : 0);
         ui->spinBox_launcherRows->setValue(m_settings->getConfiguration()->getLauncherRows());
         ui->spinBox_launcherColumns->setValue(m_settings->getConfiguration()->getLauncherColumns());
         const int coordinateFormatIndex = ui->comboBox_coordinateFormat->findData(m_settings->getConfiguration()->getCoordinateFormat());

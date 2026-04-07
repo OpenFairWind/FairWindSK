@@ -4,7 +4,7 @@
         "uiScaleMode": "auto",
         "uiScalePreset": "normal",
         "comfortViewMode": "manual",
-        "comfortViewPreset": "day",
+        "comfortViewPreset": "default",
         "launcherRows": 2,
         "launcherColumns": 3,
         "coordinateFormat": "dm_symbols_decimal",

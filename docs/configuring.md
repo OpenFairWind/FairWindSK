@@ -128,7 +128,7 @@ It keeps the persistent-log toggle readable on compact touch layouts by separati
 
 ## Comfort presets and icon color
 
-FairWindSK ships with editable comfort preset stylesheets for `dawn`, `day`, `dusk`, and `night`, and each preset can also store:
+FairWindSK ships with editable comfort preset stylesheets for `default`, `dawn`, `day`, `sunset`, `dusk`, and `night`. The bundled `default` preset is the generic marine-MFD baseline inspired by contemporary multifunction displays, and each preset can also store:
 
 - a generated visual palette override
 - optional background images for major surfaces and control states

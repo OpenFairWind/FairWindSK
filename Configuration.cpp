@@ -195,7 +195,7 @@ namespace fairwindsk {
     }
 
     QString Configuration::getComfortViewPreset() const {
-        return getString("main", "comfortViewPreset", "day");
+        return getString("main", "comfortViewPreset", "default");
     }
 
     void Configuration::setComfortThemeStyleSheet(const QString &preset, const QString &styleSheet) {

@@ -51,12 +51,13 @@ namespace fairwindsk::ui::settings {
             if (preset == QStringLiteral("sunrise")) {
                 return QStringLiteral("dawn");
             }
-            if (preset != QStringLiteral("dawn") &&
+            if (preset != QStringLiteral("default") &&
+                preset != QStringLiteral("dawn") &&
                 preset != QStringLiteral("day") &&
                 preset != QStringLiteral("sunset") &&
                 preset != QStringLiteral("dusk") &&
                 preset != QStringLiteral("night")) {
-                return QStringLiteral("day");
+                return QStringLiteral("default");
             }
             return preset;
         }
@@ -131,7 +132,7 @@ namespace fairwindsk::ui::settings {
 
         const QString currentPreset = normalizedPreset(m_settings->getConfiguration()->getComfortViewPreset());
         const int currentIndex = m_presetComboBox->findData(currentPreset);
-        m_presetComboBox->setCurrentIndex(currentIndex >= 0 ? currentIndex : 1);
+        m_presetComboBox->setCurrentIndex(currentIndex >= 0 ? currentIndex : 0);
         loadPresetEditor();
     }
 
@@ -164,6 +165,7 @@ namespace fairwindsk::ui::settings {
         presetRow->addWidget(presetLabel);
 
         m_presetComboBox = new fairwindsk::ui::widgets::TouchComboBox(content);
+        m_presetComboBox->addItem(QIcon(QStringLiteral(":/resources/svg/OpenBridge/comfort-day.svg")), tr("Default"), QStringLiteral("default"));
         m_presetComboBox->addItem(QIcon(QStringLiteral(":/resources/svg/OpenBridge/comfort-dawn.svg")), tr("Dawn"), QStringLiteral("dawn"));
         m_presetComboBox->addItem(QIcon(QStringLiteral(":/resources/svg/OpenBridge/comfort-day.svg")), tr("Day"), QStringLiteral("day"));
         m_presetComboBox->addItem(QIcon(QStringLiteral(":/resources/svg/OpenBridge/comfort-sunset.svg")), tr("Sunset"), QStringLiteral("sunset"));

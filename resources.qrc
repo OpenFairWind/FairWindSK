@@ -6,6 +6,7 @@
         <file>resources/json/units.json</file>
         <file>resources/json/signalk.json</file>
         <file>resources/stylesheets/dawn.qss</file>
+        <file>resources/stylesheets/default.qss</file>
         <file>resources/stylesheets/day.qss</file>
         <file>resources/stylesheets/sunset.qss</file>
         <file>resources/stylesheets/dusk.qss</file>
