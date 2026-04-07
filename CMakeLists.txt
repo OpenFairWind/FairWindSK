@@ -190,6 +190,7 @@ set(FAIRWINDSK_SOURCES
         signalk/Waypoint.cpp signalk/Waypoint.hpp
         signalk/Subscription.cpp signalk/Subscription.hpp
         signalk/Client.cpp signalk/Client.hpp
+        runtime/DiagnosticsSupport.cpp runtime/DiagnosticsSupport.hpp
         ui/settings/Settings.cpp ui/settings/Settings.hpp ui/settings/Settings.ui
         ui/launcher/Launcher.cpp ui/launcher/Launcher.hpp ui/launcher/Launcher.ui
         ui/about/About.cpp ui/about/About.hpp ui/about/About.ui

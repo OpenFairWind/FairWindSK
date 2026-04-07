@@ -72,6 +72,14 @@ namespace fairwindsk {
         int getLauncherColumns() const;
         void setCoordinateFormat(const QString &value);
         QString getCoordinateFormat() const;
+        void setDiagnosticsLogLevel(const QString &value);
+        QString getDiagnosticsLogLevel() const;
+        void setPersistentMessageLogging(bool value);
+        bool getPersistentMessageLogging() const;
+        void setDiagnosticsEmail(const QString &value);
+        QString getDiagnosticsEmail() const;
+        void setDiagnosticsSubject(const QString &value);
+        QString getDiagnosticsSubject() const;
 
         void setWindowMode(QString value);
         QString getWindowMode();

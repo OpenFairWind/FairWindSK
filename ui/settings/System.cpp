@@ -13,14 +13,19 @@
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QLabel>
+#include <QLineEdit>
 #include <QProgressBar>
+#include <QSignalBlocker>
 #include <QUrl>
 #include <QTimer>
 #include <QVBoxLayout>
 
 #include "FairWindSK.hpp"
+#include "runtime/DiagnosticsSupport.hpp"
 #include "Settings.hpp"
 #include "signalk/Client.hpp"
+#include "ui/widgets/TouchCheckBox.hpp"
+#include "ui/widgets/TouchComboBox.hpp"
 #include "ui_System.h"
 
 #if defined(Q_OS_MACOS)
@@ -83,6 +88,9 @@ namespace fairwindsk::ui::settings {
         connect(ui->pushButton_Quit, &QPushButton::clicked, this, [this]() {
             m_settings->quitApplication();
         });
+
+        ensureLoggingSettingsWidgets();
+        syncLoggingSettings();
 
         m_previousCpuStats = sampleCpuStats();
 
@@ -194,6 +202,82 @@ namespace fairwindsk::ui::settings {
         }
     }
 
+    void System::ensureLoggingSettingsWidgets() {
+        if (m_loggingGroupBox) {
+            return;
+        }
+
+        m_loggingGroupBox = new QGroupBox(tr("Logging"), this);
+        m_loggingFormLayout = new QFormLayout(m_loggingGroupBox);
+        m_loggingFormLayout->setContentsMargins(0, 0, 0, 0);
+        m_loggingFormLayout->setSpacing(8);
+
+        m_logLevelComboBox = new fairwindsk::ui::widgets::TouchComboBox(m_loggingGroupBox);
+        m_logLevelComboBox->addItem(fairwindsk::runtime::logLevelDisplayName(fairwindsk::runtime::LogLevel::Off),
+                                    fairwindsk::runtime::logLevelToString(fairwindsk::runtime::LogLevel::Off));
+        m_logLevelComboBox->addItem(fairwindsk::runtime::logLevelDisplayName(fairwindsk::runtime::LogLevel::Critical),
+                                    fairwindsk::runtime::logLevelToString(fairwindsk::runtime::LogLevel::Critical));
+        m_logLevelComboBox->addItem(fairwindsk::runtime::logLevelDisplayName(fairwindsk::runtime::LogLevel::Warning),
+                                    fairwindsk::runtime::logLevelToString(fairwindsk::runtime::LogLevel::Warning));
+        m_logLevelComboBox->addItem(fairwindsk::runtime::logLevelDisplayName(fairwindsk::runtime::LogLevel::Info),
+                                    fairwindsk::runtime::logLevelToString(fairwindsk::runtime::LogLevel::Info));
+        m_logLevelComboBox->addItem(fairwindsk::runtime::logLevelDisplayName(fairwindsk::runtime::LogLevel::Debug),
+                                    fairwindsk::runtime::logLevelToString(fairwindsk::runtime::LogLevel::Debug));
+        m_loggingFormLayout->addRow(tr("Level"), m_logLevelComboBox);
+
+        m_persistentLoggingCheckBox = new fairwindsk::ui::widgets::TouchCheckBox(m_loggingGroupBox);
+        m_persistentLoggingCheckBox->setText(tr("Store message logs in the persistent diagnostics directory"));
+        m_loggingFormLayout->addRow(tr("Persistent logs"), m_persistentLoggingCheckBox);
+
+        m_diagnosticsEmailEdit = new QLineEdit(m_loggingGroupBox);
+        m_diagnosticsEmailEdit->setClearButtonEnabled(true);
+        m_diagnosticsEmailEdit->setMinimumHeight(42);
+        m_loggingFormLayout->addRow(tr("Diagnostics email"), m_diagnosticsEmailEdit);
+
+        m_diagnosticsSubjectValue = new QLabel(m_loggingGroupBox);
+        m_diagnosticsSubjectValue->setTextInteractionFlags(Qt::TextSelectableByMouse);
+        m_loggingFormLayout->addRow(tr("Diagnostics subject"), m_diagnosticsSubjectValue);
+
+        m_logDirectoryValue = new QLabel(m_loggingGroupBox);
+        m_logDirectoryValue->setWordWrap(true);
+        m_logDirectoryValue->setTextInteractionFlags(Qt::TextSelectableByMouse);
+        m_loggingFormLayout->addRow(tr("Logs directory"), m_logDirectoryValue);
+
+        ui->verticalLayout_Diagnostics->insertWidget(0, m_loggingGroupBox);
+
+        connect(m_logLevelComboBox,
+                qOverload<int>(&fairwindsk::ui::widgets::TouchComboBox::currentIndexChanged),
+                this,
+                [this](const int index) {
+                    Q_UNUSED(index);
+                    auto *configuration = m_settings->getConfiguration();
+                    configuration->setDiagnosticsLogLevel(m_logLevelComboBox->currentData().toString());
+                    configuration->setPersistentMessageLogging(m_persistentLoggingCheckBox->isChecked());
+                    fairwindsk::runtime::applyLiveSettings(
+                        fairwindsk::runtime::logLevelFromString(configuration->getDiagnosticsLogLevel()),
+                        configuration->getPersistentMessageLogging());
+                    m_settings->markDirty(FairWindSK::RuntimeUi, 0);
+                });
+
+        connect(m_persistentLoggingCheckBox,
+                &fairwindsk::ui::widgets::TouchCheckBox::stateChanged,
+                this,
+                [this](const int state) {
+                    const bool enabled = state == Qt::Checked;
+                    auto *configuration = m_settings->getConfiguration();
+                    configuration->setPersistentMessageLogging(enabled);
+                    fairwindsk::runtime::applyLiveSettings(
+                        fairwindsk::runtime::logLevelFromString(configuration->getDiagnosticsLogLevel()),
+                        enabled);
+                    m_settings->markDirty(FairWindSK::RuntimeUi, 0);
+                });
+
+        connect(m_diagnosticsEmailEdit, &QLineEdit::textChanged, this, [this](const QString &text) {
+            m_settings->getConfiguration()->setDiagnosticsEmail(text);
+            m_settings->markDirty(FairWindSK::RuntimeUi, 300);
+        });
+    }
+
     void System::ensureRpiDiagnosticsWidgets() {
         if (m_rpiGroupBox) {
             return;
@@ -242,6 +326,24 @@ namespace fairwindsk::ui::settings {
         if (auto *label = m_rpiMetricValues.value(path, nullptr)) {
             label->setText(text);
         }
+    }
+
+    void System::syncLoggingSettings() {
+        if (!m_loggingGroupBox || !m_settings) {
+            return;
+        }
+
+        auto *configuration = m_settings->getConfiguration();
+        const QSignalBlocker levelBlocker(m_logLevelComboBox);
+        const QSignalBlocker persistentBlocker(m_persistentLoggingCheckBox);
+        const QSignalBlocker emailBlocker(m_diagnosticsEmailEdit);
+        const QString configuredLevel = configuration->getDiagnosticsLogLevel();
+        const int levelIndex = m_logLevelComboBox->findData(configuredLevel);
+        m_logLevelComboBox->setCurrentIndex(levelIndex >= 0 ? levelIndex : 0);
+        m_persistentLoggingCheckBox->setChecked(configuration->getPersistentMessageLogging());
+        m_diagnosticsEmailEdit->setText(configuration->getDiagnosticsEmail());
+        m_diagnosticsSubjectValue->setText(configuration->getDiagnosticsSubject());
+        m_logDirectoryValue->setText(fairwindsk::runtime::persistentLogsDirectoryPath());
     }
 
     void System::refreshRpiDiagnostics() {

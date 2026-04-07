@@ -19,10 +19,18 @@ namespace fairwindsk::ui::web {
     public:
         explicit WebPage(QWebEngineProfile *profile, QObject *parent = nullptr);
 
-    ~WebPage() override;
+        ~WebPage() override;
 
     signals:
         void createCertificateErrorDialog(QWebEngineCertificateError error);
+
+    protected:
+        void javaScriptAlert(const QUrl &securityOrigin, const QString &message) override;
+        bool javaScriptConfirm(const QUrl &securityOrigin, const QString &message) override;
+        bool javaScriptPrompt(const QUrl &securityOrigin,
+                              const QString &message,
+                              const QString &defaultValue,
+                              QString *result) override;
 
     private slots:
         void handleCertificateError(QWebEngineCertificateError error);

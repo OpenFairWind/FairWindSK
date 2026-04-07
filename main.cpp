@@ -2,91 +2,19 @@
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
 #include <QSplashScreen>
 #endif
-#include <QDateTime>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QLibraryInfo>
-#include <QMutex>
-#include <QMutexLocker>
-#include <QStandardPaths>
 #include <QTimer>
-#include <QTextStream>
 #include <QTranslator>
 
 #include <QWebEngineProfile>
 #include <QWebEngineSettings>
-#include <QSettings>
 
 #include "FairWindSK.hpp"
+#include "runtime/DiagnosticsSupport.hpp"
 #include "ui/MainWindow.hpp"
-
-
-using namespace Qt::StringLiterals;
-
-namespace {
-    QMutex g_startupLogMutex;
-    QFile *g_startupLogFile = nullptr;
-
-    QString startupLogFilePath() {
-        QString logDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-        if (logDir.trimmed().isEmpty()) {
-            logDir = QDir::homePath();
-        }
-
-        QDir().mkpath(logDir);
-        return QDir(logDir).filePath(QStringLiteral("startup.log"));
-    }
-
-    void fairWindMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &message) {
-        const QString level = [&]() {
-            switch (type) {
-                case QtDebugMsg: return QStringLiteral("DEBUG");
-                case QtInfoMsg: return QStringLiteral("INFO");
-                case QtWarningMsg: return QStringLiteral("WARN");
-                case QtCriticalMsg: return QStringLiteral("CRIT");
-                case QtFatalMsg: return QStringLiteral("FATAL");
-            }
-            return QStringLiteral("LOG");
-        }();
-
-        QString formatted = QStringLiteral("%1 [%2] %3")
-                .arg(QDateTime::currentDateTime().toString(Qt::ISODateWithMs), level, message);
-        if (context.file && *context.file) {
-            formatted.append(QStringLiteral(" (%1:%2)").arg(QString::fromUtf8(context.file)).arg(context.line));
-        }
-
-        {
-            QMutexLocker locker(&g_startupLogMutex);
-            QTextStream(stderr) << formatted << Qt::endl;
-            if (g_startupLogFile && g_startupLogFile->isOpen()) {
-                QTextStream stream(g_startupLogFile);
-                stream << formatted << Qt::endl;
-                stream.flush();
-            }
-        }
-
-        if (type == QtFatalMsg) {
-            abort();
-        }
-    }
-
-    void initializeStartupLogging() {
-        if (g_startupLogFile) {
-            return;
-        }
-
-        auto *logFile = new QFile(startupLogFilePath());
-        if (logFile->open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
-            g_startupLogFile = logFile;
-        } else {
-            delete logFile;
-        }
-
-        qInstallMessageHandler(fairWindMessageHandler);
-        qInfo() << "Startup logging initialized at" << startupLogFilePath();
-    }
-}
 
 #if defined(Q_OS_LINUX)
 namespace {
@@ -216,7 +144,7 @@ int main(int argc, char *argv[]) {
     // Set the organization name
     QCoreApplication::setOrganizationName("uniparthenope.it");
     QCoreApplication::setApplicationName("FairWindSK");
-    initializeStartupLogging();
+    fairwindsk::runtime::initializeDiagnostics();
     qInfo() << "FairWindSK bootstrap start";
     qInfo() << "argc=" << argc;
     for (int index = 0; index < argc; ++index) {
@@ -242,6 +170,10 @@ int main(int argc, char *argv[]) {
     // The QT application
     QApplication app(argc, argv);
     qInfo() << "QApplication created";
+    QObject::connect(&app, &QCoreApplication::aboutToQuit, []() {
+        fairwindsk::runtime::markGracefulShutdown();
+    });
+    fairwindsk::runtime::dispatchPendingDiagnosticsEmail();
 
     // Install the translator
     QApplication::installTranslator(&translator);

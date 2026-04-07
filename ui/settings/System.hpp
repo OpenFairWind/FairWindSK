@@ -13,6 +13,12 @@
 class QLabel;
 class QFormLayout;
 class QGroupBox;
+class QLineEdit;
+
+namespace fairwindsk::ui::widgets {
+    class TouchCheckBox;
+    class TouchComboBox;
+}
 
 namespace fairwindsk::ui::settings {
     class Settings;
@@ -40,10 +46,12 @@ namespace fairwindsk::ui::settings {
         };
 
         void ensureCoreWidgets(int coreCount);
+        void ensureLoggingSettingsWidgets();
         void ensureRpiDiagnosticsWidgets();
         void refreshRpiDiagnostics();
         double fetchSignalKRpiMetric(const QJsonObject &root, const QString &path, bool *available = nullptr) const;
         void setRpiMetricValue(const QString &path, const QString &text);
+        void syncLoggingSettings();
         QString formatBytes(quint64 bytes) const;
         quint64 processResidentMemoryBytes() const;
         quint64 totalMemoryBytes() const;
@@ -57,6 +65,13 @@ namespace fairwindsk::ui::settings {
         QGroupBox *m_rpiGroupBox = nullptr;
         QFormLayout *m_rpiFormLayout = nullptr;
         QMap<QString, QLabel *> m_rpiMetricValues;
+        QGroupBox *m_loggingGroupBox = nullptr;
+        QFormLayout *m_loggingFormLayout = nullptr;
+        fairwindsk::ui::widgets::TouchComboBox *m_logLevelComboBox = nullptr;
+        fairwindsk::ui::widgets::TouchCheckBox *m_persistentLoggingCheckBox = nullptr;
+        QLineEdit *m_diagnosticsEmailEdit = nullptr;
+        QLabel *m_logDirectoryValue = nullptr;
+        QLabel *m_diagnosticsSubjectValue = nullptr;
         QDateTime m_lastRpiRefresh;
         bool m_hasRpiMetrics = false;
     };

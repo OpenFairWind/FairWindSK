@@ -341,6 +341,38 @@ namespace fairwindsk {
         return getString("main", "coordinateFormat", "dm_symbols_decimal");
     }
 
+    void Configuration::setDiagnosticsLogLevel(const QString &value) {
+        ensureObject("diagnostics")["logLevel"] = value.trimmed().toLower().toStdString();
+    }
+
+    QString Configuration::getDiagnosticsLogLevel() const {
+        return getString("diagnostics", "logLevel", "off");
+    }
+
+    void Configuration::setPersistentMessageLogging(const bool value) {
+        ensureObject("diagnostics")["persistentLogs"] = value;
+    }
+
+    bool Configuration::getPersistentMessageLogging() const {
+        return getBool("diagnostics", "persistentLogs", true);
+    }
+
+    void Configuration::setDiagnosticsEmail(const QString &value) {
+        ensureObject("diagnostics")["email"] = value.trimmed().toStdString();
+    }
+
+    QString Configuration::getDiagnosticsEmail() const {
+        return getString("diagnostics", "email", "hpsclab@uniparthenope.it");
+    }
+
+    void Configuration::setDiagnosticsSubject(const QString &value) {
+        ensureObject("diagnostics")["subject"] = value.trimmed().toStdString();
+    }
+
+    QString Configuration::getDiagnosticsSubject() const {
+        return getString("diagnostics", "subject", "FairWindSK diagnostics");
+    }
+
     void Configuration::setWindowMode(QString value) {
         ensureObject("main")["windowMode"] = value.toStdString();
     }
