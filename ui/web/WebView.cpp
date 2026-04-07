@@ -382,7 +382,7 @@ namespace fairwindsk::ui::web {
         });
 #else
         connect(page, &QWebEnginePage::featurePermissionRequested, this,
-                [this](const QUrl &securityOrigin, QWebEnginePage::Feature feature) {
+                [this, page](const QUrl &securityOrigin, QWebEnginePage::Feature feature) {
                     const QString question = questionForFeature(feature).arg(securityOrigin.host());
                     if (!question.isEmpty()
                         && drawer::question(window(),
