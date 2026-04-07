@@ -6,6 +6,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QLibraryInfo>
+#include <QStandardPaths>
 #include <QTimer>
 #include <QTranslator>
 
