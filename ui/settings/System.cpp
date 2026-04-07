@@ -28,6 +28,7 @@
 #include "runtime/DiagnosticsSupport.hpp"
 #include "Settings.hpp"
 #include "signalk/Client.hpp"
+#include "ui/DrawerDialogHost.hpp"
 #include "ui/widgets/TouchCheckBox.hpp"
 #include "ui/widgets/TouchComboBox.hpp"
 #include "ui_System.h"
@@ -231,6 +232,8 @@ namespace fairwindsk::ui::settings {
                                     fairwindsk::runtime::logLevelToString(fairwindsk::runtime::LogLevel::Info));
         m_logLevelComboBox->addItem(fairwindsk::runtime::logLevelDisplayName(fairwindsk::runtime::LogLevel::Debug),
                                     fairwindsk::runtime::logLevelToString(fairwindsk::runtime::LogLevel::Debug));
+        m_logLevelComboBox->addItem(fairwindsk::runtime::logLevelDisplayName(fairwindsk::runtime::LogLevel::Full),
+                                    fairwindsk::runtime::logLevelToString(fairwindsk::runtime::LogLevel::Full));
         m_loggingFormLayout->addRow(tr("Level"), m_logLevelComboBox);
 
         m_persistentLoggingCheckBox = new fairwindsk::ui::widgets::TouchCheckBox(m_loggingGroupBox);
@@ -272,6 +275,9 @@ namespace fairwindsk::ui::settings {
         logsRowLayout->setContentsMargins(0, 0, 0, 0);
         logsRowLayout->setSpacing(8);
         logsRowLayout->addWidget(m_logDirectoryValue, 1);
+        m_viewLogsButton = new QPushButton(tr("View logs"), logsRowWidget);
+        m_viewLogsButton->setMinimumHeight(40);
+        logsRowLayout->addWidget(m_viewLogsButton, 0);
         m_openLogsButton = new QPushButton(tr("Open logs"), logsRowWidget);
         m_openLogsButton->setMinimumHeight(40);
         logsRowLayout->addWidget(m_openLogsButton, 0);
@@ -309,6 +315,11 @@ namespace fairwindsk::ui::settings {
         connect(m_diagnosticsEmailEdit, &QLineEdit::textChanged, this, [this](const QString &text) {
             m_settings->getConfiguration()->setDiagnosticsEmail(text);
             m_settings->markDirty(FairWindSK::RuntimeUi, 300);
+        });
+        connect(m_viewLogsButton, &QPushButton::clicked, this, [this]() {
+            fairwindsk::ui::drawer::exploreLogs(this,
+                                                tr("Persistent Logs"),
+                                                fairwindsk::runtime::persistentLogsDirectoryPath());
         });
         connect(m_openLogsButton, &QPushButton::clicked, this, []() {
             QDesktopServices::openUrl(QUrl::fromLocalFile(fairwindsk::runtime::persistentLogsDirectoryPath()));
@@ -381,6 +392,9 @@ namespace fairwindsk::ui::settings {
         m_diagnosticsEmailEdit->setText(configuration->getDiagnosticsEmail());
         m_diagnosticsSubjectValue->setText(configuration->getDiagnosticsSubject());
         m_logDirectoryValue->setText(fairwindsk::runtime::persistentLogsDirectoryPath());
+        if (m_viewLogsButton) {
+            m_viewLogsButton->setEnabled(QFileInfo::exists(fairwindsk::runtime::persistentLogsDirectoryPath()));
+        }
         if (m_openLogsButton) {
             m_openLogsButton->setEnabled(QFileInfo::exists(fairwindsk::runtime::persistentLogsDirectoryPath()));
         }

@@ -35,6 +35,7 @@ The runtime now supervises Signal K restarts as well: if the server drops and co
 * Signal K Applications
 * Automatic Signal K restart detection and reconnect consistency recovery
 * Touch-oriented diagnostics controls with persistent per-run logs
+* In-app persistent log exploration through the shared bottom drawer
 * Comfort preset editing with marine-style daypart themes and preset SVG icon colors
 * Grouped launcher editing actions with OpenBridge page/application management icons
 * The autopilot bar

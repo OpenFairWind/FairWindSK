@@ -181,6 +181,7 @@ namespace fairwindsk::runtime {
                 case LogLevel::Info:
                     return severityForType(type) <= 2;
                 case LogLevel::Debug:
+                case LogLevel::Full:
                     return true;
             }
             return false;
@@ -354,6 +355,7 @@ namespace fairwindsk::runtime {
             case LogLevel::Warning: return QStringLiteral("warning");
             case LogLevel::Info: return QStringLiteral("info");
             case LogLevel::Debug: return QStringLiteral("debug");
+            case LogLevel::Full: return QStringLiteral("full");
         }
         return QStringLiteral("off");
     }
@@ -365,6 +367,7 @@ namespace fairwindsk::runtime {
             case LogLevel::Warning: return QObject::tr("Warning");
             case LogLevel::Info: return QObject::tr("Info");
             case LogLevel::Debug: return QObject::tr("Debug");
+            case LogLevel::Full: return QObject::tr("Full");
         }
         return QObject::tr("No logging");
     }
@@ -382,6 +385,9 @@ namespace fairwindsk::runtime {
         }
         if (normalized == QStringLiteral("debug")) {
             return LogLevel::Debug;
+        }
+        if (normalized == QStringLiteral("full")) {
+            return LogLevel::Full;
         }
         return LogLevel::Off;
     }

@@ -13,6 +13,7 @@ These instructions apply to the entire repository.
 - Use the CMake build (`cmake -S . -B build` then `cmake --build build`) when you need to compile locally; Qt6 and QtWebEngine are required.
 - Run available tests or sanity checks when feasible; note any environment limitations in your report if you cannot run them.
 - Be sure that each new modification is checked for behavior and build impact across macOS, Windows, Linux, Raspberry Pi OS, Android, and iOS; when a platform is not currently supported by the codebase, call out the limitation explicitly instead of implying coverage.
+- For every GUI change, explicitly check that the result remains touch friendly and visually consistent with marine electronics multi-functional display conventions.
 
 ## Documentation & resources
 - Update user-facing strings or documentation when behavior changes; keep resource paths (e.g., `resources.qrc`) consistent if assets move.

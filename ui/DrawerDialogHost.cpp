@@ -5,6 +5,7 @@
 #include "DrawerDialogHost.hpp"
 
 #include <QCoreApplication>
+#include <QDateTime>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QDir>
@@ -16,10 +17,14 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
+#include <QLocale>
+#include <QPlainTextEdit>
 #include <QPointer>
 #include <QPushButton>
 #include <QRegularExpression>
+#include <QScrollBar>
 #include <QSet>
+#include <QSplitter>
 #include <QStandardPaths>
 #include <QToolButton>
 #include <QTreeView>
@@ -540,6 +545,129 @@ namespace fairwindsk::ui::drawer {
             QLabel *m_previewLabel = nullptr;
             QListWidget *m_listWidget = nullptr;
         };
+
+        class DrawerLogExplorerWidget final : public QWidget {
+        public:
+            explicit DrawerLogExplorerWidget(const QString &directory, QWidget *parent = nullptr)
+                : QWidget(parent),
+                  m_directory(directory) {
+                auto *layout = new QVBoxLayout(this);
+                layout->setContentsMargins(0, 0, 0, 0);
+                layout->setSpacing(10);
+
+                auto *directoryLabel = new QLabel(tr("Persistent log directory"), this);
+                layout->addWidget(directoryLabel);
+
+                m_directoryValue = new QLabel(this);
+                m_directoryValue->setWordWrap(true);
+                m_directoryValue->setTextInteractionFlags(Qt::TextSelectableByMouse);
+                m_directoryValue->setText(m_directory);
+                layout->addWidget(m_directoryValue);
+
+                auto *toolbarLayout = new QHBoxLayout();
+                toolbarLayout->setContentsMargins(0, 0, 0, 0);
+                toolbarLayout->setSpacing(8);
+                layout->addLayout(toolbarLayout);
+
+                m_refreshButton = new QPushButton(tr("Refresh"), this);
+                m_refreshButton->setMinimumHeight(42);
+                toolbarLayout->addWidget(m_refreshButton, 0);
+
+                auto *hintLabel = new QLabel(tr("Select a log file to inspect it inside the drawer."), this);
+                hintLabel->setWordWrap(true);
+                toolbarLayout->addWidget(hintLabel, 1);
+
+                auto *splitter = new QSplitter(Qt::Horizontal, this);
+                splitter->setChildrenCollapsible(false);
+                layout->addWidget(splitter, 1);
+
+                m_logList = new QListWidget(splitter);
+                m_logList->setMinimumWidth(260);
+                m_logList->setAlternatingRowColors(true);
+                m_logList->setSelectionMode(QAbstractItemView::SingleSelection);
+                m_logList->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+
+                m_logView = new QPlainTextEdit(splitter);
+                m_logView->setReadOnly(true);
+                m_logView->setLineWrapMode(QPlainTextEdit::NoWrap);
+                m_logView->setMinimumWidth(420);
+
+                splitter->setStretchFactor(0, 0);
+                splitter->setStretchFactor(1, 1);
+                splitter->setSizes({320, 840});
+
+                connect(m_refreshButton, &QPushButton::clicked, this, [this]() { reloadLogs(); });
+                connect(m_logList, &QListWidget::currentItemChanged, this, [this](QListWidgetItem *current) {
+                    loadLog(current ? current->data(Qt::UserRole).toString() : QString());
+                });
+
+                reloadLogs();
+            }
+
+        private:
+            void reloadLogs() {
+                const QString previouslySelected = m_logList->currentItem()
+                                                      ? m_logList->currentItem()->data(Qt::UserRole).toString()
+                                                      : QString();
+                QSignalBlocker blocker(m_logList);
+                m_logList->clear();
+
+                QDir directory(m_directory);
+                const QFileInfoList files = directory.entryInfoList(
+                    QStringList() << QStringLiteral("*.log") << QStringLiteral("*.txt"),
+                    QDir::Files | QDir::NoDotAndDotDot,
+                    QDir::Time | QDir::Reversed);
+
+                for (const QFileInfo &fileInfo : files) {
+                    const QString title = QStringLiteral("%1\n%2  •  %3 KB")
+                                              .arg(fileInfo.fileName(),
+                                                   QLocale().toString(fileInfo.lastModified(), QLocale::ShortFormat),
+                                                   QString::number(qMax<qint64>(1, fileInfo.size() / 1024)));
+                    auto *item = new QListWidgetItem(title, m_logList);
+                    item->setData(Qt::UserRole, fileInfo.absoluteFilePath());
+                    item->setToolTip(fileInfo.absoluteFilePath());
+                    if (fileInfo.absoluteFilePath() == previouslySelected) {
+                        m_logList->setCurrentItem(item);
+                    }
+                }
+
+                if (m_logList->count() == 0) {
+                    m_logView->setPlainText(tr("No log files are available in the persistent diagnostics directory yet."));
+                    return;
+                }
+
+                if (!m_logList->currentItem()) {
+                    m_logList->setCurrentRow(0);
+                } else {
+                    loadLog(m_logList->currentItem()->data(Qt::UserRole).toString());
+                }
+            }
+
+            void loadLog(const QString &path) {
+                if (path.trimmed().isEmpty()) {
+                    m_logView->clear();
+                    return;
+                }
+
+                QFile file(path);
+                if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+                    m_logView->setPlainText(tr("Unable to read:\n%1").arg(path));
+                    return;
+                }
+
+                m_logView->setPlainText(QString::fromUtf8(file.readAll()));
+                auto *scrollBar = m_logView->verticalScrollBar();
+                if (scrollBar) {
+                    scrollBar->setValue(scrollBar->minimum());
+                }
+            }
+
+            QString m_directory;
+            QLabel *m_directoryValue = nullptr;
+            QPushButton *m_refreshButton = nullptr;
+            QListWidget *m_logList = nullptr;
+            QPlainTextEdit *m_logView = nullptr;
+        };
     }
 
     int execDrawer(QWidget *parent, const QString &title, QWidget *content, const QList<ButtonSpec> &buttons, const int defaultResult) {
@@ -744,6 +872,19 @@ namespace fairwindsk::ui::drawer {
 
             return selectedPath;
         }
+    }
+
+    void exploreLogs(QWidget *parent,
+                     const QString &title,
+                     const QString &directory) {
+        auto *content = new DrawerLogExplorerWidget(directory, parent);
+        execDrawer(parent,
+                   title,
+                   content,
+                   {
+                       {QObject::tr("Close"), int(QMessageBox::Close), true}
+                   },
+                   int(QMessageBox::Close));
     }
 
     bool editGeoCoordinate(QWidget *parent,

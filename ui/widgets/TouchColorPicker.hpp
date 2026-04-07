@@ -7,6 +7,7 @@
 
 #include <QColor>
 #include <QDialog>
+#include <QList>
 #include <QWidget>
 
 class QFrame;
@@ -15,8 +16,11 @@ class QLabel;
 class QPushButton;
 class QSlider;
 class QWidget;
+class QHBoxLayout;
 
 namespace fairwindsk::ui::widgets {
+    class TouchColorShadeSelector;
+
     class TouchColorPicker : public QWidget {
         Q_OBJECT
 
@@ -34,21 +38,32 @@ namespace fairwindsk::ui::widgets {
         void colorActivated(const QColor &color);
 
     private:
+        void rebuildCustomSwatches();
+        void loadCustomColors();
+        void saveCustomColors() const;
+        void updateShadeSelector();
         void addSliderRow(const QString &labelText, QSlider **sliderPtr, QLabel **valueLabelPtr);
         void syncControlsFromColor();
         void syncColorFromRgbSliders();
         void syncColorFromHsvSliders();
+        void syncColorFromShade(int saturation, int value);
         void updatePreview();
         void setColorInternal(const QColor &color, bool emitSignal);
 
         QColor m_color = QColor(QStringLiteral("#ffffff"));
         bool m_alphaEnabled = false;
         bool m_updating = false;
+        QList<QColor> m_customColors;
 
         QFrame *m_preview = nullptr;
         QLineEdit *m_hexEdit = nullptr;
         QLabel *m_rgbLabel = nullptr;
         QLabel *m_hsvLabel = nullptr;
+        TouchColorShadeSelector *m_shadeSelector = nullptr;
+        QWidget *m_customSwatchesHost = nullptr;
+        QHBoxLayout *m_customSwatchesLayout = nullptr;
+        QPushButton *m_addCustomColorButton = nullptr;
+        QPushButton *m_removeCustomColorButton = nullptr;
 
         QSlider *m_hueSlider = nullptr;
         QSlider *m_saturationSlider = nullptr;

@@ -24,13 +24,14 @@ Availability of these bars depends on the configured plugin identifiers (`applic
 - The settings pane reads from `fairwindsk.json` to manage the application list, ordering, and activation. Server-discovered apps are merged with local overrides, and changes are saved back to the configuration.
 - Unit selection, window sizing, and virtual keyboard toggles are reflected in the `main` and `units` sections of the configuration.
 - The **System** tab now includes touch-friendly diagnostics controls for:
-  - logging level (`No logging`, `Critical`, `Warning`, `Info`, `Debug`)
+  - logging level (`No logging`, `Critical`, `Warning`, `Info`, `Debug`, `Full`)
   - persistent message log storage with a compact checkbox-plus-description row
   - diagnostics email destination
   - the effective diagnostics subject and persistent log directory
-  - a direct `Open logs` action for the persistent diagnostics folder
+  - an in-app persistent log explorer shown through the shared bottom drawer, plus a direct `Open logs` action for the host file manager
 - The **Performance** pane now keeps process memory, total memory, memory usage, and per-core workload together in the left pane, while diagnostics and logging controls live on the right.
 - The **Comfort** tab now exposes preset-level marine-theme tuning for the main QSS palettes and a dedicated default SVG icon color for each comfort preset.
+- The touch color picker used by comfort editing now supports quick shade selection, custom color storage, and custom color removal directly from the touch UI.
 - The **My Data > Waypoints** details page reuses the embedded Signal K web view to show the waypoint on Freeboard-SK whenever the `@signalk/freeboard-sk` app is active on the connected server.
 - The **My Data > Files** page now keeps directory actions, search results, rename/create flows, and copy/move/paste behavior aligned so the same operations work more consistently from both the browser and search views.
 - The **Settings > Apps** layout now groups the right-pane toolbar into page actions and application palette actions, uses bundled marine-style SVG icons for the launcher-management buttons, and includes bulk clear actions for removing applications from the current page or from every page.

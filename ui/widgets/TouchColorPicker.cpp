@@ -4,21 +4,135 @@
 
 #include "TouchColorPicker.hpp"
 
+#include <algorithm>
 #include <QFrame>
 #include <QHBoxLayout>
+#include <QIcon>
+#include <QImage>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMouseEvent>
+#include <QPainter>
+#include <QPlainTextEdit>
 #include <QPushButton>
 #include <QRegularExpression>
+#include <QSettings>
 #include <QSignalBlocker>
 #include <QSlider>
 #include <QToolButton>
 #include <QVBoxLayout>
-#include <QIcon>
 #include <functional>
 
+#include "Configuration.hpp"
+
 namespace fairwindsk::ui::widgets {
+    class TouchColorShadeSelector final : public QWidget {
+    public:
+        explicit TouchColorShadeSelector(QWidget *parent = nullptr)
+            : QWidget(parent) {
+            setMinimumSize(260, 220);
+            setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+            setAttribute(Qt::WA_OpaquePaintEvent, true);
+        }
+
+        void setHue(const int hue) {
+            const int normalizedHue = std::clamp(hue, 0, 359);
+            if (m_hue == normalizedHue) {
+                return;
+            }
+            m_hue = normalizedHue;
+            m_cache = QImage();
+            update();
+        }
+
+        void setSelection(const int saturation, const int value) {
+            m_saturation = std::clamp(saturation, 0, 255);
+            m_value = std::clamp(value, 0, 255);
+            update();
+        }
+
+        std::function<void(int saturation, int value)> onSelectionChanged;
+
+    protected:
+        void paintEvent(QPaintEvent *event) override {
+            Q_UNUSED(event);
+            ensureCache();
+
+            QPainter painter(this);
+            painter.setRenderHint(QPainter::Antialiasing, true);
+            painter.drawImage(rect(), m_cache);
+
+            const QRectF usableRect = rect().adjusted(1, 1, -1, -1);
+            const qreal x = usableRect.left() + usableRect.width() * (qreal(m_saturation) / 255.0);
+            const qreal y = usableRect.top() + usableRect.height() * (1.0 - (qreal(m_value) / 255.0));
+
+            painter.setPen(QPen(Qt::black, 3));
+            painter.setBrush(Qt::NoBrush);
+            painter.drawEllipse(QPointF(x, y), 10.0, 10.0);
+            painter.setPen(QPen(Qt::white, 2));
+            painter.drawEllipse(QPointF(x, y), 10.0, 10.0);
+        }
+
+        void resizeEvent(QResizeEvent *event) override {
+            QWidget::resizeEvent(event);
+            m_cache = QImage();
+        }
+
+        void mousePressEvent(QMouseEvent *event) override {
+            if (event->button() == Qt::LeftButton) {
+                updateSelectionFromPosition(event->position().toPoint());
+                event->accept();
+                return;
+            }
+            QWidget::mousePressEvent(event);
+        }
+
+        void mouseMoveEvent(QMouseEvent *event) override {
+            if (event->buttons().testFlag(Qt::LeftButton)) {
+                updateSelectionFromPosition(event->position().toPoint());
+                event->accept();
+                return;
+            }
+            QWidget::mouseMoveEvent(event);
+        }
+
+    private:
+        void ensureCache() {
+            if (!m_cache.isNull() && m_cache.size() == size()) {
+                return;
+            }
+
+            const QSize targetSize = size().boundedTo(QSize(640, 640));
+            m_cache = QImage(targetSize, QImage::Format_ARGB32_Premultiplied);
+            for (int y = 0; y < targetSize.height(); ++y) {
+                const int value = 255 - ((255 * y) / std::max(1, targetSize.height() - 1));
+                QRgb *line = reinterpret_cast<QRgb *>(m_cache.scanLine(y));
+                for (int x = 0; x < targetSize.width(); ++x) {
+                    const int saturation = (255 * x) / std::max(1, targetSize.width() - 1);
+                    line[x] = QColor::fromHsv(m_hue, saturation, value).rgba();
+                }
+            }
+        }
+
+        void updateSelectionFromPosition(const QPoint &position) {
+            const QRect usableRect = rect().adjusted(1, 1, -1, -1);
+            const int clampedX = std::clamp(position.x(), usableRect.left(), usableRect.right());
+            const int clampedY = std::clamp(position.y(), usableRect.top(), usableRect.bottom());
+
+            const int saturation = int((qreal(clampedX - usableRect.left()) / std::max(1, usableRect.width())) * 255.0);
+            const int value = 255 - int((qreal(clampedY - usableRect.top()) / std::max(1, usableRect.height())) * 255.0);
+            setSelection(saturation, value);
+            if (onSelectionChanged) {
+                onSelectionChanged(m_saturation, m_value);
+            }
+        }
+
+        int m_hue = 0;
+        int m_saturation = 255;
+        int m_value = 255;
+        QImage m_cache;
+    };
+
     namespace {
         class PreviewFrame final : public QFrame {
         public:
@@ -43,7 +157,16 @@ namespace fairwindsk::ui::widgets {
             explicit SwatchButton(const QColor &color, QWidget *parent = nullptr)
                 : QToolButton(parent),
                   m_color(color) {
+                setCheckable(true);
+                setMinimumSize(64, 64);
+                setIconSize(QSize(28, 28));
+                setAutoRaise(false);
             }
+
+            QColor color() const {
+                return m_color;
+            }
+
             std::function<void(const QColor &, bool)> onChosen;
 
         protected:
@@ -70,14 +193,14 @@ namespace fairwindsk::ui::widgets {
         QString sliderStyleSheet() {
             return QStringLiteral(
                 "QSlider::groove:horizontal {"
-                " height: 16px;"
-                " border-radius: 8px;"
+                " height: 18px;"
+                " border-radius: 9px;"
                 " background: rgba(255, 255, 255, 0.25);"
                 " }"
                 "QSlider::handle:horizontal {"
-                " width: 34px;"
+                " width: 36px;"
                 " margin: -14px 0;"
-                " border-radius: 17px;"
+                " border-radius: 18px;"
                 " border: 1px solid rgba(12, 18, 28, 0.75);"
                 " background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #fdfefe, stop:1 #d7dfe8);"
                 " }");
@@ -94,6 +217,18 @@ namespace fairwindsk::ui::widgets {
                                                     : QStringLiteral("^#[0-9A-Fa-f]{6}$"));
             return expression.match(value).hasMatch() ? value : QString();
         }
+
+        QString customColorsKey() {
+            return QStringLiteral("touchColorPicker/customColors");
+        }
+
+        QColor normalizedStoredColor(const QColor &color) {
+            return QColor(color.red(), color.green(), color.blue(), color.alpha());
+        }
+
+        bool sameStoredColor(const QColor &left, const QColor &right) {
+            return normalizedStoredColor(left).rgba() == normalizedStoredColor(right).rgba();
+        }
     }
 
     TouchColorPicker::TouchColorPicker(QWidget *parent)
@@ -102,7 +237,9 @@ namespace fairwindsk::ui::widgets {
         rootLayout->setContentsMargins(0, 0, 0, 0);
         rootLayout->setSpacing(16);
 
-        auto *hintLabel = new QLabel(tr("Drag the sliders, type a hex value, or double-tap a swatch to use the current color."), this);
+        auto *hintLabel = new QLabel(
+            tr("Tap or drag in the shade area, use the sliders, type a hex value, or manage custom swatches for quick touch selection."),
+            this);
         hintLabel->setWordWrap(true);
         rootLayout->addWidget(hintLabel);
 
@@ -140,6 +277,12 @@ namespace fairwindsk::ui::widgets {
         summaryLayout->addWidget(m_hsvLabel);
         summaryLayout->addStretch(1);
 
+        auto *shadeLabel = new QLabel(tr("Shade"), this);
+        rootLayout->addWidget(shadeLabel);
+
+        m_shadeSelector = new TouchColorShadeSelector(this);
+        rootLayout->addWidget(m_shadeSelector);
+
         auto *quickColorsLabel = new QLabel(tr("Quick Colors"), this);
         rootLayout->addWidget(quickColorsLabel);
 
@@ -161,13 +304,15 @@ namespace fairwindsk::ui::widgets {
 
         for (const QColor &swatch : swatches) {
             auto *button = new SwatchButton(swatch, this);
-            button->setAutoRaise(false);
-            button->setMinimumSize(58, 58);
             button->setStyleSheet(QStringLiteral(
                                       "QToolButton {"
-                                      " border: 1px solid %1;"
-                                      " border-radius: 10px;"
+                                      " border: 2px solid %1;"
+                                      " border-radius: 12px;"
                                       " background: %2;"
+                                      " }"
+                                      "QToolButton:checked {"
+                                      " border-width: 4px;"
+                                      " border-color: #ffffff;"
                                       " }")
                                       .arg(swatch.darker(135).name(), swatch.name(QColor::HexArgb)));
             button->onChosen = [this](const QColor &color, const bool activate) {
@@ -179,6 +324,30 @@ namespace fairwindsk::ui::widgets {
             swatchesLayout->addWidget(button);
         }
         swatchesLayout->addStretch(1);
+
+        auto *customHeaderLayout = new QHBoxLayout();
+        customHeaderLayout->setContentsMargins(0, 0, 0, 0);
+        customHeaderLayout->setSpacing(8);
+        rootLayout->addLayout(customHeaderLayout);
+
+        auto *customColorsLabel = new QLabel(tr("Custom Colors"), this);
+        customHeaderLayout->addWidget(customColorsLabel);
+
+        customHeaderLayout->addStretch(1);
+
+        m_addCustomColorButton = new QPushButton(tr("Add current"), this);
+        m_addCustomColorButton->setMinimumHeight(42);
+        customHeaderLayout->addWidget(m_addCustomColorButton);
+
+        m_removeCustomColorButton = new QPushButton(tr("Remove current"), this);
+        m_removeCustomColorButton->setMinimumHeight(42);
+        customHeaderLayout->addWidget(m_removeCustomColorButton);
+
+        m_customSwatchesHost = new QWidget(this);
+        m_customSwatchesLayout = new QHBoxLayout(m_customSwatchesHost);
+        m_customSwatchesLayout->setContentsMargins(0, 0, 0, 0);
+        m_customSwatchesLayout->setSpacing(10);
+        rootLayout->addWidget(m_customSwatchesHost);
 
         auto *hsvLabel = new QLabel(tr("Color Balance"), this);
         rootLayout->addWidget(hsvLabel);
@@ -227,6 +396,36 @@ namespace fairwindsk::ui::widgets {
                 updatePreview();
             }
         });
+        m_shadeSelector->onSelectionChanged = [this](const int saturation, const int value) {
+            syncColorFromShade(saturation, value);
+        };
+        connect(m_addCustomColorButton, &QPushButton::clicked, this, [this]() {
+            const QColor storedColor = normalizedStoredColor(m_color);
+            for (const QColor &color : m_customColors) {
+                if (sameStoredColor(color, storedColor)) {
+                    return;
+                }
+            }
+            m_customColors.prepend(storedColor);
+            while (m_customColors.size() > 14) {
+                m_customColors.removeLast();
+            }
+            saveCustomColors();
+            rebuildCustomSwatches();
+        });
+        connect(m_removeCustomColorButton, &QPushButton::clicked, this, [this]() {
+            for (int i = 0; i < m_customColors.size(); ++i) {
+                if (sameStoredColor(m_customColors.at(i), m_color)) {
+                    m_customColors.removeAt(i);
+                    saveCustomColors();
+                    rebuildCustomSwatches();
+                    return;
+                }
+            }
+        });
+
+        loadCustomColors();
+        rebuildCustomSwatches();
         setAlphaEnabled(false);
         setCurrentColor(QColor(QStringLiteral("#ffffff")));
     }
@@ -250,6 +449,84 @@ namespace fairwindsk::ui::widgets {
         }
         m_hexEdit->setPlaceholderText(enabled ? QStringLiteral("#AARRGGBB") : QStringLiteral("#RRGGBB"));
         syncControlsFromColor();
+    }
+
+    void TouchColorPicker::loadCustomColors() {
+        QSettings settings(Configuration::settingsFilename(), QSettings::IniFormat);
+        const QStringList values = settings.value(customColorsKey()).toStringList();
+        m_customColors.clear();
+        for (const QString &value : values) {
+            const QColor color(value);
+            if (color.isValid()) {
+                m_customColors.append(color);
+            }
+        }
+    }
+
+    void TouchColorPicker::saveCustomColors() const {
+        QStringList values;
+        values.reserve(m_customColors.size());
+        for (const QColor &color : m_customColors) {
+            values.append(color.name(QColor::HexArgb));
+        }
+
+        QSettings settings(Configuration::settingsFilename(), QSettings::IniFormat);
+        settings.setValue(customColorsKey(), values);
+        settings.sync();
+    }
+
+    void TouchColorPicker::rebuildCustomSwatches() {
+        if (!m_customSwatchesLayout) {
+            return;
+        }
+
+        while (QLayoutItem *item = m_customSwatchesLayout->takeAt(0)) {
+            if (item->widget()) {
+                item->widget()->deleteLater();
+            }
+            delete item;
+        }
+
+        for (const QColor &swatch : m_customColors) {
+            auto *button = new SwatchButton(swatch, m_customSwatchesHost);
+            button->setChecked(sameStoredColor(swatch, m_color));
+            button->setStyleSheet(QStringLiteral(
+                                      "QToolButton {"
+                                      " border: 2px solid %1;"
+                                      " border-radius: 12px;"
+                                      " background: %2;"
+                                      " }"
+                                      "QToolButton:checked {"
+                                      " border-width: 4px;"
+                                      " border-color: #ffffff;"
+                                      " }")
+                                      .arg(swatch.darker(135).name(), swatch.name(QColor::HexArgb)));
+            button->onChosen = [this](const QColor &color, const bool activate) {
+                setColorInternal(color, true);
+                if (activate) {
+                    emit colorActivated(m_color);
+                }
+            };
+            m_customSwatchesLayout->addWidget(button);
+        }
+        m_customSwatchesLayout->addStretch(1);
+        updatePreview();
+    }
+
+    void TouchColorPicker::updateShadeSelector() {
+        int hue = 0;
+        int saturation = 0;
+        int value = 0;
+        int alpha = 255;
+        m_color.getHsv(&hue, &saturation, &value, &alpha);
+        if (hue < 0) {
+            hue = m_hueSlider ? m_hueSlider->value() : 0;
+        }
+
+        if (m_shadeSelector) {
+            m_shadeSelector->setHue(hue);
+            m_shadeSelector->setSelection(saturation, value);
+        }
     }
 
     void TouchColorPicker::addSliderRow(const QString &labelText, QSlider **sliderPtr, QLabel **valueLabelPtr) {
@@ -308,6 +585,7 @@ namespace fairwindsk::ui::widgets {
         m_greenSlider->setValue(m_color.green());
         m_blueSlider->setValue(m_color.blue());
         m_alphaSlider->setValue(alpha);
+        updateShadeSelector();
         updatePreview();
     }
 
@@ -343,6 +621,22 @@ namespace fairwindsk::ui::widgets {
         emit currentColorChanged(m_color);
     }
 
+    void TouchColorPicker::syncColorFromShade(const int saturation, const int value) {
+        if (m_updating) {
+            return;
+        }
+
+        m_updating = true;
+        m_color = QColor::fromHsv(
+            m_hueSlider->value(),
+            saturation,
+            value,
+            m_alphaEnabled ? m_alphaSlider->value() : 255);
+        syncControlsFromColor();
+        m_updating = false;
+        emit currentColorChanged(m_color);
+    }
+
     void TouchColorPicker::updatePreview() {
         m_preview->setStyleSheet(QStringLiteral(
                                      "QFrame {"
@@ -371,6 +665,17 @@ namespace fairwindsk::ui::widgets {
         m_greenValueLabel->setText(QString::number(m_greenSlider->value()));
         m_blueValueLabel->setText(QString::number(m_blueSlider->value()));
         m_alphaValueLabel->setText(QString::number(m_alphaSlider->value()));
+
+        bool isCustomColor = false;
+        for (const QColor &color : m_customColors) {
+            if (sameStoredColor(color, m_color)) {
+                isCustomColor = true;
+                break;
+            }
+        }
+        if (m_removeCustomColorButton) {
+            m_removeCustomColorButton->setEnabled(isCustomColor);
+        }
     }
 
     void TouchColorPicker::setColorInternal(const QColor &color, const bool emitSignal) {
@@ -382,6 +687,7 @@ namespace fairwindsk::ui::widgets {
         m_updating = true;
         syncControlsFromColor();
         m_updating = false;
+        rebuildCustomSwatches();
         if (emitSignal) {
             emit currentColorChanged(m_color);
         }
@@ -461,7 +767,7 @@ namespace fairwindsk::ui::widgets {
             return;
         }
 
-        const QSize targetSize(qMax(720, windowWidget->width() - 24), qMax(640, windowWidget->height() / 2 + 80));
+        const QSize targetSize(qMax(760, windowWidget->width() - 24), qMax(760, (windowWidget->height() * 3) / 4));
         resize(targetSize);
         const QPoint topLeft = windowWidget->mapToGlobal(
             QPoint((windowWidget->width() - width()) / 2, qMax(12, windowWidget->height() - height() - 12)));

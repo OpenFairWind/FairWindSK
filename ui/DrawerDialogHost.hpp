@@ -67,6 +67,9 @@ namespace fairwindsk::ui::drawer {
                             const QString &title,
                             const QString &path = QString(),
                             const QString &filter = QString());
+    void exploreLogs(QWidget *parent,
+                     const QString &title,
+                     const QString &directory);
     bool editGeoCoordinate(QWidget *parent,
                            const QString &title,
                            double *latitude,

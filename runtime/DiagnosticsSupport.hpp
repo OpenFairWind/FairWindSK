@@ -13,7 +13,8 @@ namespace fairwindsk::runtime {
         Critical,
         Warning,
         Info,
-        Debug
+        Debug,
+        Full
     };
 
     QString defaultDiagnosticsEmail();
