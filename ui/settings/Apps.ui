@@ -310,13 +310,20 @@
              <item>
               <layout class="QHBoxLayout" name="horizontalLayout_PageHeaderCenter">
                <item>
+                <widget class="QLabel" name="label_PageActions">
+                 <property name="text">
+                  <string>Page actions</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
                 <widget class="QToolButton" name="toolButton_AddPage">
                  <property name="toolTip">
                   <string>Add page</string>
                  </property>
                  <property name="icon">
                   <iconset>
-                   <normaloff>:/resources/svg/OpenBridge/navigation-route.svg</normaloff>:/resources/svg/OpenBridge/navigation-route.svg</iconset>
+                   <normaloff>:/resources/svg/OpenBridge/add-new-page.svg</normaloff>:/resources/svg/OpenBridge/add-new-page.svg</iconset>
                  </property>
                  <property name="iconSize">
                   <size>
@@ -339,7 +346,7 @@
                  </property>
                  <property name="icon">
                   <iconset>
-                   <normaloff>:/resources/svg/OpenBridge/info.svg</normaloff>:/resources/svg/OpenBridge/info.svg</iconset>
+                   <normaloff>:/resources/svg/OpenBridge/show-page-details.svg</normaloff>:/resources/svg/OpenBridge/show-page-details.svg</iconset>
                  </property>
                  <property name="iconSize">
                   <size>
@@ -385,7 +392,7 @@
                  </property>
                  <property name="icon">
                   <iconset>
-                   <normaloff>:/resources/svg/OpenBridge/widget-add-google.svg</normaloff>:/resources/svg/OpenBridge/widget-add-google.svg</iconset>
+                   <normaloff>:/resources/svg/OpenBridge/add-selected-app-to-current-page.svg</normaloff>:/resources/svg/OpenBridge/add-selected-app-to-current-page.svg</iconset>
                  </property>
                  <property name="iconSize">
                   <size>
@@ -404,19 +411,6 @@
               </layout>
              </item>
              <item>
-              <spacer name="horizontalSpacer_PageHeaderRight">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>40</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-             <item>
               <layout class="QHBoxLayout" name="horizontalLayout_PageHeaderRight">
                <item>
                 <widget class="QToolButton" name="toolButton_SelectedSlotDetails">
@@ -425,7 +419,7 @@
                  </property>
                  <property name="icon">
                   <iconset>
-                   <normaloff>:/resources/svg/OpenBridge/info.svg</normaloff>:/resources/svg/OpenBridge/info.svg</iconset>
+                   <normaloff>:/resources/svg/OpenBridge/show-details-selected-app-on-current-page.svg</normaloff>:/resources/svg/OpenBridge/show-details-selected-app-on-current-page.svg</iconset>
                  </property>
                  <property name="iconSize">
                   <size>
@@ -448,7 +442,7 @@
                  </property>
                  <property name="icon">
                   <iconset>
-                   <normaloff>:/resources/svg/OpenBridge/delete-google.svg</normaloff>:/resources/svg/OpenBridge/delete-google.svg</iconset>
+                   <normaloff>:/resources/svg/OpenBridge/remove-selected-app-from-page.svg</normaloff>:/resources/svg/OpenBridge/remove-selected-app-from-page.svg</iconset>
                  </property>
                  <property name="iconSize">
                   <size>
@@ -465,20 +459,80 @@
                 </widget>
                </item>
                <item>
-                <widget class="Line" name="line_PageHeaderSeparator">
+               <widget class="Line" name="line_PageHeaderSeparator">
                  <property name="orientation">
                   <enum>Qt::Vertical</enum>
                  </property>
                 </widget>
                </item>
                <item>
-                <widget class="QToolButton" name="toolButton_AddAllApps">
+                <widget class="QToolButton" name="toolButton_ClearCurrentPageApps">
                  <property name="toolTip">
-                  <string>Add all applications to pages</string>
+                  <string>Remove all applications from current page</string>
                  </property>
                  <property name="icon">
                   <iconset>
-                   <normaloff>:/resources/svg/OpenBridge/widget-add-google.svg</normaloff>:/resources/svg/OpenBridge/widget-add-google.svg</iconset>
+                   <normaloff>:/resources/svg/OpenBridge/remove-all-apps-from-current-page.svg</normaloff>:/resources/svg/OpenBridge/remove-all-apps-from-current-page.svg</iconset>
+                 </property>
+                 <property name="iconSize">
+                  <size>
+                   <width>24</width>
+                   <height>24</height>
+                  </size>
+                 </property>
+                 <property name="toolButtonStyle">
+                  <enum>Qt::ToolButtonIconOnly</enum>
+                 </property>
+                 <property name="text">
+                  <string>Remove All Page Apps</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QToolButton" name="toolButton_ClearAllPagesApps">
+                 <property name="toolTip">
+                  <string>Remove all applications from all pages</string>
+                 </property>
+                 <property name="icon">
+                  <iconset>
+                   <normaloff>:/resources/svg/OpenBridge/remove-all-apps-from-all-pages.svg</normaloff>:/resources/svg/OpenBridge/remove-all-apps-from-all-pages.svg</iconset>
+                 </property>
+                 <property name="iconSize">
+                  <size>
+                   <width>24</width>
+                   <height>24</height>
+                  </size>
+                 </property>
+                 <property name="toolButtonStyle">
+                  <enum>Qt::ToolButtonIconOnly</enum>
+                 </property>
+                 <property name="text">
+                  <string>Remove All Apps</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="Line" name="line_PagePaletteSeparator">
+                 <property name="orientation">
+                  <enum>Qt::Vertical</enum>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_PaletteActions">
+                 <property name="text">
+                  <string>Palette actions</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QToolButton" name="toolButton_AddAllApps">
+                 <property name="toolTip">
+                  <string>Add all applications to current page</string>
+                 </property>
+                 <property name="icon">
+                  <iconset>
+                   <normaloff>:/resources/svg/OpenBridge/add-all-apps-to-current-page.svg</normaloff>:/resources/svg/OpenBridge/add-all-apps-to-current-page.svg</iconset>
                  </property>
                  <property name="iconSize">
                   <size>
@@ -501,7 +555,7 @@
                  </property>
                  <property name="icon">
                   <iconset>
-                   <normaloff>:/resources/svg/OpenBridge/widget-add-google.svg</normaloff>:/resources/svg/OpenBridge/widget-add-google.svg</iconset>
+                   <normaloff>:/resources/svg/OpenBridge/define-new-application-in-palette.svg</normaloff>:/resources/svg/OpenBridge/define-new-application-in-palette.svg</iconset>
                  </property>
                  <property name="iconSize">
                   <size>
@@ -524,7 +578,7 @@
                  </property>
                  <property name="icon">
                   <iconset>
-                   <normaloff>:/resources/svg/OpenBridge/info.svg</normaloff>:/resources/svg/OpenBridge/info.svg</iconset>
+                   <normaloff>:/resources/svg/OpenBridge/show-details-selected-app-in-palette.svg</normaloff>:/resources/svg/OpenBridge/show-details-selected-app-in-palette.svg</iconset>
                  </property>
                  <property name="iconSize">
                   <size>
@@ -547,7 +601,7 @@
                  </property>
                  <property name="icon">
                   <iconset>
-                   <normaloff>:/resources/svg/OpenBridge/delete-google.svg</normaloff>:/resources/svg/OpenBridge/delete-google.svg</iconset>
+                   <normaloff>:/resources/svg/OpenBridge/remove-selected-app-from-palette.svg</normaloff>:/resources/svg/OpenBridge/remove-selected-app-from-palette.svg</iconset>
                  </property>
                  <property name="iconSize">
                   <size>

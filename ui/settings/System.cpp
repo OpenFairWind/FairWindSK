@@ -234,9 +234,23 @@ namespace fairwindsk::ui::settings {
         m_loggingFormLayout->addRow(tr("Level"), m_logLevelComboBox);
 
         m_persistentLoggingCheckBox = new fairwindsk::ui::widgets::TouchCheckBox(m_loggingGroupBox);
-        m_persistentLoggingCheckBox->setText(tr("Store message logs in the persistent diagnostics directory"));
-        m_persistentLoggingCheckBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-        m_loggingFormLayout->addRow(tr("Persistent logs"), m_persistentLoggingCheckBox);
+        m_persistentLoggingCheckBox->setText(QString());
+        m_persistentLoggingCheckBox->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+
+        auto *persistentLogsWidget = new QWidget(m_loggingGroupBox);
+        auto *persistentLogsLayout = new QHBoxLayout(persistentLogsWidget);
+        persistentLogsLayout->setContentsMargins(0, 0, 0, 0);
+        persistentLogsLayout->setSpacing(10);
+        persistentLogsLayout->addWidget(m_persistentLoggingCheckBox, 0, Qt::AlignTop);
+
+        auto *persistentLogsHelpLabel = new QLabel(
+            tr("Store message logs in the persistent diagnostics directory"),
+            persistentLogsWidget);
+        persistentLogsHelpLabel->setWordWrap(true);
+        persistentLogsHelpLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        persistentLogsLayout->addWidget(persistentLogsHelpLabel, 1);
+
+        m_loggingFormLayout->addRow(tr("Persistent logs"), persistentLogsWidget);
 
         m_diagnosticsEmailEdit = new QLineEdit(m_loggingGroupBox);
         m_diagnosticsEmailEdit->setClearButtonEnabled(true);

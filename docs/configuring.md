@@ -124,7 +124,7 @@ These mappings drive UI bars (autopilot, anchor, alarms, POB) and instrument rea
 At startup, FairWindSK checks whether the previous run ended gracefully. If it did not, it prepares a report with the logs between the latest two starts plus platform details such as operating system, CPU architecture, Qt version, host information, and primary screen configuration, then opens the platform email composer with the configured destination and subject.
 
 The **Settings > System** tab exposes the same diagnostics options in the touch-friendly UI and shows the persistent log directory currently used by the application.
-It also exposes a direct button to open the persistent log folder in the host operating system file manager.
+It also exposes a direct button to open the persistent log folder in the host operating system file manager, and keeps the persistent-log toggle readable on compact touch layouts by separating the switch from its descriptive text.
 
 ## Comfort presets and icon color
 
@@ -140,6 +140,14 @@ The **Settings > Comfort** page writes those values back into `fairwindsk.json`,
 
 - **Waypoints**: the details page shows the selected waypoint in the reusable embedded Signal K app view when a Freeboard-SK app is available on the connected server.
 - **Files**: file actions operate on the active view selection, so search-result rows and normal directory rows follow the same open, rename, delete, copy, cut, and paste workflows.
+
+## Launcher editing
+
+The **Settings > Apps** page stores launcher pages and folders under the `launcherLayout` object in `fairwindsk.json`.
+The editor now exposes grouped actions for:
+
+- page-level actions such as adding pages, showing page details, assigning applications to the selected page, and clearing applications from the current page or all pages
+- palette-level actions such as creating applications, showing selected application details, removing selected applications from the palette, and adding all available applications to the current page
 
 ## Authentication and tokens
 

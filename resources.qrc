@@ -78,6 +78,17 @@
         <!-- Launcher icons from OpenBridge -->
         <file>resources/svg/OpenBridge/chevron-double-left-google.svg</file>
         <file>resources/svg/OpenBridge/chevron-double-right-google.svg</file>
+        <file>resources/svg/OpenBridge/add-all-apps-to-current-page.svg</file>
+        <file>resources/svg/OpenBridge/add-new-page.svg</file>
+        <file>resources/svg/OpenBridge/add-selected-app-to-current-page.svg</file>
+        <file>resources/svg/OpenBridge/define-new-application-in-palette.svg</file>
+        <file>resources/svg/OpenBridge/remove-all-apps-from-all-pages.svg</file>
+        <file>resources/svg/OpenBridge/remove-all-apps-from-current-page.svg</file>
+        <file>resources/svg/OpenBridge/remove-selected-app-from-page.svg</file>
+        <file>resources/svg/OpenBridge/remove-selected-app-from-palette.svg</file>
+        <file>resources/svg/OpenBridge/show-details-selected-app-in-palette.svg</file>
+        <file>resources/svg/OpenBridge/show-details-selected-app-on-current-page.svg</file>
+        <file>resources/svg/OpenBridge/show-page-details.svg</file>
 
         <!-- Anchor bitmap icons -->
         <file>resources/images/bottombar/anchor_drop.png</file>

@@ -100,6 +100,8 @@ namespace fairwindsk::ui::settings {
         void onRemoveAppClicked();
         void onAddPageClicked();
         void onAddSelectedAppToPageClicked();
+        void onClearCurrentPageAppsClicked();
+        void onClearAllPagesAppsClicked();
         void onRemoveNodeClicked();
         void onMoveNodeLeftClicked();
         void onMoveNodeRightClicked();
@@ -141,6 +143,10 @@ namespace fairwindsk::ui::settings {
         void showLayoutEditor();
         void removeAppFromLauncherNodes(const QString &appName);
         void renameAppInLauncherNodes(const QString &oldName, const QString &newName);
+        bool pageHasRemovableApps(const nlohmann::json &node) const;
+        bool anyPageHasRemovableApps(const nlohmann::json &nodes) const;
+        void clearRemovableAppsFromNode(nlohmann::json &node) const;
+        void clearRemovableAppsFromNodes(nlohmann::json &nodes) const;
         void markSettingsDirty();
         bool promotePageNode(const QString &pageId, bool selectPromotedPage = true);
         void ensureLauncherLayout();

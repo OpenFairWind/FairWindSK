@@ -25,7 +25,7 @@ Availability of these bars depends on the configured plugin identifiers (`applic
 - Unit selection, window sizing, and virtual keyboard toggles are reflected in the `main` and `units` sections of the configuration.
 - The **System** tab now includes touch-friendly diagnostics controls for:
   - logging level (`No logging`, `Critical`, `Warning`, `Info`, `Debug`)
-  - persistent message log storage
+  - persistent message log storage with a compact checkbox-plus-description row
   - diagnostics email destination
   - the effective diagnostics subject and persistent log directory
   - a direct `Open logs` action for the persistent diagnostics folder
@@ -33,6 +33,7 @@ Availability of these bars depends on the configured plugin identifiers (`applic
 - The **Comfort** tab now exposes preset-level marine-theme tuning for the main QSS palettes and a dedicated default SVG icon color for each comfort preset.
 - The **My Data > Waypoints** details page reuses the embedded Signal K web view to show the waypoint on Freeboard-SK whenever the `@signalk/freeboard-sk` app is active on the connected server.
 - The **My Data > Files** page now keeps directory actions, search results, rename/create flows, and copy/move/paste behavior aligned so the same operations work more consistently from both the browser and search views.
+- The **Settings > Apps** layout now groups the right-pane toolbar into page actions and application palette actions, uses bundled marine-style SVG icons for the launcher-management buttons, and includes bulk clear actions for removing applications from the current page or from every page.
 
 ## Splash and status messages
 
