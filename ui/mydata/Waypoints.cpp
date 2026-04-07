@@ -239,6 +239,7 @@ namespace fairwindsk::ui::mydata {
         m_propertiesTreeTab = ui->widgetPropertiesTreeContainer;
         m_propertiesJsonTab = ui->widgetPropertiesJsonContainer;
         m_geoJsonDetailsEdit = ui->plainTextEditGeoJson;
+        m_previewHost = ui->widgetPreviewHost;
         m_detailsFormLayout = ui->formLayoutDetails;
         m_nameEdit = ui->lineEditName;
         m_descriptionEdit = ui->plainTextEditDescription;
@@ -355,22 +356,16 @@ namespace fairwindsk::ui::mydata {
         m_contactsEdit->setMaximumHeight(72);
         m_propertiesEditor->setLabels(tr("Properties Tree"), tr("Properties JSON"));
         m_propertiesEditor->setHiddenKeys({QStringLiteral("name"), QStringLiteral("description"), QStringLiteral("contacts"), QStringLiteral("seaFloor"), QStringLiteral("slips")});
-        auto *previewLayout = new QVBoxLayout(ui->widgetPreviewHost);
+        auto *previewLayout = new QVBoxLayout(m_previewHost);
         previewLayout->setContentsMargins(0, 0, 0, 0);
         previewLayout->setSpacing(0);
-        m_previewAppView = new fairwindsk::ui::web::SignalKAppView(this);
-        previewLayout->addWidget(m_previewAppView);
         m_propertiesEditor->setTabBarVisible(false);
         m_geoJsonDetailsEdit->setReadOnly(true);
         m_geoJsonDetailsEdit->setLineWrapMode(QPlainTextEdit::NoWrap);
-        connect(m_previewAppView, &fairwindsk::ui::web::SignalKAppView::loadFinished, this, [this](const bool ok) {
-            if (ok) {
-                schedulePreviewFocus();
-            }
-        });
         connect(m_detailTabs, &QTabWidget::currentChanged, this, [this](const int currentIndex) {
             syncDetailTabs();
             if (currentIndex == 0) {
+                ensurePreviewAppView();
                 schedulePreviewFocus();
             }
         });
@@ -943,6 +938,27 @@ namespace fairwindsk::ui::mydata {
                 configuration->getCoordinateFormat()));
     }
 
+    void Waypoints::ensurePreviewAppView() {
+        if (m_previewAppView || !m_previewHost) {
+            return;
+        }
+
+        auto *layout = qobject_cast<QVBoxLayout *>(m_previewHost->layout());
+        if (!layout) {
+            layout = new QVBoxLayout(m_previewHost);
+            layout->setContentsMargins(0, 0, 0, 0);
+            layout->setSpacing(0);
+        }
+
+        m_previewAppView = new fairwindsk::ui::web::SignalKAppView(this);
+        layout->addWidget(m_previewAppView);
+        connect(m_previewAppView, &fairwindsk::ui::web::SignalKAppView::loadFinished, this, [this](const bool ok) {
+            if (ok) {
+                schedulePreviewFocus();
+            }
+        });
+    }
+
     void Waypoints::updatePreview(const QJsonObject &resource) {
         QList<QPair<QString, QJsonObject>> resources;
         resources.append({m_currentWaypointId, resource});
@@ -952,6 +968,12 @@ namespace fairwindsk::ui::mydata {
         const double latitude = coordinates.size() > 1 ? coordinates.at(1).toDouble() : 0.0;
         m_previewLongitude = longitude;
         m_previewLatitude = latitude;
+        ensurePreviewAppView();
+        if (!m_previewAppView) {
+            m_geoJsonDetailsEdit->setPlainText(QString::fromUtf8(geoJson.toJson(QJsonDocument::Indented)));
+            syncDetailTabs();
+            return;
+        }
         const bool freeboardAvailable = fairwindsk::ui::web::SignalKAppView::hasAppByKeyword(QStringLiteral("freeboard"));
         if (!freeboardAvailable) {
             m_previewAppView->setHtml(QStringLiteral(

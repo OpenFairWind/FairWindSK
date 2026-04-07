@@ -1039,6 +1039,10 @@ namespace fairwindsk::signalk {
     bool Client::refreshServerDiscovery() {
         qInfo() << "SignalK::Client requesting server discovery from" << m_Url;
         const QJsonObject discoveredServer = signalkGet(m_Url);
+        return applyDiscoveredServer(discoveredServer);
+    }
+
+    bool Client::applyDiscoveredServer(const QJsonObject &discoveredServer) {
         qInfo() << "SignalK::Client discovery reply keys =" << discoveredServer.keys();
 
         if (m_Debug) {
@@ -1096,13 +1100,68 @@ namespace fairwindsk::signalk {
     }
 
     void Client::scheduleReconnect(const int delayMs) {
-        if (m_reconnectTimer.isActive()) {
+        if (m_reconnectTimer.isActive() || m_reconnectAttemptInFlight) {
             return;
         }
 
         setStreamHealth(false, tr("Reconnecting stream"));
         emit serverMessageChanged(tr("Reconnecting to Signal K"));
         m_reconnectTimer.start(std::max(0, delayMs));
+    }
+
+    void Client::startAsyncReconnectDiscovery() {
+        if (m_reconnectAttemptInFlight) {
+            return;
+        }
+
+        m_reconnectAttemptInFlight = true;
+        beginRequest(QStringLiteral("GET"), m_Url);
+        auto *reply = m_NetworkAccessManager.get(createJsonRequest(m_Url));
+
+        auto *timeoutTimer = new QTimer(reply);
+        timeoutTimer->setSingleShot(true);
+        connect(timeoutTimer, &QTimer::timeout, reply, [reply]() {
+            if (!reply->isFinished()) {
+                reply->abort();
+            }
+        });
+        timeoutTimer->start(kRequestTimeoutMs);
+
+        connect(reply, &QNetworkReply::finished, this, [this, reply]() {
+            const QScopedPointer<QNetworkReply, QScopedPointerDeleteLater> guard(reply);
+            m_reconnectAttemptInFlight = false;
+
+            const bool success = guard->error() == QNetworkReply::NoError;
+            const int httpStatus = guard->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+            const QString message = success
+                                        ? QString()
+                                        : (guard->errorString().trimmed().isEmpty()
+                                               ? tr("Signal K server not available")
+                                               : guard->errorString().trimmed());
+
+            if (!success) {
+                setRestHealth(false, tr("Signal K offline"));
+                emit serverMessageChanged(tr("Signal K server not available"));
+                endRequest(false, guard->request().url(), httpStatus, message);
+                scheduleReconnect();
+                return;
+            }
+
+            const QJsonDocument document = QJsonDocument::fromJson(guard->readAll());
+            const QJsonObject discoveredServer = document.isObject() ? document.object() : QJsonObject{};
+            const bool applied = applyDiscoveredServer(discoveredServer);
+            endRequest(applied, guard->request().url(), httpStatus, applied ? QString() : tr("Invalid Signal K discovery payload"));
+            if (!applied) {
+                setRestHealth(false, tr("Signal K offline"));
+                emit serverMessageChanged(tr("Signal K server not available"));
+                scheduleReconnect();
+                return;
+            }
+
+            refreshAuthenticationState();
+            m_reconnectRecoveryPending = true;
+            openWebSocket();
+        });
     }
 
     bool Client::hasSubscription(const QString &requestedContext, const QString &path, QObject *receiver) const {
@@ -1179,16 +1238,7 @@ namespace fairwindsk::signalk {
         }
 
         qInfo() << "SignalK::Client::attemptReconnect entered";
-        if (!refreshServerDiscovery()) {
-            setRestHealth(false, tr("Signal K offline"));
-            emit serverMessageChanged(tr("Signal K server not available"));
-            scheduleReconnect();
-            return;
-        }
-
-        refreshAuthenticationState();
-        m_reconnectRecoveryPending = true;
-        openWebSocket();
+        startAsyncReconnectDiscovery();
     }
 
     signalk::Waypoint Client::getWaypointByHref(const QString &href) {

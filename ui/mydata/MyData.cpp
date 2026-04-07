@@ -17,6 +17,7 @@ namespace fairwindsk::ui::mydata {
     MyData::MyData(QWidget *parent, QWidget *currenWidget): QWidget(parent), ui(new Ui::MyData) {
 
         ui->setupUi(this);
+        connect(ui->tabWidget, &QTabWidget::currentChanged, this, &MyData::ensureTabPage);
 
         // Initialize the tabs
         initTabs(0);
@@ -53,19 +54,79 @@ namespace fairwindsk::ui::mydata {
         // Remove tabs if present
         removeTabs();
 
-        // Add the resources tabs
-        ui->tabWidget->addTab(new Waypoints(this), tr("Waypoints"));
-        ui->tabWidget->addTab(new ResourceTab(ResourceKind::Route, this), tr("Routes"));
-        ui->tabWidget->addTab(new ResourceTab(ResourceKind::Region, this), tr("Regions"));
-        ui->tabWidget->addTab(new ResourceTab(ResourceKind::Note, this), tr("Notes"));
-        ui->tabWidget->addTab(new ResourceTab(ResourceKind::Chart, this), tr("Charts"));
-        ui->tabWidget->addTab(new HistoryTrackTab(this), tr("Tracks"));
-
-        // Add the applications tab
-        ui->tabWidget->addTab(new Files(this), tr("Files"));
+        for (int index = 0; index < 7; ++index) {
+            auto *placeholder = new QWidget(this);
+            placeholder->setProperty("fairwindskPlaceholderTab", true);
+            ui->tabWidget->addTab(placeholder, tabTitle(index));
+        }
 
         // Set the current tab index
         ui->tabWidget->setCurrentIndex(currentIndex);
+        ensureTabPage(currentIndex);
+    }
+
+    void MyData::ensureTabPage(const int index) {
+        if (!ui || !ui->tabWidget || index < 0 || index >= ui->tabWidget->count()) {
+            return;
+        }
+
+        QWidget *currentPage = ui->tabWidget->widget(index);
+        if (!currentPage || !currentPage->property("fairwindskPlaceholderTab").toBool()) {
+            return;
+        }
+
+        QWidget *realPage = createTabPage(index);
+        if (!realPage) {
+            return;
+        }
+
+        const QString title = ui->tabWidget->tabText(index);
+        ui->tabWidget->removeTab(index);
+        currentPage->deleteLater();
+        ui->tabWidget->insertTab(index, realPage, title);
+        ui->tabWidget->setCurrentIndex(index);
+    }
+
+    QWidget *MyData::createTabPage(const int index) const {
+        switch (index) {
+            case 0:
+                return new Waypoints(const_cast<MyData *>(this));
+            case 1:
+                return new ResourceTab(ResourceKind::Route, const_cast<MyData *>(this));
+            case 2:
+                return new ResourceTab(ResourceKind::Region, const_cast<MyData *>(this));
+            case 3:
+                return new ResourceTab(ResourceKind::Note, const_cast<MyData *>(this));
+            case 4:
+                return new ResourceTab(ResourceKind::Chart, const_cast<MyData *>(this));
+            case 5:
+                return new HistoryTrackTab(const_cast<MyData *>(this));
+            case 6:
+                return new Files(const_cast<MyData *>(this));
+            default:
+                return nullptr;
+        }
+    }
+
+    QString MyData::tabTitle(const int index) const {
+        switch (index) {
+            case 0:
+                return tr("Waypoints");
+            case 1:
+                return tr("Routes");
+            case 2:
+                return tr("Regions");
+            case 3:
+                return tr("Notes");
+            case 4:
+                return tr("Charts");
+            case 5:
+                return tr("Tracks");
+            case 6:
+                return tr("Files");
+            default:
+                return {};
+        }
     }
 
 

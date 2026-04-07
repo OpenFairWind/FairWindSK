@@ -33,9 +33,12 @@ namespace fairwindsk::ui::mydata {
     private:
         void initTabs(int currentIndex);
         void removeTabs();
+        void ensureTabPage(int index);
+        QWidget *createTabPage(int index) const;
+        QString tabTitle(int index) const;
 
         Ui::MyData *ui;
-        QWidget *m_currentWidget;
+        QWidget *m_currentWidget = nullptr;
     };
 } // fairwindsk::ui::mydata
 

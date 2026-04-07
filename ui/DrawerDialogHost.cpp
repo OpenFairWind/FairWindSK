@@ -9,6 +9,7 @@
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QFileSystemModel>
 #include <QHeaderView>
@@ -18,7 +19,6 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QLocale>
-#include <QPlainTextEdit>
 #include <QPointer>
 #include <QPushButton>
 #include <QRegularExpression>
@@ -26,6 +26,7 @@
 #include <QSet>
 #include <QSplitter>
 #include <QStandardPaths>
+#include <QTableWidget>
 #include <QToolButton>
 #include <QTreeView>
 #include <QVBoxLayout>
@@ -583,19 +584,46 @@ namespace fairwindsk::ui::drawer {
                 layout->addWidget(splitter, 1);
 
                 m_logList = new QListWidget(splitter);
-                m_logList->setMinimumWidth(220);
+                m_logList->setMinimumWidth(260);
                 m_logList->setAlternatingRowColors(true);
                 m_logList->setSelectionMode(QAbstractItemView::SingleSelection);
                 m_logList->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
 
-                m_logView = new QPlainTextEdit(splitter);
-                m_logView->setReadOnly(true);
-                m_logView->setLineWrapMode(QPlainTextEdit::WidgetWidth);
-                m_logView->setMinimumWidth(280);
+                auto *detailsWidget = new QWidget(splitter);
+                auto *detailsLayout = new QVBoxLayout(detailsWidget);
+                detailsLayout->setContentsMargins(0, 0, 0, 0);
+                detailsLayout->setSpacing(6);
+
+                m_selectedLogLabel = new QLabel(tr("No log selected"), detailsWidget);
+                m_selectedLogLabel->setWordWrap(true);
+                m_selectedLogLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+                detailsLayout->addWidget(m_selectedLogLabel);
+
+                m_logSummaryLabel = new QLabel(tr("Choose a log file from the left pane."), detailsWidget);
+                m_logSummaryLabel->setWordWrap(true);
+                m_logSummaryLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+                detailsLayout->addWidget(m_logSummaryLabel);
+
+                m_logGrid = new QTableWidget(detailsWidget);
+                m_logGrid->setColumnCount(4);
+                m_logGrid->setHorizontalHeaderLabels({tr("Time"), tr("Level"), tr("Message"), tr("Source")});
+                m_logGrid->setEditTriggers(QAbstractItemView::NoEditTriggers);
+                m_logGrid->setSelectionBehavior(QAbstractItemView::SelectRows);
+                m_logGrid->setSelectionMode(QAbstractItemView::SingleSelection);
+                m_logGrid->setAlternatingRowColors(true);
+                m_logGrid->setWordWrap(true);
+                m_logGrid->verticalHeader()->setVisible(false);
+                m_logGrid->verticalHeader()->setDefaultSectionSize(28);
+                m_logGrid->horizontalHeader()->setStretchLastSection(false);
+                m_logGrid->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+                m_logGrid->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+                m_logGrid->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
+                m_logGrid->horizontalHeader()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
+                detailsLayout->addWidget(m_logGrid, 1);
 
                 splitter->setStretchFactor(0, 0);
                 splitter->setStretchFactor(1, 1);
-                splitter->setSizes({260, 520});
+                splitter->setSizes({280, 760});
 
                 connect(m_refreshButton, &QPushButton::clicked, this, [this]() { reloadLogs(); });
                 connect(m_logList, &QListWidget::currentItemChanged, this, [this](QListWidgetItem *current) {
@@ -633,7 +661,9 @@ namespace fairwindsk::ui::drawer {
                 }
 
                 if (m_logList->count() == 0) {
-                    m_logView->setPlainText(tr("No log files are available in the persistent diagnostics directory yet."));
+                    m_selectedLogLabel->setText(tr("No log selected"));
+                    m_logSummaryLabel->setText(tr("No log files are available in the persistent diagnostics directory yet."));
+                    m_logGrid->setRowCount(0);
                     return;
                 }
 
@@ -645,29 +675,88 @@ namespace fairwindsk::ui::drawer {
             }
 
             void loadLog(const QString &path) {
+                struct ParsedLogLine {
+                    QString timestamp;
+                    QString level;
+                    QString message;
+                    QString source;
+                };
+
                 if (path.trimmed().isEmpty()) {
-                    m_logView->clear();
+                    m_selectedLogLabel->setText(tr("No log selected"));
+                    m_logSummaryLabel->setText(tr("Choose a log file from the left pane."));
+                    m_logGrid->setRowCount(0);
                     return;
                 }
 
                 QFile file(path);
                 if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-                    m_logView->setPlainText(tr("Unable to read:\n%1").arg(path));
+                    m_selectedLogLabel->setText(path);
+                    m_logSummaryLabel->setText(tr("Unable to read the selected log file."));
+                    m_logGrid->setRowCount(1);
+                    for (int column = 0; column < 4; ++column) {
+                        m_logGrid->setItem(0, column, new QTableWidgetItem());
+                    }
+                    m_logGrid->item(0, 2)->setText(tr("Unable to read: %1").arg(path));
                     return;
                 }
 
-                m_logView->setPlainText(QString::fromUtf8(file.readAll()));
-                auto *scrollBar = m_logView->verticalScrollBar();
-                if (scrollBar) {
-                    scrollBar->setValue(scrollBar->minimum());
+                const QString content = QString::fromUtf8(file.readAll());
+                const QStringList lines = content.split(QRegularExpression(QStringLiteral("[\r\n]+")), Qt::SkipEmptyParts);
+                const QRegularExpression pattern(
+                    QStringLiteral(R"(^(\S+)\s+\[([^\]]+)\]\s+(.*?)(?:\s+\(([^()]+)\))?$)"));
+
+                QList<ParsedLogLine> parsedLines;
+                parsedLines.reserve(lines.size());
+                for (const QString &rawLine : lines) {
+                    const QString trimmedLine = rawLine.trimmed();
+                    if (trimmedLine.isEmpty()) {
+                        continue;
+                    }
+
+                    ParsedLogLine parsed;
+                    const auto match = pattern.match(trimmedLine);
+                    if (match.hasMatch()) {
+                        parsed.timestamp = match.captured(1);
+                        parsed.level = match.captured(2);
+                        parsed.message = match.captured(3).trimmed();
+                        parsed.source = match.captured(4).trimmed();
+                    } else {
+                        parsed.message = trimmedLine;
+                    }
+                    parsedLines.append(parsed);
                 }
+
+                m_selectedLogLabel->setText(path);
+                m_logSummaryLabel->setText(
+                    tr("%1 entries  •  %2")
+                        .arg(parsedLines.size())
+                        .arg(QLocale().formattedDataSize(QFileInfo(path).size())));
+
+                m_logGrid->setRowCount(parsedLines.size());
+                for (int row = 0; row < parsedLines.size(); ++row) {
+                    const ParsedLogLine &parsed = parsedLines.at(row);
+                    auto *timeItem = new QTableWidgetItem(parsed.timestamp);
+                    auto *levelItem = new QTableWidgetItem(parsed.level);
+                    auto *messageItem = new QTableWidgetItem(parsed.message);
+                    auto *sourceItem = new QTableWidgetItem(parsed.source);
+                    levelItem->setTextAlignment(Qt::AlignCenter);
+                    m_logGrid->setItem(row, 0, timeItem);
+                    m_logGrid->setItem(row, 1, levelItem);
+                    m_logGrid->setItem(row, 2, messageItem);
+                    m_logGrid->setItem(row, 3, sourceItem);
+                }
+                m_logGrid->resizeRowsToContents();
+                m_logGrid->scrollToTop();
             }
 
             QString m_directory;
             QLabel *m_directoryValue = nullptr;
             QPushButton *m_refreshButton = nullptr;
             QListWidget *m_logList = nullptr;
-            QPlainTextEdit *m_logView = nullptr;
+            QLabel *m_selectedLogLabel = nullptr;
+            QLabel *m_logSummaryLabel = nullptr;
+            QTableWidget *m_logGrid = nullptr;
         };
     }
 

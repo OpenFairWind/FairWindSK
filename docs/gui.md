@@ -28,7 +28,7 @@ Availability of these bars depends on the configured plugin identifiers (`applic
   - persistent message log storage with a compact checkbox-plus-description row
   - diagnostics email destination
   - the effective diagnostics subject and persistent log directory
-  - an in-app persistent log explorer shown through the shared bottom drawer
+  - an in-app persistent log explorer shown through the shared bottom drawer, with log files on the left and parsed log rows on the right
 - The **Performance** pane now keeps process memory, total memory, memory usage, and per-core workload together in the left pane, while diagnostics and logging controls live on the right.
 - The **Comfort** tab now exposes preset-level marine-theme tuning for the main QSS palettes and a dedicated default SVG icon color for each comfort preset.
 - The touch color picker used by comfort editing now supports quick shade selection, custom color storage, custom color removal, and a compact scroll-safe layout that fits the bottom-drawer presentation.

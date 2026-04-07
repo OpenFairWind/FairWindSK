@@ -96,6 +96,7 @@ namespace fairwindsk::ui::mydata {
         void updateCoordinateDisplay();
         QString waypointHref(const QString &id) const;
         void applyDetailSplitterRatio();
+        void ensurePreviewAppView();
         void schedulePreviewFocus();
         void applyPreviewFocus();
 
@@ -138,6 +139,7 @@ namespace fairwindsk::ui::mydata {
         QWidget *m_propertiesTreeTab = nullptr;
         QWidget *m_propertiesJsonTab = nullptr;
         QPlainTextEdit *m_geoJsonDetailsEdit = nullptr;
+        QWidget *m_previewHost = nullptr;
         QLabel *m_seaFloorRowLabel = nullptr;
         QLabel *m_slipsRowLabel = nullptr;
         QWidget *m_seaFloorWidget = nullptr;

@@ -171,9 +171,11 @@ namespace fairwindsk::signalk {
         QString normalizedSubscriptionContext(const QString &context) const;
         QString subscriptionMessage(const QString &context, const QString &path, int period, const QString &policy, int minPeriod) const;
         bool refreshServerDiscovery();
+        bool applyDiscoveredServer(const QJsonObject &discoveredServer);
         void refreshAuthenticationState();
         void openWebSocket();
         void scheduleReconnect(int delayMs = 2000);
+        void startAsyncReconnectDiscovery();
         bool hasSubscription(const QString &requestedContext, const QString &path, QObject *receiver) const;
         void resubscribeAll(bool hydrateSnapshots);
         QString serverFingerprint(const QJsonObject &server) const;
@@ -198,6 +200,7 @@ namespace fairwindsk::signalk {
         QString m_serverFingerprintValue;
         bool m_hadStreamConnection = false;
         bool m_reconnectRecoveryPending = false;
+        bool m_reconnectAttemptInFlight = false;
     };
 }
 
