@@ -44,6 +44,7 @@ namespace fairwindsk::ui::settings {
         constexpr const char *kColorAccentTop = "accentTop";
         constexpr const char *kColorAccentBottom = "accentBottom";
         constexpr const char *kColorAccentText = "accentText";
+        constexpr const char *kColorIconDefault = "iconDefault";
 
         QString normalizedPreset(QString preset) {
             preset = preset.trimmed().toLower();
@@ -214,6 +215,7 @@ namespace fairwindsk::ui::settings {
         createColorControl(QString::fromLatin1(kColorAccentTop), tr("Accent top"), m_visualEditorWidget, visualLayout, 8);
         createColorControl(QString::fromLatin1(kColorAccentBottom), tr("Accent bottom"), m_visualEditorWidget, visualLayout, 9);
         createColorControl(QString::fromLatin1(kColorAccentText), tr("Accent text"), m_visualEditorWidget, visualLayout, 10);
+        createColorControl(QString::fromLatin1(kColorIconDefault), tr("SVG icon color"), m_visualEditorWidget, visualLayout, 11);
         paletteGroupLayout->addWidget(m_visualEditorWidget);
         contentLayout->addWidget(paletteGroup);
 
@@ -704,7 +706,8 @@ namespace fairwindsk::ui::settings {
             {QString::fromLatin1(kColorBorder), QColor(QStringLiteral("#8b7f4e"))},
             {QString::fromLatin1(kColorAccentTop), QColor(QStringLiteral("#2d5ea6"))},
             {QString::fromLatin1(kColorAccentBottom), QColor(QStringLiteral("#1f447a"))},
-            {QString::fromLatin1(kColorAccentText), QColor(QStringLiteral("#f7fbff"))}
+            {QString::fromLatin1(kColorAccentText), QColor(QStringLiteral("#f7fbff"))},
+            {QString::fromLatin1(kColorIconDefault), QColor(QStringLiteral("#f7fbff"))}
         };
 
         bool hasConfiguredColors = false;
@@ -754,6 +757,14 @@ namespace fairwindsk::ui::settings {
         m_visualColors.insert(QString::fromLatin1(kColorAccentTop), extractColor(styleSheet, QStringLiteral("QTabBar::tab:selected\\s*\\{[^}]*stop:0\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#2d5ea6"))));
         m_visualColors.insert(QString::fromLatin1(kColorAccentBottom), extractColor(styleSheet, QStringLiteral("QTabBar::tab:selected\\s*\\{[^}]*stop:1\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#1f447a"))));
         m_visualColors.insert(QString::fromLatin1(kColorAccentText), extractColor(styleSheet, QStringLiteral("QTabBar::tab:selected\\s*\\{[^}]*color\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#f7fbff"))));
+        m_visualColors.insert(
+            QString::fromLatin1(kColorIconDefault),
+            m_settings && m_settings->getConfiguration()
+                ? m_settings->getConfiguration()->getComfortThemeColor(
+                    selectedPreset(),
+                    QString::fromLatin1(kColorIconDefault),
+                    m_visualColors.value(QString::fromLatin1(kColorAccentText), QColor(QStringLiteral("#f7fbff"))))
+                : QColor(QStringLiteral("#f7fbff")));
 
         m_isSyncingVisualControls = false;
     }

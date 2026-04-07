@@ -152,20 +152,25 @@ namespace fairwindsk::ui::bottombar {
         const QColor hoverColor = buttonColor.lighter(110);
         const QColor pressedColor = buttonColor.darker(118);
         const QColor transparentHover = QColor(buttonColor.red(), buttonColor.green(), buttonColor.blue(), 48);
-        const QColor iconColor = fairwindsk::ui::bestContrastingColor(
+        auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+        auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("day");
+        const QColor fallbackIconColor = fairwindsk::ui::bestContrastingColor(
             buttonColor,
             {palette().color(QPalette::ButtonText),
              palette().color(QPalette::WindowText),
              palette().color(QPalette::Text),
              QColor(QStringLiteral("#f8f8f8")),
              QColor(QStringLiteral("#111111"))});
-        const QColor transparentIconColor = fairwindsk::ui::bestContrastingColor(
+        const QColor iconColor = fairwindsk::ui::comfortIconColor(configuration, preset, fallbackIconColor);
+        const QColor fallbackTransparentIconColor = fairwindsk::ui::bestContrastingColor(
             palette().color(QPalette::Window),
             {palette().color(QPalette::WindowText),
              palette().color(QPalette::Text),
              palette().color(QPalette::ButtonText),
              QColor(QStringLiteral("#f8f8f8")),
              QColor(QStringLiteral("#111111"))});
+        const QColor transparentIconColor = fairwindsk::ui::comfortIconColor(configuration, preset, fallbackTransparentIconColor);
         const QString style = QStringLiteral(
             "QToolButton {"
             " border: 1px solid %1;"

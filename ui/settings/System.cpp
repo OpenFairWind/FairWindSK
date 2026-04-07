@@ -6,7 +6,9 @@
 
 #include <algorithm>
 #include <cmath>
+#include <QDesktopServices>
 #include <limits>
+#include <QFileInfo>
 #include <QFormLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
@@ -15,6 +17,8 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QProgressBar>
+#include <QPushButton>
+#include <QSizePolicy>
 #include <QSignalBlocker>
 #include <QUrl>
 #include <QTimer>
@@ -210,9 +214,13 @@ namespace fairwindsk::ui::settings {
         m_loggingGroupBox = new QGroupBox(tr("Logging"), this);
         m_loggingFormLayout = new QFormLayout(m_loggingGroupBox);
         m_loggingFormLayout->setContentsMargins(0, 0, 0, 0);
-        m_loggingFormLayout->setSpacing(8);
+        m_loggingFormLayout->setSpacing(10);
+        m_loggingFormLayout->setHorizontalSpacing(14);
+        m_loggingFormLayout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
 
         m_logLevelComboBox = new fairwindsk::ui::widgets::TouchComboBox(m_loggingGroupBox);
+        m_logLevelComboBox->setMinimumWidth(320);
+        m_logLevelComboBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         m_logLevelComboBox->addItem(fairwindsk::runtime::logLevelDisplayName(fairwindsk::runtime::LogLevel::Off),
                                     fairwindsk::runtime::logLevelToString(fairwindsk::runtime::LogLevel::Off));
         m_logLevelComboBox->addItem(fairwindsk::runtime::logLevelDisplayName(fairwindsk::runtime::LogLevel::Critical),
@@ -227,21 +235,33 @@ namespace fairwindsk::ui::settings {
 
         m_persistentLoggingCheckBox = new fairwindsk::ui::widgets::TouchCheckBox(m_loggingGroupBox);
         m_persistentLoggingCheckBox->setText(tr("Store message logs in the persistent diagnostics directory"));
+        m_persistentLoggingCheckBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         m_loggingFormLayout->addRow(tr("Persistent logs"), m_persistentLoggingCheckBox);
 
         m_diagnosticsEmailEdit = new QLineEdit(m_loggingGroupBox);
         m_diagnosticsEmailEdit->setClearButtonEnabled(true);
         m_diagnosticsEmailEdit->setMinimumHeight(42);
+        m_diagnosticsEmailEdit->setMinimumWidth(320);
+        m_diagnosticsEmailEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         m_loggingFormLayout->addRow(tr("Diagnostics email"), m_diagnosticsEmailEdit);
 
         m_diagnosticsSubjectValue = new QLabel(m_loggingGroupBox);
+        m_diagnosticsSubjectValue->setWordWrap(true);
         m_diagnosticsSubjectValue->setTextInteractionFlags(Qt::TextSelectableByMouse);
         m_loggingFormLayout->addRow(tr("Diagnostics subject"), m_diagnosticsSubjectValue);
 
         m_logDirectoryValue = new QLabel(m_loggingGroupBox);
         m_logDirectoryValue->setWordWrap(true);
         m_logDirectoryValue->setTextInteractionFlags(Qt::TextSelectableByMouse);
-        m_loggingFormLayout->addRow(tr("Logs directory"), m_logDirectoryValue);
+        auto *logsRowWidget = new QWidget(m_loggingGroupBox);
+        auto *logsRowLayout = new QHBoxLayout(logsRowWidget);
+        logsRowLayout->setContentsMargins(0, 0, 0, 0);
+        logsRowLayout->setSpacing(8);
+        logsRowLayout->addWidget(m_logDirectoryValue, 1);
+        m_openLogsButton = new QPushButton(tr("Open logs"), logsRowWidget);
+        m_openLogsButton->setMinimumHeight(40);
+        logsRowLayout->addWidget(m_openLogsButton, 0);
+        m_loggingFormLayout->addRow(tr("Logs directory"), logsRowWidget);
 
         ui->verticalLayout_Diagnostics->insertWidget(0, m_loggingGroupBox);
 
@@ -275,6 +295,9 @@ namespace fairwindsk::ui::settings {
         connect(m_diagnosticsEmailEdit, &QLineEdit::textChanged, this, [this](const QString &text) {
             m_settings->getConfiguration()->setDiagnosticsEmail(text);
             m_settings->markDirty(FairWindSK::RuntimeUi, 300);
+        });
+        connect(m_openLogsButton, &QPushButton::clicked, this, []() {
+            QDesktopServices::openUrl(QUrl::fromLocalFile(fairwindsk::runtime::persistentLogsDirectoryPath()));
         });
     }
 
@@ -344,6 +367,9 @@ namespace fairwindsk::ui::settings {
         m_diagnosticsEmailEdit->setText(configuration->getDiagnosticsEmail());
         m_diagnosticsSubjectValue->setText(configuration->getDiagnosticsSubject());
         m_logDirectoryValue->setText(fairwindsk::runtime::persistentLogsDirectoryPath());
+        if (m_openLogsButton) {
+            m_openLogsButton->setEnabled(QFileInfo::exists(fairwindsk::runtime::persistentLogsDirectoryPath()));
+        }
     }
 
     void System::refreshRpiDiagnostics() {

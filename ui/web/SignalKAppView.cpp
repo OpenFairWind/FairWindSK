@@ -79,6 +79,10 @@ namespace fairwindsk::ui::web {
         delete ui;
     }
 
+    bool SignalKAppView::hasAppByKeyword(const QString &keyword) {
+        return !detectAppUrlByKeyword(keyword).isEmpty();
+    }
+
     bool SignalKAppView::loadAppByKeyword(const QString &keyword) {
         const QString url = detectAppUrlByKeyword(keyword);
         if (url.isEmpty()) {

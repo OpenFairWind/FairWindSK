@@ -17,6 +17,7 @@
 
 #include <QtWidgets/QLabel>
 
+#include "FairWindSK.hpp"
 #include "ui/IconUtils.hpp"
 
 namespace fairwindsk::ui::bottombar {
@@ -209,11 +210,15 @@ namespace fairwindsk::ui::bottombar {
     }
 
     void BottomBar::applyNavigationButtonIcons() const {
-        const QColor navigationIconColor = fairwindsk::ui::bestContrastingColor(
+        auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+        auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("day");
+        const QColor fallbackColor = fairwindsk::ui::bestContrastingColor(
             palette().color(QPalette::Window),
             {palette().color(QPalette::WindowText),
              palette().color(QPalette::ButtonText),
              palette().color(QPalette::Text)});
+        const QColor navigationIconColor = fairwindsk::ui::comfortIconColor(configuration, preset, fallbackColor);
         fairwindsk::ui::applyTintedButtonIcon(ui->toolButton_MyData, navigationIconColor, QSize(m_iconSize, m_iconSize));
         fairwindsk::ui::applyTintedButtonIcon(ui->toolButton_Autopilot, navigationIconColor, QSize(m_iconSize, m_iconSize));
         fairwindsk::ui::applyTintedButtonIcon(ui->toolButton_Apps, navigationIconColor, QSize(m_iconSize, m_iconSize));

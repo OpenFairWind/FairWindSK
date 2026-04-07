@@ -417,11 +417,15 @@ namespace fairwindsk::ui::mydata {
     }
 
     void Waypoints::retintToolButtons() const {
-        const QColor buttonIconColor = fairwindsk::ui::bestContrastingColor(
+        auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+        auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("day");
+        const QColor fallbackIconColor = fairwindsk::ui::bestContrastingColor(
             palette().color(QPalette::Button),
             {palette().color(QPalette::Text),
              palette().color(QPalette::ButtonText),
              palette().color(QPalette::WindowText)});
+        const QColor buttonIconColor = fairwindsk::ui::comfortIconColor(configuration, preset, fallbackIconColor);
         for (auto *button : {
                  m_refreshButton,
                  m_addButton,
@@ -948,7 +952,14 @@ namespace fairwindsk::ui::mydata {
         const double latitude = coordinates.size() > 1 ? coordinates.at(1).toDouble() : 0.0;
         m_previewLongitude = longitude;
         m_previewLatitude = latitude;
-        if (m_previewAppView->url().isEmpty() || !m_previewAppView->url().toString().contains(QStringLiteral("freeboard"), Qt::CaseInsensitive)) {
+        const bool freeboardAvailable = fairwindsk::ui::web::SignalKAppView::hasAppByKeyword(QStringLiteral("freeboard"));
+        if (!freeboardAvailable) {
+            m_previewAppView->setHtml(QStringLiteral(
+                "<html><body style=\"margin:0;background:#07111b;color:#e5edf7;font-family:sans-serif;display:flex;align-items:center;justify-content:center;\">"
+                "<div>@signalk/freeboard-sk is not installed or not active on the current Signal K server.</div>"
+                "</body></html>"
+            ));
+        } else if (m_previewAppView->url().isEmpty() || !m_previewAppView->url().toString().contains(QStringLiteral("freeboard"), Qt::CaseInsensitive)) {
             if (!m_previewAppView->loadAppByKeyword(QStringLiteral("freeboard"))) {
                 m_previewAppView->setHtml(QStringLiteral(
                     "<html><body style=\"margin:0;background:#07111b;color:#e5edf7;font-family:sans-serif;display:flex;align-items:center;justify-content:center;\">"

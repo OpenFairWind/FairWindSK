@@ -12,7 +12,10 @@
 #include <QIcon>
 #include <QPainter>
 #include <QPixmap>
+#include <QString>
 #include <QVector>
+
+#include "Configuration.hpp"
 
 namespace fairwindsk::ui {
     inline double relativeLuminance(const QColor &color) {
@@ -82,6 +85,20 @@ namespace fairwindsk::ui {
 
         const QSize iconSize = button->iconSize().isValid() ? button->iconSize() : fallbackSize;
         button->setIcon(tintedIcon(button->icon(), color, iconSize));
+    }
+
+    inline QColor comfortIconColor(const fairwindsk::Configuration *configuration,
+                                   const QString &preset,
+                                   const QColor &fallback) {
+        if (!configuration) {
+            return fallback;
+        }
+
+        const QColor configured = configuration->getComfortThemeColor(
+            preset.trimmed().toLower(),
+            QStringLiteral("iconDefault"),
+            QColor());
+        return configured.isValid() ? configured : fallback;
     }
 }
 

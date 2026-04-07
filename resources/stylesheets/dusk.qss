@@ -1,49 +1,49 @@
 QWidget {
-    color: #e7eef7;
-    background: #07111d;
+    color: #e8eef7;
+    background: #08121f;
 }
 QMainWindow, QDialog, QWidget, QFrame, QStackedWidget, QSplitter, QScrollArea, QAbstractScrollArea {
-    background: #0d1b2c;
+    background: #102033;
 }
 QMenuBar, QMenu, QStatusBar, QToolTip {
-    background: #0d1b2c;
-    color: #e7eef7;
+    background: #102033;
+    color: #e8eef7;
 }
 QToolTip {
-    border: 1px solid #6d88a6;
+    border: 1px solid #778ea6;
 }
 QAbstractScrollArea {
-    background: #0d1b2c;
-    border: 1px solid #6d88a6;
+    background: #102033;
+    border: 1px solid #778ea6;
     border-radius: 6px;
 }
 QLineEdit, QTextEdit, QPlainTextEdit, QListView, QListWidget, QTreeView, QTreeWidget, QTableView, QTableWidget,
 QComboBox, QAbstractSpinBox, QDateTimeEdit {
-    background: #bcc9d8;
+    background: #c7d1da;
     color: #102236;
-    border: 1px solid #6d88a6;
+    border: 1px solid #778ea6;
     border-radius: 6px;
-    selection-background-color: #86a8d7;
+    selection-background-color: #5e8fc8;
     selection-color: #102236;
 }
 QComboBox QAbstractItemView {
-    background: #bcc9d8;
+    background: #c7d1da;
     color: #102236;
-    border: 1px solid #6d88a6;
-    selection-background-color: #86a8d7;
+    border: 1px solid #778ea6;
+    selection-background-color: #5e8fc8;
     selection-color: #102236;
 }
 QToolButton, QPushButton {
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #b7c7db, stop:1 #627a95);
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #c4d0d9, stop:1 #6f8090);
     color: #102236;
-    border: 1px solid #6d88a6;
+    border: 1px solid #778ea6;
     border-radius: 6px;
 }
 QToolButton:hover, QPushButton:hover {
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #c7d4e4, stop:1 #748ca6);
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #d3dde5, stop:1 #8294a5);
 }
 QToolButton:pressed, QPushButton:pressed, QToolButton:checked, QPushButton:checked {
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #4f6480, stop:1 #2a3b4f);
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #4f7099, stop:1 #294763);
     color: #edf4ff;
 }
 QTabWidget::pane {

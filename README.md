@@ -34,6 +34,8 @@ The runtime now supervises Signal K restarts as well: if the server drops and co
 * Signal K paths
 * Signal K Applications
 * Automatic Signal K restart detection and reconnect consistency recovery
+* Touch-oriented diagnostics controls with persistent per-run logs
+* Comfort preset editing with marine-style daypart themes and preset SVG icon colors
 * The autopilot bar
 * POB (Person over board) bar
 * Anchor bar
@@ -51,7 +53,8 @@ A mechanism to be back on the FairWindSK desktop after being launched is impleme
 ### Components under active development ###
 * MyData - Features:
   * Waypoints, tracks, and routes management (an interface on Signal K resources). 
-  * File browser
+  * Waypoint preview on Freeboard-SK when the plugin is available
+  * File browser and search views with aligned touch actions
   * File viewer (Images, Pdf, and text files)
 
 # Building

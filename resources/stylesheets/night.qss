@@ -1,50 +1,50 @@
 QWidget {
-    color: #ffb3b3;
-    background: #050304;
+    color: #f3b8b8;
+    background: #070809;
 }
 QMainWindow, QDialog, QWidget, QFrame, QStackedWidget, QSplitter, QScrollArea, QAbstractScrollArea {
-    background: #120608;
+    background: #12181c;
 }
 QMenuBar, QMenu, QStatusBar, QToolTip {
-    background: #120608;
-    color: #ffb3b3;
+    background: #12181c;
+    color: #f3b8b8;
 }
 QToolTip {
-    border: 1px solid #8d3741;
+    border: 1px solid #a44752;
 }
 QAbstractScrollArea {
-    background: #120608;
-    border: 1px solid #8d3741;
+    background: #12181c;
+    border: 1px solid #a44752;
     border-radius: 6px;
 }
 QLineEdit, QTextEdit, QPlainTextEdit, QListView, QListWidget, QTreeView, QTreeWidget, QTableView, QTableWidget,
 QComboBox, QAbstractSpinBox, QDateTimeEdit {
-    background: #1b0b0e;
-    color: #ffb3b3;
-    border: 1px solid #8d3741;
+    background: #1b2024;
+    color: #f3b8b8;
+    border: 1px solid #a44752;
     border-radius: 6px;
-    selection-background-color: #ff4d4d;
-    selection-color: #21080b;
+    selection-background-color: #c63c47;
+    selection-color: #f9f1f1;
 }
 QComboBox QAbstractItemView {
-    background: #1b0b0e;
-    color: #ffb3b3;
-    border: 1px solid #8d3741;
-    selection-background-color: #ff4d4d;
-    selection-color: #21080b;
+    background: #1b2024;
+    color: #f3b8b8;
+    border: 1px solid #a44752;
+    selection-background-color: #c63c47;
+    selection-color: #f9f1f1;
 }
 QToolButton, QPushButton {
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #7b2e39, stop:1 #3b0a10);
-    color: #ffb3b3;
-    border: 1px solid #8d3741;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #6b2f36, stop:1 #35181d);
+    color: #f3b8b8;
+    border: 1px solid #a44752;
     border-radius: 6px;
 }
 QToolButton:hover, QPushButton:hover {
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #96404d, stop:1 #53111a);
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #804047, stop:1 #492126);
 }
 QToolButton:pressed, QPushButton:pressed, QToolButton:checked, QPushButton:checked {
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #2b0b11, stop:1 #120507);
-    color: #ffd0d0;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #c63c47, stop:1 #7a2027);
+    color: #fff6f6;
 }
 QTabWidget::pane {
     border: 1px solid #7f1d1d;

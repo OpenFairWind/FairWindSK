@@ -1,34 +1,34 @@
 QWidget {
-    color: #10233a;
-    background: #f3ecd2;
+    color: #0f2138;
+    background: #efe5c8;
 }
 QMainWindow, QDialog, QWidget, QFrame, QStackedWidget, QSplitter, QScrollArea, QAbstractScrollArea {
-    background: #284d7a;
+    background: #1f436b;
 }
 QMenuBar, QMenu, QStatusBar, QToolTip {
-    background: #23446c;
-    color: #f7f6ef;
+    background: #173757;
+    color: #f3f7fb;
 }
 QMenu::item:selected {
-    background: #f0c864;
-    color: #10233a;
+    background: #f3c560;
+    color: #0f2138;
 }
 QToolTip {
-    border: 1px solid #d1af57;
+    border: 1px solid #bf9950;
 }
 QAbstractScrollArea {
-    background: #f8f4e5;
-    border: 1px solid #45688f;
+    background: #f8f1dc;
+    border: 1px solid #426989;
     border-radius: 6px;
 }
 QLineEdit, QTextEdit, QPlainTextEdit, QListView, QListWidget, QTreeView, QTreeWidget, QTableView, QTableWidget,
 QComboBox, QAbstractSpinBox, QDateTimeEdit {
-    background: #fffdf6;
-    color: #10233a;
-    border: 1px solid #52779d;
+    background: #fbf7ea;
+    color: #0f2138;
+    border: 1px solid #547896;
     border-radius: 6px;
-    selection-background-color: #3d75b7;
-    selection-color: #f7fbff;
+    selection-background-color: #2d6fb1;
+    selection-color: #f5fbff;
     padding: 2px 4px;
 }
 QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus, QListView:focus, QListWidget:focus, QTreeView:focus,
@@ -43,26 +43,26 @@ QAbstractSpinBox:disabled, QDateTimeEdit:disabled {
     border-color: #91a5bb;
 }
 QComboBox QAbstractItemView {
-    background: #fffdf6;
-    color: #10233a;
-    border: 1px solid #52779d;
-    selection-background-color: #3d75b7;
-    selection-color: #f7fbff;
+    background: #fbf7ea;
+    color: #0f2138;
+    border: 1px solid #547896;
+    selection-background-color: #2d6fb1;
+    selection-color: #f5fbff;
 }
 QToolButton, QPushButton {
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #fae79b, stop:1 #d6ae4f);
-    color: #10233a;
-    border: 1px solid #9c7a2b;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #f8df91, stop:1 #cfa24a);
+    color: #0f2138;
+    border: 1px solid #98712b;
     border-radius: 6px;
     padding: 4px 10px;
 }
 QToolButton:hover, QPushButton:hover {
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #fdf0b5, stop:1 #e2bd64);
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #fbeab1, stop:1 #dcbc63);
 }
 QToolButton:pressed, QPushButton:pressed, QToolButton:checked, QPushButton:checked {
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #3f6fa8, stop:1 #294f7b);
-    color: #f8fbff;
-    border-color: #6f94bd;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #3a6fa8, stop:1 #21486f);
+    color: #f4fbff;
+    border-color: #7aa4cd;
 }
 QToolButton:disabled, QPushButton:disabled {
     background: #d7d0b7;

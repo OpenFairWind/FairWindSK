@@ -28,6 +28,11 @@ Availability of these bars depends on the configured plugin identifiers (`applic
   - persistent message log storage
   - diagnostics email destination
   - the effective diagnostics subject and persistent log directory
+  - a direct `Open logs` action for the persistent diagnostics folder
+- The **Performance** pane now keeps process memory, total memory, memory usage, and per-core workload together in the left pane, while diagnostics and logging controls live on the right.
+- The **Comfort** tab now exposes preset-level marine-theme tuning for the main QSS palettes and a dedicated default SVG icon color for each comfort preset.
+- The **My Data > Waypoints** details page reuses the embedded Signal K web view to show the waypoint on Freeboard-SK whenever the `@signalk/freeboard-sk` app is active on the connected server.
+- The **My Data > Files** page now keeps directory actions, search results, rename/create flows, and copy/move/paste behavior aligned so the same operations work more consistently from both the browser and search views.
 
 ## Splash and status messages
 

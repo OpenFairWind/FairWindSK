@@ -23,6 +23,7 @@ namespace fairwindsk::ui::web {
         explicit SignalKAppView(QWidget *parent = nullptr);
         ~SignalKAppView() override;
 
+        static bool hasAppByKeyword(const QString &keyword);
         bool loadAppByKeyword(const QString &keyword);
         void loadUrl(const QUrl &url);
         void setHtml(const QString &html, const QUrl &baseUrl = QUrl());

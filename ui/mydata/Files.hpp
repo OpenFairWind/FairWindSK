@@ -7,6 +7,7 @@
 
 #include <QWidget>
 #include <QFileSystemModel>
+#include <QItemSelectionModel>
 #include <QFutureWatcher>
 #include <QtConcurrent>
 #include "FileInfoListModel.hpp"
@@ -103,6 +104,9 @@ protected:
 
 private:
     void retintToolButtons() const;
+    [[nodiscard]] QItemSelectionModel *activeSelectionModel() const;
+    [[nodiscard]] QString currentDestinationDir() const;
+    void refreshCurrentView();
     Ui::Files *ui;
 
     //QList<QString> m_visitedPaths;

@@ -124,6 +124,22 @@ These mappings drive UI bars (autopilot, anchor, alarms, POB) and instrument rea
 At startup, FairWindSK checks whether the previous run ended gracefully. If it did not, it prepares a report with the logs between the latest two starts plus platform details such as operating system, CPU architecture, Qt version, host information, and primary screen configuration, then opens the platform email composer with the configured destination and subject.
 
 The **Settings > System** tab exposes the same diagnostics options in the touch-friendly UI and shows the persistent log directory currently used by the application.
+It also exposes a direct button to open the persistent log folder in the host operating system file manager.
+
+## Comfort presets and icon color
+
+FairWindSK ships with editable comfort preset stylesheets for `dawn`, `day`, `dusk`, and `night`, and each preset can also store:
+
+- a generated visual palette override
+- optional background images for major surfaces and control states
+- a preset-specific default SVG icon tint (`comfortViewPalette.<preset>.iconDefault`)
+
+The **Settings > Comfort** page writes those values back into `fairwindsk.json`, so different presets can keep different icon colors without changing the base SVG assets.
+
+## My Data behavior
+
+- **Waypoints**: the details page shows the selected waypoint in the reusable embedded Signal K app view when a Freeboard-SK app is available on the connected server.
+- **Files**: file actions operate on the active view selection, so search-result rows and normal directory rows follow the same open, rename, delete, copy, cut, and paste workflows.
 
 ## Authentication and tokens
 

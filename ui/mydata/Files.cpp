@@ -13,9 +13,11 @@
 #include <QMessageBox>
 #include <QDirIterator>
 #include <QMimeDatabase>
+#include <QFileDialog>
 #include <QScroller>
 #include <QStorageInfo>
 
+#include "FairWindSK.hpp"
 #include "FileInfoListModel.hpp"
 #include "ui/IconUtils.hpp"
 #include "ui/DrawerDialogHost.hpp"
@@ -43,13 +45,16 @@ namespace fairwindsk::ui::mydata {
 
 
 
-	    m_fileSystemModel = new QFileSystemModel(this);
-
+		m_fileSystemModel = new QFileSystemModel(this);
+        m_fileSystemModel->setFilter(QDir::AllEntries | QDir::NoDotAndDotDot | QDir::AllDirs);
 	    m_fileSystemModel->setRootPath(QDir::homePath());
 
 		ui->listView_Files->resize(0, 0);
 		ui->listView_Files->adjustSize();
 		ui->listView_Files->setModel(m_fileSystemModel);
+        ui->listView_Files->setSelectionMode(QAbstractItemView::ExtendedSelection);
+        ui->tableView_Search->setSelectionBehavior(QAbstractItemView::SelectRows);
+        ui->tableView_Search->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
 
 
@@ -109,11 +114,15 @@ namespace fairwindsk::ui::mydata {
     }
 
     void Files::retintToolButtons() const {
-        const QColor buttonIconColor = fairwindsk::ui::bestContrastingColor(
+        auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+        auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("day");
+        const QColor fallbackIconColor = fairwindsk::ui::bestContrastingColor(
             palette().color(QPalette::Button),
             {palette().color(QPalette::Text),
              palette().color(QPalette::ButtonText),
              palette().color(QPalette::WindowText)});
+        const QColor buttonIconColor = fairwindsk::ui::comfortIconColor(configuration, preset, fallbackIconColor);
         for (auto *button : findChildren<QToolButton *>()) {
             fairwindsk::ui::applyTintedButtonIcon(button, buttonIconColor, QSize(32, 32));
         }
@@ -130,23 +139,34 @@ namespace fairwindsk::ui::mydata {
 	}
 
 	void Files::setCurrentDir(const QString& path) {
+        const QFileInfo pathInfo(path);
+        const QString absolutePath = pathInfo.exists() && pathInfo.isDir()
+            ? pathInfo.absoluteFilePath()
+            : QDir(path).absolutePath();
+        const QDir targetDir(absolutePath);
+        if (!targetDir.exists()) {
+            showWarning(tr("The selected directory does not exist."));
+            return;
+        }
+
 		if (m_currentDir) {
 			delete m_currentDir;
 			m_currentDir = nullptr;
 		}
 
-		QDir::setCurrent(path);
-
-
-		m_currentDir = new QDir(path);
+		QDir::setCurrent(absolutePath);
+		m_currentDir = new QDir(absolutePath);
 
 		ui->lineEdit_Path->setText(m_currentDir->absolutePath());
 		ui->lineEdit_Path->update();
 
-		const auto index = m_fileSystemModel->index(path);
+		const auto index = m_fileSystemModel->index(m_currentDir->absolutePath());
 
 
 		ui->listView_Files->setRootIndex(index);
+        ui->listView_Files->clearSelection();
+        ui->tableView_Search->clearSelection();
+        m_currentFilePath.clear();
 
 		ui->groupBox_ItemInfo->hide();
 	}
@@ -297,6 +317,11 @@ namespace fairwindsk::ui::mydata {
 
 			// View the file
 			viewFile(path);
+        } else if (!path.isEmpty()) {
+            setCurrentDir(path);
+            setSearchResultsVisible(false);
+            ui->widget_Searching->hide();
+            ui->listView_Files->show();
 		}
 
 	}
@@ -337,16 +362,27 @@ namespace fairwindsk::ui::mydata {
 
 
 	QStringList Files::getSelection() const {
-
-		QModelIndexList list = ui->listView_Files->selectionModel()->selectedIndexes();
+        const auto *selectionModel = activeSelectionModel();
+        if (!selectionModel) {
+            return {};
+        }
+		QModelIndexList list = selectionModel->selectedRows();
+        if (list.isEmpty()) {
+            list = selectionModel->selectedIndexes();
+        }
 		QStringList path_list;
 		foreach (const QModelIndex &index, list) {
-			path_list.append(m_fileSystemModel->filePath(index));
+            if (ui->tableView_Search->isVisible()) {
+                const QString path = m_fileListModel->getAbsolutePath(index);
+                if (!path.isEmpty()) {
+                    path_list.append(path);
+                }
+            } else {
+			    path_list.append(m_fileSystemModel->filePath(index));
+            }
 		}
-
-		qDebug() << path_list.join(",");
-
-		return path_list;
+        path_list.removeDuplicates();
+        return path_list;
 }
 
 
@@ -481,20 +517,23 @@ namespace fairwindsk::ui::mydata {
 
 	void Files::onNewFolderClicked() {
 		bool ok = false;
-		QString path = drawer::getText(this,
+		const QString folderName = drawer::getText(this,
 		                               tr("Create a new folder"),
-		                               tr("Enter path:"),
+		                               tr("Enter folder name:"),
 		                               tr("New folder"),
 		                               &ok);
 
-		if (ok && !path.isEmpty()) {
+		if (ok && !folderName.isEmpty()) {
+            const QString absolutePath = QDir(currentDestinationDir()).filePath(folderName);
 			QDir dir;
-			if (!dir.exists(path)) {
-				dir.mkdir(path);
-				qDebug() << "Directory created successfully";
+			if (!dir.exists(absolutePath)) {
+				if (!dir.mkpath(absolutePath)) {
+                    showWarning(tr("Unable to create the selected folder."));
+                }
 			} else {
-				qDebug() << "Directory already exists";
+                showWarning(tr("A file or folder with the same name already exists."));
 			}
+            refreshCurrentView();
 		}
 	}
 
@@ -521,6 +560,7 @@ namespace fairwindsk::ui::mydata {
 						}
 					}
 				}
+                refreshCurrentView();
 			}
 
 	}
@@ -535,19 +575,21 @@ namespace fairwindsk::ui::mydata {
 					QString newName = drawer::getText(this,
 					                                  tr("Rename"),
 					                                  tr("New name:"),
-					                                  fileInfo.completeBaseName(),
+					                                  fileInfo.fileName(),
 					                                  &ok);
 					if (ok && !newName.isEmpty()) {
-						QFile item(selectedItem);
-						QString itemType = fileInfo.isDir() ? "Folder" : "File";
-						if (item.rename(newName)) {
-							qDebug() << itemType << " renamed successfully";
-						} else {
-							qDebug() << "Error renaming " << itemType;
+                        const QString renamedPath = fileInfo.dir().filePath(newName);
+                        if (QFileInfo::exists(renamedPath)) {
+                            showWarning(tr("A file or folder with the same name already exists."));
+                            continue;
+                        }
+						if (!QFile::rename(selectedItem, renamedPath)) {
+                            showWarning(tr("Unable to rename the selected item."));
 						}
 					}
 				}
 			}
+            refreshCurrentView();
 
 	}
 
@@ -568,32 +610,40 @@ namespace fairwindsk::ui::mydata {
 	}
 
 	void Files::onPasteClicked() {
-
+            const QString destinationDir = currentDestinationDir();
 			foreach (QString path, m_itemsToCopy) {
 				QFileInfo item(path);
-				qDebug() << "Name:" << item.fileName();
-				qDebug() << "path: " << path;
 				if (item.isFile()) {
-					QString newPath = QDir::current().absoluteFilePath(item.fileName());
-					qDebug() << "new path:" << newPath;
-					qDebug() << "Copy result" << QFile::copy(path, newPath);
+					QString newPath = QDir(destinationDir).absoluteFilePath(item.fileName());
+                    if (QFileInfo::exists(newPath)) {
+                        showWarning(tr("Skipping %1 because it already exists in the destination.").arg(item.fileName()));
+                        continue;
+                    }
+					if (!QFile::copy(path, newPath)) {
+                        showWarning(tr("Unable to copy %1.").arg(item.fileName()));
+                    }
 				} else {
-					copyOrMoveDirectorySubtree(path, QDir::currentPath(), false, false);
+					copyOrMoveDirectorySubtree(path, destinationDir, false, false);
 				}
 			}
 			foreach (QString path, m_itemsToMove) {
 				QFileInfo item(path);
-				qDebug() << "Name:" << item.fileName();
-				qDebug() << "path: " << path;
 				if (item.isFile()) {
-					QString newPath = QDir::current().absoluteFilePath(item.fileName());
-					qDebug() << "new path:" << newPath;
-					qDebug() << "Copy result" << QFile::copy(path, newPath);
-					qDebug() << "Remove result" << QFile::remove(path);
+					QString newPath = QDir(destinationDir).absoluteFilePath(item.fileName());
+                    if (QFileInfo::exists(newPath)) {
+                        showWarning(tr("Skipping %1 because it already exists in the destination.").arg(item.fileName()));
+                        continue;
+                    }
+					if (!QFile::copy(path, newPath) || !QFile::remove(path)) {
+                        showWarning(tr("Unable to move %1.").arg(item.fileName()));
+                    }
 				} else {
-					copyOrMoveDirectorySubtree(path, QDir::currentPath(), true, false);
+					copyOrMoveDirectorySubtree(path, destinationDir, true, false);
 				}
 			}
+            m_itemsToCopy.clear();
+            m_itemsToMove.clear();
+            refreshCurrentView();
 
 	}
 
@@ -672,4 +722,36 @@ namespace fairwindsk::ui::mydata {
 			ui = nullptr;
 		}
 	}
+
+    QItemSelectionModel *Files::activeSelectionModel() const {
+        if (ui->tableView_Search->isVisible()) {
+            return ui->tableView_Search->selectionModel();
+        }
+        return ui->listView_Files->selectionModel();
+    }
+
+    QString Files::currentDestinationDir() const {
+        const QFileInfo selectedInfo(m_currentFilePath);
+        if (selectedInfo.exists() && selectedInfo.isDir()) {
+            return selectedInfo.absoluteFilePath();
+        }
+        if (m_currentDir) {
+            return m_currentDir->absolutePath();
+        }
+        return QDir::homePath();
+    }
+
+    void Files::refreshCurrentView() {
+        if (m_fileSystemModel) {
+            const QString rootPath = m_fileSystemModel->rootPath();
+            m_fileSystemModel->setRootPath(QString());
+            m_fileSystemModel->setRootPath(rootPath);
+        }
+        if (m_currentDir) {
+            setCurrentDir(m_currentDir->absolutePath());
+        }
+        if (ui->tableView_Search->isVisible() && !ui->lineEdit_Search->text().trimmed().isEmpty()) {
+            onSearchClicked();
+        }
+    }
 } // fairwindsk::ui::mydata

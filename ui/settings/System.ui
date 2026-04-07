@@ -135,6 +135,19 @@
             </layout>
            </item>
            <item>
+            <widget class="QLabel" name="label_CpuHelp">
+             <property name="text">
+              <string>Per-core workload is refreshed automatically.</string>
+             </property>
+             <property name="wordWrap">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QWidget" name="widget_CoresHost" native="true"/>
+           </item>
+           <item>
             <spacer name="verticalSpacer_Performance">
              <property name="orientation">
               <enum>Qt::Vertical</enum>
@@ -150,24 +163,10 @@
           </layout>
          </widget>
          <widget class="QGroupBox" name="groupBox_Diagnostics">
-          <property name="title">
-           <string>Diagnostics</string>
-          </property>
-          <layout class="QVBoxLayout" name="verticalLayout_Diagnostics">
-           <item>
-            <widget class="QLabel" name="label_CpuHelp">
-             <property name="text">
-              <string>Per-core workload is refreshed automatically.</string>
-             </property>
-             <property name="wordWrap">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QWidget" name="widget_CoresHost" native="true"/>
-           </item>
-          </layout>
+         <property name="title">
+          <string>Diagnostics</string>
+         </property>
+          <layout class="QVBoxLayout" name="verticalLayout_Diagnostics"/>
          </widget>
         </widget>
        </item>
