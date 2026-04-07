@@ -30,6 +30,7 @@
 #include <QPointer>
 #include <QTimer>
 #include <QTime>
+#include <QElapsedTimer>
 #include <QUrl>
 #include <algorithm>
 
@@ -43,6 +44,19 @@ using namespace Qt::StringLiterals;
 namespace fairwindsk {
     namespace {
         constexpr int kAppsRequestTimeoutMs = 5000;
+
+        void waitWithUiEvents(const int delayMs) {
+            if (delayMs <= 0) {
+                return;
+            }
+
+            QElapsedTimer timer;
+            timer.start();
+            while (timer.elapsed() < delayMs) {
+                QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
+                QThread::msleep(10);
+            }
+        }
 
         QString defaultConfigFilename() {
             QString configDir = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
@@ -526,7 +540,7 @@ namespace fairwindsk {
             QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
             QObject::connect(&timeoutTimer, &QTimer::timeout, &loop, &QEventLoop::quit);
             timeoutTimer.start(kAppsRequestTimeoutMs);
-            loop.exec(QEventLoop::ExcludeUserInputEvents);
+            loop.exec();
 
             if (!reply) {
                 return {};
@@ -974,14 +988,11 @@ namespace fairwindsk {
                     break;
                 }
 
-                // Keep progress responsive without letting user input re-enter the startup flow.
-                QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
-
                 // Increase the number of retry
                 count++;
 
-                // Wait for m_mSleep microseconds
-                QThread::msleep(m_mSleep);
+                // Back off between retries without freezing touch and pointer input.
+                waitWithUiEvents(m_mSleep);
 
                 // Loop until the number of retry
             } while (count < m_nRetry);

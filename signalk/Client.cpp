@@ -60,7 +60,7 @@ namespace fairwindsk::signalk {
         QObject::connect(guard.data(), &QNetworkReply::finished, &loop, &QEventLoop::quit);
         QObject::connect(&timeoutTimer, &QTimer::timeout, &loop, &QEventLoop::quit);
         timeoutTimer.start(kRequestTimeoutMs);
-        loop.exec(QEventLoop::ExcludeUserInputEvents);
+        loop.exec();
         qInfo() << "SignalK::Client::finishReply loop exited for" << guard->request().url()
                 << "finished =" << guard->isFinished();
 
