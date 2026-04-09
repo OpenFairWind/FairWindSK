@@ -305,7 +305,9 @@ namespace fairwindsk::ui::settings {
 
     void Settings::restartApplication() {
         applyConfiguration();
-        QApplication::exit(1);
+        QTimer::singleShot(0, qApp, []() {
+            QCoreApplication::exit(1);
+        });
     }
 
     void Settings::quitApplication() {
