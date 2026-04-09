@@ -19,6 +19,7 @@
 #include <QImageReader>
 #include <QPainter>
 #include <QSize>
+#include <QSet>
 #include <QSvgRenderer>
 #include <iostream>
 
@@ -119,6 +120,66 @@ namespace fairwindsk {
             }
 
             return loadPixmapFromPayload(file.readAll());
+        }
+
+        QUrl normalizedDirectoryUrl(QUrl url) {
+            if (!url.isValid()) {
+                return {};
+            }
+
+            QString path = url.path();
+            if (path.isEmpty()) {
+                path = QStringLiteral("/");
+            }
+
+            if (!path.endsWith(QLatin1Char('/'))) {
+                path.append(QLatin1Char('/'));
+            }
+
+            url.setPath(path);
+            return url;
+        }
+
+        QList<QUrl> iconCandidateUrls(const QString &signalKServerUrl,
+                                      const QString &appName,
+                                      const QString &appUrl,
+                                      const QString &appIcon) {
+            QList<QUrl> candidateUrls;
+
+            const QUrl absoluteIconUrl(appIcon);
+            if (absoluteIconUrl.isValid() && !absoluteIconUrl.scheme().isEmpty()) {
+                candidateUrls.append(absoluteIconUrl);
+            }
+
+            const QUrl appBaseUrl = normalizedDirectoryUrl(QUrl(appUrl));
+            if (appBaseUrl.isValid()) {
+                candidateUrls.append(appBaseUrl.resolved(QUrl(appIcon)));
+            }
+
+            const QUrl serverBaseUrl = normalizedDirectoryUrl(QUrl(signalKServerUrl));
+            if (serverBaseUrl.isValid()) {
+                candidateUrls.append(serverBaseUrl.resolved(QUrl(appName + QLatin1Char('/') + appIcon)));
+                candidateUrls.append(serverBaseUrl.resolved(QUrl(QStringLiteral("plugins/") + appName + QLatin1Char('/') + appIcon)));
+                candidateUrls.append(serverBaseUrl.resolved(QUrl(QStringLiteral("plugins/") + appName + QStringLiteral("/public/") + appIcon)));
+            }
+
+            QList<QUrl> uniqueUrls;
+            QSet<QString> seen;
+            for (const auto &candidateUrl : candidateUrls) {
+                if (!candidateUrl.isValid() || candidateUrl.scheme().isEmpty()) {
+                    continue;
+                }
+
+                const QString key = candidateUrl.toString(QUrl::FullyEncoded);
+                if (seen.contains(key)) {
+                    continue;
+                }
+
+                seen.insert(key);
+                uniqueUrls.append(candidateUrl);
+            }
+
+            return uniqueUrls;
         }
 
         QByteArray performBlockingGet(const QUrl &url, int *statusCode = nullptr) {
@@ -505,12 +566,10 @@ namespace fairwindsk {
                 return m_cachedIcon;
             }
 
-            QList<QUrl> candidateUrls;
-            candidateUrls.append(QUrl(appUrl).resolved(QUrl(iconFilename)));
-            candidateUrls.append(QUrl(signalKServerUrl + "/" + appName + "/" + iconFilename));
-
             bool loadedRemotely = false;
-            m_cachedIcon = loadRemotePixmap(candidateUrls, pixmap, &loadedRemotely);
+            m_cachedIcon = loadRemotePixmap(iconCandidateUrls(signalKServerUrl, appName, appUrl, iconFilename),
+                                            pixmap,
+                                            &loadedRemotely);
             if (loadedRemotely && !m_cachedIcon.isNull() && !iconCacheKey.isEmpty()) {
                 sharedIconCache().insert(iconCacheKey, m_cachedIcon);
             }
@@ -524,13 +583,10 @@ namespace fairwindsk {
             return m_cachedIcon;
         }
 
-        QList<QUrl> candidateUrls;
-        candidateUrls.append(QUrl(appIcon));
-        candidateUrls.append(QUrl(appUrl).resolved(QUrl(appIcon)));
-        candidateUrls.append(QUrl(signalKServerUrl + "/" + appName + "/" + appIcon));
-
         bool loadedRemotely = false;
-        m_cachedIcon = loadRemotePixmap(candidateUrls, pixmap, &loadedRemotely);
+        m_cachedIcon = loadRemotePixmap(iconCandidateUrls(signalKServerUrl, appName, appUrl, appIcon),
+                                        pixmap,
+                                        &loadedRemotely);
         if (loadedRemotely && !m_cachedIcon.isNull() && !iconCacheKey.isEmpty()) {
             sharedIconCache().insert(iconCacheKey, m_cachedIcon);
         }
