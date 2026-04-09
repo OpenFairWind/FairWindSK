@@ -62,6 +62,20 @@
            </widget>
           </item>
           <item>
+           <widget class="QPushButton" name="pushButton_Import">
+            <property name="text">
+             <string>Import</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButton_Export">
+            <property name="text">
+             <string>Export</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QPushButton" name="pushButton_Restart">
             <property name="text">
              <string>Restart</string>

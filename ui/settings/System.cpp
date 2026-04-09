@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QFormLayout>
 #include <QGroupBox>
@@ -86,6 +88,8 @@ namespace fairwindsk::ui::settings {
         connect(ui->pushButton_RestoreDefaults, &QPushButton::clicked, this, [this]() {
             m_settings->restoreDefaultConfiguration();
         });
+        connect(ui->pushButton_Import, &QPushButton::clicked, this, &System::importConfiguration);
+        connect(ui->pushButton_Export, &QPushButton::clicked, this, &System::exportConfiguration);
         connect(ui->pushButton_Restart, &QPushButton::clicked, this, [this]() {
             m_settings->restartApplication();
         });
@@ -399,6 +403,101 @@ namespace fairwindsk::ui::settings {
         if (m_viewLogsButton) {
             m_viewLogsButton->setEnabled(QFileInfo::exists(fairwindsk::runtime::persistentLogsDirectoryPath()));
         }
+    }
+
+    QString System::currentConfigurationPath() const {
+        if (!m_settings || !m_settings->getConfiguration()) {
+            return {};
+        }
+
+        const QString configuredPath = m_settings->getConfiguration()->getFilename().trimmed();
+        if (configuredPath.isEmpty()) {
+            return {};
+        }
+
+        const QFileInfo fileInfo(configuredPath);
+        if (fileInfo.isAbsolute()) {
+            return fileInfo.absoluteFilePath();
+        }
+
+        return QDir(QFileInfo(Configuration::settingsFilename()).absolutePath()).absoluteFilePath(configuredPath);
+    }
+
+    void System::importConfiguration() {
+        const QString currentPath = currentConfigurationPath();
+        const QString sourcePath = fairwindsk::ui::drawer::getOpenFilePath(
+            this,
+            tr("Import FairWindSK configuration"),
+            currentPath.isEmpty() ? QDir::homePath() : QFileInfo(currentPath).absolutePath(),
+            tr("FairWindSK configuration (*.json);;JSON files (*.json);;All files (*)"));
+        if (sourcePath.isEmpty()) {
+            return;
+        }
+
+        if (!QFileInfo::exists(sourcePath)) {
+            fairwindsk::ui::drawer::warning(this, tr("System"), tr("The selected configuration file does not exist."));
+            return;
+        }
+
+        if (currentPath.isEmpty()) {
+            fairwindsk::ui::drawer::warning(this, tr("System"), tr("The active FairWindSK configuration path is not available."));
+            return;
+        }
+
+        Configuration importedConfiguration(currentPath);
+        if (!importedConfiguration.load(sourcePath)) {
+            fairwindsk::ui::drawer::warning(this, tr("System"), tr("Unable to import the selected configuration file."));
+            return;
+        }
+
+        if (QFileInfo::exists(currentPath) && !QFile::remove(currentPath)) {
+            fairwindsk::ui::drawer::warning(this, tr("System"), tr("Unable to replace the current configuration file."));
+            return;
+        }
+
+        if (!QFile::copy(sourcePath, currentPath)) {
+            fairwindsk::ui::drawer::warning(this, tr("System"), tr("Unable to copy the imported configuration into place."));
+            return;
+        }
+
+        FairWindSK::getInstance()->getConfiguration()->load();
+        m_settings->resetFromCurrentConfiguration(6);
+        FairWindSK::getInstance()->applyUiPreferences(FairWindSK::getInstance()->getConfiguration());
+        fairwindsk::ui::drawer::information(this, tr("System"), tr("Configuration imported successfully."));
+    }
+
+    void System::exportConfiguration() {
+        const QString currentPath = currentConfigurationPath();
+        if (currentPath.isEmpty() || !QFileInfo::exists(currentPath)) {
+            fairwindsk::ui::drawer::warning(this, tr("System"), tr("The active FairWindSK configuration file is not available."));
+            return;
+        }
+
+        const QString defaultPath = QDir(QFileInfo(currentPath).absolutePath()).filePath(QStringLiteral("fairwindsk.json"));
+        QString targetPath = fairwindsk::ui::drawer::getSaveFilePath(
+            this,
+            tr("Export FairWindSK configuration"),
+            defaultPath,
+            tr("FairWindSK configuration (*.json);;JSON files (*.json);;All files (*)"));
+        if (targetPath.isEmpty()) {
+            return;
+        }
+
+        if (QFileInfo(targetPath).suffix().isEmpty()) {
+            targetPath.append(QStringLiteral(".json"));
+        }
+
+        if (QFileInfo::exists(targetPath) && !QFile::remove(targetPath)) {
+            fairwindsk::ui::drawer::warning(this, tr("System"), tr("Unable to overwrite the selected export file."));
+            return;
+        }
+
+        if (!QFile::copy(currentPath, targetPath)) {
+            fairwindsk::ui::drawer::warning(this, tr("System"), tr("Unable to export the current configuration file."));
+            return;
+        }
+
+        fairwindsk::ui::drawer::information(this, tr("System"), tr("Configuration exported successfully."));
     }
 
     void System::refreshRpiDiagnostics() {

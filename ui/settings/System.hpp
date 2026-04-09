@@ -38,6 +38,8 @@ namespace fairwindsk::ui::settings {
 
     private slots:
         void refreshDiagnostics();
+        void importConfiguration();
+        void exportConfiguration();
 
     private:
         struct CpuSnapshot {
@@ -54,6 +56,7 @@ namespace fairwindsk::ui::settings {
         double fetchSignalKRpiMetric(const QJsonObject &root, const QString &path, bool *available = nullptr) const;
         void setRpiMetricValue(const QString &path, const QString &text);
         void syncLoggingSettings();
+        QString currentConfigurationPath() const;
         QString formatBytes(quint64 bytes) const;
         quint64 processResidentMemoryBytes() const;
         quint64 totalMemoryBytes() const;
