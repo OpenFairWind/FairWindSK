@@ -441,13 +441,7 @@ namespace fairwindsk::ui::bottombar {
     void BottomBar::setRegularBarVisible(const bool visible) const {
         const QList<QWidget *> regularWidgets = {
             ui->scrollArea_Port,
-            ui->toolButton_MyData,
-            ui->toolButton_POB,
-            ui->toolButton_Autopilot,
-            ui->toolButton_Apps,
-            ui->toolButton_Anchor,
-            ui->toolButton_Alarms,
-            ui->toolButton_Settings,
+            ui->widget_CenterButtons,
             ui->widget_Starboard
         };
 

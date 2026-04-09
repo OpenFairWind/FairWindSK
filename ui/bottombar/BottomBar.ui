@@ -99,146 +99,173 @@
          </property>
         </layout>
        </widget>
-      </widget>
+     </widget>
      </item>
      <item>
-      <widget class="QToolButton" name="toolButton_MyData">
-       <property name="text">
-        <string>My Data</string>
+      <widget class="QWidget" name="widget_CenterButtons" native="true">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
        </property>
-       <property name="icon">
-        <iconset resource="../../resources.qrc">
-         <normaloff>:/resources/svg/OpenBridge/database.svg</normaloff>:/resources/svg/OpenBridge/database.svg</iconset>
-       </property>
-       <property name="iconSize">
-        <size>
-         <width>64</width>
-         <height>64</height>
-        </size>
-       </property>
-       <property name="toolButtonStyle">
-        <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QToolButton" name="toolButton_POB">
-       <property name="text">
-        <string>POB</string>
-       </property>
-       <property name="icon">
-        <iconset resource="../../resources.qrc">
-         <normaloff>:/resources/svg/OpenBridge/alarm-pob.svg</normaloff>:/resources/svg/OpenBridge/alarm-pob.svg</iconset>
-       </property>
-       <property name="iconSize">
-        <size>
-         <width>64</width>
-         <height>64</height>
-        </size>
-       </property>
-       <property name="toolButtonStyle">
-        <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QToolButton" name="toolButton_Autopilot">
-       <property name="text">
-        <string>Autopilot</string>
-       </property>
-       <property name="icon">
-        <iconset resource="../../resources.qrc">
-         <normaloff>:/resources/svg/OpenBridge/command-autopilot.svg</normaloff>:/resources/svg/OpenBridge/command-autopilot.svg</iconset>
-       </property>
-       <property name="iconSize">
-        <size>
-         <width>64</width>
-         <height>64</height>
-        </size>
-       </property>
-       <property name="toolButtonStyle">
-        <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QToolButton" name="toolButton_Apps">
-       <property name="text">
-        <string>Apps</string>
-       </property>
-       <property name="icon">
-        <iconset resource="../../resources.qrc">
-         <normaloff>:/resources/svg/OpenBridge/applications.svg</normaloff>:/resources/svg/OpenBridge/applications.svg</iconset>
-       </property>
-       <property name="iconSize">
-        <size>
-         <width>64</width>
-         <height>64</height>
-        </size>
-       </property>
-       <property name="toolButtonStyle">
-        <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QToolButton" name="toolButton_Anchor">
-       <property name="text">
-        <string>Anchor</string>
-       </property>
-       <property name="icon">
-        <iconset resource="../../resources.qrc">
-         <normaloff>:/resources/svg/OpenBridge/anchor-iec.svg</normaloff>:/resources/svg/OpenBridge/anchor-iec.svg</iconset>
-       </property>
-       <property name="iconSize">
-        <size>
-         <width>64</width>
-         <height>64</height>
-        </size>
-       </property>
-       <property name="toolButtonStyle">
-        <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QToolButton" name="toolButton_Alarms">
-       <property name="text">
-        <string>Alarms</string>
-       </property>
-       <property name="icon">
-        <iconset resource="../../resources.qrc">
-         <normaloff>:/resources/svg/OpenBridge/alarm-general.svg</normaloff>:/resources/svg/OpenBridge/alarm-general.svg</iconset>
-       </property>
-       <property name="iconSize">
-        <size>
-         <width>64</width>
-         <height>64</height>
-        </size>
-       </property>
-       <property name="toolButtonStyle">
-        <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QToolButton" name="toolButton_Settings">
-       <property name="text">
-        <string>Settings</string>
-       </property>
-       <property name="icon">
-        <iconset resource="../../resources.qrc">
-         <normaloff>:/resources/svg/OpenBridge/settings-iec.svg</normaloff>:/resources/svg/OpenBridge/settings-iec.svg</iconset>
-       </property>
-       <property name="iconSize">
-        <size>
-         <width>64</width>
-         <height>64</height>
-        </size>
-       </property>
-       <property name="toolButtonStyle">
-        <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
-       </property>
+       <layout class="QHBoxLayout" name="horizontalLayoutCenterButtons">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <property name="spacing">
+         <number>4</number>
+        </property>
+        <item>
+         <widget class="QToolButton" name="toolButton_MyData">
+          <property name="text">
+           <string>My Data</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../../resources.qrc">
+            <normaloff>:/resources/svg/OpenBridge/database.svg</normaloff>:/resources/svg/OpenBridge/database.svg</iconset>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>64</width>
+            <height>64</height>
+           </size>
+          </property>
+          <property name="toolButtonStyle">
+           <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolButton" name="toolButton_POB">
+          <property name="text">
+           <string>POB</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../../resources.qrc">
+            <normaloff>:/resources/svg/OpenBridge/alarm-pob.svg</normaloff>:/resources/svg/OpenBridge/alarm-pob.svg</iconset>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>64</width>
+            <height>64</height>
+           </size>
+          </property>
+          <property name="toolButtonStyle">
+           <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolButton" name="toolButton_Autopilot">
+          <property name="text">
+           <string>Autopilot</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../../resources.qrc">
+            <normaloff>:/resources/svg/OpenBridge/command-autopilot.svg</normaloff>:/resources/svg/OpenBridge/command-autopilot.svg</iconset>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>64</width>
+            <height>64</height>
+           </size>
+          </property>
+          <property name="toolButtonStyle">
+           <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolButton" name="toolButton_Apps">
+          <property name="text">
+           <string>Apps</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../../resources.qrc">
+            <normaloff>:/resources/svg/OpenBridge/applications.svg</normaloff>:/resources/svg/OpenBridge/applications.svg</iconset>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>64</width>
+            <height>64</height>
+           </size>
+          </property>
+          <property name="toolButtonStyle">
+           <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolButton" name="toolButton_Anchor">
+          <property name="text">
+           <string>Anchor</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../../resources.qrc">
+            <normaloff>:/resources/svg/OpenBridge/anchor-iec.svg</normaloff>:/resources/svg/OpenBridge/anchor-iec.svg</iconset>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>64</width>
+            <height>64</height>
+           </size>
+          </property>
+          <property name="toolButtonStyle">
+           <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolButton" name="toolButton_Alarms">
+          <property name="text">
+           <string>Alarms</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../../resources.qrc">
+            <normaloff>:/resources/svg/OpenBridge/alarm-general.svg</normaloff>:/resources/svg/OpenBridge/alarm-general.svg</iconset>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>64</width>
+            <height>64</height>
+           </size>
+          </property>
+          <property name="toolButtonStyle">
+           <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolButton" name="toolButton_Settings">
+          <property name="text">
+           <string>Settings</string>
+          </property>
+          <property name="icon">
+           <iconset resource="../../resources.qrc">
+            <normaloff>:/resources/svg/OpenBridge/settings-iec.svg</normaloff>:/resources/svg/OpenBridge/settings-iec.svg</iconset>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>64</width>
+            <height>64</height>
+           </size>
+          </property>
+          <property name="toolButtonStyle">
+           <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </widget>
      </item>
      <item>
