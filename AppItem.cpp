@@ -15,6 +15,11 @@
 #include <QPixmap>
 #include <QHash>
 #include <QFileInfo>
+#include <QFile>
+#include <QImageReader>
+#include <QPainter>
+#include <QSize>
+#include <QSvgRenderer>
 #include <iostream>
 
 #include "AppItem.hpp"
@@ -43,6 +48,77 @@ namespace fairwindsk {
         QHash<QString, QPixmap> &sharedIconCache() {
             static QHash<QString, QPixmap> cache;
             return cache;
+        }
+
+        constexpr int kDefaultRenderedIconSize = 256;
+
+        bool payloadLooksLikeSvg(const QByteArray &payload) {
+            const QByteArray trimmed = payload.trimmed().left(256).toLower();
+            return trimmed.startsWith("<?xml") || trimmed.startsWith("<svg") || trimmed.contains("<svg");
+        }
+
+        QPixmap renderSvgPayload(const QByteArray &payload, const QSize &targetSize = QSize(kDefaultRenderedIconSize, kDefaultRenderedIconSize)) {
+            if (payload.isEmpty()) {
+                return {};
+            }
+
+            QSvgRenderer renderer(payload);
+            if (!renderer.isValid()) {
+                return {};
+            }
+
+            QSize renderSize = targetSize;
+            if (!renderSize.isValid() || renderSize.isEmpty()) {
+                renderSize = renderer.defaultSize();
+            }
+            if (!renderSize.isValid() || renderSize.isEmpty()) {
+                renderSize = QSize(kDefaultRenderedIconSize, kDefaultRenderedIconSize);
+            }
+
+            QPixmap pixmap(renderSize);
+            pixmap.fill(Qt::transparent);
+
+            QPainter painter(&pixmap);
+            renderer.render(&painter);
+            return pixmap;
+        }
+
+        QPixmap loadPixmapFromPayload(const QByteArray &payload, const QPixmap &fallback = QPixmap()) {
+            if (payload.isEmpty()) {
+                return fallback;
+            }
+
+            QPixmap pixmap;
+            if (pixmap.loadFromData(payload) && !pixmap.isNull()) {
+                return pixmap;
+            }
+
+            if (payloadLooksLikeSvg(payload)) {
+                const QPixmap svgPixmap = renderSvgPayload(payload, fallback.isNull() ? QSize() : fallback.size());
+                if (!svgPixmap.isNull()) {
+                    return svgPixmap;
+                }
+            }
+
+            return fallback;
+        }
+
+        QPixmap loadPixmapFromPath(const QString &path) {
+            if (path.trimmed().isEmpty()) {
+                return {};
+            }
+
+            QPixmap pixmap;
+            if (pixmap.load(path) && !pixmap.isNull()) {
+                return pixmap;
+            }
+
+            QFile file(path);
+            if (!file.open(QIODevice::ReadOnly)) {
+                return {};
+            }
+
+            return loadPixmapFromPayload(file.readAll());
         }
 
         QByteArray performBlockingGet(const QUrl &url, int *statusCode = nullptr) {
@@ -197,8 +273,8 @@ namespace fairwindsk {
                     continue;
                 }
 
-                QPixmap pixmap = fallback;
-                if (pixmap.loadFromData(payload)) {
+                const QPixmap pixmap = loadPixmapFromPayload(payload, fallback);
+                if (!pixmap.isNull() && pixmap.cacheKey() != fallback.cacheKey()) {
                     if (loadedRemotely) {
                         *loadedRemotely = true;
                     }
@@ -399,8 +475,8 @@ namespace fairwindsk {
             const QString executableRelativePath = QCoreApplication::applicationDirPath() + QLatin1Char('/') + iconFilename;
 
             if (iconInfo.isAbsolute() && QFileInfo::exists(iconFilename)) {
-                QPixmap loadedPixmap;
-                if (loadedPixmap.load(iconFilename) && !loadedPixmap.isNull()) {
+                const QPixmap loadedPixmap = loadPixmapFromPath(iconFilename);
+                if (!loadedPixmap.isNull()) {
                     m_cachedIcon = loadedPixmap;
                     m_hasCachedIcon = true;
                     return m_cachedIcon;
@@ -408,8 +484,8 @@ namespace fairwindsk {
             }
 
             if (!iconInfo.isAbsolute() && QFileInfo::exists(executableRelativePath)) {
-                QPixmap loadedPixmap;
-                if (loadedPixmap.load(executableRelativePath) && !loadedPixmap.isNull()) {
+                const QPixmap loadedPixmap = loadPixmapFromPath(executableRelativePath);
+                if (!loadedPixmap.isNull()) {
                     m_cachedIcon = loadedPixmap;
                     m_hasCachedIcon = true;
                     return m_cachedIcon;
