@@ -137,9 +137,19 @@ if(NOT FAIRWINDSK_MOBILE)
     ExternalProject_Add(QtZeroConf
             GIT_REPOSITORY https://github.com/OpenFairWind/QtZeroConf.git
             GIT_TAG f7744716dff7fad22ca9edd4e3182477afe43b8d
-            CMAKE_ARGS -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH} -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION} -DBUILD_SHARED_LIBS=ON -DCMAKE_POLICY_VERSION_MINIMUM=3.16
+            CMAKE_ARGS -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH} -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION} -DBUILD_SHARED_LIBS=ON -DCMAKE_POLICY_VERSION_MINIMUM=3.16 -DCMAKE_INSTALL_REMOVE_ENVIRONMENT_RPATH=FALSE
             TIMEOUT 360
     )
+
+    if(APPLE)
+        ExternalProject_Add_Step(QtZeroConf sanitize_install_script
+                COMMAND ${CMAKE_COMMAND}
+                -DINPUT=${CMAKE_BINARY_DIR}/QtZeroConf-prefix/src/QtZeroConf-build/cmake_install.cmake
+                -P ${CMAKE_SOURCE_DIR}/cmake/SanitizeAppleInstallScript.cmake
+                DEPENDEES configure
+                DEPENDERS install
+        )
+    endif()
 
     if(WIN32)
         set(LIBQTZEROCONF ${EXTERNAL_INSTALL_LOCATION}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_IMPORT_LIBRARY_PREFIX}QtZeroConf${CMAKE_IMPORT_LIBRARY_SUFFIX})
@@ -151,9 +161,19 @@ if(NOT FAIRWINDSK_MOBILE)
     ExternalProject_Add(qhotkey
             GIT_REPOSITORY https://github.com/Skycoder42/QHotkey.git
             GIT_TAG 1.5.0
-            CMAKE_ARGS -DBUILD_SHARED_LIBS=on -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION} -DQT_DEFAULT_MAJOR_VERSION=6 -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+            CMAKE_ARGS -DBUILD_SHARED_LIBS=on -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION} -DQT_DEFAULT_MAJOR_VERSION=6 -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_INSTALL_REMOVE_ENVIRONMENT_RPATH=FALSE
             TIMEOUT 360
     )
+
+    if(APPLE)
+        ExternalProject_Add_Step(qhotkey sanitize_install_script
+                COMMAND ${CMAKE_COMMAND}
+                -DINPUT=${CMAKE_BINARY_DIR}/qhotkey-prefix/src/qhotkey-build/cmake_install.cmake
+                -P ${CMAKE_SOURCE_DIR}/cmake/SanitizeAppleInstallScript.cmake
+                DEPENDEES configure
+                DEPENDERS install
+        )
+    endif()
 
     if(WIN32)
         set(LIBQHOTKEY ${EXTERNAL_INSTALL_LOCATION}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_IMPORT_LIBRARY_PREFIX}qhotkey${CMAKE_IMPORT_LIBRARY_SUFFIX})
