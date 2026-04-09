@@ -30,6 +30,12 @@ namespace fairwindsk::ui::topbar {
 
         QString comfortViewIconPath(QString preset) {
             preset = preset.trimmed().toLower();
+            if (preset == "sunrise") {
+                preset = QStringLiteral("dawn");
+            }
+            if (preset == "default" || preset.isEmpty()) {
+                return QStringLiteral(":/resources/svg/OpenBridge/comfort-default.svg");
+            }
             if (preset == "dawn") {
                 return QStringLiteral(":/resources/svg/OpenBridge/comfort-dawn.svg");
             }
@@ -42,7 +48,7 @@ namespace fairwindsk::ui::topbar {
             if (preset == "night") {
                 return QStringLiteral(":/resources/svg/OpenBridge/comfort-night.svg");
             }
-            return QStringLiteral(":/resources/svg/OpenBridge/comfort-day.svg");
+            return QStringLiteral(":/resources/svg/OpenBridge/comfort-default.svg");
         }
     }
 
@@ -376,7 +382,7 @@ namespace fairwindsk::ui::topbar {
         }
 
         auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
-        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset() : QStringLiteral("day");
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset() : QStringLiteral("default");
         const QColor fallbackColor = fairwindsk::ui::bestContrastingColor(
             palette().color(QPalette::Window),
             {palette().color(QPalette::WindowText),
