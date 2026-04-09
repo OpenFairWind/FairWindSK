@@ -1,88 +1,151 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
+import configparser
 import json
 import os
-import re
-import sys
+import shutil
 import subprocess as sp
+import sys
 from pathlib import Path
-import configparser
+from typing import Dict, List, Optional
 
 
-
-# Check if this script has been launched as main
-if __name__ == '__main__':
-
-    # Create the configuration parser
-    config = configparser.ConfigParser()
-
-    # Set the argv[0]
-    sys.argv[0] = re.sub(r'(-script\.pyw?|\.exe)?$', '', sys.argv[0])
-
-    # Set the default return value
-    rc = 1
-
-    # While the return value is 1
-    while rc == 1:
-
-        # Get the ini file path
-        iniTextFile = str(Path.home().absolute()) + os.sep + "fairwindsk.ini"
-
-        # Read the ini file
-        config.read(iniTextFile)
-
-        # Get the json file
-        jsonFile = config.get('General','config')
-
-        # Check if the json file is valid
-        if jsonFile is not None and jsonFile != "":
-
-            # Check if the json file is a local file path
-            if jsonFile[0] != os.sep:
-
-                # Update the json file path
-                jsonFile = str(Path.home().absolute()) + os.sep + jsonFile
-
-            # Opening JSON file
-            f = open(jsonFile)
-
-            # returns JSON object as a dictionary
-            configData = json.load(f)
-
-            # Checl if main/virtaualKeyboard is in the path
-            if "main" in configData and "virtualKeyboard" in configData["main"]:
-
-                # Get the boolean value for the virtual keyboard
-                useVirtualKeyboard = bool(configData["main"]["virtualKeyboard"])
-
-                # Check if the virtual keuboard must be set
-                if useVirtualKeyboard:
-
-                    # Set the virtual keyboard
-                    os.environ["QT_IM_MODULE"] = "qtvirtualkeyboard"
-
-                else:
-
-                    # Clear the virtual keyboard
-                    os.environ["QT_IM_MODULE"] = ""
+APP_NAME = "FairWindSK"
+ORGANIZATION_NAME = "uniparthenope.it"
+SETTINGS_FILENAME = "fairwindsk.ini"
+CONFIG_FILENAME = "fairwindsk.json"
+RESTART_EXIT_CODE = 1
 
 
-            # Close the file
-            f.close()
+def log(message: str) -> None:
+    print(f"[fairwindsk-startup] {message}", flush=True)
 
-        # Show the virtual keyboard settings
-        print("Virtual Keyboard:", os.environ["QT_IM_MODULE"])
 
-        # Run the process
-        child = sp.Popen("FairWindSK", stdout=sp.PIPE, cwd=Path.home())
+def candidate_settings_paths() -> List[Path]:
+    home = Path.home()
+    xdg_config_home = Path(os.environ.get("XDG_CONFIG_HOME", home / ".config")).expanduser()
+    candidates = [
+        xdg_config_home / APP_NAME / SETTINGS_FILENAME,
+        xdg_config_home / ORGANIZATION_NAME / APP_NAME / SETTINGS_FILENAME,
+        home / APP_NAME / SETTINGS_FILENAME,
+        home / SETTINGS_FILENAME,
+    ]
 
-        # Get the standard output
-        streamdata = child.communicate()[0]
+    unique_candidates: List[Path] = []
+    seen = set()
+    for candidate in candidates:
+        normalized = candidate.expanduser()
+        if normalized not in seen:
+            unique_candidates.append(normalized)
+            seen.add(normalized)
+    return unique_candidates
 
-        # Retrieve the return code
-        rc = child.returncode
 
-        # Print the return code
-        print(rc)
+def find_settings_path() -> Path:
+    for candidate in candidate_settings_paths():
+        if candidate.is_file():
+            return candidate
+    return candidate_settings_paths()[0]
 
-        # Exit the script with the return code
-        sys.exit(rc)
+
+def read_settings(settings_path: Path) -> configparser.ConfigParser:
+    parser = configparser.ConfigParser()
+    if settings_path.is_file():
+        parser.read(settings_path, encoding="utf-8")
+    else:
+        log(f"Settings file not found, using defaults: {settings_path}")
+    return parser
+
+
+def resolve_config_path(parser: configparser.ConfigParser, settings_path: Path) -> Path:
+    settings_dir = settings_path.parent
+    configured_path = ""
+    if parser.has_section("General"):
+        configured_path = parser.get("General", "config", fallback="").strip()
+
+    if configured_path:
+        candidate = Path(configured_path).expanduser()
+        if candidate.is_absolute():
+            return candidate
+        return settings_dir / candidate
+
+    return settings_dir / CONFIG_FILENAME
+
+
+def read_virtual_keyboard_flag(config_path: Path) -> Optional[bool]:
+    if not config_path.is_file():
+        log(f"Configuration file not found, keeping keyboard defaults: {config_path}")
+        return None
+
+    try:
+        with config_path.open("r", encoding="utf-8") as handle:
+            config_data = json.load(handle)
+    except (OSError, json.JSONDecodeError) as exc:
+        log(f"Unable to read configuration file {config_path}: {exc}")
+        return None
+
+    main_config = config_data.get("main")
+    if not isinstance(main_config, dict) or "virtualKeyboard" not in main_config:
+        return None
+
+    return bool(main_config["virtualKeyboard"])
+
+
+def configure_environment(settings_path: Path, config_path: Path) -> Dict[str, str]:
+    env = os.environ.copy()
+    use_virtual_keyboard = read_virtual_keyboard_flag(config_path)
+
+    if use_virtual_keyboard is True:
+        env["QT_IM_MODULE"] = "qtvirtualkeyboard"
+    elif use_virtual_keyboard is False:
+        env.pop("QT_IM_MODULE", None)
+
+    log(f"Settings path: {settings_path}")
+    log(f"Configuration path: {config_path}")
+    log(f"Virtual keyboard: {env.get('QT_IM_MODULE', '<disabled>')}")
+    return env
+
+
+def resolve_executable() -> Optional[str]:
+    executable = shutil.which(APP_NAME)
+    if executable:
+        return executable
+
+    script_dir = Path(__file__).resolve().parent
+    local_candidate = script_dir / APP_NAME
+    if local_candidate.is_file() and os.access(local_candidate, os.X_OK):
+        return str(local_candidate)
+
+    return None
+
+
+def run_once(env: Dict[str, str]) -> int:
+    executable = resolve_executable()
+    if not executable:
+        log(f"Unable to locate the {APP_NAME} executable in PATH.")
+        return 127
+
+    log(f"Launching: {executable}")
+    child = sp.run([executable], cwd=Path.home(), env=env, check=False)
+    log(f"Exit code: {child.returncode}")
+    return child.returncode
+
+
+def main() -> int:
+    attempt = 1
+    while True:
+        settings_path = find_settings_path()
+        parser = read_settings(settings_path)
+        config_path = resolve_config_path(parser, settings_path)
+        env = configure_environment(settings_path, config_path)
+
+        log(f"Startup attempt: {attempt}")
+        return_code = run_once(env)
+        if return_code != RESTART_EXIT_CODE:
+            return return_code
+
+        log("Application requested restart.")
+        attempt += 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
