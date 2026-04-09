@@ -7,6 +7,7 @@
 
 #include <QLabel>
 #include <QPixmap>
+#include <QResizeEvent>
 #include <QWidget>
 
 class QMovie;
@@ -22,6 +23,9 @@ namespace fairwindsk::ui::widgets {
     public:
         explicit SignalKServerBox(QWidget *parent = nullptr);
         ~SignalKServerBox() override;
+
+    protected:
+        void resizeEvent(QResizeEvent *event) override;
 
     private slots:
         void onServerHealthChanged(bool healthy, const QString &statusText);

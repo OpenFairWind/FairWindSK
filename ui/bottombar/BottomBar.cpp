@@ -25,8 +25,6 @@ namespace fairwindsk::ui::bottombar {
         constexpr int kBottomBarIconSize = 44;
         constexpr int kBottomBarButtonHeight = 90;
         constexpr int kPortAreaHeight = 84;
-        constexpr int kStarboardWidth = 280;
-
         const QString kChromeToolButtonStyle = QStringLiteral(
             "QToolButton {"
             " background: transparent;"
@@ -55,7 +53,6 @@ namespace fairwindsk::ui::bottombar {
         ui->scrollArea_Port->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         ui->scrollArea_Port->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         ui->scrollArea_Port->setFixedHeight(kPortAreaHeight);
-        ui->scrollArea_Port->setFixedWidth(kStarboardWidth);
         ui->scrollArea_Port->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         ui->scrollArea_Port->viewport()->setAutoFillBackground(false);
         ui->scrollArea_Port->viewport()->setAttribute(Qt::WA_AcceptTouchEvents, true);
@@ -107,10 +104,9 @@ namespace fairwindsk::ui::bottombar {
         m_AlarmsBar = new AlarmsBar(this);
 
         m_signalKServerBox = new widgets::SignalKServerBox(this);
-        ui->widget_Starboard->setFixedWidth(kStarboardWidth);
-        ui->widget_Starboard->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+        ui->widget_Starboard->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         m_signalKServerBox->setMaximumHeight(kBottomBarButtonHeight);
-        m_signalKServerBox->setFixedWidth(kStarboardWidth);
+        m_signalKServerBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         auto *starboardLayout = new QVBoxLayout(ui->widget_Starboard);
         starboardLayout->setContentsMargins(0, 0, 0, 0);
         starboardLayout->setSpacing(0);

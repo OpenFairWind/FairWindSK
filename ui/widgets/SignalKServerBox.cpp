@@ -18,7 +18,6 @@ namespace fairwindsk::ui::widgets {
     namespace {
         constexpr int kIndicatorSize = 10;
         constexpr int kThrobberSize = 18;
-        constexpr int kServerBoxWidth = 280;
         constexpr int kServerBoxHeight = 58;
     }
 
@@ -27,8 +26,10 @@ namespace fairwindsk::ui::widgets {
           ui(new Ui::SignalKServerBox) {
         ui->setupUi(this);
 
-        setFixedSize(kServerBoxWidth, kServerBoxHeight);
-        setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+        setMinimumHeight(kServerBoxHeight);
+        setMaximumHeight(kServerBoxHeight);
+        setMinimumWidth(280);
+        setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         ui->labelIndicator->setFixedSize(kIndicatorSize, kIndicatorSize);
         ui->labelBusy->setFixedSize(kThrobberSize, kThrobberSize);
         ui->labelBusy->setScaledContents(true);
@@ -67,6 +68,13 @@ namespace fairwindsk::ui::widgets {
 
             onConnectivityChanged(client->isRestHealthy(), client->isStreamHealthy(), client->connectionStatusText());
             onServerHealthChanged(client->isRestHealthy() && client->isStreamHealthy(), client->connectionStatusText());
+        }
+    }
+
+    void SignalKServerBox::resizeEvent(QResizeEvent *event) {
+        QWidget::resizeEvent(event);
+        if (ui && ui->labelStatus) {
+            updateStatusLabel(ui->labelStatus->toolTip());
         }
     }
 
