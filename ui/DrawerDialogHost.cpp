@@ -173,7 +173,7 @@ namespace fairwindsk::ui::drawer {
                     layout->addWidget(m_nameEdit);
                 }
 
-                setMinimumHeight(m_mode == FileBrowserMode::SaveFile ? 430 : 400);
+                setMinimumHeight(m_mode == FileBrowserMode::SaveFile ? 560 : 400);
 
                 m_model = new QFileSystemModel(this);
                 m_model->setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot);
@@ -186,7 +186,7 @@ namespace fairwindsk::ui::drawer {
                 m_view->hideColumn(1);
                 m_view->hideColumn(2);
                 m_view->hideColumn(3);
-                const int minimumVisibleRows = 10;
+                const int minimumVisibleRows = (m_mode == FileBrowserMode::SaveFile) ? 14 : 10;
                 const int rowHeight = qMax(24, m_view->sizeHintForRow(0));
                 const int headerHeight = m_view->header()->sizeHint().height();
                 const int frameHeight = m_view->frameWidth() * 2;
