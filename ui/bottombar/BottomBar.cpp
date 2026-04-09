@@ -22,9 +22,9 @@
 
 namespace fairwindsk::ui::bottombar {
     namespace {
-        constexpr int kBottomBarIconSize = 56;
-        constexpr int kBottomBarButtonHeight = 78;
-        constexpr int kPortAreaHeight = 72;
+        constexpr int kBottomBarIconSize = 44;
+        constexpr int kBottomBarButtonHeight = 90;
+        constexpr int kPortAreaHeight = 84;
         constexpr int kStarboardWidth = 280;
 
         const QString kChromeToolButtonStyle = QStringLiteral(
@@ -48,13 +48,15 @@ namespace fairwindsk::ui::bottombar {
 
         // Set the UI
         ui->setupUi(this);
-        setMaximumHeight(84);
+        setMaximumHeight(96);
         setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
         ui->scrollArea_Port->setBorderless(true);
         ui->scrollArea_Port->setFrameShape(QFrame::NoFrame);
         ui->scrollArea_Port->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         ui->scrollArea_Port->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         ui->scrollArea_Port->setFixedHeight(kPortAreaHeight);
+        ui->scrollArea_Port->setFixedWidth(kStarboardWidth);
+        ui->scrollArea_Port->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         ui->scrollArea_Port->viewport()->setAutoFillBackground(false);
         ui->scrollArea_Port->viewport()->setAttribute(Qt::WA_AcceptTouchEvents, true);
         QScroller::grabGesture(ui->scrollArea_Port->viewport(), QScroller::TouchGesture);
@@ -84,9 +86,10 @@ namespace fairwindsk::ui::bottombar {
 
             button->setStyleSheet(kChromeToolButtonStyle);
             button->setAutoRaise(true);
+            button->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
             button->setIconSize(QSize(m_iconSize, m_iconSize));
             button->setMinimumHeight(kBottomBarButtonHeight);
-            button->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+            button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         }
 
         applyNavigationButtonIcons();
@@ -105,6 +108,7 @@ namespace fairwindsk::ui::bottombar {
 
         m_signalKServerBox = new widgets::SignalKServerBox(this);
         ui->widget_Starboard->setFixedWidth(kStarboardWidth);
+        ui->widget_Starboard->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         m_signalKServerBox->setMaximumHeight(kBottomBarButtonHeight);
         m_signalKServerBox->setFixedWidth(kStarboardWidth);
         auto *starboardLayout = new QVBoxLayout(ui->widget_Starboard);

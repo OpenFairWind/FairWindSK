@@ -26,12 +26,16 @@ namespace fairwindsk::ui::web {
 
         // Create the navigation bar
         m_NavigationBar = new NavigationBar(this);
+        m_NavigationBar->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
+        m_NavigationBar->setMaximumWidth(m_NavigationBar->sizeHint().width());
 
         // Hide the navigation bar
         m_NavigationBar->setVisible(false);
 
         // Add the navigation bar to the user interface
         ui->verticalLayout_NavigationBar->addWidget(m_NavigationBar);
+        ui->horizontalLayout->setStretch(0, 1);
+        ui->horizontalLayout->setStretch(1, 0);
 
         // Connect the home button handler
         connect(m_NavigationBar, &NavigationBar::home, this, &Web::onHomeClicked);

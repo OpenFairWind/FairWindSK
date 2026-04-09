@@ -736,6 +736,8 @@ namespace fairwindsk::ui::launcher {
 
         m_iconRefreshScheduled = true;
         QTimer::singleShot(0, this, [this]() { refreshDeferredIcons(); });
+        QTimer::singleShot(1500, this, [this]() { refreshDeferredIcons(); });
+        QTimer::singleShot(5000, this, [this]() { refreshDeferredIcons(); });
     }
 
     void Launcher::refreshDeferredIcons() {

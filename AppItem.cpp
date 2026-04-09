@@ -181,7 +181,11 @@ namespace fairwindsk {
             return legacyCatalogForServer(serverUrl).displayNamesByName.value(appName);
         }
 
-        QPixmap loadRemotePixmap(const QList<QUrl> &candidateUrls, const QPixmap &fallback) {
+        QPixmap loadRemotePixmap(const QList<QUrl> &candidateUrls, const QPixmap &fallback, bool *loadedRemotely = nullptr) {
+            if (loadedRemotely) {
+                *loadedRemotely = false;
+            }
+
             for (const auto &iconUrl : candidateUrls) {
                 if (!iconUrl.isValid() || iconUrl.scheme().isEmpty()) {
                     continue;
@@ -195,6 +199,9 @@ namespace fairwindsk {
 
                 QPixmap pixmap = fallback;
                 if (pixmap.loadFromData(payload)) {
+                    if (loadedRemotely) {
+                        *loadedRemotely = true;
+                    }
                     return pixmap;
                 }
             }
@@ -426,11 +433,12 @@ namespace fairwindsk {
             candidateUrls.append(QUrl(appUrl).resolved(QUrl(iconFilename)));
             candidateUrls.append(QUrl(signalKServerUrl + "/" + appName + "/" + iconFilename));
 
-            m_cachedIcon = loadRemotePixmap(candidateUrls, pixmap);
-            if (!m_cachedIcon.isNull() && !iconCacheKey.isEmpty()) {
+            bool loadedRemotely = false;
+            m_cachedIcon = loadRemotePixmap(candidateUrls, pixmap, &loadedRemotely);
+            if (loadedRemotely && !m_cachedIcon.isNull() && !iconCacheKey.isEmpty()) {
                 sharedIconCache().insert(iconCacheKey, m_cachedIcon);
             }
-            m_hasCachedIcon = true;
+            m_hasCachedIcon = loadedRemotely;
             return m_cachedIcon;
         }
 
@@ -445,14 +453,15 @@ namespace fairwindsk {
         candidateUrls.append(QUrl(appUrl).resolved(QUrl(appIcon)));
         candidateUrls.append(QUrl(signalKServerUrl + "/" + appName + "/" + appIcon));
 
-        m_cachedIcon = loadRemotePixmap(candidateUrls, pixmap);
-        if (!m_cachedIcon.isNull() && !iconCacheKey.isEmpty()) {
+        bool loadedRemotely = false;
+        m_cachedIcon = loadRemotePixmap(candidateUrls, pixmap, &loadedRemotely);
+        if (loadedRemotely && !m_cachedIcon.isNull() && !iconCacheKey.isEmpty()) {
             sharedIconCache().insert(iconCacheKey, m_cachedIcon);
         }
         if (m_cachedIcon.isNull()) {
             m_cachedIcon = QPixmap::fromImage(QImage(":/resources/images/icons/apps_icon.png"));
         }
-        m_hasCachedIcon = true;
+        m_hasCachedIcon = loadedRemotely;
         return m_cachedIcon;
     }
 

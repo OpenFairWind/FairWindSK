@@ -45,6 +45,13 @@
 
 namespace {
     constexpr int kWaypointTableBatchSize = 40;
+    constexpr bool kDisableEmbeddedPreviewOnThisPlatform =
+#if defined(Q_OS_LINUX) && (defined(__arm__) || defined(__aarch64__))
+        true;
+#else
+        false;
+#endif
+
     constexpr int kWaypointNameColumn = 0;
     constexpr int kWaypointDescriptionColumn = 1;
     constexpr int kWaypointTypeColumn = 2;
@@ -939,6 +946,10 @@ namespace fairwindsk::ui::mydata {
     }
 
     void Waypoints::ensurePreviewAppView() {
+        if (kDisableEmbeddedPreviewOnThisPlatform) {
+            return;
+        }
+
         if (m_previewAppView || !m_previewHost) {
             return;
         }
@@ -970,6 +981,10 @@ namespace fairwindsk::ui::mydata {
         m_previewLatitude = latitude;
         ensurePreviewAppView();
         if (!m_previewAppView) {
+            if (kDisableEmbeddedPreviewOnThisPlatform && m_previewHost) {
+                m_previewHost->setToolTip(
+                    tr("Embedded waypoint preview is disabled on this platform to avoid Qt WebEngine instability."));
+            }
             m_geoJsonDetailsEdit->setPlainText(QString::fromUtf8(geoJson.toJson(QJsonDocument::Indented)));
             syncDetailTabs();
             return;
