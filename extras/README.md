@@ -12,3 +12,5 @@ Autostart on Raspberry Pi
 It also prints simple startup diagnostics to standard output so kiosk and autostart failures are easier to debug on-device.
 
 The companion `fairwindsk-startup.desktop` file is now a fuller desktop-entry definition with a stable name/comment, `Terminal=false`, disabled startup notifications, and explicit autostart enablement so it behaves more consistently across Raspberry Pi OS desktop sessions.
+
+For the Raspberry Pi OS applications menu, `fairwindsk.desktop` provides a normal launcher entry for FairWindSK itself. Unlike the autostart entry, it launches `FairWindSK` directly and is intended to be copied into the desktop environment's application-menu directory.

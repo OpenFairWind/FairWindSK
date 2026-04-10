@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=FairWindSK
+GenericName=Signal K Desktop
+Comment=Launch the FairWindSK Signal K desktop
+Exec=FairWindSK
+Terminal=false
+StartupNotify=true
+Categories=Navigation;Network;Utility;
+Keywords=Signal K;Marine;Navigation;FairWindSK;
