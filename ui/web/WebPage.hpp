@@ -23,6 +23,7 @@ namespace fairwindsk::ui::web {
 
     signals:
         void createCertificateErrorDialog(QWebEngineCertificateError error);
+        void signalKRestartConfirmed();
 
     protected:
         void javaScriptAlert(const QUrl &securityOrigin, const QString &message) override;

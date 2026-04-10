@@ -91,6 +91,7 @@ namespace fairwindsk::ui::web {
             if (auto *client = fairwindsk::FairWindSK::getInstance()->getSignalKClient()) {
                 client->beginPlannedServerRestart();
             }
+            emit signalKRestartConfirmed();
         }
         return accepted;
     }

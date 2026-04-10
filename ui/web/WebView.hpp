@@ -59,6 +59,7 @@ namespace fairwindsk::ui::web {
         void initializeMobile();
         void applyZoom();
         static QString zoomScript(double zoomPercent);
+        void showSignalKRestartPlaceholder();
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         void setDesktopPage(class WebPage *page);

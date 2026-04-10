@@ -274,6 +274,30 @@ namespace fairwindsk::ui::web {
 #endif
     }
 
+    void WebView::showSignalKRestartPlaceholder() {
+        stop();
+        setHtml(QStringLiteral(
+                    "<!doctype html>"
+                    "<html><head><meta charset=\"utf-8\">"
+                    "<style>"
+                    "html,body{height:100%%;margin:0;background:#05070c;color:#f8fafc;"
+                    "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}"
+                    "body{display:flex;align-items:center;justify-content:center;}"
+                    ".panel{max-width:36rem;padding:2rem 2.5rem;border:1px solid #2f4058;border-radius:18px;"
+                    "background:linear-gradient(180deg,#0f1724,#0a1220);box-shadow:0 18px 48px rgba(0,0,0,0.45);"
+                    "text-align:center;}"
+                    ".title{font-size:2rem;font-weight:700;margin-bottom:0.75rem;}"
+                    ".body{font-size:1.05rem;line-height:1.5;color:#c8d2df;}"
+                    "</style></head>"
+                    "<body><div class=\"panel\">"
+                    "<div class=\"title\">%1</div>"
+                    "<div class=\"body\">%2</div>"
+                    "</div></body></html>")
+                    .arg(tr("Signal K is restarting"),
+                         tr("FairWindSK will reconnect automatically when the server is available again.")));
+        applyZoom();
+    }
+
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
     void WebView::initializeDesktop(fairwindsk::WebProfileHandle *profile) {
         m_desktopView = new QWebEngineView(this);
@@ -365,6 +389,12 @@ namespace fairwindsk::ui::web {
             } else {
                 error.rejectCertificate();
             }
+        });
+
+        connect(page, &WebPage::signalKRestartConfirmed, this, [this]() {
+            QTimer::singleShot(1500, this, [this]() {
+                showSignalKRestartPlaceholder();
+            });
         });
 
         connect(page, &QWebEnginePage::authenticationRequired, this,
