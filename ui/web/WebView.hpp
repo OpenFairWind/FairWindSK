@@ -35,6 +35,7 @@ namespace fairwindsk::ui::web {
         bool canGoBack() const;
         bool canGoForward() const;
         void runJavaScript(const QString &script);
+        void setZoomPercent(double zoomPercent);
 
     signals:
         void loadStarted();
@@ -56,6 +57,8 @@ namespace fairwindsk::ui::web {
     private:
         void initializeDesktop(fairwindsk::WebProfileHandle *profile);
         void initializeMobile();
+        void applyZoom();
+        static QString zoomScript(double zoomPercent);
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         void setDesktopPage(class WebPage *page);
@@ -63,6 +66,7 @@ namespace fairwindsk::ui::web {
 
         int m_loadProgress = 100;
         QWidget *m_viewWidget = nullptr;
+        double m_zoomPercent = 100.0;
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         QWebEngineView *m_desktopView = nullptr;

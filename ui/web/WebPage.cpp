@@ -10,6 +10,8 @@
 #include "WebPage.hpp"
 #include "ui/DrawerDialogHost.hpp"
 #include "WebView.hpp"
+#include "FairWindSK.hpp"
+#include <QRegularExpression>
 #include <QTimer>
 
 namespace fairwindsk::ui::web {
@@ -32,6 +34,26 @@ namespace fairwindsk::ui::web {
                 return QObject::tr("Message from %1").arg(host);
             }
             return QObject::tr("Web Message");
+        }
+
+        bool looksLikeSignalKRestartPrompt(const QUrl &securityOrigin, const QString &message) {
+            auto *fairwind = fairwindsk::FairWindSK::getInstance();
+            auto *configuration = fairwind ? fairwind->getConfiguration() : nullptr;
+            if (!configuration) {
+                return false;
+            }
+
+            const QUrl configuredServer(configuration->getSignalKServerUrl());
+            if (!configuredServer.isValid() || configuredServer.host().trimmed().isEmpty()) {
+                return false;
+            }
+
+            if (securityOrigin.host().trimmed().compare(configuredServer.host().trimmed(), Qt::CaseInsensitive) != 0) {
+                return false;
+            }
+
+            static const QRegularExpression restartPattern(QStringLiteral("\\brestart\\b"), QRegularExpression::CaseInsensitiveOption);
+            return restartPattern.match(message).hasMatch();
         }
     }
 
@@ -60,11 +82,17 @@ namespace fairwindsk::ui::web {
     }
 
     bool WebPage::javaScriptConfirm(const QUrl &securityOrigin, const QString &message) {
-        return drawer::question(dialogParentForPage(this),
-                                javaScriptDialogTitle(securityOrigin),
-                                message,
-                                QMessageBox::Yes | QMessageBox::No,
-                                QMessageBox::No) == QMessageBox::Yes;
+        const bool accepted = drawer::question(dialogParentForPage(this),
+                                               javaScriptDialogTitle(securityOrigin),
+                                               message,
+                                               QMessageBox::Yes | QMessageBox::No,
+                                               QMessageBox::No) == QMessageBox::Yes;
+        if (accepted && looksLikeSignalKRestartPrompt(securityOrigin, message)) {
+            if (auto *client = fairwindsk::FairWindSK::getInstance()->getSignalKClient()) {
+                client->beginPlannedServerRestart();
+            }
+        }
+        return accepted;
     }
 
     bool WebPage::javaScriptPrompt(const QUrl &securityOrigin,

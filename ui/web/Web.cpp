@@ -61,6 +61,10 @@ namespace fairwindsk::ui::web {
         // Set the size policy of the web view widget
         m_webView->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
 
+        if (m_appItem) {
+            m_webView->setZoomPercent(m_appItem->getZoomPercent());
+        }
+
         // Add the web view widget to the user interface
         ui->verticalLayout_WebView->addWidget(m_webView);
 

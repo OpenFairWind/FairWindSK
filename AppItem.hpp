@@ -59,6 +59,8 @@ namespace fairwindsk {
             QPixmap getIcon(bool allowRemoteFetch = true);
             QString getAppIcon();
             void setAppIcon(const QString& appIcon);
+            double getZoomPercent() const;
+            void setZoomPercent(double zoomPercent);
 
             QString getSettingsUrl(const QString& pluginUrl);
             void setSettingsUrl(const QString& settingsUrl);

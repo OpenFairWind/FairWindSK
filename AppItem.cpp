@@ -21,6 +21,7 @@
 #include <QSize>
 #include <QSet>
 #include <QSvgRenderer>
+#include <QtGlobal>
 #include <iostream>
 
 #include "AppItem.hpp"
@@ -777,6 +778,21 @@ namespace fairwindsk {
 
     QString AppItem::getAppIcon() {
         return iconStringFromJson(m_jsonApp);
+    }
+
+    double AppItem::getZoomPercent() const {
+        if (m_jsonApp.contains("fairwind") && m_jsonApp["fairwind"].is_object()) {
+            const auto &fairwindJsonObject = m_jsonApp["fairwind"];
+            if (fairwindJsonObject.contains("zoomPercent") && fairwindJsonObject["zoomPercent"].is_number()) {
+                return fairwindJsonObject["zoomPercent"].get<double>();
+            }
+        }
+        return 100.0;
+    }
+
+    void AppItem::setZoomPercent(double zoomPercent) {
+        const double normalizedZoom = qBound(25.0, zoomPercent, 400.0);
+        m_jsonApp["fairwind"]["zoomPercent"] = normalizedZoom;
     }
 
     void AppItem::setName(const QString& name) {

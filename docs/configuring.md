@@ -45,6 +45,7 @@ Applications live under the `apps` array. Each entry represents a web or local a
 - `name`: URL for the app (supports `https://`, `http://`, and `file://` for local desktop tools like OpenCPN).
 - `fairwind.active`: Whether the app tile is shown.
 - `fairwind.order`: Ordering on the desktop (lower numbers appear first).
+- `fairwind.zoomPercent`: Per-app web zoom level, expressed as a percentage. The default is `100`.
 - `signalk.*`: Presentation metadata used by the UI. Icon paths support Qt resource prefixes (`:/resources/...`) or filesystem URLs.
 
 Apps discovered from the Signal K server (`signalk-webapp` entries) are merged with this list during startup. Local overrides for ordering and activation are preserved. `file://` entries are a desktop-only integration.
@@ -149,6 +150,8 @@ The editor now exposes grouped actions for:
 
 - page-level actions such as adding pages, showing page details, assigning applications to the selected page, and clearing applications from the current page or all pages
 - palette-level actions such as creating applications, showing selected application details, removing selected applications from the palette, and adding all available applications to the current page
+
+Application details also expose the stored web zoom percentage so each embedded web app can be enlarged or reduced without affecting the others.
 
 ## Authentication and tokens
 

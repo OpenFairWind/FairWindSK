@@ -237,6 +237,9 @@ namespace fairwindsk::signalk {
         m_reconnectTimer.setInterval(2000);
         m_reconnectTimer.setSingleShot(true);
         connect(&m_reconnectTimer, &QTimer::timeout, this, &Client::attemptReconnect);
+
+        m_plannedRestartTimer.setSingleShot(true);
+        connect(&m_plannedRestartTimer, &QTimer::timeout, this, &Client::finishPlannedRestartGrace);
     }
 
 /*
@@ -937,6 +940,8 @@ namespace fairwindsk::signalk {
             qDebug() << "WebSocket connected";
 
         m_reconnectTimer.stop();
+        m_plannedRestartTimer.stop();
+        m_plannedRestartInProgress = false;
         markStreamActivity(tr("Stream online"));
         emit serverMessageChanged(discoveryMessage());
 
@@ -958,6 +963,12 @@ namespace fairwindsk::signalk {
             qDebug() << "WebSocket disconnected";
 
         m_streamHealthTimer.stop();
+        if (m_plannedRestartInProgress) {
+            setStreamHealth(false, tr("Signal K restarting"));
+            emit serverMessageChanged(tr("Waiting for Signal K restart"));
+            return;
+        }
+
         setStreamHealth(false, tr("Stream disconnected"));
         emit serverMessageChanged(tr("Waiting for Signal K"));
         if (m_Active && !m_Url.isEmpty()) {
@@ -1100,7 +1111,7 @@ namespace fairwindsk::signalk {
     }
 
     void Client::scheduleReconnect(const int delayMs) {
-        if (m_reconnectTimer.isActive() || m_reconnectAttemptInFlight) {
+        if (m_plannedRestartInProgress || m_reconnectTimer.isActive() || m_reconnectAttemptInFlight) {
             return;
         }
 
@@ -1110,7 +1121,7 @@ namespace fairwindsk::signalk {
     }
 
     void Client::startAsyncReconnectDiscovery() {
-        if (m_reconnectAttemptInFlight) {
+        if (m_plannedRestartInProgress || m_reconnectAttemptInFlight) {
             return;
         }
 
@@ -1228,7 +1239,7 @@ namespace fairwindsk::signalk {
     }
 
     void Client::attemptReconnect() {
-        if (!m_Active || m_Url.isEmpty()) {
+        if (!m_Active || m_Url.isEmpty() || m_plannedRestartInProgress) {
             return;
         }
 
@@ -1239,6 +1250,43 @@ namespace fairwindsk::signalk {
 
         qInfo() << "SignalK::Client::attemptReconnect entered";
         startAsyncReconnectDiscovery();
+    }
+
+    void Client::beginPlannedServerRestart(const int gracePeriodMs) {
+        if (!m_Active || m_Url.isEmpty()) {
+            return;
+        }
+
+        m_plannedRestartInProgress = true;
+        m_reconnectRecoveryPending = true;
+        m_reconnectTimer.stop();
+        m_streamHealthTimer.stop();
+
+        if (m_reconnectAttemptInFlight) {
+            m_reconnectAttemptInFlight = false;
+        }
+
+        setRestHealth(false, tr("Signal K restarting"));
+        setStreamHealth(false, tr("Signal K restarting"));
+        emit serverMessageChanged(tr("Signal K restart requested"));
+
+        if (m_WebSocket.state() != QAbstractSocket::UnconnectedState) {
+            m_WebSocket.abort();
+            m_WebSocket.close();
+        }
+
+        m_plannedRestartTimer.start(std::max(5000, gracePeriodMs));
+    }
+
+    void Client::finishPlannedRestartGrace() {
+        if (!m_plannedRestartInProgress) {
+            return;
+        }
+
+        m_plannedRestartInProgress = false;
+        if (m_Active && !m_Url.isEmpty()) {
+            scheduleReconnect(0);
+        }
     }
 
     signalk::Waypoint Client::getWaypointByHref(const QString &href) {

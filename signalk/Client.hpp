@@ -104,6 +104,7 @@ namespace fairwindsk::signalk {
         bool isRestHealthy() const;
         bool isStreamHealthy() const;
         QString connectionStatusText() const;
+        void beginPlannedServerRestart(int gracePeriodMs = 45000);
 
         static QString getStringFromUpdateByPath(const QJsonObject &update, const QString& path = "");
         static double getDoubleFromUpdateByPath(const QJsonObject &update, const QString& path = "");
@@ -131,6 +132,7 @@ namespace fairwindsk::signalk {
         void onTextMessageReceived(QString message);
         void onStreamHealthTimeout();
         void attemptReconnect();
+        void finishPlannedRestartGrace();
 
 
 
@@ -201,6 +203,8 @@ namespace fairwindsk::signalk {
         bool m_hadStreamConnection = false;
         bool m_reconnectRecoveryPending = false;
         bool m_reconnectAttemptInFlight = false;
+        bool m_plannedRestartInProgress = false;
+        QTimer m_plannedRestartTimer;
     };
 }
 

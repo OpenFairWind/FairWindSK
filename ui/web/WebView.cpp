@@ -5,6 +5,7 @@
 #include "WebView.hpp"
 
 #include <QVBoxLayout>
+#include <QtGlobal>
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
 #include <QAuthenticator>
@@ -241,6 +242,38 @@ namespace fairwindsk::ui::web {
 #endif
     }
 
+    void WebView::setZoomPercent(const double zoomPercent) {
+        m_zoomPercent = qBound(25.0, zoomPercent, 400.0);
+        applyZoom();
+    }
+
+    QString WebView::zoomScript(const double zoomPercent) {
+        const QString factorText = QString::number(qBound(0.25, zoomPercent / 100.0, 4.0), 'f', 2);
+        return QStringLiteral(
+                   "(function(){"
+                   "const factor=%1;"
+                   "document.documentElement.style.zoom=factor;"
+                   "if (document.body) {"
+                   "document.body.style.zoom=factor;"
+                   "document.body.style.transformOrigin='top left';"
+                   "document.body.style.width=(100/factor)+'%%';"
+                   "}"
+                   "})();")
+            .arg(factorText);
+    }
+
+    void WebView::applyZoom() {
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+        if (m_desktopView) {
+            m_desktopView->setZoomFactor(m_zoomPercent / 100.0);
+        }
+#else
+        if (m_quickRoot) {
+            QMetaObject::invokeMethod(m_quickRoot, "runScript", Q_ARG(QVariant, zoomScript(m_zoomPercent)));
+        }
+#endif
+    }
+
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
     void WebView::initializeDesktop(fairwindsk::WebProfileHandle *profile) {
         m_desktopView = new QWebEngineView(this);
@@ -256,6 +289,9 @@ namespace fairwindsk::ui::web {
         });
         connect(m_desktopView, &QWebEngineView::loadFinished, this, [this](const bool success) {
             m_loadProgress = success ? 100 : -1;
+            if (success) {
+                applyZoom();
+            }
             emit loadFinished(success);
         });
         connect(m_desktopView, &QWebEngineView::urlChanged, this, &WebView::urlChanged);
@@ -503,6 +539,9 @@ namespace fairwindsk::ui::web {
 
     void WebView::handleMobileLoadFinished(const bool ok) {
         m_loadProgress = ok ? 100 : -1;
+        if (ok) {
+            applyZoom();
+        }
         emit loadFinished(ok);
     }
 

@@ -634,6 +634,10 @@ namespace fairwindsk::ui::settings {
         connect(m_appDetailsWidget->ui->lineEdit_Apps_Name, &QLineEdit::textChanged, this, &Apps::onAppsDetailsFieldsTextChanged);
         connect(m_appDetailsWidget->ui->lineEdit_Apps_Description, &QLineEdit::textChanged, this, &Apps::onAppsDetailsFieldsTextChanged);
         connect(m_appDetailsWidget->ui->lineEdit_Apps_DisplayName, &QLineEdit::textChanged, this, &Apps::onAppsDetailsFieldsTextChanged);
+        connect(m_appDetailsWidget->ui->spinBox_Apps_ZoomPercent,
+                qOverload<double>(&fairwindsk::ui::widgets::TouchSpinBox::valueChanged),
+                this,
+                [this](double) { onAppsDetailsFieldsTextChanged(QString()); });
         connect(m_appDetailsWidget->ui->pushButton_Apps_AppIcon_Browse, &QPushButton::clicked, this, &Apps::onAppsAppIconBrowse);
         connect(m_appDetailsWidget->ui->pushButton_Apps_Name_Browse, &QPushButton::clicked, this, &Apps::onAppsNameBrowse);
         connect(ui->toolButton_AddAllApps, &QToolButton::clicked, this, &Apps::onAddAllAppsClicked);
@@ -758,6 +762,7 @@ namespace fairwindsk::ui::settings {
         m_appDetailsWidget->ui->lineEdit_Apps_Name->setReadOnly(false);
         m_appDetailsWidget->ui->lineEdit_Apps_Description->setReadOnly(false);
         m_appDetailsWidget->ui->lineEdit_Apps_DisplayName->setReadOnly(false);
+        m_appDetailsWidget->ui->spinBox_Apps_ZoomPercent->setEnabled(!m_currentDetailAppName.isEmpty());
         m_appDetailsWidget->ui->pushButton_Apps_Name_Browse->setEnabled(!m_currentDetailAppName.isEmpty());
         m_appDetailsWidget->ui->pushButton_Apps_AppIcon_Browse->setEnabled(!m_currentDetailAppName.isEmpty());
         m_appsEditChanged = false;
@@ -800,6 +805,7 @@ namespace fairwindsk::ui::settings {
         appJsonObject["description"] = m_appDetailsWidget->ui->lineEdit_Apps_Description->text().trimmed().toStdString();
         appJsonObject["displayName"] = m_appDetailsWidget->ui->lineEdit_Apps_DisplayName->text().trimmed().toStdString();
         appJsonObject["signalk"]["appIcon"] = m_appDetailsWidget->appIconPath().toStdString();
+        appJsonObject["fairwind"]["zoomPercent"] = m_appDetailsWidget->ui->spinBox_Apps_ZoomPercent->value();
         m_settings->getConfiguration()->getRoot()["apps"].at(idx) = appJsonObject;
 
         if (newName != m_currentDetailAppName) {
@@ -1060,6 +1066,7 @@ namespace fairwindsk::ui::settings {
         const QSignalBlocker nameBlocker(m_appDetailsWidget->ui->lineEdit_Apps_Name);
         const QSignalBlocker descriptionBlocker(m_appDetailsWidget->ui->lineEdit_Apps_Description);
         const QSignalBlocker displayNameBlocker(m_appDetailsWidget->ui->lineEdit_Apps_DisplayName);
+        const QSignalBlocker zoomBlocker(m_appDetailsWidget->ui->spinBox_Apps_ZoomPercent);
         m_appDetailsWidget->ui->label_Apps_Version_Text->setText(appItem.getVersion());
         m_appDetailsWidget->ui->label_Apps_Url_Text->setText(appItem.getUrl());
         m_appDetailsWidget->ui->label_Apps_Copyright_Text->setText(appItem.getCopyright());
@@ -1069,6 +1076,7 @@ namespace fairwindsk::ui::settings {
         m_appDetailsWidget->ui->lineEdit_Apps_Name->setText(appItem.getName());
         m_appDetailsWidget->ui->lineEdit_Apps_Description->setText(appItem.getDescription());
         m_appDetailsWidget->ui->lineEdit_Apps_DisplayName->setText(appItem.getDisplayName());
+        m_appDetailsWidget->ui->spinBox_Apps_ZoomPercent->setValue(appItem.getZoomPercent());
         m_appDetailsWidget->setAppIconPath(appItem.getAppIcon());
 
         QPixmap pixmap = appItem.getIcon();
@@ -1084,6 +1092,7 @@ namespace fairwindsk::ui::settings {
         m_appDetailsWidget->ui->lineEdit_Apps_Description->setReadOnly(false);
         m_appDetailsWidget->ui->lineEdit_Apps_DisplayName->setEnabled(true);
         m_appDetailsWidget->ui->lineEdit_Apps_DisplayName->setReadOnly(false);
+        m_appDetailsWidget->ui->spinBox_Apps_ZoomPercent->setEnabled(true);
         m_appDetailsWidget->ui->pushButton_Apps_Name_Browse->setEnabled(true);
         m_appDetailsWidget->ui->pushButton_Apps_AppIcon_Browse->setEnabled(true);
         m_appDetailsWidget->hideIconPicker();

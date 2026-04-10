@@ -162,6 +162,29 @@
         <widget class="QLineEdit" name="lineEdit_Apps_DisplayName"/>
        </item>
        <item>
+        <widget class="QLabel" name="label_Apps_ZoomPercent">
+         <property name="text">
+          <string>Zoom</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="fairwindsk::ui::widgets::TouchSpinBox" name="spinBox_Apps_ZoomPercent">
+         <property name="minimum">
+          <double>25.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>400.000000000000000</double>
+         </property>
+         <property name="singleStep">
+          <double>5.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>100.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QLabel" name="label_Apps_AppIcon">
          <property name="visible">
           <bool>false</bool>
@@ -317,5 +340,12 @@
   </layout>
  </widget>
  <resources/>
+ <customwidgets>
+  <customwidget>
+   <class>fairwindsk::ui::widgets::TouchSpinBox</class>
+   <extends>QWidget</extends>
+   <header>ui/widgets/TouchSpinBox.hpp</header>
+  </customwidget>
+ </customwidgets>
  <connections/>
 </ui>
