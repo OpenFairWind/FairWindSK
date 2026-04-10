@@ -5,6 +5,7 @@ Autostart on Raspberry Pi
 - finds `fairwindsk.ini` in the same per-user configuration locations used by the application
 - resolves the JSON configuration path from that INI file, with legacy fallbacks for older installs
 - enables `QT_IM_MODULE=qtvirtualkeyboard` only when `main.virtualKeyboard` is enabled in `fairwindsk.json`
+- waits for the configured Signal K web-app catalog to become reachable before launching FairWindSK, so plugin tiles have a better chance of loading their real artwork during kiosk/autostart boots
 - launches `FairWindSK` from `PATH`
 - restarts the application only when it exits with code `1`
 

@@ -5,6 +5,9 @@ import os
 import shutil
 import subprocess as sp
 import sys
+import time
+import urllib.error
+import urllib.request
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -14,6 +17,9 @@ ORGANIZATION_NAME = "uniparthenope.it"
 SETTINGS_FILENAME = "fairwindsk.ini"
 CONFIG_FILENAME = "fairwindsk.json"
 RESTART_EXIT_CODE = 1
+SERVER_WAIT_TIMEOUT_SECONDS = 45
+SERVER_WAIT_INTERVAL_SECONDS = 2
+SERVER_SETTLE_DELAY_SECONDS = 2
 
 
 def log(message: str) -> None:
@@ -90,6 +96,66 @@ def read_virtual_keyboard_flag(config_path: Path) -> Optional[bool]:
     return bool(main_config["virtualKeyboard"])
 
 
+def read_signal_k_server_url(config_path: Path) -> str:
+    if not config_path.is_file():
+        return ""
+
+    try:
+        with config_path.open("r", encoding="utf-8") as handle:
+            config_data = json.load(handle)
+    except (OSError, json.JSONDecodeError) as exc:
+        log(f"Unable to read Signal K server configuration from {config_path}: {exc}")
+        return ""
+
+    connection_config = config_data.get("connection")
+    if not isinstance(connection_config, dict):
+        return ""
+
+    server_url = str(connection_config.get("server", "")).strip()
+    return server_url.rstrip("/")
+
+
+def url_is_ready(url: str) -> bool:
+    try:
+        request = urllib.request.Request(
+            url,
+            headers={
+                "Accept": "application/json",
+                "User-Agent": "fairwindsk-startup/1.0",
+            },
+        )
+        with urllib.request.urlopen(request, timeout=5) as response:
+            status_code = getattr(response, "status", response.getcode())
+            return 200 <= int(status_code) < 300
+    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, ValueError) as exc:
+        log(f"Endpoint not ready yet: {url} ({exc})")
+        return False
+
+
+def wait_for_signal_k_server(config_path: Path) -> None:
+    server_url = read_signal_k_server_url(config_path)
+    if not server_url:
+        log("No Signal K server configured, skipping autostart readiness wait.")
+        return
+
+    readiness_urls = [
+        f"{server_url}/signalk/v1/apps/list",
+        f"{server_url}/skServer/webapps",
+    ]
+
+    deadline = time.monotonic() + SERVER_WAIT_TIMEOUT_SECONDS
+    while time.monotonic() < deadline:
+        if any(url_is_ready(url) for url in readiness_urls):
+            log("Signal K application catalog is reachable.")
+            if SERVER_SETTLE_DELAY_SECONDS > 0:
+                log(f"Waiting {SERVER_SETTLE_DELAY_SECONDS}s for plugin static assets to settle.")
+                time.sleep(SERVER_SETTLE_DELAY_SECONDS)
+            return
+        time.sleep(SERVER_WAIT_INTERVAL_SECONDS)
+
+    log("Signal K application catalog did not become reachable before timeout; launching anyway.")
+
+
 def configure_environment(settings_path: Path, config_path: Path) -> Dict[str, str]:
     env = os.environ.copy()
     use_virtual_keyboard = read_virtual_keyboard_flag(config_path)
@@ -137,6 +203,7 @@ def main() -> int:
         parser = read_settings(settings_path)
         config_path = resolve_config_path(parser, settings_path)
         env = configure_environment(settings_path, config_path)
+        wait_for_signal_k_server(config_path)
 
         log(f"Startup attempt: {attempt}")
         return_code = run_once(env)

@@ -160,6 +160,7 @@ sudo touch /usr/lib/aarch64-linux-gnu/cmake/Qt6VirtualKeyboard/Qt6VirtualKeyboar
 ```
 
 - For kiosk deployments, see `extras/fairwindsk-startup.desktop` and `extras/fairwindsk-startup`.
+- The `fairwindsk-startup` helper now waits briefly for the configured Signal K web-app catalog to come online before launching FairWindSK, which improves plugin icon/artwork availability during Raspberry Pi autostart boots.
 
 ## Windows
 
