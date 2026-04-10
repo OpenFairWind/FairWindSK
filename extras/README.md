@@ -10,3 +10,5 @@ Autostart on Raspberry Pi
 - restarts the application only when it exits with code `1`
 
 It also prints simple startup diagnostics to standard output so kiosk and autostart failures are easier to debug on-device.
+
+The companion `fairwindsk-startup.desktop` file is now a fuller desktop-entry definition with a stable name/comment, `Terminal=false`, disabled startup notifications, and explicit autostart enablement so it behaves more consistently across Raspberry Pi OS desktop sessions.

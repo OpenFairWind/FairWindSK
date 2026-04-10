@@ -1,3 +1,10 @@
 [Desktop Entry]
+Version=1.0
 Type=Application
+Name=FairWindSK Startup
+Comment=Launch FairWindSK after Signal K is ready
 Exec=fairwindsk-startup
+Terminal=false
+StartupNotify=false
+Categories=Navigation;Network;Utility;
+X-GNOME-Autostart-enabled=true
