@@ -649,13 +649,17 @@ namespace fairwindsk::ui {
             setMaximumSize(width, height);
         };
 
+        const QRect fallbackGeometry(0,
+                                     0,
+                                     std::max(1, fairWindSK->getConfiguration()->getWindowWidth()),
+                                     std::max(1, fairWindSK->getConfiguration()->getWindowHeight()));
+        const QScreen *screen = QGuiApplication::primaryScreen();
+        const QRect screenGeometry = screen ? screen->geometry() : fallbackGeometry;
+
         if (fairWindSK->getConfiguration()->getWindowMode()=="centered") {
 
             const auto width = fairWindSK->getConfiguration()->getWindowWidth();
             const auto height = fairWindSK->getConfiguration()->getWindowHeight();
-
-            const QScreen *screen = QGuiApplication::primaryScreen();
-            const auto  screenGeometry = screen->geometry();
 
             const auto left = (screenGeometry.width() - width) / 2;
             const auto top = (screenGeometry.height() - height) / 2;

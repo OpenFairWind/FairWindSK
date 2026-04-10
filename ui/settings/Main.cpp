@@ -144,8 +144,13 @@ namespace fairwindsk::ui::settings {
 
         setWindowGeometryFieldsEnabled(windowMode);
 
-        QScreen *screen = QGuiApplication::primaryScreen();
-        auto  screenGeometry = screen->geometry();
+        const QScreen *screen = QGuiApplication::primaryScreen();
+        const QRect screenGeometry = screen
+                                     ? screen->geometry()
+                                     : QRect(0,
+                                             0,
+                                             std::max(1, m_settings->getConfiguration()->getWindowWidth()),
+                                             std::max(1, m_settings->getConfiguration()->getWindowHeight()));
 
         ui->lineEdit_left->setValidator( new QIntValidator(0, screenGeometry.width(), this) );
         ui->lineEdit_top->setValidator( new QIntValidator(0, screenGeometry.height(), this) );
