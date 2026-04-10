@@ -46,6 +46,8 @@ namespace fairwindsk::ui::bottombar {
 
     protected:
         void changeEvent(QEvent *event) override;
+        void resizeEvent(QResizeEvent *event) override;
+        bool eventFilter(QObject *watched, QEvent *event) override;
 
     public
         slots:
@@ -90,6 +92,7 @@ namespace fairwindsk::ui::bottombar {
 
     private:
         void applyNavigationButtonIcons() const;
+        void rebalanceNavigationBlock() const;
         void setRegularBarVisible(bool visible) const;
         void setPanelVisibility(QWidget *panel, bool visible) const;
         void hideTransientPanels(QWidget *except = nullptr) const;

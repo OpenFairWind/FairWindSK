@@ -13,6 +13,7 @@
 #include <QScroller>
 #include <QScrollerProperties>
 #include <QVBoxLayout>
+#include <QResizeEvent>
 #include "BottomBar.hpp"
 
 #include <QtWidgets/QLabel>
@@ -56,6 +57,9 @@ namespace fairwindsk::ui::bottombar {
         ui->scrollArea_Port->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         ui->scrollArea_Port->viewport()->setAutoFillBackground(false);
         ui->scrollArea_Port->viewport()->setAttribute(Qt::WA_AcceptTouchEvents, true);
+        ui->scrollArea_Port->installEventFilter(this);
+        ui->widget_Starboard->installEventFilter(this);
+        ui->widget_CenterButtons->installEventFilter(this);
         QScroller::grabGesture(ui->scrollArea_Port->viewport(), QScroller::TouchGesture);
         QScroller::grabGesture(ui->scrollArea_Port->viewport(), QScroller::LeftMouseButtonGesture);
         auto scrollerProperties = QScroller::scroller(ui->scrollArea_Port->viewport())->scrollerProperties();
@@ -149,6 +153,8 @@ namespace fairwindsk::ui::bottombar {
         connect(m_AutopilotBar, &AutopilotBar::hidden, this, [this]() { setPanelVisibility(m_AutopilotBar, false); });
         connect(m_AnchorBar, &AnchorBar::hidden, this, [this]() { setPanelVisibility(m_AnchorBar, false); });
         connect(m_AlarmsBar, &AlarmsBar::hidden, this, [this]() { setPanelVisibility(m_AlarmsBar, false); });
+
+        QTimer::singleShot(0, this, [this]() { rebalanceNavigationBlock(); });
     }
 
     /*
@@ -209,6 +215,27 @@ namespace fairwindsk::ui::bottombar {
         }
     }
 
+    void BottomBar::resizeEvent(QResizeEvent *event) {
+        QWidget::resizeEvent(event);
+        rebalanceNavigationBlock();
+    }
+
+    bool BottomBar::eventFilter(QObject *watched, QEvent *event) {
+        const bool needsRebalance = watched &&
+                                    event &&
+                                    (watched == ui->scrollArea_Port ||
+                                     watched == ui->widget_Starboard ||
+                                     watched == ui->widget_CenterButtons) &&
+                                    (event->type() == QEvent::Resize ||
+                                     event->type() == QEvent::Show ||
+                                     event->type() == QEvent::LayoutRequest);
+        if (needsRebalance) {
+            QTimer::singleShot(0, this, [this]() { rebalanceNavigationBlock(); });
+        }
+
+        return QWidget::eventFilter(watched, event);
+    }
+
     void BottomBar::applyNavigationButtonIcons() const {
         auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
         auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
@@ -224,6 +251,33 @@ namespace fairwindsk::ui::bottombar {
         fairwindsk::ui::applyTintedButtonIcon(ui->toolButton_Apps, navigationIconColor, QSize(m_iconSize, m_iconSize));
         fairwindsk::ui::applyTintedButtonIcon(ui->toolButton_Anchor, navigationIconColor, QSize(m_iconSize, m_iconSize));
         fairwindsk::ui::applyTintedButtonIcon(ui->toolButton_Settings, navigationIconColor, QSize(m_iconSize, m_iconSize));
+    }
+
+    void BottomBar::rebalanceNavigationBlock() const {
+        if (!ui || !ui->scrollArea_Port || !ui->widget_Starboard || !ui->widget_CenterButtons) {
+            return;
+        }
+
+        if (!ui->scrollArea_Port->isVisible() || !ui->widget_Starboard->isVisible() || !ui->widget_CenterButtons->isVisible()) {
+            return;
+        }
+
+        const int totalWidth = width();
+        const int centerWidth = ui->widget_CenterButtons->sizeHint().width();
+        const int spacing = ui->horizontalLayoutButtons ? ui->horizontalLayoutButtons->spacing() : 0;
+        const int availableSideWidth = std::max(0, (totalWidth - centerWidth - (2 * spacing)) / 2);
+        const int portHintWidth = std::max(ui->scrollArea_Port->sizeHint().width(), ui->scrollArea_Port->minimumSizeHint().width());
+        const int starboardHintWidth = std::max(ui->widget_Starboard->sizeHint().width(), ui->widget_Starboard->minimumSizeHint().width());
+        const int balancedSideWidth = std::min(availableSideWidth, std::max(portHintWidth, starboardHintWidth));
+
+        if (balancedSideWidth <= 0) {
+            return;
+        }
+
+        ui->scrollArea_Port->setMinimumWidth(balancedSideWidth);
+        ui->scrollArea_Port->setMaximumWidth(balancedSideWidth);
+        ui->widget_Starboard->setMinimumWidth(balancedSideWidth);
+        ui->widget_Starboard->setMaximumWidth(balancedSideWidth);
     }
 
 /*
