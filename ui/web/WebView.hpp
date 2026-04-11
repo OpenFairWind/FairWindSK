@@ -68,6 +68,8 @@ namespace fairwindsk::ui::web {
         int m_loadProgress = 100;
         QWidget *m_viewWidget = nullptr;
         double m_zoomPercent = 100.0;
+        QUrl m_restartResumeUrl;
+        bool m_restartPlaceholderVisible = false;
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         QWebEngineView *m_desktopView = nullptr;

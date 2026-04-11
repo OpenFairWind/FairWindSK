@@ -276,6 +276,7 @@ namespace fairwindsk::ui::web {
 
     void WebView::showSignalKRestartPlaceholder() {
         stop();
+        m_restartPlaceholderVisible = true;
         setHtml(QStringLiteral(
                     "<!doctype html>"
                     "<html><head><meta charset=\"utf-8\">"
@@ -314,6 +315,12 @@ namespace fairwindsk::ui::web {
         connect(m_desktopView, &QWebEngineView::loadFinished, this, [this](const bool success) {
             m_loadProgress = success ? 100 : -1;
             if (success) {
+                const QUrl currentUrl = m_desktopView ? m_desktopView->url() : QUrl();
+                if (!currentUrl.scheme().compare(QStringLiteral("data"), Qt::CaseInsensitive)) {
+                    m_restartPlaceholderVisible = true;
+                } else {
+                    m_restartPlaceholderVisible = false;
+                }
                 applyZoom();
             }
             emit loadFinished(success);
@@ -392,10 +399,32 @@ namespace fairwindsk::ui::web {
         });
 
         connect(page, &WebPage::signalKRestartConfirmed, this, [this]() {
+            const QUrl currentUrl = url();
+            if (currentUrl.isValid()
+                && !currentUrl.isEmpty()
+                && currentUrl.scheme().compare(QStringLiteral("data"), Qt::CaseInsensitive) != 0) {
+                m_restartResumeUrl = currentUrl;
+            }
             QTimer::singleShot(1500, this, [this]() {
-                showSignalKRestartPlaceholder();
+                auto *client = fairwindsk::FairWindSK::getInstance()->getSignalKClient();
+                if (client && !client->isStreamHealthy()) {
+                    showSignalKRestartPlaceholder();
+                }
             });
         });
+
+        if (auto *client = fairwindsk::FairWindSK::getInstance()->getSignalKClient()) {
+            connect(client, &fairwindsk::signalk::Client::serverStateResynchronized, this,
+                    [this](const bool recoveredFromDisconnect) {
+                        if (!recoveredFromDisconnect || !m_restartPlaceholderVisible || !m_restartResumeUrl.isValid()) {
+                            return;
+                        }
+
+                        m_restartPlaceholderVisible = false;
+                        setUrl(m_restartResumeUrl);
+                    },
+                    Qt::UniqueConnection);
+        }
 
         connect(page, &QWebEnginePage::authenticationRequired, this,
                 [this](const QUrl &requestUrl, QAuthenticator *auth) {
