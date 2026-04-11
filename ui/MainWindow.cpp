@@ -288,7 +288,11 @@ namespace fairwindsk::ui {
 
     void MainWindow::syncTopBarToCurrentPage() {
         if (m_topBar) {
-            const auto *currentWidget = ui->stackedWidget_Center->currentWidget();
+            auto *currentWidget = ui->stackedWidget_Center->currentWidget();
+            if (m_currentApp && m_currentApp->getWidget() != currentWidget) {
+                m_currentApp = nullptr;
+            }
+
             if (currentWidget == m_launcher) {
                 m_topBar->setCurrentContext(
                     m_launcher ? m_launcher->currentPageTitle() : tr("Home"),

@@ -876,11 +876,12 @@ namespace fairwindsk::ui::topbar {
     void TopBar::setCurrentApp(AppItem *appItem) {
         m_currentApp = appItem;
         if (m_currentApp) {
+            auto *widget = m_currentApp->getWidget();
             ui->toolButton_UR->setIcon(m_currentApp->getIcon());
             ui->toolButton_UR->setIconSize(QSize(32, 32));
             ui->label_ApplicationName->setText(m_currentApp->getDisplayName());
             ui->label_ApplicationName->setToolTip(m_currentApp->getDescription());
-            ui->toolButton_UR->setEnabled(qobject_cast<fairwindsk::ui::web::Web *>(m_currentApp->getWidget()) != nullptr);
+            ui->toolButton_UR->setEnabled(qobject_cast<fairwindsk::ui::web::Web *>(widget) != nullptr);
         } else {
             resetCurrentAppPresentation();
         }

@@ -7,6 +7,7 @@
 
 #include <QIcon>
 #include <QJsonObject>
+#include <QPointer>
 #include <QWidget>
 
 #include <FairWindSK.hpp>
@@ -67,7 +68,7 @@ namespace fairwindsk::ui::topbar {
         void resetCurrentAppPresentation() const;
 
         Ui::TopBar *ui;
-        AppItem *m_currentApp = nullptr;
+        QPointer<AppItem> m_currentApp;
         Units *m_units = nullptr;
         QTimer *m_timer = nullptr;
         QString m_pathCOG;

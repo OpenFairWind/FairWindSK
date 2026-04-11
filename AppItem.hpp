@@ -10,6 +10,7 @@
 #include <QImage>
 #include <QPixmap>
 #include <QProcess>
+#include <QPointer>
 #include <QString>
 #include <nlohmann/json.hpp>
 
@@ -86,7 +87,7 @@ namespace fairwindsk {
         private:
             nlohmann::json m_jsonApp;
 
-            QWidget *m_pWidget = nullptr;
+            QPointer<QWidget> m_pWidget;
             QProcess *m_pProcess = nullptr;
             QPixmap m_cachedIcon;
             bool m_hasCachedIcon = false;

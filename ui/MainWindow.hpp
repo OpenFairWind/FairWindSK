@@ -7,6 +7,7 @@
 
 #include <QMainWindow>
 #include <QMap>
+#include <QPointer>
 #include <QDebug>
 #include <QCloseEvent>
 #include <QEventLoop>
@@ -158,7 +159,7 @@ namespace fairwindsk::ui {
         bottombar::BottomBar *m_bottomBar = nullptr;
 
         // The pointer to the foreground app
-        fairwindsk::AppItem *m_currentApp = nullptr;
+        QPointer<fairwindsk::AppItem> m_currentApp;
 
         // The hotkey
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
