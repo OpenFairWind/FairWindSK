@@ -299,6 +299,15 @@ namespace fairwindsk::ui::web {
         applyZoom();
     }
 
+    void WebView::handleServerStateResynchronized(const bool recoveredFromDisconnect) {
+        if (!recoveredFromDisconnect || !m_restartPlaceholderVisible || !m_restartResumeUrl.isValid()) {
+            return;
+        }
+
+        m_restartPlaceholderVisible = false;
+        setUrl(m_restartResumeUrl);
+    }
+
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
     void WebView::initializeDesktop(fairwindsk::WebProfileHandle *profile) {
         m_desktopView = new QWebEngineView(this);
@@ -414,15 +423,10 @@ namespace fairwindsk::ui::web {
         });
 
         if (auto *client = fairwindsk::FairWindSK::getInstance()->getSignalKClient()) {
-            connect(client, &fairwindsk::signalk::Client::serverStateResynchronized, this,
-                    [this](const bool recoveredFromDisconnect) {
-                        if (!recoveredFromDisconnect || !m_restartPlaceholderVisible || !m_restartResumeUrl.isValid()) {
-                            return;
-                        }
-
-                        m_restartPlaceholderVisible = false;
-                        setUrl(m_restartResumeUrl);
-                    },
+            connect(client,
+                    &fairwindsk::signalk::Client::serverStateResynchronized,
+                    this,
+                    &WebView::handleServerStateResynchronized,
                     Qt::UniqueConnection);
         }
 

@@ -53,6 +53,7 @@ namespace fairwindsk::ui::web {
         void handleMobileCurrentUrlNotified(const QString &url);
         void handleMobileTitleChanged(const QString &title);
 #endif
+        void handleServerStateResynchronized(bool recoveredFromDisconnect);
 
     private:
         void initializeDesktop(fairwindsk::WebProfileHandle *profile);
