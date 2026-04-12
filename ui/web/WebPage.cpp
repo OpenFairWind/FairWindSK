@@ -73,6 +73,11 @@ namespace fairwindsk::ui::web {
 
     void WebPage::handleSelectClientCertificate(QWebEngineClientCertificateSelection selection)
     {
+        if (selection.certificates().isEmpty()) {
+            selection.selectNone();
+            return;
+        }
+
         // Just select one.
         selection.select(selection.certificates().at(0));
     }

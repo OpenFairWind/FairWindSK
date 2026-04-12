@@ -11,6 +11,22 @@
 
 
 namespace fairwindsk::ui::web {
+    namespace {
+        QString signalKAdminBaseUrl() {
+            auto *fairWindSK = FairWindSK::getInstance();
+            auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+            if (!configuration) {
+                return {};
+            }
+
+            const QString serverUrl = configuration->getSignalKServerUrl().trimmed();
+            if (serverUrl.isEmpty()) {
+                return {};
+            }
+
+            return serverUrl + QStringLiteral("/admin/#/serverConfiguration/plugins/");
+        }
+    }
 
     /*
      * Web
@@ -233,7 +249,7 @@ namespace fairwindsk::ui::web {
         }
 
         // Get th settings application URL
-        const QString settingsUrl = m_appItem->getSettingsUrl(FairWindSK::getInstance()->getConfiguration()->getSignalKServerUrl()+"/admin/#/serverConfiguration/plugins/");
+        const QString settingsUrl = m_appItem->getSettingsUrl(signalKAdminBaseUrl());
 
         // Check if the debug is active
         if (FairWindSK::getInstance()->isDebug()) {
@@ -295,6 +311,6 @@ namespace fairwindsk::ui::web {
         m_NavigationBar->setBackEnabled(m_webView->canGoBack());
         m_NavigationBar->setForwardEnabled(m_webView->canGoForward());
         m_NavigationBar->setHomeEnabled(m_appItem != nullptr && !m_appItem->getUrl().isEmpty());
-        m_NavigationBar->setSettingsEnabled(m_appItem != nullptr && !m_appItem->getSettingsUrl(FairWindSK::getInstance()->getConfiguration()->getSignalKServerUrl()+"/admin/#/serverConfiguration/plugins/").isEmpty());
+        m_NavigationBar->setSettingsEnabled(m_appItem != nullptr && !m_appItem->getSettingsUrl(signalKAdminBaseUrl()).isEmpty());
     }
 } // fairwindsk::ui::web
