@@ -50,7 +50,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QLineEdit" name="lineEditValue">
+    <widget class="QLabel" name="labelValue">
      <property name="minimumSize">
       <size>
        <width>0</width>
@@ -58,7 +58,10 @@
       </size>
      </property>
      <property name="alignment">
-      <set>Qt::AlignRight|Qt::AlignVCenter</set>
+      <set>Qt::AlignCenter</set>
+     </property>
+     <property name="text">
+      <string>0</string>
      </property>
     </widget>
    </item>

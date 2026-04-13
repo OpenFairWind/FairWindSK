@@ -6,10 +6,8 @@
 
 #include <QtMath>
 #include <QEvent>
-#include <QDoubleValidator>
-#include <QLineEdit>
+#include <QLabel>
 #include <QPalette>
-#include <QSignalBlocker>
 
 #include "ui/IconUtils.hpp"
 #include "ui_TouchSpinBox.h"
@@ -71,17 +69,12 @@ namespace fairwindsk::ui::widgets {
 
         ui->pushButtonMinus->setObjectName(QStringLiteral("pushButton_touchSpinBoxMinus"));
         ui->pushButtonPlus->setObjectName(QStringLiteral("pushButton_touchSpinBoxPlus"));
-        m_editor = ui->lineEditValue;
-        m_editor->setObjectName(QStringLiteral("lineEdit_touchSpinBox"));
-        m_editor->setAlignment(m_alignment);
-
-        m_validator = new QDoubleValidator(this);
-        m_validator->setNotation(QDoubleValidator::StandardNotation);
-        m_editor->setValidator(m_validator);
+        m_valueLabel = ui->labelValue;
+        m_valueLabel->setObjectName(QStringLiteral("label_touchSpinBoxValue"));
+        m_valueLabel->setAlignment(m_alignment);
 
         connect(ui->pushButtonMinus, &QPushButton::clicked, this, &TouchSpinBox::stepDown);
         connect(ui->pushButtonPlus, &QPushButton::clicked, this, &TouchSpinBox::stepUp);
-        connect(m_editor, &QLineEdit::editingFinished, this, &TouchSpinBox::applyEditedValue);
 
         applyTouchStyle();
         setRange(0.0, 99.0);
@@ -96,8 +89,15 @@ namespace fairwindsk::ui::widgets {
     }
 
     bool TouchSpinBox::event(QEvent *event) {
-        if (event && (event->type() == QEvent::PaletteChange || event->type() == QEvent::ApplicationPaletteChange)) {
-            applyTouchStyle();
+        if (event) {
+            if (event->type() == QEvent::PaletteChange || event->type() == QEvent::ApplicationPaletteChange) {
+                applyTouchStyle();
+            } else if (event->type() == QEvent::EnabledChange) {
+                refreshButtonState();
+                if (m_valueLabel) {
+                    m_valueLabel->setEnabled(isEnabled());
+                }
+            }
         }
         return QWidget::event(event);
     }
@@ -141,7 +141,6 @@ namespace fairwindsk::ui::widgets {
 
         m_minimum = minimum;
         m_maximum = maximum;
-        refreshValidator();
         setValue(m_value);
     }
 
@@ -174,14 +173,13 @@ namespace fairwindsk::ui::widgets {
 
     void TouchSpinBox::setDecimals(const int decimals) {
         m_decimals = qMax(0, decimals);
-        refreshValidator();
         setValue(m_value);
     }
 
     void TouchSpinBox::setAlignment(const Qt::Alignment alignment) {
         m_alignment = alignment;
-        if (m_editor) {
-            m_editor->setAlignment(alignment);
+        if (m_valueLabel) {
+            m_valueLabel->setAlignment(alignment);
         }
     }
 
@@ -191,13 +189,6 @@ namespace fairwindsk::ui::widgets {
 
     void TouchSpinBox::stepDown() {
         setValue(m_value - m_singleStep);
-    }
-
-    void TouchSpinBox::applyEditedValue() {
-        bool ok = false;
-        const double editedValue = parsedEditorValue(&ok);
-        setValue(ok ? editedValue : m_value);
-        emit editingFinished();
     }
 
     void TouchSpinBox::applyTouchStyle() {
@@ -219,15 +210,14 @@ namespace fairwindsk::ui::widgets {
     }
 
     void TouchSpinBox::refreshText() {
-        if (!m_editor) {
+        if (!m_valueLabel) {
             return;
         }
 
-        const QSignalBlocker blocker(m_editor);
         if (m_decimals == 0) {
-            m_editor->setText(QLocale().toString(qRound64(m_value)));
+            m_valueLabel->setText(QLocale().toString(qRound64(m_value)));
         } else {
-            m_editor->setText(QLocale().toString(m_value, 'f', m_decimals));
+            m_valueLabel->setText(QLocale().toString(m_value, 'f', m_decimals));
         }
     }
 
@@ -240,14 +230,6 @@ namespace fairwindsk::ui::widgets {
         ui->pushButtonPlus->setEnabled(isEnabled() && (m_value < m_maximum || !qFuzzyCompare(m_value + 1.0, m_maximum + 1.0)));
     }
 
-    void TouchSpinBox::refreshValidator() {
-        if (!m_validator) {
-            return;
-        }
-
-        m_validator->setRange(m_minimum, m_maximum, m_decimals);
-    }
-
     double TouchSpinBox::normalizedValue(const double value) const {
         double normalized = qBound(m_minimum, value, m_maximum);
         if (m_decimals == 0) {
@@ -257,22 +239,5 @@ namespace fairwindsk::ui::widgets {
             normalized = std::round(normalized * factor) / factor;
         }
         return normalized;
-    }
-
-    double TouchSpinBox::parsedEditorValue(bool *ok) const {
-        bool parsed = false;
-        const double localeValue = QLocale().toDouble(m_editor ? m_editor->text() : QString(), &parsed);
-        if (ok) {
-            *ok = parsed;
-        }
-        if (parsed) {
-            return localeValue;
-        }
-
-        const double fallbackValue = (m_editor ? m_editor->text().toDouble(&parsed) : 0.0);
-        if (ok) {
-            *ok = parsed;
-        }
-        return fallbackValue;
     }
 }

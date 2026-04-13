@@ -7,9 +7,8 @@
 
 #include <QWidget>
 
-class QDoubleValidator;
+class QLabel;
 class QEvent;
-class QLineEdit;
 
 namespace fairwindsk::ui::widgets {
     QT_BEGIN_NAMESPACE
@@ -51,23 +50,16 @@ namespace fairwindsk::ui::widgets {
     signals:
         void valueChanged(double value);
         void valueChanged(int value);
-        void editingFinished();
-
-    private slots:
-        void applyEditedValue();
 
     private:
         bool event(QEvent *event) override;
         void applyTouchStyle();
         void refreshText();
         void refreshButtonState();
-        void refreshValidator();
         double normalizedValue(double value) const;
-        double parsedEditorValue(bool *ok = nullptr) const;
 
         Ui::TouchSpinBox *ui = nullptr;
-        QLineEdit *m_editor = nullptr;
-        QDoubleValidator *m_validator = nullptr;
+        QLabel *m_valueLabel = nullptr;
         double m_minimum = 0.0;
         double m_maximum = 99.0;
         double m_value = 0.0;
