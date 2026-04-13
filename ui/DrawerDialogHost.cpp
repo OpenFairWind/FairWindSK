@@ -44,6 +44,20 @@ namespace fairwindsk::ui::drawer {
             SaveFile
         };
 
+        struct DrawerBrowserColors {
+            QColor panelBackground;
+            QColor cardBackground;
+            QColor fieldBackground;
+            QColor border;
+            QColor text;
+            QColor mutedText;
+            QColor icon;
+            QColor accentTrack;
+            QColor accentTop;
+            QColor accentMid;
+            QColor accentBottom;
+        };
+
         MainWindow *resolveMainWindow(QWidget *parent) {
             if (parent) {
                 if (auto *mainWindow = qobject_cast<MainWindow *>(parent->window())) {
@@ -127,6 +141,150 @@ namespace fairwindsk::ui::drawer {
             return {};
         }
 
+        DrawerBrowserColors effectiveDrawerBrowserColors(const QPalette &palette) {
+            DrawerBrowserColors colors;
+            auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+            const auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+            const auto scrollPalette = fairWindSK
+                ? fairWindSK->getActiveComfortScrollPalette(configuration)
+                : fairwindsk::UiScrollPalette{};
+            const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+
+            colors.panelBackground = palette.color(QPalette::Window);
+            colors.cardBackground = palette.color(QPalette::Base);
+            colors.fieldBackground = palette.color(QPalette::AlternateBase);
+            colors.border = palette.color(QPalette::Mid);
+            colors.text = palette.color(QPalette::WindowText);
+            colors.mutedText = palette.color(QPalette::Midlight);
+            colors.accentTrack = scrollPalette.track.isValid() ? scrollPalette.track : palette.color(QPalette::Button);
+            colors.accentTop = scrollPalette.handleTop.isValid() ? scrollPalette.handleTop : palette.color(QPalette::Button).lighter(145);
+            colors.accentMid = scrollPalette.handleMid.isValid() ? scrollPalette.handleMid : palette.color(QPalette::Button).lighter(118);
+            colors.accentBottom = scrollPalette.handleBottom.isValid() ? scrollPalette.handleBottom : palette.color(QPalette::Button).darker(116);
+            colors.icon = fairwindsk::ui::comfortIconColor(
+                configuration,
+                preset,
+                fairwindsk::ui::bestContrastingColor(
+                    colors.accentMid,
+                    {palette.color(QPalette::Text),
+                     palette.color(QPalette::ButtonText),
+                     palette.color(QPalette::WindowText)}));
+            return colors;
+        }
+
+        QString drawerButtonStyle(const DrawerBrowserColors &colors, const bool accent = false) {
+            const QColor top = accent ? colors.accentTop : colors.accentTrack.lighter(120);
+            const QColor mid = accent ? colors.accentMid : colors.accentTrack;
+            const QColor bottom = accent ? colors.accentBottom : colors.accentTrack.darker(118);
+            const QColor border = accent ? colors.accentBottom : colors.border;
+
+            return QStringLiteral(
+                "QPushButton {"
+                " min-width: 64px;"
+                " min-height: 64px;"
+                " padding: 0px;"
+                " border: 1px solid %1;"
+                " border-radius: 14px;"
+                " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
+                " stop:0 %2, stop:0.42 %3, stop:1 %4);"
+                " }"
+                "QPushButton:hover {"
+                " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
+                " stop:0 %5, stop:0.42 %6, stop:1 %7);"
+                " }"
+                "QPushButton:pressed {"
+                " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
+                " stop:0 %8, stop:0.42 %9, stop:1 %10);"
+                " }"
+                "QPushButton:disabled {"
+                " background: %11;"
+                " border-color: %12;"
+                " }")
+                .arg(border.name(),
+                     top.name(), mid.name(), bottom.name(),
+                     top.lighter(108).name(), mid.lighter(104).name(), bottom.lighter(106).name(),
+                     mid.darker(112).name(), bottom.darker(108).name(), bottom.darker(118).name(),
+                     colors.fieldBackground.name(), colors.border.name());
+        }
+
+        QString drawerLineEditStyle(const DrawerBrowserColors &colors) {
+            return QStringLiteral(
+                "QLineEdit {"
+                " min-height: 62px;"
+                " padding: 0 18px;"
+                " border: 1px solid %1;"
+                " border-radius: 14px;"
+                " background: %2;"
+                " color: %3;"
+                " font-size: 20px;"
+                " }"
+                "QLineEdit:focus {"
+                " border-color: %4;"
+                " }")
+                .arg(colors.border.name(),
+                     colors.fieldBackground.name(),
+                     colors.text.name(),
+                     colors.accentMid.name());
+        }
+
+        QString drawerLabelStyle(const DrawerBrowserColors &colors,
+                                 const int pointSize,
+                                 const int weight,
+                                 const QColor &color = QColor()) {
+            const QColor effectiveColor = color.isValid() ? color : colors.text;
+            return QStringLiteral("color: %1; font-size: %2px; font-weight: %3;")
+                .arg(effectiveColor.name())
+                .arg(pointSize)
+                .arg(weight);
+        }
+
+        QString drawerCardStyle(const DrawerBrowserColors &colors) {
+            return QStringLiteral(
+                "QFrame {"
+                " border: 1px solid %1;"
+                " border-radius: 18px;"
+                " background: %2;"
+                " }")
+                .arg(colors.border.name(), colors.cardBackground.name());
+        }
+
+        QString drawerTreeStyle(const DrawerBrowserColors &colors) {
+            return QStringLiteral(
+                "QTreeView {"
+                " background: transparent;"
+                " color: %1;"
+                " font-size: 20px;"
+                " alternate-background-color: rgba(255, 255, 255, 0.03);"
+                " border: none;"
+                " outline: none;"
+                " show-decoration-selected: 1;"
+                " }"
+                "QTreeView::item {"
+                " min-height: 60px;"
+                " padding: 8px 14px;"
+                " border-radius: 10px;"
+                " }"
+                "QTreeView::item:selected {"
+                " background: %2;"
+                " color: %3;"
+                " }"
+                "QHeaderView::section {"
+                " min-height: 48px;"
+                " padding: 0 14px;"
+                " background: %4;"
+                " color: %5;"
+                " border: none;"
+                " border-bottom: 1px solid %6;"
+                " font-size: 16px;"
+                " font-weight: 700;"
+                " }")
+                .arg(colors.text.name(),
+                     colors.accentTrack.name(),
+                     colors.icon.name(),
+                     colors.fieldBackground.name(),
+                     colors.mutedText.name(),
+                     colors.border.name());
+        }
+
         class DrawerFileBrowserWidget final : public QWidget {
         public:
             DrawerFileBrowserWidget(const FileBrowserMode mode,
@@ -135,44 +293,48 @@ namespace fairwindsk::ui::drawer {
                                     const QStringList &nameFilters,
                                     QWidget *parent = nullptr)
                 : QWidget(parent), m_mode(mode), m_nameFilters(nameFilters) {
-                setStyleSheet(QStringLiteral(
-                    "QPushButton#drawerNavButton, QPushButton#drawerActionButton {"
-                    " min-width: 52px; min-height: 52px; padding: 0px; }"
-                    "QLineEdit#drawerPathEdit, QLineEdit#drawerFileNameEdit {"
-                    " min-height: 52px; padding: 0 14px; font-size: 18px; }"
-                    "QLabel#drawerFileNameLabel { font-size: 15px; font-weight: 600; }"
-                    "QTreeView { font-size: 18px; alternate-background-color: rgba(255, 255, 255, 0.04); }"
-                    "QTreeView::item { min-height: 44px; }"
-                    "QHeaderView::section {"
-                    " min-height: 42px; padding: 0 12px; font-size: 15px; font-weight: 600; }"));
+                setObjectName(QStringLiteral("drawerFileBrowserWidget"));
                 setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
                 auto *layout = new QVBoxLayout(this);
                 layout->setContentsMargins(0, 0, 0, 0);
-                layout->setSpacing(12);
+                layout->setSpacing(14);
+
+                auto *titleRow = new QHBoxLayout();
+                titleRow->setContentsMargins(0, 0, 0, 0);
+                titleRow->setSpacing(12);
+
+                m_titleLabel = new QLabel(m_mode == FileBrowserMode::SaveFile ? tr("Save file") : tr("Select file"), this);
+                titleRow->addWidget(m_titleLabel);
+
+                m_statusLabel = new QLabel(this);
+                m_statusLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                titleRow->addWidget(m_statusLabel, 1);
+
+                layout->addLayout(titleRow);
 
                 auto *toolbarLayout = new QHBoxLayout();
                 toolbarLayout->setContentsMargins(0, 0, 0, 0);
-                toolbarLayout->setSpacing(10);
+                toolbarLayout->setSpacing(12);
 
                 m_backButton = new QPushButton(this);
                 m_backButton->setObjectName(QStringLiteral("drawerNavButton"));
                 m_backButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/arrow-left-google.svg")));
-                m_backButton->setIconSize(QSize(28, 28));
+                m_backButton->setIconSize(QSize(32, 32));
                 m_backButton->setToolTip(tr("Close"));
                 toolbarLayout->addWidget(m_backButton);
 
                 m_homeButton = new QPushButton(this);
                 m_homeButton->setObjectName(QStringLiteral("drawerNavButton"));
                 m_homeButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/home.svg")));
-                m_homeButton->setIconSize(QSize(28, 28));
+                m_homeButton->setIconSize(QSize(32, 32));
                 m_homeButton->setToolTip(tr("Home"));
                 toolbarLayout->addWidget(m_homeButton);
 
                 m_upButton = new QPushButton(this);
                 m_upButton->setObjectName(QStringLiteral("drawerNavButton"));
                 m_upButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/arrow-up-google.svg")));
-                m_upButton->setIconSize(QSize(28, 28));
+                m_upButton->setIconSize(QSize(32, 32));
                 m_upButton->setToolTip(tr("Up"));
                 toolbarLayout->addWidget(m_upButton);
 
@@ -184,11 +346,19 @@ namespace fairwindsk::ui::drawer {
                 m_acceptButton = new QPushButton(this);
                 m_acceptButton->setObjectName(QStringLiteral("drawerActionButton"));
                 m_acceptButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/arrow-right-google.svg")));
-                m_acceptButton->setIconSize(QSize(28, 28));
+                m_acceptButton->setIconSize(QSize(32, 32));
                 m_acceptButton->setToolTip(m_mode == FileBrowserMode::SaveFile ? tr("Save") : tr("Open"));
                 toolbarLayout->addWidget(m_acceptButton);
 
                 layout->addLayout(toolbarLayout);
+
+                m_selectionLabel = new QLabel(this);
+                layout->addWidget(m_selectionLabel);
+
+                auto *browserFrame = new QFrame(this);
+                auto *browserLayout = new QVBoxLayout(browserFrame);
+                browserLayout->setContentsMargins(12, 12, 12, 12);
+                browserLayout->setSpacing(10);
 
                 m_view = new QTreeView(this);
                 m_view->setAlternatingRowColors(true);
@@ -197,16 +367,25 @@ namespace fairwindsk::ui::drawer {
                 m_view->setSortingEnabled(true);
                 m_view->setUniformRowHeights(true);
                 m_view->setIndentation(0);
-                m_view->setIconSize(QSize(28, 28));
+                m_view->setSelectionBehavior(QAbstractItemView::SelectRows);
+                m_view->setSelectionMode(QAbstractItemView::SingleSelection);
+                m_view->setAllColumnsShowFocus(true);
+                m_view->setIconSize(QSize(36, 36));
                 m_view->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
                 m_view->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
-                m_view->header()->setMinimumHeight(42);
+                m_view->setTextElideMode(Qt::ElideMiddle);
+                m_view->header()->setMinimumHeight(48);
                 m_view->header()->setDefaultAlignment(Qt::AlignLeft | Qt::AlignVCenter);
                 m_view->header()->setStretchLastSection(true);
                 m_view->header()->setSectionResizeMode(0, QHeaderView::Stretch);
+                m_view->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+                m_view->header()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
                 m_view->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
                 m_view->sortByColumn(0, Qt::AscendingOrder);
-                layout->addWidget(m_view, 1);
+                browserLayout->addWidget(m_view, 1);
+                layout->addWidget(browserFrame, 1);
+
+                m_browserFrame = browserFrame;
 
                 if (m_mode == FileBrowserMode::SaveFile) {
                     auto *nameLabel = new QLabel(tr("File name"), this);
@@ -219,7 +398,7 @@ namespace fairwindsk::ui::drawer {
                     layout->addWidget(m_nameEdit);
                 }
 
-                setMinimumHeight(m_mode == FileBrowserMode::SaveFile ? 720 : 680);
+                setMinimumHeight(m_mode == FileBrowserMode::SaveFile ? 780 : 740);
 
                 m_model = new QFileSystemModel(this);
                 m_model->setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot);
@@ -229,18 +408,17 @@ namespace fairwindsk::ui::drawer {
                 }
 
                 m_view->setModel(m_model);
-                m_view->hideColumn(1);
                 m_view->hideColumn(2);
-                m_view->hideColumn(3);
-                const int minimumVisibleRows = (m_mode == FileBrowserMode::SaveFile) ? 12 : 10;
-                const int rowHeight = qMax(44, m_view->sizeHintForRow(0));
+                const int minimumVisibleRows = (m_mode == FileBrowserMode::SaveFile) ? 11 : 10;
+                const int rowHeight = 60;
                 const int headerHeight = m_view->header()->sizeHint().height();
                 const int frameHeight = m_view->frameWidth() * 2;
                 m_view->setMinimumHeight(headerHeight + frameHeight + (rowHeight * minimumVisibleRows));
 
                 const QString initialDirectory = QFileInfo(directory).isDir() ? directory : defaultBrowserDirectory();
                 navigateTo(initialDirectory);
-                applyComfortIcons();
+                updateSelectionSummary();
+                applyComfortChrome();
 
                 connect(m_backButton, &QPushButton::clicked, this, [this]() { finishDrawer(int(QMessageBox::Cancel)); });
                 connect(m_homeButton, &QPushButton::clicked, this, [this]() { navigateTo(defaultBrowserDirectory()); });
@@ -259,6 +437,9 @@ namespace fairwindsk::ui::drawer {
                         navigateTo(info.absoluteFilePath());
                     }
                 });
+                if (m_nameEdit) {
+                    connect(m_nameEdit, &QLineEdit::textChanged, this, [this]() { updateSelectionSummary(); });
+                }
                 connect(m_view, &QTreeView::clicked, this, [this](const QModelIndex &index) { handleSelection(index, false); });
                 connect(m_view, &QTreeView::doubleClicked, this, [this](const QModelIndex &index) { handleSelection(index, true); });
             }
@@ -335,8 +516,15 @@ namespace fairwindsk::ui::drawer {
                 if (event && (event->type() == QEvent::PaletteChange
                               || event->type() == QEvent::ApplicationPaletteChange
                               || event->type() == QEvent::StyleChange)) {
-                    applyComfortIcons();
+                    applyComfortChrome();
                 }
+            }
+
+            bool eventFilter(QObject *watched, QEvent *event) override {
+                if (watched == m_geometryHost && event && event->type() == QEvent::Resize) {
+                    updateDrawerGeometry();
+                }
+                return QWidget::eventFilter(watched, event);
             }
 
         private:
@@ -351,8 +539,15 @@ namespace fairwindsk::ui::drawer {
                     return;
                 }
 
-                const int reservedHeight = m_mode == FileBrowserMode::SaveFile ? 64 : 32;
-                const int targetHeight = qMax(availableHeight - reservedHeight, 680);
+                if (m_geometryHost != mainWindow->getUi()->stackedWidget_Center) {
+                    if (m_geometryHost) {
+                        m_geometryHost->removeEventFilter(this);
+                    }
+                    m_geometryHost = mainWindow->getUi()->stackedWidget_Center;
+                    m_geometryHost->installEventFilter(this);
+                }
+
+                const int targetHeight = qMax(availableHeight - 8, m_mode == FileBrowserMode::SaveFile ? 780 : 740);
                 setMinimumHeight(targetHeight);
                 setMaximumHeight(targetHeight);
             }
@@ -363,7 +558,44 @@ namespace fairwindsk::ui::drawer {
                 }
             }
 
-            void applyComfortIcons() const {
+            void applyComfortChrome() {
+                const DrawerBrowserColors colors = effectiveDrawerBrowserColors(palette());
+
+                setStyleSheet(QStringLiteral("QWidget#drawerFileBrowserWidget { background: %1; }").arg(colors.panelBackground.name()));
+                if (m_titleLabel) {
+                    m_titleLabel->setStyleSheet(drawerLabelStyle(colors, 26, 700));
+                }
+                if (m_statusLabel) {
+                    m_statusLabel->setStyleSheet(drawerLabelStyle(colors, 16, 600, colors.mutedText));
+                }
+                if (m_selectionLabel) {
+                    m_selectionLabel->setStyleSheet(drawerLabelStyle(colors, 18, 600));
+                }
+                if (m_browserFrame) {
+                    m_browserFrame->setStyleSheet(drawerCardStyle(colors));
+                }
+                if (m_nameEdit) {
+                    m_nameEdit->setStyleSheet(drawerLineEditStyle(colors));
+                }
+                if (m_pathEdit) {
+                    m_pathEdit->setStyleSheet(drawerLineEditStyle(colors));
+                }
+                if (m_backButton) {
+                    m_backButton->setStyleSheet(drawerButtonStyle(colors));
+                }
+                if (m_homeButton) {
+                    m_homeButton->setStyleSheet(drawerButtonStyle(colors));
+                }
+                if (m_upButton) {
+                    m_upButton->setStyleSheet(drawerButtonStyle(colors));
+                }
+                if (m_acceptButton) {
+                    m_acceptButton->setStyleSheet(drawerButtonStyle(colors, true));
+                }
+                if (m_view) {
+                    m_view->setStyleSheet(drawerTreeStyle(colors) + fairwindsk::ui::widgets::TouchScrollArea::scrollBarStyleSheet());
+                }
+
                 auto *fairWindSK = FairWindSK::getInstance();
                 const auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
                 const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("day");
@@ -392,6 +624,10 @@ namespace fairwindsk::ui::drawer {
                 m_pathEdit->setText(m_currentDirectory);
                 m_selectedPath.clear();
                 m_upButton->setEnabled(QDir(m_currentDirectory).cdUp());
+                if (m_view->selectionModel()) {
+                    m_view->selectionModel()->clearSelection();
+                }
+                updateSelectionSummary();
             }
 
             void handleSelection(const QModelIndex &index, const bool activate) {
@@ -411,8 +647,36 @@ namespace fairwindsk::ui::drawer {
                 if (m_nameEdit) {
                     m_nameEdit->setText(info.fileName());
                 }
+                updateSelectionSummary();
                 if (activate) {
                     finishDrawer(m_mode == FileBrowserMode::SaveFile ? int(QMessageBox::Save) : int(QMessageBox::Open));
+                }
+            }
+
+            void updateSelectionSummary() {
+                const QString currentName = fileName();
+                if (m_statusLabel) {
+                    const QFileInfo directoryInfo(m_currentDirectory);
+                    m_statusLabel->setText(directoryInfo.fileName().isEmpty() ? m_currentDirectory : directoryInfo.fileName());
+                }
+
+                if (!m_selectionLabel) {
+                    return;
+                }
+
+                if (m_mode == FileBrowserMode::SaveFile) {
+                    if (currentName.isEmpty()) {
+                        m_selectionLabel->setText(tr("Choose a destination folder and enter a file name."));
+                    } else {
+                        m_selectionLabel->setText(tr("Destination: %1").arg(QDir(m_currentDirectory).filePath(currentName)));
+                    }
+                    return;
+                }
+
+                if (m_selectedPath.isEmpty()) {
+                    m_selectionLabel->setText(tr("Tap a file once to select it, or double tap to open it."));
+                } else {
+                    m_selectionLabel->setText(tr("Selected file: %1").arg(QFileInfo(m_selectedPath).fileName()));
                 }
             }
 
@@ -424,10 +688,15 @@ namespace fairwindsk::ui::drawer {
             QTreeView *m_view = nullptr;
             QLineEdit *m_pathEdit = nullptr;
             QLineEdit *m_nameEdit = nullptr;
+            QLabel *m_titleLabel = nullptr;
+            QLabel *m_statusLabel = nullptr;
+            QLabel *m_selectionLabel = nullptr;
+            QFrame *m_browserFrame = nullptr;
             QPushButton *m_backButton = nullptr;
             QPushButton *m_homeButton = nullptr;
             QPushButton *m_upButton = nullptr;
             QPushButton *m_acceptButton = nullptr;
+            QWidget *m_geometryHost = nullptr;
         };
 
         struct IconEntry {
