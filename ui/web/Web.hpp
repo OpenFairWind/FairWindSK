@@ -45,6 +45,8 @@ namespace fairwindsk::ui::web {
         void onBackClicked();
         void onForwardClicked();
         void onReloadClicked();
+        void onZoomOutClicked();
+        void onZoomInClicked();
         void onSettingsClicked();
         void onCloseClicked();
 
@@ -55,6 +57,8 @@ namespace fairwindsk::ui::web {
         void syncNavigationState();
 
     private:
+        void adjustZoomPercent(double delta);
+        void applyZoomPercent(double zoomPercent);
         Ui::Web *ui = nullptr;
 
         WebView *m_webView = nullptr;

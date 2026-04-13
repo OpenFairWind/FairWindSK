@@ -24,12 +24,15 @@ namespace fairwindsk::ui::web {
         void setHomeEnabled(bool enabled) const;
         void setSettingsEnabled(bool enabled) const;
         void setReloadActive(bool loading) const;
+        void setZoomPercent(double zoomPercent) const;
 
     public slots:
         void onHomeClicked();
         void onBackClicked();
         void onForwardClicked();
         void onReloadClicked();
+        void onZoomOutClicked();
+        void onZoomInClicked();
         void onSettingsClicked();
         void onCloseClicked();
 
@@ -38,6 +41,8 @@ namespace fairwindsk::ui::web {
         void back();
         void forward();
         void reload();
+        void zoomOut();
+        void zoomIn();
         void settings();
         void close();
 

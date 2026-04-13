@@ -35,6 +35,7 @@ namespace fairwindsk::ui::web {
         bool canGoBack() const;
         bool canGoForward() const;
         void runJavaScript(const QString &script);
+        double zoomPercent() const;
         void setZoomPercent(double zoomPercent);
 
     signals:

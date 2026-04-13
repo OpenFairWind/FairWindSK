@@ -242,6 +242,10 @@ namespace fairwindsk::ui::web {
 #endif
     }
 
+    double WebView::zoomPercent() const {
+        return m_zoomPercent;
+    }
+
     void WebView::setZoomPercent(const double zoomPercent) {
         m_zoomPercent = qBound(25.0, zoomPercent, 400.0);
         applyZoom();

@@ -12,6 +12,8 @@
 
 namespace fairwindsk::ui::web {
     namespace {
+        constexpr double kZoomStepPercent = 25.0;
+
         QString signalKAdminBaseUrl() {
             auto *fairWindSK = FairWindSK::getInstance();
             auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
@@ -65,6 +67,10 @@ namespace fairwindsk::ui::web {
         // Connect the reload button handler
         connect(m_NavigationBar, &NavigationBar::reload, this, &Web::onReloadClicked);
 
+        // Connect zoom controls
+        connect(m_NavigationBar, &NavigationBar::zoomOut, this, &Web::onZoomOutClicked);
+        connect(m_NavigationBar, &NavigationBar::zoomIn, this, &Web::onZoomInClicked);
+
         // Connect the settings button handler
         connect(m_NavigationBar, &NavigationBar::settings, this, &Web::onSettingsClicked);
 
@@ -80,6 +86,7 @@ namespace fairwindsk::ui::web {
         if (m_appItem) {
             m_webView->setZoomPercent(m_appItem->getZoomPercent());
         }
+        m_NavigationBar->setZoomPercent(m_webView->zoomPercent());
 
         // Add the web view widget to the user interface
         ui->verticalLayout_WebView->addWidget(m_webView);
@@ -224,6 +231,14 @@ namespace fairwindsk::ui::web {
         }
     }
 
+    void Web::onZoomOutClicked() {
+        adjustZoomPercent(-kZoomStepPercent);
+    }
+
+    void Web::onZoomInClicked() {
+        adjustZoomPercent(kZoomStepPercent);
+    }
+
     /*
      * onCloseClicked
      * Handler of the settings button
@@ -303,6 +318,45 @@ namespace fairwindsk::ui::web {
         syncNavigationState();
     }
 
+    void Web::adjustZoomPercent(const double delta) {
+        if (!m_webView) {
+            return;
+        }
+
+        applyZoomPercent(m_webView->zoomPercent() + delta);
+    }
+
+    void Web::applyZoomPercent(const double zoomPercent) {
+        if (!m_webView) {
+            return;
+        }
+
+        m_webView->setZoomPercent(zoomPercent);
+        const double normalizedZoom = m_webView->zoomPercent();
+
+        if (m_NavigationBar) {
+            m_NavigationBar->setZoomPercent(normalizedZoom);
+        }
+
+        if (m_appItem) {
+            m_appItem->setZoomPercent(normalizedZoom);
+        }
+
+        auto *fairWindSK = FairWindSK::getInstance();
+        auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        if (!configuration || !m_appItem) {
+            return;
+        }
+
+        const int appIndex = configuration->findApp(m_appItem->getName());
+        if (appIndex == -1) {
+            return;
+        }
+
+        configuration->getRoot()["apps"].at(appIndex)["fairwind"]["zoomPercent"] = normalizedZoom;
+        configuration->save();
+    }
+
     void Web::syncNavigationState() {
         if (!m_NavigationBar || !m_webView) {
             return;
@@ -312,5 +366,6 @@ namespace fairwindsk::ui::web {
         m_NavigationBar->setForwardEnabled(m_webView->canGoForward());
         m_NavigationBar->setHomeEnabled(m_appItem != nullptr && !m_appItem->getUrl().isEmpty());
         m_NavigationBar->setSettingsEnabled(m_appItem != nullptr && !m_appItem->getSettingsUrl(signalKAdminBaseUrl()).isEmpty());
+        m_NavigationBar->setZoomPercent(m_webView->zoomPercent());
     }
 } // fairwindsk::ui::web
