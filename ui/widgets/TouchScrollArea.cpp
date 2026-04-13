@@ -16,20 +16,56 @@
 #include <QStyle>
 #include <QTimer>
 
+#include "FairWindSK.hpp"
 #include "ui/IconUtils.hpp"
 
 namespace fairwindsk::ui::widgets {
     namespace {
+        struct TouchScrollColors {
+            QColor track;
+            QColor handleTop;
+            QColor handleMid;
+            QColor handleBottom;
+            QColor border;
+            QColor icon;
+            QColor disabled;
+            QColor disabledText;
+            QColor disabledBorder;
+        };
+
         constexpr int kTouchScrollControlSize = 44;
         constexpr int kTouchScrollControlSpacing = 4;
         constexpr int kTouchScrollReservedExtent = kTouchScrollControlSize + kTouchScrollControlSpacing;
 
-        QString touchScrollButtonStyle(const QPalette &palette) {
-            const QColor base = palette.color(QPalette::Button);
-            const QColor border = palette.color(QPalette::Mid);
-            const QColor light = base.lighter(150);
-            const QColor mid = base.lighter(120);
-            const QColor dark = base.darker(120);
+        TouchScrollColors effectiveScrollColors(const QPalette &palette) {
+            TouchScrollColors colors;
+            colors.border = palette.color(QPalette::Mid);
+            colors.disabled = palette.color(QPalette::AlternateBase);
+            colors.disabledText = palette.color(QPalette::Disabled, QPalette::ButtonText);
+            colors.disabledBorder = palette.color(QPalette::Disabled, QPalette::Mid);
+
+            auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+            const auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+            const auto scrollPalette = fairWindSK
+                ? fairWindSK->getActiveComfortScrollPalette(configuration)
+                : fairwindsk::UiScrollPalette{};
+
+            colors.track = scrollPalette.track.isValid() ? scrollPalette.track : palette.color(QPalette::Button);
+            colors.handleTop = scrollPalette.handleTop.isValid() ? scrollPalette.handleTop : palette.color(QPalette::Button).lighter(145);
+            colors.handleMid = scrollPalette.handleMid.isValid() ? scrollPalette.handleMid : palette.color(QPalette::Button).lighter(118);
+            colors.handleBottom = scrollPalette.handleBottom.isValid() ? scrollPalette.handleBottom : palette.color(QPalette::Button).darker(116);
+            colors.icon = fairwindsk::ui::comfortIconColor(
+                configuration,
+                fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default"),
+                fairwindsk::ui::bestContrastingColor(
+                    colors.handleMid,
+                    {palette.color(QPalette::Text),
+                     palette.color(QPalette::ButtonText),
+                     palette.color(QPalette::WindowText)}));
+            return colors;
+        }
+
+        QString touchScrollButtonStyle(const TouchScrollColors &colors) {
             return QStringLiteral(
                 "QPushButton {"
                 " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
@@ -57,23 +93,14 @@ namespace fairwindsk::ui::widgets {
                 " color: %13;"
                 " border-color: %14;"
                 " }")
-                .arg(light.name(), mid.name(), dark.name(), border.name(),
-                     light.darker(108).name(), dark.name(),
-                     light.lighter(110).name(), mid.lighter(108).name(), dark.lighter(108).name(),
-                     base.darker(115).name(), base.lighter(120).name(),
-                     palette.color(QPalette::AlternateBase).name(),
-                     palette.color(QPalette::Disabled, QPalette::ButtonText).name(),
-                     palette.color(QPalette::Disabled, QPalette::Mid).name());
+                .arg(colors.handleTop.name(), colors.handleMid.name(), colors.handleBottom.name(), colors.border.name(),
+                     colors.handleTop.darker(108).name(), colors.handleBottom.name(),
+                     colors.handleTop.lighter(110).name(), colors.handleMid.lighter(108).name(), colors.handleBottom.lighter(108).name(),
+                     colors.handleMid.darker(115).name(), colors.handleTop.lighter(120).name(),
+                     colors.disabled.name(), colors.disabledText.name(), colors.disabledBorder.name());
         }
 
-        QString touchScrollBarStyle(const QPalette &palette) {
-            const QColor track = palette.color(QPalette::Button);
-            const QColor handle = palette.color(QPalette::Button);
-            const QColor border = palette.color(QPalette::Mid);
-            const QColor handleTop = handle.lighter(145);
-            const QColor handleMid = handle.lighter(118);
-            const QColor handleBottom = handle.darker(116);
-
+        QString touchScrollBarStyle(const TouchScrollColors &colors) {
             return QStringLiteral(
                 "QScrollBar:vertical {"
                 " background: %1;"
@@ -147,13 +174,14 @@ namespace fairwindsk::ui::widgets {
                 " background: transparent;"
                 " border: none;"
                 " }")
-                .arg(track.name(), handleTop.name(), handleMid.name(), handleBottom.name(), border.name(),
-                     handleTop.darker(108).name(), handleBottom.name(),
-                     handleTop.lighter(110).name(), handleMid.lighter(108).name(), handleBottom.lighter(108).name(),
-                     handle.darker(115).name(), handle.lighter(120).name());
+                .arg(colors.track.name(), colors.handleTop.name(), colors.handleMid.name(), colors.handleBottom.name(), colors.border.name(),
+                     colors.handleTop.darker(108).name(), colors.handleBottom.name(),
+                     colors.handleTop.lighter(110).name(), colors.handleMid.lighter(108).name(), colors.handleBottom.lighter(108).name(),
+                     colors.handleMid.darker(115).name(), colors.handleTop.lighter(120).name());
         }
 
         QString touchScrollAreaStyle(const QPalette &palette, const bool borderless) {
+            const TouchScrollColors colors = effectiveScrollColors(palette);
             const QString areaStyle = borderless
                 ? QStringLiteral(
                     "QScrollArea {"
@@ -172,7 +200,7 @@ namespace fairwindsk::ui::widgets {
                     " }")
                     .arg(palette.color(QPalette::Mid).name(), palette.color(QPalette::Base).name());
 
-            return areaStyle + touchScrollBarStyle(palette);
+            return areaStyle + touchScrollBarStyle(colors);
         }
     }
 
@@ -181,7 +209,7 @@ namespace fairwindsk::ui::widgets {
     }
 
     QString TouchScrollArea::scrollBarStyleSheet() {
-        return touchScrollBarStyle(QApplication::palette());
+        return touchScrollBarStyle(effectiveScrollColors(QApplication::palette()));
     }
 
     bool TouchScrollArea::isBorderless() const {
@@ -244,58 +272,35 @@ namespace fairwindsk::ui::widgets {
         m_isApplyingStyle = true;
         const QPalette activePalette = palette();
         const QString scrollAreaStyle = touchScrollAreaStyle(activePalette, m_borderless);
+        const TouchScrollColors colors = effectiveScrollColors(activePalette);
         if (styleSheet() != scrollAreaStyle) {
             setStyleSheet(scrollAreaStyle);
         }
 
-        const QString buttonStyle = touchScrollButtonStyle(activePalette);
+        const QString buttonStyle = touchScrollButtonStyle(colors);
         if (m_verticalUpButton) {
             if (m_verticalUpButton->styleSheet() != buttonStyle) {
                 m_verticalUpButton->setStyleSheet(buttonStyle);
             }
-            fairwindsk::ui::applyTintedButtonIcon(
-                m_verticalUpButton,
-                fairwindsk::ui::bestContrastingColor(
-                    activePalette.color(QPalette::Button),
-                    {activePalette.color(QPalette::Text),
-                     activePalette.color(QPalette::ButtonText),
-                     activePalette.color(QPalette::WindowText)}));
+            fairwindsk::ui::applyTintedButtonIcon(m_verticalUpButton, colors.icon);
         }
         if (m_verticalDownButton) {
             if (m_verticalDownButton->styleSheet() != buttonStyle) {
                 m_verticalDownButton->setStyleSheet(buttonStyle);
             }
-            fairwindsk::ui::applyTintedButtonIcon(
-                m_verticalDownButton,
-                fairwindsk::ui::bestContrastingColor(
-                    activePalette.color(QPalette::Button),
-                    {activePalette.color(QPalette::Text),
-                     activePalette.color(QPalette::ButtonText),
-                     activePalette.color(QPalette::WindowText)}));
+            fairwindsk::ui::applyTintedButtonIcon(m_verticalDownButton, colors.icon);
         }
         if (m_horizontalLeftButton) {
             if (m_horizontalLeftButton->styleSheet() != buttonStyle) {
                 m_horizontalLeftButton->setStyleSheet(buttonStyle);
             }
-            fairwindsk::ui::applyTintedButtonIcon(
-                m_horizontalLeftButton,
-                fairwindsk::ui::bestContrastingColor(
-                    activePalette.color(QPalette::Button),
-                    {activePalette.color(QPalette::Text),
-                     activePalette.color(QPalette::ButtonText),
-                     activePalette.color(QPalette::WindowText)}));
+            fairwindsk::ui::applyTintedButtonIcon(m_horizontalLeftButton, colors.icon);
         }
         if (m_horizontalRightButton) {
             if (m_horizontalRightButton->styleSheet() != buttonStyle) {
                 m_horizontalRightButton->setStyleSheet(buttonStyle);
             }
-            fairwindsk::ui::applyTintedButtonIcon(
-                m_horizontalRightButton,
-                fairwindsk::ui::bestContrastingColor(
-                    activePalette.color(QPalette::Button),
-                    {activePalette.color(QPalette::Text),
-                     activePalette.color(QPalette::ButtonText),
-                     activePalette.color(QPalette::WindowText)}));
+            fairwindsk::ui::applyTintedButtonIcon(m_horizontalRightButton, colors.icon);
         }
         m_isApplyingStyle = false;
     }

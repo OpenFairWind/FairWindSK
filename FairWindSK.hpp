@@ -9,6 +9,7 @@
 #include <QList>
 #include <QMap>
 #include <QString>
+#include <QColor>
 #include <QEvent>
 #include <QTimer>
 #include <nlohmann/json.hpp>
@@ -29,6 +30,13 @@ namespace fairwindsk {
 #else
     using WebProfileHandle = QObject;
 #endif
+
+    struct UiScrollPalette {
+        QColor track;
+        QColor handleTop;
+        QColor handleMid;
+        QColor handleBottom;
+    };
 
     class AppItem;
 
@@ -79,6 +87,7 @@ namespace fairwindsk {
         bool isAutomaticComfortViewConfigured(const Configuration *configuration = nullptr) const;
         bool isAutomaticComfortViewAvailable(const Configuration *configuration = nullptr) const;
         QString getActiveComfortViewPreset(const Configuration *configuration = nullptr) const;
+        UiScrollPalette getActiveComfortScrollPalette(const Configuration *configuration = nullptr) const;
 
         // Get the Signal K client
         signalk::Client *getSignalKClient();

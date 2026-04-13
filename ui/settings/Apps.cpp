@@ -605,6 +605,7 @@ namespace fairwindsk::ui::settings {
 
         m_appDetailsWidget = new AppDetailsWidget(this);
         auto *appDetailsScrollArea = new widgets::TouchScrollArea(this);
+        appDetailsScrollArea->setBorderless(true);
         appDetailsScrollArea->setWidgetResizable(true);
         appDetailsScrollArea->setFrameShape(QFrame::NoFrame);
         appDetailsScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -615,6 +616,7 @@ namespace fairwindsk::ui::settings {
 
         m_pageDetailsWidget = new PageDetailsWidget(this);
         auto *pageDetailsScrollArea = new widgets::TouchScrollArea(this);
+        pageDetailsScrollArea->setBorderless(true);
         pageDetailsScrollArea->setWidgetResizable(true);
         pageDetailsScrollArea->setFrameShape(QFrame::NoFrame);
         pageDetailsScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -638,6 +640,7 @@ namespace fairwindsk::ui::settings {
                 qOverload<double>(&fairwindsk::ui::widgets::TouchSpinBox::valueChanged),
                 this,
                 [this](double) { onAppsDetailsFieldsTextChanged(QString()); });
+        m_appDetailsWidget->ui->spinBox_Apps_ZoomPercent->setSingleStep(25.0);
         connect(m_appDetailsWidget->ui->pushButton_Apps_AppIcon_Browse, &QPushButton::clicked, this, &Apps::onAppsAppIconBrowse);
         connect(m_appDetailsWidget->ui->pushButton_Apps_Name_Browse, &QPushButton::clicked, this, &Apps::onAppsNameBrowse);
         connect(ui->toolButton_AddAllApps, &QToolButton::clicked, this, &Apps::onAddAllAppsClicked);

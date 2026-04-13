@@ -778,6 +778,17 @@ namespace fairwindsk {
         return QStringLiteral("night");
     }
 
+    UiScrollPalette FairWindSK::getActiveComfortScrollPalette(const Configuration *configuration) const {
+        const QString preset = getActiveComfortViewPreset(configuration);
+        const UiComfortPalette palette = uiComfortPaletteForPreset(preset);
+        return {
+            QColor(palette.scrollTrack),
+            QColor(palette.scrollHandleTop),
+            QColor(palette.scrollHandleMid),
+            QColor(palette.scrollHandleBottom)
+        };
+    }
+
     void FairWindSK::applyUiPreferences(const Configuration *configuration) {
         if (!qApp) {
             return;
