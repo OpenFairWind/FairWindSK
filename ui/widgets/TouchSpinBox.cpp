@@ -9,22 +9,59 @@
 #include <QLabel>
 #include <QPalette>
 
+#include "FairWindSK.hpp"
 #include "ui/IconUtils.hpp"
 #include "ui_TouchSpinBox.h"
 
 namespace fairwindsk::ui::widgets {
     namespace {
-        QString touchButtonStyle(const QPalette &palette) {
-            const QColor base = palette.color(QPalette::Button);
-            const QColor text = palette.color(QPalette::ButtonText);
-            const QColor border = palette.color(QPalette::Mid);
-            const QColor light = base.lighter(145);
-            const QColor mid = base.lighter(118);
-            const QColor dark = base.darker(120);
-            const QColor pressedTop = base.darker(115);
-            const QColor pressedBottom = base.lighter(118);
-            const QColor disabled = palette.color(QPalette::AlternateBase);
+        struct TouchSpinBoxColors {
+            QColor buttonTop;
+            QColor buttonMid;
+            QColor buttonBottom;
+            QColor pressedTop;
+            QColor pressedBottom;
+            QColor border;
+            QColor text;
+            QColor disabled;
+            QColor disabledText;
+            QColor disabledBorder;
+            QColor valueBackground;
+            QColor valueBorder;
+            QColor valueText;
+        };
 
+        TouchSpinBoxColors effectiveColors(const QPalette &palette) {
+            TouchSpinBoxColors colors;
+            auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+            const auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+            const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+
+            colors.buttonTop = palette.color(QPalette::Button).lighter(145);
+            colors.buttonMid = palette.color(QPalette::Button).lighter(118);
+            colors.buttonBottom = palette.color(QPalette::Button).darker(120);
+            colors.pressedTop = palette.color(QPalette::Button).darker(115);
+            colors.pressedBottom = palette.color(QPalette::Button).lighter(118);
+            colors.border = palette.color(QPalette::Mid);
+            colors.text = fairwindsk::ui::comfortIconColor(
+                configuration,
+                preset,
+                fairwindsk::ui::bestContrastingColor(
+                    palette.color(QPalette::Button),
+                    {palette.color(QPalette::Text),
+                     palette.color(QPalette::ButtonText),
+                     palette.color(QPalette::WindowText)}));
+            colors.disabled = palette.color(QPalette::AlternateBase);
+            colors.disabledText = palette.color(QPalette::Disabled, QPalette::ButtonText);
+            colors.disabledBorder = palette.color(QPalette::Disabled, QPalette::Mid);
+            colors.valueBackground = palette.color(QPalette::Base);
+            colors.valueBorder = palette.color(QPalette::Mid);
+            colors.valueText = palette.color(QPalette::Text);
+            return colors;
+        }
+
+        QString touchButtonStyle(const TouchSpinBoxColors &colors) {
+            
             return QStringLiteral(
                 "QPushButton {"
                 " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
@@ -53,12 +90,35 @@ namespace fairwindsk::ui::widgets {
                 " color: %14;"
                 " border-color: %15;"
                 " }")
-                .arg(light.name(), mid.name(), dark.name(), text.name(), border.name(),
-                     light.darker(108).name(), dark.name(),
-                     light.lighter(110).name(), mid.lighter(108).name(), dark.lighter(108).name(),
-                     pressedTop.name(), pressedBottom.name(), disabled.name(),
-                     palette.color(QPalette::Disabled, QPalette::ButtonText).name(),
-                     palette.color(QPalette::Disabled, QPalette::Mid).name());
+                .arg(colors.buttonTop.name(), colors.buttonMid.name(), colors.buttonBottom.name(), colors.text.name(), colors.border.name(),
+                     colors.buttonTop.darker(108).name(), colors.buttonBottom.name(),
+                     colors.buttonTop.lighter(110).name(), colors.buttonMid.lighter(108).name(), colors.buttonBottom.lighter(108).name(),
+                     colors.pressedTop.name(), colors.pressedBottom.name(), colors.disabled.name(),
+                     colors.disabledText.name(), colors.disabledBorder.name());
+        }
+
+        QString touchValueStyle(const TouchSpinBoxColors &colors) {
+            return QStringLiteral(
+                "QLabel {"
+                " min-height: 44px;"
+                " padding: 0 12px;"
+                " border: 1px solid %1;"
+                " border-radius: 10px;"
+                " background: %2;"
+                " color: %3;"
+                " font-weight: 600;"
+                " }"
+                "QLabel:disabled {"
+                " background: %4;"
+                " color: %5;"
+                " border-color: %6;"
+                " }")
+                .arg(colors.valueBorder.name(),
+                     colors.valueBackground.name(),
+                     colors.valueText.name(),
+                     colors.disabled.name(),
+                     colors.disabledText.name(),
+                     colors.disabledBorder.name());
         }
     }
 
@@ -193,20 +253,20 @@ namespace fairwindsk::ui::widgets {
 
     void TouchSpinBox::applyTouchStyle() {
         const QPalette activePalette = palette();
-        const QString style = touchButtonStyle(activePalette);
-        if (m_buttonStyleSheet != style) {
-            m_buttonStyleSheet = style;
+        const TouchSpinBoxColors colors = effectiveColors(activePalette);
+        const QString buttonStyle = touchButtonStyle(colors);
+        if (m_buttonStyleSheet != buttonStyle) {
+            m_buttonStyleSheet = buttonStyle;
             ui->pushButtonMinus->setStyleSheet(m_buttonStyleSheet);
             ui->pushButtonPlus->setStyleSheet(m_buttonStyleSheet);
         }
 
-        const QColor iconColor = fairwindsk::ui::bestContrastingColor(
-            activePalette.color(QPalette::Button),
-            {activePalette.color(QPalette::Text),
-             activePalette.color(QPalette::ButtonText),
-             activePalette.color(QPalette::WindowText)});
-        fairwindsk::ui::applyTintedButtonIcon(ui->pushButtonMinus, iconColor);
-        fairwindsk::ui::applyTintedButtonIcon(ui->pushButtonPlus, iconColor);
+        if (m_valueLabel) {
+            m_valueLabel->setStyleSheet(touchValueStyle(colors));
+        }
+
+        fairwindsk::ui::applyTintedButtonIcon(ui->pushButtonMinus, colors.text);
+        fairwindsk::ui::applyTintedButtonIcon(ui->pushButtonPlus, colors.text);
     }
 
     void TouchSpinBox::refreshText() {
