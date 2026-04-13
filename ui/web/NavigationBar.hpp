@@ -47,6 +47,8 @@ namespace fairwindsk::ui::web {
         void close();
 
     private:
+        void changeEvent(QEvent *event) override;
+        void retintIcons() const;
         Ui::NavigationBar *ui;
     };
 } // fairwindsk::ui::web

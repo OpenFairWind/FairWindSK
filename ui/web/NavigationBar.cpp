@@ -7,8 +7,13 @@
 #include "NavigationBar.hpp"
 #include "ui_NavigationBar.h"
 
+#include <QEvent>
+#include <QPalette>
 #include <QToolButton>
 #include <QtGlobal>
+
+#include "FairWindSK.hpp"
+#include "ui/IconUtils.hpp"
 
 namespace fairwindsk::ui::web {
     NavigationBar::NavigationBar(QWidget *parent) :
@@ -28,6 +33,7 @@ namespace fairwindsk::ui::web {
         setForwardEnabled(false);
         setReloadActive(false);
         setZoomPercent(100.0);
+        retintIcons();
     }
 
     void NavigationBar::setBackEnabled(const bool enabled) const {
@@ -53,6 +59,30 @@ namespace fairwindsk::ui::web {
 
     void NavigationBar::setZoomPercent(const double zoomPercent) const {
         ui->label_ZoomPercent->setText(tr("%1%").arg(qRound(zoomPercent)));
+    }
+
+    void NavigationBar::changeEvent(QEvent *event) {
+        QWidget::changeEvent(event);
+        if (event && (event->type() == QEvent::PaletteChange
+                      || event->type() == QEvent::ApplicationPaletteChange
+                      || event->type() == QEvent::StyleChange)) {
+            retintIcons();
+        }
+    }
+
+    void NavigationBar::retintIcons() const {
+        auto *fairWindSK = FairWindSK::getInstance();
+        const auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QString();
+        const QColor fallbackIconColor = fairwindsk::ui::bestContrastingColor(
+            palette().color(QPalette::Button),
+            {palette().color(QPalette::Text),
+             palette().color(QPalette::ButtonText),
+             palette().color(QPalette::WindowText)});
+        const QColor iconColor = fairwindsk::ui::comfortIconColor(configuration, preset, fallbackIconColor);
+
+        fairwindsk::ui::applyTintedButtonIcon(ui->toolButton_ZoomOut, iconColor, QSize(32, 32));
+        fairwindsk::ui::applyTintedButtonIcon(ui->toolButton_ZoomIn, iconColor, QSize(32, 32));
     }
 
     void NavigationBar::onHomeClicked() {
