@@ -38,6 +38,13 @@ QLabel#label_Page_Icon {
 }
 QLineEdit {
     min-height: 44px;
+    border: 1px solid rgba(15, 23, 42, 0.18);
+    border-radius: 12px;
+    background: rgba(17, 24, 39, 0.96);
+    color: #f8fafc;
+    padding: 0 12px;
+    selection-background-color: rgba(250, 204, 21, 0.45);
+    selection-color: #f8fafc;
 }
 QPushButton {
     min-height: 44px;

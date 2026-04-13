@@ -24,6 +24,7 @@
 #include <QRegularExpression>
 #include <QScrollBar>
 #include <QSet>
+#include <QShowEvent>
 #include <QSplitter>
 #include <QStandardPaths>
 #include <QTableWidget>
@@ -144,6 +145,7 @@ namespace fairwindsk::ui::drawer {
                     "QTreeView::item { min-height: 44px; }"
                     "QHeaderView::section {"
                     " min-height: 42px; padding: 0 12px; font-size: 15px; font-weight: 600; }"));
+                setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
                 auto *layout = new QVBoxLayout(this);
                 layout->setContentsMargins(0, 0, 0, 0);
@@ -217,7 +219,7 @@ namespace fairwindsk::ui::drawer {
                     layout->addWidget(m_nameEdit);
                 }
 
-                setMinimumHeight(m_mode == FileBrowserMode::SaveFile ? 640 : 520);
+                setMinimumHeight(m_mode == FileBrowserMode::SaveFile ? 720 : 680);
 
                 m_model = new QFileSystemModel(this);
                 m_model->setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot);
@@ -323,6 +325,11 @@ namespace fairwindsk::ui::drawer {
             }
 
         protected:
+            void showEvent(QShowEvent *event) override {
+                QWidget::showEvent(event);
+                updateDrawerGeometry();
+            }
+
             void changeEvent(QEvent *event) override {
                 QWidget::changeEvent(event);
                 if (event && (event->type() == QEvent::PaletteChange
@@ -333,6 +340,23 @@ namespace fairwindsk::ui::drawer {
             }
 
         private:
+            void updateDrawerGeometry() {
+                auto *mainWindow = resolveMainWindow(this);
+                if (!mainWindow || !mainWindow->getUi() || !mainWindow->getUi()->stackedWidget_Center) {
+                    return;
+                }
+
+                const int availableHeight = mainWindow->getUi()->stackedWidget_Center->height();
+                if (availableHeight <= 0) {
+                    return;
+                }
+
+                const int reservedHeight = m_mode == FileBrowserMode::SaveFile ? 64 : 32;
+                const int targetHeight = qMax(availableHeight - reservedHeight, 680);
+                setMinimumHeight(targetHeight);
+                setMaximumHeight(targetHeight);
+            }
+
             void finishDrawer(const int result) const {
                 if (auto *mainWindow = resolveMainWindow(const_cast<DrawerFileBrowserWidget *>(this))) {
                     mainWindow->finishActiveDrawer(result);
