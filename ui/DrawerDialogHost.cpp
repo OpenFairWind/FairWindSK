@@ -37,6 +37,7 @@
 #include "GeoCoordinateEditorWidget.hpp"
 #include "IconUtils.hpp"
 #include "MainWindow.hpp"
+#include "ui/widgets/TouchFileBrowser.hpp"
 
 namespace fairwindsk::ui::drawer {
     namespace {
@@ -1248,8 +1249,12 @@ namespace fairwindsk::ui::drawer {
         QString currentDirectory = directory;
 
         while (true) {
-            auto *browser = new DrawerFileBrowserWidget(FileBrowserMode::OpenFile, currentDirectory, {}, filters);
-            QPointer<DrawerFileBrowserWidget> browserGuard(browser);
+            auto *browser = new fairwindsk::ui::widgets::TouchFileBrowser(
+                fairwindsk::ui::widgets::TouchFileBrowser::Mode::OpenFile,
+                currentDirectory,
+                {},
+                filters);
+            QPointer<fairwindsk::ui::widgets::TouchFileBrowser> browserGuard(browser);
             const int result = execDrawer(parent, title, browser, {}, int(QMessageBox::Cancel));
 
             if (!browserGuard) {
@@ -1302,8 +1307,12 @@ namespace fairwindsk::ui::drawer {
         }
 
         while (true) {
-            auto *browser = new DrawerFileBrowserWidget(FileBrowserMode::SaveFile, currentDirectory, currentFileName, filters);
-            QPointer<DrawerFileBrowserWidget> browserGuard(browser);
+            auto *browser = new fairwindsk::ui::widgets::TouchFileBrowser(
+                fairwindsk::ui::widgets::TouchFileBrowser::Mode::SaveFile,
+                currentDirectory,
+                currentFileName,
+                filters);
+            QPointer<fairwindsk::ui::widgets::TouchFileBrowser> browserGuard(browser);
             const int result = execDrawer(parent, title, browser, {}, int(QMessageBox::Cancel));
 
             if (!browserGuard) {
