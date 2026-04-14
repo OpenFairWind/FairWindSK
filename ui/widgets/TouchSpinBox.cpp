@@ -61,9 +61,12 @@ namespace fairwindsk::ui::widgets {
         }
 
         QString touchButtonStyle(const TouchSpinBoxColors &colors) {
-            
             return QStringLiteral(
                 "QPushButton {"
+                " min-width: 44px;"
+                " max-width: 52px;"
+                " min-height: 44px;"
+                " max-height: 52px;"
                 " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
                 " stop:0 %1, stop:0.45 %2, stop:1 %3);"
                 " color: %4;"
@@ -71,7 +74,7 @@ namespace fairwindsk::ui::widgets {
                 " border-top-color: %6;"
                 " border-bottom-color: %7;"
                 " border-radius: 8px;"
-                " padding: 4px;"
+                " padding: 2px;"
                 " }"
                 "QPushButton:hover {"
                 " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
@@ -101,12 +104,13 @@ namespace fairwindsk::ui::widgets {
             return QStringLiteral(
                 "QLabel {"
                 " min-height: 44px;"
-                " padding: 0 12px;"
+                " padding: 0 14px;"
                 " border: 1px solid %1;"
-                " border-radius: 10px;"
+                " border-radius: 0px;"
                 " background: %2;"
                 " color: %3;"
                 " font-weight: 600;"
+                " qproperty-alignment: 'AlignRight|AlignVCenter';"
                 " }"
                 "QLabel:disabled {"
                 " background: %4;"
@@ -129,6 +133,10 @@ namespace fairwindsk::ui::widgets {
 
         ui->pushButtonMinus->setObjectName(QStringLiteral("pushButton_touchSpinBoxMinus"));
         ui->pushButtonPlus->setObjectName(QStringLiteral("pushButton_touchSpinBoxPlus"));
+        ui->pushButtonMinus->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+        ui->pushButtonPlus->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+        ui->pushButtonMinus->setFixedSize(44, 44);
+        ui->pushButtonPlus->setFixedSize(44, 44);
         m_valueLabel = ui->labelValue;
         m_valueLabel->setObjectName(QStringLiteral("label_touchSpinBoxValue"));
         m_valueLabel->setAlignment(m_alignment);
