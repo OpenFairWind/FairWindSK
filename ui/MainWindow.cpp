@@ -212,6 +212,7 @@ namespace fairwindsk::ui {
         const QSizePolicy previousDrawerSizePolicy = m_dialogDrawer->sizePolicy();
         const int previousDrawerMinimumHeight = m_dialogDrawer->minimumHeight();
         const int previousDrawerMaximumHeight = m_dialogDrawer->maximumHeight();
+        const bool centerWasVisible = ui->stackedWidget_Center && ui->stackedWidget_Center->isVisible();
 
         clearDrawer();
         m_dialogDrawerTitle->setText(title);
@@ -234,12 +235,19 @@ namespace fairwindsk::ui {
         const int minimumDrawerHeight = m_dialogDrawer->layout()
                                             ? m_dialogDrawer->layout()->minimumSize().height()
                                             : m_dialogDrawer->minimumSizeHint().height();
+        const bool fillCenterArea = content->property("drawerFillCenterArea").toBool();
         int targetDrawerHeight = qMax(minimumDrawerHeight, requestedDrawerHeight);
         if (availableCenterHeight > 0) {
-            targetDrawerHeight = std::min(targetDrawerHeight, availableCenterHeight);
+            targetDrawerHeight = fillCenterArea
+                                     ? availableCenterHeight
+                                     : std::min(targetDrawerHeight, availableCenterHeight);
         }
         m_dialogDrawer->setMinimumHeight(targetDrawerHeight);
         m_dialogDrawer->setMaximumHeight(targetDrawerHeight);
+
+        if (fillCenterArea && ui->stackedWidget_Center) {
+            ui->stackedWidget_Center->setVisible(false);
+        }
 
         QEventLoop loop;
         int result = defaultResult;
@@ -263,6 +271,9 @@ namespace fairwindsk::ui {
         m_activeDrawerLoop = nullptr;
         m_activeDrawerResult = nullptr;
         m_dialogDrawer->hide();
+        if (ui->stackedWidget_Center) {
+            ui->stackedWidget_Center->setVisible(centerWasVisible);
+        }
         m_dialogDrawer->setSizePolicy(previousDrawerSizePolicy);
         m_dialogDrawer->setMinimumHeight(previousDrawerMinimumHeight);
         m_dialogDrawer->setMaximumHeight(previousDrawerMaximumHeight);

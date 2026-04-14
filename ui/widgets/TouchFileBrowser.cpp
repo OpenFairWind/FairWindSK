@@ -220,6 +220,7 @@ namespace fairwindsk::ui::widgets {
                                        QWidget *parent)
         : QWidget(parent), m_mode(mode), m_nameFilters(nameFilters) {
         setObjectName(QStringLiteral("touchFileBrowser"));
+        setProperty("drawerFillCenterArea", true);
         setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
         auto *layout = new QVBoxLayout(this);
