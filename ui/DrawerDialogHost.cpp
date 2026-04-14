@@ -353,8 +353,10 @@ namespace fairwindsk::ui::drawer {
 
                 layout->addLayout(toolbarLayout);
 
-                m_selectionLabel = new QLabel(this);
-                layout->addWidget(m_selectionLabel);
+                if (m_mode == FileBrowserMode::SaveFile) {
+                    m_selectionLabel = new QLabel(this);
+                    layout->addWidget(m_selectionLabel);
+                }
 
                 auto *browserFrame = new QFrame(this);
                 auto *browserLayout = new QVBoxLayout(browserFrame);
@@ -399,7 +401,7 @@ namespace fairwindsk::ui::drawer {
                     layout->addWidget(m_nameEdit);
                 }
 
-                setMinimumHeight(m_mode == FileBrowserMode::SaveFile ? 780 : 740);
+                setMinimumHeight(m_mode == FileBrowserMode::SaveFile ? 900 : 860);
 
                 m_model = new QFileSystemModel(this);
                 m_model->setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot);
@@ -410,7 +412,7 @@ namespace fairwindsk::ui::drawer {
 
                 m_view->setModel(m_model);
                 m_view->hideColumn(2);
-                const int minimumVisibleRows = (m_mode == FileBrowserMode::SaveFile) ? 11 : 10;
+                const int minimumVisibleRows = (m_mode == FileBrowserMode::SaveFile) ? 13 : 12;
                 const int rowHeight = 60;
                 const int headerHeight = m_view->header()->sizeHint().height();
                 const int frameHeight = m_view->frameWidth() * 2;
@@ -547,7 +549,7 @@ namespace fairwindsk::ui::drawer {
                     m_geometryHost->installEventFilter(this);
                 }
 
-                const int targetHeight = qMax(availableHeight - 8, m_mode == FileBrowserMode::SaveFile ? 780 : 740);
+                const int targetHeight = qMax(availableHeight - 2, m_mode == FileBrowserMode::SaveFile ? 900 : 860);
                 setMinimumHeight(targetHeight);
                 setMaximumHeight(targetHeight);
             }
@@ -648,23 +650,14 @@ namespace fairwindsk::ui::drawer {
                     m_statusLabel->setText(directoryInfo.fileName().isEmpty() ? m_currentDirectory : directoryInfo.fileName());
                 }
 
-                if (!m_selectionLabel) {
+                if (!m_selectionLabel || m_mode != FileBrowserMode::SaveFile) {
                     return;
                 }
 
-                if (m_mode == FileBrowserMode::SaveFile) {
-                    if (currentName.isEmpty()) {
-                        m_selectionLabel->setText(tr("Choose a destination folder and enter a file name."));
-                    } else {
-                        m_selectionLabel->setText(tr("Destination: %1").arg(QDir(m_currentDirectory).filePath(currentName)));
-                    }
-                    return;
-                }
-
-                if (m_selectedPath.isEmpty()) {
-                    m_selectionLabel->setText(tr("Tap a file once to select it, or double tap to open it."));
+                if (currentName.isEmpty()) {
+                    m_selectionLabel->setText(tr("Choose a destination folder and enter a file name."));
                 } else {
-                    m_selectionLabel->setText(tr("Selected file: %1").arg(QFileInfo(m_selectedPath).fileName()));
+                    m_selectionLabel->setText(tr("Destination: %1").arg(QDir(m_currentDirectory).filePath(currentName)));
                 }
             }
 
