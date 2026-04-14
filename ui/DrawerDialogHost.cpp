@@ -22,6 +22,7 @@
 #include <QPointer>
 #include <QPushButton>
 #include <QRegularExpression>
+#include <QScopedValueRollback>
 #include <QScrollBar>
 #include <QSet>
 #include <QShowEvent>
@@ -514,8 +515,7 @@ namespace fairwindsk::ui::drawer {
             void changeEvent(QEvent *event) override {
                 QWidget::changeEvent(event);
                 if (event && (event->type() == QEvent::PaletteChange
-                              || event->type() == QEvent::ApplicationPaletteChange
-                              || event->type() == QEvent::StyleChange)) {
+                              || event->type() == QEvent::ApplicationPaletteChange)) {
                     applyComfortChrome();
                 }
             }
@@ -559,42 +559,30 @@ namespace fairwindsk::ui::drawer {
             }
 
             void applyComfortChrome() {
-                const DrawerBrowserColors colors = effectiveDrawerBrowserColors(palette());
+                if (m_isApplyingComfortChrome) {
+                    return;
+                }
+                QScopedValueRollback<bool> applyingGuard(m_isApplyingComfortChrome, true);
 
-                setStyleSheet(QStringLiteral("QWidget#drawerFileBrowserWidget { background: %1; }").arg(colors.panelBackground.name()));
-                if (m_titleLabel) {
-                    m_titleLabel->setStyleSheet(drawerLabelStyle(colors, 26, 700));
-                }
-                if (m_statusLabel) {
-                    m_statusLabel->setStyleSheet(drawerLabelStyle(colors, 16, 600, colors.mutedText));
-                }
-                if (m_selectionLabel) {
-                    m_selectionLabel->setStyleSheet(drawerLabelStyle(colors, 18, 600));
-                }
-                if (m_browserFrame) {
-                    m_browserFrame->setStyleSheet(drawerCardStyle(colors));
-                }
-                if (m_nameEdit) {
-                    m_nameEdit->setStyleSheet(drawerLineEditStyle(colors));
-                }
-                if (m_pathEdit) {
-                    m_pathEdit->setStyleSheet(drawerLineEditStyle(colors));
-                }
-                if (m_backButton) {
-                    m_backButton->setStyleSheet(drawerButtonStyle(colors));
-                }
-                if (m_homeButton) {
-                    m_homeButton->setStyleSheet(drawerButtonStyle(colors));
-                }
-                if (m_upButton) {
-                    m_upButton->setStyleSheet(drawerButtonStyle(colors));
-                }
-                if (m_acceptButton) {
-                    m_acceptButton->setStyleSheet(drawerButtonStyle(colors, true));
-                }
-                if (m_view) {
-                    m_view->setStyleSheet(drawerTreeStyle(colors) + fairwindsk::ui::widgets::TouchScrollArea::scrollBarStyleSheet());
-                }
+                const DrawerBrowserColors colors = effectiveDrawerBrowserColors(palette());
+                const auto applyStyleIfChanged = [](QWidget *widget, const QString &style) {
+                    if (widget && widget->styleSheet() != style) {
+                        widget->setStyleSheet(style);
+                    }
+                };
+
+                applyStyleIfChanged(this, QStringLiteral("QWidget#drawerFileBrowserWidget { background: %1; }").arg(colors.panelBackground.name()));
+                applyStyleIfChanged(m_titleLabel, drawerLabelStyle(colors, 26, 700));
+                applyStyleIfChanged(m_statusLabel, drawerLabelStyle(colors, 16, 600, colors.mutedText));
+                applyStyleIfChanged(m_selectionLabel, drawerLabelStyle(colors, 18, 600));
+                applyStyleIfChanged(m_browserFrame, drawerCardStyle(colors));
+                applyStyleIfChanged(m_nameEdit, drawerLineEditStyle(colors));
+                applyStyleIfChanged(m_pathEdit, drawerLineEditStyle(colors));
+                applyStyleIfChanged(m_backButton, drawerButtonStyle(colors));
+                applyStyleIfChanged(m_homeButton, drawerButtonStyle(colors));
+                applyStyleIfChanged(m_upButton, drawerButtonStyle(colors));
+                applyStyleIfChanged(m_acceptButton, drawerButtonStyle(colors, true));
+                applyStyleIfChanged(m_view, drawerTreeStyle(colors) + fairwindsk::ui::widgets::TouchScrollArea::scrollBarStyleSheet());
 
                 auto *fairWindSK = FairWindSK::getInstance();
                 const auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
@@ -697,6 +685,7 @@ namespace fairwindsk::ui::drawer {
             QPushButton *m_upButton = nullptr;
             QPushButton *m_acceptButton = nullptr;
             QWidget *m_geometryHost = nullptr;
+            bool m_isApplyingComfortChrome = false;
         };
 
         struct IconEntry {
