@@ -277,6 +277,16 @@ namespace fairwindsk::ui::drawer {
                 " border-bottom: 1px solid %6;"
                 " font-size: 16px;"
                 " font-weight: 700;"
+                " }"
+                "QHeaderView::section:first {"
+                " border-top-left-radius: 10px;"
+                " }"
+                "QHeaderView::section:last {"
+                " border-top-right-radius: 10px;"
+                " }"
+                "QHeaderView::up-arrow, QHeaderView::down-arrow {"
+                " width: 0px;"
+                " height: 0px;"
                 " }")
                 .arg(colors.text.name(),
                      colors.accentTrack.name(),
@@ -313,6 +323,7 @@ namespace fairwindsk::ui::drawer {
 
                 m_statusLabel = new QLabel(this);
                 m_statusLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                m_statusLabel->hide();
                 titleRow->addWidget(m_statusLabel, 1);
 
                 layout->addLayout(titleRow);
@@ -383,10 +394,12 @@ namespace fairwindsk::ui::drawer {
                 m_view->header()->setMinimumHeight(48);
                 m_view->header()->setDefaultAlignment(Qt::AlignLeft | Qt::AlignVCenter);
                 m_view->header()->setStretchLastSection(true);
+                m_view->header()->setSortIndicatorShown(false);
                 m_view->header()->setSectionResizeMode(0, QHeaderView::Stretch);
                 m_view->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
                 m_view->header()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
                 m_view->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+                m_view->setMinimumHeight(0);
                 m_view->sortByColumn(0, Qt::AscendingOrder);
                 browserLayout->addWidget(m_view, 1);
                 layout->addWidget(browserFrame, 1);
@@ -415,11 +428,7 @@ namespace fairwindsk::ui::drawer {
 
                 m_view->setModel(m_model);
                 m_view->hideColumn(2);
-                const int minimumVisibleRows = (m_mode == FileBrowserMode::SaveFile) ? 13 : 12;
-                const int rowHeight = 60;
-                const int headerHeight = m_view->header()->sizeHint().height();
-                const int frameHeight = m_view->frameWidth() * 2;
-                m_view->setMinimumHeight(headerHeight + frameHeight + (rowHeight * minimumVisibleRows));
+                browserFrame->setMinimumHeight(0);
 
                 const QString initialDirectory = QFileInfo(directory).isDir() ? directory : defaultBrowserDirectory();
                 navigateTo(initialDirectory);
@@ -656,10 +665,6 @@ namespace fairwindsk::ui::drawer {
 
             void updateSelectionSummary() {
                 const QString currentName = fileName();
-                if (m_statusLabel) {
-                    const QFileInfo directoryInfo(m_currentDirectory);
-                    m_statusLabel->setText(directoryInfo.fileName().isEmpty() ? m_currentDirectory : directoryInfo.fileName());
-                }
 
                 if (!m_selectionLabel || m_mode != FileBrowserMode::SaveFile) {
                     return;
