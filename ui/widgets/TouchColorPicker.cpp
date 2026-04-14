@@ -23,8 +23,10 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 #include <functional>
+#include <memory>
 
 #include "Configuration.hpp"
+#include "ui/DrawerDialogHost.hpp"
 
 namespace fairwindsk::ui::widgets {
     class TouchColorShadeSelector final : public QWidget {
@@ -789,16 +791,31 @@ namespace fairwindsk::ui::widgets {
                                             const QColor &initialColor,
                                             bool *accepted,
                                             const bool alphaEnabled) {
-        TouchColorPickerDialog dialog(parent);
-        dialog.setTitleText(title);
-        dialog.setAlphaEnabled(alphaEnabled);
-        dialog.setCurrentColor(initialColor);
-        dialog.openNear(parent);
+        auto *picker = new TouchColorPicker();
+        picker->setProperty("drawerFillCenterArea", true);
+        picker->setAlphaEnabled(alphaEnabled);
+        picker->setCurrentColor(initialColor);
+        auto selectedColor = std::make_shared<QColor>(picker->currentColor());
+        connect(picker, &TouchColorPicker::currentColorChanged, picker, [selectedColor](const QColor &color) {
+            *selectedColor = color;
+        });
 
-        const bool ok = dialog.exec() == QDialog::Accepted;
+        constexpr int kResultCancel = 0;
+        constexpr int kResultApply = 1;
+        const int result = fairwindsk::ui::drawer::execDrawer(
+            parent,
+            title,
+            picker,
+            {
+                {QObject::tr("Cancel"), kResultCancel, false},
+                {QObject::tr("Apply"), kResultApply, true}
+            },
+            kResultCancel);
+
+        const bool ok = result == kResultApply;
         if (accepted) {
             *accepted = ok;
         }
-        return ok ? dialog.currentColor() : initialColor;
+        return ok ? *selectedColor : initialColor;
     }
 }
