@@ -417,7 +417,8 @@ namespace fairwindsk::ui::drawer {
                     layout->addWidget(m_nameEdit);
                 }
 
-                setMinimumHeight(m_mode == FileBrowserMode::SaveFile ? 900 : 860);
+                setMinimumHeight(0);
+                setMaximumHeight(QWIDGETSIZE_MAX);
 
                 m_model = new QFileSystemModel(this);
                 m_model->setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot);
@@ -569,7 +570,7 @@ namespace fairwindsk::ui::drawer {
                     m_geometryHost->installEventFilter(this);
                 }
 
-                const int targetHeight = qMax(availableHeight, m_mode == FileBrowserMode::SaveFile ? 900 : 860);
+                const int targetHeight = availableHeight;
                 setMinimumHeight(targetHeight);
                 setMaximumHeight(targetHeight);
             }

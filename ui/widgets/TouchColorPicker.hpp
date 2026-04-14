@@ -18,7 +18,6 @@ class QSlider;
 class QWidget;
 class QHBoxLayout;
 class QGridLayout;
-class QScrollArea;
 
 namespace fairwindsk::ui::widgets {
     class TouchColorShadeSelector;
@@ -107,7 +106,6 @@ namespace fairwindsk::ui::widgets {
     private:
         QLabel *m_titleLabel = nullptr;
         QPushButton *m_closeButton = nullptr;
-        QScrollArea *m_scrollArea = nullptr;
         TouchColorPicker *m_picker = nullptr;
     };
 }

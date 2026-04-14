@@ -12,7 +12,6 @@
 #include <QWindow>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
-#include <QScrollArea>
 
 #include "MainWindow.hpp"
 #include "ui/topbar/TopBar.hpp"
@@ -216,47 +215,9 @@ namespace fairwindsk::ui {
 
         clearDrawer();
         m_dialogDrawerTitle->setText(title);
+        content->setParent(m_dialogDrawerContentHost);
+        m_dialogDrawerContentLayout->addWidget(content);
         ui->widgetDialogDrawerButtonRow->setVisible(!buttons.isEmpty());
-
-        auto *contentScrollArea = new QScrollArea(m_dialogDrawerContentHost);
-        contentScrollArea->setObjectName(QStringLiteral("dialogDrawerScrollArea"));
-        contentScrollArea->setWidgetResizable(true);
-        contentScrollArea->setFrameShape(QFrame::NoFrame);
-        contentScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        contentScrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-        contentScrollArea->setLayoutDirection(Qt::RightToLeft);
-        contentScrollArea->setStyleSheet(
-            "QScrollArea#dialogDrawerScrollArea {"
-            " border: none;"
-            " background: transparent;"
-            " }"
-            "QScrollArea#dialogDrawerScrollArea > QWidget > QWidget {"
-            " background: transparent;"
-            " }"
-            "QScrollArea#dialogDrawerScrollArea QScrollBar:vertical {"
-            " background: rgba(8, 33, 56, 0.9);"
-            " width: 14px;"
-            " margin: 0px;"
-            " border: 1px solid rgba(212, 173, 62, 0.45);"
-            " border-radius: 7px;"
-            " }"
-            "QScrollArea#dialogDrawerScrollArea QScrollBar::handle:vertical {"
-            " background: rgba(212, 173, 62, 0.85);"
-            " min-height: 36px;"
-            " border-radius: 6px;"
-            " }"
-            "QScrollArea#dialogDrawerScrollArea QScrollBar::add-line:vertical,"
-            "QScrollArea#dialogDrawerScrollArea QScrollBar::sub-line:vertical,"
-            "QScrollArea#dialogDrawerScrollArea QScrollBar::add-page:vertical,"
-            "QScrollArea#dialogDrawerScrollArea QScrollBar::sub-page:vertical {"
-            " height: 0px;"
-            " background: transparent;"
-            " }");
-
-        content->setParent(contentScrollArea);
-        content->setLayoutDirection(Qt::LeftToRight);
-        contentScrollArea->setWidget(content);
-        m_dialogDrawerContentLayout->addWidget(contentScrollArea);
 
         m_dialogDrawer->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
         if (m_dialogDrawer->layout()) {
@@ -267,8 +228,12 @@ namespace fairwindsk::ui {
         }
 
         const int availableCenterHeight = ui->stackedWidget_Center ? ui->stackedWidget_Center->height() : 0;
-        const int requestedDrawerHeight = m_dialogDrawer->layout() ? m_dialogDrawer->layout()->sizeHint().height() : m_dialogDrawer->sizeHint().height();
-        const int minimumDrawerHeight = m_dialogDrawer->layout() ? m_dialogDrawer->layout()->minimumSize().height() : m_dialogDrawer->minimumSizeHint().height();
+        const int requestedDrawerHeight = m_dialogDrawer->layout()
+                                              ? m_dialogDrawer->layout()->sizeHint().height()
+                                              : m_dialogDrawer->sizeHint().height();
+        const int minimumDrawerHeight = m_dialogDrawer->layout()
+                                            ? m_dialogDrawer->layout()->minimumSize().height()
+                                            : m_dialogDrawer->minimumSizeHint().height();
         int targetDrawerHeight = qMax(minimumDrawerHeight, requestedDrawerHeight);
         if (availableCenterHeight > 0) {
             targetDrawerHeight = std::min(targetDrawerHeight, availableCenterHeight);

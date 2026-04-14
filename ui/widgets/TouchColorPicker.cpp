@@ -17,7 +17,6 @@
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QRegularExpression>
-#include <QScrollArea>
 #include <QSettings>
 #include <QSignalBlocker>
 #include <QSlider>
@@ -735,14 +734,8 @@ namespace fairwindsk::ui::widgets {
             " }"));
         headerLayout->addWidget(m_closeButton, 0, Qt::AlignTop);
 
-        m_scrollArea = new QScrollArea(this);
-        m_scrollArea->setWidgetResizable(true);
-        m_scrollArea->setFrameShape(QFrame::NoFrame);
-        m_scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        rootLayout->addWidget(m_scrollArea, 1);
-
         m_picker = new TouchColorPicker(this);
-        m_scrollArea->setWidget(m_picker);
+        rootLayout->addWidget(m_picker, 1);
 
         connect(m_picker, &TouchColorPicker::colorActivated, this, [this](const QColor &) {
             accept();
