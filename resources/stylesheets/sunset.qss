@@ -9,13 +9,27 @@ QMenuBar, QMenu, QStatusBar, QToolTip {
     background: #2a1a17;
     color: #fff1df;
 }
-QToolTip {
-    border: 1px solid #d19965;
-}
+QToolTip { border: 1px solid #d19965; }
 QAbstractScrollArea {
     background: #2a1a17;
     border: 1px solid #d19965;
     border-radius: 6px;
+}
+QScrollBar:vertical, QScrollBar:horizontal {
+    background: #d1b08e;
+    border: 1px solid #d19965;
+    border-radius: 8px;
+}
+QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ffe4bb, stop:1 #ad7240);
+    border: 1px solid #d19965;
+    border-radius: 7px;
+    min-height: 28px;
+    min-width: 28px;
+}
+QScrollBar::add-line, QScrollBar::sub-line, QScrollBar::add-page, QScrollBar::sub-page {
+    background: transparent;
+    border: none;
 }
 QLineEdit, QTextEdit, QPlainTextEdit, QListView, QListWidget, QTreeView, QTreeWidget, QTableView, QTableWidget,
 QComboBox, QAbstractSpinBox, QDateTimeEdit {
@@ -43,41 +57,24 @@ QToolButton:hover, QPushButton:hover {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ffdeaf, stop:1 #daa063);
 }
 QToolButton:pressed, QPushButton:pressed, QToolButton:checked, QPushButton:checked {
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #c1693b, stop:1 #7f3b1f);
-    color: #fff3e7;
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ffb45f, stop:1 #ef6b2e);
+    color: #2b1d18;
 }
-QTabWidget::pane {
-    border: 1px solid #6f3e27;
-    top: -1px;
-}
+QTabWidget::pane { border: 1px solid #d19965; top: -1px; }
 QTabBar::tab {
     color: #2b1d18;
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ffd39a, stop:1 #cf8d4d);
     border: 1px solid #d19965;
-    border-bottom-color: #6f3e27;
 }
 QTabBar::tab:selected {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ffb45f, stop:1 #ef6b2e);
     color: #2b1d18;
     border-color: #ffd29d;
 }
-QTabBar::tab:hover:!selected {
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ffdeaf, stop:1 #daa063);
-}
-QCheckBox, QLabel, QGroupBox {
-    color: #fff1df;
-}
-QLabel {
-    background: transparent;
-}
-QGroupBox {
-    background: transparent;
-    border: 1px solid #d19965;
-}
-QGroupBox::title {
-    subcontrol-origin: margin;
-    color: #ffb45f;
-}
+QCheckBox, QLabel, QGroupBox { color: #fff1df; }
+QLabel { background: transparent; }
+QGroupBox { background: transparent; border: 1px solid #d19965; }
+QGroupBox::title { subcontrol-origin: margin; color: #ffb45f; }
 QCheckBox::indicator {
     border: 1px solid #d19965;
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ffd39a, stop:1 #cf8d4d);
@@ -86,16 +83,10 @@ QCheckBox::indicator:checked {
     border-color: #ffd29d;
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ffb45f, stop:1 #ef6b2e);
 }
-QCheckBox::indicator:unchecked:hover, QCheckBox::indicator:checked:hover {
-    border-color: #ffb45f;
-}
 QHeaderView::section, QTableCornerButton::section {
     background: #2a1a17;
     color: #fff1df;
     border: 1px solid #d19965;
-}
-QSplitter::handle {
-    background: #d19965;
 }
 QProgressBar {
     border: 1px solid #d19965;
@@ -107,38 +98,4 @@ QProgressBar {
 QProgressBar::chunk {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ffb45f, stop:1 #ef6b2e);
     border-radius: 5px;
-}
-QFrame#frameDialogDrawer,
-QFrame#frame_AppsIconPicker,
-QFrame#frame_PageIconPicker {
-    background: #2a1a17;
-    border: 1px solid #d19965;
-    border-radius: 10px;
-}
-QPlainTextEdit#plainTextEditMessage {
-    background: transparent;
-    border: none;
-    color: #f4cda2;
-}
-QListWidget#listWidget_Apps_Icons,
-QListWidget#listWidget_Page_Icons {
-    selection-background-color: transparent;
-    background: #3c241f;
-    color: #fff1df;
-    border: none;
-}
-QListWidget#listWidget_Apps_Icons::item,
-QListWidget#listWidget_Page_Icons::item {
-    border: 2px solid transparent;
-    border-radius: 8px;
-    padding: 4px;
-    margin: 2px;
-    background: transparent;
-    color: #fff1df;
-}
-QListWidget#listWidget_Apps_Icons::item:selected,
-QListWidget#listWidget_Page_Icons::item:selected {
-    border: 2px solid #ffb45f;
-    background: rgba(255, 180, 95, 0.18);
-    color: #fff7ef;
 }

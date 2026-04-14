@@ -98,7 +98,6 @@ namespace fairwindsk::ui::mydata {
         m_textView = ui->plainTextEditGeoJson;
         m_textView->setReadOnly(true);
         m_textView->setLineWrapMode(QPlainTextEdit::NoWrap);
-        m_textView->setStyleSheet("QPlainTextEdit { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
         setMinimumSize(320, 240);
         connect(m_freeboardView, &fairwindsk::ui::web::WebView::loadFinished, this, [this](const bool ok) {
             if (ok) {

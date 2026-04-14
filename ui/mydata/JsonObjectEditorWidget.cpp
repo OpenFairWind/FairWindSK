@@ -49,17 +49,12 @@ namespace fairwindsk::ui::mydata {
         m_treeWidget->header()->setStretchLastSection(false);
         m_treeWidget->setAlternatingRowColors(false);
         m_treeWidget->setRootIsDecorated(false);
-        m_treeWidget->setStyleSheet(
-            "QTreeWidget { background: #f7f7f4; color: #1f2937; alternate-background-color: #f7f7f4; selection-background-color: #c7d2fe; selection-color: #111827; border: 1px solid #d1d5db; }"
-            "QHeaderView::section { background: #e5e7eb; color: #111827; padding: 4px; border: 0; border-bottom: 1px solid #d1d5db; }");
         connect(m_treeWidget, &QTreeWidget::itemSelectionChanged, this, &JsonObjectEditorWidget::updateButtonState);
         m_emptyTreeLabel->setAlignment(Qt::AlignCenter);
         m_emptyTreeLabel->setWordWrap(true);
         m_emptyTreeLabel->setText(tr("No feature properties are available for this resource."));
-        m_emptyTreeLabel->setStyleSheet("QLabel { background: #f7f7f4; color: #4b5563; border: 1px solid #d1d5db; padding: 12px; }");
 
         m_jsonEdit->setLineWrapMode(QPlainTextEdit::NoWrap);
-        m_jsonEdit->setStyleSheet("QPlainTextEdit { background: #f7f7f4; color: #1f2937; selection-background-color: #c7d2fe; selection-color: #111827; }");
         connect(m_tabWidget, &QTabWidget::currentChanged, this, &JsonObjectEditorWidget::onCurrentTabChanged);
 
         setJsonObject(QJsonObject{});

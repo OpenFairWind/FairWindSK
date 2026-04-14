@@ -30,7 +30,7 @@ Availability of these bars depends on the configured plugin identifiers (`applic
   - the effective diagnostics subject and persistent log directory
   - an in-app persistent log explorer shown through the shared bottom drawer, with log files on the left and parsed log rows on the right
 - The **Performance** pane now keeps process memory, total memory, memory usage, and per-core workload together in the left pane, while diagnostics and logging controls live on the right.
-- The **Comfort** tab now exposes preset-level marine-theme tuning for the bundled `Default`, `Dawn`, `Day`, `Sunset`, `Dusk`, and `Night` QSS palettes, plus a dedicated default SVG icon color for each comfort preset.
+- The **Comfort** tab now exposes preset-level marine-theme tuning for the bundled `Default`, `Dawn`, `Day`, `Sunset`, `Dusk`, and `Night` QSS palettes, including dedicated controls for application background, button background, scroll-bar background, scroll-bar knob, and default SVG icon color.
 - The touch color picker used by comfort editing now supports quick shade selection, custom color storage, custom color removal, and a compact scroll-safe layout that fits the bottom-drawer presentation.
 - The **My Data > Waypoints** details page reuses the embedded Signal K web view to show the waypoint on Freeboard-SK whenever the `@signalk/freeboard-sk` app is active on the connected server.
 - The **My Data > Files** page now keeps directory actions, search results, rename/create flows, and copy/move/paste behavior aligned so the same operations work more consistently from both the browser and search views.

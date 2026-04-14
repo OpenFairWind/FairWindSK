@@ -14,6 +14,7 @@
 #include <QPushButton>
 #include <QStandardPaths>
 #include <QFile>
+#include <QStyle>
 
 
 #include <QLoggingCategory>
@@ -43,6 +44,14 @@ using namespace Qt::StringLiterals;
 
 namespace fairwindsk {
     namespace {
+        QColor comfortOverrideColor(const Configuration &configuration,
+                                    const QString &preset,
+                                    const QString &key,
+                                    const QColor &fallback) {
+            const QColor configured = configuration.getComfortThemeColor(preset, key, QColor());
+            return configured.isValid() ? configured : fallback;
+        }
+
         constexpr int kAppsRequestTimeoutMs = 5000;
 
         void waitWithUiEvents(const int delayMs) {
@@ -354,6 +363,29 @@ namespace fairwindsk {
                 palette.scrollHandleTop = "#fff0bf";
                 palette.scrollHandleMid = "#edd49d";
                 palette.scrollHandleBottom = "#b69056";
+            } else if (normalizedPreset == "day") {
+                palette.window = "#10253b";
+                palette.panel = "#173149";
+                palette.base = "#dbe8f5";
+                palette.alternateBase = "#adc3da";
+                palette.buttonTop = "#f1de9a";
+                palette.buttonBottom = "#c59f4e";
+                palette.buttonHoverTop = "#f7e8b2";
+                palette.buttonHoverBottom = "#d4b567";
+                palette.buttonPressedTop = "#5b84b8";
+                palette.buttonPressedBottom = "#2f5fb7";
+                palette.accentTop = "#5b84b8";
+                palette.accentBottom = "#2f5fb7";
+                palette.accentBorder = "#8bb3df";
+                palette.text = "#f2f7ff";
+                palette.subduedText = "#c2d3e5";
+                palette.fieldText = "#10263c";
+                palette.border = "#6f8dad";
+                palette.borderStrong = "#3f6083";
+                palette.scrollTrack = "#9bb2c8";
+                palette.scrollHandleTop = "#e1ebf5";
+                palette.scrollHandleMid = "#a6bdd4";
+                palette.scrollHandleBottom = "#5f7f9f";
             } else if (normalizedPreset == "sunset") {
                 palette.window = "#1b1210";
                 palette.panel = "#2a1a17";
@@ -424,28 +456,28 @@ namespace fairwindsk {
                 palette.scrollHandleMid = "#822430";
                 palette.scrollHandleBottom = "#501118";
             } else {
-                palette.window = "#f6f2df";
-                palette.panel = "#fff7dc";
-                palette.base = "#fffdf5";
-                palette.alternateBase = "#f4efcf";
-                palette.buttonTop = "#fff9d7";
-                palette.buttonBottom = "#d8ca76";
-                palette.buttonHoverTop = "#fffbe4";
-                palette.buttonHoverBottom = "#e4d487";
-                palette.buttonPressedTop = "#c5b85c";
-                palette.buttonPressedBottom = "#8c7f2b";
+                palette.window = "#0d1521";
+                palette.panel = "#12253a";
+                palette.base = "#102338";
+                palette.alternateBase = "#1a3047";
+                palette.buttonTop = "#ecd28c";
+                palette.buttonBottom = "#c6a357";
+                palette.buttonHoverTop = "#f6df9e";
+                palette.buttonHoverBottom = "#d4b468";
+                palette.buttonPressedTop = "#2f5fb7";
+                palette.buttonPressedBottom = "#1e4387";
                 palette.accentTop = "#2f5fb7";
                 palette.accentBottom = "#1e4387";
                 palette.accentBorder = "#4c7bd1";
-                palette.text = "#111111";
-                palette.subduedText = "#4a4f55";
-                palette.fieldText = "#111111";
-                palette.border = "#9c9160";
+                palette.text = "#edf5ff";
+                palette.subduedText = "#c0d0e2";
+                palette.fieldText = "#edf5ff";
+                palette.border = "#6f89a7";
                 palette.borderStrong = "#4f5d72";
-                palette.scrollTrack = "#ece4bf";
-                palette.scrollHandleTop = "#fffdf1";
-                palette.scrollHandleMid = "#efe6b8";
-                palette.scrollHandleBottom = "#c4b56a";
+                palette.scrollTrack = "#20374f";
+                palette.scrollHandleTop = "#f4fbff";
+                palette.scrollHandleMid = "#d7e6f5";
+                palette.scrollHandleBottom = "#bfd2e6";
             }
 
             return palette;
@@ -779,13 +811,14 @@ namespace fairwindsk {
     }
 
     UiScrollPalette FairWindSK::getActiveComfortScrollPalette(const Configuration *configuration) const {
-        const QString preset = getActiveComfortViewPreset(configuration);
+        const Configuration &effectiveConfiguration = configuration ? *configuration : m_configuration;
+        const QString preset = getActiveComfortViewPreset(&effectiveConfiguration);
         const UiComfortPalette palette = uiComfortPaletteForPreset(preset);
         return {
-            QColor(palette.scrollTrack),
-            QColor(palette.scrollHandleTop),
-            QColor(palette.scrollHandleMid),
-            QColor(palette.scrollHandleBottom)
+            comfortOverrideColor(effectiveConfiguration, preset, QStringLiteral("scrollBarBackground"), QColor(palette.scrollTrack)),
+            comfortOverrideColor(effectiveConfiguration, preset, QStringLiteral("scrollBarKnob"), QColor(palette.scrollHandleTop)).lighter(108),
+            comfortOverrideColor(effectiveConfiguration, preset, QStringLiteral("scrollBarKnob"), QColor(palette.scrollHandleMid)),
+            comfortOverrideColor(effectiveConfiguration, preset, QStringLiteral("scrollBarKnob"), QColor(palette.scrollHandleBottom)).darker(108)
         };
     }
 
@@ -803,19 +836,30 @@ namespace fairwindsk {
                 : resolvedComfortViewPreset(effectiveConfiguration);
         const auto comfortPalette = uiComfortPaletteForPreset(comfortPreset);
 
+        const QColor applicationBackgroundColor = comfortOverrideColor(effectiveConfiguration, comfortPreset, QStringLiteral("applicationBackground"), QColor(comfortPalette.panel));
+        const QColor panelColor = comfortOverrideColor(effectiveConfiguration, comfortPreset, QStringLiteral("panel"), QColor(comfortPalette.panel));
+        const QColor baseColor = comfortOverrideColor(effectiveConfiguration, comfortPreset, QStringLiteral("base"), QColor(comfortPalette.base));
+        const QColor textColor = comfortOverrideColor(effectiveConfiguration, comfortPreset, QStringLiteral("text"), QColor(comfortPalette.text));
+        const QColor buttonBackgroundColor = comfortOverrideColor(effectiveConfiguration, comfortPreset, QStringLiteral("buttonBackground"), QColor(comfortPalette.buttonBottom));
+        const QColor buttonTextColor = comfortOverrideColor(effectiveConfiguration, comfortPreset, QStringLiteral("buttonText"), QColor(comfortPalette.text));
+        const QColor accentTopColor = comfortOverrideColor(effectiveConfiguration, comfortPreset, QStringLiteral("accentTop"), QColor(comfortPalette.accentTop));
+        const QColor accentTextColor = comfortOverrideColor(effectiveConfiguration, comfortPreset, QStringLiteral("accentText"), QColor(QStringLiteral("#eff6ff")));
+        const QColor borderColor = comfortOverrideColor(effectiveConfiguration, comfortPreset, QStringLiteral("border"), QColor(comfortPalette.border));
+
         QFont appFont = qApp->font();
         appFont.setPointSize(metrics.fontPointSize);
         qApp->setFont(appFont);
         QPalette appPalette = qApp->palette();
-        appPalette.setColor(QPalette::Window, QColor(comfortPalette.window));
-        appPalette.setColor(QPalette::Base, QColor(comfortPalette.base));
-        appPalette.setColor(QPalette::AlternateBase, QColor(comfortPalette.alternateBase));
-        appPalette.setColor(QPalette::Button, QColor(comfortPalette.buttonBottom));
-        appPalette.setColor(QPalette::WindowText, QColor(comfortPalette.text));
-        appPalette.setColor(QPalette::Text, QColor(comfortPalette.fieldText));
-        appPalette.setColor(QPalette::ButtonText, QColor(comfortPalette.text));
-        appPalette.setColor(QPalette::Highlight, QColor(comfortPalette.accentTop));
-        appPalette.setColor(QPalette::HighlightedText, QColor(QStringLiteral("#eff6ff")));
+        appPalette.setColor(QPalette::Window, applicationBackgroundColor);
+        appPalette.setColor(QPalette::Base, baseColor);
+        appPalette.setColor(QPalette::AlternateBase, panelColor);
+        appPalette.setColor(QPalette::Button, buttonBackgroundColor);
+        appPalette.setColor(QPalette::Mid, borderColor);
+        appPalette.setColor(QPalette::WindowText, textColor);
+        appPalette.setColor(QPalette::Text, textColor);
+        appPalette.setColor(QPalette::ButtonText, buttonTextColor);
+        appPalette.setColor(QPalette::Highlight, accentTopColor);
+        appPalette.setColor(QPalette::HighlightedText, accentTextColor);
         qApp->setPalette(appPalette);
         const QString combinedStyleSheet =
             buildUiMetricsStyleSheet(metrics)
@@ -844,6 +888,10 @@ namespace fairwindsk {
             }
 
             applyIconMetrics(widget, metrics);
+            if (auto *style = qApp->style()) {
+                style->unpolish(widget);
+                style->polish(widget);
+            }
             widget->updateGeometry();
             widget->update();
         }

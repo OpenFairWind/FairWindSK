@@ -16,7 +16,6 @@
 }
 QLabel#label_Apps_SectionTitle,
 QLabel#label_Apps_MetadataTitle {
-    color: #f8fafc;
     font-size: 20px;
     font-weight: 700;
 }
@@ -30,7 +29,6 @@ QLabel#label_Apps_Copyright,
 QLabel#label_Apps_License,
 QLabel#label_Apps_Author,
 QLabel#label_Apps_Vendor {
-    color: #cbd5e1;
     font-size: 15px;
     font-weight: 600;
 }
@@ -40,33 +38,21 @@ QLabel#label_Apps_Copyright_Text,
 QLabel#label_Apps_License_Text,
 QLabel#label_Apps_Author_Text,
 QLabel#label_Apps_Vendor_Text {
-    color: #f8fafc;
     font-size: 15px;
     padding: 10px 12px;
-    border: 1px solid rgba(15, 23, 42, 0.18);
     border-radius: 12px;
-    background: rgba(17, 24, 39, 0.96);
 }
 QFrame#frame_AppSummaryCard,
 QFrame#frame_AppMetadataCard {
-    border: 1px solid rgba(148, 163, 184, 0.24);
     border-radius: 16px;
-    background: rgba(10, 15, 23, 0.88);
 }
 QLabel#label_Apps_Icon {
-    border: 1px solid rgba(148, 163, 184, 0.2);
     border-radius: 18px;
-    background: rgba(15, 23, 42, 0.82);
 }
 QLineEdit {
     min-height: 44px;
-    border: 1px solid rgba(15, 23, 42, 0.18);
     border-radius: 12px;
-    background: rgba(17, 24, 39, 0.96);
-    color: #f8fafc;
     padding: 0 12px;
-    selection-background-color: rgba(250, 204, 21, 0.45);
-    selection-color: #f8fafc;
 }
 QPushButton {
     min-height: 44px;

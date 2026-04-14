@@ -129,11 +129,16 @@ It keeps the persistent-log toggle readable on compact touch layouts by separati
 
 ## Comfort presets and icon color
 
-FairWindSK ships with editable comfort preset stylesheets for `default`, `dawn`, `day`, `sunset`, `dusk`, and `night`. The bundled `default` preset is the generic marine-MFD baseline inspired by contemporary multifunction displays, and each preset can also store:
+FairWindSK ships with editable comfort preset stylesheets for `default`, `dawn`, `day`, `sunset`, `dusk`, and `night`. The bundled presets are now aligned to a marine multifunction-display visual language (high contrast, large touch targets, and predictable accent behavior), and each preset can also store:
 
 - a generated visual palette override
 - optional background images for major surfaces and control states
 - a preset-specific default SVG icon tint (`comfortViewPalette.<preset>.iconDefault`)
+- preset-level palette colors for:
+  - application background (`comfortViewPalette.<preset>.applicationBackground`)
+  - button background (`comfortViewPalette.<preset>.buttonBackground`)
+  - scroll bar background (`comfortViewPalette.<preset>.scrollBarBackground`)
+  - scroll bar knob (`comfortViewPalette.<preset>.scrollBarKnob`)
 
 The **Settings > Comfort** page writes those values back into `fairwindsk.json`, so different presets can keep different icon colors without changing the base SVG assets.
 Its touch color picker also keeps a reusable custom-color set in the per-user settings store, provides a shade selector for fast tap-driven color choice, and uses a compact scroll-safe layout that fits the shared bottom-drawer interaction pattern.
