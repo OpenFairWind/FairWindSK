@@ -209,11 +209,26 @@ namespace fairwindsk::ui {
             return defaultResult;
         }
 
+        const QSizePolicy previousDrawerSizePolicy = m_dialogDrawer->sizePolicy();
+        const int previousDrawerMinimumHeight = m_dialogDrawer->minimumHeight();
+        const int previousDrawerMaximumHeight = m_dialogDrawer->maximumHeight();
+        const bool centerWasVisible = ui->stackedWidget_Center && ui->stackedWidget_Center->isVisible();
+
         clearDrawer();
         m_dialogDrawerTitle->setText(title);
         content->setParent(m_dialogDrawerContentHost);
         m_dialogDrawerContentLayout->addWidget(content);
         ui->widgetDialogDrawerButtonRow->setVisible(!buttons.isEmpty());
+
+        m_dialogDrawer->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+        if (ui->stackedWidget_Center) {
+            const int centerHeight = ui->stackedWidget_Center->height();
+            if (centerHeight > 0) {
+                m_dialogDrawer->setMinimumHeight(centerHeight);
+                m_dialogDrawer->setMaximumHeight(centerHeight);
+            }
+            ui->stackedWidget_Center->setVisible(false);
+        }
 
         QEventLoop loop;
         int result = defaultResult;
@@ -237,6 +252,12 @@ namespace fairwindsk::ui {
         m_activeDrawerLoop = nullptr;
         m_activeDrawerResult = nullptr;
         m_dialogDrawer->hide();
+        if (ui->stackedWidget_Center) {
+            ui->stackedWidget_Center->setVisible(centerWasVisible);
+        }
+        m_dialogDrawer->setSizePolicy(previousDrawerSizePolicy);
+        m_dialogDrawer->setMinimumHeight(previousDrawerMinimumHeight);
+        m_dialogDrawer->setMaximumHeight(previousDrawerMaximumHeight);
         clearDrawer();
         setDrawerEnabled(true);
         return result;

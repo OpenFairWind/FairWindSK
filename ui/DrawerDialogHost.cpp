@@ -306,6 +306,9 @@ namespace fairwindsk::ui::drawer {
                 titleRow->setSpacing(12);
 
                 m_titleLabel = new QLabel(m_mode == FileBrowserMode::SaveFile ? tr("Save file") : tr("Select file"), this);
+                if (m_mode == FileBrowserMode::OpenFile) {
+                    m_titleLabel->hide();
+                }
                 titleRow->addWidget(m_titleLabel);
 
                 m_statusLabel = new QLabel(this);
@@ -536,20 +539,28 @@ namespace fairwindsk::ui::drawer {
                     return;
                 }
 
-                const int availableHeight = mainWindow->getUi()->stackedWidget_Center->height();
+                QWidget *geometryHost = parentWidget();
+                if (!geometryHost) {
+                    geometryHost = mainWindow->getUi()->widgetDialogDrawerContentHost;
+                }
+                if (!geometryHost) {
+                    geometryHost = mainWindow->getUi()->stackedWidget_Center;
+                }
+
+                const int availableHeight = geometryHost ? geometryHost->height() : 0;
                 if (availableHeight <= 0) {
                     return;
                 }
 
-                if (m_geometryHost != mainWindow->getUi()->stackedWidget_Center) {
+                if (m_geometryHost != geometryHost) {
                     if (m_geometryHost) {
                         m_geometryHost->removeEventFilter(this);
                     }
-                    m_geometryHost = mainWindow->getUi()->stackedWidget_Center;
+                    m_geometryHost = geometryHost;
                     m_geometryHost->installEventFilter(this);
                 }
 
-                const int targetHeight = qMax(availableHeight - 2, m_mode == FileBrowserMode::SaveFile ? 900 : 860);
+                const int targetHeight = qMax(availableHeight, m_mode == FileBrowserMode::SaveFile ? 900 : 860);
                 setMinimumHeight(targetHeight);
                 setMaximumHeight(targetHeight);
             }
