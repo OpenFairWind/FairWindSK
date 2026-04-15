@@ -141,7 +141,7 @@ FairWindSK ships with editable comfort preset stylesheets for `default`, `dawn`,
   - scroll bar knob (`comfortViewPalette.<preset>.scrollBarKnob`)
 
 The **Settings > Comfort** page writes those values back into `fairwindsk.json`, so different presets can keep different icon colors without changing the base SVG assets.
-Its touch color picker also keeps a reusable custom-color set in the per-user settings store, provides a shade selector for fast tap-driven color choice, and uses a compact scroll-safe layout that fits the shared bottom-drawer interaction pattern.
+Its touch color picker also keeps a reusable custom-color set in the per-user settings store, provides a shade selector for fast tap-driven color choice, and uses a compact scroll-safe layout that fits the shared Bottom Bar horizontal drawer interaction pattern.
 
 ## My Data behavior
 
@@ -157,6 +157,7 @@ The editor now exposes grouped actions for:
 - palette-level actions such as creating applications, showing selected application details, removing selected applications from the palette, and adding all available applications to the current page
 
 Application details also expose the stored web zoom percentage so each embedded web app can be enlarged or reduced without affecting the others.
+Launcher, settings, and embedded web interactions should follow the formal shell vocabulary from [docs/ui_shell.md](./ui_shell.md), especially when a flow uses the Bottom Bar horizontal drawer or the Application Area vertical drawer.
 
 ## Authentication and tokens
 

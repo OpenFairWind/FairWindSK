@@ -19,6 +19,7 @@ The runtime now supervises Signal K restarts as well: if the server drops and co
 * [Getting started](docs/getting_started.md)
 * [Building FairWindSK](docs/building.md)
 * [Architecture overview](docs/architecture.md)
+* [UI shell definition](docs/ui_shell.md)
 * [Configuration guide](docs/configuring.md)
 * [GUI tour](docs/gui.md)
 * [Typical use cases](docs/use_case.md)
@@ -34,7 +35,7 @@ The runtime now supervises Signal K restarts as well: if the server drops and co
 * Signal K Applications
 * Automatic Signal K restart detection and reconnect consistency recovery
 * Touch-oriented diagnostics controls with persistent per-run logs
-* In-app persistent log exploration through the shared bottom drawer
+* In-app persistent log exploration through the shared Bottom Bar horizontal drawer
 * Comfort preset editing with marine-style daypart themes and preset SVG icon colors
 * Grouped launcher editing actions with OpenBridge page/application management icons
 * The autopilot bar

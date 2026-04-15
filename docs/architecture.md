@@ -11,6 +11,8 @@ FairWindSK is a Qt6 shell that launches Signal K web applications and exposes na
 - **Signal K client (`signalk::Client`)**: Manages REST and websocket communication with the server using URLs derived from `connection.server` plus `/signalk`, including authentication tokens shared through the WebEngine cookie store. The client now re-discovers the server after disconnects, reopens the stream, re-sends subscriptions, and hydrates current values so widgets recover cleanly after a Signal K restart.
 - **UI layers (`ui/` directory)**: Implements the Qt widgets for the desktop, top/bottom bars, settings panels, and embedded web views. A shared `ui/web/WebView` facade keeps the desktop `QWebEngineView` path and the mobile Qt WebView path behind the same widget-oriented API so the higher-level UI classes do not fork.
 
+The formal names and behavioral rules for the shell surfaces are defined in [docs/ui_shell.md](./ui_shell.md). In particular, contributor discussions should distinguish between the **Top Bar**, **Bottom Bar**, **Application Area**, **Bottom Bar horizontal drawer**, and **Application Area vertical drawer** instead of using generic terms such as popup, right menu, or main view.
+
 ## Data and configuration flow
 
 1. **Startup**: `FairWindSK::loadConfig()` reads `fairwindsk.ini` for the JSON configuration path and debug flag, then loads or seeds `fairwindsk.json`.

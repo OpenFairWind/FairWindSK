@@ -280,7 +280,7 @@ cd FairWindSK
    - select the physical device in the run target chooser
    - verify signing settings if Qt Creator prompts for them
    - run the project from Qt Creator
-12. Validate that the main widget shell, drawers, and embedded web content behave correctly on both compact phone layouts and larger iPad layouts.
+12. Validate that the Top Bar, Bottom Bar, Application Area, Bottom Bar horizontal drawer, Application Area vertical drawer, and embedded web content behave correctly on both compact phone layouts and larger iPad layouts.
 
 ### Optional command-line iOS configure example
 

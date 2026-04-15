@@ -5,6 +5,7 @@ These instructions apply to the entire repository.
 ## Code style
 - Match the existing C++17/Qt6 style (4-space indentation, brace placement, and include ordering).
 - Keep header and source files in sync; prefer small, focused changes that respect current patterns.
+- Avoid code duplication; when the same behavior or UI pattern appears in more than one place, factor it into a fully reusable component instead of copying logic.
 - Avoid introducing new third-party dependencies unless absolutely necessary.
 - Do not wrap imports or includes in `try/catch`.
 - Line-by-line pedagogical comments.
