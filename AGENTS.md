@@ -22,6 +22,12 @@ These instructions apply to the entire repository.
 - Update user-facing strings or documentation when behavior changes; keep resource paths (e.g., `resources.qrc`) consistent if assets move.
 - Update existing Markdown documentation under `docs/` and add new Markdown files when a change introduces a substantial workflow, feature, or maintenance improvement that should be captured for future contributors or users.
 
+## Built feature definitions
+- **MyData**: lets the user interact with `Waypoints`, `Routes`, `Regions`, `Notes`, `Charts`, `Tracks`, and `Files`, including both local and remote files.
+- **POB**: tracks one or more Person(s) Over Board. Clicking the icon sets a new POB. The POB dialog overlays the Bottom Bar and shows the last known position of the current POB, with support for selecting among multiple POBs, together with the bearing, range, and elapsed time. The user can cancel the active POB from the dialog. To close the POB dialog and return to the regular Bottom Bar, the user must click the rightmost POB dialog icon.
+- **Autopilot**: the icon is active only when the Autopilot plugin is installed and its APIs make autopilot interaction consistent. When the user clicks the Autopilot icon, the Autopilot dialog appears covering the Bottom Bar. The Autopilot dialog lets the user go to the next waypoint, switch to wind-vane mode, tack, gybe, trim by `1` degree or `10` degrees to port or starboard, select the route, dodge, and set auto mode. To close the Autopilot dialog and return to the regular Bottom Bar, the user must click the rightmost dialog icon.
+- **Apps**: acts as the home button. When clicked, the current application shown in the Application Area is hidden and the launcher home is shown with the application tiles. Applications can be organized in pages and sub-pages. Clicking an application tile launches that application.
+
 ## Operational guidelines
 - Prefer `rg` for searches over recursive `ls`/`grep`.
 - Follow repo-level reporting norms: provide a concise summary of changes and list the commands you ran, prefixing each command with the appropriate status emoji.
