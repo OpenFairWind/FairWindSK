@@ -57,11 +57,6 @@ namespace fairwindsk::ui::bottombar {
             auto s = QString::number(i);
             if (i>0) s = "+" + s;
             auto *labelTick = new QLabel( s,  ui->widget_Rudder);
-            /*
-            if (i % 2) {
-                labelTick->setStyleSheet("background-color:blue");
-            }
-             */
             if (i<0) {
                 labelTick->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
             } else if (i>0) {

@@ -34,8 +34,8 @@ namespace fairwindsk::ui::widgets {
         void onServerMessageChanged(const QString &message);
 
     private:
-        void applyIndicatorColor(QLabel *label, const QString &color);
-        void applyStatusBadge(QLabel *label, const QString &text, const QString &fillColor, const QString &textColor);
+        void applyIndicatorColor(QLabel *label, const QColor &color);
+        void applyStatusBadge(QLabel *label, const QString &text, const QColor &fillColor, const QColor &textColor);
         void updateStatusLabel(const QString &text);
         void setBusyVisible(bool active);
 

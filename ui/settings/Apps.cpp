@@ -220,12 +220,32 @@ namespace fairwindsk::ui::settings {
 
                 const QRect rect = option.rect.adjusted(3, 3, -3, -3);
                 const bool isSelected = option.state & QStyle::State_Selected;
+                auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+                auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+                const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+                const QColor tileBackground = fairwindsk::ui::comfortThemeColor(
+                    configuration,
+                    preset,
+                    QStringLiteral("applicationBackground"),
+                    option.palette.color(QPalette::Window));
+                const QColor borderColor = isSelected
+                    ? fairwindsk::ui::comfortThemeColor(configuration, preset, QStringLiteral("accentTop"), option.palette.color(QPalette::Highlight))
+                    : fairwindsk::ui::comfortThemeColor(configuration, preset, QStringLiteral("border"), option.palette.color(QPalette::Mid));
+                const QColor titleColor = fairwindsk::ui::comfortThemeColor(
+                    configuration,
+                    preset,
+                    QStringLiteral("text"),
+                    option.palette.color(QPalette::WindowText));
+                const QColor overlayBottom = fairwindsk::ui::comfortAlpha(
+                    fairwindsk::ui::comfortThemeColor(configuration, preset, QStringLiteral("panel"), tileBackground.darker(112)),
+                    190);
+                const QColor overlayMid = fairwindsk::ui::comfortAlpha(overlayBottom, 40);
 
                 QPainterPath clipPath;
                 clipPath.addRoundedRect(rect, 3.0, 3.0);
                 painter->setClipPath(clipPath);
 
-                painter->fillRect(rect, QColor(16, 22, 32));
+                painter->fillRect(rect, tileBackground);
 
                 const QPixmap pixmap = index.data(Qt::DecorationRole).value<QPixmap>();
                 if (!pixmap.isNull()) {
@@ -240,19 +260,19 @@ namespace fairwindsk::ui::settings {
                 }
 
                 QLinearGradient overlay(rect.topLeft(), QPointF(rect.left(), rect.bottom()));
-                overlay.setColorAt(0.0, QColor(0, 0, 0, 0));
-                overlay.setColorAt(0.55, QColor(0, 0, 0, 10));
-                overlay.setColorAt(1.0, QColor(0, 0, 0, 170));
+                overlay.setColorAt(0.0, Qt::transparent);
+                overlay.setColorAt(0.55, overlayMid);
+                overlay.setColorAt(1.0, overlayBottom);
                 painter->fillRect(rect, overlay);
 
                 painter->setClipping(false);
-                painter->setPen(QPen(isSelected ? QColor(255, 255, 255) : QColor(230, 231, 235), isSelected ? 2.0 : 1.0));
+                painter->setPen(QPen(borderColor, isSelected ? 2.0 : 1.0));
                 painter->drawRoundedRect(rect, 3.0, 3.0);
 
                 QFont font = option.font;
                 font.setPointSizeF(std::max<qreal>(10.0, font.pointSizeF()));
                 painter->setFont(font);
-                painter->setPen(QColor(248, 250, 252));
+                painter->setPen(titleColor);
                 painter->drawText(rect.adjusted(10, 10, -10, -10),
                                   Qt::AlignLeft | Qt::AlignBottom | Qt::TextWordWrap,
                                   index.data(Qt::DisplayRole).toString());

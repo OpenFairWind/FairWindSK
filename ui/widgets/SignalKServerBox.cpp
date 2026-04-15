@@ -53,9 +53,14 @@ namespace fairwindsk::ui::widgets {
         ui->labelBusy->setPixmap(m_idleBusyPixmap);
         ui->labelBusy->setVisible(true);
 
-        applyIndicatorColor(ui->labelIndicator, QStringLiteral("#f59e0b"));
-        applyStatusBadge(ui->labelRestIndicator, tr("REST"), QStringLiteral("#7c2d12"), QStringLiteral("#fed7aa"));
-        applyStatusBadge(ui->labelStreamIndicator, tr("STR"), QStringLiteral("#7f1d1d"), QStringLiteral("#fecaca"));
+        auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+        auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+        const auto statusColors = fairwindsk::ui::resolveComfortStatusColors(configuration, preset, palette());
+
+        applyIndicatorColor(ui->labelIndicator, statusColors.warningFill);
+        applyStatusBadge(ui->labelRestIndicator, tr("REST"), statusColors.warningFill, statusColors.warningText);
+        applyStatusBadge(ui->labelStreamIndicator, tr("STR"), statusColors.errorFill, statusColors.errorText);
 
         if (auto *client = FairWindSK::getInstance()->getSignalKClient()) {
             connect(client, &fairwindsk::signalk::Client::serverHealthChanged,
@@ -86,26 +91,34 @@ namespace fairwindsk::ui::widgets {
 
     void SignalKServerBox::onServerHealthChanged(const bool healthy, const QString &statusText) {
         updateStatusLabel(statusText.trimmed().isEmpty() ? tr("Signal K") : statusText.trimmed());
-        applyIndicatorColor(ui->labelIndicator, healthy ? QStringLiteral("#22c55e") : QStringLiteral("#f59e0b"));
+        auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+        auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+        const auto colors = fairwindsk::ui::resolveComfortStatusColors(configuration, preset, palette());
+        applyIndicatorColor(ui->labelIndicator, healthy ? colors.healthyFill : colors.warningFill);
     }
 
     void SignalKServerBox::onConnectivityChanged(const bool restHealthy, const bool streamHealthy, const QString &statusText) {
         Q_UNUSED(statusText)
+        auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+        auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+        const auto colors = fairwindsk::ui::resolveComfortStatusColors(configuration, preset, palette());
         applyStatusBadge(ui->labelRestIndicator,
                          tr("REST"),
-                         restHealthy ? QStringLiteral("#14532d") : QStringLiteral("#7f1d1d"),
-                         restHealthy ? QStringLiteral("#dcfce7") : QStringLiteral("#fecaca"));
+                         restHealthy ? colors.healthyFill : colors.errorFill,
+                         restHealthy ? colors.healthyText : colors.errorText);
         applyStatusBadge(ui->labelStreamIndicator,
                          tr("STR"),
-                         streamHealthy ? QStringLiteral("#14532d") : QStringLiteral("#7f1d1d"),
-                         streamHealthy ? QStringLiteral("#dcfce7") : QStringLiteral("#fecaca"));
+                         streamHealthy ? colors.healthyFill : colors.errorFill,
+                         streamHealthy ? colors.healthyText : colors.errorText);
 
         if (restHealthy && streamHealthy) {
-            applyIndicatorColor(ui->labelIndicator, QStringLiteral("#22c55e"));
+            applyIndicatorColor(ui->labelIndicator, colors.healthyFill);
         } else if (restHealthy || streamHealthy) {
-            applyIndicatorColor(ui->labelIndicator, QStringLiteral("#f59e0b"));
+            applyIndicatorColor(ui->labelIndicator, colors.warningFill);
         } else {
-            applyIndicatorColor(ui->labelIndicator, QStringLiteral("#ef4444"));
+            applyIndicatorColor(ui->labelIndicator, colors.errorFill);
         }
     }
 
@@ -119,7 +132,7 @@ namespace fairwindsk::ui::widgets {
         ui->plainTextEditMessage->setToolTip(ui->plainTextEditMessage->toPlainText());
     }
 
-    void SignalKServerBox::applyIndicatorColor(QLabel *label, const QString &color) {
+    void SignalKServerBox::applyIndicatorColor(QLabel *label, const QColor &color) {
         if (!label) {
             return;
         }
@@ -134,10 +147,10 @@ namespace fairwindsk::ui::widgets {
             " background: %1;"
             " border: 1px solid %2;"
             " border-radius: 5px;"
-            " }").arg(color, borderColor.name()));
+            " }").arg(color.name(), borderColor.name()));
     }
 
-    void SignalKServerBox::applyStatusBadge(QLabel *label, const QString &text, const QString &fillColor, const QString &textColor) {
+    void SignalKServerBox::applyStatusBadge(QLabel *label, const QString &text, const QColor &fillColor, const QColor &textColor) {
         if (!label) {
             return;
         }
@@ -158,7 +171,7 @@ namespace fairwindsk::ui::widgets {
             " font-size: 10px;"
             " font-weight: 700;"
             " padding: 0px 4px;"
-            " }").arg(fillColor, textColor, borderColor.name()));
+            " }").arg(fillColor.name(), textColor.name(), borderColor.name()));
     }
 
     void SignalKServerBox::updateStatusLabel(const QString &text) {

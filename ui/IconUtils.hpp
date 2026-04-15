@@ -140,6 +140,15 @@ namespace fairwindsk::ui {
         QColor transparentIcon;
     };
 
+    struct ComfortStatusColors {
+        QColor healthyFill;
+        QColor healthyText;
+        QColor warningFill;
+        QColor warningText;
+        QColor errorFill;
+        QColor errorText;
+    };
+
     inline ComfortChromeColors resolveComfortChromeColors(const fairwindsk::Configuration *configuration,
                                                           const QString &preset,
                                                           const QPalette &palette,
@@ -174,13 +183,34 @@ namespace fairwindsk::ui {
             preset,
             bestContrastingColor(
                 colors.buttonBackground,
-                {colors.buttonText, colors.text, colors.accentText, QColor(QStringLiteral("#f8f8f8")), QColor(QStringLiteral("#111111"))}));
+                {colors.buttonText, colors.text, colors.accentText, palette.color(QPalette::Base), palette.color(QPalette::ButtonText)}));
         colors.transparentIcon = comfortIconColor(
             configuration,
             preset,
             bestContrastingColor(
                 colors.window,
-                {colors.text, colors.buttonText, colors.accentText, QColor(QStringLiteral("#f8f8f8")), QColor(QStringLiteral("#111111"))}));
+                {colors.text, colors.buttonText, colors.accentText, palette.color(QPalette::Base), palette.color(QPalette::WindowText)}));
+        return colors;
+    }
+
+    inline ComfortStatusColors resolveComfortStatusColors(const fairwindsk::Configuration *configuration,
+                                                          const QString &preset,
+                                                          const QPalette &palette) {
+        const auto chrome = resolveComfortChromeColors(configuration, preset, palette, false);
+
+        ComfortStatusColors colors;
+        colors.healthyFill = chrome.accentTop;
+        colors.healthyText = bestContrastingColor(
+            colors.healthyFill,
+            {chrome.accentText, chrome.text, chrome.buttonText, palette.color(QPalette::HighlightedText), palette.color(QPalette::WindowText)});
+        colors.warningFill = chrome.buttonBackground;
+        colors.warningText = bestContrastingColor(
+            colors.warningFill,
+            {chrome.buttonText, chrome.text, chrome.accentText, palette.color(QPalette::ButtonText), palette.color(QPalette::WindowText)});
+        colors.errorFill = chrome.accentBottom;
+        colors.errorText = bestContrastingColor(
+            colors.errorFill,
+            {chrome.accentText, chrome.text, chrome.buttonText, palette.color(QPalette::HighlightedText), palette.color(QPalette::WindowText)});
         return colors;
     }
 }
