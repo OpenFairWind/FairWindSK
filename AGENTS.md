@@ -17,6 +17,7 @@ These instructions apply to the entire repository.
 - For every GUI change, explicitly verify touch-friendly behavior and marine electronics multi-functional display (MFD) consistency before considering the task done.
 - Touch targets must be finger-friendly by default (comfortable hit area, clear focus/pressed states, and readable high-contrast text at normal helm distance).
 - Layout, spacing, and visual hierarchy must remain stable in rough-use conditions: avoid dense controls, ambiguous labels, or low-contrast decorative styling that reduces operational clarity.
+- Ensure all comfort presets: 1) fit the marine electronics UI style; 2) ensure the best visibility for down, day, default, dusk, night, and sunset.
 
 ## Documentation & resources
 - Update user-facing strings or documentation when behavior changes; keep resource paths (e.g., `resources.qrc`) consistent if assets move.
