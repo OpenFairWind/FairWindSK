@@ -38,6 +38,7 @@
 #include "IconUtils.hpp"
 #include "MainWindow.hpp"
 #include "ui/widgets/TouchFileBrowser.hpp"
+#include "ui/widgets/TouchIconBrowser.hpp"
 
 namespace fairwindsk::ui::drawer {
     namespace {
@@ -1279,8 +1280,9 @@ namespace fairwindsk::ui::drawer {
     QString getIconPath(QWidget *parent,
                         const QString &title,
                         const QString &currentPath) {
-        auto *picker = new DrawerIconPickerWidget(currentPath);
-        QPointer<DrawerIconPickerWidget> pickerGuard(picker);
+        auto *picker = new fairwindsk::ui::widgets::TouchIconBrowser();
+        picker->setCurrentPath(currentPath);
+        QPointer<fairwindsk::ui::widgets::TouchIconBrowser> pickerGuard(picker);
         const int result = execDrawer(parent, title, picker, {
             {QObject::tr("Select"), int(QMessageBox::Ok), true},
             {QObject::tr("Cancel"), int(QMessageBox::Cancel), false}
@@ -1290,7 +1292,7 @@ namespace fairwindsk::ui::drawer {
             return {};
         }
 
-        return normalizedIconStoragePath(pickerGuard->selectedPath());
+        return fairwindsk::ui::widgets::TouchIconBrowser::normalizedIconStoragePath(pickerGuard->selectedPath());
     }
 
     QString getSaveFilePath(QWidget *parent,

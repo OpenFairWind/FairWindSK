@@ -157,11 +157,11 @@ namespace fairwindsk::ui::widgets {
 
         class SwatchButton final : public QToolButton {
         public:
-            explicit SwatchButton(const QColor &color, QWidget *parent = nullptr)
+        explicit SwatchButton(const QColor &color, QWidget *parent = nullptr)
                 : QToolButton(parent),
                   m_color(color) {
                 setCheckable(true);
-                setMinimumSize(64, 64);
+                setMinimumSize(56, 56);
                 setIconSize(QSize(28, 28));
                 setAutoRaise(false);
             }
@@ -254,7 +254,7 @@ namespace fairwindsk::ui::widgets {
         rootLayout->addLayout(headerLayout);
 
         auto *preview = new PreviewFrame(this);
-        preview->setMinimumSize(132, 108);
+        preview->setMinimumSize(112, 92);
         preview->setFrameShape(QFrame::StyledPanel);
         preview->onActivated = [this]() {
             emit colorActivated(m_color);
@@ -282,21 +282,36 @@ namespace fairwindsk::ui::widgets {
         summaryLayout->addWidget(m_hsvLabel);
         summaryLayout->addStretch(1);
 
+        auto *contentLayout = new QHBoxLayout();
+        contentLayout->setContentsMargins(0, 0, 0, 0);
+        contentLayout->setSpacing(14);
+        rootLayout->addLayout(contentLayout, 1);
+
+        auto *leftColumnLayout = new QVBoxLayout();
+        leftColumnLayout->setContentsMargins(0, 0, 0, 0);
+        leftColumnLayout->setSpacing(10);
+        contentLayout->addLayout(leftColumnLayout, 1);
+
+        auto *rightColumnLayout = new QVBoxLayout();
+        rightColumnLayout->setContentsMargins(0, 0, 0, 0);
+        rightColumnLayout->setSpacing(10);
+        contentLayout->addLayout(rightColumnLayout, 1);
+
         auto *shadeLabel = new QLabel(tr("Shade"), this);
-        rootLayout->addWidget(shadeLabel);
+        leftColumnLayout->addWidget(shadeLabel);
 
         m_shadeSelector = new TouchColorShadeSelector(this);
-        rootLayout->addWidget(m_shadeSelector);
+        leftColumnLayout->addWidget(m_shadeSelector, 1);
 
         auto *quickColorsLabel = new QLabel(tr("Quick Colors"), this);
-        rootLayout->addWidget(quickColorsLabel);
+        leftColumnLayout->addWidget(quickColorsLabel);
 
         auto *quickSwatchesHost = new QWidget(this);
         m_quickSwatchesLayout = new QGridLayout(quickSwatchesHost);
         m_quickSwatchesLayout->setContentsMargins(0, 0, 0, 0);
         m_quickSwatchesLayout->setHorizontalSpacing(10);
         m_quickSwatchesLayout->setVerticalSpacing(10);
-        rootLayout->addWidget(quickSwatchesHost);
+        leftColumnLayout->addWidget(quickSwatchesHost);
 
         const QList<QColor> swatches = {
             QColor(QStringLiteral("#ffffff")),
@@ -335,7 +350,7 @@ namespace fairwindsk::ui::widgets {
         auto *customHeaderLayout = new QHBoxLayout();
         customHeaderLayout->setContentsMargins(0, 0, 0, 0);
         customHeaderLayout->setSpacing(8);
-        rootLayout->addLayout(customHeaderLayout);
+        leftColumnLayout->addLayout(customHeaderLayout);
 
         auto *customColorsLabel = new QLabel(tr("Custom Colors"), this);
         customHeaderLayout->addWidget(customColorsLabel);
@@ -355,22 +370,35 @@ namespace fairwindsk::ui::widgets {
         m_customSwatchesLayout->setContentsMargins(0, 0, 0, 0);
         m_customSwatchesLayout->setHorizontalSpacing(10);
         m_customSwatchesLayout->setVerticalSpacing(10);
-        rootLayout->addWidget(m_customSwatchesHost);
+        leftColumnLayout->addWidget(m_customSwatchesHost);
 
         auto *hsvLabel = new QLabel(tr("Color Balance"), this);
-        rootLayout->addWidget(hsvLabel);
+        rightColumnLayout->addWidget(hsvLabel);
 
-        addSliderRow(tr("Hue"), &m_hueSlider, &m_hueValueLabel);
-        addSliderRow(tr("Saturation"), &m_saturationSlider, &m_saturationValueLabel);
-        addSliderRow(tr("Brightness"), &m_valueSlider, &m_valueValueLabel);
+        auto *balanceHost = new QWidget(this);
+        m_balanceLayout = new QVBoxLayout(balanceHost);
+        m_balanceLayout->setContentsMargins(0, 0, 0, 0);
+        m_balanceLayout->setSpacing(8);
+        rightColumnLayout->addWidget(balanceHost);
+
+        addSliderRow(m_balanceLayout, tr("Hue"), &m_hueSlider, &m_hueValueLabel);
+        addSliderRow(m_balanceLayout, tr("Saturation"), &m_saturationSlider, &m_saturationValueLabel);
+        addSliderRow(m_balanceLayout, tr("Brightness"), &m_valueSlider, &m_valueValueLabel);
 
         auto *rgbLabel = new QLabel(tr("RGB Fine Tuning"), this);
-        rootLayout->addWidget(rgbLabel);
+        rightColumnLayout->addWidget(rgbLabel);
 
-        addSliderRow(tr("Red"), &m_redSlider, &m_redValueLabel);
-        addSliderRow(tr("Green"), &m_greenSlider, &m_greenValueLabel);
-        addSliderRow(tr("Blue"), &m_blueSlider, &m_blueValueLabel);
-        addSliderRow(tr("Opacity"), &m_alphaSlider, &m_alphaValueLabel);
+        auto *fineTuneHost = new QWidget(this);
+        m_fineTuneLayout = new QVBoxLayout(fineTuneHost);
+        m_fineTuneLayout->setContentsMargins(0, 0, 0, 0);
+        m_fineTuneLayout->setSpacing(8);
+        rightColumnLayout->addWidget(fineTuneHost);
+
+        addSliderRow(m_fineTuneLayout, tr("Red"), &m_redSlider, &m_redValueLabel);
+        addSliderRow(m_fineTuneLayout, tr("Green"), &m_greenSlider, &m_greenValueLabel);
+        addSliderRow(m_fineTuneLayout, tr("Blue"), &m_blueSlider, &m_blueValueLabel);
+        addSliderRow(m_fineTuneLayout, tr("Opacity"), &m_alphaSlider, &m_alphaValueLabel);
+        rightColumnLayout->addStretch(1);
 
         const QList<QSlider *> sliders = {
             m_hueSlider, m_saturationSlider, m_valueSlider,
@@ -537,20 +565,23 @@ namespace fairwindsk::ui::widgets {
         }
     }
 
-    void TouchColorPicker::addSliderRow(const QString &labelText, QSlider **sliderPtr, QLabel **valueLabelPtr) {
+    void TouchColorPicker::addSliderRow(QVBoxLayout *targetLayout,
+                                        const QString &labelText,
+                                        QSlider **sliderPtr,
+                                        QLabel **valueLabelPtr) {
         auto *rowWidget = new QWidget(this);
         auto *rowLayout = new QHBoxLayout(rowWidget);
         rowLayout->setContentsMargins(0, 0, 0, 0);
-        rowLayout->setSpacing(10);
+        rowLayout->setSpacing(8);
 
         auto *label = new QLabel(labelText, this);
-        label->setMinimumWidth(82);
+        label->setMinimumWidth(72);
         rowLayout->addWidget(label);
 
         auto *slider = new QSlider(Qt::Horizontal, this);
         slider->setPageStep(8);
         slider->setSingleStep(1);
-        slider->setMinimumHeight(58);
+        slider->setMinimumHeight(48);
         rowLayout->addWidget(slider, 1);
 
         auto *valueLabel = new QLabel(this);
@@ -558,7 +589,9 @@ namespace fairwindsk::ui::widgets {
         valueLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
         rowLayout->addWidget(valueLabel);
 
-        static_cast<QVBoxLayout *>(layout())->addWidget(rowWidget);
+        if (targetLayout) {
+            targetLayout->addWidget(rowWidget);
+        }
 
         if (sliderPtr == &m_alphaSlider) {
             m_alphaRow = rowWidget;

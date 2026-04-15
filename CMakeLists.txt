@@ -237,6 +237,7 @@ set(FAIRWINDSK_SOURCES
         ui/widgets/TouchCheckBox.cpp ui/widgets/TouchCheckBox.hpp ui/widgets/TouchCheckBox.ui
         ui/widgets/TouchColorPicker.cpp ui/widgets/TouchColorPicker.hpp
         ui/widgets/TouchFileBrowser.cpp ui/widgets/TouchFileBrowser.hpp
+        ui/widgets/TouchIconBrowser.cpp ui/widgets/TouchIconBrowser.hpp
         ui/widgets/TouchScrollArea.cpp ui/widgets/TouchScrollArea.hpp
         ui/widgets/TouchSpinBox.cpp ui/widgets/TouchSpinBox.hpp ui/widgets/TouchSpinBox.ui
         ui/widgets/SignalKServerBox.cpp ui/widgets/SignalKServerBox.hpp ui/widgets/SignalKServerBox.ui

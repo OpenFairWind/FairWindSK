@@ -1,0 +1,47 @@
+//
+// Created by Codex on 15/04/26.
+//
+
+#ifndef FAIRWINDSK_UI_WIDGETS_TOUCHICONBROWSER_HPP
+#define FAIRWINDSK_UI_WIDGETS_TOUCHICONBROWSER_HPP
+
+#include <QPixmap>
+#include <QWidget>
+
+class QLabel;
+class QListWidget;
+class QListWidgetItem;
+
+namespace fairwindsk::ui::widgets {
+    class TouchIconBrowser final : public QWidget {
+        Q_OBJECT
+
+    public:
+        explicit TouchIconBrowser(QWidget *parent = nullptr);
+
+        void setCurrentPath(const QString &path);
+        QString currentPath() const;
+        QString selectedPath() const;
+
+        static QString normalizedIconStoragePath(const QString &path);
+        static QString resolvedLocalIconPath(const QString &path);
+        static QPixmap iconPixmapForPath(const QString &path, int iconSize);
+
+    signals:
+        void pathSelected(const QString &path);
+        void pathActivated(const QString &path);
+
+    private:
+        void populate();
+        void ensureIconEntry(const QString &path);
+        void updatePreview(const QString &path);
+
+    private:
+        QString m_currentPath;
+        QLabel *m_previewLabel = nullptr;
+        QLabel *m_selectionLabel = nullptr;
+        QListWidget *m_listWidget = nullptr;
+    };
+}
+
+#endif // FAIRWINDSK_UI_WIDGETS_TOUCHICONBROWSER_HPP

@@ -18,6 +18,7 @@ class QSlider;
 class QWidget;
 class QHBoxLayout;
 class QGridLayout;
+class QVBoxLayout;
 
 namespace fairwindsk::ui::widgets {
     class TouchColorShadeSelector;
@@ -43,7 +44,10 @@ namespace fairwindsk::ui::widgets {
         void loadCustomColors();
         void saveCustomColors() const;
         void updateShadeSelector();
-        void addSliderRow(const QString &labelText, QSlider **sliderPtr, QLabel **valueLabelPtr);
+        void addSliderRow(QVBoxLayout *targetLayout,
+                          const QString &labelText,
+                          QSlider **sliderPtr,
+                          QLabel **valueLabelPtr);
         void syncControlsFromColor();
         void syncColorFromRgbSliders();
         void syncColorFromHsvSliders();
@@ -64,6 +68,8 @@ namespace fairwindsk::ui::widgets {
         QGridLayout *m_quickSwatchesLayout = nullptr;
         QWidget *m_customSwatchesHost = nullptr;
         QGridLayout *m_customSwatchesLayout = nullptr;
+        QVBoxLayout *m_balanceLayout = nullptr;
+        QVBoxLayout *m_fineTuneLayout = nullptr;
         QPushButton *m_addCustomColorButton = nullptr;
         QPushButton *m_removeCustomColorButton = nullptr;
 
