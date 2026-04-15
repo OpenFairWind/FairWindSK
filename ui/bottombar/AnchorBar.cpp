@@ -147,30 +147,10 @@ namespace fairwindsk::ui::bottombar {
     }
 
     void AnchorBar::applyComfortStyle() const {
-        const QColor buttonColor = palette().color(QPalette::Button);
-        const QColor borderColor = buttonColor.darker(140);
-        const QColor hoverColor = buttonColor.lighter(110);
-        const QColor pressedColor = buttonColor.darker(118);
-        const QColor transparentHover = QColor(buttonColor.red(), buttonColor.green(), buttonColor.blue(), 48);
         auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
         auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
         const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("day");
-        const QColor fallbackIconColor = fairwindsk::ui::bestContrastingColor(
-            buttonColor,
-            {palette().color(QPalette::ButtonText),
-             palette().color(QPalette::WindowText),
-             palette().color(QPalette::Text),
-             QColor(QStringLiteral("#f8f8f8")),
-             QColor(QStringLiteral("#111111"))});
-        const QColor iconColor = fairwindsk::ui::comfortIconColor(configuration, preset, fallbackIconColor);
-        const QColor fallbackTransparentIconColor = fairwindsk::ui::bestContrastingColor(
-            palette().color(QPalette::Window),
-            {palette().color(QPalette::WindowText),
-             palette().color(QPalette::Text),
-             palette().color(QPalette::ButtonText),
-             QColor(QStringLiteral("#f8f8f8")),
-             QColor(QStringLiteral("#111111"))});
-        const QColor transparentIconColor = fairwindsk::ui::comfortIconColor(configuration, preset, fallbackTransparentIconColor);
+        const auto colors = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), false);
         const QString style = QStringLiteral(
             "QToolButton {"
             " border: 1px solid %1;"
@@ -180,8 +160,15 @@ namespace fairwindsk::ui::bottombar {
             " color: %3;"
             " }"
             "QToolButton:hover { background: %4; }"
-            "QToolButton:pressed, QToolButton:checked { background: %5; color: %3; }")
-            .arg(borderColor.name(), buttonColor.name(), iconColor.name(), hoverColor.name(), pressedColor.name());
+            "QToolButton:pressed, QToolButton:checked { background: %5; color: %6; border-color: %5; }"
+            "QToolButton:disabled { color: %7; }")
+            .arg(colors.border.name(),
+                 colors.buttonBackground.name(),
+                 colors.icon.name(),
+                 colors.hoverBackground.name(),
+                 colors.pressedBackground.name(),
+                 colors.accentText.name(),
+                 colors.disabledText.name());
         const QString transparentStyle = QStringLiteral(
             "QToolButton {"
             " border: 0px;"
@@ -192,9 +179,11 @@ namespace fairwindsk::ui::bottombar {
             "QToolButton:hover, QToolButton:pressed, QToolButton:checked {"
             " background: %2;"
             " border: 0px;"
-            " color: %1;"
+            " color: %3;"
             " }")
-            .arg(transparentIconColor.name(), transparentHover.name(QColor::HexArgb));
+            .arg(colors.transparentIcon.name(),
+                 colors.transparentHoverBackground.name(QColor::HexArgb),
+                 colors.accentText.name());
 
         for (auto *button : findChildren<QToolButton *>()) {
             button->setAutoRaise(false);
@@ -207,7 +196,7 @@ namespace fairwindsk::ui::bottombar {
             }
             fairwindsk::ui::applyTintedButtonIcon(
                 button,
-                isTransparentIconButton ? transparentIconColor : iconColor,
+                isTransparentIconButton ? colors.transparentIcon : colors.icon,
                 QSize(32, 32));
         }
     }

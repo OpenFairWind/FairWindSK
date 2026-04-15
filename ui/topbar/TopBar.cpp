@@ -19,14 +19,23 @@
 
 namespace fairwindsk::ui::topbar {
     namespace {
-        const QString kChromeToolButtonStyle = QStringLiteral(
-            "QToolButton {"
-            " background: transparent;"
-            " border: none;"
-            " padding: 6px;"
-            " }"
-            "QToolButton:hover { background: rgba(127, 127, 127, 0.18); border-radius: 8px; }"
-            "QToolButton:pressed { background: rgba(127, 127, 127, 0.28); border-radius: 8px; }");
+        QString chromeToolButtonStyle(const fairwindsk::ui::ComfortChromeColors &colors) {
+            return QStringLiteral(
+                "QToolButton {"
+                " background: transparent;"
+                " border: none;"
+                " padding: 6px;"
+                " color: %1;"
+                " }"
+                "QToolButton:hover { background: %2; border-radius: 8px; color: %1; }"
+                "QToolButton:pressed { background: %3; border-radius: 8px; color: %4; }"
+                "QToolButton:disabled { color: %5; }")
+                .arg(colors.transparentIcon.name(),
+                     colors.transparentHoverBackground.name(QColor::HexArgb),
+                     fairwindsk::ui::comfortAlpha(colors.accentBottom, 84).name(QColor::HexArgb),
+                     colors.accentText.name(),
+                     colors.disabledText.name());
+        }
 
         QString comfortViewIconPath(QString preset) {
             preset = preset.trimmed().toLower();
@@ -107,6 +116,8 @@ namespace fairwindsk::ui::topbar {
 
         // Get configuration
         auto configuration = fairWindSK->getConfiguration();
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+        const auto chromeColors = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), false);
 
         // Get units converter instance
         m_units = Units::getInstance();
@@ -114,12 +125,12 @@ namespace fairwindsk::ui::topbar {
         ui->toolButton_UL->setIcon(QPixmap::fromImage(QImage(":/resources/images/mainwindow/fairwind_icon.png")));
         ui->toolButton_UL->setIconSize(QSize(32, 32));
         ui->toolButton_UL->setAutoRaise(true);
-        ui->toolButton_UL->setStyleSheet(kChromeToolButtonStyle);
+        ui->toolButton_UL->setStyleSheet(chromeToolButtonStyle(chromeColors));
 
         ui->toolButton_UR->setIcon(QPixmap::fromImage(QImage(":/resources/images/icons/apps_icon.png")));
         ui->toolButton_UR->setIconSize(QSize(32, 32));
         ui->toolButton_UR->setAutoRaise(true);
-        ui->toolButton_UR->setStyleSheet(kChromeToolButtonStyle);
+        ui->toolButton_UR->setStyleSheet(chromeToolButtonStyle(chromeColors));
         
         ui->widget_POS->setVisible(false);
         ui->widget_COG->setVisible(false);

@@ -59,20 +59,28 @@ namespace {
     constexpr int kWaypointLongitudeColumn = 4;
     constexpr int kWaypointTimestampColumn = 5;
 
-    const QString kActionButtonStyle = QStringLiteral(
-        "QToolButton {"
-        " background: transparent;"
-        " border: 1px solid rgba(127, 127, 127, 0.35);"
-        " border-radius: 6px;"
-        " padding: 4px;"
-        " min-width: 40px;"
-        " max-width: 40px;"
-        " min-height: 40px;"
-        " max-height: 40px;"
-        " margin: 0px;"
-        " }"
-        "QToolButton:hover { background: rgba(127, 127, 127, 0.18); }"
-        "QToolButton:pressed { background: rgba(127, 127, 127, 0.28); padding-top: 5px; padding-bottom: 3px; }");
+    QString actionButtonStyle(const fairwindsk::ui::ComfortChromeColors &colors) {
+        return QStringLiteral(
+            "QToolButton {"
+            " background: transparent;"
+            " border: 1px solid %1;"
+            " border-radius: 6px;"
+            " color: %2;"
+            " padding: 4px;"
+            " min-width: 40px;"
+            " max-width: 40px;"
+            " min-height: 40px;"
+            " max-height: 40px;"
+            " margin: 0px;"
+            " }"
+            "QToolButton:hover { background: %3; color: %2; }"
+            "QToolButton:pressed { background: %4; color: %5; padding-top: 5px; padding-bottom: 3px; }")
+            .arg(colors.border.name(),
+                 colors.transparentIcon.name(),
+                 colors.transparentHoverBackground.name(QColor::HexArgb),
+                 fairwindsk::ui::comfortAlpha(colors.accentBottom, 84).name(QColor::HexArgb),
+                 colors.accentText.name());
+    }
 
     void processWaypointUiEvents() {
         QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
@@ -572,12 +580,17 @@ namespace fairwindsk::ui::mydata {
         actionsLayout->setContentsMargins(6, 4, 6, 4);
         actionsLayout->setSpacing(4);
         actionsLayout->setAlignment(Qt::AlignCenter);
+        auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+        auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+        const auto chromeColors = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, m_tableWidget->palette(), false);
+        const QString rowActionStyle = actionButtonStyle(chromeColors);
 
         auto *navigateButton = new QToolButton(actionsWidget);
         navigateButton->setIcon(QIcon(":/resources/svg/mydata/waypoint-navigate-to.svg"));
         navigateButton->setToolTip(tr("Navigate to waypoint"));
         navigateButton->setProperty("waypointId", id);
-        navigateButton->setStyleSheet(kActionButtonStyle);
+        navigateButton->setStyleSheet(rowActionStyle);
         navigateButton->setIconSize(QSize(20, 20));
         fairwindsk::ui::applyTintedButtonIcon(
             navigateButton,
@@ -594,7 +607,7 @@ namespace fairwindsk::ui::mydata {
         detailsButton->setIcon(QIcon(":/resources/svg/mydata/waypoint-details.svg"));
         detailsButton->setToolTip(tr("Waypoint details"));
         detailsButton->setProperty("waypointId", id);
-        detailsButton->setStyleSheet(kActionButtonStyle);
+        detailsButton->setStyleSheet(rowActionStyle);
         detailsButton->setIconSize(QSize(20, 20));
         fairwindsk::ui::applyTintedButtonIcon(
             detailsButton,
@@ -611,7 +624,7 @@ namespace fairwindsk::ui::mydata {
         editButton->setIcon(QIcon(":/resources/svg/mydata/waypoint-edit.svg"));
         editButton->setToolTip(tr("Edit waypoint"));
         editButton->setProperty("waypointId", id);
-        editButton->setStyleSheet(kActionButtonStyle);
+        editButton->setStyleSheet(rowActionStyle);
         editButton->setIconSize(QSize(20, 20));
         fairwindsk::ui::applyTintedButtonIcon(
             editButton,
@@ -628,7 +641,7 @@ namespace fairwindsk::ui::mydata {
         removeButton->setIcon(QIcon(":/resources/svg/mydata/waypoint-remove.svg"));
         removeButton->setToolTip(tr("Remove waypoint"));
         removeButton->setProperty("waypointId", id);
-        removeButton->setStyleSheet(kActionButtonStyle);
+        removeButton->setStyleSheet(rowActionStyle);
         removeButton->setIconSize(QSize(20, 20));
         fairwindsk::ui::applyTintedButtonIcon(
             removeButton,
@@ -714,7 +727,14 @@ namespace fairwindsk::ui::mydata {
                 iconLabel->setPixmap(QIcon(iconPath).pixmap(18, 18));
             } else {
                 iconLabel->setText(label.left(1).toUpper());
-                iconLabel->setStyleSheet("QLabel { border: 1px solid rgba(127, 127, 127, 0.35); border-radius: 9px; min-width: 18px; min-height: 18px; padding: 0 4px; }");
+                auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+                auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+                const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+                const QColor borderColor = fairwindsk::ui::comfortThemeColor(configuration, preset, QStringLiteral("border"), iconLabel->palette().color(QPalette::Mid));
+                const QColor textColor = fairwindsk::ui::comfortThemeColor(configuration, preset, QStringLiteral("text"), iconLabel->palette().color(QPalette::WindowText));
+                iconLabel->setStyleSheet(QStringLiteral(
+                    "QLabel { border: 1px solid %1; color: %2; border-radius: 9px; min-width: 18px; min-height: 18px; padding: 0 4px; }")
+                    .arg(borderColor.name(), textColor.name()));
                 iconLabel->setAlignment(Qt::AlignCenter);
             }
             iconLabel->setToolTip(label);

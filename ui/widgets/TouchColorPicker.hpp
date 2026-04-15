@@ -41,7 +41,11 @@ namespace fairwindsk::ui::widgets {
         void currentColorChanged(const QColor &color);
         void colorActivated(const QColor &color);
 
+    protected:
+        void changeEvent(QEvent *event) override;
+
     private:
+        void applyComfortStyle();
         void rebuildCustomSwatches();
         void loadCustomColors();
         void saveCustomColors() const;
@@ -113,7 +117,11 @@ namespace fairwindsk::ui::widgets {
                                bool *accepted = nullptr,
                                bool alphaEnabled = false);
 
+    protected:
+        void changeEvent(QEvent *event) override;
+
     private:
+        void applyComfortStyle();
         QLabel *m_titleLabel = nullptr;
         QPushButton *m_closeButton = nullptr;
         TouchColorPicker *m_picker = nullptr;

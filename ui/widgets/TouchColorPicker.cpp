@@ -28,6 +28,7 @@
 #include "Configuration.hpp"
 #include "ui/MainWindow.hpp"
 #include "ui/DrawerDialogHost.hpp"
+#include "ui/IconUtils.hpp"
 
 namespace fairwindsk::ui::widgets {
     class TouchColorShadeSelector final : public QWidget {
@@ -138,6 +139,87 @@ namespace fairwindsk::ui::widgets {
     };
 
     namespace {
+        struct PickerChrome {
+            QColor window;
+            QColor panel;
+            QColor base;
+            QColor text;
+            QColor border;
+            QColor accent;
+            QColor accentText;
+            QColor buttonBackground;
+            QColor buttonText;
+        };
+
+        PickerChrome resolvePickerChrome(const QWidget *widget) {
+            auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+            auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+            const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+            const auto chrome = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, widget ? widget->palette() : QPalette(), false);
+
+            PickerChrome colors;
+            colors.window = fairwindsk::ui::comfortThemeColor(configuration, preset, QStringLiteral("window"), chrome.window);
+            colors.panel = fairwindsk::ui::comfortThemeColor(configuration, preset, QStringLiteral("panel"), widget ? widget->palette().color(QPalette::AlternateBase) : chrome.window);
+            colors.base = fairwindsk::ui::comfortThemeColor(configuration, preset, QStringLiteral("base"), widget ? widget->palette().color(QPalette::Base) : chrome.buttonBackground);
+            colors.text = fairwindsk::ui::comfortThemeColor(configuration, preset, QStringLiteral("text"), chrome.text);
+            colors.border = fairwindsk::ui::comfortThemeColor(configuration, preset, QStringLiteral("border"), chrome.border);
+            colors.accent = fairwindsk::ui::comfortThemeColor(configuration, preset, QStringLiteral("accentTop"), chrome.accentTop);
+            colors.accentText = fairwindsk::ui::comfortThemeColor(configuration, preset, QStringLiteral("accentText"), chrome.accentText);
+            colors.buttonBackground = fairwindsk::ui::comfortThemeColor(configuration, preset, QStringLiteral("buttonBackground"), chrome.buttonBackground);
+            colors.buttonText = fairwindsk::ui::comfortThemeColor(configuration, preset, QStringLiteral("buttonText"), chrome.buttonText);
+            return colors;
+        }
+
+        QString sliderStyleSheet(const PickerChrome &colors) {
+            return QStringLiteral(
+                "QSlider::groove:horizontal {"
+                " height: 18px;"
+                " border-radius: 9px;"
+                " background: %1;"
+                " border: 1px solid %2;"
+                " }"
+                "QSlider::sub-page:horizontal {"
+                " background: %3;"
+                " border-radius: 9px;"
+                " }"
+                "QSlider::add-page:horizontal {"
+                " background: %1;"
+                " border-radius: 9px;"
+                " }"
+                "QSlider::handle:horizontal {"
+                " width: 36px;"
+                " margin: -14px 0;"
+                " border-radius: 18px;"
+                " border: 1px solid %2;"
+                " background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %4, stop:1 %5);"
+                " }")
+                .arg(fairwindsk::ui::comfortAlpha(colors.base, 208).name(QColor::HexArgb),
+                     colors.border.name(),
+                     colors.accent.name(),
+                     colors.buttonBackground.lighter(112).name(),
+                     colors.buttonBackground.darker(112).name());
+        }
+
+        QString swatchStyleSheet(const QColor &swatch, const PickerChrome &colors) {
+            return QStringLiteral(
+                "QToolButton {"
+                " border: 2px solid %1;"
+                " border-radius: 12px;"
+                " background: %2;"
+                " }"
+                "QToolButton:hover {"
+                " border-color: %3;"
+                " }"
+                "QToolButton:checked {"
+                " border-width: 4px;"
+                " border-color: %4;"
+                " }")
+                .arg(swatch.darker(135).name(),
+                     swatch.name(QColor::HexArgb),
+                     colors.accent.name(),
+                     colors.accentText.name());
+        }
+
         class PreviewFrame final : public QFrame {
         public:
             using QFrame::QFrame;
@@ -165,6 +247,7 @@ namespace fairwindsk::ui::widgets {
                 setMinimumSize(56, 56);
                 setIconSize(QSize(28, 28));
                 setAutoRaise(false);
+                setProperty("touchColorPickerSwatch", true);
             }
 
             QColor color() const {
@@ -193,22 +276,6 @@ namespace fairwindsk::ui::widgets {
         private:
             QColor m_color;
         };
-
-        QString sliderStyleSheet() {
-            return QStringLiteral(
-                "QSlider::groove:horizontal {"
-                " height: 18px;"
-                " border-radius: 9px;"
-                " background: rgba(255, 255, 255, 0.25);"
-                " }"
-                "QSlider::handle:horizontal {"
-                " width: 36px;"
-                " margin: -14px 0;"
-                " border-radius: 18px;"
-                " border: 1px solid rgba(12, 18, 28, 0.75);"
-                " background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #fdfefe, stop:1 #d7dfe8);"
-                " }");
-        }
 
         QString normalizedHexInput(const QString &text, const bool alphaEnabled) {
             QString value = text.trimmed();
@@ -342,17 +409,6 @@ namespace fairwindsk::ui::widgets {
         for (int i = 0; i < swatches.size(); ++i) {
             const QColor &swatch = swatches.at(i);
             auto *button = new SwatchButton(swatch, this);
-            button->setStyleSheet(QStringLiteral(
-                                      "QToolButton {"
-                                      " border: 2px solid %1;"
-                                      " border-radius: 12px;"
-                                      " background: %2;"
-                                      " }"
-                                      "QToolButton:checked {"
-                                      " border-width: 4px;"
-                                      " border-color: #ffffff;"
-                                      " }")
-                                      .arg(swatch.darker(135).name(), swatch.name(QColor::HexArgb)));
             button->onChosen = [this](const QColor &color, const bool activate) {
                 setColorInternal(color, true);
                 if (activate) {
@@ -419,9 +475,6 @@ namespace fairwindsk::ui::widgets {
             m_hueSlider, m_saturationSlider, m_valueSlider,
             m_redSlider, m_greenSlider, m_blueSlider, m_alphaSlider
         };
-        for (QSlider *slider : sliders) {
-            slider->setStyleSheet(sliderStyleSheet());
-        }
 
         m_hueSlider->setRange(0, 359);
         m_saturationSlider->setRange(0, 255);
@@ -485,6 +538,7 @@ namespace fairwindsk::ui::widgets {
         rebuildCustomSwatches();
         setAlphaEnabled(false);
         setCurrentColor(QColor(QStringLiteral("#ffffff")));
+        applyComfortStyle();
     }
 
     QColor TouchColorPicker::currentColor() const {
@@ -497,6 +551,13 @@ namespace fairwindsk::ui::widgets {
 
     bool TouchColorPicker::alphaEnabled() const {
         return m_alphaEnabled;
+    }
+
+    void TouchColorPicker::changeEvent(QEvent *event) {
+        QWidget::changeEvent(event);
+        if (event && (event->type() == QEvent::PaletteChange || event->type() == QEvent::ApplicationPaletteChange || event->type() == QEvent::StyleChange)) {
+            applyComfortStyle();
+        }
     }
 
     void TouchColorPicker::setAlphaEnabled(const bool enabled) {
@@ -548,17 +609,6 @@ namespace fairwindsk::ui::widgets {
             const QColor &swatch = m_customColors.at(i);
             auto *button = new SwatchButton(swatch, m_customSwatchesHost);
             button->setChecked(sameStoredColor(swatch, m_color));
-            button->setStyleSheet(QStringLiteral(
-                                      "QToolButton {"
-                                      " border: 2px solid %1;"
-                                      " border-radius: 12px;"
-                                      " background: %2;"
-                                      " }"
-                                      "QToolButton:checked {"
-                                      " border-width: 4px;"
-                                      " border-color: #ffffff;"
-                                      " }")
-                                      .arg(swatch.darker(135).name(), swatch.name(QColor::HexArgb)));
             button->onChosen = [this](const QColor &color, const bool activate) {
                 setColorInternal(color, true);
                 if (activate) {
@@ -567,6 +617,56 @@ namespace fairwindsk::ui::widgets {
             };
             m_customSwatchesLayout->addWidget(button, i / kSwatchColumns, i % kSwatchColumns);
         }
+        applyComfortStyle();
+        updatePreview();
+    }
+
+    void TouchColorPicker::applyComfortStyle() {
+        const PickerChrome colors = resolvePickerChrome(this);
+
+        const QList<QSlider *> sliders = {
+            m_hueSlider, m_saturationSlider, m_valueSlider,
+            m_redSlider, m_greenSlider, m_blueSlider, m_alphaSlider
+        };
+        const QString sliderStyle = sliderStyleSheet(colors);
+        for (QSlider *slider : sliders) {
+            if (slider) {
+                slider->setStyleSheet(sliderStyle);
+            }
+        }
+
+        for (auto *button : findChildren<QToolButton *>()) {
+            if (!button->property("touchColorPickerSwatch").toBool()) {
+                continue;
+            }
+            auto *swatchButton = static_cast<SwatchButton *>(button);
+            swatchButton->setStyleSheet(swatchStyleSheet(swatchButton->color(), colors));
+        }
+
+        if (m_cancelButton) {
+            m_cancelButton->setStyleSheet(QStringLiteral(
+                "QPushButton {"
+                " border: 1px solid %1;"
+                " border-radius: 10px;"
+                " background: transparent;"
+                " color: %2;"
+                " padding: 4px;"
+                " }"
+                "QPushButton:hover, QPushButton:pressed {"
+                " background: %3;"
+                " color: %4;"
+                " }")
+                .arg(colors.border.name(),
+                     colors.text.name(),
+                     fairwindsk::ui::comfortAlpha(colors.accent, 48).name(QColor::HexArgb),
+                     colors.accentText.name()));
+            fairwindsk::ui::applyTintedButtonIcon(m_cancelButton, colors.text, QSize(28, 28));
+        }
+
+        if (m_applyButton) {
+            fairwindsk::ui::applyTintedButtonIcon(m_applyButton, colors.buttonText, QSize(28, 28));
+        }
+
         updatePreview();
     }
 
@@ -700,13 +800,14 @@ namespace fairwindsk::ui::widgets {
     }
 
     void TouchColorPicker::updatePreview() {
+        const PickerChrome chrome = resolvePickerChrome(this);
         m_preview->setStyleSheet(QStringLiteral(
                                      "QFrame {"
                                      " border: 1px solid %1;"
                                      " border-radius: 12px;"
                                      " background: %2;"
                                      " }")
-                                     .arg(m_color.darker(150).name(), m_color.name(QColor::HexArgb)));
+                                     .arg(chrome.border.name(), m_color.name(QColor::HexArgb)));
         m_hexEdit->setText(m_alphaEnabled ? m_color.name(QColor::HexArgb).toUpper() : m_color.name(QColor::HexRgb).toUpper());
         m_rgbLabel->setText(tr("RGB: %1, %2, %3").arg(m_color.red()).arg(m_color.green()).arg(m_color.blue()));
 
@@ -777,17 +878,6 @@ namespace fairwindsk::ui::widgets {
         m_closeButton->setToolTip(tr("Use current color"));
         m_closeButton->setMinimumSize(46, 46);
         m_closeButton->setIconSize(QSize(28, 28));
-        m_closeButton->setStyleSheet(QStringLiteral(
-            "QPushButton {"
-            " border: 1px solid rgba(255, 255, 255, 0.20);"
-            " border-radius: 10px;"
-            " background: transparent;"
-            " padding: 4px;"
-            " }"
-            "QPushButton:hover, QPushButton:pressed {"
-            " background: rgba(255, 255, 255, 0.16);"
-            " border-color: rgba(255, 255, 255, 0.32);"
-            " }"));
         headerLayout->addWidget(m_closeButton, 0, Qt::AlignTop);
 
         m_picker = new TouchColorPicker(this);
@@ -799,6 +889,37 @@ namespace fairwindsk::ui::widgets {
         connect(m_closeButton, &QPushButton::clicked, this, [this]() {
             accept();
         });
+        applyComfortStyle();
+    }
+
+    void TouchColorPickerDialog::changeEvent(QEvent *event) {
+        QDialog::changeEvent(event);
+        if (event && (event->type() == QEvent::PaletteChange || event->type() == QEvent::ApplicationPaletteChange || event->type() == QEvent::StyleChange)) {
+            applyComfortStyle();
+        }
+    }
+
+    void TouchColorPickerDialog::applyComfortStyle() {
+        const PickerChrome colors = resolvePickerChrome(this);
+        if (m_closeButton) {
+            m_closeButton->setStyleSheet(QStringLiteral(
+                "QPushButton {"
+                " border: 1px solid %1;"
+                " border-radius: 10px;"
+                " background: transparent;"
+                " color: %2;"
+                " padding: 4px;"
+                " }"
+                "QPushButton:hover, QPushButton:pressed {"
+                " background: %3;"
+                " color: %4;"
+                " }")
+                .arg(colors.border.name(),
+                     colors.text.name(),
+                     fairwindsk::ui::comfortAlpha(colors.accent, 48).name(QColor::HexArgb),
+                     colors.accentText.name()));
+            fairwindsk::ui::applyTintedButtonIcon(m_closeButton, colors.text, QSize(28, 28));
+        }
     }
 
     void TouchColorPickerDialog::setTitleText(const QString &title) {

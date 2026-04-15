@@ -12,6 +12,7 @@
 
 #include "FairWindSK.hpp"
 #include "signalk/Client.hpp"
+#include "ui/IconUtils.hpp"
 #include "ui_SignalKServerBox.h"
 
 namespace fairwindsk::ui::widgets {
@@ -123,12 +124,17 @@ namespace fairwindsk::ui::widgets {
             return;
         }
 
+        auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+        auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+        const QColor borderColor = fairwindsk::ui::comfortThemeColor(configuration, preset, QStringLiteral("border"), palette().color(QPalette::Mid));
+
         label->setStyleSheet(QStringLiteral(
             "QLabel {"
             " background: %1;"
-            " border: 1px solid rgba(127,127,127,0.45);"
+            " border: 1px solid %2;"
             " border-radius: 5px;"
-            " }").arg(color));
+            " }").arg(color, borderColor.name()));
     }
 
     void SignalKServerBox::applyStatusBadge(QLabel *label, const QString &text, const QString &fillColor, const QString &textColor) {
@@ -136,18 +142,23 @@ namespace fairwindsk::ui::widgets {
             return;
         }
 
+        auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+        auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+        const QColor borderColor = fairwindsk::ui::comfortThemeColor(configuration, preset, QStringLiteral("border"), palette().color(QPalette::Mid));
+
         label->setAlignment(Qt::AlignCenter);
         label->setText(text);
         label->setStyleSheet(QStringLiteral(
             "QLabel {"
             " background: %1;"
             " color: %2;"
-            " border: 1px solid rgba(127,127,127,0.35);"
+            " border: 1px solid %3;"
             " border-radius: 9px;"
             " font-size: 10px;"
             " font-weight: 700;"
             " padding: 0px 4px;"
-            " }").arg(fillColor, textColor));
+            " }").arg(fillColor, textColor, borderColor.name()));
     }
 
     void SignalKServerBox::updateStatusLabel(const QString &text) {

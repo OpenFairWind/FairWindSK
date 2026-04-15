@@ -11,6 +11,7 @@
 #include <QColor>
 #include <QIcon>
 #include <QPainter>
+#include <QPalette>
 #include <QPixmap>
 #include <QString>
 #include <QVector>
@@ -99,6 +100,88 @@ namespace fairwindsk::ui {
             QStringLiteral("iconDefault"),
             QColor());
         return configured.isValid() ? configured : fallback;
+    }
+
+    inline QColor comfortThemeColor(const fairwindsk::Configuration *configuration,
+                                    const QString &preset,
+                                    const QString &key,
+                                    const QColor &fallback) {
+        if (!configuration) {
+            return fallback;
+        }
+
+        const QColor configured = configuration->getComfortThemeColor(
+            preset.trimmed().toLower(),
+            key,
+            QColor());
+        return configured.isValid() ? configured : fallback;
+    }
+
+    inline QColor comfortAlpha(const QColor &color, const int alpha) {
+        QColor result = color;
+        result.setAlpha(std::clamp(alpha, 0, 255));
+        return result;
+    }
+
+    struct ComfortChromeColors {
+        QColor window;
+        QColor text;
+        QColor buttonBackground;
+        QColor buttonText;
+        QColor border;
+        QColor accentTop;
+        QColor accentBottom;
+        QColor accentText;
+        QColor disabledText;
+        QColor hoverBackground;
+        QColor pressedBackground;
+        QColor transparentHoverBackground;
+        QColor icon;
+        QColor transparentIcon;
+    };
+
+    inline ComfortChromeColors resolveComfortChromeColors(const fairwindsk::Configuration *configuration,
+                                                          const QString &preset,
+                                                          const QPalette &palette,
+                                                          const bool accentButtons = false) {
+        ComfortChromeColors colors;
+        colors.window = comfortThemeColor(configuration, preset, QStringLiteral("window"), palette.color(QPalette::Window));
+        colors.text = comfortThemeColor(configuration, preset, QStringLiteral("text"), palette.color(QPalette::WindowText));
+        colors.buttonBackground = comfortThemeColor(
+            configuration,
+            preset,
+            accentButtons ? QStringLiteral("accentTop") : QStringLiteral("buttonBackground"),
+            palette.color(accentButtons ? QPalette::Highlight : QPalette::Button));
+        colors.buttonText = comfortThemeColor(
+            configuration,
+            preset,
+            accentButtons ? QStringLiteral("accentText") : QStringLiteral("buttonText"),
+            palette.color(accentButtons ? QPalette::HighlightedText : QPalette::ButtonText));
+        colors.border = comfortThemeColor(configuration, preset, QStringLiteral("border"), palette.color(QPalette::Mid));
+        colors.accentTop = comfortThemeColor(configuration, preset, QStringLiteral("accentTop"), palette.color(QPalette::Highlight));
+        colors.accentBottom = comfortThemeColor(configuration, preset, QStringLiteral("accentBottom"), colors.accentTop.darker(122));
+        colors.accentText = comfortThemeColor(configuration, preset, QStringLiteral("accentText"), palette.color(QPalette::HighlightedText));
+        colors.disabledText = comfortThemeColor(
+            configuration,
+            preset,
+            QStringLiteral("text"),
+            palette.color(QPalette::Disabled, QPalette::WindowText)).darker(150);
+        colors.hoverBackground = accentButtons ? colors.accentTop.lighter(108) : colors.buttonBackground.lighter(108);
+        colors.pressedBackground = accentButtons ? colors.accentBottom : colors.buttonBackground.darker(118);
+        colors.transparentHoverBackground = comfortAlpha(colors.accentTop, 56);
+        colors.icon = comfortIconColor(
+            configuration,
+            preset,
+            bestContrastingColor(
+                colors.buttonBackground,
+                {colors.buttonText, colors.text, colors.accentText, QColor(QStringLiteral("#f8f8f8")), QColor(QStringLiteral("#111111"))}));
+        colors.transparentIcon = comfortIconColor(
+            configuration,
+            preset,
+            bestContrastingColor(
+                colors.window,
+                {colors.text, colors.buttonText, colors.accentText, QColor(QStringLiteral("#f8f8f8")), QColor(QStringLiteral("#111111"))}));
+        return colors;
     }
 }
 
