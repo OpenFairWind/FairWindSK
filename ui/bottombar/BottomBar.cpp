@@ -26,14 +26,29 @@ namespace fairwindsk::ui::bottombar {
         constexpr int kBottomBarIconSize = 44;
         constexpr int kBottomBarButtonHeight = 90;
         constexpr int kPortAreaHeight = 84;
-        const QString kChromeToolButtonStyle = QStringLiteral(
-            "QToolButton {"
-            " background: transparent;"
-            " border: none;"
-            " padding: 2px 4px;"
-            " }"
-            "QToolButton:hover { background: rgba(127, 127, 127, 0.18); border-radius: 8px; }"
-            "QToolButton:pressed { background: rgba(127, 127, 127, 0.28); border-radius: 8px; }");
+        QString chromeToolButtonStyle(const QColor &textColor) {
+            return QStringLiteral(
+                "QToolButton {"
+                " background: transparent;"
+                " border: none;"
+                " padding: 2px 4px;"
+                " color: %1;"
+                " }"
+                "QToolButton:hover {"
+                " background: rgba(127, 127, 127, 0.18);"
+                " border-radius: 8px;"
+                " color: %1;"
+                " }"
+                "QToolButton:pressed, QToolButton:checked {"
+                " background: rgba(127, 127, 127, 0.28);"
+                " border-radius: 8px;"
+                " color: %1;"
+                " }"
+                "QToolButton:disabled {"
+                " color: %2;"
+                " }")
+                .arg(textColor.name(), textColor.darker(160).name());
+        }
     }
 /*
  * BottomBar
@@ -85,7 +100,6 @@ namespace fairwindsk::ui::bottombar {
                 continue;
             }
 
-            button->setStyleSheet(kChromeToolButtonStyle);
             button->setAutoRaise(true);
             button->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
             button->setIconSize(QSize(m_iconSize, m_iconSize));
@@ -246,11 +260,23 @@ namespace fairwindsk::ui::bottombar {
              palette().color(QPalette::ButtonText),
              palette().color(QPalette::Text)});
         const QColor navigationIconColor = fairwindsk::ui::comfortIconColor(configuration, preset, fallbackColor);
-        fairwindsk::ui::applyTintedButtonIcon(ui->toolButton_MyData, navigationIconColor, QSize(m_iconSize, m_iconSize));
-        fairwindsk::ui::applyTintedButtonIcon(ui->toolButton_Autopilot, navigationIconColor, QSize(m_iconSize, m_iconSize));
-        fairwindsk::ui::applyTintedButtonIcon(ui->toolButton_Apps, navigationIconColor, QSize(m_iconSize, m_iconSize));
-        fairwindsk::ui::applyTintedButtonIcon(ui->toolButton_Anchor, navigationIconColor, QSize(m_iconSize, m_iconSize));
-        fairwindsk::ui::applyTintedButtonIcon(ui->toolButton_Settings, navigationIconColor, QSize(m_iconSize, m_iconSize));
+        const QString buttonStyle = chromeToolButtonStyle(navigationIconColor);
+        const QList<QToolButton *> navigationButtons = {
+            ui->toolButton_MyData,
+            ui->toolButton_POB,
+            ui->toolButton_Autopilot,
+            ui->toolButton_Apps,
+            ui->toolButton_Anchor,
+            ui->toolButton_Alarms,
+            ui->toolButton_Settings
+        };
+        for (auto *button : navigationButtons) {
+            if (!button) {
+                continue;
+            }
+            button->setStyleSheet(buttonStyle);
+            fairwindsk::ui::applyTintedButtonIcon(button, navigationIconColor, QSize(m_iconSize, m_iconSize));
+        }
     }
 
     void BottomBar::rebalanceNavigationBlock() const {
@@ -400,7 +426,7 @@ namespace fairwindsk::ui::bottombar {
                 // Set the tool tip
                 button->setToolTip(displayName);
                 button->setAutoRaise(true);
-                button->setStyleSheet(kChromeToolButtonStyle);
+                button->setStyleSheet(chromeToolButtonStyle(palette().color(QPalette::WindowText)));
 
                 // Check if the icon is available
                 if (!pixmap.isNull()) {
