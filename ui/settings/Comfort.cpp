@@ -902,17 +902,42 @@ namespace fairwindsk::ui::settings {
                    "    selection-background-color: %11;\n"
                    "    selection-color: %12;\n"
                    "}\n"
+                   "QAbstractItemView::item:selected, QListView::item:selected, QListWidget::item:selected,\n"
+                   "QTreeView::item:selected, QTreeWidget::item:selected, QTableView::item:selected, QTableWidget::item:selected {\n"
+                   "    background: %11;\n"
+                   "    color: %12;\n"
+                   "}\n"
+                   "QAbstractItemView::item:hover, QListView::item:hover, QListWidget::item:hover,\n"
+                   "QTreeView::item:hover, QTreeWidget::item:hover, QTableView::item:hover, QTableWidget::item:hover {\n"
+                   "    background: %16;\n"
+                   "    color: %2;\n"
+                   "}\n"
                    "QToolButton, QPushButton {\n"
                    "    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %13, stop:1 %14);\n"
                    "    color: %15;\n"
                    "    border: 1px solid %6;\n"
                    "    border-radius: 6px;\n"
                    "}\n"
+                   "QToolButton:disabled, QPushButton:disabled, QLineEdit:disabled, QTextEdit:disabled,\n"
+                   "QPlainTextEdit:disabled, QListView:disabled, QListWidget:disabled, QTreeView:disabled,\n"
+                   "QTreeWidget:disabled, QTableView:disabled, QTableWidget:disabled, QComboBox:disabled,\n"
+                   "QAbstractSpinBox:disabled, QDateTimeEdit:disabled, QLabel:disabled, QCheckBox:disabled,\n"
+                   "QGroupBox:disabled {\n"
+                   "    color: %22;\n"
+                   "}\n"
                    "QToolButton:hover, QPushButton:hover {\n"
                    "    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %16, stop:1 %17);\n"
                    "}\n"
                    "QToolButton:pressed, QPushButton:pressed, QToolButton:checked, QPushButton:checked {\n"
                    "    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %18, stop:1 %19);\n"
+                   "    color: %12;\n"
+                   "}\n"
+                   "QToolButton[autoRaise=\"true\"] {\n"
+                   "    color: %2;\n"
+                   "}\n"
+                   "QToolButton[autoRaise=\"true\"]:hover,\n"
+                   "QToolButton[autoRaise=\"true\"]:pressed,\n"
+                   "QToolButton[autoRaise=\"true\"]:checked {\n"
                    "    color: %12;\n"
                    "}\n"
                    "QTabWidget::pane {\n"
@@ -938,6 +963,10 @@ namespace fairwindsk::ui::settings {
                    "QLabel {\n"
                    "    background: transparent;\n"
                    "}\n"
+                   "QMenu::item:selected {\n"
+                   "    background: %11;\n"
+                   "    color: %12;\n"
+                   "}\n"
                    "QGroupBox {\n"
                    "    background: transparent;\n"
                    "    border: 1px solid %6;\n"
@@ -959,6 +988,10 @@ namespace fairwindsk::ui::settings {
                    "    color: %2;\n"
                    "    border: 1px solid %6;\n"
                    "}\n"
+                   "QHeaderView::section:checked {\n"
+                   "    background: %11;\n"
+                   "    color: %12;\n"
+                   "}\n"
                    "QProgressBar {\n"
                    "    border: 1px solid %6;\n"
                    "    border-radius: 6px;\n"
@@ -970,7 +1003,7 @@ namespace fairwindsk::ui::settings {
                    "    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %11, stop:1 %20);\n"
                    "    border-radius: 5px;\n"
                    "}\n"
-                   "%22\n")
+                   "%23\n")
             .arg(generatedOverrideStartMarker(),
                  textColor.name(),
                  windowColor.name(),
@@ -992,6 +1025,7 @@ namespace fairwindsk::ui::settings {
                  pressedBottomColor.name(),
                  accentBottomColor.name(),
                  accentTopColor.lighter(125).name(),
+                 textColor.darker(150).name(),
                  generatedOverrideEndMarker());
     }
 
