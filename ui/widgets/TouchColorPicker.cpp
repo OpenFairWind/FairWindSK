@@ -26,6 +26,7 @@
 #include <memory>
 
 #include "Configuration.hpp"
+#include "ui/MainWindow.hpp"
 #include "ui/DrawerDialogHost.hpp"
 
 namespace fairwindsk::ui::widgets {
@@ -282,6 +283,12 @@ namespace fairwindsk::ui::widgets {
         summaryLayout->addWidget(m_hsvLabel);
         summaryLayout->addStretch(1);
 
+        m_doneButton = new QToolButton(this);
+        m_doneButton->setText(tr("Done"));
+        m_doneButton->setToolButtonStyle(Qt::ToolButtonTextOnly);
+        m_doneButton->setMinimumSize(88, 48);
+        headerLayout->addWidget(m_doneButton, 0, Qt::AlignTop);
+
         auto *contentLayout = new QHBoxLayout();
         contentLayout->setContentsMargins(0, 0, 0, 0);
         contentLayout->setSpacing(14);
@@ -458,6 +465,9 @@ namespace fairwindsk::ui::widgets {
                     return;
                 }
             }
+        });
+        connect(m_doneButton, &QToolButton::clicked, this, [this]() {
+            emit colorActivated(m_color);
         });
 
         loadCustomColors();
@@ -824,6 +834,21 @@ namespace fairwindsk::ui::widgets {
                                             const QColor &initialColor,
                                             bool *accepted,
                                             const bool alphaEnabled) {
+        auto *mainWindow = fairwindsk::ui::MainWindow::instance(parent);
+        if (!mainWindow) {
+            TouchColorPickerDialog dialog(parent);
+            dialog.setTitleText(title);
+            dialog.setAlphaEnabled(alphaEnabled);
+            dialog.setCurrentColor(initialColor);
+            dialog.openNear(parent);
+            const int result = dialog.exec();
+            const bool ok = result == QDialog::Accepted;
+            if (accepted) {
+                *accepted = ok;
+            }
+            return ok ? dialog.currentColor() : initialColor;
+        }
+
         auto *picker = new TouchColorPicker();
         picker->setProperty("drawerFillCenterArea", true);
         picker->setAlphaEnabled(alphaEnabled);
@@ -832,20 +857,19 @@ namespace fairwindsk::ui::widgets {
         connect(picker, &TouchColorPicker::currentColorChanged, picker, [selectedColor](const QColor &color) {
             *selectedColor = color;
         });
-
-        constexpr int kResultCancel = 0;
-        constexpr int kResultApply = 1;
+        connect(picker, &TouchColorPicker::colorActivated, picker, [mainWindow]() {
+            if (mainWindow) {
+                mainWindow->finishActiveDrawer(QDialog::Accepted);
+            }
+        });
         const int result = fairwindsk::ui::drawer::execDrawer(
             parent,
             title,
             picker,
-            {
-                {QObject::tr("Cancel"), kResultCancel, false},
-                {QObject::tr("Apply"), kResultApply, true}
-            },
-            kResultCancel);
+            {},
+            QDialog::Rejected);
 
-        const bool ok = result == kResultApply;
+        const bool ok = result == QDialog::Accepted;
         if (accepted) {
             *accepted = ok;
         }

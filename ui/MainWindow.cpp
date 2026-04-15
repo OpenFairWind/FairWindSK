@@ -220,6 +220,15 @@ namespace fairwindsk::ui {
         m_dialogDrawerContentLayout->addWidget(content);
         ui->widgetDialogDrawerButtonRow->setVisible(!buttons.isEmpty());
 
+        for (const auto &buttonSpec : buttons) {
+            auto *button = new QPushButton(buttonSpec.text, m_dialogDrawer);
+            button->setDefault(buttonSpec.isDefault);
+            connect(button, &QPushButton::clicked, this, [this, buttonSpec]() {
+                finishActiveDrawer(buttonSpec.result);
+            });
+            m_dialogDrawerButtonsLayout->insertWidget(m_dialogDrawerButtonsLayout->count() - 1, button);
+        }
+
         m_dialogDrawer->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
         if (m_dialogDrawer->layout()) {
             m_dialogDrawer->layout()->activate();
@@ -229,18 +238,25 @@ namespace fairwindsk::ui {
         }
 
         const int availableCenterHeight = ui->stackedWidget_Center ? ui->stackedWidget_Center->height() : 0;
-        const int requestedDrawerHeight = m_dialogDrawer->layout()
-                                              ? m_dialogDrawer->layout()->sizeHint().height()
-                                              : m_dialogDrawer->sizeHint().height();
-        const int minimumDrawerHeight = m_dialogDrawer->layout()
-                                            ? m_dialogDrawer->layout()->minimumSize().height()
-                                            : m_dialogDrawer->minimumSizeHint().height();
+        const int availableDrawerHeight = availableCenterHeight + (m_bottomBar ? m_bottomBar->height() : 0);
+        int requestedDrawerHeight = m_dialogDrawer->layout()
+                                        ? m_dialogDrawer->layout()->sizeHint().height()
+                                        : m_dialogDrawer->sizeHint().height();
+        int minimumDrawerHeight = m_dialogDrawer->layout()
+                                      ? m_dialogDrawer->layout()->minimumSize().height()
+                                      : m_dialogDrawer->minimumSizeHint().height();
+        if (auto *drawerLayout = m_dialogDrawer->layout()) {
+            const int drawerWidth = m_dialogDrawer->width() > 0 ? m_dialogDrawer->width() : width();
+            if (drawerLayout->hasHeightForWidth() && drawerWidth > 0) {
+                requestedDrawerHeight = qMax(requestedDrawerHeight, drawerLayout->totalHeightForWidth(drawerWidth));
+            }
+        }
         const bool fillCenterArea = content->property("drawerFillCenterArea").toBool();
         int targetDrawerHeight = qMax(minimumDrawerHeight, requestedDrawerHeight);
-        if (availableCenterHeight > 0) {
+        if (availableDrawerHeight > 0) {
             targetDrawerHeight = fillCenterArea
-                                     ? availableCenterHeight
-                                     : std::min(targetDrawerHeight, availableCenterHeight);
+                                     ? availableDrawerHeight
+                                     : std::min(targetDrawerHeight, availableDrawerHeight);
         }
         m_dialogDrawer->setMinimumHeight(targetDrawerHeight);
         m_dialogDrawer->setMaximumHeight(targetDrawerHeight);
@@ -253,16 +269,6 @@ namespace fairwindsk::ui {
         int result = defaultResult;
         m_activeDrawerLoop = &loop;
         m_activeDrawerResult = &result;
-
-        for (const auto &buttonSpec : buttons) {
-            auto *button = new QPushButton(buttonSpec.text, m_dialogDrawer);
-            button->setDefault(buttonSpec.isDefault);
-            connect(button, &QPushButton::clicked, this, [&loop, &result, buttonSpec]() {
-                result = buttonSpec.result;
-                loop.quit();
-            });
-            m_dialogDrawerButtonsLayout->insertWidget(m_dialogDrawerButtonsLayout->count() - 1, button);
-        }
 
         setDrawerEnabled(false);
         m_dialogDrawer->show();

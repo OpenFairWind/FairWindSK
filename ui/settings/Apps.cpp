@@ -1999,7 +1999,18 @@ namespace fairwindsk::ui::settings {
         if (m_currentDetailAppName.isEmpty()) {
             return;
         }
-        m_appDetailsWidget->showIconPicker();
+
+        const QString iconPath = drawer::getIconPath(this,
+                                                     tr("Application icon"),
+                                                     m_appDetailsWidget ? m_appDetailsWidget->appIconPath() : QString());
+        if (iconPath.isEmpty() || !m_appDetailsWidget) {
+            return;
+        }
+
+        m_appDetailsWidget->setAppIconPath(iconPath);
+        m_appsEditChanged = true;
+        saveAppsDetails();
+        showDetailsForApp(m_currentDetailAppName, false);
     }
 
     void Apps::onAppsNameBrowse() {

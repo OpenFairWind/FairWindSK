@@ -19,6 +19,7 @@ class QWidget;
 class QHBoxLayout;
 class QGridLayout;
 class QVBoxLayout;
+class QToolButton;
 
 namespace fairwindsk::ui::widgets {
     class TouchColorShadeSelector;
@@ -72,6 +73,7 @@ namespace fairwindsk::ui::widgets {
         QVBoxLayout *m_fineTuneLayout = nullptr;
         QPushButton *m_addCustomColorButton = nullptr;
         QPushButton *m_removeCustomColorButton = nullptr;
+        QToolButton *m_doneButton = nullptr;
 
         QSlider *m_hueSlider = nullptr;
         QSlider *m_saturationSlider = nullptr;

@@ -24,7 +24,6 @@ namespace fairwindsk::ui::settings {
 
         hideIconPicker();
 
-        connect(ui->pushButton_Apps_AppIcon_Browse, &QPushButton::clicked, this, &AppDetailsWidget::showIconPicker);
         if (m_iconBrowser) {
             connect(m_iconBrowser, &fairwindsk::ui::widgets::TouchIconBrowser::pathSelected, this, [this](const QString &path) {
                 updateIconPreview(path);
