@@ -1280,13 +1280,21 @@ namespace fairwindsk::ui::drawer {
     QString getIconPath(QWidget *parent,
                         const QString &title,
                         const QString &currentPath) {
+        auto *mainWindow = resolveMainWindow(parent);
+        if (!mainWindow) {
+            return {};
+        }
+
         auto *picker = new fairwindsk::ui::widgets::TouchIconBrowser();
         picker->setCurrentPath(currentPath);
         QPointer<fairwindsk::ui::widgets::TouchIconBrowser> pickerGuard(picker);
-        const int result = execDrawer(parent, title, picker, {
-            {QObject::tr("Select"), int(QMessageBox::Ok), true},
-            {QObject::tr("Cancel"), int(QMessageBox::Cancel), false}
-        }, int(QMessageBox::Cancel));
+        QObject::connect(picker, &fairwindsk::ui::widgets::TouchIconBrowser::canceled, picker, [mainWindow]() {
+            mainWindow->finishActiveDrawer(int(QMessageBox::Cancel));
+        });
+        QObject::connect(picker, &fairwindsk::ui::widgets::TouchIconBrowser::pathActivated, picker, [mainWindow](const QString &) {
+            mainWindow->finishActiveDrawer(int(QMessageBox::Ok));
+        });
+        const int result = execDrawer(parent, title, picker, {}, int(QMessageBox::Cancel));
 
         if (!pickerGuard || result != QMessageBox::Ok) {
             return {};

@@ -37,6 +37,7 @@ namespace fairwindsk::ui::widgets {
         void setAlphaEnabled(bool enabled);
 
     signals:
+        void canceled();
         void currentColorChanged(const QColor &color);
         void colorActivated(const QColor &color);
 
@@ -73,7 +74,8 @@ namespace fairwindsk::ui::widgets {
         QVBoxLayout *m_fineTuneLayout = nullptr;
         QPushButton *m_addCustomColorButton = nullptr;
         QPushButton *m_removeCustomColorButton = nullptr;
-        QToolButton *m_doneButton = nullptr;
+        QPushButton *m_cancelButton = nullptr;
+        QPushButton *m_applyButton = nullptr;
 
         QSlider *m_hueSlider = nullptr;
         QSlider *m_saturationSlider = nullptr;

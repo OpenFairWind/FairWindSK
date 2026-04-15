@@ -12,6 +12,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QListWidget>
+#include <QPushButton>
 #include <QSet>
 #include <QVBoxLayout>
 
@@ -117,9 +118,28 @@ namespace fairwindsk::ui::widgets {
         rootLayout->setContentsMargins(0, 0, 0, 0);
         rootLayout->setSpacing(10);
 
+        auto *headerLayout = new QHBoxLayout();
+        headerLayout->setContentsMargins(0, 0, 0, 0);
+        headerLayout->setSpacing(8);
+        rootLayout->addLayout(headerLayout);
+
+        m_cancelButton = new QPushButton(this);
+        m_cancelButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/close-google.svg")));
+        m_cancelButton->setIconSize(QSize(28, 28));
+        m_cancelButton->setMinimumSize(52, 52);
+        m_cancelButton->setToolTip(tr("Cancel"));
+        headerLayout->addWidget(m_cancelButton, 0, Qt::AlignTop);
+
         auto *headerLabel = new QLabel(tr("Choose an icon to override the default application icon."), this);
         headerLabel->setWordWrap(true);
-        rootLayout->addWidget(headerLabel);
+        headerLayout->addWidget(headerLabel, 1);
+
+        m_applyButton = new QPushButton(this);
+        m_applyButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/arrow-right-google.svg")));
+        m_applyButton->setIconSize(QSize(28, 28));
+        m_applyButton->setMinimumSize(52, 52);
+        m_applyButton->setToolTip(tr("Apply"));
+        headerLayout->addWidget(m_applyButton, 0, Qt::AlignTop);
 
         auto *previewFrame = new QFrame(this);
         previewFrame->setFrameShape(QFrame::StyledPanel);
@@ -163,6 +183,12 @@ namespace fairwindsk::ui::widgets {
             }
             const QString path = item->data(Qt::UserRole).toString();
             emit pathActivated(path);
+        });
+        connect(m_cancelButton, &QPushButton::clicked, this, [this]() {
+            emit canceled();
+        });
+        connect(m_applyButton, &QPushButton::clicked, this, [this]() {
+            emit pathActivated(selectedPath());
         });
     }
 

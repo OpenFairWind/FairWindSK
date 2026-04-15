@@ -283,11 +283,19 @@ namespace fairwindsk::ui::widgets {
         summaryLayout->addWidget(m_hsvLabel);
         summaryLayout->addStretch(1);
 
-        m_doneButton = new QToolButton(this);
-        m_doneButton->setText(tr("Done"));
-        m_doneButton->setToolButtonStyle(Qt::ToolButtonTextOnly);
-        m_doneButton->setMinimumSize(88, 48);
-        headerLayout->addWidget(m_doneButton, 0, Qt::AlignTop);
+        m_cancelButton = new QPushButton(this);
+        m_cancelButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/close-google.svg")));
+        m_cancelButton->setIconSize(QSize(28, 28));
+        m_cancelButton->setMinimumSize(52, 52);
+        m_cancelButton->setToolTip(tr("Cancel"));
+        headerLayout->insertWidget(0, m_cancelButton, 0, Qt::AlignTop);
+
+        m_applyButton = new QPushButton(this);
+        m_applyButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/arrow-right-google.svg")));
+        m_applyButton->setIconSize(QSize(28, 28));
+        m_applyButton->setMinimumSize(52, 52);
+        m_applyButton->setToolTip(tr("Apply"));
+        headerLayout->addWidget(m_applyButton, 0, Qt::AlignTop);
 
         auto *contentLayout = new QHBoxLayout();
         contentLayout->setContentsMargins(0, 0, 0, 0);
@@ -466,7 +474,10 @@ namespace fairwindsk::ui::widgets {
                 }
             }
         });
-        connect(m_doneButton, &QToolButton::clicked, this, [this]() {
+        connect(m_cancelButton, &QPushButton::clicked, this, [this]() {
+            emit canceled();
+        });
+        connect(m_applyButton, &QPushButton::clicked, this, [this]() {
             emit colorActivated(m_color);
         });
 
@@ -856,6 +867,11 @@ namespace fairwindsk::ui::widgets {
         auto selectedColor = std::make_shared<QColor>(picker->currentColor());
         connect(picker, &TouchColorPicker::currentColorChanged, picker, [selectedColor](const QColor &color) {
             *selectedColor = color;
+        });
+        connect(picker, &TouchColorPicker::canceled, picker, [mainWindow]() {
+            if (mainWindow) {
+                mainWindow->finishActiveDrawer(QDialog::Rejected);
+            }
         });
         connect(picker, &TouchColorPicker::colorActivated, picker, [mainWindow]() {
             if (mainWindow) {
