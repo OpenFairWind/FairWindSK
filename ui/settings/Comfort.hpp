@@ -6,6 +6,7 @@
 #define FAIRWINDSK_UI_SETTINGS_COMFORT_HPP
 
 #include <QColor>
+#include <QList>
 #include <QMap>
 #include <QWidget>
 
@@ -34,6 +35,9 @@ namespace fairwindsk::ui::settings {
         explicit Comfort(Settings *settings, QWidget *parent = nullptr);
         ~Comfort() override = default;
 
+    protected:
+        bool event(QEvent *event) override;
+
     private slots:
         void onPresetChanged(int index);
         void onStyleSheetChanged();
@@ -55,6 +59,7 @@ namespace fairwindsk::ui::settings {
         void updatePreview();
         void updateColorButtons();
         void updateBackgroundImageLabels();
+        void refreshEditorChrome();
         QString colorLabel(const QString &key) const;
         void pickColor(const QString &key);
         void browseBackgroundImage(const QString &area);
@@ -83,6 +88,7 @@ namespace fairwindsk::ui::settings {
         QMap<QString, QColor> m_visualColors;
         QMap<QString, QPushButton *> m_colorButtons;
         QMap<QString, QLabel *> m_backgroundPathLabels;
+        QList<QLabel *> m_editorLabels;
         QWidget *m_visualEditorWidget = nullptr;
         QWidget *m_previewTopBar = nullptr;
         fairwindsk::ui::launcher::Launcher *m_previewLauncher = nullptr;

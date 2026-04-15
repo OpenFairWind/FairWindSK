@@ -24,6 +24,7 @@
 #include <QVBoxLayout>
 
 #include "FairWindSK.hpp"
+#include "ui/IconUtils.hpp"
 #include "Settings.hpp"
 #include "ui/DrawerDialogHost.hpp"
 #include "ui/launcher/Launcher.hpp"
@@ -138,6 +139,13 @@ namespace fairwindsk::ui::settings {
         loadPresetEditor();
     }
 
+    bool Comfort::event(QEvent *event) {
+        if (event && (event->type() == QEvent::PaletteChange || event->type() == QEvent::ApplicationPaletteChange)) {
+            refreshEditorChrome();
+        }
+        return QWidget::event(event);
+    }
+
     void Comfort::buildUi() {
         auto *rootLayout = new QVBoxLayout(this);
         rootLayout->setContentsMargins(0, 0, 0, 0);
@@ -156,6 +164,7 @@ namespace fairwindsk::ui::settings {
         contentLayout->setSpacing(12);
 
         auto *titleLabel = new QLabel(tr("Comfort Theme Presets"), content);
+        m_editorLabels.append(titleLabel);
         contentLayout->addWidget(titleLabel);
 
         auto *presetRow = new QHBoxLayout();
@@ -164,6 +173,7 @@ namespace fairwindsk::ui::settings {
         contentLayout->addLayout(presetRow);
 
         auto *presetLabel = new QLabel(tr("Preset"), content);
+        m_editorLabels.append(presetLabel);
         presetRow->addWidget(presetLabel);
 
         m_presetComboBox = new fairwindsk::ui::widgets::TouchComboBox(content);
@@ -192,6 +202,7 @@ namespace fairwindsk::ui::settings {
         buttonRow->addStretch(1);
 
         m_statusLabel = new QLabel(content);
+        m_editorLabels.append(m_statusLabel);
         m_statusLabel->hide();
 
         auto *paletteGroup = new QGroupBox(tr("Palette"), content);
@@ -201,6 +212,7 @@ namespace fairwindsk::ui::settings {
 
         auto *paletteHint = new QLabel(tr("Tap a swatch to adjust the saved colors for the selected comfort preset."), paletteGroup);
         paletteHint->setWordWrap(true);
+        m_editorLabels.append(paletteHint);
         paletteGroupLayout->addWidget(paletteHint);
 
         m_visualEditorWidget = new QWidget(paletteGroup);
@@ -232,6 +244,7 @@ namespace fairwindsk::ui::settings {
 
         auto *imagesHint = new QLabel(tr("Choose optional images for major surfaces and control states. Clear any entry to fall back to the QSS colors."), imagesGroup);
         imagesHint->setWordWrap(true);
+        m_editorLabels.append(imagesHint);
         imagesLayout->addWidget(imagesHint);
 
         imagesLayout->addWidget(createImageGroup(
@@ -359,10 +372,12 @@ namespace fairwindsk::ui::settings {
             }
         });
         connect(m_resetButton, &QPushButton::clicked, this, &Comfort::resetPreset);
+        refreshEditorChrome();
     }
 
     void Comfort::createColorControl(const QString &key, const QString &labelText, QWidget *parent, QGridLayout *layout, const int row) {
         auto *label = new QLabel(labelText, parent);
+        m_editorLabels.append(label);
         auto *button = new QPushButton(parent);
         button->setMinimumHeight(44);
         button->setObjectName(QStringLiteral("button_%1").arg(key));
@@ -378,6 +393,8 @@ namespace fairwindsk::ui::settings {
         auto *label = new QLabel(labelText, parent);
         auto *pathLabel = new QLabel(tr("None"), parent);
         pathLabel->setWordWrap(true);
+        m_editorLabels.append(label);
+        m_editorLabels.append(pathLabel);
         auto *browseButton = new QPushButton(tr("Browse"), parent);
         auto *clearButton = new QPushButton(tr("Clear"), parent);
         browseButton->setMinimumHeight(40);
@@ -553,6 +570,7 @@ namespace fairwindsk::ui::settings {
         }
         updateColorButtons();
         updateBackgroundImageLabels();
+        refreshEditorChrome();
         updatePreview();
         updateStatusLabel();
     }
@@ -561,6 +579,27 @@ namespace fairwindsk::ui::settings {
         if (m_statusLabel) {
             m_statusLabel->clear();
             m_statusLabel->hide();
+        }
+    }
+
+    void Comfort::refreshEditorChrome() {
+        const QPalette activePalette = palette();
+        const QColor editorBackground = activePalette.color(QPalette::Window);
+        const QColor readableText = fairwindsk::ui::bestContrastingColor(
+            editorBackground,
+            {
+                activePalette.color(QPalette::WindowText),
+                activePalette.color(QPalette::Text),
+                activePalette.color(QPalette::ButtonText),
+                QColor(QStringLiteral("#f7fbff")),
+                QColor(QStringLiteral("#111111"))
+            });
+        const QString labelStyle = QStringLiteral("QLabel { color: %1; background: transparent; }").arg(readableText.name());
+
+        for (QLabel *label : std::as_const(m_editorLabels)) {
+            if (label) {
+                label->setStyleSheet(labelStyle);
+            }
         }
     }
 
