@@ -55,11 +55,19 @@ QToolButton, QPushButton {
     border: 1px solid #6f89a7;
     border-radius: 6px;
 }
+QToolButton[autoRaise="true"] {
+    color: #edf5ff;
+}
 QToolButton:hover, QPushButton:hover {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #f6df9e, stop:1 #d4b468);
 }
 QToolButton:pressed, QPushButton:pressed, QToolButton:checked, QPushButton:checked {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #2f5fb7, stop:1 #1e4387);
+    color: #f7fbff;
+}
+QToolButton[autoRaise="true"]:hover,
+QToolButton[autoRaise="true"]:pressed,
+QToolButton[autoRaise="true"]:checked {
     color: #f7fbff;
 }
 QTabWidget::pane {
