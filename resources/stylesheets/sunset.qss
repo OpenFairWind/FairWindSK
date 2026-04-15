@@ -53,11 +53,19 @@ QToolButton, QPushButton {
     border: 1px solid #d19965;
     border-radius: 6px;
 }
+QToolButton[autoRaise="true"] {
+    color: #fff1df;
+}
 QToolButton:hover, QPushButton:hover {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ffdeaf, stop:1 #daa063);
 }
 QToolButton:pressed, QPushButton:pressed, QToolButton:checked, QPushButton:checked {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ffb45f, stop:1 #ef6b2e);
+    color: #2b1d18;
+}
+QToolButton[autoRaise="true"]:hover,
+QToolButton[autoRaise="true"]:pressed,
+QToolButton[autoRaise="true"]:checked {
     color: #2b1d18;
 }
 QTabWidget::pane { border: 1px solid #d19965; top: -1px; }
@@ -70,6 +78,9 @@ QTabBar::tab:selected {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ffb45f, stop:1 #ef6b2e);
     color: #2b1d18;
     border-color: #ffd29d;
+}
+QTabBar::tab:hover:!selected {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #ffdeaf, stop:1 #daa063);
 }
 QCheckBox, QLabel, QGroupBox { color: #fff1df; }
 QLabel { background: transparent; }

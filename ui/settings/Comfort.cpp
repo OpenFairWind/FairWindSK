@@ -701,21 +701,31 @@ namespace fairwindsk::ui::settings {
             return false;
         }
 
+        const QString baselineStyleSheet = defaultStyleSheetForPreset(preset);
+        const QColor baselineTextColor = extractColor(
+            baselineStyleSheet,
+            QStringLiteral("QWidget\\s*\\{[^}]*color\\s*:\\s*(#[0-9A-Fa-f]{6,8})"),
+            QColor(QStringLiteral("#e9f3ff")));
+        const QColor baselineAccentTextColor = extractColor(
+            baselineStyleSheet,
+            QStringLiteral("QTabBar::tab:selected\\s*\\{[^}]*color\\s*:\\s*(#[0-9A-Fa-f]{6,8})"),
+            QColor(QStringLiteral("#f7fbff")));
+
         const QList<QPair<QString, QColor>> defaults = {
-            {QString::fromLatin1(kColorWindow), QColor(QStringLiteral("#0d1521"))},
-            {QString::fromLatin1(kColorApplicationBackground), QColor(QStringLiteral("#12253a"))},
-            {QString::fromLatin1(kColorPanel), QColor(QStringLiteral("#1a3047"))},
-            {QString::fromLatin1(kColorBase), QColor(QStringLiteral("#102338"))},
-            {QString::fromLatin1(kColorText), QColor(QStringLiteral("#e7f1ff"))},
-            {QString::fromLatin1(kColorButtonBackground), QColor(QStringLiteral("#d4bb73"))},
-            {QString::fromLatin1(kColorButtonText), QColor(QStringLiteral("#0f2138"))},
-            {QString::fromLatin1(kColorScrollBarBackground), QColor(QStringLiteral("#20374f"))},
-            {QString::fromLatin1(kColorScrollBarKnob), QColor(QStringLiteral("#d8e6f4"))},
-            {QString::fromLatin1(kColorBorder), QColor(QStringLiteral("#6f89a7"))},
-            {QString::fromLatin1(kColorAccentTop), QColor(QStringLiteral("#2d5ea6"))},
-            {QString::fromLatin1(kColorAccentBottom), QColor(QStringLiteral("#1f447a"))},
-            {QString::fromLatin1(kColorAccentText), QColor(QStringLiteral("#f7fbff"))},
-            {QString::fromLatin1(kColorIconDefault), QColor(QStringLiteral("#f7fbff"))}
+            {QString::fromLatin1(kColorWindow), extractColor(baselineStyleSheet, QStringLiteral("QWidget\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#0f1622")))},
+            {QString::fromLatin1(kColorApplicationBackground), extractColor(baselineStyleSheet, QStringLiteral("QMainWindow[\\s\\S]*?QAbstractScrollArea\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#15283d")))},
+            {QString::fromLatin1(kColorPanel), extractColor(baselineStyleSheet, QStringLiteral("QMenuBar,\\s*QMenu,\\s*QStatusBar,\\s*QToolTip\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#1d3146")))},
+            {QString::fromLatin1(kColorBase), extractColor(baselineStyleSheet, QStringLiteral("QLineEdit[\\s\\S]*?QDateTimeEdit\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#dce7f2")))},
+            {QString::fromLatin1(kColorText), baselineTextColor},
+            {QString::fromLatin1(kColorButtonBackground), extractColor(baselineStyleSheet, QStringLiteral("QToolButton,\\s*QPushButton\\s*\\{[^}]*stop:0\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#d8be74")))},
+            {QString::fromLatin1(kColorButtonText), extractColor(baselineStyleSheet, QStringLiteral("QToolButton,\\s*QPushButton\\s*\\{[^}]*color\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), baselineTextColor)},
+            {QString::fromLatin1(kColorScrollBarBackground), extractColor(baselineStyleSheet, QStringLiteral("QScrollBar:vertical,\\s*QScrollBar:horizontal\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#22354a")))},
+            {QString::fromLatin1(kColorScrollBarKnob), extractColor(baselineStyleSheet, QStringLiteral("QScrollBar::handle:vertical,\\s*QScrollBar::handle:horizontal\\s*\\{[^}]*stop:0\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#c8d8e8")))},
+            {QString::fromLatin1(kColorBorder), extractColor(baselineStyleSheet, QStringLiteral("QToolTip\\s*\\{[^}]*border\\s*:\\s*1px solid\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#7690ac")))},
+            {QString::fromLatin1(kColorAccentTop), extractColor(baselineStyleSheet, QStringLiteral("QTabBar::tab:selected\\s*\\{[^}]*stop:0\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#2d5ea6")))},
+            {QString::fromLatin1(kColorAccentBottom), extractColor(baselineStyleSheet, QStringLiteral("QTabBar::tab:selected\\s*\\{[^}]*stop:1\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#1f447a")))},
+            {QString::fromLatin1(kColorAccentText), baselineAccentTextColor},
+            {QString::fromLatin1(kColorIconDefault), baselineAccentTextColor}
         };
 
         bool hasConfiguredColors = false;

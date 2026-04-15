@@ -84,6 +84,9 @@ QTabBar::tab:selected {
     color: #f7fbff;
     border-color: #4c7bd1;
 }
+QTabBar::tab:hover:!selected {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #f6df9e, stop:1 #d4b468);
+}
 QCheckBox, QLabel, QGroupBox {
     color: #edf5ff;
 }
