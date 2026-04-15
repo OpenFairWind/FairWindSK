@@ -39,14 +39,22 @@ namespace fairwindsk::ui::settings {
         constexpr const char *kColorPanel = "panel";
         constexpr const char *kColorBase = "base";
         constexpr const char *kColorText = "text";
+        constexpr const char *kColorSelectionBackground = "selectionBackground";
+        constexpr const char *kColorSelectionText = "selectionText";
         constexpr const char *kColorButtonBackground = "buttonBackground";
         constexpr const char *kColorButtonText = "buttonText";
+        constexpr const char *kColorButtonHover = "buttonHover";
+        constexpr const char *kColorButtonPressed = "buttonPressed";
         constexpr const char *kColorScrollBarBackground = "scrollBarBackground";
         constexpr const char *kColorScrollBarKnob = "scrollBarKnob";
         constexpr const char *kColorBorder = "border";
         constexpr const char *kColorAccentTop = "accentTop";
         constexpr const char *kColorAccentBottom = "accentBottom";
         constexpr const char *kColorAccentText = "accentText";
+        constexpr const char *kColorHeaderBackground = "headerBackground";
+        constexpr const char *kColorHeaderText = "headerText";
+        constexpr const char *kColorGroupTitleText = "groupTitleText";
+        constexpr const char *kColorDisabledText = "disabledText";
         constexpr const char *kColorIconDefault = "iconDefault";
 
         QString normalizedPreset(QString preset) {
@@ -223,17 +231,25 @@ namespace fairwindsk::ui::settings {
         createColorControl(QString::fromLatin1(kColorWindow), tr("Window"), m_visualEditorWidget, visualLayout, 0);
         createColorControl(QString::fromLatin1(kColorApplicationBackground), tr("Application background"), m_visualEditorWidget, visualLayout, 1);
         createColorControl(QString::fromLatin1(kColorPanel), tr("Panel"), m_visualEditorWidget, visualLayout, 2);
-        createColorControl(QString::fromLatin1(kColorBase), tr("Fields"), m_visualEditorWidget, visualLayout, 3);
+        createColorControl(QString::fromLatin1(kColorBase), tr("Field background"), m_visualEditorWidget, visualLayout, 3);
         createColorControl(QString::fromLatin1(kColorText), tr("Text"), m_visualEditorWidget, visualLayout, 4);
-        createColorControl(QString::fromLatin1(kColorButtonBackground), tr("Button background"), m_visualEditorWidget, visualLayout, 5);
-        createColorControl(QString::fromLatin1(kColorButtonText), tr("Button text"), m_visualEditorWidget, visualLayout, 6);
-        createColorControl(QString::fromLatin1(kColorScrollBarBackground), tr("Scroll bar background"), m_visualEditorWidget, visualLayout, 7);
-        createColorControl(QString::fromLatin1(kColorScrollBarKnob), tr("Scroll bar knob"), m_visualEditorWidget, visualLayout, 8);
-        createColorControl(QString::fromLatin1(kColorBorder), tr("Borders"), m_visualEditorWidget, visualLayout, 9);
-        createColorControl(QString::fromLatin1(kColorAccentTop), tr("Accent top"), m_visualEditorWidget, visualLayout, 10);
-        createColorControl(QString::fromLatin1(kColorAccentBottom), tr("Accent bottom"), m_visualEditorWidget, visualLayout, 11);
-        createColorControl(QString::fromLatin1(kColorAccentText), tr("Accent text"), m_visualEditorWidget, visualLayout, 12);
-        createColorControl(QString::fromLatin1(kColorIconDefault), tr("SVG icon color"), m_visualEditorWidget, visualLayout, 13);
+        createColorControl(QString::fromLatin1(kColorSelectionBackground), tr("Selection background"), m_visualEditorWidget, visualLayout, 5);
+        createColorControl(QString::fromLatin1(kColorSelectionText), tr("Selection text"), m_visualEditorWidget, visualLayout, 6);
+        createColorControl(QString::fromLatin1(kColorButtonBackground), tr("Button background"), m_visualEditorWidget, visualLayout, 7);
+        createColorControl(QString::fromLatin1(kColorButtonText), tr("Button text"), m_visualEditorWidget, visualLayout, 8);
+        createColorControl(QString::fromLatin1(kColorButtonHover), tr("Button hover"), m_visualEditorWidget, visualLayout, 9);
+        createColorControl(QString::fromLatin1(kColorButtonPressed), tr("Button pressed"), m_visualEditorWidget, visualLayout, 10);
+        createColorControl(QString::fromLatin1(kColorScrollBarBackground), tr("Scroll bar background"), m_visualEditorWidget, visualLayout, 11);
+        createColorControl(QString::fromLatin1(kColorScrollBarKnob), tr("Scroll bar knob"), m_visualEditorWidget, visualLayout, 12);
+        createColorControl(QString::fromLatin1(kColorBorder), tr("Borders"), m_visualEditorWidget, visualLayout, 13);
+        createColorControl(QString::fromLatin1(kColorAccentTop), tr("Accent top"), m_visualEditorWidget, visualLayout, 14);
+        createColorControl(QString::fromLatin1(kColorAccentBottom), tr("Accent bottom"), m_visualEditorWidget, visualLayout, 15);
+        createColorControl(QString::fromLatin1(kColorAccentText), tr("Accent text"), m_visualEditorWidget, visualLayout, 16);
+        createColorControl(QString::fromLatin1(kColorHeaderBackground), tr("Header background"), m_visualEditorWidget, visualLayout, 17);
+        createColorControl(QString::fromLatin1(kColorHeaderText), tr("Header text"), m_visualEditorWidget, visualLayout, 18);
+        createColorControl(QString::fromLatin1(kColorGroupTitleText), tr("Group title"), m_visualEditorWidget, visualLayout, 19);
+        createColorControl(QString::fromLatin1(kColorDisabledText), tr("Disabled text"), m_visualEditorWidget, visualLayout, 20);
+        createColorControl(QString::fromLatin1(kColorIconDefault), tr("SVG icon color"), m_visualEditorWidget, visualLayout, 21);
         paletteGroupLayout->addWidget(m_visualEditorWidget);
         contentLayout->addWidget(paletteGroup);
 
@@ -756,14 +772,22 @@ namespace fairwindsk::ui::settings {
             {QString::fromLatin1(kColorPanel), extractColor(baselineStyleSheet, QStringLiteral("QMenuBar,\\s*QMenu,\\s*QStatusBar,\\s*QToolTip\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#1d3146")))},
             {QString::fromLatin1(kColorBase), extractColor(baselineStyleSheet, QStringLiteral("QLineEdit[\\s\\S]*?QDateTimeEdit\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#dce7f2")))},
             {QString::fromLatin1(kColorText), baselineTextColor},
-            {QString::fromLatin1(kColorButtonBackground), extractColor(baselineStyleSheet, QStringLiteral("QToolButton,\\s*QPushButton\\s*\\{[^}]*stop:0\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#d8be74")))},
+            {QString::fromLatin1(kColorSelectionBackground), extractColor(baselineStyleSheet, QStringLiteral("QLineEdit[\\s\\S]*?QDateTimeEdit\\s*\\{[^}]*selection-background-color\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#2d5ea6")))},
+            {QString::fromLatin1(kColorSelectionText), extractColor(baselineStyleSheet, QStringLiteral("QLineEdit[\\s\\S]*?QDateTimeEdit\\s*\\{[^}]*selection-color\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#f7fbff")))},
+            {QString::fromLatin1(kColorButtonBackground), extractColor(baselineStyleSheet, QStringLiteral("QToolButton,\\s*QPushButton\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#d8be74")))},
             {QString::fromLatin1(kColorButtonText), extractColor(baselineStyleSheet, QStringLiteral("QToolButton,\\s*QPushButton\\s*\\{[^}]*color\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), baselineTextColor)},
+            {QString::fromLatin1(kColorButtonHover), extractColor(baselineStyleSheet, QStringLiteral("QToolButton:hover[\\s\\S]*?QPushButton:hover\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#e0c889")))},
+            {QString::fromLatin1(kColorButtonPressed), extractColor(baselineStyleSheet, QStringLiteral("QToolButton:pressed[\\s\\S]*?QPushButton:checked\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#2d5ea6")))},
             {QString::fromLatin1(kColorScrollBarBackground), extractColor(baselineStyleSheet, QStringLiteral("QScrollBar:vertical,\\s*QScrollBar:horizontal\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#22354a")))},
             {QString::fromLatin1(kColorScrollBarKnob), extractColor(baselineStyleSheet, QStringLiteral("QScrollBar::handle:vertical,\\s*QScrollBar::handle:horizontal\\s*\\{[^}]*stop:0\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#c8d8e8")))},
             {QString::fromLatin1(kColorBorder), extractColor(baselineStyleSheet, QStringLiteral("QToolTip\\s*\\{[^}]*border\\s*:\\s*1px solid\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#7690ac")))},
             {QString::fromLatin1(kColorAccentTop), extractColor(baselineStyleSheet, QStringLiteral("QTabBar::tab:selected\\s*\\{[^}]*stop:0\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#2d5ea6")))},
             {QString::fromLatin1(kColorAccentBottom), extractColor(baselineStyleSheet, QStringLiteral("QTabBar::tab:selected\\s*\\{[^}]*stop:1\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#1f447a")))},
             {QString::fromLatin1(kColorAccentText), baselineAccentTextColor},
+            {QString::fromLatin1(kColorHeaderBackground), extractColor(baselineStyleSheet, QStringLiteral("QHeaderView::section,\\s*QTableCornerButton::section\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#1d3146")))},
+            {QString::fromLatin1(kColorHeaderText), extractColor(baselineStyleSheet, QStringLiteral("QHeaderView::section,\\s*QTableCornerButton::section\\s*\\{[^}]*color\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), baselineTextColor)},
+            {QString::fromLatin1(kColorGroupTitleText), extractColor(baselineStyleSheet, QStringLiteral("QGroupBox::title\\s*\\{[^}]*color\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#2d5ea6")))},
+            {QString::fromLatin1(kColorDisabledText), extractColor(baselineStyleSheet, QStringLiteral("QToolButton:disabled[\\s\\S]*?QGroupBox:disabled\\s*\\{[^}]*color\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), baselineTextColor.darker(150))},
             {QString::fromLatin1(kColorIconDefault), baselineAccentTextColor}
         };
 
@@ -808,14 +832,22 @@ namespace fairwindsk::ui::settings {
         m_visualColors.insert(QString::fromLatin1(kColorPanel), extractColor(styleSheet, QStringLiteral("QMenuBar,\\s*QMenu,\\s*QStatusBar,\\s*QToolTip\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#1d3146"))));
         m_visualColors.insert(QString::fromLatin1(kColorBase), extractColor(styleSheet, QStringLiteral("QLineEdit[\\s\\S]*?QDateTimeEdit\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#dce7f2"))));
         m_visualColors.insert(QString::fromLatin1(kColorText), extractColor(styleSheet, QStringLiteral("QWidget\\s*\\{[^}]*color\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#e9f3ff"))));
-        m_visualColors.insert(QString::fromLatin1(kColorButtonBackground), extractColor(styleSheet, QStringLiteral("QToolButton,\\s*QPushButton\\s*\\{[^}]*stop:0\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#d8be74"))));
+        m_visualColors.insert(QString::fromLatin1(kColorSelectionBackground), extractColor(styleSheet, QStringLiteral("QLineEdit[\\s\\S]*?QDateTimeEdit\\s*\\{[^}]*selection-background-color\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#2d5ea6"))));
+        m_visualColors.insert(QString::fromLatin1(kColorSelectionText), extractColor(styleSheet, QStringLiteral("QLineEdit[\\s\\S]*?QDateTimeEdit\\s*\\{[^}]*selection-color\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#f7fbff"))));
+        m_visualColors.insert(QString::fromLatin1(kColorButtonBackground), extractColor(styleSheet, QStringLiteral("QToolButton,\\s*QPushButton\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#d8be74"))));
         m_visualColors.insert(QString::fromLatin1(kColorButtonText), extractColor(styleSheet, QStringLiteral("QToolButton,\\s*QPushButton\\s*\\{[^}]*color\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), m_visualColors.value(QString::fromLatin1(kColorText))));
+        m_visualColors.insert(QString::fromLatin1(kColorButtonHover), extractColor(styleSheet, QStringLiteral("QToolButton:hover[\\s\\S]*?QPushButton:hover\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), m_visualColors.value(QString::fromLatin1(kColorButtonBackground)).lighter(110)));
+        m_visualColors.insert(QString::fromLatin1(kColorButtonPressed), extractColor(styleSheet, QStringLiteral("QToolButton:pressed[\\s\\S]*?QPushButton:checked\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), m_visualColors.value(QString::fromLatin1(kColorAccentTop))));
         m_visualColors.insert(QString::fromLatin1(kColorScrollBarBackground), extractColor(styleSheet, QStringLiteral("QScrollBar:vertical,\\s*QScrollBar:horizontal\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#22354a"))));
         m_visualColors.insert(QString::fromLatin1(kColorScrollBarKnob), extractColor(styleSheet, QStringLiteral("QScrollBar::handle:vertical,\\s*QScrollBar::handle:horizontal\\s*\\{[^}]*stop:0\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#c8d8e8"))));
         m_visualColors.insert(QString::fromLatin1(kColorBorder), extractColor(styleSheet, QStringLiteral("QToolTip\\s*\\{[^}]*border\\s*:\\s*1px solid\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#7690ac"))));
         m_visualColors.insert(QString::fromLatin1(kColorAccentTop), extractColor(styleSheet, QStringLiteral("QTabBar::tab:selected\\s*\\{[^}]*stop:0\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#2d5ea6"))));
         m_visualColors.insert(QString::fromLatin1(kColorAccentBottom), extractColor(styleSheet, QStringLiteral("QTabBar::tab:selected\\s*\\{[^}]*stop:1\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#1f447a"))));
         m_visualColors.insert(QString::fromLatin1(kColorAccentText), extractColor(styleSheet, QStringLiteral("QTabBar::tab:selected\\s*\\{[^}]*color\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#f7fbff"))));
+        m_visualColors.insert(QString::fromLatin1(kColorHeaderBackground), extractColor(styleSheet, QStringLiteral("QHeaderView::section,\\s*QTableCornerButton::section\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), m_visualColors.value(QString::fromLatin1(kColorPanel))));
+        m_visualColors.insert(QString::fromLatin1(kColorHeaderText), extractColor(styleSheet, QStringLiteral("QHeaderView::section,\\s*QTableCornerButton::section\\s*\\{[^}]*color\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), m_visualColors.value(QString::fromLatin1(kColorText))));
+        m_visualColors.insert(QString::fromLatin1(kColorGroupTitleText), extractColor(styleSheet, QStringLiteral("QGroupBox::title\\s*\\{[^}]*color\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), m_visualColors.value(QString::fromLatin1(kColorAccentTop))));
+        m_visualColors.insert(QString::fromLatin1(kColorDisabledText), extractColor(styleSheet, QStringLiteral("QToolButton:disabled[\\s\\S]*?QGroupBox:disabled\\s*\\{[^}]*color\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), m_visualColors.value(QString::fromLatin1(kColorText)).darker(150)));
         m_visualColors.insert(
             QString::fromLatin1(kColorIconDefault),
             m_settings && m_settings->getConfiguration()
@@ -834,20 +866,22 @@ namespace fairwindsk::ui::settings {
         const QColor panelColor = colorValue(QString::fromLatin1(kColorPanel));
         const QColor baseColor = colorValue(QString::fromLatin1(kColorBase));
         const QColor textColor = colorValue(QString::fromLatin1(kColorText));
+        const QColor selectionBackgroundColor = colorValue(QString::fromLatin1(kColorSelectionBackground));
+        const QColor selectionTextColor = colorValue(QString::fromLatin1(kColorSelectionText));
         const QColor buttonBackgroundColor = colorValue(QString::fromLatin1(kColorButtonBackground));
         const QColor buttonTextColor = colorValue(QString::fromLatin1(kColorButtonText));
-        const QColor buttonTopColor = buttonBackgroundColor.lighter(114);
-        const QColor buttonBottomColor = buttonBackgroundColor.darker(114);
+        const QColor buttonHoverColor = colorValue(QString::fromLatin1(kColorButtonHover));
+        const QColor buttonPressedColor = colorValue(QString::fromLatin1(kColorButtonPressed));
         const QColor scrollBarBackgroundColor = colorValue(QString::fromLatin1(kColorScrollBarBackground));
         const QColor scrollBarKnobColor = colorValue(QString::fromLatin1(kColorScrollBarKnob));
         const QColor borderColor = colorValue(QString::fromLatin1(kColorBorder));
         const QColor accentTopColor = colorValue(QString::fromLatin1(kColorAccentTop));
         const QColor accentBottomColor = colorValue(QString::fromLatin1(kColorAccentBottom));
         const QColor accentTextColor = colorValue(QString::fromLatin1(kColorAccentText));
-        const QColor hoverTopColor = buttonTopColor.lighter(108);
-        const QColor hoverBottomColor = buttonBottomColor.lighter(110);
-        const QColor pressedTopColor = buttonTopColor.darker(118);
-        const QColor pressedBottomColor = buttonBottomColor.darker(132);
+        const QColor headerBackgroundColor = colorValue(QString::fromLatin1(kColorHeaderBackground));
+        const QColor headerTextColor = colorValue(QString::fromLatin1(kColorHeaderText));
+        const QColor groupTitleTextColor = colorValue(QString::fromLatin1(kColorGroupTitleText));
+        const QColor disabledTextColor = colorValue(QString::fromLatin1(kColorDisabledText));
 
         return QStringLiteral(
                    "%1\n"
@@ -858,9 +892,12 @@ namespace fairwindsk::ui::settings {
                    "QMainWindow, QDialog, QWidget, QFrame, QStackedWidget, QSplitter, QScrollArea, QAbstractScrollArea {\n"
                    "    background: %4;\n"
                    "}\n"
-                   "QMenuBar, QMenu, QStatusBar, QToolTip {\n"
+                   "QMenuBar, QMenu, QStatusBar, QToolTip, QToolBar {\n"
                    "    background: %5;\n"
                    "    color: %2;\n"
+                   "}\n"
+                   "QMenuBar::item:selected, QToolBar {\n"
+                   "    background: %15;\n"
                    "}\n"
                    "QToolTip {\n"
                    "    border: 1px solid %6;\n"
@@ -918,12 +955,12 @@ namespace fairwindsk::ui::settings {
                    "}\n"
                    "QAbstractItemView::item:hover, QListView::item:hover, QListWidget::item:hover,\n"
                    "QTreeView::item:hover, QTreeWidget::item:hover, QTableView::item:hover, QTableWidget::item:hover {\n"
-                   "    background: %16;\n"
+                   "    background: %15;\n"
                    "    color: %2;\n"
                    "}\n"
                    "QToolButton, QPushButton {\n"
-                   "    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %13, stop:1 %14);\n"
-                   "    color: %15;\n"
+                   "    background: %13;\n"
+                   "    color: %14;\n"
                    "    border: 1px solid %6;\n"
                    "    border-radius: 6px;\n"
                    "}\n"
@@ -931,14 +968,14 @@ namespace fairwindsk::ui::settings {
                    "QPlainTextEdit:disabled, QListView:disabled, QListWidget:disabled, QTreeView:disabled,\n"
                    "QTreeWidget:disabled, QTableView:disabled, QTableWidget:disabled, QComboBox:disabled,\n"
                    "QAbstractSpinBox:disabled, QDateTimeEdit:disabled, QLabel:disabled, QCheckBox:disabled,\n"
-                   "QGroupBox:disabled {\n"
-                   "    color: %22;\n"
+                   "QRadioButton:disabled, QGroupBox:disabled {\n"
+                   "    color: %23;\n"
                    "}\n"
                    "QToolButton:hover, QPushButton:hover {\n"
-                   "    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %16, stop:1 %17);\n"
+                   "    background: %15;\n"
                    "}\n"
                    "QToolButton:pressed, QPushButton:pressed, QToolButton:checked, QPushButton:checked {\n"
-                   "    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %18, stop:1 %19);\n"
+                   "    background: %16;\n"
                    "    color: %12;\n"
                    "}\n"
                    "QToolButton[autoRaise=\"true\"] {\n"
@@ -954,19 +991,19 @@ namespace fairwindsk::ui::settings {
                    "    top: -1px;\n"
                    "}\n"
                    "QTabBar::tab {\n"
-                   "    color: %15;\n"
-                   "    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %13, stop:1 %14);\n"
+                   "    color: %14;\n"
+                   "    background: %13;\n"
                    "    border: 1px solid %6;\n"
                    "}\n"
                    "QTabBar::tab:selected {\n"
-                   "    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %11, stop:1 %20);\n"
-                   "    color: %12;\n"
-                   "    border-color: %21;\n"
+                   "    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %17, stop:1 %18);\n"
+                   "    color: %19;\n"
+                   "    border-color: %17;\n"
                    "}\n"
                    "QTabBar::tab:hover:!selected {\n"
-                   "    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %16, stop:1 %17);\n"
+                   "    background: %15;\n"
                    "}\n"
-                   "QCheckBox, QLabel, QGroupBox {\n"
+                   "QCheckBox, QRadioButton, QLabel, QGroupBox {\n"
                    "    color: %2;\n"
                    "}\n"
                    "QLabel {\n"
@@ -982,23 +1019,23 @@ namespace fairwindsk::ui::settings {
                    "}\n"
                    "QGroupBox::title {\n"
                    "    subcontrol-origin: margin;\n"
-                   "    color: %11;\n"
+                   "    color: %22;\n"
                    "}\n"
-                   "QCheckBox::indicator {\n"
+                   "QCheckBox::indicator, QRadioButton::indicator {\n"
                    "    border: 1px solid %6;\n"
-                   "    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %13, stop:1 %14);\n"
+                   "    background: %13;\n"
                    "}\n"
-                   "QCheckBox::indicator:checked {\n"
-                   "    border-color: %21;\n"
-                   "    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %11, stop:1 %20);\n"
+                   "QCheckBox::indicator:checked, QRadioButton::indicator:checked {\n"
+                   "    border-color: %17;\n"
+                   "    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %17, stop:1 %18);\n"
                    "}\n"
                    "QHeaderView::section, QTableCornerButton::section {\n"
-                   "    background: %5;\n"
-                   "    color: %2;\n"
+                   "    background: %20;\n"
+                   "    color: %21;\n"
                    "    border: 1px solid %6;\n"
                    "}\n"
                    "QHeaderView::section:checked {\n"
-                   "    background: %11;\n"
+                   "    background: %17;\n"
                    "    color: %12;\n"
                    "}\n"
                    "QSlider::groove:horizontal, QSlider::groove:vertical {\n"
@@ -1007,7 +1044,7 @@ namespace fairwindsk::ui::settings {
                    "    border-radius: 6px;\n"
                    "}\n"
                    "QSlider::sub-page:horizontal, QSlider::add-page:vertical {\n"
-                   "    background: %11;\n"
+                   "    background: %17;\n"
                    "    border-radius: 6px;\n"
                    "}\n"
                    "QSlider::add-page:horizontal, QSlider::sub-page:vertical {\n"
@@ -1015,7 +1052,7 @@ namespace fairwindsk::ui::settings {
                    "    border-radius: 6px;\n"
                    "}\n"
                    "QSlider::handle:horizontal, QSlider::handle:vertical {\n"
-                   "    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %13, stop:1 %14);\n"
+                   "    background: %13;\n"
                    "    border: 1px solid %6;\n"
                    "    border-radius: 9px;\n"
                    "}\n"
@@ -1030,10 +1067,10 @@ namespace fairwindsk::ui::settings {
                    "    text-align: center;\n"
                    "}\n"
                    "QProgressBar::chunk {\n"
-                   "    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %11, stop:1 %20);\n"
+                   "    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %17, stop:1 %18);\n"
                    "    border-radius: 5px;\n"
                    "}\n"
-                   "%23\n")
+                   "%24\n")
             .arg(generatedOverrideStartMarker(),
                  textColor.name(),
                  windowColor.name(),
@@ -1044,18 +1081,19 @@ namespace fairwindsk::ui::settings {
                  scrollBarKnobColor.lighter(108).name(),
                  scrollBarKnobColor.darker(108).name(),
                  baseColor.name(),
-                 accentTopColor.name(),
-                 accentTextColor.name(),
-                 buttonTopColor.name(),
-                 buttonBottomColor.name(),
+                 selectionBackgroundColor.name(),
+                 selectionTextColor.name(),
+                 buttonBackgroundColor.name(),
                  buttonTextColor.name(),
-                 hoverTopColor.name(),
-                 hoverBottomColor.name(),
-                 pressedTopColor.name(),
-                 pressedBottomColor.name(),
+                 buttonHoverColor.name(),
+                 buttonPressedColor.name(),
+                 accentTopColor.name(),
                  accentBottomColor.name(),
-                 accentTopColor.lighter(125).name(),
-                 textColor.darker(150).name(),
+                 accentTextColor.name(),
+                 headerBackgroundColor.name(),
+                 headerTextColor.name(),
+                 groupTitleTextColor.name(),
+                 disabledTextColor.name(),
                  generatedOverrideEndMarker());
     }
 
