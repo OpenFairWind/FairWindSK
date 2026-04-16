@@ -126,11 +126,11 @@ namespace fairwindsk::ui::mydata {
 
             if (col == WaypointsModel::Columns::Type) {
                 if (type=="pseudoaton") {
-                    return QIcon(":resources/svg/OpenBridge/chart-aton-iec.svg");
+                    return QIcon(":/resources/svg/OpenBridge/chart-aton-iec.svg");
                 } else if (type=="whale") {
-                    return QIcon(":resources/svg/OpenBridge/whale.svg");
+                    return QIcon(":/resources/svg/OpenBridge/whale.svg");
                 }  else if (type=="alarm-mob") {
-                    return QIcon(":resources/svg/OpenBridge/alarm-pob.svg");
+                    return QIcon(":/resources/svg/OpenBridge/alarm-pob.svg");
                 }
             }
             return QIcon("");

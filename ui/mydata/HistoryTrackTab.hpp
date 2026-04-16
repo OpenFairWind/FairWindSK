@@ -59,6 +59,7 @@ namespace fairwindsk::ui::mydata {
         int selectedSourceRow() const;
         void rebuildTable();
         void styleTable();
+        void configureTableColumns();
         void showListPage();
         void showDetailsPage(int row, bool editMode);
         void setEditMode(bool editMode);

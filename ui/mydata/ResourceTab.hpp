@@ -63,6 +63,7 @@ namespace fairwindsk::ui::mydata {
         QString currentResourceIdFromSelection() const;
         void rebuildTable();
         void styleTable();
+        void configureTableColumns();
         bool canNavigateResource() const;
         void selectResource(const QString &id);
         void showError(const QString &message) const;

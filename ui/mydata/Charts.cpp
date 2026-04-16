@@ -156,7 +156,7 @@ namespace fairwindsk::ui::mydata {
     }
 
     QIcon Charts::primaryRowActionIcon() const {
-        return QIcon(QStringLiteral(":resources/svg/OpenBridge/chart-aton-iec.svg"));
+        return QIcon(QStringLiteral(":/resources/svg/OpenBridge/chart-aton-iec.svg"));
     }
 
     void Charts::triggerPrimaryAction(const QString &id, const QJsonObject &resource) {

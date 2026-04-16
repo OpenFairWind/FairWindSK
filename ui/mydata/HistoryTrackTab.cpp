@@ -99,13 +99,7 @@ namespace fairwindsk::ui::mydata {
         m_tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
         m_tableWidget->setColumnCount(m_model->columnCount() + 1);
         styleTable();
-        auto *trackHeader = m_tableWidget->horizontalHeader();
-        trackHeader->setSectionResizeMode(QHeaderView::ResizeToContents);
-        if (m_model->columnCount() > 1) {
-            trackHeader->setSectionResizeMode(m_model->columnCount() - 2, QHeaderView::Stretch);
-        }
-        trackHeader->setSectionResizeMode(m_model->columnCount(), QHeaderView::Fixed);
-        trackHeader->setStretchLastSection(false);
+        configureTableColumns();
         m_tableWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         connect(m_tableWidget, &QTableWidget::cellDoubleClicked, this, &HistoryTrackTab::onTableDoubleClicked);
         connect(m_tableWidget, &QTableWidget::cellActivated, this, &HistoryTrackTab::onTableDoubleClicked);
@@ -184,7 +178,23 @@ namespace fairwindsk::ui::mydata {
     }
 
     void HistoryTrackTab::styleTable() {
+        m_tableWidget->horizontalHeader()->setVisible(true);
         m_tableWidget->verticalHeader()->setVisible(false);
+        m_tableWidget->verticalHeader()->setDefaultSectionSize(62);
+    }
+
+    void HistoryTrackTab::configureTableColumns() {
+        auto *trackHeader = m_tableWidget->horizontalHeader();
+        trackHeader->setVisible(true);
+        trackHeader->setMinimumSectionSize(96);
+        trackHeader->setSectionResizeMode(QHeaderView::ResizeToContents);
+        trackHeader->setSectionResizeMode(0, QHeaderView::Stretch);
+        if (m_model->columnCount() > 1) {
+            m_tableWidget->setColumnWidth(1, 140);
+            m_tableWidget->setColumnWidth(2, 140);
+        }
+        trackHeader->setSectionResizeMode(m_model->columnCount(), QHeaderView::Fixed);
+        trackHeader->setStretchLastSection(false);
     }
 
     void HistoryTrackTab::rebuildTable() {
@@ -198,6 +208,7 @@ namespace fairwindsk::ui::mydata {
         m_tableWidget->setColumnCount(headers.size());
         m_tableWidget->setHorizontalHeaderLabels(headers);
         m_tableWidget->setRowCount(0);
+        configureTableColumns();
         m_visibleRows.clear();
 
         for (int row = 0; row < m_model->rowCount(); ++row) {

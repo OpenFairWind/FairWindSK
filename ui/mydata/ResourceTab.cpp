@@ -129,11 +129,7 @@ namespace fairwindsk::ui::mydata {
         m_tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
         m_tableWidget->setColumnCount(m_model->columnCount() + 1);
         styleTable();
-        auto *resourceHeader = m_tableWidget->horizontalHeader();
-        resourceHeader->setSectionResizeMode(QHeaderView::ResizeToContents);
-        resourceHeader->setSectionResizeMode(1, QHeaderView::Stretch);
-        resourceHeader->setSectionResizeMode(m_model->columnCount(), QHeaderView::Fixed);
-        resourceHeader->setStretchLastSection(false);
+        configureTableColumns();
         m_tableWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         connect(m_tableWidget, &QTableWidget::cellDoubleClicked, this, &ResourceTab::onTableDoubleClicked);
         connect(m_tableWidget, &QTableWidget::cellActivated, this, &ResourceTab::onTableDoubleClicked);
@@ -284,7 +280,22 @@ namespace fairwindsk::ui::mydata {
     }
 
     void ResourceTab::styleTable() {
+        m_tableWidget->horizontalHeader()->setVisible(true);
         m_tableWidget->verticalHeader()->setVisible(false);
+        m_tableWidget->verticalHeader()->setDefaultSectionSize(62);
+    }
+
+    void ResourceTab::configureTableColumns() {
+        auto *resourceHeader = m_tableWidget->horizontalHeader();
+        resourceHeader->setVisible(true);
+        resourceHeader->setMinimumSectionSize(96);
+        resourceHeader->setSectionResizeMode(QHeaderView::ResizeToContents);
+        resourceHeader->setSectionResizeMode(0, QHeaderView::Stretch);
+        if (m_model->columnCount() > 1) {
+            m_tableWidget->setColumnWidth(1, 240);
+        }
+        resourceHeader->setSectionResizeMode(m_model->columnCount(), QHeaderView::Fixed);
+        resourceHeader->setStretchLastSection(false);
     }
 
     QString ResourceTab::currentResourceIdFromSelection() const {
@@ -331,6 +342,7 @@ namespace fairwindsk::ui::mydata {
         m_tableWidget->setColumnCount(headers.size());
         m_tableWidget->setHorizontalHeaderLabels(headers);
         m_tableWidget->setRowCount(0);
+        configureTableColumns();
         m_visibleResourceIds.clear();
 
         for (int row = 0; row < m_model->rowCount(); ++row) {
