@@ -6,27 +6,29 @@
 
 #include <algorithm>
 
+#include <QSignalBlocker>
+
 #include "MyData.hpp"
 #include "ui_MyData.h"
 #include "Charts.hpp"
 #include "Files.hpp"
+#include "HistoryTrackTab.hpp"
 #include "Notes.hpp"
 #include "Regions.hpp"
 #include "ResourceTab.hpp"
 #include "Routes.hpp"
-#include "HistoryTrackTab.hpp"
 #include "Waypoints.hpp"
 
 namespace fairwindsk::ui::mydata {
     MyData::MyData(QWidget *parent, QWidget *currenWidget): QWidget(parent), ui(new Ui::MyData) {
-
         ui->setupUi(this);
+        connect(ui->tabWidget, &QTabWidget::currentChanged, this, &MyData::ensureTabInitialized);
 
-        // Initialize the tabs
+        // Initialize only the selected tab eagerly. The remaining tabs are loaded
+        // on demand, which keeps MyData startup lighter on constrained devices.
         initTabs(0);
 
         m_currentWidget = currenWidget;
-
     }
 
     /*
@@ -58,13 +60,15 @@ namespace fairwindsk::ui::mydata {
         removeTabs();
 
         for (int index = 0; index < 7; ++index) {
-            if (QWidget *page = createTabPage(index)) {
+            if (QWidget *page = createPlaceholderPage()) {
                 ui->tabWidget->addTab(page, tabTitle(index));
             }
         }
 
         // Set the current tab index
-        ui->tabWidget->setCurrentIndex(currentIndex);
+        const int safeIndex = std::clamp(currentIndex, 0, std::max(0, ui->tabWidget->count() - 1));
+        ui->tabWidget->setCurrentIndex(safeIndex);
+        ensureTabInitialized(safeIndex);
     }
 
     QWidget *MyData::createTabPage(const int index) const {
@@ -109,8 +113,38 @@ namespace fairwindsk::ui::mydata {
         }
     }
 
+    QWidget *MyData::createPlaceholderPage() const {
+        auto *page = new QWidget();
+        page->setProperty("fw_mydata_placeholder", true);
+        return page;
+    }
 
+    void MyData::ensureTabInitialized(const int index) {
+        if (!ui || !ui->tabWidget || index < 0 || index >= ui->tabWidget->count()) {
+            return;
+        }
 
+        QWidget *page = ui->tabWidget->widget(index);
+        if (!isPlaceholderPage(page)) {
+            return;
+        }
+
+        QWidget *realPage = createTabPage(index);
+        if (!realPage) {
+            return;
+        }
+
+        const QString title = ui->tabWidget->tabText(index);
+        const QSignalBlocker blocker(ui->tabWidget);
+        ui->tabWidget->removeTab(index);
+        page->deleteLater();
+        ui->tabWidget->insertTab(index, realPage, title);
+        ui->tabWidget->setCurrentIndex(index);
+    }
+
+    bool MyData::isPlaceholderPage(const QWidget *page) const {
+        return page && page->property("fw_mydata_placeholder").toBool();
+    }
 
     void MyData::onClose() {
         setVisible(false);
@@ -128,6 +162,9 @@ namespace fairwindsk::ui::mydata {
 
         for (int index = 0; index < ui->tabWidget->count(); ++index) {
             if (QWidget *page = ui->tabWidget->widget(index)) {
+                if (isPlaceholderPage(page)) {
+                    continue;
+                }
                 page->updateGeometry();
                 page->update();
             }
