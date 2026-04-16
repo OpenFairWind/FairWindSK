@@ -29,21 +29,17 @@ The runtime now supervises Signal K restarts as well: if the server drops and co
 ![The FairWindSK desktop](images/fairwindsk-desktop.png)
 
 ### Stable components ###
-* The desktop (of course, a far remembrance of other similar user interfaces)
-* The execution environments
-* The setup and configuration of units
-* The QT virtual keyboard
-* Signal K paths
-* Signal K Applications
-* Automatic Signal K restart detection and reconnect consistency recovery
-* Touch-oriented diagnostics controls with persistent per-run logs
-* In-app persistent log exploration through the shared Bottom Bar horizontal drawer
-* Comfort preset editing with marine-style daypart themes and preset SVG icon colors
-* Grouped launcher editing actions with OpenBridge page/application management icons
-* The autopilot bar
-* POB (Person over board) bar
-* Anchor bar
-* Alarm bar
+* Cross-platform Qt/CMake build targets for macOS, Linux, Raspberry Pi OS, Windows, Android, and iOS
+* The main FairWindSK shell: Top Bar, Application Area, Bottom Bar, Bottom Bar horizontal drawer, and Application Area vertical drawer
+* Signal K server connection, web-app discovery, and application hosting
+* Automatic Signal K restart detection, reconnect, subscription restore, and server-backed resource refresh
+* The desktop launcher with application tiles, OpenBridge-style page/application management actions, and local desktop app support on desktop targets
+* The setup and configuration of units, window preferences, Signal K paths, and server settings
+* The Qt virtual keyboard integration for touch-oriented deployments
+* Comfort preset management for `Default`, `Dawn`, `Day`, `Sunset`, `Dusk`, and `Night`, including QSS editing, configurable palette items, and theme image support
+* Touch-oriented diagnostics controls with persistent per-run logs and in-app log exploration through the shared Bottom Bar horizontal drawer
+* Native vessel-operation surfaces: Autopilot, POB (Person over board), Anchor, and Alarms bars
+* MyData core workflows: waypoints, tracks, routes, Signal K resource browsing, file browsing/search, and file viewing for images, PDF, and text files
 
 Those bars relay on SK web apps invoking their APIs or access the Signal K APIs directly. 
 
@@ -55,11 +51,10 @@ Applications can also be local desktop applications (as OpenCPN) characterized b
 A mechanism to be back on the FairWindSK desktop after being launched is implemented as a SHIFT+TAB hot key on desktop builds.
 
 ### Components under active development ###
-* MyData - Features:
-  * Waypoints, tracks, and routes management (an interface on Signal K resources). 
-  * Waypoint preview on Freeboard-SK when the plugin is available
-  * File browser and search views with aligned touch actions
-  * File viewer (Images, Pdf, and text files)
+* MyData advanced workflows and UX polish, especially around richer resource editing, preview integration, and touch optimization
+* Mobile-platform parity work for the alternate Qt WebView path on Android and iOS
+* Ongoing Comfort-system refinement so all reusable UI states and shell elements remain fully mapped to configurable preset items
+* Continued UX tuning of reusable touch components and drawer-hosted dialogs for marine MFD consistency across platforms
 
 # Building
 
