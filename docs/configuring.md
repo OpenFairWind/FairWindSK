@@ -111,6 +111,7 @@ These mappings drive UI bars (autopilot, anchor, alarms, POB) and instrument rea
   "diagnostics": {
     "logLevel": "off",
     "persistentLogs": true,
+    "interactionHistory": true,
     "email": "hpsclab@uniparthenope.it",
     "subject": "FairWindSK diagnostics"
   }
@@ -119,13 +120,16 @@ These mappings drive UI bars (autopilot, anchor, alarms, POB) and instrument rea
 
 - `logLevel`: Logging verbosity. Supported values are `off`, `critical`, `warning`, `info`, `debug`, and `full`. The default is `off` (`No logging` in the UI).
 - `persistentLogs`: When true, FairWindSK stores per-run message logs in the per-user application data directory. This is enabled by default.
-- `email`: Target email address used when FairWindSK detects that the previous run did not end gracefully.
-- `subject`: Subject line used for the diagnostics report email flow.
+- `interactionHistory`: When true, FairWindSK stores a lightweight journal of operator navigation and control actions beside each run log. This is enabled by default.
+- `email`: Optional fallback email address. When set, FairWindSK still tries to open the platform email composer after storing a crash report bundle locally.
+- `subject`: Subject line used for the optional fallback email flow.
 
-At startup, FairWindSK checks whether the previous run ended gracefully. If it did not, it prepares a report with the logs between the latest two starts plus platform details such as operating system, CPU architecture, Qt version, host information, and primary screen configuration, then opens the platform email composer with the configured destination and subject.
+At startup, FairWindSK checks whether the previous run ended gracefully. If it did not, it creates a persistent crash-report bundle in the per-user diagnostics reports directory. The bundle includes a text summary, a JSON manifest, the previous run log when available, the previous interaction journal when available, and platform details such as operating system, CPU architecture, Qt version, host information, and primary screen configuration.
 
-The **Settings > System** tab exposes the same diagnostics options in the touch-friendly UI and shows the persistent log directory currently used by the application.
-It keeps the persistent-log toggle readable on compact touch layouts by separating the switch from its descriptive text and relies on the in-application log explorer so operators can inspect persistent run logs without leaving FairWindSK.
+If a fallback email address is configured, FairWindSK also tries to open the platform email composer with a condensed summary that points at the stored report bundle. This keeps diagnostics available even when SMTP is not configured on the machine.
+
+The **Settings > System** tab exposes the same diagnostics options in the touch-friendly UI and shows both the persistent log directory and the crash-report directory currently used by the application.
+It keeps the persistent-log and interaction-history toggles readable on compact touch layouts by separating each switch from its descriptive text and relies on the in-application log explorer so operators can inspect both stored run logs and stored crash summaries without leaving FairWindSK.
 
 ## Comfort presets and icon color
 

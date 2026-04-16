@@ -12,6 +12,7 @@
 #include <QToolButton>
 
 #include "FairWindSK.hpp"
+#include "runtime/DiagnosticsSupport.hpp"
 #include "ui/IconUtils.hpp"
 #include "ui_AutopilotBar.h"
 
@@ -307,63 +308,78 @@ namespace fairwindsk::ui::bottombar {
     }
 
     void AutopilotBar::onStandByClicked() {
+        fairwindsk::runtime::recordUserInteraction(QStringLiteral("autopilot"), QStringLiteral("standby"), QStringLiteral("disengage"));
         checkStateAndUpdateUI(FairWindSK::getInstance()->getSignalKClient()->signalkPost(autopilotUrl("disengage")));
     }
 
     void AutopilotBar::onAutoClicked() {
+        fairwindsk::runtime::recordUserInteraction(QStringLiteral("autopilot"), QStringLiteral("auto"), QStringLiteral("engage"));
         checkStateAndUpdateUI(FairWindSK::getInstance()->getSignalKClient()->signalkPost(autopilotUrl("engage")));
     }
 
     void AutopilotBar::onWindClicked() {
+        fairwindsk::runtime::recordUserInteraction(QStringLiteral("autopilot"), QStringLiteral("mode"), QStringLiteral("wind"));
         setMode("wind");
     }
 
     void AutopilotBar::onRouteClicked() {
+        fairwindsk::runtime::recordUserInteraction(QStringLiteral("autopilot"), QStringLiteral("mode"), QStringLiteral("route"));
         setMode("route");
     }
 
     void AutopilotBar::onPortTackClicked() {
+        fairwindsk::runtime::recordUserInteraction(QStringLiteral("autopilot"), QStringLiteral("tack"), QStringLiteral("port"));
         tack("port");
     }
 
     void AutopilotBar::onStarboardTackClicked() {
+        fairwindsk::runtime::recordUserInteraction(QStringLiteral("autopilot"), QStringLiteral("tack"), QStringLiteral("starboard"));
         tack("starboard");
     }
 
     void AutopilotBar::onPortGybeClicked() {
+        fairwindsk::runtime::recordUserInteraction(QStringLiteral("autopilot"), QStringLiteral("gybe"), QStringLiteral("port"));
         gybe("port");
     }
 
     void AutopilotBar::onStarboardGybeClicked() {
+        fairwindsk::runtime::recordUserInteraction(QStringLiteral("autopilot"), QStringLiteral("gybe"), QStringLiteral("starboard"));
         gybe("starboard");
     }
 
     void AutopilotBar::onPlus1Clicked(){
+        fairwindsk::runtime::recordUserInteraction(QStringLiteral("autopilot"), QStringLiteral("adjust_heading"), QStringLiteral("+1"));
         adjustHeading(1);
     }
 
     void AutopilotBar::onPlus10Clicked(){
+        fairwindsk::runtime::recordUserInteraction(QStringLiteral("autopilot"), QStringLiteral("adjust_heading"), QStringLiteral("+10"));
         adjustHeading(10);
     }
 
     void AutopilotBar::onMinus1Clicked() {
+        fairwindsk::runtime::recordUserInteraction(QStringLiteral("autopilot"), QStringLiteral("adjust_heading"), QStringLiteral("-1"));
         adjustHeading(-1);
     }
 
     void AutopilotBar::onMinus10Clicked() {
+        fairwindsk::runtime::recordUserInteraction(QStringLiteral("autopilot"), QStringLiteral("adjust_heading"), QStringLiteral("-10"));
         adjustHeading(-10);
     }
 
     void AutopilotBar::onHideClicked() {
         setVisible(false);
+        fairwindsk::runtime::recordUserInteraction(QStringLiteral("autopilot"), QStringLiteral("hide"), QStringLiteral("panel"));
         emit hidden();
     }
 
     void AutopilotBar::onNextWPTClicked() {
+        fairwindsk::runtime::recordUserInteraction(QStringLiteral("autopilot"), QStringLiteral("advance_waypoint"), QStringLiteral("+1"));
         advanceWaypoint(1);
     }
 
     void AutopilotBar::onDodgeClicked() {
+        fairwindsk::runtime::recordUserInteraction(QStringLiteral("autopilot"), QStringLiteral("dodge"), QStringLiteral("request"));
         checkStateAndUpdateUI(FairWindSK::getInstance()->getSignalKClient()->signalkPost(autopilotUrl("dodge")));
     }
 

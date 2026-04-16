@@ -357,6 +357,14 @@ namespace fairwindsk {
         return getBool("diagnostics", "persistentLogs", true);
     }
 
+    void Configuration::setDiagnosticsInteractionHistory(const bool value) {
+        ensureObject("diagnostics")["interactionHistory"] = value;
+    }
+
+    bool Configuration::getDiagnosticsInteractionHistory() const {
+        return getBool("diagnostics", "interactionHistory", true);
+    }
+
     void Configuration::setDiagnosticsEmail(const QString &value) {
         ensureObject("diagnostics")["email"] = value.trimmed().toStdString();
     }

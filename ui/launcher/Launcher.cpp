@@ -23,6 +23,7 @@
 
 #include "Launcher.hpp"
 #include "AppItem.hpp"
+#include "runtime/DiagnosticsSupport.hpp"
 #include "ui/IconUtils.hpp"
 
 namespace fairwindsk::ui::launcher {
@@ -857,15 +858,24 @@ namespace fairwindsk::ui::launcher {
         if (currentPage() == 0 && !m_navigationStack.isEmpty()) {
             m_currentRootPageId = m_navigationStack.takeLast();
             m_targetPage = 0;
+            fairwindsk::runtime::recordUserInteraction(QStringLiteral("launcher"),
+                                                       QStringLiteral("navigate_up"),
+                                                       currentPageTitle());
             refreshFromConfiguration(true);
             return;
         }
         m_targetPage = std::max(0, currentPage() - 1);
+        fairwindsk::runtime::recordUserInteraction(QStringLiteral("launcher"),
+                                                   QStringLiteral("scroll_left"),
+                                                   QString::number(m_targetPage));
         ui->scrollArea->horizontalScrollBar()->setValue(m_targetPage * pageWidth());
     }
 
     void Launcher::onScrollRight() {
         m_targetPage = std::min(m_pageCount - 1, currentPage() + 1);
+        fairwindsk::runtime::recordUserInteraction(QStringLiteral("launcher"),
+                                                   QStringLiteral("scroll_right"),
+                                                   QString::number(m_targetPage));
         ui->scrollArea->horizontalScrollBar()->setValue(m_targetPage * pageWidth());
     }
 
@@ -967,6 +977,9 @@ namespace fairwindsk::ui::launcher {
                         m_navigationStack.append(m_currentRootPageId);
                         m_currentRootPageId = hash;
                         m_targetPage = 0;
+                        fairwindsk::runtime::recordUserInteraction(QStringLiteral("launcher"),
+                                                                   QStringLiteral("open_folder"),
+                                                                   hash);
                         refreshFromConfiguration(true);
                         return;
                     }
@@ -979,10 +992,16 @@ namespace fairwindsk::ui::launcher {
                             m_currentRootPageId = hash;
                         }
                         m_targetPage = 0;
+                        fairwindsk::runtime::recordUserInteraction(QStringLiteral("launcher"),
+                                                                   QStringLiteral("open_parent"),
+                                                                   hash);
                         refreshFromConfiguration(true);
                         return;
                     }
 
+                    fairwindsk::runtime::recordUserInteraction(QStringLiteral("launcher"),
+                                                               QStringLiteral("activate_tile"),
+                                                               hash);
                     emit foregroundAppChanged(hash);
                 });
             });

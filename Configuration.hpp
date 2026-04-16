@@ -76,6 +76,8 @@ namespace fairwindsk {
         QString getDiagnosticsLogLevel() const;
         void setPersistentMessageLogging(bool value);
         bool getPersistentMessageLogging() const;
+        void setDiagnosticsInteractionHistory(bool value);
+        bool getDiagnosticsInteractionHistory() const;
         void setDiagnosticsEmail(const QString &value);
         QString getDiagnosticsEmail() const;
         void setDiagnosticsSubject(const QString &value);

@@ -74,10 +74,13 @@ namespace fairwindsk::ui::settings {
         QFormLayout *m_loggingFormLayout = nullptr;
         fairwindsk::ui::widgets::TouchComboBox *m_logLevelComboBox = nullptr;
         fairwindsk::ui::widgets::TouchCheckBox *m_persistentLoggingCheckBox = nullptr;
+        fairwindsk::ui::widgets::TouchCheckBox *m_interactionHistoryCheckBox = nullptr;
         QLineEdit *m_diagnosticsEmailEdit = nullptr;
         QLabel *m_logDirectoryValue = nullptr;
+        QLabel *m_reportDirectoryValue = nullptr;
         QLabel *m_diagnosticsSubjectValue = nullptr;
         QPushButton *m_viewLogsButton = nullptr;
+        QPushButton *m_viewReportsButton = nullptr;
         QVBoxLayout *m_loggingDetailsLayout = nullptr;
         QDateTime m_lastRpiRefresh;
         bool m_hasRpiMetrics = false;

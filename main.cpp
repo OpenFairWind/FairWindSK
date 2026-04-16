@@ -183,7 +183,7 @@ int main(int argc, char *argv[]) {
     QObject::connect(&app, &QCoreApplication::aboutToQuit, []() {
         fairwindsk::runtime::markGracefulShutdown();
     });
-    fairwindsk::runtime::dispatchPendingDiagnosticsEmail();
+    fairwindsk::runtime::dispatchPendingDiagnosticsReport();
 
     // Install the translator
     QApplication::installTranslator(&translator);

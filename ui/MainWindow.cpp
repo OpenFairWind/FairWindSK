@@ -22,6 +22,7 @@
 #include "ui/settings/Settings.hpp"
 #include "ui/mydata/MyData.hpp"
 #include "ui/DrawerDialogHost.hpp"
+#include "runtime/DiagnosticsSupport.hpp"
 
 namespace fairwindsk::ui {
     MainWindow *MainWindow::s_instance = nullptr;
@@ -126,6 +127,9 @@ namespace fairwindsk::ui {
 
         // Set the window size
         setSize();
+        fairwindsk::runtime::recordUserInteraction(QStringLiteral("navigation"),
+                                                   QStringLiteral("main_window_ready"),
+                                                   QStringLiteral("launcher"));
 
         QTimer::singleShot(750, this, [this]() {
             ensureSettingsPage(m_launcher);
@@ -329,6 +333,9 @@ namespace fairwindsk::ui {
         if (m_launcher && ui->stackedWidget_Center->indexOf(m_launcher) >= 0) {
             ui->stackedWidget_Center->setCurrentWidget(m_launcher);
         }
+        fairwindsk::runtime::recordUserInteraction(QStringLiteral("navigation"),
+                                                   QStringLiteral("show_launcher"),
+                                                   m_launcher ? m_launcher->currentPageTitle() : tr("Home"));
         syncTopBarToCurrentPage();
     }
 
@@ -436,6 +443,9 @@ namespace fairwindsk::ui {
         }
 
         if (!appItem) {
+            fairwindsk::runtime::recordUserInteraction(QStringLiteral("apps"),
+                                                       QStringLiteral("launch_failed"),
+                                                       hash);
             showLauncher();
             return;
         }
@@ -489,6 +499,12 @@ namespace fairwindsk::ui {
                 if (ownsFallbackAppItem) {
                     appItem->deleteLater();
                 }
+                fairwindsk::runtime::recordUserInteraction(QStringLiteral("apps"),
+                                                           QStringLiteral("launch_native"),
+                                                           resolvedHash,
+                                                           QJsonObject{
+                                                               {QStringLiteral("executable"), executable}
+                                                           });
                 showLauncher();
                 return;
 #endif
@@ -537,6 +553,15 @@ namespace fairwindsk::ui {
 
             // Set the current app in ui components
             m_topBar->setCurrentApp(m_currentApp);
+            fairwindsk::runtime::recordUserInteraction(QStringLiteral("apps"),
+                                                       QStringLiteral("launch"),
+                                                       resolvedHash,
+                                                       QJsonObject{
+                                                           {QStringLiteral("displayName"), appItem->getDisplayName()},
+                                                           {QStringLiteral("kind"), appItem->getName().startsWith("file://")
+                                                                                        ? QStringLiteral("native")
+                                                                                        : QStringLiteral("web")}
+                                                       });
 
             // Set the window size
             //setSize();
@@ -595,6 +620,9 @@ namespace fairwindsk::ui {
 
         // Remove the icon from the bottom bar
         m_bottomBar->removeApp(hash);
+        fairwindsk::runtime::recordUserInteraction(QStringLiteral("apps"),
+                                                   QStringLiteral("remove"),
+                                                   hash);
 
         // Set the launcher as current application
         showLauncher();
@@ -611,6 +639,7 @@ namespace fairwindsk::ui {
             return;
         }
         closeAboutPage(m_launcher);
+        fairwindsk::runtime::recordUserInteraction(QStringLiteral("navigation"), QStringLiteral("bottom_bar_apps"), QStringLiteral("launcher"));
         showLauncher();
     }
 
@@ -626,6 +655,7 @@ namespace fairwindsk::ui {
 
         ensureMyDataPage(ui->stackedWidget_Center->currentWidget());
         ui->stackedWidget_Center->setCurrentWidget(m_myDataPage);
+        fairwindsk::runtime::recordUserInteraction(QStringLiteral("navigation"), QStringLiteral("open_mydata"), QStringLiteral("MyData"));
         syncTopBarToCurrentPage();
     }
 
@@ -647,6 +677,7 @@ namespace fairwindsk::ui {
         const auto fallbackWidget = ui->stackedWidget_Center->currentWidget();
         ensureSettingsPage(fallbackWidget);
         ui->stackedWidget_Center->setCurrentWidget(m_settingsPage);
+        fairwindsk::runtime::recordUserInteraction(QStringLiteral("navigation"), QStringLiteral("open_settings"), QStringLiteral("Settings"));
         syncTopBarToCurrentPage();
     }
 
@@ -795,6 +826,7 @@ namespace fairwindsk::ui {
 
         ensureAboutPage(fallbackWidget ? fallbackWidget : ui->stackedWidget_Center->currentWidget());
         ui->stackedWidget_Center->setCurrentWidget(m_aboutPage);
+        fairwindsk::runtime::recordUserInteraction(QStringLiteral("navigation"), QStringLiteral("open_about"), QStringLiteral("About"));
         syncTopBarToCurrentPage();
     }
 
@@ -924,6 +956,9 @@ namespace fairwindsk::ui {
         }
 
         QTimer::singleShot(0, this, [this]() {
+            fairwindsk::runtime::recordUserInteraction(QStringLiteral("lifecycle"),
+                                                       QStringLiteral("quit_confirmation_requested"),
+                                                       QStringLiteral("FairWindSK"));
             const QMessageBox::StandardButton reply = drawer::question(this,
                                                                        tr("Quit FairWindSK"),
                                                                        tr("Are you sure you want to exit FairWindSK?"),
@@ -931,7 +966,14 @@ namespace fairwindsk::ui {
                                                                        QMessageBox::No);
             if (reply == QMessageBox::Yes) {
                 m_quitConfirmed = true;
+                fairwindsk::runtime::recordUserInteraction(QStringLiteral("lifecycle"),
+                                                           QStringLiteral("quit_confirmed"),
+                                                           QStringLiteral("FairWindSK"));
                 close();
+            } else {
+                fairwindsk::runtime::recordUserInteraction(QStringLiteral("lifecycle"),
+                                                           QStringLiteral("quit_cancelled"),
+                                                           QStringLiteral("FairWindSK"));
             }
         });
     }

@@ -259,12 +259,31 @@ namespace fairwindsk::ui::settings {
 
         m_loggingFormLayout->addRow(tr("Persistent logs"), persistentLogsWidget);
 
+        m_interactionHistoryCheckBox = new fairwindsk::ui::widgets::TouchCheckBox(m_loggingGroupBox);
+        m_interactionHistoryCheckBox->setText(QString());
+        m_interactionHistoryCheckBox->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+
+        auto *interactionHistoryWidget = new QWidget(m_loggingGroupBox);
+        auto *interactionHistoryLayout = new QHBoxLayout(interactionHistoryWidget);
+        interactionHistoryLayout->setContentsMargins(0, 0, 0, 0);
+        interactionHistoryLayout->setSpacing(10);
+        interactionHistoryLayout->addWidget(m_interactionHistoryCheckBox, 0, Qt::AlignTop);
+
+        auto *interactionHistoryHelpLabel = new QLabel(
+            tr("Store a lightweight history of navigation and control actions with each run"),
+            interactionHistoryWidget);
+        interactionHistoryHelpLabel->setWordWrap(true);
+        interactionHistoryHelpLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        interactionHistoryLayout->addWidget(interactionHistoryHelpLabel, 1);
+
+        m_loggingFormLayout->addRow(tr("Interaction history"), interactionHistoryWidget);
+
         m_diagnosticsEmailEdit = new QLineEdit(m_loggingGroupBox);
         m_diagnosticsEmailEdit->setClearButtonEnabled(true);
         m_diagnosticsEmailEdit->setMinimumHeight(42);
         m_diagnosticsEmailEdit->setMinimumWidth(320);
         m_diagnosticsEmailEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-        m_loggingFormLayout->addRow(tr("Diagnostics email"), m_diagnosticsEmailEdit);
+        m_loggingFormLayout->addRow(tr("Fallback email"), m_diagnosticsEmailEdit);
 
         m_diagnosticsSubjectValue = new QLabel(m_loggingGroupBox);
         m_diagnosticsSubjectValue->setWordWrap(true);
@@ -281,6 +300,11 @@ namespace fairwindsk::ui::settings {
         m_logDirectoryValue->setTextInteractionFlags(Qt::TextSelectableByMouse);
         m_loggingDetailsLayout->addWidget(m_logDirectoryValue);
 
+        m_reportDirectoryValue = new QLabel(loggingDetailsWidget);
+        m_reportDirectoryValue->setWordWrap(true);
+        m_reportDirectoryValue->setTextInteractionFlags(Qt::TextSelectableByMouse);
+        m_loggingDetailsLayout->addWidget(m_reportDirectoryValue);
+
         auto *loggingActionRow = new QWidget(loggingDetailsWidget);
         auto *loggingActionLayout = new QHBoxLayout(loggingActionRow);
         loggingActionLayout->setContentsMargins(0, 0, 0, 0);
@@ -289,6 +313,9 @@ namespace fairwindsk::ui::settings {
         m_viewLogsButton = new QPushButton(tr("View logs"), loggingActionRow);
         m_viewLogsButton->setMinimumHeight(40);
         loggingActionLayout->addWidget(m_viewLogsButton, 0);
+        m_viewReportsButton = new QPushButton(tr("View reports"), loggingActionRow);
+        m_viewReportsButton->setMinimumHeight(40);
+        loggingActionLayout->addWidget(m_viewReportsButton, 0);
         loggingActionLayout->addStretch(1);
         m_loggingDetailsLayout->addWidget(loggingActionRow);
 
@@ -306,7 +333,8 @@ namespace fairwindsk::ui::settings {
                     configuration->setPersistentMessageLogging(m_persistentLoggingCheckBox->isChecked());
                     fairwindsk::runtime::applyLiveSettings(
                         fairwindsk::runtime::logLevelFromString(configuration->getDiagnosticsLogLevel()),
-                        configuration->getPersistentMessageLogging());
+                        configuration->getPersistentMessageLogging(),
+                        configuration->getDiagnosticsInteractionHistory());
                     m_settings->markDirty(FairWindSK::RuntimeUi, 0);
                 });
 
@@ -319,6 +347,21 @@ namespace fairwindsk::ui::settings {
                     configuration->setPersistentMessageLogging(enabled);
                     fairwindsk::runtime::applyLiveSettings(
                         fairwindsk::runtime::logLevelFromString(configuration->getDiagnosticsLogLevel()),
+                        enabled,
+                        configuration->getDiagnosticsInteractionHistory());
+                    m_settings->markDirty(FairWindSK::RuntimeUi, 0);
+                });
+
+        connect(m_interactionHistoryCheckBox,
+                &fairwindsk::ui::widgets::TouchCheckBox::stateChanged,
+                this,
+                [this](const int state) {
+                    const bool enabled = state == Qt::Checked;
+                    auto *configuration = m_settings->getConfiguration();
+                    configuration->setDiagnosticsInteractionHistory(enabled);
+                    fairwindsk::runtime::applyLiveSettings(
+                        fairwindsk::runtime::logLevelFromString(configuration->getDiagnosticsLogLevel()),
+                        configuration->getPersistentMessageLogging(),
                         enabled);
                     m_settings->markDirty(FairWindSK::RuntimeUi, 0);
                 });
@@ -331,6 +374,11 @@ namespace fairwindsk::ui::settings {
             fairwindsk::ui::drawer::exploreLogs(this,
                                                 tr("Persistent Logs"),
                                                 fairwindsk::runtime::persistentLogsDirectoryPath());
+        });
+        connect(m_viewReportsButton, &QPushButton::clicked, this, [this]() {
+            fairwindsk::ui::drawer::exploreLogs(this,
+                                                tr("Crash Reports"),
+                                                fairwindsk::runtime::persistentReportsDirectoryPath());
         });
     }
 
@@ -392,16 +440,22 @@ namespace fairwindsk::ui::settings {
         auto *configuration = m_settings->getConfiguration();
         const QSignalBlocker levelBlocker(m_logLevelComboBox);
         const QSignalBlocker persistentBlocker(m_persistentLoggingCheckBox);
+        const QSignalBlocker interactionBlocker(m_interactionHistoryCheckBox);
         const QSignalBlocker emailBlocker(m_diagnosticsEmailEdit);
         const QString configuredLevel = configuration->getDiagnosticsLogLevel();
         const int levelIndex = m_logLevelComboBox->findData(configuredLevel);
         m_logLevelComboBox->setCurrentIndex(levelIndex >= 0 ? levelIndex : 0);
         m_persistentLoggingCheckBox->setChecked(configuration->getPersistentMessageLogging());
+        m_interactionHistoryCheckBox->setChecked(configuration->getDiagnosticsInteractionHistory());
         m_diagnosticsEmailEdit->setText(configuration->getDiagnosticsEmail());
         m_diagnosticsSubjectValue->setText(configuration->getDiagnosticsSubject());
-        m_logDirectoryValue->setText(fairwindsk::runtime::persistentLogsDirectoryPath());
+        m_logDirectoryValue->setText(tr("Logs: %1").arg(fairwindsk::runtime::persistentLogsDirectoryPath()));
+        m_reportDirectoryValue->setText(tr("Reports: %1").arg(fairwindsk::runtime::persistentReportsDirectoryPath()));
         if (m_viewLogsButton) {
             m_viewLogsButton->setEnabled(QFileInfo::exists(fairwindsk::runtime::persistentLogsDirectoryPath()));
+        }
+        if (m_viewReportsButton) {
+            m_viewReportsButton->setEnabled(QFileInfo::exists(fairwindsk::runtime::persistentReportsDirectoryPath()));
         }
     }
 

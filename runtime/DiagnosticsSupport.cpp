@@ -11,8 +11,10 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QGuiApplication>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QJsonValue>
 #include <QLoggingCategory>
 #include <QMessageLogContext>
 #include <QMutex>
@@ -34,6 +36,7 @@ namespace fairwindsk::runtime {
         struct DiagnosticsOptions {
             LogLevel logLevel = LogLevel::Off;
             bool persistentLogging = true;
+            bool interactionHistoryEnabled = true;
             QString email = defaultDiagnosticsEmail();
             QString subject = defaultDiagnosticsSubject();
         };
@@ -43,9 +46,10 @@ namespace fairwindsk::runtime {
             bool graceful = true;
             QString startUtc;
             QString logPath;
+            QString interactionPath;
         };
 
-        struct PendingDiagnosticsEmail {
+        struct PendingDiagnosticsReport {
             bool pending = false;
             QString currentRunId;
             PreviousRunState previousRun;
@@ -54,10 +58,12 @@ namespace fairwindsk::runtime {
 
         QMutex g_logMutex;
         QFile *g_runLogFile = nullptr;
+        QFile *g_runInteractionFile = nullptr;
         DiagnosticsOptions g_diagnosticsOptions;
-        PendingDiagnosticsEmail g_pendingEmail;
+        PendingDiagnosticsReport g_pendingReport;
         QString g_currentRunId;
         QString g_currentRunLogPath;
+        QString g_currentRunInteractionPath;
         QString g_currentRunStartUtc;
 
         QString defaultConfigFilename() {
@@ -130,6 +136,9 @@ namespace fairwindsk::runtime {
             options.persistentLogging = diagnosticsObject.contains(QStringLiteral("persistentLogs"))
                                             ? diagnosticsObject.value(QStringLiteral("persistentLogs")).toBool(true)
                                             : true;
+            options.interactionHistoryEnabled = diagnosticsObject.contains(QStringLiteral("interactionHistory"))
+                                                   ? diagnosticsObject.value(QStringLiteral("interactionHistory")).toBool(true)
+                                                   : true;
 
             const QString email = diagnosticsObject.value(QStringLiteral("email")).toString().trimmed();
             if (!email.isEmpty()) {
@@ -196,6 +205,22 @@ namespace fairwindsk::runtime {
             }
         }
 
+        void writeInteractionLine(const QJsonObject &payload) {
+            if (!g_diagnosticsOptions.interactionHistoryEnabled || !g_runInteractionFile || !g_runInteractionFile->isOpen()) {
+                return;
+            }
+
+            QJsonObject enrichedPayload = payload;
+            enrichedPayload.insert(QStringLiteral("runId"), g_currentRunId);
+            if (!enrichedPayload.contains(QStringLiteral("ts"))) {
+                enrichedPayload.insert(QStringLiteral("ts"), QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs));
+            }
+
+            QTextStream stream(g_runInteractionFile);
+            stream << QString::fromUtf8(QJsonDocument(enrichedPayload).toJson(QJsonDocument::Compact)) << Qt::endl;
+            stream.flush();
+        }
+
         void writeLifecycleLine(const QString &level, const QString &message) {
             QMutexLocker locker(&g_logMutex);
             writeFormattedLine(currentTimestamp(level, message));
@@ -236,6 +261,7 @@ namespace fairwindsk::runtime {
             PreviousRunState state;
             state.startUtc = settings.value(diagnosticsStateKey(QStringLiteral("lastRunStartUtc"))).toString();
             state.logPath = settings.value(diagnosticsStateKey(QStringLiteral("lastRunLogPath"))).toString();
+            state.interactionPath = settings.value(diagnosticsStateKey(QStringLiteral("lastRunInteractionPath"))).toString();
             state.graceful = settings.value(diagnosticsStateKey(QStringLiteral("lastRunGraceful")), true).toBool();
             state.valid = !state.startUtc.trimmed().isEmpty();
             return state;
@@ -250,6 +276,7 @@ namespace fairwindsk::runtime {
             settings.setValue(diagnosticsStateKey(QStringLiteral("lastRunStartUtc")), g_currentRunStartUtc);
             settings.setValue(diagnosticsStateKey(QStringLiteral("lastRunId")), g_currentRunId);
             settings.setValue(diagnosticsStateKey(QStringLiteral("lastRunLogPath")), g_currentRunLogPath);
+            settings.setValue(diagnosticsStateKey(QStringLiteral("lastRunInteractionPath")), g_currentRunInteractionPath);
             settings.setValue(diagnosticsStateKey(QStringLiteral("lastRunGraceful")), graceful);
             settings.sync();
         }
@@ -293,6 +320,7 @@ namespace fairwindsk::runtime {
                      << QStringLiteral("Previous start (UTC): %1").arg(previousRun.startUtc)
                      << QStringLiteral("Previous run graceful: %1").arg(previousRun.graceful ? QStringLiteral("yes") : QStringLiteral("no"))
                      << QStringLiteral("Previous run log path: %1").arg(previousRun.logPath)
+                     << QStringLiteral("Previous interaction path: %1").arg(previousRun.interactionPath)
                      << QString()
                      << QStringLiteral("Environment")
                      << QStringLiteral("-----------")
@@ -311,15 +339,128 @@ namespace fairwindsk::runtime {
             return sections.join(u'\n');
         }
 
-        QString writeDiagnosticsReport(const QString &reportText, const QString &currentRunId) {
-            const QString reportPath = QDir(reportsDirectoryPath()).filePath(QStringLiteral("%1-unclean-run.txt").arg(currentRunId));
-            QFile file(reportPath);
+        QString reportDirectoryPath(const QString &reportId) {
+            const QString path = QDir(reportsDirectoryPath()).filePath(reportId);
+            QDir().mkpath(path);
+            return path;
+        }
+
+        bool copyFileReplacing(const QString &sourcePath, const QString &targetPath) {
+            if (sourcePath.trimmed().isEmpty() || !QFileInfo::exists(sourcePath)) {
+                return false;
+            }
+
+            QFile::remove(targetPath);
+            return QFile::copy(sourcePath, targetPath);
+        }
+
+        QStringList summarizeInteractionHistory(const QString &path, const int maxEntries = 12) {
+            QFile file(path);
+            if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+                return {};
+            }
+
+            QStringList entries;
+            while (!file.atEnd()) {
+                const QByteArray rawLine = file.readLine();
+                const QJsonDocument document = QJsonDocument::fromJson(rawLine);
+                if (!document.isObject()) {
+                    continue;
+                }
+
+                const QJsonObject object = document.object();
+                const QString timestamp = object.value(QStringLiteral("ts")).toString();
+                const QString category = object.value(QStringLiteral("category")).toString();
+                const QString action = object.value(QStringLiteral("action")).toString();
+                const QString target = object.value(QStringLiteral("target")).toString();
+                QString summary = QStringLiteral("%1  %2/%3").arg(timestamp, category, action);
+                if (!target.trimmed().isEmpty()) {
+                    summary.append(QStringLiteral("  %1").arg(target));
+                }
+                entries.append(summary);
+            }
+
+            if (entries.size() > maxEntries) {
+                entries = entries.mid(entries.size() - maxEntries);
+            }
+            return entries;
+        }
+
+        QString buildInteractionSummaryText(const QString &path) {
+            const QStringList entries = summarizeInteractionHistory(path);
+            if (entries.isEmpty()) {
+                return QStringLiteral("No interaction history is available for the previous run.");
+            }
+
+            QStringList lines;
+            lines << QStringLiteral("Recent operator interactions before the previous shutdown:")
+                  << QStringLiteral("-------------------------------------------------------");
+            lines.append(entries);
+            return lines.join(u'\n');
+        }
+
+        QString writeTextFile(const QString &path, const QString &content) {
+            QFile file(path);
             if (file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
                 QTextStream stream(&file);
-                stream << reportText;
+                stream << content;
                 stream.flush();
             }
-            return reportPath;
+            return path;
+        }
+
+        QString writeDiagnosticsReportBundle(const PreviousRunState &previousRun,
+                                             const DiagnosticsOptions &options,
+                                             const QString &currentRunId,
+                                             const QString &currentRunStartUtc,
+                                             QString *reportTextOut = nullptr) {
+            const QString reportId = QStringLiteral("%1-unclean-run").arg(currentRunId);
+            const QString bundlePath = reportDirectoryPath(reportId);
+            const QString reportText = buildDiagnosticsReport(previousRun, currentRunStartUtc);
+            const QString interactionSummary = buildInteractionSummaryText(previousRun.interactionPath);
+            const QString combinedReportText = reportText + QStringLiteral("\n\n") + interactionSummary
+                                               + QStringLiteral("\n\nBundle directory:\n%1\n").arg(bundlePath);
+
+            writeTextFile(QDir(bundlePath).filePath(QStringLiteral("report.txt")), combinedReportText);
+            writeTextFile(QDir(reportsDirectoryPath()).filePath(QStringLiteral("%1.txt").arg(reportId)), combinedReportText);
+
+            copyFileReplacing(previousRun.logPath,
+                              QDir(bundlePath).filePath(QStringLiteral("previous-run.log")));
+            copyFileReplacing(previousRun.interactionPath,
+                              QDir(bundlePath).filePath(QStringLiteral("previous-run.events.ndjson")));
+
+            QJsonObject manifest;
+            manifest.insert(QStringLiteral("reportId"), reportId);
+            manifest.insert(QStringLiteral("status"), QStringLiteral("pending-review"));
+            manifest.insert(QStringLiteral("createdAtUtc"), currentRunStartUtc);
+            manifest.insert(QStringLiteral("currentRunId"), currentRunId);
+            manifest.insert(QStringLiteral("previousRunStartUtc"), previousRun.startUtc);
+            manifest.insert(QStringLiteral("previousRunGraceful"), previousRun.graceful);
+            manifest.insert(QStringLiteral("previousRunLogPath"), previousRun.logPath);
+            manifest.insert(QStringLiteral("previousRunInteractionPath"), previousRun.interactionPath);
+            manifest.insert(QStringLiteral("logLevel"), logLevelToString(options.logLevel));
+            manifest.insert(QStringLiteral("persistentLogs"), options.persistentLogging);
+            manifest.insert(QStringLiteral("interactionHistory"), options.interactionHistoryEnabled);
+            manifest.insert(QStringLiteral("fallbackEmail"), options.email);
+            manifest.insert(QStringLiteral("subject"), options.subject);
+            manifest.insert(QStringLiteral("summary"), interactionSummary);
+            manifest.insert(QStringLiteral("bundlePath"), bundlePath);
+
+            QJsonArray recentInteractions;
+            for (const QString &entry : summarizeInteractionHistory(previousRun.interactionPath)) {
+                recentInteractions.append(entry);
+            }
+            manifest.insert(QStringLiteral("recentInteractions"), recentInteractions);
+            manifest.insert(QStringLiteral("environment"), hardwareSummary());
+
+            writeTextFile(QDir(bundlePath).filePath(QStringLiteral("report.json")),
+                          QString::fromUtf8(QJsonDocument(manifest).toJson(QJsonDocument::Indented)));
+
+            if (reportTextOut) {
+                *reportTextOut = combinedReportText;
+            }
+
+            return bundlePath;
         }
 
         QString condensedEmailBody(const QString &reportText, const QString &reportPath) {
@@ -346,6 +487,10 @@ namespace fairwindsk::runtime {
 
     QString persistentLogsDirectoryPath() {
         return runsDirectoryPath();
+    }
+
+    QString persistentReportsDirectoryPath() {
+        return reportsDirectoryPath();
     }
 
     QString logLevelToString(const LogLevel level) {
@@ -400,6 +545,7 @@ namespace fairwindsk::runtime {
         g_currentRunId = sanitizeRunId(nowUtc);
         g_currentRunStartUtc = nowUtc.toString(Qt::ISODateWithMs);
         g_currentRunLogPath = QDir(runsDirectoryPath()).filePath(QStringLiteral("%1.log").arg(g_currentRunId));
+        g_currentRunInteractionPath = QDir(runsDirectoryPath()).filePath(QStringLiteral("%1.events.ndjson").arg(g_currentRunId));
 
         if (g_diagnosticsOptions.persistentLogging) {
             auto *file = new QFile(g_currentRunLogPath);
@@ -411,54 +557,90 @@ namespace fairwindsk::runtime {
             }
         }
 
+        if (g_diagnosticsOptions.interactionHistoryEnabled) {
+            auto *file = new QFile(g_currentRunInteractionPath);
+            if (file->open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
+                g_runInteractionFile = file;
+            } else {
+                delete file;
+                g_runInteractionFile = nullptr;
+            }
+        }
+
         qInstallMessageHandler(diagnosticsMessageHandler);
         persistCurrentRunState(false);
 
         writeLifecycleLine(QStringLiteral("INFO"),
                            QStringLiteral("Startup logging initialized at \"%1\"").arg(g_currentRunLogPath));
         writeLifecycleLine(QStringLiteral("INFO"),
-                           QStringLiteral("Diagnostics configuration logLevel=%1 persistentLogs=%2")
+                           QStringLiteral("Diagnostics configuration logLevel=%1 persistentLogs=%2 interactionHistory=%3")
                                .arg(logLevelToString(g_diagnosticsOptions.logLevel),
-                                    g_diagnosticsOptions.persistentLogging ? QStringLiteral("true") : QStringLiteral("false")));
+                                    g_diagnosticsOptions.persistentLogging ? QStringLiteral("true") : QStringLiteral("false"),
+                                    g_diagnosticsOptions.interactionHistoryEnabled ? QStringLiteral("true") : QStringLiteral("false")));
+        recordUserInteraction(QStringLiteral("lifecycle"),
+                              QStringLiteral("startup"),
+                              QStringLiteral("FairWindSK"),
+                              QJsonObject{
+                                  {QStringLiteral("logPath"), g_currentRunLogPath},
+                                  {QStringLiteral("interactionPath"), g_currentRunInteractionPath}
+                              });
 
         if (previousRun.valid && !previousRun.graceful) {
-            g_pendingEmail.pending = true;
-            g_pendingEmail.currentRunId = g_currentRunId;
-            g_pendingEmail.previousRun = previousRun;
-            g_pendingEmail.options = g_diagnosticsOptions;
+            g_pendingReport.pending = true;
+            g_pendingReport.currentRunId = g_currentRunId;
+            g_pendingReport.previousRun = previousRun;
+            g_pendingReport.options = g_diagnosticsOptions;
             writeLifecycleLine(QStringLiteral("WARN"),
-                               QStringLiteral("Previous run did not end gracefully; diagnostics email is queued."));
+                               QStringLiteral("Previous run did not end gracefully; diagnostics report bundle is queued."));
         } else {
-            g_pendingEmail = {};
+            g_pendingReport = {};
         }
     }
 
-    void dispatchPendingDiagnosticsEmail() {
-        if (!g_pendingEmail.pending || g_pendingEmail.options.email.trimmed().isEmpty()) {
+    void dispatchPendingDiagnosticsReport() {
+        if (!g_pendingReport.pending) {
             return;
         }
 
         const QString currentRunStartUtc = QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs);
-        const QString reportText = buildDiagnosticsReport(g_pendingEmail.previousRun, currentRunStartUtc);
-        const QString reportPath = writeDiagnosticsReport(reportText, g_pendingEmail.currentRunId);
+        QString reportText;
+        const QString reportPath = writeDiagnosticsReportBundle(g_pendingReport.previousRun,
+                                                                g_pendingReport.options,
+                                                                g_pendingReport.currentRunId,
+                                                                currentRunStartUtc,
+                                                                &reportText);
 
-        QUrl mailUrl;
-        mailUrl.setScheme(QStringLiteral("mailto"));
-        mailUrl.setPath(g_pendingEmail.options.email);
-        QUrlQuery query;
-        query.addQueryItem(QStringLiteral("subject"), g_pendingEmail.options.subject);
-        query.addQueryItem(QStringLiteral("body"), condensedEmailBody(reportText, reportPath));
-        mailUrl.setQuery(query);
+        writeLifecycleLine(QStringLiteral("WARN"),
+                           QStringLiteral("Stored crash report bundle at \"%1\"").arg(reportPath));
+        recordUserInteraction(QStringLiteral("diagnostics"),
+                              QStringLiteral("report_bundle_created"),
+                              reportPath,
+                              QJsonObject{
+                                  {QStringLiteral("previousRunStartUtc"), g_pendingReport.previousRun.startUtc},
+                                  {QStringLiteral("fallbackEmail"), g_pendingReport.options.email}
+                              });
 
-        const bool opened = QDesktopServices::openUrl(mailUrl);
-        writeLifecycleLine(opened ? QStringLiteral("INFO") : QStringLiteral("WARN"),
-                           opened
-                               ? QStringLiteral("Diagnostics email composer opened for %1").arg(g_pendingEmail.options.email)
-                               : QStringLiteral("Unable to open diagnostics email composer for %1").arg(g_pendingEmail.options.email));
-        g_pendingEmail.pending = false;
+        if (!g_pendingReport.options.email.trimmed().isEmpty()) {
+            QUrl mailUrl;
+            mailUrl.setScheme(QStringLiteral("mailto"));
+            mailUrl.setPath(g_pendingReport.options.email);
+            QUrlQuery query;
+            query.addQueryItem(QStringLiteral("subject"), g_pendingReport.options.subject);
+            query.addQueryItem(QStringLiteral("body"), condensedEmailBody(reportText, reportPath));
+            mailUrl.setQuery(query);
+
+            const bool opened = QDesktopServices::openUrl(mailUrl);
+            writeLifecycleLine(opened ? QStringLiteral("INFO") : QStringLiteral("WARN"),
+                               opened
+                                   ? QStringLiteral("Fallback diagnostics email composer opened for %1").arg(g_pendingReport.options.email)
+                                   : QStringLiteral("Unable to open fallback diagnostics email composer for %1").arg(g_pendingReport.options.email));
+        }
+
+        g_pendingReport.pending = false;
     }
 
     void markGracefulShutdown() {
+        recordUserInteraction(QStringLiteral("lifecycle"), QStringLiteral("graceful_shutdown"), QStringLiteral("FairWindSK"));
         writeLifecycleLine(QStringLiteral("INFO"), QStringLiteral("Application is closing gracefully."));
         persistCurrentRunState(true);
         if (g_runLogFile) {
@@ -467,14 +649,22 @@ namespace fairwindsk::runtime {
             delete g_runLogFile;
             g_runLogFile = nullptr;
         }
+        if (g_runInteractionFile) {
+            g_runInteractionFile->flush();
+            g_runInteractionFile->close();
+            delete g_runInteractionFile;
+            g_runInteractionFile = nullptr;
+        }
     }
 
-    void applyLiveSettings(const LogLevel level, const bool persistentLogging) {
+    void applyLiveSettings(const LogLevel level, const bool persistentLogging, const bool interactionHistoryEnabled) {
         QMutexLocker locker(&g_logMutex);
         const bool changed = g_diagnosticsOptions.logLevel != level
-                             || g_diagnosticsOptions.persistentLogging != persistentLogging;
+                             || g_diagnosticsOptions.persistentLogging != persistentLogging
+                             || g_diagnosticsOptions.interactionHistoryEnabled != interactionHistoryEnabled;
         g_diagnosticsOptions.logLevel = level;
         g_diagnosticsOptions.persistentLogging = persistentLogging;
+        g_diagnosticsOptions.interactionHistoryEnabled = interactionHistoryEnabled;
 
         if (g_diagnosticsOptions.persistentLogging && !g_runLogFile) {
             auto *file = new QFile(g_currentRunLogPath);
@@ -490,11 +680,44 @@ namespace fairwindsk::runtime {
             g_runLogFile = nullptr;
         }
 
+        if (g_diagnosticsOptions.interactionHistoryEnabled && !g_runInteractionFile) {
+            auto *file = new QFile(g_currentRunInteractionPath);
+            if (file->open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append)) {
+                g_runInteractionFile = file;
+            } else {
+                delete file;
+            }
+        } else if (!g_diagnosticsOptions.interactionHistoryEnabled && g_runInteractionFile) {
+            g_runInteractionFile->flush();
+            g_runInteractionFile->close();
+            delete g_runInteractionFile;
+            g_runInteractionFile = nullptr;
+        }
+
         if (changed) {
             writeFormattedLine(currentTimestamp(QStringLiteral("INFO"),
-                                                QStringLiteral("Logging preferences updated logLevel=%1 persistentLogs=%2")
+                                                QStringLiteral("Logging preferences updated logLevel=%1 persistentLogs=%2 interactionHistory=%3")
                                                     .arg(logLevelToString(level),
-                                                         persistentLogging ? QStringLiteral("true") : QStringLiteral("false"))));
+                                                         persistentLogging ? QStringLiteral("true") : QStringLiteral("false"),
+                                                         interactionHistoryEnabled ? QStringLiteral("true") : QStringLiteral("false"))));
         }
+    }
+
+    void recordUserInteraction(const QString &category,
+                               const QString &action,
+                               const QString &target,
+                               const QJsonObject &context) {
+        if (category.trimmed().isEmpty() || action.trimmed().isEmpty()) {
+            return;
+        }
+
+        QMutexLocker locker(&g_logMutex);
+        QJsonObject payload = context;
+        payload.insert(QStringLiteral("category"), category);
+        payload.insert(QStringLiteral("action"), action);
+        if (!target.trimmed().isEmpty()) {
+            payload.insert(QStringLiteral("target"), target);
+        }
+        writeInteractionLine(payload);
     }
 }

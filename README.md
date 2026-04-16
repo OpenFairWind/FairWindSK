@@ -39,7 +39,7 @@ The runtime now supervises Signal K restarts as well: if the server drops and co
 * The Qt virtual keyboard integration for touch-oriented deployments
 * Comfort preset management for `Default`, `Dawn`, `Day`, `Sunset`, `Dusk`, and `Night`, including QSS editing, configurable palette items, and theme image support
 * Shared touch-first reusable UI components and drawer-hosted dialogs, including touch file, color, and icon browsers used by the shell workflows
-* Touch-oriented diagnostics controls with persistent per-run logs and in-app log exploration through the shared Bottom Bar horizontal drawer
+* Touch-oriented diagnostics controls with persistent per-run logs, stored crash-report bundles, lightweight interaction history, and in-app diagnostics exploration through the shared Bottom Bar horizontal drawer
 * Native vessel-operation surfaces: Autopilot, POB (Person over board), Anchor, and Alarms bars
 * MyData core workflows: waypoints, tracks, routes, Signal K resource browsing, file browsing/search, and file viewing for images, PDF, and text files
 * Embedded geographic preview integration for MyData resources and waypoints, including GeoJSON preview surfaces and Freeboard-assisted focusing where available

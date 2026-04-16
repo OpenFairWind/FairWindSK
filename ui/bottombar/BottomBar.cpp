@@ -19,6 +19,7 @@
 #include <QtWidgets/QLabel>
 
 #include "FairWindSK.hpp"
+#include "runtime/DiagnosticsSupport.hpp"
 #include "ui/IconUtils.hpp"
 
 namespace fairwindsk::ui::bottombar {
@@ -311,6 +312,7 @@ namespace fairwindsk::ui::bottombar {
  */
     void BottomBar::myData_clicked() {
         hideTransientPanels();
+        fairwindsk::runtime::recordUserInteraction(QStringLiteral("bottom_bar"), QStringLiteral("mydata"), QStringLiteral("MyData"));
         // Emit the signal to tell the MainWindow to update the UI and show the settings screen
         emit setMyData();
     }
@@ -321,12 +323,14 @@ namespace fairwindsk::ui::bottombar {
  */
     void BottomBar::pob_clicked() {
         hideTransientPanels(m_POBBar);
+        fairwindsk::runtime::recordUserInteraction(QStringLiteral("bottom_bar"), QStringLiteral("pob"), QStringLiteral("POB"));
         m_POBBar->POB();
         setPanelVisibility(m_POBBar, true);
     }
 
     void BottomBar::autopilot_clicked() {
         if (m_AutopilotBar) {
+            fairwindsk::runtime::recordUserInteraction(QStringLiteral("bottom_bar"), QStringLiteral("autopilot"), QStringLiteral("Autopilot"));
             setPanelVisibility(m_AutopilotBar, true);
         }
     }
@@ -337,6 +341,7 @@ namespace fairwindsk::ui::bottombar {
  */
     void BottomBar::apps_clicked() {
         hideTransientPanels();
+        fairwindsk::runtime::recordUserInteraction(QStringLiteral("bottom_bar"), QStringLiteral("apps"), QStringLiteral("Launcher"));
 
         // Emit the signal to tell the MainWindow to update the UI and show the apps screen
         emit setApps();
@@ -345,6 +350,7 @@ namespace fairwindsk::ui::bottombar {
 
     void BottomBar::anchor_clicked() {
         if (m_AnchorBar) {
+            fairwindsk::runtime::recordUserInteraction(QStringLiteral("bottom_bar"), QStringLiteral("anchor"), QStringLiteral("Anchor"));
             setPanelVisibility(m_AnchorBar, true);
         }
 
@@ -356,6 +362,7 @@ namespace fairwindsk::ui::bottombar {
  */
     void BottomBar::alarms_clicked() {
         if (m_AlarmsBar) {
+            fairwindsk::runtime::recordUserInteraction(QStringLiteral("bottom_bar"), QStringLiteral("alarms"), QStringLiteral("Alarms"));
             setPanelVisibility(m_AlarmsBar, true);
         }
     }
@@ -366,6 +373,7 @@ namespace fairwindsk::ui::bottombar {
  */
     void BottomBar::settings_clicked() {
         hideTransientPanels();
+        fairwindsk::runtime::recordUserInteraction(QStringLiteral("bottom_bar"), QStringLiteral("settings"), QStringLiteral("Settings"));
 
         // Emit the signal to tell the MainWindow to update the UI and show the settings screen
         emit setSettings();
