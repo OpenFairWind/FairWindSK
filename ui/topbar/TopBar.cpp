@@ -5,6 +5,7 @@
 #include <QTimer>
 #include <QAbstractButton>
 #include <QGeoCoordinate>
+#include <QHBoxLayout>
 #include <QToolButton>
 #include <QString>
 #include <QFontMetrics>
@@ -131,6 +132,14 @@ namespace fairwindsk::ui::topbar {
         ui->toolButton_UR->setIconSize(QSize(32, 32));
         ui->toolButton_UR->setAutoRaise(true);
         ui->toolButton_UR->setStyleSheet(chromeToolButtonStyle(chromeColors));
+
+        if (ui->widget_SignalKStatusIcons) {
+            auto *statusLayout = new QHBoxLayout(ui->widget_SignalKStatusIcons);
+            statusLayout->setContentsMargins(0, 0, 0, 0);
+            statusLayout->setSpacing(0);
+            m_signalKStatusIcons = new fairwindsk::ui::widgets::SignalKStatusIconsWidget(ui->widget_SignalKStatusIcons);
+            statusLayout->addWidget(m_signalKStatusIcons, 0, Qt::AlignVCenter);
+        }
         
         ui->widget_POS->setVisible(false);
         ui->widget_COG->setVisible(false);
@@ -384,6 +393,9 @@ namespace fairwindsk::ui::topbar {
 
         if (event && (event->type() == QEvent::PaletteChange || event->type() == QEvent::StyleChange)) {
             updateComfortViewIcon();
+            if (m_signalKStatusIcons) {
+                m_signalKStatusIcons->refreshFromConfiguration();
+            }
         }
     }
 
@@ -470,6 +482,9 @@ namespace fairwindsk::ui::topbar {
         updateETA(m_lastEtaUpdate);
         updateXTE(m_lastXteUpdate);
         updateVMG(m_lastVmgUpdate);
+        if (m_signalKStatusIcons) {
+            m_signalKStatusIcons->refreshFromConfiguration();
+        }
     }
 
 /*

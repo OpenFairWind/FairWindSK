@@ -985,6 +985,16 @@
            </spacer>
           </item>
           <item>
+           <widget class="QWidget" name="widget_SignalKStatusIcons" native="true">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QLabel" name="label_ComfortViewIcon">
             <property name="minimumSize">
              <size>

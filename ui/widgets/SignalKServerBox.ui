@@ -44,20 +44,6 @@
       <number>6</number>
      </property>
      <item>
-      <widget class="QLabel" name="labelIndicator">
-       <property name="text">
-        <string/>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labelBusy">
-       <property name="text">
-        <string/>
-       </property>
-      </widget>
-     </item>
-     <item>
       <widget class="QLabel" name="labelStatus">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
@@ -82,58 +68,6 @@
        </property>
        <property name="text">
         <string>Signal K</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labelRestCaption">
-       <property name="text">
-        <string/>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labelRestIndicator">
-       <property name="minimumSize">
-        <size>
-         <width>44</width>
-         <height>18</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>44</width>
-         <height>18</height>
-        </size>
-       </property>
-       <property name="text">
-        <string>REST</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labelStreamCaption">
-       <property name="text">
-        <string/>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labelStreamIndicator">
-       <property name="minimumSize">
-        <size>
-         <width>38</width>
-         <height>18</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>38</width>
-         <height>18</height>
-        </size>
-       </property>
-       <property name="text">
-        <string>STR</string>
        </property>
       </widget>
      </item>

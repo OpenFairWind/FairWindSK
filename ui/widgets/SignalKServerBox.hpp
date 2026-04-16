@@ -5,12 +5,8 @@
 #ifndef FAIRWINDSK_SIGNALKSERVERBOX_HPP
 #define FAIRWINDSK_SIGNALKSERVERBOX_HPP
 
-#include <QLabel>
-#include <QPixmap>
 #include <QResizeEvent>
 #include <QWidget>
-
-class QMovie;
 
 namespace fairwindsk::ui::widgets {
     QT_BEGIN_NAMESPACE
@@ -30,18 +26,12 @@ namespace fairwindsk::ui::widgets {
     private slots:
         void onServerHealthChanged(bool healthy, const QString &statusText);
         void onConnectivityChanged(bool restHealthy, bool streamHealthy, const QString &statusText);
-        void onRequestActivityChanged(bool active);
         void onServerMessageChanged(const QString &message);
 
     private:
-        void applyIndicatorColor(QLabel *label, const QColor &color);
-        void applyStatusBadge(QLabel *label, const QString &text, const QColor &fillColor, const QColor &textColor);
         void updateStatusLabel(const QString &text);
-        void setBusyVisible(bool active);
 
         Ui::SignalKServerBox *ui = nullptr;
-        QMovie *m_throbber = nullptr;
-        QPixmap m_idleBusyPixmap;
     };
 }
 

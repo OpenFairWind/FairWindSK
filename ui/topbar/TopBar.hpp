@@ -13,6 +13,7 @@
 #include <FairWindSK.hpp>
 #include "ui_TopBar.h"
 #include "Units.hpp"
+#include "ui/widgets/SignalKStatusIconsWidget.hpp"
 
 namespace Ui { class TopBar; }
 
@@ -69,6 +70,7 @@ namespace fairwindsk::ui::topbar {
 
         Ui::TopBar *ui;
         QPointer<AppItem> m_currentApp;
+        widgets::SignalKStatusIconsWidget *m_signalKStatusIcons = nullptr;
         Units *m_units = nullptr;
         QTimer *m_timer = nullptr;
         QString m_pathCOG;
