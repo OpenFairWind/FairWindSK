@@ -7,12 +7,14 @@
 
 #include <QModelIndex>
 #include <QJsonObject>
+#include <QIcon>
 #include <QWidget>
 
 #include "ResourceModel.hpp"
 
 class QCheckBox;
 class QDoubleSpinBox;
+class QFormLayout;
 class QLabel;
 class QLineEdit;
 class QPlainTextEdit;
@@ -27,14 +29,14 @@ namespace fairwindsk::ui::mydata {
     class GeoJsonPreviewWidget;
     class JsonObjectEditorWidget;
 
-    class ResourceTab final : public QWidget {
+    class ResourceTab : public QWidget {
         Q_OBJECT
 
     public:
-        explicit ResourceTab(ResourceKind kind, QWidget *parent = nullptr);
         ~ResourceTab() override;
 
     protected:
+        explicit ResourceTab(ResourceKind kind, QWidget *parent = nullptr);
         void changeEvent(QEvent *event) override;
 
     private slots:
@@ -48,6 +50,7 @@ namespace fairwindsk::ui::mydata {
         void onSearchTextChanged(const QString &text);
         void onTableDoubleClicked(int row, int column);
         void onCoordinateEditClicked();
+        void onPrimaryRowClicked();
         void onNavigateRowClicked();
         void onEditRowClicked();
         void onRemoveRowClicked();
@@ -82,6 +85,39 @@ namespace fairwindsk::ui::mydata {
         QString resourceDisplayName(const QJsonObject &resource) const;
         QString resourceDescription(const QJsonObject &resource) const;
         QString detailsTitleForCurrentState() const;
+    protected:
+        void refreshWorkflowTexts();
+        virtual QString searchPlaceholderText() const;
+        virtual QString namePlaceholderText() const;
+        virtual QString descriptionPlaceholderText() const;
+        virtual QString typePlaceholderText() const;
+        virtual QString coordinatesPlaceholderText() const;
+        virtual QString geometryPlaceholderText() const;
+        virtual QString importButtonText() const;
+        virtual QString exportButtonText() const;
+        virtual QString importFileFilter() const;
+        virtual QString exportFileFilter() const;
+        virtual QString exportDefaultFileName() const;
+        virtual QString primaryRowActionToolTip() const;
+        virtual QIcon primaryRowActionIcon() const;
+        virtual void triggerPrimaryAction(const QString &id, const QJsonObject &resource);
+        virtual bool importResourcesFromPath(const QString &fileName,
+                                             QList<QPair<QString, QJsonObject>> *resources,
+                                             QString *message) const;
+        virtual bool exportResourcesToPath(const QString &fileName,
+                                           const QList<QPair<QString, QJsonObject>> &resources,
+                                           QString *message) const;
+        QFormLayout *editorFormLayout() const;
+        QLineEdit *nameEdit() const;
+        QLineEdit *descriptionEdit() const;
+        QLineEdit *hrefEdit() const;
+        QLineEdit *mimeTypeEdit() const;
+        QLineEdit *identifierEdit() const;
+        QLineEdit *chartFormatEdit() const;
+        QLineEdit *chartUrlEdit() const;
+        QLineEdit *tilemapUrlEdit() const;
+        QString currentResourceId() const;
+        void showWorkflowError(const QString &message) const;
 
         ::Ui::ResourceTab *ui = nullptr;
         ResourceKind m_kind;
@@ -90,6 +126,7 @@ namespace fairwindsk::ui::mydata {
         QTabWidget *m_detailTabs = nullptr;
         QWidget *m_listPage;
         QWidget *m_detailsPage;
+        QFormLayout *m_formLayout = nullptr;
         QWidget *m_propertiesTreeTab = nullptr;
         QWidget *m_propertiesJsonTab = nullptr;
         QLineEdit *m_searchEdit;

@@ -14,6 +14,7 @@
 #include <QDirIterator>
 #include <QMimeDatabase>
 #include <QFileDialog>
+#include <QHeaderView>
 #include <QScroller>
 #include <QStorageInfo>
 
@@ -21,6 +22,7 @@
 #include "FileInfoListModel.hpp"
 #include "ui/IconUtils.hpp"
 #include "ui/DrawerDialogHost.hpp"
+#include "ui/widgets/TouchScrollArea.hpp"
 
 
 
@@ -32,6 +34,149 @@ int qt_ntfs_permission_lookup = 0; //dummy
 #endif
 
 namespace fairwindsk::ui::mydata {
+    namespace {
+        QString touchToolButtonStyle(const fairwindsk::ui::ComfortChromeColors &colors, const bool accent = false) {
+            const QColor top = accent ? colors.accentTop : colors.buttonBackground.lighter(112);
+            const QColor mid = accent ? colors.accentTop.darker(103) : colors.buttonBackground;
+            const QColor bottom = accent ? colors.accentBottom : colors.buttonBackground.darker(118);
+            const QColor border = accent ? colors.accentBottom : colors.border;
+            const QColor text = accent ? colors.accentText : colors.buttonText;
+            return QStringLiteral(
+                "QToolButton {"
+                " min-width: 82px;"
+                " min-height: 74px;"
+                " padding: 6px 8px;"
+                " border-radius: 14px;"
+                " border: 1px solid %1;"
+                " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
+                " stop:0 %2, stop:0.52 %3, stop:1 %4);"
+                " color: %5;"
+                " font-size: 16px;"
+                " font-weight: 700;"
+                " }"
+                "QToolButton:hover { border-color: %6; }"
+                "QToolButton:pressed {"
+                " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
+                " stop:0 %7, stop:0.52 %3, stop:1 %8);"
+                " }"
+                "QToolButton:disabled {"
+                " color: %9;"
+                " border-color: %10;"
+                " background: %11;"
+                " }")
+                .arg(border.name(),
+                     top.name(),
+                     mid.name(),
+                     bottom.name(),
+                     text.name(),
+                     colors.icon.lighter(115).name(),
+                     top.darker(118).name(),
+                     bottom.darker(118).name(),
+                     colors.disabledText.name(),
+                     colors.border.darker(135).name(),
+                     colors.window.darker(105).name());
+        }
+
+        QString touchLineEditStyle(const fairwindsk::ui::ComfortChromeColors &colors, const QColor &baseColor) {
+            return QStringLiteral(
+                "QLineEdit {"
+                " min-height: 58px;"
+                " border: 1px solid %1;"
+                " border-radius: 14px;"
+                " padding: 6px 14px;"
+                " background: %2;"
+                " color: %3;"
+                " font-size: 20px;"
+                " }"
+                "QLineEdit:focus { border-color: %4; }")
+                .arg(colors.border.name(), baseColor.name(), colors.text.name(), colors.accentTop.name());
+        }
+
+        QString touchListStyle(const fairwindsk::ui::ComfortChromeColors &colors, const QColor &baseColor) {
+            return QStringLiteral(
+                "QListView {"
+                " background: %1;"
+                " color: %2;"
+                " border: 1px solid %3;"
+                " border-radius: 14px;"
+                " outline: none;"
+                " font-size: 18px;"
+                " }"
+                "QListView::item {"
+                " padding: 10px;"
+                " margin: 4px;"
+                " border-radius: 12px;"
+                " }"
+                "QListView::item:selected {"
+                " background: %4;"
+                " color: %5;"
+                " }")
+                .arg(baseColor.name(),
+                     colors.text.name(),
+                     colors.border.name(),
+                     colors.accentTop.name(),
+                     colors.accentText.name());
+        }
+
+        QString touchTableStyle(const fairwindsk::ui::ComfortChromeColors &colors, const QColor &baseColor, const QColor &panelColor) {
+            return QStringLiteral(
+                "QTableView {"
+                " background: %1;"
+                " color: %2;"
+                " alternate-background-color: %3;"
+                " border: 1px solid %4;"
+                " border-radius: 14px;"
+                " gridline-color: transparent;"
+                " outline: none;"
+                " font-size: 18px;"
+                " }"
+                "QTableView::item { padding: 10px; }"
+                "QTableView::item:selected { background: %5; color: %6; }"
+                "QHeaderView::section {"
+                " min-height: 46px;"
+                " padding: 0 12px;"
+                " background: %7;"
+                " color: %8;"
+                " border: none;"
+                " border-bottom: 1px solid %4;"
+                " font-size: 16px;"
+                " font-weight: 700;"
+                " }")
+                .arg(baseColor.name(),
+                     colors.text.name(),
+                     panelColor.name(),
+                     colors.border.name(),
+                     colors.accentTop.name(),
+                     colors.accentText.name(),
+                     panelColor.darker(104).name(),
+                     colors.text.name());
+        }
+
+        QString touchInfoStyle(const fairwindsk::ui::ComfortChromeColors &colors, const QColor &panelColor) {
+            return QStringLiteral(
+                "QGroupBox {"
+                " margin-top: 14px;"
+                " padding-top: 18px;"
+                " border: 1px solid %1;"
+                " border-radius: 14px;"
+                " background: %2;"
+                " color: %3;"
+                " font-size: 18px;"
+                " font-weight: 700;"
+                " }"
+                "QGroupBox::title {"
+                " subcontrol-origin: margin;"
+                " left: 14px;"
+                " padding: 0 6px;"
+                " }"
+                "QLabel {"
+                " color: %3;"
+                " font-size: 17px;"
+                " }")
+                .arg(colors.border.name(), panelColor.name(), colors.text.name());
+        }
+    }
+
 	Files::Files(QWidget *parent) : QWidget(parent), ui(new Ui::Files) {
 	    ui->setupUi(this);
 
@@ -55,8 +200,9 @@ namespace fairwindsk::ui::mydata {
         ui->listView_Files->setSelectionMode(QAbstractItemView::ExtendedSelection);
         ui->tableView_Search->setSelectionBehavior(QAbstractItemView::SelectRows);
         ui->tableView_Search->setSelectionMode(QAbstractItemView::ExtendedSelection);
-
-
+        ui->tableView_Search->horizontalHeader()->setStretchLastSection(true);
+        ui->tableView_Search->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+        ui->tableView_Search->verticalHeader()->setVisible(false);
 
 		const auto index = m_fileSystemModel->index(QDir::currentPath());
 
@@ -87,12 +233,32 @@ namespace fairwindsk::ui::mydata {
 
 		m_fileListModel = new FileInfoListModel(this);
 		ui->tableView_Search->setModel(m_fileListModel);
+        ui->lineEdit_Path->setPlaceholderText(tr("Enter a path"));
+        ui->lineEdit_Search->setPlaceholderText(tr("Search current folder"));
+        ui->toolButton_Open->setToolTip(tr("Open selected item"));
+        ui->toolButton_NewFolder->setToolTip(tr("Create folder"));
+        ui->toolButton_Delete->setToolTip(tr("Delete selected items"));
+        ui->toolButton_Rename->setToolTip(tr("Rename selected item"));
+        ui->toolButton_Copy->setToolTip(tr("Copy selection"));
+        ui->toolButton_Cut->setToolTip(tr("Cut selection"));
+        ui->toolButton_Paste->setToolTip(tr("Paste into current folder"));
+        ui->toolButton_Search->setToolTip(tr("Search in current folder"));
+        ui->toolButton_Filters->setToolTip(tr("Clear search results"));
+        ui->toolButton_CaseSensitive->setToolTip(tr("Case-sensitive search"));
+        ui->toolButton_SearchHidden->setToolTip(tr("Include hidden files"));
+        ui->toolButton_SearchSystem->setToolTip(tr("Include system files"));
 
 		connect(&m_searchingWatcher, &QFutureWatcher<QFileInfo>::finished, this, &Files::searchFinished);
 		connect(&m_searchingWatcher, &QFutureWatcher<QFileInfo>::progressValueChanged, this, &Files::searchProgressValueChanged);
 
 		connect(ui->tableView_Search, &QAbstractItemView::doubleClicked, this, &Files::onSearchViewItemDoubleClicked);
 		connect(ui->tableView_Search, &QAbstractItemView::clicked, this, &Files::onSearchViewItemClicked);
+        connect(ui->listView_Files->selectionModel(), &QItemSelectionModel::selectionChanged, this, [this]() {
+            updateActionStates();
+        });
+        connect(ui->tableView_Search->selectionModel(), &QItemSelectionModel::selectionChanged, this, [this]() {
+            updateActionStates();
+        });
 
 	    ui->listView_Files->setAttribute(Qt::WA_AcceptTouchEvents,true);
 		ui->tableView_Search->setAttribute(Qt::WA_AcceptTouchEvents,true);
@@ -101,7 +267,11 @@ namespace fairwindsk::ui::mydata {
         QScroller::grabGesture(ui->tableView_Search->viewport(), QScroller::TouchGesture);
         QScroller::grabGesture(ui->tableView_Search->viewport(), QScroller::LeftMouseButtonGesture);
 
+        configureTouchFriendlyUi();
         retintToolButtons();
+        applyComfortChrome();
+        clearItemInfo();
+        updateActionStates();
 		
 		onHome();
 	}
@@ -110,7 +280,82 @@ namespace fairwindsk::ui::mydata {
         QWidget::changeEvent(event);
         if (event->type() == QEvent::PaletteChange || event->type() == QEvent::ApplicationPaletteChange) {
             retintToolButtons();
+            applyComfortChrome();
+            updateActionStates();
         }
+    }
+
+    void Files::configureTouchFriendlyUi() {
+        const auto configureButton = [](QToolButton *button, const QString &text, const bool accent = false) {
+            if (!button) {
+                return;
+            }
+            button->setText(text);
+            button->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+            button->setMinimumSize(accent ? QSize(88, 78) : QSize(82, 74));
+            button->setIconSize(QSize(30, 30));
+        };
+
+        configureButton(ui->toolButton_Home, tr("Home"));
+        configureButton(ui->toolButton_Up, tr("Up"));
+        configureButton(ui->toolButton_Filters, tr("Clear"));
+        configureButton(ui->toolButton_CaseSensitive, tr("Case"));
+        configureButton(ui->toolButton_SearchHidden, tr("Hidden"));
+        configureButton(ui->toolButton_SearchSystem, tr("System"));
+        configureButton(ui->toolButton_Search, tr("Search"), true);
+        configureButton(ui->toolButton_Cut, tr("Cut"));
+        configureButton(ui->toolButton_Copy, tr("Copy"));
+        configureButton(ui->toolButton_Paste, tr("Paste"));
+        configureButton(ui->toolButton_Rename, tr("Rename"));
+        configureButton(ui->toolButton_Delete, tr("Delete"));
+        configureButton(ui->toolButton_NewFolder, tr("Folder"));
+        configureButton(ui->toolButton_Open, tr("Open"), true);
+
+        ui->lineEdit_Path->setClearButtonEnabled(true);
+        ui->lineEdit_Search->setClearButtonEnabled(true);
+        ui->lineEdit_Path->setMinimumHeight(58);
+        ui->lineEdit_Search->setMinimumHeight(58);
+
+        ui->listView_Files->setIconSize(QSize(80, 80));
+        ui->listView_Files->setGridSize(QSize(176, 138));
+        ui->listView_Files->setSpacing(10);
+        ui->listView_Files->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+        ui->listView_Files->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
+
+        ui->tableView_Search->verticalHeader()->setDefaultSectionSize(58);
+        ui->tableView_Search->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+        ui->tableView_Search->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
+
+        ui->progressBar_Searching->setMinimumHeight(18);
+        ui->label_Searching->setMinimumHeight(54);
+        ui->groupBox_ItemInfo->setMinimumHeight(84);
+    }
+
+    void Files::applyComfortChrome() {
+        auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+        auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+        const auto chrome = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), false);
+        const QColor panelColor = fairwindsk::ui::comfortThemeColor(configuration, preset, QStringLiteral("panel"), palette().color(QPalette::AlternateBase));
+        const QColor baseColor = fairwindsk::ui::comfortThemeColor(configuration, preset, QStringLiteral("base"), palette().color(QPalette::Base));
+
+        const auto applyStyleIfChanged = [](QWidget *widget, const QString &style) {
+            if (widget && widget->styleSheet() != style) {
+                widget->setStyleSheet(style);
+            }
+        };
+
+        applyStyleIfChanged(this, QStringLiteral("QWidget { background: %1; }").arg(chrome.window.name()));
+        applyStyleIfChanged(ui->lineEdit_Path, touchLineEditStyle(chrome, baseColor));
+        applyStyleIfChanged(ui->lineEdit_Search, touchLineEditStyle(chrome, baseColor));
+        for (auto *button : findChildren<QToolButton *>()) {
+            const bool accent = button == ui->toolButton_Search || button == ui->toolButton_Open;
+            applyStyleIfChanged(button, touchToolButtonStyle(chrome, accent));
+        }
+        applyStyleIfChanged(ui->listView_Files, touchListStyle(chrome, baseColor) + fairwindsk::ui::widgets::TouchScrollArea::scrollBarStyleSheet());
+        applyStyleIfChanged(ui->tableView_Search, touchTableStyle(chrome, baseColor, panelColor) + fairwindsk::ui::widgets::TouchScrollArea::scrollBarStyleSheet());
+        applyStyleIfChanged(ui->groupBox_ItemInfo, touchInfoStyle(chrome, panelColor));
+        applyStyleIfChanged(ui->widget_Searching, QStringLiteral("QWidget { background: %1; border: 1px solid %2; border-radius: 12px; } QLabel { color: %3; font-size: 18px; font-weight: 600; }").arg(panelColor.name(), chrome.border.name(), chrome.text.name()));
     }
 
     void Files::retintToolButtons() const {
@@ -154,7 +399,6 @@ namespace fairwindsk::ui::mydata {
 			m_currentDir = nullptr;
 		}
 
-		QDir::setCurrent(absolutePath);
 		m_currentDir = new QDir(absolutePath);
 
 		ui->lineEdit_Path->setText(m_currentDir->absolutePath());
@@ -167,8 +411,8 @@ namespace fairwindsk::ui::mydata {
         ui->listView_Files->clearSelection();
         ui->tableView_Search->clearSelection();
         m_currentFilePath.clear();
-
-		ui->groupBox_ItemInfo->hide();
+        clearItemInfo();
+        updateActionStates();
 	}
 
 
@@ -177,104 +421,34 @@ namespace fairwindsk::ui::mydata {
 	 * Open the selected
 	 ***********************/
 	void Files::onOpenClicked() {
+        const QString path = selectedOrCurrentPath();
+        if (path.isEmpty()) {
+            showWarning(tr("Select a file or folder first."));
+            return;
+        }
 
-		// Check if the selected file is not empty
-		if (!m_currentFilePath.isEmpty()) {
-
-			const auto fileInfo = QFileInfo(m_currentFilePath);
-
-			if (fileInfo.isFile()) {
-				// View the selected file
-				viewFile(m_currentFilePath);
-			} else {
-				// Select the current path
-				setCurrentDir(m_currentFilePath);
-			}
-		}
-
+        const QFileInfo fileInfo(path);
+        if (fileInfo.isFile()) {
+            viewFile(path);
+        } else if (fileInfo.isDir()) {
+            setCurrentDir(path);
+            setSearchResultsVisible(false);
+            ui->widget_Searching->hide();
+        }
 	}
 
 	bool Files::setCurrentFilePath(const QString& path) {
-
-		// By default, the file path is a directory
-		bool result = false;
-
-		// Get the file info sand check if it is a file
-		if (const auto fileInfo =QFileInfo(path); fileInfo.isFile()) {
-
-			// Set the group box title
-			ui->groupBox_ItemInfo->setTitle(fileInfo.fileName());
-
-			// Initialize the permission string
-			QString permissions = "";
-
-			// Get the NTFS Flag (needed by Windows)
-			const QStorageInfo storageInfo(QDir::current());
-			const bool isNTFS = storageInfo.fileSystemType().compare("NTFS") == 0;
-
-			// Check if is NTFS
-			if (isNTFS) {
-				// turn checking on, Windows only
-				qt_ntfs_permission_lookup++;
-			}
-
-			// Check if the file is readable
-			if (fileInfo.isReadable())
-				permissions += tr("Read ");
-
-			// Check if the file is Writable
-			if (fileInfo.isWritable())
-				permissions += tr("Write ");
-
-			// Check if the file is executable
-			if (fileInfo.isExecutable())
-				permissions += tr("Execute ");
-
-			// Check if is NTFS
-			if (isNTFS) {
-				// turn it off again, Windows only
-				qt_ntfs_permission_lookup--;
-			}
-
-			// Set the permission label
-			ui->label_Permissions->setText(permissions.trimmed());
-
-			// Set the file size label
-			ui->label_Size->setText(format_bytes(fileInfo.size()));
-
-			// Define the mime type database
-			const QMimeDatabase mimedb;
-
-			// Set the mime type label
-			ui->label_Type->setText(mimedb.mimeTypeForFile(fileInfo).comment());
-
-			// Show the group box
-			ui->groupBox_ItemInfo->show();
-
-			// Return true
-			result = true;
-		} else {
-
-			// Hide the group box
-			ui->groupBox_ItemInfo->hide();
-
-
-		}
-
-		// Set the current file path
-		m_currentFilePath = path;
-
-		// Return the result
-		return result;
+        m_currentFilePath = path;
+        updateItemInfo(path);
+        updateActionStates();
+        return QFileInfo(path).isFile();
 	}
 
 	void Files::onFileViewItemClicked(const QModelIndex &index)  {
 
 		// Get the selected file, set is as current file path if it is a file
 		if (const auto path = m_fileSystemModel->filePath(index); !setCurrentFilePath(path)) {
-
-			// Hide the file group box
-			ui->groupBox_ItemInfo->hide();
+            updateItemInfo(path);
 		}
 	}
 
@@ -302,9 +476,8 @@ namespace fairwindsk::ui::mydata {
 
 			// Reset the current file path
 			m_currentFilePath = "";
-
-			// Hide the file group box
-			ui->groupBox_ItemInfo->hide();
+            clearItemInfo();
+            updateActionStates();
 		}
 
 
@@ -341,9 +514,10 @@ namespace fairwindsk::ui::mydata {
 
 		ui->group_ToolBar->hide();
 		ui->group_Main->hide();
-		m_fileViewer = new FileViewer(path);
+		m_fileViewer = new FileViewer(path, this);
 		connect(m_fileViewer, &FileViewer::askedToBeClosed, this, &Files::onFileViewerCloseClicked);
 		ui->group_Content->layout()->addWidget(m_fileViewer);
+        updateActionStates();
 	}
 
 
@@ -356,6 +530,7 @@ namespace fairwindsk::ui::mydata {
 
 			ui->group_ToolBar->show();
 			ui->group_Main->show();
+            updateActionStates();
 		}
 	}
 
@@ -398,6 +573,7 @@ namespace fairwindsk::ui::mydata {
 		setSearchResultsVisible(false);
 		ui->widget_Searching->hide();
 		ui->listView_Files->show();
+        updateActionStates();
 	}
 
 	void Files::onSearchClicked() {
@@ -410,6 +586,7 @@ namespace fairwindsk::ui::mydata {
 		if (const auto key = ui->lineEdit_Search->text(); key.isEmpty()) {
 			setSearchResultsVisible(false);
 			ui->listView_Files->show();
+            updateActionStates();
 		} else {
 
 			ui->listView_Files->hide();
@@ -463,8 +640,8 @@ namespace fairwindsk::ui::mydata {
 	}
 
 	void Files::searchProgressValueChanged(const int progress) {
-		// Update the progress bar
-		ui->progressBar_Searching->setValue(progress % 100);
+		ui->progressBar_Searching->setValue(std::min(progress, ui->progressBar_Searching->maximum()));
+        ui->label_Searching->setText(tr("Searching... %1 item(s) scanned").arg(progress));
 	}
 
 	void Files::searchFinished() {
@@ -474,15 +651,18 @@ namespace fairwindsk::ui::mydata {
 			ui->tableView_Search->resizeColumnsToContents();
 			ui->widget_Searching->hide();
 			setSearchResultsVisible(true);
+            ui->label_Searching->setText(tr("%1 result(s)").arg(results.size()));
 		} else {
 			ui->label_Searching->setText(tr("Not found!"));
 			ui->progressBar_Searching->setValue(100);
 			setSearchResultsVisible(false);
 		}
+        updateActionStates();
 	}
 
 	void Files::setSearchResultsVisible(const bool visible) {
 		ui->tableView_Search->setVisible(visible);
+        ui->listView_Files->setVisible(!visible);
 		if (!visible) {
 			m_fileListModel->setQFileInfoList({});
 		}
@@ -494,10 +674,6 @@ namespace fairwindsk::ui::mydata {
 
 	void Files::onHome() {
 		setCurrentDir(QDir::homePath());
-		ui->lineEdit_Path->setText(m_currentDir->absolutePath());
-
-		QDir::setCurrent(m_currentDir->absolutePath());
-
 	}
 
 	void Files::onPathReturnPressed() {
@@ -510,7 +686,7 @@ namespace fairwindsk::ui::mydata {
 	}
 
 	void Files::onUpClicked() {
-		if (QDir dir = QDir::current(); dir.cdUp()) {
+		if (QDir dir(getCurrentDir()); dir.cdUp()) {
 			setCurrentDir(dir.absolutePath());
 		}
 	}
@@ -534,6 +710,7 @@ namespace fairwindsk::ui::mydata {
                 showWarning(tr("A file or folder with the same name already exists."));
 			}
             refreshCurrentView();
+            setCurrentFilePath(absolutePath);
 		}
 	}
 
@@ -561,6 +738,8 @@ namespace fairwindsk::ui::mydata {
 					}
 				}
                 refreshCurrentView();
+                clearItemInfo();
+                updateActionStates();
 			}
 
 	}
@@ -583,13 +762,24 @@ namespace fairwindsk::ui::mydata {
                             showWarning(tr("A file or folder with the same name already exists."));
                             continue;
                         }
-						if (!QFile::rename(selectedItem, renamedPath)) {
+                        bool renamed = false;
+                        if (fileInfo.isDir()) {
+                            renamed = fileInfo.dir().rename(fileInfo.fileName(), newName);
+                        } else {
+						    renamed = QFile::rename(selectedItem, renamedPath);
+                        }
+						if (!renamed) {
                             showWarning(tr("Unable to rename the selected item."));
+                        } else {
+                            m_currentFilePath = renamedPath;
 						}
 					}
 				}
 			}
             refreshCurrentView();
+            if (!m_currentFilePath.isEmpty()) {
+                setCurrentFilePath(m_currentFilePath);
+            }
 
 	}
 
@@ -634,7 +824,11 @@ namespace fairwindsk::ui::mydata {
                         showWarning(tr("Skipping %1 because it already exists in the destination.").arg(item.fileName()));
                         continue;
                     }
-					if (!QFile::copy(path, newPath) || !QFile::remove(path)) {
+                    bool moved = QFile::rename(path, newPath);
+                    if (!moved) {
+					    moved = QFile::copy(path, newPath) && QFile::remove(path);
+                    }
+					if (!moved) {
                         showWarning(tr("Unable to move %1.").arg(item.fileName()));
                     }
 				} else {
@@ -644,6 +838,7 @@ namespace fairwindsk::ui::mydata {
             m_itemsToCopy.clear();
             m_itemsToMove.clear();
             refreshCurrentView();
+            updateActionStates();
 
 	}
 
@@ -753,5 +948,91 @@ namespace fairwindsk::ui::mydata {
         if (ui->tableView_Search->isVisible() && !ui->lineEdit_Search->text().trimmed().isEmpty()) {
             onSearchClicked();
         }
+    }
+
+    void Files::updateActionStates() {
+        const QStringList selection = getSelection();
+        const bool hasSelection = !selection.isEmpty();
+        const bool singleSelection = selection.size() == 1;
+        const bool hasClipboardItems = !m_itemsToCopy.isEmpty() || !m_itemsToMove.isEmpty();
+        const QString candidatePath = selectedOrCurrentPath();
+        const QFileInfo selectedInfo(candidatePath);
+
+        ui->toolButton_Open->setEnabled(hasSelection || !m_currentFilePath.isEmpty());
+        ui->toolButton_Rename->setEnabled(singleSelection);
+        ui->toolButton_Delete->setEnabled(hasSelection);
+        ui->toolButton_Copy->setEnabled(hasSelection);
+        ui->toolButton_Cut->setEnabled(hasSelection);
+        ui->toolButton_Paste->setEnabled(hasClipboardItems && m_fileViewer == nullptr);
+        ui->toolButton_NewFolder->setEnabled(m_fileViewer == nullptr);
+        ui->toolButton_Home->setEnabled(m_fileViewer == nullptr);
+        ui->toolButton_Up->setEnabled(m_fileViewer == nullptr && !getCurrentDir().isEmpty() && QDir(getCurrentDir()).absolutePath() != QDir::rootPath());
+        ui->toolButton_Search->setEnabled(m_fileViewer == nullptr && !getCurrentDir().isEmpty());
+        ui->toolButton_Filters->setEnabled(m_fileViewer == nullptr && (ui->tableView_Search->isVisible() || !ui->lineEdit_Search->text().trimmed().isEmpty()));
+        ui->lineEdit_Path->setEnabled(m_fileViewer == nullptr);
+        ui->lineEdit_Search->setEnabled(m_fileViewer == nullptr);
+
+        if (singleSelection && selectedInfo.exists()) {
+            ui->toolButton_Open->setToolTip(selectedInfo.isDir() ? tr("Open selected folder") : tr("Open selected file"));
+        } else {
+            ui->toolButton_Open->setToolTip(tr("Open selected item"));
+        }
+    }
+
+    void Files::updateItemInfo(const QString &path) {
+        const QFileInfo fileInfo(path);
+        if (!fileInfo.exists()) {
+            clearItemInfo();
+            return;
+        }
+
+        QString permissions;
+        const QStorageInfo storageInfo(fileInfo.absolutePath());
+        const bool isNTFS = storageInfo.fileSystemType().compare("NTFS") == 0;
+        if (isNTFS) {
+            qt_ntfs_permission_lookup++;
+        }
+        if (fileInfo.isReadable()) {
+            permissions += tr("Read ");
+        }
+        if (fileInfo.isWritable()) {
+            permissions += tr("Write ");
+        }
+        if (fileInfo.isExecutable()) {
+            permissions += tr("Execute ");
+        }
+        if (isNTFS) {
+            qt_ntfs_permission_lookup--;
+        }
+
+        ui->groupBox_ItemInfo->setTitle(fileInfo.fileName().isEmpty() ? fileInfo.absoluteFilePath() : fileInfo.fileName());
+        ui->label_Permissions->setText(permissions.trimmed());
+        if (fileInfo.isDir()) {
+            const QDir dir(fileInfo.absoluteFilePath());
+            const int entryCount = dir.entryInfoList(QDir::AllEntries | QDir::NoDotAndDotDot).size();
+            ui->label_Size->setText(tr("%1 item(s)").arg(entryCount));
+            ui->label_Type->setText(tr("Folder"));
+        } else {
+            const QMimeDatabase mimedb;
+            ui->label_Size->setText(format_bytes(fileInfo.size()));
+            ui->label_Type->setText(mimedb.mimeTypeForFile(fileInfo).comment());
+        }
+        ui->groupBox_ItemInfo->show();
+    }
+
+    void Files::clearItemInfo() {
+        ui->groupBox_ItemInfo->hide();
+        ui->groupBox_ItemInfo->setTitle(QString());
+        ui->label_Size->clear();
+        ui->label_Type->clear();
+        ui->label_Permissions->clear();
+    }
+
+    QString Files::selectedOrCurrentPath() const {
+        const QStringList selection = getSelection();
+        if (!selection.isEmpty()) {
+            return selection.first();
+        }
+        return m_currentFilePath;
     }
 } // fairwindsk::ui::mydata

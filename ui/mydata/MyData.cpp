@@ -8,8 +8,12 @@
 
 #include "MyData.hpp"
 #include "ui_MyData.h"
+#include "Charts.hpp"
 #include "Files.hpp"
+#include "Notes.hpp"
+#include "Regions.hpp"
 #include "ResourceTab.hpp"
+#include "Routes.hpp"
 #include "HistoryTrackTab.hpp"
 #include "Waypoints.hpp"
 
@@ -92,13 +96,13 @@ namespace fairwindsk::ui::mydata {
             case 0:
                 return new Waypoints(const_cast<MyData *>(this));
             case 1:
-                return new ResourceTab(ResourceKind::Route, const_cast<MyData *>(this));
+                return new Routes(const_cast<MyData *>(this));
             case 2:
-                return new ResourceTab(ResourceKind::Region, const_cast<MyData *>(this));
+                return new Regions(const_cast<MyData *>(this));
             case 3:
-                return new ResourceTab(ResourceKind::Note, const_cast<MyData *>(this));
+                return new Notes(const_cast<MyData *>(this));
             case 4:
-                return new ResourceTab(ResourceKind::Chart, const_cast<MyData *>(this));
+                return new Charts(const_cast<MyData *>(this));
             case 5:
                 return new HistoryTrackTab(const_cast<MyData *>(this));
             case 6:

@@ -261,6 +261,10 @@ set(FAIRWINDSK_SOURCES
         ui/bottombar/AutopilotBar.cpp ui/bottombar/AutopilotBar.hpp ui/bottombar/AutopilotBar.ui
         ui/mydata/MyData.cpp ui/mydata/MyData.hpp ui/mydata/MyData.ui
         ui/mydata/Waypoints.cpp ui/mydata/Waypoints.hpp ui/mydata/Waypoints.ui
+        ui/mydata/Routes.cpp ui/mydata/Routes.hpp
+        ui/mydata/Regions.cpp ui/mydata/Regions.hpp
+        ui/mydata/Notes.cpp ui/mydata/Notes.hpp
+        ui/mydata/Charts.cpp ui/mydata/Charts.hpp
         ui/mydata/GeoJsonUtils.cpp ui/mydata/GeoJsonUtils.hpp
         ui/mydata/GeoJsonPreviewWidget.cpp ui/mydata/GeoJsonPreviewWidget.hpp ui/mydata/GeoJsonPreviewWidget.ui
         ui/mydata/JsonObjectEditorWidget.cpp ui/mydata/JsonObjectEditorWidget.hpp ui/mydata/JsonObjectEditorWidget.ui

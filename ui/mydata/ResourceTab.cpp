@@ -107,7 +107,6 @@ namespace fairwindsk::ui::mydata {
         m_idValueLabel = new QLabel(this);
         m_timestampValueLabel = new QLabel(this);
 
-        m_searchEdit->setPlaceholderText(tr("Search %1").arg(resourceKindToTitle(kind).toLower()));
         m_searchEdit->setMaximumHeight(28);
         m_searchEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         connect(m_searchEdit, &QLineEdit::textChanged, this, &ResourceTab::onSearchTextChanged);
@@ -116,10 +115,8 @@ namespace fairwindsk::ui::mydata {
         m_refreshButton->setToolTip(tr("Refresh"));
         connect(m_refreshButton, &QToolButton::clicked, this, &ResourceTab::onRefreshClicked);
 
-        m_importButton->setText(tr("Import"));
         connect(m_importButton, &QToolButton::clicked, this, &ResourceTab::onImportClicked);
 
-        m_exportButton->setText(tr("Export"));
         connect(m_exportButton, &QToolButton::clicked, this, &ResourceTab::onExportClicked);
 
         m_addButton->setIcon(QIcon(":/resources/svg/OpenBridge/widget-add-google.svg"));
@@ -170,6 +167,7 @@ namespace fairwindsk::ui::mydata {
         const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
         fairwindsk::ui::applySectionTitleLabelStyle(m_titleLabel, configuration, preset, palette());
         auto *formLayout = new QFormLayout(ui->widgetFormHost);
+        m_formLayout = formLayout;
         ui->splitterDetails->setStretchFactor(0, 2);
         ui->splitterDetails->setStretchFactor(1, 1);
 
@@ -183,8 +181,6 @@ namespace fairwindsk::ui::mydata {
         m_chartScaleSpinBox->setDecimals(0);
 
         m_propertiesEditor->setLabels(tr("Properties Tree"), tr("Properties JSON"));
-        m_coordinatesEdit->setPlaceholderText(tr("41.9028, 12.4964\n41.9031, 12.4970"));
-        m_geometryEdit->setPlaceholderText("{\n  \"type\": \"Polygon\",\n  \"coordinates\": [[[12.4, 41.9], [12.5, 41.9], [12.5, 42.0], [12.4, 41.9]]]\n}");
         m_chartLayersEdit->setPlaceholderText("base,depth");
         m_chartBoundsEdit->setPlaceholderText("[[12.0, 41.0], [13.0, 42.0]]");
         m_coordinateDisplayEdit->setReadOnly(true);
@@ -279,6 +275,7 @@ namespace fairwindsk::ui::mydata {
 
         connect(m_model, &QAbstractItemModel::modelReset, this, &ResourceTab::rebuildTable);
         connectEditorPreviewInputs();
+        refreshWorkflowTexts();
         rebuildTable();
     }
 
@@ -305,6 +302,17 @@ namespace fairwindsk::ui::mydata {
 
     bool ResourceTab::canNavigateResource() const {
         return m_kind == ResourceKind::Waypoint;
+    }
+
+    void ResourceTab::refreshWorkflowTexts() {
+        m_searchEdit->setPlaceholderText(searchPlaceholderText());
+        m_importButton->setText(importButtonText());
+        m_exportButton->setText(exportButtonText());
+        m_nameEdit->setPlaceholderText(namePlaceholderText());
+        m_descriptionEdit->setPlaceholderText(descriptionPlaceholderText());
+        m_typeEdit->setPlaceholderText(typePlaceholderText());
+        m_coordinatesEdit->setPlaceholderText(coordinatesPlaceholderText());
+        m_geometryEdit->setPlaceholderText(geometryPlaceholderText());
     }
 
     void ResourceTab::rebuildTable() {
@@ -367,7 +375,7 @@ namespace fairwindsk::ui::mydata {
 
             auto *navigateButton = new QToolButton(actionsWidget);
             navigateButton->setAutoRaise(true);
-            navigateButton->setIcon(QIcon(":/resources/svg/OpenBridge/navigation-route.svg"));
+            navigateButton->setIcon(primaryRowActionIcon());
             fairwindsk::ui::applyTintedButtonIcon(
                 navigateButton,
                 fairwindsk::ui::bestContrastingColor(
@@ -376,12 +384,9 @@ namespace fairwindsk::ui::mydata {
                      m_tableWidget->palette().color(QPalette::ButtonText),
                      m_tableWidget->palette().color(QPalette::WindowText)}),
                 QSize(22, 22));
-            navigateButton->setToolTip(canNavigateResource()
-                                               ? tr("Navigate to resource")
-                                               : tr("Navigate is not available for this resource"));
-            navigateButton->setEnabled(canNavigateResource());
+            navigateButton->setToolTip(primaryRowActionToolTip());
             navigateButton->setProperty("resourceId", id);
-            connect(navigateButton, &QToolButton::clicked, this, &ResourceTab::onNavigateRowClicked);
+            connect(navigateButton, &QToolButton::clicked, this, &ResourceTab::onPrimaryRowClicked);
             actionsLayout->addWidget(navigateButton);
 
             auto *editButton = new QToolButton(actionsWidget);
@@ -1089,7 +1094,7 @@ namespace fairwindsk::ui::mydata {
             this,
             tr("Import %1").arg(resourceKindToTitle(m_kind)),
             QString(),
-            tr("GeoJSON files (*.geojson *.json);;All files (*)"));
+            importFileFilter());
         if (fileName.isEmpty()) {
             return;
         }
@@ -1102,7 +1107,7 @@ namespace fairwindsk::ui::mydata {
 
         QList<QPair<QString, QJsonObject>> resources;
         QString message;
-        if (!importResourcesFromGeoJson(m_kind, QJsonDocument::fromJson(file.readAll()), &resources, &message)) {
+        if (!importResourcesFromPath(fileName, &resources, &message)) {
             showError(message);
             return;
         }
@@ -1163,8 +1168,8 @@ namespace fairwindsk::ui::mydata {
         const QString fileName = drawer::getSaveFilePath(
             this,
             tr("Export %1").arg(resourceKindToTitle(m_kind)),
-            QString("%1.geojson").arg(resourceKindToCollection(m_kind)),
-            tr("GeoJSON files (*.geojson *.json);;All files (*)"));
+            exportDefaultFileName(),
+            exportFileFilter());
         if (fileName.isEmpty()) {
             return;
         }
@@ -1191,7 +1196,10 @@ namespace fairwindsk::ui::mydata {
             }
         }
 
-        file.write(exportResourcesAsGeoJson(m_kind, resources).toJson(QJsonDocument::Indented));
+        QString message;
+        if (!exportResourcesToPath(fileName, resources, &message)) {
+            showError(message.isEmpty() ? tr("Unable to export the selected resources.") : message);
+        }
     }
 
     void ResourceTab::onRefreshClicked() {
@@ -1230,6 +1238,25 @@ namespace fairwindsk::ui::mydata {
         }
     }
 
+    void ResourceTab::onPrimaryRowClicked() {
+        const auto *button = qobject_cast<QToolButton *>(sender());
+        if (!button) {
+            return;
+        }
+
+        const QString id = button->property("resourceId").toString();
+        if (id.isEmpty()) {
+            return;
+        }
+
+        for (int row = 0; row < m_model->rowCount(); ++row) {
+            if (m_model->resourceIdAtRow(row) == id) {
+                triggerPrimaryAction(id, m_model->resourceAtRow(row));
+                return;
+            }
+        }
+    }
+
     void ResourceTab::onNavigateRowClicked() {
         if (!canNavigateResource()) {
             return;
@@ -1244,6 +1271,140 @@ namespace fairwindsk::ui::mydata {
         if (!fairwindsk::FairWindSK::getInstance()->getSignalKClient()->navigateToWaypoint("/resources/waypoints/" + id)) {
             showError(tr("Unable to start navigation to the selected resource."));
         }
+    }
+
+    QString ResourceTab::searchPlaceholderText() const {
+        return tr("Search %1").arg(resourceKindToTitle(m_kind).toLower());
+    }
+
+    QString ResourceTab::namePlaceholderText() const {
+        return m_kind == ResourceKind::Note ? tr("Enter a note title") : tr("Enter a %1 name").arg(resourceKindToSingularTitle(m_kind).toLower());
+    }
+
+    QString ResourceTab::descriptionPlaceholderText() const {
+        return tr("Describe this %1").arg(resourceKindToSingularTitle(m_kind).toLower());
+    }
+
+    QString ResourceTab::typePlaceholderText() const {
+        return tr("Optional type");
+    }
+
+    QString ResourceTab::coordinatesPlaceholderText() const {
+        return tr("41.9028, 12.4964\n41.9031, 12.4970");
+    }
+
+    QString ResourceTab::geometryPlaceholderText() const {
+        return tr("{\n  \"type\": \"Polygon\",\n  \"coordinates\": [[[12.4, 41.9], [12.5, 41.9], [12.5, 42.0], [12.4, 41.9]]]\n}");
+    }
+
+    QString ResourceTab::importButtonText() const {
+        return tr("Import");
+    }
+
+    QString ResourceTab::exportButtonText() const {
+        return tr("Export");
+    }
+
+    QString ResourceTab::importFileFilter() const {
+        return tr("GeoJSON files (*.geojson *.json);;All files (*)");
+    }
+
+    QString ResourceTab::exportFileFilter() const {
+        return tr("GeoJSON files (*.geojson *.json);;All files (*)");
+    }
+
+    QString ResourceTab::exportDefaultFileName() const {
+        return QString("%1.geojson").arg(resourceKindToCollection(m_kind));
+    }
+
+    QString ResourceTab::primaryRowActionToolTip() const {
+        return tr("Open %1 details").arg(resourceKindToSingularTitle(m_kind).toLower());
+    }
+
+    QIcon ResourceTab::primaryRowActionIcon() const {
+        return QIcon(QStringLiteral(":/resources/svg/OpenBridge/arrow-right-google.svg"));
+    }
+
+    void ResourceTab::triggerPrimaryAction(const QString &id, const QJsonObject &resource) {
+        showDetailsPage(id, resource, false);
+    }
+
+    bool ResourceTab::importResourcesFromPath(const QString &fileName,
+                                              QList<QPair<QString, QJsonObject>> *resources,
+                                              QString *message) const {
+        QFile file(fileName);
+        if (!file.open(QIODevice::ReadOnly)) {
+            if (message) {
+                *message = tr("Unable to open %1.").arg(fileName);
+            }
+            return false;
+        }
+        return importResourcesFromGeoJson(m_kind, QJsonDocument::fromJson(file.readAll()), resources, message);
+    }
+
+    bool ResourceTab::exportResourcesToPath(const QString &fileName,
+                                            const QList<QPair<QString, QJsonObject>> &resources,
+                                            QString *message) const {
+        QFile file(fileName);
+        if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+            if (message) {
+                *message = tr("Unable to write %1.").arg(fileName);
+            }
+            return false;
+        }
+
+        if (file.write(exportResourcesAsGeoJson(m_kind, resources).toJson(QJsonDocument::Indented)) < 0) {
+            if (message) {
+                *message = tr("Unable to export data to %1.").arg(fileName);
+            }
+            return false;
+        }
+
+        return true;
+    }
+
+    QFormLayout *ResourceTab::editorFormLayout() const {
+        return m_formLayout;
+    }
+
+    QLineEdit *ResourceTab::nameEdit() const {
+        return m_nameEdit;
+    }
+
+    QLineEdit *ResourceTab::descriptionEdit() const {
+        return m_descriptionEdit;
+    }
+
+    QLineEdit *ResourceTab::hrefEdit() const {
+        return m_hrefEdit;
+    }
+
+    QLineEdit *ResourceTab::mimeTypeEdit() const {
+        return m_mimeTypeEdit;
+    }
+
+    QLineEdit *ResourceTab::identifierEdit() const {
+        return m_identifierEdit;
+    }
+
+    QLineEdit *ResourceTab::chartFormatEdit() const {
+        return m_chartFormatEdit;
+    }
+
+    QLineEdit *ResourceTab::chartUrlEdit() const {
+        return m_chartUrlEdit;
+    }
+
+    QLineEdit *ResourceTab::tilemapUrlEdit() const {
+        return m_tilemapUrlEdit;
+    }
+
+    QString ResourceTab::currentResourceId() const {
+        return m_currentResourceId;
+    }
+
+    void ResourceTab::showWorkflowError(const QString &message) const {
+        showError(message);
     }
 
     void ResourceTab::onEditRowClicked() {

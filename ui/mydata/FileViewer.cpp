@@ -27,19 +27,20 @@ namespace fairwindsk::ui::mydata {
     FileViewer::FileViewer(const QString& path, QWidget *parent): QWidget(parent), ui(new Ui::FileViewer), m_path(path) {
         ui->setupUi(this);
 
-        fairwindsk::ui::applyTintedButtonIcon(
-            ui->toolButton_Close,
-            fairwindsk::ui::bestContrastingColor(
-                palette().color(QPalette::Button),
-                {palette().color(QPalette::Text),
-                 palette().color(QPalette::ButtonText),
-                 palette().color(QPalette::WindowText)}));
+        retintToolButtons();
 
         connect(ui->toolButton_Close, &QToolButton::clicked, this, &FileViewer::onCloseClicked);
         connect(ui->toolButton_Save, &QToolButton::clicked, this, &FileViewer::onSaveClicked);
+        connect(ui->plainTextEdit->document(), &QTextDocument::modificationChanged, this, [this](const bool modified) {
+            ui->toolButton_Save->setEnabled(m_isEditableTextMode && modified);
+            ui->toolButton_Save->setToolTip(modified ? tr("Save changes") : tr("No pending changes"));
+        });
 
         ui->label_filePath->setText(path);
+        ui->label_filePath->setToolTip(path);
         ui->plainTextEdit->setLineWrapMode(QPlainTextEdit::NoWrap);
+        ui->toolButton_Close->setToolTip(tr("Close file viewer"));
+        ui->toolButton_Save->setToolTip(tr("No pending changes"));
 
         auto *previewLayout = new QVBoxLayout(ui->widgetPreviewHost);
         previewLayout->setContentsMargins(0, 0, 0, 0);
@@ -50,6 +51,23 @@ namespace fairwindsk::ui::mydata {
         previewLayout->addWidget(m_previewView);
 
         loadFile();
+    }
+
+    void FileViewer::changeEvent(QEvent *event) {
+        QWidget::changeEvent(event);
+        if (event->type() == QEvent::PaletteChange || event->type() == QEvent::ApplicationPaletteChange) {
+            retintToolButtons();
+        }
+    }
+
+    void FileViewer::retintToolButtons() const {
+        const QColor iconColor = fairwindsk::ui::bestContrastingColor(
+            palette().color(QPalette::Button),
+            {palette().color(QPalette::Text),
+             palette().color(QPalette::ButtonText),
+             palette().color(QPalette::WindowText)});
+        fairwindsk::ui::applyTintedButtonIcon(ui->toolButton_Close, iconColor);
+        fairwindsk::ui::applyTintedButtonIcon(ui->toolButton_Save, iconColor);
     }
 
     void FileViewer::loadFile() {
@@ -74,13 +92,18 @@ namespace fairwindsk::ui::mydata {
         }
 
         ui->plainTextEdit->setPlainText(QString::fromUtf8(file.readAll()));
+        ui->plainTextEdit->document()->setModified(false);
         ui->stackedWidget->setCurrentWidget(ui->page_Editor);
         ui->toolButton_Save->setVisible(true);
+        ui->toolButton_Save->setEnabled(false);
+        m_isEditableTextMode = true;
     }
 
     void FileViewer::loadPreview() {
         ui->toolButton_Save->setVisible(false);
+        ui->toolButton_Save->setEnabled(false);
         ui->stackedWidget->setCurrentWidget(ui->page_Preview);
+        m_isEditableTextMode = false;
         if (m_previewView) {
             m_previewView->load(QUrl::fromLocalFile(m_path));
         }
@@ -110,6 +133,9 @@ namespace fairwindsk::ui::mydata {
     }
 
     void FileViewer::onCloseClicked() {
+        if (!confirmDiscardChanges()) {
+            return;
+        }
         emit askedToBeClosed();
     }
 
@@ -123,11 +149,26 @@ namespace fairwindsk::ui::mydata {
         const QByteArray content = ui->plainTextEdit->toPlainText().toUtf8();
         if (file.write(content) != content.size() || !file.commit()) {
             showError(tr("Unable to save %1.").arg(m_path));
+            return;
         }
+        ui->plainTextEdit->document()->setModified(false);
     }
 
     void FileViewer::showError(const QString &message) const {
         drawer::warning(const_cast<FileViewer *>(this), tr("File Viewer"), message);
+    }
+
+    bool FileViewer::confirmDiscardChanges() const {
+        if (!m_isEditableTextMode || !ui->plainTextEdit->document()->isModified()) {
+            return true;
+        }
+        const QMessageBox::StandardButton answer = drawer::warning(
+            const_cast<FileViewer *>(this),
+            tr("Unsaved changes"),
+            tr("Discard the current file changes?"),
+            QMessageBox::Discard | QMessageBox::Cancel,
+            QMessageBox::Cancel);
+        return answer == QMessageBox::Discard;
     }
 
     FileViewer::~FileViewer() {

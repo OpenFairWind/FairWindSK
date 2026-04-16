@@ -8,6 +8,7 @@
 #include <QWidget>
 #include <QFileSystemModel>
 #include <QItemSelectionModel>
+#include <QModelIndexList>
 #include <QFutureWatcher>
 #include <QtConcurrent>
 #include "FileInfoListModel.hpp"
@@ -103,10 +104,16 @@ protected:
     void searchProgressValueChanged(int progress);
 
 private:
+    void configureTouchFriendlyUi();
+    void applyComfortChrome();
     void retintToolButtons() const;
     [[nodiscard]] QItemSelectionModel *activeSelectionModel() const;
     [[nodiscard]] QString currentDestinationDir() const;
     void refreshCurrentView();
+    void updateActionStates();
+    void updateItemInfo(const QString &path);
+    void clearItemInfo();
+    [[nodiscard]] QString selectedOrCurrentPath() const;
     Ui::Files *ui;
 
     //QList<QString> m_visitedPaths;

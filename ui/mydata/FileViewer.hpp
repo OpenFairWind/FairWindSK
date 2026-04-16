@@ -6,6 +6,7 @@
 #define JSONVIEWER_H
 
 #include <QWidget>
+#include <QEvent>
 #include <QMimeType>
 
 namespace fairwindsk::ui::web { class WebView; }
@@ -26,20 +27,26 @@ namespace fairwindsk::ui::mydata
         signals:
         void askedToBeClosed();
 
+        protected:
+            void changeEvent(QEvent *event) override;
+
         public slots:
             void onCloseClicked();
             void onSaveClicked();
 
     private:
+        void retintToolButtons() const;
         void loadFile();
         void loadEditableTextFile();
         void loadPreview();
         bool isEditableTextFile(const QMimeType &mimeType) const;
         void showError(const QString &message) const;
+        bool confirmDiscardChanges() const;
 
         Ui::FileViewer *ui;
         QString m_path;
         fairwindsk::ui::web::WebView *m_previewView = nullptr;
+        bool m_isEditableTextMode = false;
     };
 }
 
