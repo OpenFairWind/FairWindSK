@@ -13,16 +13,11 @@
 class QLabel;
 class QPlainTextEdit;
 class QPushButton;
-class QTabWidget;
 class QGridLayout;
 class QGroupBox;
 
 namespace fairwindsk::ui::widgets {
     class TouchComboBox;
-}
-
-namespace fairwindsk::ui::launcher {
-    class Launcher;
 }
 
 namespace fairwindsk::ui::settings {
@@ -58,7 +53,6 @@ namespace fairwindsk::ui::settings {
         QGroupBox *createImageGroup(const QString &title, QWidget *parent, const QList<QPair<QString, QString>> &entries);
         void loadPresetEditor();
         void updateStatusLabel();
-        void updatePreview();
         void updateColorButtons();
         void updateBackgroundImageLabels();
         void refreshEditorChrome();
@@ -94,12 +88,7 @@ namespace fairwindsk::ui::settings {
         QList<QLabel *> m_editorLabels;
         QGroupBox *m_paletteGroup = nullptr;
         QGroupBox *m_imagesGroup = nullptr;
-        QGroupBox *m_previewGroup = nullptr;
         QWidget *m_visualEditorWidget = nullptr;
-        QWidget *m_previewTopBar = nullptr;
-        fairwindsk::ui::launcher::Launcher *m_previewLauncher = nullptr;
-        QWidget *m_previewBottomBar = nullptr;
-        QTabWidget *m_previewTabs = nullptr;
         QGroupBox *m_advancedGroup = nullptr;
         bool m_isUpdating = false;
         bool m_isSyncingVisualControls = false;

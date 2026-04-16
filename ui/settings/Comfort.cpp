@@ -18,7 +18,6 @@
 #include <QCheckBox>
 #include <QRegularExpression>
 #include <QSignalBlocker>
-#include <QTabWidget>
 #include <QTextStream>
 #include <QUrl>
 #include <QVBoxLayout>
@@ -27,7 +26,6 @@
 #include "ui/IconUtils.hpp"
 #include "Settings.hpp"
 #include "ui/DrawerDialogHost.hpp"
-#include "ui/launcher/Launcher.hpp"
 #include "ui/widgets/TouchColorPicker.hpp"
 #include "ui/widgets/TouchComboBox.hpp"
 #include "ui/widgets/TouchScrollArea.hpp"
@@ -297,83 +295,6 @@ namespace fairwindsk::ui::settings {
             }));
         contentLayout->addWidget(m_imagesGroup);
 
-        m_previewGroup = new QGroupBox(tr("Live Preview"), content);
-        auto *previewLayout = new QVBoxLayout(m_previewGroup);
-        previewLayout->setSpacing(10);
-
-        m_previewTopBar = new QWidget(m_previewGroup);
-        m_previewTopBar->setObjectName(QStringLiteral("TopBar"));
-        m_previewTopBar->setMinimumHeight(74);
-        auto *topBarLayout = new QHBoxLayout(m_previewTopBar);
-        topBarLayout->setContentsMargins(12, 8, 12, 8);
-        topBarLayout->setSpacing(10);
-        auto *leftStatus = new QLabel(QStringLiteral("FairWindSK"), m_previewTopBar);
-        auto *title = new QLabel(tr("Comfort Preview"), m_previewTopBar);
-        title->setAlignment(Qt::AlignCenter);
-        auto *rightStatus = new QLabel(QStringLiteral("05-04-2026 19:58"), m_previewTopBar);
-        topBarLayout->addWidget(leftStatus);
-        topBarLayout->addStretch(1);
-        topBarLayout->addWidget(title);
-        topBarLayout->addStretch(1);
-        topBarLayout->addWidget(rightStatus);
-        previewLayout->addWidget(m_previewTopBar);
-
-        m_previewLauncher = new fairwindsk::ui::launcher::Launcher(m_previewGroup);
-        m_previewLauncher->setAttribute(Qt::WA_TransparentForMouseEvents, true);
-        m_previewLauncher->setMinimumHeight(220);
-        m_previewLauncher->refreshFromConfiguration(true);
-        previewLayout->addWidget(m_previewLauncher);
-
-        m_previewTabs = new QTabWidget(m_previewGroup);
-        auto *mainPage = new QWidget(m_previewTabs);
-        auto *mainLayout = new QVBoxLayout(mainPage);
-        mainLayout->setContentsMargins(12, 12, 12, 12);
-        mainLayout->setSpacing(8);
-        auto *fieldLabel = new QLabel(tr("Field preview"), mainPage);
-        auto *sampleField = new QLineEdit(QStringLiteral("Sample data"), mainPage);
-        auto *sampleCheckBox = new QCheckBox(tr("Sample checkbox"), mainPage);
-        auto *buttonRowPreview = new QHBoxLayout();
-        auto *primaryButton = new QPushButton(tr("Primary"), mainPage);
-        auto *secondaryButton = new QPushButton(tr("Secondary"), mainPage);
-        buttonRowPreview->addWidget(primaryButton);
-        buttonRowPreview->addWidget(secondaryButton);
-        mainLayout->addWidget(fieldLabel);
-        mainLayout->addWidget(sampleField);
-        mainLayout->addWidget(sampleCheckBox);
-        mainLayout->addLayout(buttonRowPreview);
-
-        auto *settingsPage = new QWidget(m_previewTabs);
-        auto *settingsLayout = new QVBoxLayout(settingsPage);
-        settingsLayout->setContentsMargins(12, 12, 12, 12);
-        settingsLayout->setSpacing(8);
-        auto *settingsButton = new QToolButton(settingsPage);
-        settingsButton->setText(tr("Settings button"));
-        settingsButton->setToolButtonStyle(Qt::ToolButtonTextOnly);
-        auto *settingsInfo = new QLabel(tr("Tabs, fields, and buttons update as you edit colors."), settingsPage);
-        settingsInfo->setWordWrap(true);
-        settingsLayout->addWidget(settingsButton);
-        settingsLayout->addWidget(settingsInfo);
-        settingsLayout->addStretch(1);
-
-        m_previewTabs->addTab(mainPage, tr("Main"));
-        m_previewTabs->addTab(settingsPage, tr("Settings"));
-        previewLayout->addWidget(m_previewTabs);
-
-        m_previewBottomBar = new QWidget(m_previewGroup);
-        m_previewBottomBar->setObjectName(QStringLiteral("BottomBar"));
-        m_previewBottomBar->setMinimumHeight(78);
-        auto *bottomBarLayout = new QHBoxLayout(m_previewBottomBar);
-        bottomBarLayout->setContentsMargins(12, 8, 12, 8);
-        bottomBarLayout->setSpacing(8);
-        for (const QString &label : {tr("My Data"), tr("Apps"), tr("Alarms"), tr("Settings")}) {
-            auto *button = new QPushButton(label, m_previewBottomBar);
-            button->setMinimumHeight(44);
-            bottomBarLayout->addWidget(button);
-        }
-        previewLayout->addWidget(m_previewBottomBar);
-
-        contentLayout->addWidget(m_previewGroup);
-
         m_advancedGroup = new QGroupBox(tr("Advanced QSS"), content);
         m_advancedGroup->setVisible(false);
         auto *advancedLayout = new QVBoxLayout(m_advancedGroup);
@@ -456,7 +377,13 @@ namespace fairwindsk::ui::settings {
     }
 
     void Comfort::onPresetChanged(const int) {
+        if (m_settings && m_settings->getConfiguration()) {
+            m_settings->getConfiguration()->setComfortViewPreset(selectedPreset());
+        }
         loadPresetEditor();
+        if (m_settings) {
+            m_settings->markDirty(FairWindSK::RuntimeUi, 0);
+        }
     }
 
     void Comfort::onStyleSheetChanged() {
@@ -472,9 +399,8 @@ namespace fairwindsk::ui::settings {
         }
         updateColorButtons();
         updateBackgroundImageLabels();
-        updatePreview();
         updateStatusLabel();
-        m_settings->markDirty(FairWindSK::RuntimeUi, 250);
+        m_settings->markDirty(FairWindSK::RuntimeUi, 0);
     }
 
     void Comfort::importStyleSheet() {
@@ -553,9 +479,6 @@ namespace fairwindsk::ui::settings {
         if (m_imagesGroup) {
             m_imagesGroup->setVisible(!editorMode);
         }
-        if (m_previewGroup) {
-            m_previewGroup->setVisible(!editorMode);
-        }
         if (m_advancedGroup) {
             m_advancedGroup->setVisible(editorMode);
         }
@@ -632,7 +555,6 @@ namespace fairwindsk::ui::settings {
         updateColorButtons();
         updateBackgroundImageLabels();
         refreshEditorChrome();
-        updatePreview();
         updateStatusLabel();
     }
 
@@ -660,19 +582,6 @@ namespace fairwindsk::ui::settings {
         for (QLabel *label : std::as_const(m_editorLabels)) {
             if (label) {
                 label->setStyleSheet(labelStyle);
-            }
-        }
-    }
-
-    void Comfort::updatePreview() {
-        const QString preset = selectedPreset();
-        const QString previewStyleSheet = removeGeneratedOverrideBlock(m_styleEditor->toPlainText())
-            + buildVisualOverrideBlock()
-            + effectiveBackgroundStyleSheetForPreset(preset);
-
-        for (QWidget *widget : {m_previewTopBar, static_cast<QWidget *>(m_previewLauncher), static_cast<QWidget *>(m_previewTabs), m_previewBottomBar}) {
-            if (widget) {
-                widget->setStyleSheet(previewStyleSheet);
             }
         }
     }
@@ -762,14 +671,12 @@ namespace fairwindsk::ui::settings {
 
         m_settings->getConfiguration()->setComfortBackgroundImagePath(selectedPreset(), area, fileName);
         updateBackgroundImageLabels();
-        updatePreview();
         m_settings->markDirty(FairWindSK::RuntimeUi, 0);
     }
 
     void Comfort::clearBackgroundImage(const QString &area) {
         m_settings->getConfiguration()->clearComfortBackgroundImagePath(selectedPreset(), area);
         updateBackgroundImageLabels();
-        updatePreview();
         m_settings->markDirty(FairWindSK::RuntimeUi, 0);
     }
 
@@ -789,9 +696,8 @@ namespace fairwindsk::ui::settings {
             configuration->setComfortThemeColor(preset, it.key(), it.value());
         }
         updateColorButtons();
-        updatePreview();
         updateStatusLabel();
-        m_settings->markDirty(FairWindSK::RuntimeUi, 250);
+        m_settings->markDirty(FairWindSK::RuntimeUi, 0);
     }
 
     bool Comfort::loadVisualColorsFromConfiguration() {
