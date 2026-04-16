@@ -25,6 +25,7 @@
 
 #include "GeoJsonPreviewWidget.hpp"
 #include "GeoJsonUtils.hpp"
+#include "FairWindSK.hpp"
 #include "HistoryTrackModel.hpp"
 #include "JsonObjectEditorWidget.hpp"
 #include "ui/DrawerDialogHost.hpp"
@@ -136,7 +137,10 @@ namespace fairwindsk::ui::mydata {
 
         retintToolButtons();
 
-        m_titleLabel->setStyleSheet("font-size: 20px; font-weight: bold;");
+        auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+        auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+        fairwindsk::ui::applySectionTitleLabelStyle(m_titleLabel, configuration, preset, palette());
         auto *formLayout = new QFormLayout(ui->widgetFormHost);
         ui->verticalLayoutPreviewHost->addWidget(m_previewWidget);
         ui->splitterDetails->setStretchFactor(0, 1);
@@ -540,6 +544,10 @@ namespace fairwindsk::ui::mydata {
         QWidget::changeEvent(event);
         if (event->type() == QEvent::PaletteChange || event->type() == QEvent::ApplicationPaletteChange) {
             retintToolButtons();
+            auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+            auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+            const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+            fairwindsk::ui::applySectionTitleLabelStyle(m_titleLabel, configuration, preset, palette());
         }
     }
 

@@ -1171,14 +1171,25 @@ namespace fairwindsk::ui::drawer {
         auto *layout = new QHBoxLayout(content);
         layout->setContentsMargins(0, 0, 0, 0);
         layout->setSpacing(12);
+        const auto colors = effectiveDrawerBrowserColors(content->palette());
 
         const QString glyph = iconGlyph(icon);
         if (!glyph.isEmpty()) {
             auto *iconLabel = new QLabel(glyph, content);
             iconLabel->setAlignment(Qt::AlignCenter);
             iconLabel->setFixedSize(30, 30);
-            iconLabel->setStyleSheet(
-                "QLabel { border: 1px solid rgba(127, 127, 127, 0.35); border-radius: 15px; font-size: 18px; font-weight: 700; }");
+            iconLabel->setStyleSheet(QStringLiteral(
+                "QLabel {"
+                " border: 1px solid %1;"
+                " color: %2;"
+                " border-radius: 15px;"
+                " font-size: 18px;"
+                " font-weight: 700;"
+                " background: %3;"
+                " }")
+                .arg(fairwindsk::ui::comfortAlpha(colors.border, 144).name(QColor::HexArgb),
+                     colors.text.name(),
+                     fairwindsk::ui::comfortAlpha(colors.fieldBackground, 112).name(QColor::HexArgb)));
             layout->addWidget(iconLabel, 0, Qt::AlignTop);
         }
 

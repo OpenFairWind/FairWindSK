@@ -23,6 +23,7 @@
 
 #include "Launcher.hpp"
 #include "AppItem.hpp"
+#include "ui/IconUtils.hpp"
 
 namespace fairwindsk::ui::launcher {
     namespace {
@@ -458,6 +459,13 @@ namespace fairwindsk::ui::launcher {
             return entries;
         }
 
+        fairwindsk::ui::ComfortChromeColors launcherChromeColors(const QPalette &palette) {
+            auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+            auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+            const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+            return fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette, false);
+        }
+
         class AppTile final : public QFrame {
         public:
             explicit AppTile(QWidget *parent = nullptr) : QFrame(parent) {
@@ -540,12 +548,20 @@ namespace fairwindsk::ui::launcher {
                 const QRectF contentRect = QRectF(tileRect).adjusted(1, 1, -1, -1);
                 const qreal titleBandHeight = 28.0;
                 const QRectF artworkRect = contentRect.adjusted(4, 4, -4, -(titleBandHeight + 4));
+                const auto chromeColors = launcherChromeColors(palette());
+                const QColor tileBackground = chromeColors.window;
+                const QColor overlayMid = fairwindsk::ui::comfortAlpha(chromeColors.window, 16);
+                const QColor overlayBottom = fairwindsk::ui::comfortAlpha(chromeColors.window.darker(165), 188);
+                const QColor borderColor = m_hovered ? chromeColors.accentTop : chromeColors.border;
+                const QColor titleColor = fairwindsk::ui::bestContrastingColor(
+                    tileBackground,
+                    {chromeColors.text, chromeColors.buttonText, chromeColors.accentText});
 
                 QPainterPath clipPath;
                 clipPath.addRoundedRect(tileRect, radius, radius);
                 painter.setClipPath(clipPath);
 
-                painter.fillRect(tileRect, QColor(16, 22, 32));
+                painter.fillRect(tileRect, tileBackground);
                 if (!m_pixmap.isNull()) {
                     const QPixmap scaled = m_pixmap.scaled(tileRect.size(),
                                                            Qt::KeepAspectRatioByExpanding,
@@ -558,13 +574,13 @@ namespace fairwindsk::ui::launcher {
                 }
 
                 QLinearGradient overlay(tileRect.topLeft(), QPointF(tileRect.left(), tileRect.bottom()));
-                overlay.setColorAt(0.0, QColor(0, 0, 0, 0));
-                overlay.setColorAt(0.55, QColor(0, 0, 0, 10));
-                overlay.setColorAt(1.0, QColor(0, 0, 0, 170));
+                overlay.setColorAt(0.0, Qt::transparent);
+                overlay.setColorAt(0.55, overlayMid);
+                overlay.setColorAt(1.0, overlayBottom);
                 painter.fillRect(tileRect, overlay);
 
                 painter.setClipping(false);
-                painter.setPen(QPen(m_hovered ? QColor(255, 255, 255) : QColor(230, 231, 235), m_hovered ? 2.0 : 1.0));
+                painter.setPen(QPen(borderColor, m_hovered ? 2.0 : 1.0));
                 painter.drawRoundedRect(tileRect, radius, radius);
 
                 QFont titleFont = font();
@@ -573,7 +589,7 @@ namespace fairwindsk::ui::launcher {
                 }
                 titleFont.setPointSizeF(std::max<qreal>(10.0, titleFont.pointSizeF()));
                 painter.setFont(titleFont);
-                painter.setPen(QColor(248, 250, 252));
+                painter.setPen(titleColor);
                 const QRect textRect = (m_kind == TileKind::App)
                                            ? tileRect.adjusted(10, 10, -10, -10)
                                            : QRectF(contentRect.left() + 8,
@@ -595,20 +611,6 @@ namespace fairwindsk::ui::launcher {
             bool m_hovered = false;
             std::function<void(const QString &)> m_onActivated;
         };
-
-        const QString kNavigationButtonStyle = QStringLiteral(
-            "QToolButton {"
-            " background: transparent;"
-            " border: none;"
-            " padding: 8px;"
-            " }"
-            "QToolButton:hover { background: rgba(127, 127, 127, 0.18); border-radius: 8px; }"
-            "QToolButton:pressed { background: rgba(127, 127, 127, 0.28); border-radius: 8px; }");
-        const QString kLauncherFrameStyle = QStringLiteral(
-            "QScrollArea {"
-            " background: transparent;"
-            " border: none;"
-            " }");
     }
 
     Launcher::Launcher(QWidget *parent) : QWidget(parent), ui(new Ui::Launcher) {
@@ -619,12 +621,10 @@ namespace fairwindsk::ui::launcher {
             m_layout->setContentsMargins(10, 10, 10, 10);
             m_layout->setHorizontalSpacing(8);
             m_layout->setVerticalSpacing(8);
-            ui->toolButton_Left->setStyleSheet(kNavigationButtonStyle);
-            ui->toolButton_Right->setStyleSheet(kNavigationButtonStyle);
             ui->toolButton_Left->setAutoRaise(true);
             ui->toolButton_Right->setAutoRaise(true);
             ui->scrollArea->setFrameShape(QFrame::NoFrame);
-            ui->scrollArea->setStyleSheet(kLauncherFrameStyle);
+            ui->scrollArea->setStyleSheet(QStringLiteral("QScrollArea { background: transparent; border: none; }"));
 
             ui->scrollArea->setWidgetResizable(false);
             ui->scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -641,6 +641,22 @@ namespace fairwindsk::ui::launcher {
             connect(ui->scrollArea->horizontalScrollBar(), &QScrollBar::rangeChanged, this, [this]() { updateScrollButtons(); });
             refreshFromConfiguration();
         }
+
+        const auto chromeColors = launcherChromeColors(palette());
+        const QString navigationButtonStyle = QStringLiteral(
+            "QToolButton {"
+            " background: transparent;"
+            " border: none;"
+            " color: %1;"
+            " padding: 8px;"
+            " }"
+            "QToolButton:hover { background: %2; border-radius: 8px; }"
+            "QToolButton:pressed { background: %3; border-radius: 8px; }")
+            .arg(chromeColors.transparentIcon.name(),
+                 chromeColors.transparentHoverBackground.name(QColor::HexArgb),
+                 fairwindsk::ui::comfortAlpha(chromeColors.accentBottom, 92).name(QColor::HexArgb));
+        ui->toolButton_Left->setStyleSheet(navigationButtonStyle);
+        ui->toolButton_Right->setStyleSheet(navigationButtonStyle);
     }
 
     Launcher::~Launcher() {

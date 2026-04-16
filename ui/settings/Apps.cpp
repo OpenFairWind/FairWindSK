@@ -595,7 +595,10 @@ namespace fairwindsk::ui::settings {
         ui->splitter_Main->setStretchFactor(1, 2);
         ui->verticalLayout_LeftPane->setStretch(0, 3);
         ui->verticalLayout_LeftPane->setStretch(1, 2);
-        ui->label_PageTitle->setStyleSheet(QStringLiteral("font-size: 18px; font-weight: 600;"));
+        auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+        auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+        fairwindsk::ui::applySectionTitleLabelStyle(ui->label_PageTitle, configuration, preset, palette(), 18.0);
         ui->label_PageTitle->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
         ui->label_PageIcon->setAlignment(Qt::AlignCenter);
 
@@ -756,6 +759,10 @@ namespace fairwindsk::ui::settings {
         QWidget::changeEvent(event);
         if (event->type() == QEvent::PaletteChange || event->type() == QEvent::ApplicationPaletteChange) {
             retintToolButtons();
+            auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+            auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+            const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+            fairwindsk::ui::applySectionTitleLabelStyle(ui->label_PageTitle, configuration, preset, palette(), 18.0);
         }
     }
 

@@ -33,13 +33,16 @@ The runtime now supervises Signal K restarts as well: if the server drops and co
 * The main FairWindSK shell: Top Bar, Application Area, Bottom Bar, Bottom Bar horizontal drawer, and Application Area vertical drawer
 * Signal K server connection, web-app discovery, and application hosting
 * Automatic Signal K restart detection, reconnect, subscription restore, and server-backed resource refresh
+* The alternate mobile-safe Qt WebView runtime path used on Android and iOS, including shared restart placeholder and reconnect handling
 * The desktop launcher with application tiles, OpenBridge-style page/application management actions, and local desktop app support on desktop targets
 * The setup and configuration of units, window preferences, Signal K paths, and server settings
 * The Qt virtual keyboard integration for touch-oriented deployments
 * Comfort preset management for `Default`, `Dawn`, `Day`, `Sunset`, `Dusk`, and `Night`, including QSS editing, configurable palette items, and theme image support
+* Shared touch-first reusable UI components and drawer-hosted dialogs, including touch file, color, and icon browsers used by the shell workflows
 * Touch-oriented diagnostics controls with persistent per-run logs and in-app log exploration through the shared Bottom Bar horizontal drawer
 * Native vessel-operation surfaces: Autopilot, POB (Person over board), Anchor, and Alarms bars
 * MyData core workflows: waypoints, tracks, routes, Signal K resource browsing, file browsing/search, and file viewing for images, PDF, and text files
+* Embedded geographic preview integration for MyData resources and waypoints, including GeoJSON preview surfaces and Freeboard-assisted focusing where available
 
 Those bars relay on SK web apps invoking their APIs or access the Signal K APIs directly. 
 
@@ -51,10 +54,10 @@ Applications can also be local desktop applications (as OpenCPN) characterized b
 A mechanism to be back on the FairWindSK desktop after being launched is implemented as a SHIFT+TAB hot key on desktop builds.
 
 ### Components under active development ###
-* MyData advanced workflows and UX polish, especially around richer resource editing, preview integration, and touch optimization
-* Mobile-platform parity work for the alternate Qt WebView path on Android and iOS
-* Ongoing Comfort-system refinement so all reusable UI states and shell elements remain fully mapped to configurable preset items
-* Continued UX tuning of reusable touch components and drawer-hosted dialogs for marine MFD consistency across platforms
+* Deeper MyData editing workflows and UX polish for advanced chart, region, route, and bulk-management scenarios
+* Final Android/iOS platform validation and parity verification for the alternate Qt WebView path on real mobile deployments
+* Residual Comfort-system cleanup in legacy designer-driven snippets and specialized embedded/custom-painted surfaces
+* Continued marine-MFD tuning of reusable touch components on a per-platform basis as helm-distance and touch ergonomics are validated in use
 
 # Building
 

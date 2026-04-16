@@ -345,7 +345,10 @@ namespace fairwindsk::ui::mydata {
         m_deleteButton->setToolTip(tr("Delete waypoint"));
         connect(m_deleteButton, &QToolButton::clicked, this, &Waypoints::onDeleteClicked);
 
-        m_titleLabel->setStyleSheet("font-size: 20px; font-weight: bold;");
+        auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+        auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+        fairwindsk::ui::applySectionTitleLabelStyle(m_titleLabel, configuration, preset, palette());
         ui->verticalLayoutDetails->setStretch(2, 1);
         m_detailsSplitter->setStretchFactor(0, 2);
         m_detailsSplitter->setStretchFactor(1, 1);
@@ -423,6 +426,10 @@ namespace fairwindsk::ui::mydata {
         QWidget::changeEvent(event);
         if (event->type() == QEvent::PaletteChange || event->type() == QEvent::ApplicationPaletteChange) {
             retintToolButtons();
+            auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+            auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+            const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+            fairwindsk::ui::applySectionTitleLabelStyle(m_titleLabel, configuration, preset, palette());
         }
     }
 
@@ -1010,19 +1017,34 @@ namespace fairwindsk::ui::mydata {
             return;
         }
         const bool freeboardAvailable = fairwindsk::ui::web::SignalKAppView::hasAppByKeyword(QStringLiteral("freeboard"));
+        const QColor windowColor = palette().color(QPalette::Window);
+        const QColor textColor = fairwindsk::ui::bestContrastingColor(
+            windowColor,
+            {palette().color(QPalette::WindowText),
+             palette().color(QPalette::Text),
+             palette().color(QPalette::ButtonText)});
+        const QColor panelColor = palette().color(QPalette::Base);
+        const QColor borderColor = fairwindsk::ui::comfortAlpha(palette().color(QPalette::Mid), 180);
+        const QColor shellShadow = fairwindsk::ui::comfortAlpha(windowColor.darker(165), 148);
+        const auto placeholderHtml = [&](const QString &message) {
+            return QStringLiteral(
+                "<html><body style=\"margin:0;background:%1;color:%2;font-family:'Avenir Next','Helvetica Neue',sans-serif;"
+                "display:flex;align-items:center;justify-content:center;padding:18px;\">"
+                "<div style=\"max-width:28rem;text-align:center;padding:1.25rem 1.5rem;background:%3;"
+                "border:1px solid %4;border-radius:16px;box-shadow:0 12px 30px %5;\">%6</div>"
+                "</body></html>")
+                .arg(windowColor.name(),
+                     textColor.name(),
+                     panelColor.name(),
+                     borderColor.name(QColor::HexArgb),
+                     shellShadow.name(QColor::HexArgb),
+                     message.toHtmlEscaped());
+        };
         if (!freeboardAvailable) {
-            m_previewAppView->setHtml(QStringLiteral(
-                "<html><body style=\"margin:0;background:#07111b;color:#e5edf7;font-family:sans-serif;display:flex;align-items:center;justify-content:center;\">"
-                "<div>@signalk/freeboard-sk is not installed or not active on the current Signal K server.</div>"
-                "</body></html>"
-            ));
+            m_previewAppView->setHtml(placeholderHtml(tr("@signalk/freeboard-sk is not installed or not active on the current Signal K server.")));
         } else if (m_previewAppView->url().isEmpty() || !m_previewAppView->url().toString().contains(QStringLiteral("freeboard"), Qt::CaseInsensitive)) {
             if (!m_previewAppView->loadAppByKeyword(QStringLiteral("freeboard"))) {
-                m_previewAppView->setHtml(QStringLiteral(
-                    "<html><body style=\"margin:0;background:#07111b;color:#e5edf7;font-family:sans-serif;display:flex;align-items:center;justify-content:center;\">"
-                    "<div>Freeboard-SK is not installed or not active on the current Signal K server.</div>"
-                    "</body></html>"
-                ));
+                m_previewAppView->setHtml(placeholderHtml(tr("Freeboard-SK is not installed or not active on the current Signal K server.")));
             }
         } else {
             schedulePreviewFocus();

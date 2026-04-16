@@ -7,6 +7,8 @@
 #include <QVBoxLayout>
 #include <QtGlobal>
 
+#include "ui/IconUtils.hpp"
+
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
 #include <QAuthenticator>
 #include <QDialog>
@@ -99,6 +101,48 @@ namespace fairwindsk::ui::web {
             return QStringLiteral("data:text/html;charset=UTF-8,%1").arg(QString::fromUtf8(QUrl::toPercentEncoding(html)));
         }
 #endif
+
+        QString signalKRestartPlaceholderHtml(const QPalette &palette,
+                                              const QString &title,
+                                              const QString &body) {
+            const QColor windowColor = palette.color(QPalette::Window);
+            const QColor panelColor = palette.color(QPalette::Base);
+            const QColor textColor = fairwindsk::ui::bestContrastingColor(
+                windowColor,
+                {palette.color(QPalette::WindowText),
+                 palette.color(QPalette::Text),
+                 palette.color(QPalette::ButtonText)});
+            const QColor mutedTextColor = fairwindsk::ui::comfortAlpha(textColor, 204);
+            const QColor borderColor = fairwindsk::ui::comfortAlpha(palette.color(QPalette::Mid), 188);
+            const QColor shadowColor = fairwindsk::ui::comfortAlpha(windowColor.darker(180), 180);
+
+            return QStringLiteral(
+                "<!doctype html>"
+                "<html><head><meta charset=\"utf-8\">"
+                "<style>"
+                "html,body{height:100%%;margin:0;background:%1;color:%2;"
+                "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}"
+                "body{display:flex;align-items:center;justify-content:center;}"
+                ".panel{max-width:36rem;padding:2rem 2.5rem;border:1px solid %3;border-radius:18px;"
+                "background:linear-gradient(180deg,%4,%5);box-shadow:0 18px 48px %6;"
+                "text-align:center;}"
+                ".title{font-size:2rem;font-weight:700;margin-bottom:0.75rem;}"
+                ".body{font-size:1.05rem;line-height:1.5;color:%7;}"
+                "</style></head>"
+                "<body><div class=\"panel\">"
+                "<div class=\"title\">%8</div>"
+                "<div class=\"body\">%9</div>"
+                "</div></body></html>")
+                .arg(windowColor.name(),
+                     textColor.name(),
+                     borderColor.name(QColor::HexArgb),
+                     panelColor.lighter(104).name(),
+                     panelColor.darker(106).name(),
+                     shadowColor.name(QColor::HexArgb),
+                     mutedTextColor.name(QColor::HexArgb),
+                     title.toHtmlEscaped(),
+                     body.toHtmlEscaped());
+        }
     }
 
     WebView::WebView(fairwindsk::WebProfileHandle *profile, QWidget *parent)
@@ -294,25 +338,10 @@ namespace fairwindsk::ui::web {
     void WebView::showSignalKRestartPlaceholder() {
         stop();
         m_restartPlaceholderVisible = true;
-        setHtml(QStringLiteral(
-                    "<!doctype html>"
-                    "<html><head><meta charset=\"utf-8\">"
-                    "<style>"
-                    "html,body{height:100%%;margin:0;background:#05070c;color:#f8fafc;"
-                    "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}"
-                    "body{display:flex;align-items:center;justify-content:center;}"
-                    ".panel{max-width:36rem;padding:2rem 2.5rem;border:1px solid #2f4058;border-radius:18px;"
-                    "background:linear-gradient(180deg,#0f1724,#0a1220);box-shadow:0 18px 48px rgba(0,0,0,0.45);"
-                    "text-align:center;}"
-                    ".title{font-size:2rem;font-weight:700;margin-bottom:0.75rem;}"
-                    ".body{font-size:1.05rem;line-height:1.5;color:#c8d2df;}"
-                    "</style></head>"
-                    "<body><div class=\"panel\">"
-                    "<div class=\"title\">%1</div>"
-                    "<div class=\"body\">%2</div>"
-                    "</div></body></html>")
-                    .arg(tr("Signal K is restarting"),
-                         tr("FairWindSK will reconnect automatically when the server is available again.")));
+        setHtml(signalKRestartPlaceholderHtml(
+                    palette(),
+                    tr("Signal K is restarting"),
+                    tr("FairWindSK will reconnect automatically when the server is available again.")));
         applyZoom();
     }
 

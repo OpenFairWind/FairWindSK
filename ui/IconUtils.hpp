@@ -9,7 +9,9 @@
 #include <cmath>
 #include <QAbstractButton>
 #include <QColor>
+#include <QFont>
 #include <QIcon>
+#include <QLabel>
 #include <QPainter>
 #include <QPalette>
 #include <QPixmap>
@@ -212,6 +214,35 @@ namespace fairwindsk::ui {
             colors.errorFill,
             {chrome.accentText, chrome.text, chrome.buttonText, palette.color(QPalette::HighlightedText), palette.color(QPalette::WindowText)});
         return colors;
+    }
+
+    inline void applySectionTitleLabelStyle(QLabel *label,
+                                            const fairwindsk::Configuration *configuration,
+                                            const QString &preset,
+                                            const QPalette &palette,
+                                            const qreal pointSize = 20.0) {
+        if (!label) {
+            return;
+        }
+
+        QFont font = label->font();
+        font.setBold(true);
+        font.setPointSizeF(pointSize);
+        label->setFont(font);
+
+        QPalette labelPalette = label->palette();
+        const QColor titleColor = comfortThemeColor(
+            configuration,
+            preset,
+            QStringLiteral("text"),
+            bestContrastingColor(
+                palette.color(QPalette::Window),
+                {palette.color(QPalette::WindowText),
+                 palette.color(QPalette::Text),
+                 palette.color(QPalette::ButtonText)}));
+        labelPalette.setColor(QPalette::WindowText, titleColor);
+        labelPalette.setColor(QPalette::Text, titleColor);
+        label->setPalette(labelPalette);
     }
 }
 

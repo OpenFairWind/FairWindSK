@@ -165,7 +165,10 @@ namespace fairwindsk::ui::mydata {
         m_deleteButton->setToolTip(tr("Delete"));
         connect(m_deleteButton, &QToolButton::clicked, this, &ResourceTab::onDeleteClicked);
 
-        m_titleLabel->setStyleSheet("font-size: 20px; font-weight: bold;");
+        auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+        auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+        fairwindsk::ui::applySectionTitleLabelStyle(m_titleLabel, configuration, preset, palette());
         auto *formLayout = new QFormLayout(ui->widgetFormHost);
         ui->splitterDetails->setStretchFactor(0, 2);
         ui->splitterDetails->setStretchFactor(1, 1);
@@ -1053,6 +1056,10 @@ namespace fairwindsk::ui::mydata {
         QWidget::changeEvent(event);
         if (event->type() == QEvent::PaletteChange || event->type() == QEvent::ApplicationPaletteChange) {
             retintToolButtons();
+            auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+            auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+            const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+            fairwindsk::ui::applySectionTitleLabelStyle(m_titleLabel, configuration, preset, palette());
         }
     }
 
