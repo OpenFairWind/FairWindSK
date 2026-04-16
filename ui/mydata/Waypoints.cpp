@@ -462,12 +462,15 @@ namespace fairwindsk::ui::mydata {
     }
 
     void Waypoints::styleTable() {
+        m_tableWidget->horizontalHeader()->setVisible(true);
         m_tableWidget->verticalHeader()->setVisible(false);
         m_tableWidget->verticalHeader()->setDefaultSectionSize(62);
     }
 
     void Waypoints::configureTableColumns() {
         auto *waypointHeader = m_tableWidget->horizontalHeader();
+        waypointHeader->setVisible(true);
+        waypointHeader->setMinimumSectionSize(96);
         waypointHeader->setSectionResizeMode(QHeaderView::Interactive);
         waypointHeader->setSectionResizeMode(kWaypointNameColumn, QHeaderView::Stretch);
         waypointHeader->setSectionResizeMode(m_model->columnCount(), QHeaderView::Fixed);

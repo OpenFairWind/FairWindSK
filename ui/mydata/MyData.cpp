@@ -21,7 +21,6 @@ namespace fairwindsk::ui::mydata {
     MyData::MyData(QWidget *parent, QWidget *currenWidget): QWidget(parent), ui(new Ui::MyData) {
 
         ui->setupUi(this);
-        connect(ui->tabWidget, &QTabWidget::currentChanged, this, &MyData::ensureTabPage);
 
         // Initialize the tabs
         initTabs(0);
@@ -59,36 +58,13 @@ namespace fairwindsk::ui::mydata {
         removeTabs();
 
         for (int index = 0; index < 7; ++index) {
-            auto *placeholder = new QWidget(this);
-            placeholder->setProperty("fairwindskPlaceholderTab", true);
-            ui->tabWidget->addTab(placeholder, tabTitle(index));
+            if (QWidget *page = createTabPage(index)) {
+                ui->tabWidget->addTab(page, tabTitle(index));
+            }
         }
 
         // Set the current tab index
         ui->tabWidget->setCurrentIndex(currentIndex);
-        ensureTabPage(currentIndex);
-    }
-
-    void MyData::ensureTabPage(const int index) {
-        if (!ui || !ui->tabWidget || index < 0 || index >= ui->tabWidget->count()) {
-            return;
-        }
-
-        QWidget *currentPage = ui->tabWidget->widget(index);
-        if (!currentPage || !currentPage->property("fairwindskPlaceholderTab").toBool()) {
-            return;
-        }
-
-        QWidget *realPage = createTabPage(index);
-        if (!realPage) {
-            return;
-        }
-
-        const QString title = ui->tabWidget->tabText(index);
-        ui->tabWidget->removeTab(index);
-        currentPage->deleteLater();
-        ui->tabWidget->insertTab(index, realPage, title);
-        ui->tabWidget->setCurrentIndex(index);
     }
 
     QWidget *MyData::createTabPage(const int index) const {
