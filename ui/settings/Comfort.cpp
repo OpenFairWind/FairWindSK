@@ -34,6 +34,17 @@
 
 namespace fairwindsk::ui::settings {
     namespace {
+        QStringList comfortPresetIds() {
+            return {
+                QStringLiteral("default"),
+                QStringLiteral("dawn"),
+                QStringLiteral("day"),
+                QStringLiteral("sunset"),
+                QStringLiteral("dusk"),
+                QStringLiteral("night")
+            };
+        }
+
         constexpr const char *kColorWindow = "window";
         constexpr const char *kColorApplicationBackground = "applicationBackground";
         constexpr const char *kColorPanel = "panel";
@@ -202,28 +213,30 @@ namespace fairwindsk::ui::settings {
         m_exportButton = new QPushButton(tr("Export QSS"), content);
         m_editorButton = new QPushButton(tr("Editor"), content);
         m_editorButton->setCheckable(true);
-        m_resetButton = new QPushButton(tr("Reset Preset"), content);
+        m_resetCurrentButton = new QPushButton(tr("Reset current preset"), content);
+        m_resetAllButton = new QPushButton(tr("Reset all presets"), content);
         buttonRow->addWidget(m_importButton);
         buttonRow->addWidget(m_exportButton);
         buttonRow->addWidget(m_editorButton);
-        buttonRow->addWidget(m_resetButton);
+        buttonRow->addWidget(m_resetCurrentButton);
+        buttonRow->addWidget(m_resetAllButton);
         buttonRow->addStretch(1);
 
         m_statusLabel = new QLabel(content);
         m_editorLabels.append(m_statusLabel);
         m_statusLabel->hide();
 
-        auto *paletteGroup = new QGroupBox(tr("Palette"), content);
-        auto *paletteGroupLayout = new QVBoxLayout(paletteGroup);
+        m_paletteGroup = new QGroupBox(tr("Palette"), content);
+        auto *paletteGroupLayout = new QVBoxLayout(m_paletteGroup);
         paletteGroupLayout->setContentsMargins(8, 8, 8, 8);
         paletteGroupLayout->setSpacing(8);
 
-        auto *paletteHint = new QLabel(tr("Tap a swatch to adjust the saved colors for the selected comfort preset."), paletteGroup);
+        auto *paletteHint = new QLabel(tr("Tap a swatch to adjust the saved colors for the selected comfort preset."), m_paletteGroup);
         paletteHint->setWordWrap(true);
         m_editorLabels.append(paletteHint);
         paletteGroupLayout->addWidget(paletteHint);
 
-        m_visualEditorWidget = new QWidget(paletteGroup);
+        m_visualEditorWidget = new QWidget(m_paletteGroup);
         auto *visualLayout = new QGridLayout(m_visualEditorWidget);
         visualLayout->setContentsMargins(0, 0, 0, 0);
         visualLayout->setHorizontalSpacing(12);
@@ -251,21 +264,21 @@ namespace fairwindsk::ui::settings {
         createColorControl(QString::fromLatin1(kColorDisabledText), tr("Disabled text"), m_visualEditorWidget, visualLayout, 20);
         createColorControl(QString::fromLatin1(kColorIconDefault), tr("SVG icon color"), m_visualEditorWidget, visualLayout, 21);
         paletteGroupLayout->addWidget(m_visualEditorWidget);
-        contentLayout->addWidget(paletteGroup);
+        contentLayout->addWidget(m_paletteGroup);
 
-        auto *imagesGroup = new QGroupBox(tr("Theme Images"), content);
-        auto *imagesLayout = new QVBoxLayout(imagesGroup);
+        m_imagesGroup = new QGroupBox(tr("Theme Images"), content);
+        auto *imagesLayout = new QVBoxLayout(m_imagesGroup);
         imagesLayout->setContentsMargins(8, 8, 8, 8);
         imagesLayout->setSpacing(10);
 
-        auto *imagesHint = new QLabel(tr("Choose optional images for major surfaces and control states. Clear any entry to fall back to the QSS colors."), imagesGroup);
+        auto *imagesHint = new QLabel(tr("Choose optional images for major surfaces and control states. Clear any entry to fall back to the QSS colors."), m_imagesGroup);
         imagesHint->setWordWrap(true);
         m_editorLabels.append(imagesHint);
         imagesLayout->addWidget(imagesHint);
 
         imagesLayout->addWidget(createImageGroup(
             tr("Surface Images"),
-            imagesGroup,
+            m_imagesGroup,
             {
                 {QStringLiteral("topbar"), tr("Top bar")},
                 {QStringLiteral("launcher"), tr("Launcher")},
@@ -273,7 +286,7 @@ namespace fairwindsk::ui::settings {
             }));
         imagesLayout->addWidget(createImageGroup(
             tr("Control Images"),
-            imagesGroup,
+            m_imagesGroup,
             {
                 {QStringLiteral("buttons-default"), tr("Buttons")},
                 {QStringLiteral("buttons-selected"), tr("Buttons selected")},
@@ -282,13 +295,13 @@ namespace fairwindsk::ui::settings {
                 {QStringLiteral("checkbox-default"), tr("Checkbox")},
                 {QStringLiteral("checkbox-selected"), tr("Checkbox selected")}
             }));
-        contentLayout->addWidget(imagesGroup);
+        contentLayout->addWidget(m_imagesGroup);
 
-        auto *previewGroup = new QGroupBox(tr("Live Preview"), content);
-        auto *previewLayout = new QVBoxLayout(previewGroup);
+        m_previewGroup = new QGroupBox(tr("Live Preview"), content);
+        auto *previewLayout = new QVBoxLayout(m_previewGroup);
         previewLayout->setSpacing(10);
 
-        m_previewTopBar = new QWidget(previewGroup);
+        m_previewTopBar = new QWidget(m_previewGroup);
         m_previewTopBar->setObjectName(QStringLiteral("TopBar"));
         m_previewTopBar->setMinimumHeight(74);
         auto *topBarLayout = new QHBoxLayout(m_previewTopBar);
@@ -305,13 +318,13 @@ namespace fairwindsk::ui::settings {
         topBarLayout->addWidget(rightStatus);
         previewLayout->addWidget(m_previewTopBar);
 
-        m_previewLauncher = new fairwindsk::ui::launcher::Launcher(previewGroup);
+        m_previewLauncher = new fairwindsk::ui::launcher::Launcher(m_previewGroup);
         m_previewLauncher->setAttribute(Qt::WA_TransparentForMouseEvents, true);
         m_previewLauncher->setMinimumHeight(220);
         m_previewLauncher->refreshFromConfiguration(true);
         previewLayout->addWidget(m_previewLauncher);
 
-        m_previewTabs = new QTabWidget(previewGroup);
+        m_previewTabs = new QTabWidget(m_previewGroup);
         auto *mainPage = new QWidget(m_previewTabs);
         auto *mainLayout = new QVBoxLayout(mainPage);
         mainLayout->setContentsMargins(12, 12, 12, 12);
@@ -346,7 +359,7 @@ namespace fairwindsk::ui::settings {
         m_previewTabs->addTab(settingsPage, tr("Settings"));
         previewLayout->addWidget(m_previewTabs);
 
-        m_previewBottomBar = new QWidget(previewGroup);
+        m_previewBottomBar = new QWidget(m_previewGroup);
         m_previewBottomBar->setObjectName(QStringLiteral("BottomBar"));
         m_previewBottomBar->setMinimumHeight(78);
         auto *bottomBarLayout = new QHBoxLayout(m_previewBottomBar);
@@ -359,7 +372,7 @@ namespace fairwindsk::ui::settings {
         }
         previewLayout->addWidget(m_previewBottomBar);
 
-        contentLayout->addWidget(previewGroup);
+        contentLayout->addWidget(m_previewGroup);
 
         m_advancedGroup = new QGroupBox(tr("Advanced QSS"), content);
         m_advancedGroup->setVisible(false);
@@ -379,15 +392,12 @@ namespace fairwindsk::ui::settings {
         connect(m_styleEditor, &QPlainTextEdit::textChanged, this, &Comfort::onStyleSheetChanged);
         connect(m_importButton, &QPushButton::clicked, this, &Comfort::importStyleSheet);
         connect(m_exportButton, &QPushButton::clicked, this, &Comfort::exportStyleSheet);
-        connect(m_editorButton, &QPushButton::toggled, this, [this](const bool checked) {
-            if (m_advancedGroup) {
-                m_advancedGroup->setVisible(checked);
-            }
-            if (m_visualEditorWidget) {
-                m_visualEditorWidget->setVisible(!checked);
-            }
+        connect(m_editorButton, &QPushButton::toggled, this, [this](const bool) {
+            updateEditorModeUi();
         });
-        connect(m_resetButton, &QPushButton::clicked, this, &Comfort::resetPreset);
+        connect(m_resetCurrentButton, &QPushButton::clicked, this, &Comfort::resetCurrentPreset);
+        connect(m_resetAllButton, &QPushButton::clicked, this, &Comfort::resetAllPresets);
+        updateEditorModeUi();
         refreshEditorChrome();
     }
 
@@ -505,7 +515,7 @@ namespace fairwindsk::ui::settings {
         stream << m_styleEditor->toPlainText();
     }
 
-    void Comfort::resetPreset() {
+    void Comfort::resetCurrentPreset() {
         const QString preset = selectedPreset();
         m_settings->getConfiguration()->clearComfortThemeStyleSheet(preset);
         m_settings->getConfiguration()->clearComfortThemeColors(preset);
@@ -514,6 +524,41 @@ namespace fairwindsk::ui::settings {
         }
         loadPresetEditor();
         m_settings->markDirty(FairWindSK::RuntimeUi, 0);
+    }
+
+    void Comfort::resetAllPresets() {
+        auto *configuration = m_settings ? m_settings->getConfiguration() : nullptr;
+        if (!configuration) {
+            return;
+        }
+
+        for (const QString &preset : comfortPresetIds()) {
+            configuration->clearComfortThemeStyleSheet(preset);
+            configuration->clearComfortThemeColors(preset);
+            for (const QString &area : comfortBackgroundAreas()) {
+                configuration->clearComfortBackgroundImagePath(preset, area);
+            }
+        }
+
+        loadPresetEditor();
+        m_settings->markDirty(FairWindSK::RuntimeUi, 0);
+    }
+
+    void Comfort::updateEditorModeUi() {
+        const bool editorMode = m_editorButton && m_editorButton->isChecked();
+
+        if (m_paletteGroup) {
+            m_paletteGroup->setVisible(!editorMode);
+        }
+        if (m_imagesGroup) {
+            m_imagesGroup->setVisible(!editorMode);
+        }
+        if (m_previewGroup) {
+            m_previewGroup->setVisible(!editorMode);
+        }
+        if (m_advancedGroup) {
+            m_advancedGroup->setVisible(editorMode);
+        }
     }
 
     QString Comfort::selectedPreset() const {

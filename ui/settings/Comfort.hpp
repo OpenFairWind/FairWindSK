@@ -43,7 +43,8 @@ namespace fairwindsk::ui::settings {
         void onStyleSheetChanged();
         void importStyleSheet();
         void exportStyleSheet();
-        void resetPreset();
+        void resetCurrentPreset();
+        void resetAllPresets();
 
     private:
         QString selectedPreset() const;
@@ -51,6 +52,7 @@ namespace fairwindsk::ui::settings {
         QString effectiveStyleSheetForPreset(const QString &preset) const;
         QString effectiveBackgroundStyleSheetForPreset(const QString &preset) const;
         void buildUi();
+        void updateEditorModeUi();
         void createColorControl(const QString &key, const QString &labelText, QWidget *parent, QGridLayout *layout, int row);
         void createBackgroundImageControl(const QString &area, const QString &labelText, QWidget *parent, QGridLayout *layout, int row);
         QGroupBox *createImageGroup(const QString &title, QWidget *parent, const QList<QPair<QString, QString>> &entries);
@@ -84,11 +86,15 @@ namespace fairwindsk::ui::settings {
         QPushButton *m_importButton = nullptr;
         QPushButton *m_exportButton = nullptr;
         QPushButton *m_editorButton = nullptr;
-        QPushButton *m_resetButton = nullptr;
+        QPushButton *m_resetCurrentButton = nullptr;
+        QPushButton *m_resetAllButton = nullptr;
         QMap<QString, QColor> m_visualColors;
         QMap<QString, QPushButton *> m_colorButtons;
         QMap<QString, QLabel *> m_backgroundPathLabels;
         QList<QLabel *> m_editorLabels;
+        QGroupBox *m_paletteGroup = nullptr;
+        QGroupBox *m_imagesGroup = nullptr;
+        QGroupBox *m_previewGroup = nullptr;
         QWidget *m_visualEditorWidget = nullptr;
         QWidget *m_previewTopBar = nullptr;
         fairwindsk::ui::launcher::Launcher *m_previewLauncher = nullptr;
