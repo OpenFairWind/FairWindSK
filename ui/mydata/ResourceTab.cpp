@@ -275,6 +275,7 @@ namespace fairwindsk::ui::mydata {
         showListPage();
 
         connect(m_model, &QAbstractItemModel::modelReset, this, &ResourceTab::rebuildTable);
+        connectEditorPreviewInputs();
         rebuildTable();
     }
 
@@ -735,8 +736,12 @@ namespace fairwindsk::ui::mydata {
         return true;
     }
 
-    QJsonObject ResourceTab::resourceFromEditor() const {
-        const QString id = m_currentResourceId.isEmpty() ? QUuid::createUuid().toString(QUuid::WithoutBraces) : m_currentResourceId;
+    QJsonObject ResourceTab::resourceFromEditor(const QString &idOverride) const {
+        const QString id = !idOverride.trimmed().isEmpty()
+                               ? idOverride.trimmed()
+                               : (m_currentResourceId.isEmpty()
+                                      ? QUuid::createUuid().toString(QUuid::WithoutBraces)
+                                      : m_currentResourceId);
         const auto properties = m_propertiesEditor->jsonObject();
 
         QJsonObject resource;
@@ -851,6 +856,43 @@ namespace fairwindsk::ui::mydata {
         }
 
         return resource;
+    }
+
+    void ResourceTab::connectEditorPreviewInputs() {
+        const auto refresh = [this]() {
+            refreshEditorLiveState();
+        };
+
+        connect(m_nameEdit, &QLineEdit::textChanged, this, refresh);
+        connect(m_descriptionEdit, &QLineEdit::textChanged, this, refresh);
+        connect(m_typeEdit, &QLineEdit::textChanged, this, refresh);
+        connect(m_latitudeSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, refresh);
+        connect(m_longitudeSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, refresh);
+        connect(m_altitudeSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, refresh);
+        connect(m_coordinatesEdit, &QPlainTextEdit::textChanged, this, refresh);
+        connect(m_geometryEdit, &QPlainTextEdit::textChanged, this, refresh);
+        connect(m_hrefEdit, &QLineEdit::textChanged, this, refresh);
+        connect(m_mimeTypeEdit, &QLineEdit::textChanged, this, refresh);
+        connect(m_notePositionCheckBox, &QCheckBox::toggled, this, refresh);
+        connect(m_identifierEdit, &QLineEdit::textChanged, this, refresh);
+        connect(m_chartFormatEdit, &QLineEdit::textChanged, this, refresh);
+        connect(m_chartUrlEdit, &QLineEdit::textChanged, this, refresh);
+        connect(m_tilemapUrlEdit, &QLineEdit::textChanged, this, refresh);
+        connect(m_chartRegionEdit, &QLineEdit::textChanged, this, refresh);
+        connect(m_chartScaleSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, refresh);
+        connect(m_chartLayersEdit, &QLineEdit::textChanged, this, refresh);
+        connect(m_chartBoundsEdit, &QPlainTextEdit::textChanged, this, refresh);
+    }
+
+    void ResourceTab::refreshEditorLiveState() {
+        m_titleLabel->setText(detailsTitleForCurrentState());
+        updateCoordinateDisplay();
+
+        if (m_stackedWidget->currentWidget() != m_detailsPage || !(m_isEditing || m_isCreating)) {
+            return;
+        }
+
+        updatePreview(resourceFromEditor(QStringLiteral("preview")));
     }
 
     void ResourceTab::clearEditor() {
@@ -1004,6 +1046,7 @@ namespace fairwindsk::ui::mydata {
         }
 
         showListPage();
+        rebuildTable();
     }
 
     void ResourceTab::changeEvent(QEvent *event) {
@@ -1080,6 +1123,16 @@ namespace fairwindsk::ui::mydata {
             showError(tr("No %1 could be imported from the selected GeoJSON file.")
                               .arg(resourceKindToTitle(m_kind).toLower()));
             return;
+        }
+
+        rebuildTable();
+        if (!resources.isEmpty()) {
+            const QString importedId = !resources.first().first.isEmpty()
+                                           ? resources.first().first
+                                           : m_model->resourceIdAtRow(0);
+            if (!importedId.isEmpty()) {
+                selectResource(importedId);
+            }
         }
 
         drawer::information(this,
@@ -1251,8 +1304,8 @@ namespace fairwindsk::ui::mydata {
         }
 
         showListPage();
-        selectResource(id);
         rebuildTable();
+        selectResource(id);
     }
 
     void ResourceTab::onCancelClicked() {

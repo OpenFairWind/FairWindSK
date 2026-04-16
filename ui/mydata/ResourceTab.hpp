@@ -69,7 +69,7 @@ namespace fairwindsk::ui::mydata {
         void setButtonsForReadOnly();
         void setButtonsForEdit();
         void populateEditor(const QString &id, const QJsonObject &resource);
-        QJsonObject resourceFromEditor() const;
+        QJsonObject resourceFromEditor(const QString &idOverride = QString()) const;
         bool validateEditor(QString *message) const;
         QJsonObject parseJsonObject(const QPlainTextEdit *edit) const;
         QJsonArray coordinatesJson() const;
@@ -77,6 +77,8 @@ namespace fairwindsk::ui::mydata {
         void updatePreview(const QJsonObject &resource);
         void updateCoordinateDisplay();
         void syncDetailTabs();
+        void connectEditorPreviewInputs();
+        void refreshEditorLiveState();
         QString resourceDisplayName(const QJsonObject &resource) const;
         QString resourceDescription(const QJsonObject &resource) const;
         QString detailsTitleForCurrentState() const;

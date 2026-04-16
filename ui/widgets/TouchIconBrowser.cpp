@@ -6,6 +6,7 @@
 
 #include <QCoreApplication>
 #include <QDir>
+#include <QEvent>
 #include <QFileInfo>
 #include <QFrame>
 #include <QGridLayout>
@@ -17,6 +18,7 @@
 #include <QVBoxLayout>
 
 #include "FairWindSK.hpp"
+#include "ui/IconUtils.hpp"
 
 namespace fairwindsk::ui::widgets {
     namespace {
@@ -142,6 +144,7 @@ namespace fairwindsk::ui::widgets {
         headerLayout->addWidget(m_applyButton, 0, Qt::AlignTop);
 
         auto *previewFrame = new QFrame(this);
+        m_previewFrame = previewFrame;
         previewFrame->setFrameShape(QFrame::StyledPanel);
         auto *previewLayout = new QHBoxLayout(previewFrame);
         previewLayout->setContentsMargins(12, 12, 12, 12);
@@ -190,6 +193,8 @@ namespace fairwindsk::ui::widgets {
         connect(m_applyButton, &QPushButton::clicked, this, [this]() {
             emit pathActivated(selectedPath());
         });
+
+        applyComfortChrome();
     }
 
     void TouchIconBrowser::setCurrentPath(const QString &path) {
@@ -220,6 +225,13 @@ namespace fairwindsk::ui::widgets {
     QString TouchIconBrowser::selectedPath() const {
         auto *item = m_listWidget ? m_listWidget->currentItem() : nullptr;
         return item ? normalizedIconStoragePath(item->data(Qt::UserRole).toString()) : m_currentPath;
+    }
+
+    void TouchIconBrowser::changeEvent(QEvent *event) {
+        QWidget::changeEvent(event);
+        if (event && (event->type() == QEvent::PaletteChange || event->type() == QEvent::ApplicationPaletteChange)) {
+            applyComfortChrome();
+        }
     }
 
     QString TouchIconBrowser::normalizedIconStoragePath(const QString &path) {
@@ -337,5 +349,65 @@ namespace fairwindsk::ui::widgets {
                 m_selectionLabel->setText(tr("Selected icon:\n%1").arg(m_currentPath));
             }
         }
+    }
+
+    void TouchIconBrowser::applyComfortChrome() {
+        if (m_isApplyingComfortChrome) {
+            return;
+        }
+        m_isApplyingComfortChrome = true;
+
+        auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+        const auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+        const auto chrome = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), false);
+        const auto accentChrome = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), true);
+
+        setStyleSheet(QStringLiteral(
+            "QWidget { background: %1; color: %2; }"
+            "QLabel { color: %2; font-size: 18px; }"
+            "QFrame { background: %3; border: 1px solid %4; border-radius: 18px; }"
+            "QListWidget {"
+            " background: %3;"
+            " color: %2;"
+            " border: 1px solid %4;"
+            " border-radius: 18px;"
+            " padding: 8px;"
+            " outline: none;"
+            " }"
+            "QListWidget::item {"
+            " min-width: 96px;"
+            " min-height: 112px;"
+            " padding: 8px;"
+            " border-radius: 14px;"
+            " }"
+            "QListWidget::item:selected {"
+            " background: %5;"
+            " color: %6;"
+            " }"
+            "QPushButton {"
+            " min-height: 64px;"
+            " min-width: 64px;"
+            " border-radius: 16px;"
+            " border: 1px solid %4;"
+            " background: %7;"
+            " color: %8;"
+            " }"
+            "QPushButton:hover { background: %9; }"
+            "QPushButton:pressed { background: %10; }")
+            .arg(chrome.window.name(),
+                 chrome.text.name(),
+                 palette().color(QPalette::Base).name(),
+                 chrome.border.name(),
+                 chrome.accentTop.name(),
+                 chrome.accentText.name(),
+                 chrome.buttonBackground.name(),
+                 chrome.buttonText.name(),
+                 chrome.hoverBackground.name(),
+                 chrome.pressedBackground.name()));
+
+        fairwindsk::ui::applyTintedButtonIcon(m_cancelButton, chrome.icon, QSize(28, 28));
+        fairwindsk::ui::applyTintedButtonIcon(m_applyButton, accentChrome.icon, QSize(28, 28));
+        m_isApplyingComfortChrome = false;
     }
 }

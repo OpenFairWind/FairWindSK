@@ -6,12 +6,14 @@
 #define FAIRWINDSK_UI_WIDGETS_TOUCHICONBROWSER_HPP
 
 #include <QPixmap>
+#include <QFrame>
 #include <QWidget>
 
 class QLabel;
 class QListWidget;
 class QListWidgetItem;
 class QPushButton;
+class QEvent;
 
 namespace fairwindsk::ui::widgets {
     class TouchIconBrowser final : public QWidget {
@@ -33,7 +35,11 @@ namespace fairwindsk::ui::widgets {
         void pathSelected(const QString &path);
         void pathActivated(const QString &path);
 
+    protected:
+        void changeEvent(QEvent *event) override;
+
     private:
+        void applyComfortChrome();
         void populate();
         void ensureIconEntry(const QString &path);
         void updatePreview(const QString &path);
@@ -45,6 +51,8 @@ namespace fairwindsk::ui::widgets {
         QListWidget *m_listWidget = nullptr;
         QPushButton *m_cancelButton = nullptr;
         QPushButton *m_applyButton = nullptr;
+        QFrame *m_previewFrame = nullptr;
+        bool m_isApplyingComfortChrome = false;
     };
 }
 

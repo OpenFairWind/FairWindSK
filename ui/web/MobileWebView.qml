@@ -13,17 +13,20 @@ Item {
     property string currentUrl: webView.url.toString()
     property bool canGoBack: webView.canGoBack
     property bool canGoForward: webView.canGoForward
+    property string pendingScript: ""
 
     function loadUrl(urlString) {
         if (!urlString || urlString.length === 0) {
             return
         }
         webView.url = urlString
+        root.currentUrlNotified(urlString)
     }
 
     function setHtmlContent(htmlString, baseUrlString) {
         const encoded = encodeURIComponent(htmlString)
         webView.url = "data:text/html;charset=UTF-8," + encoded
+        root.currentUrlNotified(webView.url.toString())
     }
 
     function reloadPage() {
@@ -47,6 +50,7 @@ Item {
     }
 
     function runScript(script) {
+        pendingScript = script
         if (webView.runJavaScript) {
             webView.runJavaScript(script)
         }
@@ -61,6 +65,9 @@ Item {
                 root.loadStarted()
             }
             if (loadRequest.status === WebView.LoadSucceededStatus) {
+                if (root.pendingScript && root.pendingScript.length > 0 && webView.runJavaScript) {
+                    webView.runJavaScript(root.pendingScript)
+                }
                 root.loadFinished(true)
             } else if (loadRequest.status === WebView.LoadFailedStatus) {
                 root.loadFinished(false)

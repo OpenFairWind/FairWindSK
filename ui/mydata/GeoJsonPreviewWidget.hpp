@@ -31,7 +31,7 @@ namespace fairwindsk::ui::mydata {
 
     private:
         static QString detectFreeboardUrl();
-        static QString htmlForContent(const QString &bodyScript);
+        QString htmlForContent(const QString &bodyScript) const;
         void ensureFreeboardTab(const QString &url);
         void updateFocusCoordinate(const QJsonDocument &document);
         void applyFreeboardFocus();

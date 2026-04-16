@@ -54,6 +54,7 @@ namespace fairwindsk::ui::web {
         void handleMobileCurrentUrlNotified(const QString &url);
         void handleMobileTitleChanged(const QString &title);
 #endif
+        void handleConnectivityChanged(bool restHealthy, bool streamHealthy, const QString &statusText);
         void handleServerStateResynchronized(bool recoveredFromDisconnect);
 
     private:

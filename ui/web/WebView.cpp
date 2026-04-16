@@ -118,6 +118,19 @@ namespace fairwindsk::ui::web {
             m_viewWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
             layout->addWidget(m_viewWidget);
         }
+
+        if (auto *client = fairwindsk::FairWindSK::getInstance()->getSignalKClient()) {
+            connect(client,
+                    &fairwindsk::signalk::Client::connectivityChanged,
+                    this,
+                    &WebView::handleConnectivityChanged,
+                    Qt::UniqueConnection);
+            connect(client,
+                    &fairwindsk::signalk::Client::serverStateResynchronized,
+                    this,
+                    &WebView::handleServerStateResynchronized,
+                    Qt::UniqueConnection);
+        }
     }
 
     WebView::~WebView() = default;
@@ -312,6 +325,22 @@ namespace fairwindsk::ui::web {
         setUrl(m_restartResumeUrl);
     }
 
+    void WebView::handleConnectivityChanged(const bool, const bool streamHealthy, const QString &statusText) {
+        if (streamHealthy || !statusText.contains(QStringLiteral("restart"), Qt::CaseInsensitive)) {
+            return;
+        }
+
+        const QUrl currentUrl = url();
+        if (!currentUrl.isValid()
+            || currentUrl.isEmpty()
+            || currentUrl.scheme().compare(QStringLiteral("data"), Qt::CaseInsensitive) == 0) {
+            return;
+        }
+
+        m_restartResumeUrl = currentUrl;
+        showSignalKRestartPlaceholder();
+    }
+
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
     void WebView::initializeDesktop(fairwindsk::WebProfileHandle *profile) {
         m_desktopView = new QWebEngineView(this);
@@ -425,14 +454,6 @@ namespace fairwindsk::ui::web {
                 }
             });
         });
-
-        if (auto *client = fairwindsk::FairWindSK::getInstance()->getSignalKClient()) {
-            connect(client,
-                    &fairwindsk::signalk::Client::serverStateResynchronized,
-                    this,
-                    &WebView::handleServerStateResynchronized,
-                    Qt::UniqueConnection);
-        }
 
         connect(page, &QWebEnginePage::authenticationRequired, this,
                 [this](const QUrl &requestUrl, QAuthenticator *auth) {
@@ -614,6 +635,7 @@ namespace fairwindsk::ui::web {
 
     void WebView::handleMobileCurrentUrlNotified(const QString &urlText) {
         m_currentUrl = QUrl::fromUserInput(urlText);
+        m_restartPlaceholderVisible = m_currentUrl.scheme().compare(QStringLiteral("data"), Qt::CaseInsensitive) == 0;
         m_canGoBack = canGoBack();
         m_canGoForward = canGoForward();
         emit urlChanged(m_currentUrl);

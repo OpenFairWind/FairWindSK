@@ -14,6 +14,7 @@
 
 #include "AppItem.hpp"
 #include "FairWindSK.hpp"
+#include "ui/IconUtils.hpp"
 #include "ui/web/WebView.hpp"
 #include "ui_GeoJsonPreviewWidget.h"
 
@@ -63,7 +64,7 @@ namespace fairwindsk::ui::mydata {
         const auto hashes = fairWindSk->getAppsHashes();
         for (const auto &hash : hashes) {
             auto *appItem = fairWindSk->getAppItemByHash(hash);
-            if (!appItem || !appItem->getActive()) {
+            if (!appItem) {
                 continue;
             }
 
@@ -160,6 +161,14 @@ namespace fairwindsk::ui::mydata {
     void GeoJsonPreviewWidget::setGeoJson(const QJsonDocument &document, const QString &) {
         const QString base64Json = QString::fromLatin1(document.toJson(QJsonDocument::Compact).toBase64());
         const QString freeboardUrl = m_freeboardEnabled ? detectFreeboardUrl() : QString{};
+        const QColor accentColor = palette().color(QPalette::Highlight);
+        const QColor accentStroke = fairwindsk::ui::bestContrastingColor(
+            accentColor,
+            {palette().color(QPalette::WindowText),
+             palette().color(QPalette::Text),
+             QColor(Qt::black),
+             QColor(Qt::white)});
+        const QColor fillColor = fairwindsk::ui::comfortAlpha(accentColor, 72);
         updateFocusCoordinate(document);
         ensureFreeboardTab(freeboardUrl);
         m_textView->setPlainText(QString::fromUtf8(document.toJson(QJsonDocument::Indented)));
@@ -200,11 +209,11 @@ function renderPreview() {
     style: new ol.style.Style({
       image: new ol.style.Circle({
         radius: 7,
-        fill: new ol.style.Fill({ color: '#f59e0b' }),
-        stroke: new ol.style.Stroke({ color: '#111827', width: 2 })
+        fill: new ol.style.Fill({ color: '%4' }),
+        stroke: new ol.style.Stroke({ color: '%5', width: 2 })
       }),
-      stroke: new ol.style.Stroke({ color: '#0ea5e9', width: 3 }),
-      fill: new ol.style.Fill({ color: 'rgba(16,185,129,0.25)' })
+      stroke: new ol.style.Stroke({ color: '%4', width: 3 }),
+      fill: new ol.style.Fill({ color: '%6' })
     })
   });
 
@@ -247,7 +256,10 @@ window.setTimeout(renderPreview, 1000);
 )")
             .arg(base64Json)
             .arg(m_focusLongitude, 0, 'f', 8)
-            .arg(m_focusLatitude, 0, 'f', 8);
+            .arg(m_focusLatitude, 0, 'f', 8)
+            .arg(accentColor.name())
+            .arg(accentStroke.name())
+            .arg(fillColor.name(QColor::HexArgb));
 
         m_view->setHtml(htmlForContent(script), QUrl(QStringLiteral("https://preview.local/")));
     }
@@ -407,7 +419,21 @@ info.textContent = %1[0];
         m_freeboardView->runJavaScript(script);
     }
 
-    QString GeoJsonPreviewWidget::htmlForContent(const QString &bodyScript) {
+    QString GeoJsonPreviewWidget::htmlForContent(const QString &bodyScript) const {
+        const QColor windowColor = palette().color(QPalette::Window);
+        const QColor textColor = fairwindsk::ui::bestContrastingColor(
+            windowColor,
+            {palette().color(QPalette::Text),
+             palette().color(QPalette::WindowText),
+             palette().color(QPalette::ButtonText),
+             QColor(Qt::white),
+             QColor(Qt::black)});
+        const QColor panelColor = palette().color(QPalette::Base);
+        const QColor mutedColor = fairwindsk::ui::comfortAlpha(textColor, 188);
+        const QColor borderColor = fairwindsk::ui::comfortAlpha(palette().color(QPalette::Mid), 180);
+        const QColor shadowColor = fairwindsk::ui::comfortAlpha(windowColor.darker(170), 180);
+        const QColor overlayColor = fairwindsk::ui::comfortAlpha(windowColor, 192);
+
         return QStringLiteral(R"(
 <!DOCTYPE html>
 <html lang="en">
@@ -417,15 +443,15 @@ info.textContent = %1[0];
   <style>
     body {
       margin: 0;
-      background: #07111b;
-      color: #e5edf7;
+      background: %1;
+      color: %2;
       font-family: "Avenir Next", "Helvetica Neue", sans-serif;
     }
     .shell {
       display: flex;
       flex-direction: column;
       height: 100vh;
-      background: linear-gradient(180deg, #0b1724 0%%, #132739 100%%);
+      background: linear-gradient(180deg, %3 0%%, %4 100%%);
     }
     .map {
       flex: 1;
@@ -436,10 +462,10 @@ info.textContent = %1[0];
       width: 100%%;
       height: 100%%;
       border-radius: 14px;
-      border: 1px solid rgba(229, 237, 247, 0.12);
+      border: 1px solid %5;
       overflow: hidden;
-      background: #0b1825;
-      box-shadow: inset 0 0 40px rgba(7, 17, 27, 0.35);
+      background: %6;
+      box-shadow: inset 0 0 40px %7;
     }
     .overlay-source {
       position: absolute;
@@ -448,8 +474,8 @@ info.textContent = %1[0];
       z-index: 2;
       padding: 6px 10px;
       border-radius: 999px;
-      background: rgba(7, 17, 27, 0.72);
-      color: #e5edf7;
+      background: %8;
+      color: %2;
       font-size: 12px;
       backdrop-filter: blur(8px);
     }
@@ -461,7 +487,7 @@ info.textContent = %1[0];
     }
     .footer {
       padding: 12px 18px 18px;
-      color: #aebfd3;
+      color: %9;
       font-size: 13px;
     }
   </style>
@@ -477,10 +503,19 @@ info.textContent = %1[0];
   </div>
   <script src="https://cdn.jsdelivr.net/npm/ol@v10.6.1/dist/ol.js"></script>
   <script>
-    %1
+    %10
   </script>
 </body>
 </html>)")
-            .arg(bodyScript);
+            .arg(windowColor.name(),
+                 textColor.name(),
+                 panelColor.lighter(104).name(),
+                 panelColor.darker(106).name(),
+                 borderColor.name(QColor::HexArgb),
+                 panelColor.name(),
+                 shadowColor.name(QColor::HexArgb),
+                 overlayColor.name(QColor::HexArgb),
+                 mutedColor.name(QColor::HexArgb),
+                 bodyScript);
     }
 }
