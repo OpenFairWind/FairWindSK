@@ -105,6 +105,7 @@ protected:
 
 private:
     void configureTouchFriendlyUi();
+    void rebuildToolbarLayout();
     void applyComfortChrome();
     void retintToolButtons() const;
     [[nodiscard]] QItemSelectionModel *activeSelectionModel() const;
