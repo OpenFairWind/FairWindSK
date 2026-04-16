@@ -14,12 +14,9 @@
 #include <QDirIterator>
 #include <QMimeDatabase>
 #include <QFileDialog>
-#include <QFrame>
 #include <QHeaderView>
-#include <QHBoxLayout>
 #include <QScroller>
 #include <QStorageInfo>
-#include <QVBoxLayout>
 
 #include "FairWindSK.hpp"
 #include "FileInfoListModel.hpp"
@@ -48,15 +45,15 @@ namespace fairwindsk::ui::mydata {
             const QColor checkedBottom = colors.accentBottom;
             return QStringLiteral(
                 "QToolButton {"
-                " min-width: 86px;"
-                " min-height: 80px;"
-                " padding: 8px 10px;"
-                " border-radius: 16px;"
+                " min-width: 58px;"
+                " min-height: 56px;"
+                " padding: 6px 8px;"
+                " border-radius: 14px;"
                 " border: 1px solid %1;"
                 " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
                 " stop:0 %2, stop:0.52 %3, stop:1 %4);"
                 " color: %5;"
-                " font-size: 17px;"
+                " font-size: 15px;"
                 " font-weight: 700;"
                 " }"
                 "QToolButton:hover { border-color: %6; }"
@@ -95,13 +92,13 @@ namespace fairwindsk::ui::mydata {
         QString touchLineEditStyle(const fairwindsk::ui::ComfortChromeColors &colors, const QColor &baseColor) {
             return QStringLiteral(
                 "QLineEdit {"
-                " min-height: 58px;"
+                " min-height: 50px;"
                 " border: 1px solid %1;"
-                " border-radius: 14px;"
-                " padding: 6px 14px;"
+                " border-radius: 12px;"
+                " padding: 4px 12px;"
                 " background: %2;"
                 " color: %3;"
-                " font-size: 20px;"
+                " font-size: 18px;"
                 " }"
                 "QLineEdit:focus { border-color: %4; }")
                 .arg(colors.border.name(), baseColor.name(), colors.text.name(), colors.accentTop.name());
@@ -170,23 +167,23 @@ namespace fairwindsk::ui::mydata {
         QString touchInfoStyle(const fairwindsk::ui::ComfortChromeColors &colors, const QColor &panelColor) {
             return QStringLiteral(
                 "QGroupBox {"
-                " margin-top: 16px;"
-                " padding-top: 22px;"
+                " margin-top: 12px;"
+                " padding-top: 18px;"
                 " border: 1px solid %1;"
-                " border-radius: 16px;"
+                " border-radius: 14px;"
                 " background: %2;"
                 " color: %3;"
-                " font-size: 18px;"
+                " font-size: 16px;"
                 " font-weight: 700;"
                 " }"
                 "QGroupBox::title {"
                 " subcontrol-origin: margin;"
-                " left: 16px;"
-                " padding: 0 8px;"
+                " left: 14px;"
+                " padding: 0 6px;"
                 " }"
                 "QLabel {"
                 " color: %3;"
-                " font-size: 18px;"
+                " font-size: 16px;"
                 " }")
                 .arg(colors.border.name(), panelColor.name(), colors.text.name());
         }
@@ -196,7 +193,7 @@ namespace fairwindsk::ui::mydata {
                 "QFrame {"
                 " background: %1;"
                 " border: 1px solid %2;"
-                " border-radius: 18px;"
+                " border-radius: 14px;"
                 " }")
                 .arg(panelColor.name(), colors.border.name());
         }
@@ -292,7 +289,6 @@ namespace fairwindsk::ui::mydata {
         QScroller::grabGesture(ui->tableView_Search->viewport(), QScroller::TouchGesture);
         QScroller::grabGesture(ui->tableView_Search->viewport(), QScroller::LeftMouseButtonGesture);
 
-        rebuildToolbarLayout();
         configureTouchFriendlyUi();
         retintToolButtons();
         applyComfortChrome();
@@ -311,106 +307,62 @@ namespace fairwindsk::ui::mydata {
         }
     }
 
-    void Files::rebuildToolbarLayout() {
-        auto *toolbarLayout = qobject_cast<QHBoxLayout *>(ui->group_ToolBar->layout());
-        if (!toolbarLayout) {
-            return;
-        }
-
-        while (QLayoutItem *item = toolbarLayout->takeAt(0)) {
-            if (QWidget *widget = item->widget()) {
-                widget->setParent(ui->group_ToolBar);
+    void Files::configureTouchFriendlyUi() {
+        const auto configureIconButton = [](QToolButton *button, const QString &toolTip, const bool accent = false) {
+            if (!button) {
+                return;
             }
-            delete item;
-        }
-
-        auto *toolbarStack = new QWidget(ui->group_ToolBar);
-        auto *stackLayout = new QVBoxLayout(toolbarStack);
-        stackLayout->setContentsMargins(0, 0, 0, 0);
-        stackLayout->setSpacing(6);
-
-        const auto createRow = [toolbarStack, stackLayout](const QString &name) {
-            auto *frame = new QFrame(toolbarStack);
-            frame->setObjectName(name);
-            auto *layout = new QHBoxLayout(frame);
-            layout->setContentsMargins(10, 8, 10, 8);
-            layout->setSpacing(6);
-            stackLayout->addWidget(frame);
-            return layout;
+            button->setText(QString());
+            button->setToolTip(toolTip);
+            button->setToolButtonStyle(Qt::ToolButtonIconOnly);
+            button->setMinimumSize(accent ? QSize(62, 58) : QSize(58, 56));
+            button->setIconSize(QSize(28, 28));
         };
 
-        auto *navigationRow = createRow(QStringLiteral("frame_FilesNavigationRow"));
-        navigationRow->addWidget(ui->toolButton_Home);
-        navigationRow->addWidget(ui->toolButton_Up);
-        navigationRow->addWidget(ui->lineEdit_Path, 1);
-
-        auto *searchRow = createRow(QStringLiteral("frame_FilesSearchRow"));
-        searchRow->addWidget(ui->lineEdit_Search, 1);
-        searchRow->addWidget(ui->toolButton_Search);
-        searchRow->addWidget(ui->toolButton_Filters);
-        searchRow->addWidget(ui->toolButton_CaseSensitive);
-        searchRow->addWidget(ui->toolButton_SearchHidden);
-        searchRow->addWidget(ui->toolButton_SearchSystem);
-
-        auto *actionsRow = createRow(QStringLiteral("frame_FilesActionsRow"));
-        actionsRow->addWidget(ui->toolButton_Open);
-        actionsRow->addWidget(ui->toolButton_NewFolder);
-        actionsRow->addWidget(ui->toolButton_Rename);
-        actionsRow->addWidget(ui->toolButton_Delete);
-        actionsRow->addSpacing(12);
-        actionsRow->addWidget(ui->toolButton_Cut);
-        actionsRow->addWidget(ui->toolButton_Copy);
-        actionsRow->addWidget(ui->toolButton_Paste);
-        actionsRow->addStretch(1);
-
-        toolbarLayout->addWidget(toolbarStack);
-    }
-
-    void Files::configureTouchFriendlyUi() {
-        const auto configureButton = [](QToolButton *button, const QString &text, const bool accent = false) {
+        const auto configureLabeledButton = [](QToolButton *button, const QString &text, const bool accent = false) {
             if (!button) {
                 return;
             }
             button->setText(text);
-            button->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-            button->setMinimumSize(accent ? QSize(96, 86) : QSize(90, 82));
-            button->setIconSize(QSize(34, 34));
+            button->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+            button->setMinimumSize(accent ? QSize(96, 58) : QSize(88, 56));
+            button->setIconSize(QSize(26, 26));
         };
 
-        configureButton(ui->toolButton_Home, tr("Home"));
-        configureButton(ui->toolButton_Up, tr("Up"));
-        configureButton(ui->toolButton_Filters, tr("Clear"));
-        configureButton(ui->toolButton_CaseSensitive, tr("Case"));
-        configureButton(ui->toolButton_SearchHidden, tr("Hidden"));
-        configureButton(ui->toolButton_SearchSystem, tr("System"));
-        configureButton(ui->toolButton_Search, tr("Search"), true);
-        configureButton(ui->toolButton_Cut, tr("Cut"));
-        configureButton(ui->toolButton_Copy, tr("Copy"));
-        configureButton(ui->toolButton_Paste, tr("Paste"));
-        configureButton(ui->toolButton_Rename, tr("Rename"));
-        configureButton(ui->toolButton_Delete, tr("Delete"));
-        configureButton(ui->toolButton_NewFolder, tr("Folder"));
-        configureButton(ui->toolButton_Open, tr("Open"), true);
+        configureIconButton(ui->toolButton_Home, tr("Home"));
+        configureIconButton(ui->toolButton_Up, tr("Up"));
+        configureIconButton(ui->toolButton_Filters, tr("Clear search"));
+        configureLabeledButton(ui->toolButton_CaseSensitive, tr("Case"));
+        configureLabeledButton(ui->toolButton_SearchHidden, tr("Hidden"));
+        configureLabeledButton(ui->toolButton_SearchSystem, tr("System"));
+        configureIconButton(ui->toolButton_Search, tr("Search in current folder"), true);
+        configureIconButton(ui->toolButton_Cut, tr("Cut selection"));
+        configureIconButton(ui->toolButton_Copy, tr("Copy selection"));
+        configureIconButton(ui->toolButton_Paste, tr("Paste into current folder"));
+        configureIconButton(ui->toolButton_Rename, tr("Rename selected item"));
+        configureIconButton(ui->toolButton_Delete, tr("Delete selected items"));
+        configureIconButton(ui->toolButton_NewFolder, tr("Create folder"), true);
+        configureIconButton(ui->toolButton_Open, tr("Open selected item"), true);
 
         ui->lineEdit_Path->setClearButtonEnabled(true);
         ui->lineEdit_Search->setClearButtonEnabled(true);
-        ui->lineEdit_Path->setMinimumHeight(62);
-        ui->lineEdit_Search->setMinimumHeight(62);
+        ui->lineEdit_Path->setMinimumHeight(52);
+        ui->lineEdit_Search->setMinimumHeight(52);
 
-        ui->listView_Files->setIconSize(QSize(92, 92));
-        ui->listView_Files->setGridSize(QSize(196, 156));
-        ui->listView_Files->setSpacing(16);
+        ui->listView_Files->setIconSize(QSize(76, 76));
+        ui->listView_Files->setGridSize(QSize(164, 124));
+        ui->listView_Files->setSpacing(10);
         ui->listView_Files->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
         ui->listView_Files->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
         ui->listView_Files->setWrapping(true);
 
-        ui->tableView_Search->verticalHeader()->setDefaultSectionSize(68);
+        ui->tableView_Search->verticalHeader()->setDefaultSectionSize(58);
         ui->tableView_Search->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
         ui->tableView_Search->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
 
-        ui->progressBar_Searching->setMinimumHeight(20);
-        ui->label_Searching->setMinimumHeight(60);
-        ui->groupBox_ItemInfo->setMinimumHeight(108);
+        ui->progressBar_Searching->setMinimumHeight(16);
+        ui->label_Searching->setMinimumHeight(44);
+        ui->groupBox_ItemInfo->setMinimumHeight(88);
         ui->groupBox_ItemInfo->setTitle(tr("Selection"));
     }
 
@@ -443,7 +395,7 @@ namespace fairwindsk::ui::mydata {
         applyStyleIfChanged(ui->listView_Files, touchListStyle(chrome, baseColor) + fairwindsk::ui::widgets::TouchScrollArea::scrollBarStyleSheet());
         applyStyleIfChanged(ui->tableView_Search, touchTableStyle(chrome, baseColor, panelColor) + fairwindsk::ui::widgets::TouchScrollArea::scrollBarStyleSheet());
         applyStyleIfChanged(ui->groupBox_ItemInfo, touchInfoStyle(chrome, panelColor));
-        applyStyleIfChanged(ui->widget_Searching, QStringLiteral("QWidget { background: %1; border: 1px solid %2; border-radius: 16px; } QLabel { color: %3; font-size: 20px; font-weight: 600; }").arg(panelColor.name(), chrome.border.name(), chrome.text.name()));
+        applyStyleIfChanged(ui->widget_Searching, QStringLiteral("QWidget { background: %1; border: 1px solid %2; border-radius: 12px; } QLabel { color: %3; font-size: 17px; font-weight: 600; }").arg(panelColor.name(), chrome.border.name(), chrome.text.name()));
     }
 
     void Files::retintToolButtons() const {
