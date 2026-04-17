@@ -346,8 +346,8 @@ namespace fairwindsk::ui::mydata {
 
         ui->lineEdit_Path->setClearButtonEnabled(true);
         ui->lineEdit_Search->setClearButtonEnabled(true);
-        ui->lineEdit_Path->setMinimumHeight(52);
-        ui->lineEdit_Search->setMinimumHeight(52);
+        ui->lineEdit_Path->setMinimumHeight(66);
+        ui->lineEdit_Search->setMinimumHeight(58);
 
         ui->listView_Files->setIconSize(QSize(76, 76));
         ui->listView_Files->setGridSize(QSize(164, 124));
@@ -381,6 +381,8 @@ namespace fairwindsk::ui::mydata {
         };
 
         applyStyleIfChanged(this, QStringLiteral("QWidget { background: %1; }").arg(chrome.window.name()));
+        applyStyleIfChanged(ui->labelTitle, QStringLiteral("color: %1; font-size: 26px; font-weight: 700;")
+            .arg(chrome.text.name()));
         applyStyleIfChanged(ui->lineEdit_Path, touchLineEditStyle(chrome, baseColor));
         applyStyleIfChanged(ui->lineEdit_Search, touchLineEditStyle(chrome, baseColor));
         for (auto *button : findChildren<QToolButton *>()) {

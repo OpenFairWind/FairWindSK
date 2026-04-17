@@ -18,9 +18,9 @@ class QFormLayout;
 class QLabel;
 class QLineEdit;
 class QPlainTextEdit;
+class QPushButton;
 class QStackedWidget;
 class QTableWidget;
-class QTabWidget;
 class QToolButton;
 namespace Ui { class ResourceTab; }
 
@@ -80,7 +80,8 @@ namespace fairwindsk::ui::mydata {
         void clearEditor();
         void updatePreview(const QJsonObject &resource);
         void updateCoordinateDisplay();
-        void syncDetailTabs();
+        void applyResourceKindUi();
+        void setRowVisible(QWidget *fieldWidget, bool visible) const;
         void connectEditorPreviewInputs();
         void refreshEditorLiveState();
         QString resourceDisplayName(const QJsonObject &resource) const;
@@ -117,6 +118,11 @@ namespace fairwindsk::ui::mydata {
         QLineEdit *chartFormatEdit() const;
         QLineEdit *chartUrlEdit() const;
         QLineEdit *tilemapUrlEdit() const;
+        QPushButton *browseAttachmentButton() const;
+        QPushButton *openAttachmentButton() const;
+        QPushButton *chooseChartSourceButton() const;
+        QPushButton *openChartSourceButton() const;
+        QPushButton *chooseTileMapSourceButton() const;
         QString currentResourceId() const;
         void showWorkflowError(const QString &message) const;
 
@@ -124,12 +130,9 @@ namespace fairwindsk::ui::mydata {
         ResourceKind m_kind;
         ResourceModel *m_model;
         QStackedWidget *m_stackedWidget;
-        QTabWidget *m_detailTabs = nullptr;
         QWidget *m_listPage;
         QWidget *m_detailsPage;
         QFormLayout *m_formLayout = nullptr;
-        QWidget *m_propertiesTreeTab = nullptr;
-        QWidget *m_propertiesJsonTab = nullptr;
         QLineEdit *m_searchEdit;
         QTableWidget *m_tableWidget;
         QToolButton *m_addButton;
@@ -169,6 +172,11 @@ namespace fairwindsk::ui::mydata {
         QDoubleSpinBox *m_chartScaleSpinBox;
         QLineEdit *m_chartLayersEdit;
         QPlainTextEdit *m_chartBoundsEdit;
+        QPushButton *m_browseAttachmentButton = nullptr;
+        QPushButton *m_openAttachmentButton = nullptr;
+        QPushButton *m_chooseChartSourceButton = nullptr;
+        QPushButton *m_openChartSourceButton = nullptr;
+        QPushButton *m_chooseTileMapSourceButton = nullptr;
         QString m_currentResourceId;
         QStringList m_visibleResourceIds;
         bool m_isEditing = false;

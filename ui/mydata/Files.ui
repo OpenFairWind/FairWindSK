@@ -48,6 +48,13 @@
        <number>0</number>
       </property>
       <item>
+       <widget class="QLabel" name="labelTitle">
+        <property name="text">
+         <string>Files</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QFrame" name="frame_FilesNavigationRow">
         <layout class="QHBoxLayout" name="horizontalLayout_NavigationRow">
          <property name="leftMargin">
@@ -109,6 +116,27 @@
            </property>
            <property name="toolTip">
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The address bar.&lt;br/&gt;The current path is displayed here.&lt;br/&gt;Change the path and press &lt;kbd&gt;Enter&lt;/kbd&gt; to visit.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButton_Open">
+           <property name="toolTip">
+            <string/>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="../../resources.qrc">
+             <normaloff>:/resources/svg/OpenBridge/arrow-right-google.svg</normaloff>
+             <normalon>:/resources/svg/OpenBridge/arrow-right-google.svg</normalon>:/resources/svg/OpenBridge/arrow-right-google.svg</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>32</width>
+             <height>32</height>
+            </size>
            </property>
           </widget>
          </item>
@@ -248,27 +276,6 @@
          <property name="spacing">
           <number>4</number>
          </property>
-         <item>
-          <widget class="QToolButton" name="toolButton_Open">
-           <property name="toolTip">
-            <string/>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset resource="../../resources.qrc">
-             <normaloff>:/resources/svg/OpenBridge/arrow-right-google.svg</normaloff>
-             <normalon>:/resources/svg/OpenBridge/arrow-right-google.svg</normalon>:/resources/svg/OpenBridge/arrow-right-google.svg</iconset>
-           </property>
-           <property name="iconSize">
-            <size>
-             <width>32</width>
-             <height>32</height>
-            </size>
-           </property>
-          </widget>
-         </item>
          <item>
           <widget class="QToolButton" name="toolButton_NewFolder">
            <property name="text">

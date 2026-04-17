@@ -41,12 +41,6 @@ namespace fairwindsk::ui::mydata {
         : QWidget(parent),
           ui(new ::Ui::HistoryTrackTab),
           m_model(new HistoryTrackModel(this)),
-          m_timestampEdit(new QDateTimeEdit(this)),
-          m_latitudeSpinBox(new QDoubleSpinBox(this)),
-          m_longitudeSpinBox(new QDoubleSpinBox(this)),
-          m_altitudeSpinBox(new QDoubleSpinBox(this)),
-          m_propertiesEditor(new JsonObjectEditorWidget(this)),
-          m_previewWidget(new GeoJsonPreviewWidget(this)),
           m_refreshTimer(new QTimer(this)) {
         ui->setupUi(this);
 
@@ -55,7 +49,7 @@ namespace fairwindsk::ui::mydata {
         m_detailsPage = ui->pageDetails;
         m_statusLabel = ui->labelStatus;
         m_titleLabel = ui->labelTitle;
-        m_indexValueLabel = new QLabel(this);
+        m_indexValueLabel = ui->labelSampleValue;
         m_durationCombo = ui->comboBoxDuration;
         m_tableWidget = ui->tableWidget;
         m_refreshButton = ui->toolButtonRefresh;
@@ -67,6 +61,12 @@ namespace fairwindsk::ui::mydata {
         m_saveButton = ui->toolButtonSave;
         m_cancelButton = ui->toolButtonCancel;
         m_deleteButton = ui->toolButtonDelete;
+        m_timestampEdit = ui->dateTimeEditTimestamp;
+        m_latitudeSpinBox = ui->doubleSpinBoxLatitude;
+        m_longitudeSpinBox = ui->doubleSpinBoxLongitude;
+        m_altitudeSpinBox = ui->doubleSpinBoxAltitude;
+        m_propertiesEditor = ui->jsonObjectEditorProperties;
+        m_previewWidget = ui->geoJsonPreviewWidget;
 
         m_durationCombo->addItem(tr("Last hour"), "PT1H");
         m_durationCombo->addItem(tr("Last 6 hours"), "PT6H");
@@ -135,8 +135,6 @@ namespace fairwindsk::ui::mydata {
         auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
         const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
         fairwindsk::ui::applySectionTitleLabelStyle(m_titleLabel, configuration, preset, palette());
-        auto *formLayout = new QFormLayout(ui->widgetFormHost);
-        ui->verticalLayoutPreviewHost->addWidget(m_previewWidget);
         ui->splitterDetails->setStretchFactor(0, 1);
         ui->splitterDetails->setStretchFactor(1, 1);
 
@@ -149,13 +147,6 @@ namespace fairwindsk::ui::mydata {
         m_altitudeSpinBox->setRange(-100000.0, 100000.0);
         m_altitudeSpinBox->setDecimals(2);
         m_propertiesEditor->setLabels(tr("Properties Tree"), tr("Properties JSON"));
-
-        formLayout->addRow(tr("Sample"), m_indexValueLabel);
-        formLayout->addRow(tr("Timestamp"), m_timestampEdit);
-        formLayout->addRow(tr("Latitude"), m_latitudeSpinBox);
-        formLayout->addRow(tr("Longitude"), m_longitudeSpinBox);
-        formLayout->addRow(tr("Altitude"), m_altitudeSpinBox);
-        formLayout->addRow(tr("Feature properties"), m_propertiesEditor);
 
         connect(m_refreshTimer, &QTimer::timeout, this, &HistoryTrackTab::onRefreshClicked);
         m_refreshTimer->start(5000);

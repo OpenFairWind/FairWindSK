@@ -7,8 +7,6 @@
 #include <QDesktopServices>
 #include <QFile>
 #include <QFileInfo>
-#include <QFormLayout>
-#include <QHBoxLayout>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -74,30 +72,9 @@ namespace fairwindsk::ui::mydata {
         : ResourceTab(ResourceKind::Chart, parent) {
         refreshWorkflowTexts();
 
-        auto *chartActions = new QWidget(this);
-        auto *chartActionsLayout = new QHBoxLayout(chartActions);
-        chartActionsLayout->setContentsMargins(0, 0, 0, 0);
-        chartActionsLayout->setSpacing(8);
-
-        m_browseChartButton = new QPushButton(tr("Choose chart"), chartActions);
-        m_openChartButton = new QPushButton(tr("Open source"), chartActions);
-        chartActionsLayout->addWidget(m_browseChartButton);
-        chartActionsLayout->addWidget(m_openChartButton);
-        chartActionsLayout->addStretch(1);
-
-        auto *tileMapActions = new QWidget(this);
-        auto *tileMapActionsLayout = new QHBoxLayout(tileMapActions);
-        tileMapActionsLayout->setContentsMargins(0, 0, 0, 0);
-        tileMapActionsLayout->setSpacing(8);
-
-        m_browseTileMapButton = new QPushButton(tr("Choose tile map"), tileMapActions);
-        tileMapActionsLayout->addWidget(m_browseTileMapButton);
-        tileMapActionsLayout->addStretch(1);
-
-        if (auto *layout = editorFormLayout()) {
-            layout->insertRow(7, tr("Chart source"), chartActions);
-            layout->insertRow(9, tr("Tile map source"), tileMapActions);
-        }
+        m_browseChartButton = chooseChartSourceButton();
+        m_openChartButton = openChartSourceButton();
+        m_browseTileMapButton = chooseTileMapSourceButton();
 
         connect(m_browseChartButton, &QPushButton::clicked, this, [this]() {
             chooseChartSource();

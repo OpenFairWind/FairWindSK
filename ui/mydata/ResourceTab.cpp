@@ -61,31 +61,7 @@ namespace fairwindsk::ui::mydata {
         : QWidget(parent),
           ui(new ::Ui::ResourceTab),
           m_kind(kind),
-          m_model(new ResourceModel(kind, this)),
-          m_nameEdit(new QLineEdit(this)),
-          m_descriptionEdit(new QLineEdit(this)),
-          m_typeEdit(new QLineEdit(this)),
-          m_latitudeSpinBox(new QDoubleSpinBox(this)),
-          m_longitudeSpinBox(new QDoubleSpinBox(this)),
-          m_altitudeSpinBox(new QDoubleSpinBox(this)),
-          m_coordinateRowWidget(new QWidget(this)),
-          m_coordinateDisplayEdit(new QLineEdit(this)),
-          m_coordinateEditButton(new QToolButton(this)),
-          m_coordinatesEdit(new QPlainTextEdit(this)),
-          m_geometryEdit(new QPlainTextEdit(this)),
-          m_propertiesEditor(new JsonObjectEditorWidget(this)),
-          m_previewWidget(new GeoJsonPreviewWidget(this)),
-          m_hrefEdit(new QLineEdit(this)),
-          m_mimeTypeEdit(new QLineEdit(this)),
-          m_notePositionCheckBox(new QCheckBox(tr("Include position"), this)),
-          m_identifierEdit(new QLineEdit(this)),
-          m_chartFormatEdit(new QLineEdit(this)),
-          m_chartUrlEdit(new QLineEdit(this)),
-          m_tilemapUrlEdit(new QLineEdit(this)),
-          m_chartRegionEdit(new QLineEdit(this)),
-          m_chartScaleSpinBox(new QDoubleSpinBox(this)),
-          m_chartLayersEdit(new QLineEdit(this)),
-          m_chartBoundsEdit(new QPlainTextEdit(this)) {
+          m_model(new ResourceModel(kind, this)) {
         ui->setupUi(this);
 
         m_stackedWidget = ui->stackedWidget;
@@ -104,8 +80,38 @@ namespace fairwindsk::ui::mydata {
         m_exportButton = ui->toolButtonExport;
         m_refreshButton = ui->toolButtonRefresh;
         m_titleLabel = ui->labelTitle;
-        m_idValueLabel = new QLabel(this);
-        m_timestampValueLabel = new QLabel(this);
+        m_formLayout = ui->formLayoutResource;
+        m_idValueLabel = ui->labelIdValue;
+        m_timestampValueLabel = ui->labelTimestampValue;
+        m_nameEdit = ui->lineEditName;
+        m_descriptionEdit = ui->lineEditDescription;
+        m_typeEdit = ui->lineEditType;
+        m_latitudeSpinBox = ui->doubleSpinBoxLatitude;
+        m_longitudeSpinBox = ui->doubleSpinBoxLongitude;
+        m_altitudeSpinBox = ui->doubleSpinBoxAltitude;
+        m_coordinateRowWidget = ui->widgetCoordinateRow;
+        m_coordinateDisplayEdit = ui->lineEditCoordinateDisplay;
+        m_coordinateEditButton = ui->toolButtonCoordinateEdit;
+        m_coordinatesEdit = ui->plainTextEditCoordinates;
+        m_geometryEdit = ui->plainTextEditGeometry;
+        m_propertiesEditor = ui->jsonObjectEditorProperties;
+        m_previewWidget = ui->geoJsonPreviewWidget;
+        m_hrefEdit = ui->lineEditHref;
+        m_mimeTypeEdit = ui->lineEditMimeType;
+        m_notePositionCheckBox = ui->checkBoxIncludePosition;
+        m_identifierEdit = ui->lineEditIdentifier;
+        m_chartFormatEdit = ui->lineEditChartFormat;
+        m_chartUrlEdit = ui->lineEditChartUrl;
+        m_tilemapUrlEdit = ui->lineEditTilemapUrl;
+        m_chartRegionEdit = ui->lineEditChartRegion;
+        m_chartScaleSpinBox = ui->doubleSpinBoxChartScale;
+        m_chartLayersEdit = ui->lineEditChartLayers;
+        m_chartBoundsEdit = ui->plainTextEditChartBounds;
+        m_browseAttachmentButton = ui->pushButtonBrowseAttachment;
+        m_openAttachmentButton = ui->pushButtonOpenAttachment;
+        m_chooseChartSourceButton = ui->pushButtonChooseChartSource;
+        m_openChartSourceButton = ui->pushButtonOpenChartSource;
+        m_chooseTileMapSourceButton = ui->pushButtonChooseTileMapSource;
 
         m_searchEdit->setMaximumHeight(28);
         m_searchEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -162,8 +168,6 @@ namespace fairwindsk::ui::mydata {
         auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
         const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
         fairwindsk::ui::applySectionTitleLabelStyle(m_titleLabel, configuration, preset, palette());
-        auto *formLayout = new QFormLayout(ui->widgetFormHost);
-        m_formLayout = formLayout;
         ui->splitterDetails->setStretchFactor(0, 2);
         ui->splitterDetails->setStretchFactor(1, 1);
 
@@ -185,30 +189,6 @@ namespace fairwindsk::ui::mydata {
         m_coordinateEditButton->setToolTip(tr("Edit coordinates"));
 
         retintToolButtons();
-
-        if (m_kind == ResourceKind::Route) {
-            m_detailTabs = new QTabWidget(ui->widgetPreviewHost);
-            m_detailTabs->setDocumentMode(true);
-            m_detailTabs->addTab(m_previewWidget, tr("Preview"));
-            m_propertiesTreeTab = new QWidget(m_detailTabs);
-            m_propertiesJsonTab = new QWidget(m_detailTabs);
-            m_detailTabs->addTab(m_propertiesTreeTab, tr("Properties Tree"));
-            m_detailTabs->addTab(m_propertiesJsonTab, tr("Properties JSON"));
-            ui->verticalLayoutPreviewHost->addWidget(m_detailTabs);
-            m_propertiesEditor->setLabels(tr("Properties Tree"), tr("Properties JSON"));
-            m_propertiesEditor->setTabBarVisible(false);
-            connect(m_detailTabs, &QTabWidget::currentChanged, this, [this](int) {
-                syncDetailTabs();
-            });
-        } else {
-            ui->verticalLayoutPreviewHost->addWidget(m_previewWidget);
-        }
-
-        auto *coordinateRowLayout = new QHBoxLayout(m_coordinateRowWidget);
-        coordinateRowLayout->setContentsMargins(0, 0, 0, 0);
-        coordinateRowLayout->setSpacing(6);
-        coordinateRowLayout->addWidget(m_coordinateDisplayEdit, 1);
-        coordinateRowLayout->addWidget(m_coordinateEditButton);
         connect(m_coordinateEditButton, &QToolButton::clicked, this, &ResourceTab::onCoordinateEditClicked);
         connect(m_notePositionCheckBox, &QCheckBox::toggled, this, [this](const bool checked) {
             if (m_kind == ResourceKind::Note) {
@@ -221,51 +201,7 @@ namespace fairwindsk::ui::mydata {
                 }
             }
         });
-
-        if (m_kind != ResourceKind::Route) {
-            formLayout->addRow(tr("Id"), m_idValueLabel);
-        }
-        formLayout->addRow(m_kind == ResourceKind::Note ? tr("Title") : tr("Name"), m_nameEdit);
-        formLayout->addRow(tr("Description"), m_descriptionEdit);
-
-        switch (m_kind) {
-            case ResourceKind::Route:
-                formLayout->addRow(tr("Type"), m_typeEdit);
-                formLayout->addRow(tr("Coordinates"), m_coordinatesEdit);
-                break;
-            case ResourceKind::Region:
-                formLayout->addRow(tr("Geometry (JSON)"), m_geometryEdit);
-                formLayout->addRow(tr("Feature properties"), m_propertiesEditor);
-                break;
-            case ResourceKind::Note:
-                formLayout->addRow(tr("Href"), m_hrefEdit);
-                formLayout->addRow(tr("MIME Type"), m_mimeTypeEdit);
-                formLayout->addRow(QString(), m_notePositionCheckBox);
-                formLayout->addRow(tr("Position"), m_coordinateRowWidget);
-                formLayout->addRow(tr("Altitude"), m_altitudeSpinBox);
-                formLayout->addRow(tr("Feature properties"), m_propertiesEditor);
-                break;
-            case ResourceKind::Chart:
-                formLayout->addRow(tr("Identifier"), m_identifierEdit);
-                formLayout->addRow(tr("Format"), m_chartFormatEdit);
-                formLayout->addRow(tr("Chart URL"), m_chartUrlEdit);
-                formLayout->addRow(tr("Tilemap URL"), m_tilemapUrlEdit);
-                formLayout->addRow(tr("Region"), m_chartRegionEdit);
-                formLayout->addRow(tr("Scale"), m_chartScaleSpinBox);
-                formLayout->addRow(tr("Layers"), m_chartLayersEdit);
-                formLayout->addRow(tr("Bounds (JSON)"), m_chartBoundsEdit);
-                break;
-            case ResourceKind::Waypoint:
-                formLayout->addRow(tr("Type"), m_typeEdit);
-                formLayout->addRow(tr("Position"), m_coordinateRowWidget);
-                formLayout->addRow(tr("Altitude"), m_altitudeSpinBox);
-                formLayout->addRow(tr("Feature properties"), m_propertiesEditor);
-                break;
-        }
-
-        if (m_kind != ResourceKind::Route) {
-            formLayout->addRow(tr("Timestamp"), m_timestampValueLabel);
-        }
+        applyResourceKindUi();
 
         showListPage();
 
@@ -460,29 +396,53 @@ namespace fairwindsk::ui::mydata {
         m_isCreating = false;
     }
 
-    void ResourceTab::syncDetailTabs() {
-        if (!m_detailTabs || !m_propertiesTreeTab || !m_propertiesJsonTab) {
+    void ResourceTab::setRowVisible(QWidget *fieldWidget, const bool visible) const {
+        if (!m_formLayout || !fieldWidget) {
             return;
         }
 
-        if (!m_propertiesTreeTab->layout()) {
-            auto *layout = new QVBoxLayout(m_propertiesTreeTab);
-            layout->setContentsMargins(0, 0, 0, 0);
+        if (QWidget *label = m_formLayout->labelForField(fieldWidget)) {
+            label->setVisible(visible);
         }
-        if (!m_propertiesJsonTab->layout()) {
-            auto *layout = new QVBoxLayout(m_propertiesJsonTab);
-            layout->setContentsMargins(0, 0, 0, 0);
-        }
+        fieldWidget->setVisible(visible);
+    }
 
-        const int currentIndex = m_detailTabs->currentIndex();
-        if (currentIndex == 1) {
-            m_propertiesEditor->setCurrentView(0);
-            m_propertiesEditor->setParent(m_propertiesTreeTab);
-            static_cast<QVBoxLayout *>(m_propertiesTreeTab->layout())->addWidget(m_propertiesEditor);
-        } else if (currentIndex == 2) {
-            m_propertiesEditor->setCurrentView(1);
-            m_propertiesEditor->setParent(m_propertiesJsonTab);
-            static_cast<QVBoxLayout *>(m_propertiesJsonTab->layout())->addWidget(m_propertiesEditor);
+    void ResourceTab::applyResourceKindUi() {
+        const bool isRoute = m_kind == ResourceKind::Route;
+        const bool isRegion = m_kind == ResourceKind::Region;
+        const bool isNote = m_kind == ResourceKind::Note;
+        const bool isChart = m_kind == ResourceKind::Chart;
+        const bool isWaypoint = m_kind == ResourceKind::Waypoint;
+
+        setRowVisible(m_idValueLabel, !isRoute);
+        setRowVisible(m_timestampValueLabel, !isRoute);
+        setRowVisible(m_typeEdit, isRoute || isWaypoint);
+        setRowVisible(m_coordinateRowWidget, isNote || isWaypoint);
+        setRowVisible(m_latitudeSpinBox, false);
+        setRowVisible(m_longitudeSpinBox, false);
+        setRowVisible(m_altitudeSpinBox, isNote || isWaypoint);
+        setRowVisible(m_coordinatesEdit, isRoute);
+        setRowVisible(m_geometryEdit, isRegion);
+        setRowVisible(m_propertiesEditor, isRegion || isNote || isWaypoint);
+        setRowVisible(m_hrefEdit, isNote);
+        setRowVisible(m_mimeTypeEdit, isNote);
+        setRowVisible(m_browseAttachmentButton ? m_browseAttachmentButton->parentWidget() : nullptr, isNote);
+        setRowVisible(m_notePositionCheckBox, isNote);
+        setRowVisible(m_identifierEdit, isChart);
+        setRowVisible(m_chartFormatEdit, isChart);
+        setRowVisible(m_chartUrlEdit, isChart);
+        setRowVisible(m_chooseChartSourceButton ? m_chooseChartSourceButton->parentWidget() : nullptr, isChart);
+        setRowVisible(m_tilemapUrlEdit, isChart);
+        setRowVisible(m_chooseTileMapSourceButton ? m_chooseTileMapSourceButton->parentWidget() : nullptr, isChart);
+        setRowVisible(m_chartRegionEdit, isChart);
+        setRowVisible(m_chartScaleSpinBox, isChart);
+        setRowVisible(m_chartLayersEdit, isChart);
+        setRowVisible(m_chartBoundsEdit, isChart);
+
+        if (QWidget *label = m_formLayout->labelForField(m_nameEdit)) {
+            if (auto *nameLabel = qobject_cast<QLabel *>(label)) {
+                nameLabel->setText(isNote ? tr("Title") : tr("Name"));
+            }
         }
     }
 
@@ -677,7 +637,6 @@ namespace fairwindsk::ui::mydata {
 
         m_titleLabel->setText(detailsTitleForCurrentState());
         updatePreview(resource);
-        syncDetailTabs();
     }
 
     QJsonObject ResourceTab::parseJsonObject(const QPlainTextEdit *edit) const {
@@ -951,10 +910,6 @@ namespace fairwindsk::ui::mydata {
 
         m_titleLabel->setText(detailsTitleForCurrentState());
         updatePreview(resourceFromEditor());
-        if (m_detailTabs) {
-            m_detailTabs->setCurrentIndex(0);
-            syncDetailTabs();
-        }
     }
 
     void ResourceTab::updateCoordinateDisplay() {
@@ -1409,6 +1364,26 @@ namespace fairwindsk::ui::mydata {
 
     QLineEdit *ResourceTab::tilemapUrlEdit() const {
         return m_tilemapUrlEdit;
+    }
+
+    QPushButton *ResourceTab::browseAttachmentButton() const {
+        return m_browseAttachmentButton;
+    }
+
+    QPushButton *ResourceTab::openAttachmentButton() const {
+        return m_openAttachmentButton;
+    }
+
+    QPushButton *ResourceTab::chooseChartSourceButton() const {
+        return m_chooseChartSourceButton;
+    }
+
+    QPushButton *ResourceTab::openChartSourceButton() const {
+        return m_openChartSourceButton;
+    }
+
+    QPushButton *ResourceTab::chooseTileMapSourceButton() const {
+        return m_chooseTileMapSourceButton;
     }
 
     QString ResourceTab::currentResourceId() const {

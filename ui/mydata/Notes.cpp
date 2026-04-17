@@ -6,8 +6,6 @@
 
 #include <QFile>
 #include <QFileInfo>
-#include <QFormLayout>
-#include <QHBoxLayout>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QMimeDatabase>
@@ -24,20 +22,8 @@ namespace fairwindsk::ui::mydata {
         : ResourceTab(ResourceKind::Note, parent) {
         refreshWorkflowTexts();
 
-        auto *attachmentActions = new QWidget(this);
-        auto *attachmentLayout = new QHBoxLayout(attachmentActions);
-        attachmentLayout->setContentsMargins(0, 0, 0, 0);
-        attachmentLayout->setSpacing(8);
-
-        m_browseAttachmentButton = new QPushButton(tr("Browse attachment"), attachmentActions);
-        m_openAttachmentButton = new QPushButton(tr("Open attachment"), attachmentActions);
-        attachmentLayout->addWidget(m_browseAttachmentButton);
-        attachmentLayout->addWidget(m_openAttachmentButton);
-        attachmentLayout->addStretch(1);
-
-        if (auto *layout = editorFormLayout()) {
-            layout->insertRow(4, tr("Attachment"), attachmentActions);
-        }
+        m_browseAttachmentButton = browseAttachmentButton();
+        m_openAttachmentButton = openAttachmentButton();
 
         connect(m_browseAttachmentButton, &QPushButton::clicked, this, [this]() {
             chooseAttachment();
