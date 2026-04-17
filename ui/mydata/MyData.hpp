@@ -35,9 +35,6 @@ namespace fairwindsk::ui::mydata {
         void removeTabs();
         QWidget *createTabPage(int index) const;
         QString tabTitle(int index) const;
-        QWidget *createPlaceholderPage() const;
-        void ensureTabInitialized(int index);
-        bool isPlaceholderPage(const QWidget *page) const;
 
         Ui::MyData *ui;
         QWidget *m_currentWidget = nullptr;
