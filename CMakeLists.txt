@@ -263,6 +263,7 @@ set(FAIRWINDSK_SOURCES
         ui/mydata/MyData.cpp ui/mydata/MyData.hpp ui/mydata/MyData.ui
         ui/mydata/Waypoints.cpp ui/mydata/Waypoints.hpp ui/mydata/Waypoints.ui
         ui/mydata/Routes.cpp ui/mydata/Routes.hpp
+        ui/mydata/RoutesLite.cpp ui/mydata/RoutesLite.hpp
         ui/mydata/Regions.cpp ui/mydata/Regions.hpp
         ui/mydata/Notes.cpp ui/mydata/Notes.hpp
         ui/mydata/Charts.cpp ui/mydata/Charts.hpp
