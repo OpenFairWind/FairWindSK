@@ -20,6 +20,13 @@
 
 namespace fairwindsk::ui::mydata {
     namespace {
+        constexpr bool kDisableEmbeddedPreviewOnThisPlatform =
+#if defined(Q_OS_LINUX) && (defined(__arm__) || defined(__aarch64__))
+            true;
+#else
+            false;
+#endif
+
         void collectCoordinatesFromValue(const QJsonValue &value, QVector<QPair<double, double>> *coordinates) {
             if (!coordinates || value.isUndefined() || value.isNull()) {
                 return;
@@ -87,24 +94,35 @@ namespace fairwindsk::ui::mydata {
     GeoJsonPreviewWidget::GeoJsonPreviewWidget(QWidget *parent)
         : QWidget(parent),
           ui(new Ui::GeoJsonPreviewWidget),
-          m_freeboardView(new fairwindsk::ui::web::WebView(FairWindSK::getInstance() ? FairWindSK::getInstance()->getWebEngineProfile() : nullptr, this)),
+          m_freeboardView(nullptr),
           m_textView(nullptr) {
         ui->setupUi(this);
         m_tabWidget = ui->tabWidget;
-        auto *previewLayout = new QVBoxLayout(ui->widgetPreviewHost);
-        previewLayout->setContentsMargins(0, 0, 0, 0);
-        previewLayout->setSpacing(0);
-        m_view = new fairwindsk::ui::web::WebView(FairWindSK::getInstance() ? FairWindSK::getInstance()->getWebEngineProfile() : nullptr, ui->widgetPreviewHost);
-        previewLayout->addWidget(m_view);
+        if (!kDisableEmbeddedPreviewOnThisPlatform) {
+            auto *previewLayout = new QVBoxLayout(ui->widgetPreviewHost);
+            previewLayout->setContentsMargins(0, 0, 0, 0);
+            previewLayout->setSpacing(0);
+            m_view = new fairwindsk::ui::web::WebView(FairWindSK::getInstance() ? FairWindSK::getInstance()->getWebEngineProfile() : nullptr, ui->widgetPreviewHost);
+            previewLayout->addWidget(m_view);
+            m_freeboardView = new fairwindsk::ui::web::WebView(FairWindSK::getInstance() ? FairWindSK::getInstance()->getWebEngineProfile() : nullptr, this);
+            connect(m_freeboardView, &fairwindsk::ui::web::WebView::loadFinished, this, [this](const bool ok) {
+                if (ok) {
+                    scheduleFreeboardFocus();
+                }
+            });
+        } else {
+            const int previewTabIndex = m_tabWidget->indexOf(ui->tabPreview);
+            if (previewTabIndex >= 0) {
+                m_tabWidget->removeTab(previewTabIndex);
+            }
+            ui->widgetPreviewHost->setToolTip(
+                tr("Embedded GeoJSON preview is disabled on this platform to avoid Qt WebEngine instability."));
+            m_tabWidget->setCurrentWidget(ui->tabGeoJson);
+        }
         m_textView = ui->plainTextEditGeoJson;
         m_textView->setReadOnly(true);
         m_textView->setLineWrapMode(QPlainTextEdit::NoWrap);
         setMinimumSize(320, 240);
-        connect(m_freeboardView, &fairwindsk::ui::web::WebView::loadFinished, this, [this](const bool ok) {
-            if (ok) {
-                scheduleFreeboardFocus();
-            }
-        });
         setMessage(tr("GeoJSON preview will appear here."));
     }
 
@@ -120,6 +138,9 @@ namespace fairwindsk::ui::mydata {
     }
 
     void GeoJsonPreviewWidget::setCurrentView(const int index) {
+        if (!m_tabWidget || index < 0 || index >= m_tabWidget->count()) {
+            return;
+        }
         m_tabWidget->setCurrentIndex(index);
     }
 
@@ -172,6 +193,9 @@ namespace fairwindsk::ui::mydata {
         updateFocusCoordinate(document);
         ensureFreeboardTab(freeboardUrl);
         m_textView->setPlainText(QString::fromUtf8(document.toJson(QJsonDocument::Indented)));
+        if (!m_view) {
+            return;
+        }
         const QString script = QStringLiteral(R"(
 const data = JSON.parse(atob('%1'));
 function renderPreview() {
@@ -268,6 +292,9 @@ window.setTimeout(renderPreview, 1000);
         ensureFreeboardTab(QString());
         const QString safeMessage = QString::fromUtf8(QJsonDocument(QJsonArray{message}).toJson(QJsonDocument::Compact));
         m_textView->setPlainText(message);
+        if (!m_view) {
+            return;
+        }
         const QString script = QStringLiteral(R"(
 const map = document.getElementById('map');
 const fallbackSource = document.getElementById('fallback-source');
