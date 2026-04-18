@@ -360,6 +360,8 @@ namespace fairwindsk::ui::mydata {
         configureIconButton(ui->toolButton_NewFolder, tr("Create folder"), true);
         configureIconButton(ui->toolButton_Open, tr("Open selected item"), true);
 
+        ui->labelTitle->setTextFormat(Qt::RichText);
+        ui->labelTitle->setWordWrap(true);
         ui->lineEdit_Search->setClearButtonEnabled(true);
         ui->lineEdit_Path->setClearButtonEnabled(true);
         ui->lineEdit_Search->setMinimumHeight(58);
@@ -582,7 +584,14 @@ namespace fairwindsk::ui::mydata {
 		m_fileViewer = new FileViewer(path, this);
 		connect(m_fileViewer, &FileViewer::askedToBeClosed, this, &Files::onFileViewerCloseClicked);
 		ui->group_Content->layout()->addWidget(m_fileViewer);
-        ui->labelTitle->setText(tr("Files\n%1").arg(QFileInfo(path).fileName().isEmpty() ? path : QFileInfo(path).fileName().toHtmlEscaped()));
+        const QString fileLabel = QFileInfo(path).fileName().isEmpty() ? path : QFileInfo(path).fileName();
+        ui->labelTitle->setText(QStringLiteral(
+                                    "<html><head/><body>"
+                                    "<p style=\"margin:0;\">"
+                                    "<span style=\"font-size:26px; font-weight:700;\">%1</span><br/>"
+                                    "<span style=\"font-size:16px; font-weight:500;\">%2</span>"
+                                    "</p></body></html>")
+                                    .arg(tr("Files"), fileLabel.toHtmlEscaped()));
         updateActionStates();
 	}
 
@@ -1053,8 +1062,13 @@ namespace fairwindsk::ui::mydata {
             return;
         }
 
-        ui->labelTitle->setText(tr("Files\n<span style=\"font-size:16px; font-weight:500;\">%1</span>")
-                                    .arg(path.toHtmlEscaped()));
+        ui->labelTitle->setText(QStringLiteral(
+                                    "<html><head/><body>"
+                                    "<p style=\"margin:0;\">"
+                                    "<span style=\"font-size:26px; font-weight:700;\">%1</span><br/>"
+                                    "<span style=\"font-size:16px; font-weight:500;\">%2</span>"
+                                    "</p></body></html>")
+                                    .arg(tr("Files"), path.toHtmlEscaped()));
     }
 
     void Files::updateItemInfo(const QString &path) {
