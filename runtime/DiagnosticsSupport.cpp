@@ -464,16 +464,25 @@ namespace fairwindsk::runtime {
         }
 
         QString condensedEmailBody(const QString &reportText, const QString &reportPath) {
-            constexpr int kMaxBodyLength = 6000;
-            QString body = reportText;
+            QStringList lines;
+            lines << QStringLiteral("FairWindSK detected a previous unclean shutdown.")
+                  << QStringLiteral("The full diagnostics bundle has already been stored locally.");
+
+            const QStringList reportLines = reportText.split(u'\n', Qt::SkipEmptyParts);
+            for (const QString &line : reportLines) {
+                if (line.startsWith(QStringLiteral("Current start (UTC):"))
+                    || line.startsWith(QStringLiteral("Previous start (UTC):"))
+                    || line.startsWith(QStringLiteral("Previous run graceful:"))) {
+                    lines << line;
+                }
+            }
+
             if (!reportPath.trimmed().isEmpty()) {
-                body.append(QStringLiteral("\n\nFull report saved at:\n%1").arg(reportPath));
+                lines << QStringLiteral("Bundle path: %1").arg(reportPath);
             }
-            if (body.size() > kMaxBodyLength) {
-                body = body.left(kMaxBodyLength - 64)
-                       + QStringLiteral("\n\n[truncated]\nFull report saved at:\n%1").arg(reportPath);
-            }
-            return body;
+
+            lines << QStringLiteral("Please attach the stored report files instead of replying with the full log in the email body.");
+            return lines.join(u'\n');
         }
     }
 
@@ -628,12 +637,19 @@ namespace fairwindsk::runtime {
             query.addQueryItem(QStringLiteral("subject"), g_pendingReport.options.subject);
             query.addQueryItem(QStringLiteral("body"), condensedEmailBody(reportText, reportPath));
             mailUrl.setQuery(query);
-
-            const bool opened = QDesktopServices::openUrl(mailUrl);
-            writeLifecycleLine(opened ? QStringLiteral("INFO") : QStringLiteral("WARN"),
-                               opened
-                                   ? QStringLiteral("Fallback diagnostics email composer opened for %1").arg(g_pendingReport.options.email)
-                                   : QStringLiteral("Unable to open fallback diagnostics email composer for %1").arg(g_pendingReport.options.email));
+            const QString mailUrlText = mailUrl.toString(QUrl::FullyEncoded);
+            constexpr int kMaxMailtoUrlLength = 1800;
+            if (mailUrlText.size() > kMaxMailtoUrlLength) {
+                writeLifecycleLine(QStringLiteral("WARN"),
+                                   QStringLiteral("Skipping fallback diagnostics email because the mailto URL is too long (%1 characters).")
+                                       .arg(mailUrlText.size()));
+            } else {
+                const bool opened = QDesktopServices::openUrl(mailUrl);
+                writeLifecycleLine(opened ? QStringLiteral("INFO") : QStringLiteral("WARN"),
+                                   opened
+                                       ? QStringLiteral("Fallback diagnostics email composer opened for %1").arg(g_pendingReport.options.email)
+                                       : QStringLiteral("Unable to open fallback diagnostics email composer for %1").arg(g_pendingReport.options.email));
+            }
         }
 
         g_pendingReport.pending = false;
