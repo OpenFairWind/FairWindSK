@@ -115,6 +115,7 @@ namespace fairwindsk::ui::mydata {
         : QWidget(parent),
           m_kind(kind),
           m_model(new ResourceModel(kind, this)) {
+        qInfo() << "ResourceCollectionPageBase ctor kind =" << resourceKindToTitle(kind);
         connect(m_model, &QAbstractItemModel::modelReset, this, &ResourceCollectionPageBase::rebuildTable);
     }
 
@@ -150,12 +151,13 @@ namespace fairwindsk::ui::mydata {
         m_exportButton->setText(tr("Export"));
         m_refreshButton->setText(tr("Refresh"));
 
+        qInfo() << "Binding MyData collection page UI for" << pageTitle();
         m_openButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/arrow-right-google.svg")));
         m_editButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/edit-google.svg")));
         m_addButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/widget-add-google.svg")));
         m_deleteButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/delete-google.svg")));
-        m_importButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/import-google.svg")));
-        m_exportButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/export-google.svg")));
+        m_importButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/route-import-iec.svg")));
+        m_exportButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/file-export-google.svg")));
         m_refreshButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/refresh-google.svg")));
 
         const QList<QToolButton *> buttons = {
@@ -181,7 +183,9 @@ namespace fairwindsk::ui::mydata {
         connect(m_tableWidget, &QTableWidget::cellDoubleClicked, this, &ResourceCollectionPageBase::onTableDoubleClicked);
         connect(m_tableWidget, &QTableWidget::itemSelectionChanged, this, &ResourceCollectionPageBase::updateActionState);
 
+        qInfo() << "MyData collection page UI bound for" << pageTitle() << "- rebuilding table";
         rebuildTable();
+        qInfo() << "MyData collection page ready for" << pageTitle();
     }
 
     ResourceModel *ResourceCollectionPageBase::model() const {
@@ -292,6 +296,9 @@ namespace fairwindsk::ui::mydata {
         if (!m_tableWidget) {
             return;
         }
+
+        qInfo() << "Rebuilding MyData table for" << pageTitle()
+                << "rows =" << m_model->rowCount();
 
         const QString selectedId = selectedResourceId();
         const QString filter = m_searchEdit ? m_searchEdit->text().trimmed() : QString();
