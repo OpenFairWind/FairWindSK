@@ -284,6 +284,9 @@ namespace fairwindsk::ui::mydata {
         m_refreshButton = ui->toolButtonRefresh;
         m_selectAllButton = ui->toolButtonSelectAll;
         m_bulkRemoveButton = ui->toolButtonBulkRemove;
+        m_navigateSelectedButton = ui->toolButtonNavigateSelected;
+        m_editSelectedButton = ui->toolButtonEditSelected;
+        m_removeSelectedButton = ui->toolButtonRemoveSelected;
         m_backButton = ui->toolButtonBack;
         m_newButton = ui->toolButtonNew;
         m_navigateButton = ui->toolButtonNavigate;
@@ -354,16 +357,29 @@ namespace fairwindsk::ui::mydata {
         m_bulkRemoveButton->setToolTip(tr("Remove all shown waypoints"));
         connect(m_bulkRemoveButton, &QToolButton::clicked, this, &Waypoints::onRemoveSelectedClicked);
 
+        m_navigateSelectedButton->setIcon(QIcon(":/resources/svg/OpenBridge/navigation-route.svg"));
+        m_navigateSelectedButton->setToolTip(tr("Navigate to selected waypoint"));
+        connect(m_navigateSelectedButton, &QToolButton::clicked, this, &Waypoints::onNavigateCurrentClicked);
+
+        m_editSelectedButton->setIcon(QIcon(":/resources/svg/OpenBridge/edit-google.svg"));
+        m_editSelectedButton->setToolTip(tr("Edit selected waypoint"));
+        connect(m_editSelectedButton, &QToolButton::clicked, this, &Waypoints::onEditClicked);
+
+        m_removeSelectedButton->setIcon(QIcon(":/resources/svg/OpenBridge/delete-google.svg"));
+        m_removeSelectedButton->setToolTip(tr("Remove selected waypoint"));
+        connect(m_removeSelectedButton, &QToolButton::clicked, this, &Waypoints::onDeleteClicked);
+
         m_tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
         m_tableWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
         m_tableWidget->setSortingEnabled(false);
         m_tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
-        m_tableWidget->setColumnCount(m_model->columnCount() + 1);
+        m_tableWidget->setColumnCount(m_model->columnCount());
         styleTable();
         configureTableColumns();
         m_tableWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         connect(m_tableWidget, &QTableWidget::cellDoubleClicked, this, &Waypoints::onTableDoubleClicked);
         connect(m_tableWidget, &QTableWidget::cellActivated, this, &Waypoints::onTableDoubleClicked);
+        connect(m_tableWidget, &QTableWidget::itemSelectionChanged, this, &Waypoints::updateSelectionActionButtons);
 
         m_backButton->setIcon(QIcon(":/resources/svg/OpenBridge/arrow-left-google.svg"));
         m_backButton->setToolTip(tr("Back to list"));
@@ -501,6 +517,9 @@ namespace fairwindsk::ui::mydata {
                  m_addButton,
                  m_selectAllButton,
                  m_bulkRemoveButton,
+                 m_navigateSelectedButton,
+                 m_editSelectedButton,
+                 m_removeSelectedButton,
                  m_backButton,
                  m_newButton,
                  m_navigateButton,
@@ -530,6 +549,9 @@ namespace fairwindsk::ui::mydata {
                  m_addButton,
                  m_selectAllButton,
                  m_bulkRemoveButton,
+                 m_navigateSelectedButton,
+                 m_editSelectedButton,
+                 m_removeSelectedButton,
                  m_backButton,
                  m_newButton,
                  m_navigateButton,
@@ -685,6 +707,7 @@ namespace fairwindsk::ui::mydata {
         m_stackedWidget->setCurrentWidget(m_listPage);
         m_isEditing = false;
         m_isCreating = false;
+        updateSelectionActionButtons();
     }
 
     void Waypoints::syncDetailTabs() {
@@ -1322,19 +1345,39 @@ namespace fairwindsk::ui::mydata {
     }
 
     void Waypoints::onNavigateCurrentClicked() {
-        if (m_currentWaypointId.isEmpty()) {
+        QString id = m_currentWaypointId;
+        if (id.isEmpty()) {
+            id = currentWaypointIdFromSelection();
+        }
+        if (id.isEmpty()) {
             return;
         }
 
-        navigateToWaypoint(m_currentWaypointId, waypointFromEditor());
+        for (int sourceRow = 0; sourceRow < m_model->rowCount(); ++sourceRow) {
+            if (m_model->resourceIdAtRow(sourceRow) == id) {
+                navigateToWaypoint(id, m_model->resourceAtRow(sourceRow));
+                return;
+            }
+        }
     }
 
     void Waypoints::onEditClicked() {
-        if (m_currentWaypointId.isEmpty()) {
+        if (!m_currentWaypointId.isEmpty()) {
+            setEditMode(true);
             return;
         }
 
-        setEditMode(true);
+        const QString id = currentWaypointIdFromSelection();
+        if (id.isEmpty()) {
+            return;
+        }
+
+        for (int sourceRow = 0; sourceRow < m_model->rowCount(); ++sourceRow) {
+            if (m_model->resourceIdAtRow(sourceRow) == id) {
+                showDetailsPage(id, m_model->resourceAtRow(sourceRow), true);
+                return;
+            }
+        }
     }
 
     void Waypoints::onCoordinateEditClicked() {
@@ -1357,11 +1400,25 @@ namespace fairwindsk::ui::mydata {
     }
 
     void Waypoints::onDeleteClicked() {
-        if (m_currentWaypointId.isEmpty()) {
+        QString id = m_currentWaypointId;
+        QString name = m_nameEdit->text().trimmed();
+        if (id.isEmpty()) {
+            id = currentWaypointIdFromSelection();
+        }
+        if (id.isEmpty()) {
             return;
         }
 
-        deleteWaypoint(m_currentWaypointId, m_nameEdit->text().trimmed());
+        if (name.isEmpty()) {
+            for (int sourceRow = 0; sourceRow < m_model->rowCount(); ++sourceRow) {
+                if (m_model->resourceIdAtRow(sourceRow) == id) {
+                    name = displayNameForWaypoint(m_model->resourceAtRow(sourceRow));
+                    break;
+                }
+            }
+        }
+
+        deleteWaypoint(id, name);
     }
 
     void Waypoints::onSaveClicked() {
@@ -1407,12 +1464,25 @@ namespace fairwindsk::ui::mydata {
         m_addButton->setEnabled(!busy);
         m_selectAllButton->setEnabled(!busy);
         m_bulkRemoveButton->setEnabled(!busy && !visibleWaypointIds().isEmpty());
+        updateSelectionActionButtons();
     }
 
     void Waypoints::updateBulkButtons() {
         const bool hasVisibleRows = !visibleWaypointIds().isEmpty();
         m_selectAllButton->setEnabled(!m_isBusy && hasVisibleRows);
         m_bulkRemoveButton->setEnabled(!m_isBusy && hasVisibleRows);
+        updateSelectionActionButtons();
+    }
+
+    void Waypoints::updateSelectionActionButtons() {
+        const bool singleSelection = !m_isBusy
+                && m_stackedWidget->currentWidget() == m_listPage
+                && !currentWaypointIdFromSelection().isEmpty()
+                && m_tableWidget->selectionModel()
+                && m_tableWidget->selectionModel()->selectedRows().size() == 1;
+        m_navigateSelectedButton->setEnabled(singleSelection);
+        m_editSelectedButton->setEnabled(singleSelection);
+        m_removeSelectedButton->setEnabled(singleSelection);
     }
 
     QStringList Waypoints::visibleWaypointIds() const {

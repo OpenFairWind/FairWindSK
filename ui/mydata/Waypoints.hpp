@@ -76,6 +76,7 @@ namespace fairwindsk::ui::mydata {
         void styleTable();
         void setBusy(bool busy, const QString &label = QString(), int maximum = 0);
         void updateBulkButtons();
+        void updateSelectionActionButtons();
         QStringList visibleWaypointIds() const;
         void syncDetailTabs();
         void updateSpecialFieldVisibility();
@@ -117,6 +118,9 @@ namespace fairwindsk::ui::mydata {
         QToolButton *m_refreshButton = nullptr;
         QToolButton *m_selectAllButton = nullptr;
         QToolButton *m_bulkRemoveButton = nullptr;
+        QToolButton *m_navigateSelectedButton = nullptr;
+        QToolButton *m_editSelectedButton = nullptr;
+        QToolButton *m_removeSelectedButton = nullptr;
         QToolButton *m_backButton = nullptr;
         QToolButton *m_newButton = nullptr;
         QToolButton *m_navigateButton = nullptr;

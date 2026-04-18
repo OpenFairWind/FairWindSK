@@ -55,8 +55,8 @@
        </widget>
       </item>
       <item>
-       <widget class="QFrame" name="frame_FilesNavigationRow">
-        <layout class="QHBoxLayout" name="horizontalLayout_NavigationRow">
+       <widget class="QFrame" name="frame_FilesSearchRow">
+        <layout class="QHBoxLayout" name="horizontalLayout_SearchRow">
          <property name="leftMargin">
           <number>8</number>
          </property>
@@ -72,6 +72,9 @@
          <property name="spacing">
           <number>4</number>
          </property>
+         <item>
+          <widget class="QLineEdit" name="lineEdit_Search"/>
+         </item>
          <item>
           <widget class="QPushButton" name="toolButton_Home">
            <property name="text">
@@ -107,19 +110,6 @@
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="lineEdit_Path">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-             <horstretch>3</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The address bar.&lt;br/&gt;The current path is displayed here.&lt;br/&gt;Change the path and press &lt;kbd&gt;Enter&lt;/kbd&gt; to visit.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-           </property>
-          </widget>
-         </item>
-         <item>
           <widget class="QPushButton" name="toolButton_Open">
            <property name="toolTip">
             <string/>
@@ -139,30 +129,6 @@
             </size>
            </property>
           </widget>
-         </item>
-        </layout>
-       </widget>
-      </item>
-      <item>
-       <widget class="QFrame" name="frame_FilesSearchRow">
-        <layout class="QHBoxLayout" name="horizontalLayout_SearchRow">
-         <property name="leftMargin">
-          <number>8</number>
-         </property>
-         <property name="topMargin">
-          <number>6</number>
-         </property>
-         <property name="rightMargin">
-          <number>8</number>
-         </property>
-         <property name="bottomMargin">
-          <number>6</number>
-         </property>
-         <property name="spacing">
-          <number>4</number>
-         </property>
-         <item>
-          <widget class="QLineEdit" name="lineEdit_Search"/>
          </item>
          <item>
           <widget class="QPushButton" name="toolButton_Search">
@@ -255,27 +221,6 @@
            </property>
           </widget>
          </item>
-        </layout>
-       </widget>
-      </item>
-      <item>
-       <widget class="QFrame" name="frame_FilesActionsRow">
-        <layout class="QHBoxLayout" name="horizontalLayout_ActionsRow">
-         <property name="leftMargin">
-          <number>8</number>
-         </property>
-         <property name="topMargin">
-          <number>6</number>
-         </property>
-         <property name="rightMargin">
-          <number>8</number>
-         </property>
-         <property name="bottomMargin">
-          <number>6</number>
-         </property>
-         <property name="spacing">
-          <number>4</number>
-         </property>
          <item>
           <widget class="QPushButton" name="toolButton_NewFolder">
            <property name="text">
@@ -405,6 +350,22 @@
           </spacer>
          </item>
         </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="lineEdit_Path">
+        <property name="visible">
+         <bool>false</bool>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>3</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The address bar.&lt;br/&gt;The current path is displayed here.&lt;br/&gt;Change the path and press &lt;kbd&gt;Enter&lt;/kbd&gt; to visit.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
        </widget>
       </item>
      </layout>

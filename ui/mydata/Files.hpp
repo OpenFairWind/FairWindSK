@@ -111,6 +111,7 @@ private:
     [[nodiscard]] QString currentDestinationDir() const;
     void refreshCurrentView();
     void updateActionStates();
+    void updateTitleLabel() const;
     void updateItemInfo(const QString &path);
     void clearItemInfo();
     [[nodiscard]] QString selectedOrCurrentPath() const;

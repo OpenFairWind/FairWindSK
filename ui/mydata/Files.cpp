@@ -214,8 +214,8 @@ namespace fairwindsk::ui::mydata {
 		ui->tableView_Search->hide();
 		ui->listView_Files->show();
 		ui->widget_Searching->hide();
-
 		ui->groupBox_ItemInfo->hide();
+        ui->groupBox_ItemInfo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
 		m_currentDir = nullptr;
 
@@ -298,7 +298,7 @@ namespace fairwindsk::ui::mydata {
 		connect(&m_searchingWatcher, &QFutureWatcher<QFileInfo>::finished, this, &Files::searchFinished);
 		connect(&m_searchingWatcher, &QFutureWatcher<QFileInfo>::progressValueChanged, this, &Files::searchProgressValueChanged);
 
-		connect(ui->tableView_Search, &QAbstractItemView::doubleClicked, this, &Files::onSearchViewItemDoubleClicked);
+        connect(ui->tableView_Search, &QAbstractItemView::doubleClicked, this, &Files::onSearchViewItemDoubleClicked);
 		connect(ui->tableView_Search, &QAbstractItemView::clicked, this, &Files::onSearchViewItemClicked);
         connect(ui->listView_Files->selectionModel(), &QItemSelectionModel::selectionChanged, this, [this]() {
             updateActionStates();
@@ -319,6 +319,7 @@ namespace fairwindsk::ui::mydata {
         applyComfortChrome();
         clearItemInfo();
         updateActionStates();
+        updateTitleLabel();
 		
 		onHome();
 	}
@@ -359,10 +360,11 @@ namespace fairwindsk::ui::mydata {
         configureIconButton(ui->toolButton_NewFolder, tr("Create folder"), true);
         configureIconButton(ui->toolButton_Open, tr("Open selected item"), true);
 
-        ui->lineEdit_Path->setClearButtonEnabled(true);
         ui->lineEdit_Search->setClearButtonEnabled(true);
-        ui->lineEdit_Path->setMinimumHeight(66);
-        ui->lineEdit_Search->setMinimumHeight(66);
+        ui->lineEdit_Path->setClearButtonEnabled(true);
+        ui->lineEdit_Search->setMinimumHeight(58);
+        ui->lineEdit_Path->setMinimumHeight(0);
+        ui->lineEdit_Path->setMaximumHeight(0);
 
         ui->listView_Files->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
         ui->listView_Files->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
@@ -376,6 +378,10 @@ namespace fairwindsk::ui::mydata {
         ui->label_Searching->setMinimumHeight(44);
         ui->groupBox_ItemInfo->setMinimumHeight(88);
         ui->groupBox_ItemInfo->setTitle(tr("Selection"));
+        ui->verticalLayout_Main->setStretch(0, 1);
+        ui->verticalLayout_Main->setStretch(1, 1);
+        ui->verticalLayout_Main->setStretch(2, 0);
+        ui->verticalLayout_Main->setStretch(3, 0);
 
         ui->toolButton_CaseSensitive->setIcon(QIcon(":/resources/svg/OpenBridge/sort-google.svg"));
         ui->toolButton_SearchHidden->setIcon(QIcon(":/resources/svg/OpenBridge/show-page-details.svg"));
@@ -461,6 +467,7 @@ namespace fairwindsk::ui::mydata {
 
 		ui->lineEdit_Path->setText(m_currentDir->absolutePath());
 		ui->lineEdit_Path->update();
+        updateTitleLabel();
 
 		const auto index = m_fileSystemModel->index(m_currentDir->absolutePath());
 
@@ -575,6 +582,7 @@ namespace fairwindsk::ui::mydata {
 		m_fileViewer = new FileViewer(path, this);
 		connect(m_fileViewer, &FileViewer::askedToBeClosed, this, &Files::onFileViewerCloseClicked);
 		ui->group_Content->layout()->addWidget(m_fileViewer);
+        ui->labelTitle->setText(tr("Files\n%1").arg(QFileInfo(path).fileName().isEmpty() ? path : QFileInfo(path).fileName().toHtmlEscaped()));
         updateActionStates();
 	}
 
@@ -588,6 +596,7 @@ namespace fairwindsk::ui::mydata {
 
 			ui->group_ToolBar->show();
 			ui->group_Main->show();
+            updateTitleLabel();
             updateActionStates();
 		}
 	}
@@ -1035,6 +1044,17 @@ namespace fairwindsk::ui::mydata {
         } else {
             ui->toolButton_Open->setToolTip(tr("Open selected item"));
         }
+    }
+
+    void Files::updateTitleLabel() const {
+        const QString path = ui->lineEdit_Path->text().trimmed();
+        if (path.isEmpty()) {
+            ui->labelTitle->setText(tr("Files"));
+            return;
+        }
+
+        ui->labelTitle->setText(tr("Files\n<span style=\"font-size:16px; font-weight:500;\">%1</span>")
+                                    .arg(path.toHtmlEscaped()));
     }
 
     void Files::updateItemInfo(const QString &path) {
