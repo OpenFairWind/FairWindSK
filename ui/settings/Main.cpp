@@ -11,6 +11,7 @@
 #include "Main.hpp"
 #include "ui_Main.h"
 #include "FairWindSK.hpp"
+#include "ui/DrawerDialogHost.hpp"
 #include "ui/GeoCoordinateUtils.hpp"
 #include "ui/widgets/TouchCheckBox.hpp"
 #include "ui/widgets/TouchComboBox.hpp"
@@ -55,12 +56,21 @@ namespace fairwindsk::ui::settings {
         ui->comboBox_comfortViewPreset->setToolTip(toolTip);
     }
 
+    void Main::updateVirtualKeyboardHint() const {
+        const QString note = tr("Requires restart. FairWindSK reads this option during startup when enabling the Qt Virtual Keyboard.");
+        ui->label_virtualKeyboardHint->setText(note);
+        ui->label_virtualkeyboard->setToolTip(note);
+        ui->checkBox_virtualkeboard->setToolTip(note);
+        ui->label_virtualKeyboardHint->setToolTip(note);
+    }
+
     Main::Main(Settings *settings, QWidget *parent) :
             QWidget(parent), ui(new Ui::Main) {
 
         m_settings = settings;
 
         ui->setupUi(this);
+        updateVirtualKeyboardHint();
 
         ui->comboBox_windowMode->addItem(tr("Windowed"));
         ui->comboBox_windowMode->addItem(tr("Centered"));
@@ -198,6 +208,10 @@ namespace fairwindsk::ui::settings {
 
         m_settings->getConfiguration()->setVirtualKeyboard(value);
         m_settings->markDirty(FairWindSK::RuntimeUi, 0);
+        fairwindsk::ui::drawer::information(
+            this,
+            tr("Restart Required"),
+            tr("Restart FairWindSK to apply the Qt Virtual Keyboard setting."));
     }
 
     void Main::onUiScaleModeStateChanged(const int state) {

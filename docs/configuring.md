@@ -101,7 +101,7 @@ These mappings drive UI bars (autopilot, anchor, alarms, POB) and instrument rea
 
 - `windowMode`: Choose `windowed` or `fullscreen` (useful for kiosk deployments).
 - `windowWidth/Height/Left/Top`: Window geometry when not fullscreen.
-- `virtualKeyboard`: Enables the Qt virtual keyboard module if available.
+- `virtualKeyboard`: Enables the Qt virtual keyboard module if available. The setting is read during startup, so restart FairWindSK after changing it.
 - `autopilot`: Default autopilot identifier for widgets that target a specific device.
 
 ## Diagnostics and logging

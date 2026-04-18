@@ -32,7 +32,7 @@ Platform-specific dependencies, Qt kit selection, Windows deployment, Raspberry 
 
 ## Running the desktop
 
-- Start the application normally from the build output folder or after installing it into your system path. On Raspberry Pi OS the project includes a sample autostart entry in `extras/fairwindsk-startup.desktop` and a helper script in `extras/fairwindsk-startup`. The helper follows the same per-user Qt configuration directory used by the application, applies the virtual keyboard environment only when `main.virtualKeyboard` is enabled, and only relaunches FairWindSK when the application exits with code `1`.
+- Start the application normally from the build output folder or after installing it into your system path. On Raspberry Pi OS the project includes a sample autostart entry in `extras/fairwindsk-startup.desktop` and a helper script in `extras/fairwindsk-startup`. The helper follows the same per-user Qt configuration directory used by the application, applies the virtual keyboard environment only when `main.virtualKeyboard` is enabled, and only relaunches FairWindSK when the application exits with code `1`. Direct launches now read the same startup setting too, but changing `main.virtualKeyboard` still requires an application restart.
 - The splash screen shows connection progress while the Signal K client initializes and downloads the web app catalog.
 - Once the main window appears, use the tiles to launch apps. On desktop targets, `SHIFT+TAB` brings you back to the FairWindSK desktop when a web app takes full focus.
 - The bottom bars expose quick controls for alarms, person overboard, anchor, and autopilot features. Availability depends on the configured Signal K data paths and installed plugins.

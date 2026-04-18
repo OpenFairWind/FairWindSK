@@ -2,9 +2,11 @@
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
 #include <QSplashScreen>
 #endif
+#include <QByteArray>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QSettings>
 #include <QLibraryInfo>
 #include <QStandardPaths>
 #include <QTimer>
@@ -18,6 +20,7 @@
 #endif
 
 #include "FairWindSK.hpp"
+#include "Configuration.hpp"
 #include "runtime/DiagnosticsSupport.hpp"
 #include "ui/MainWindow.hpp"
 
@@ -141,6 +144,36 @@ namespace {
 }
 #endif
 
+namespace {
+    QString resolveConfigurationPathFromSettings() {
+        const QString settingsPath = fairwindsk::Configuration::settingsFilename();
+        QSettings settings(settingsPath, QSettings::IniFormat);
+        const QString configuredPath = settings.value(QStringLiteral("General/config")).toString().trimmed();
+        if (!configuredPath.isEmpty()) {
+            const QFileInfo configuredInfo(configuredPath);
+            if (configuredInfo.isAbsolute()) {
+                return configuredInfo.absoluteFilePath();
+            }
+            return QDir(QFileInfo(settingsPath).absolutePath()).filePath(configuredPath);
+        }
+
+        return QDir(QFileInfo(settingsPath).absolutePath()).filePath(QStringLiteral("fairwindsk.json"));
+    }
+
+    bool shouldEnableVirtualKeyboardAtStartup(QString *configurationPath = nullptr) {
+        const QString resolvedConfigurationPath = resolveConfigurationPathFromSettings();
+        if (configurationPath) {
+            *configurationPath = resolvedConfigurationPath;
+        }
+
+        fairwindsk::Configuration configuration(resolvedConfigurationPath);
+        if (configuration.getFilename().isEmpty()) {
+            return false;
+        }
+        return configuration.getVirtualKeyboard();
+    }
+}
+
 int main(int argc, char *argv[]) {
 
     // The translator
@@ -149,12 +182,21 @@ int main(int argc, char *argv[]) {
     // Set the organization name
     QCoreApplication::setOrganizationName("uniparthenope.it");
     QCoreApplication::setApplicationName("FairWindSK");
+
+    QString startupConfigurationPath;
+    const bool useVirtualKeyboard = shouldEnableVirtualKeyboardAtStartup(&startupConfigurationPath);
+    if (useVirtualKeyboard) {
+        qputenv("QT_IM_MODULE", QByteArrayLiteral("qtvirtualkeyboard"));
+    }
+
     fairwindsk::runtime::initializeDiagnostics();
     qInfo() << "FairWindSK bootstrap start";
     qInfo() << "argc=" << argc;
     for (int index = 0; index < argc; ++index) {
         qInfo() << "argv[" << index << "]=" << (argv[index] ? argv[index] : "<null>");
     }
+    qInfo() << "Startup configuration path=" << startupConfigurationPath;
+    qInfo() << "QT_IM_MODULE=" << qEnvironmentVariable("QT_IM_MODULE");
 
     // Enable OpenGL shared contexts
     QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts );

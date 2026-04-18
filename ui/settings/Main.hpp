@@ -41,6 +41,7 @@ namespace fairwindsk::ui::settings {
         void setUiScaleFieldsEnabled(bool automatic) const;
         void setComfortViewFieldsEnabled(bool automatic) const;
         void updateComfortViewAvailability();
+        void updateVirtualKeyboardHint() const;
         void applyUiPreview() const;
 
         Ui::Main *ui;
