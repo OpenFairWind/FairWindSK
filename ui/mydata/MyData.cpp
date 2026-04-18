@@ -90,15 +90,19 @@ namespace fairwindsk::ui::mydata {
             return;
         }
 
+        const int previousIndex = ui->tabWidget->currentIndex();
         QWidget *existingPage = ui->tabWidget->widget(index);
-        ui->tabWidget->removeTab(index);
-        ui->tabWidget->insertTab(index, page, tabTitle(index));
-        ui->tabWidget->setCurrentIndex(index);
-
         if (index >= m_loadedPages.size()) {
             m_loadedPages.resize(index + 1);
         }
         m_loadedPages[index] = page;
+
+        const QSignalBlocker blocker(ui->tabWidget);
+        ui->tabWidget->removeTab(index);
+        ui->tabWidget->insertTab(index, page, tabTitle(index));
+        if (previousIndex >= 0 && previousIndex < ui->tabWidget->count()) {
+            ui->tabWidget->setCurrentIndex(previousIndex);
+        }
 
         if (existingPage) {
             delete existingPage;
