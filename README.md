@@ -29,20 +29,20 @@ The runtime now supervises Signal K restarts as well: if the server drops and co
 ![The FairWindSK desktop](images/fairwindsk-desktop.png)
 
 ### Stable components ###
-* Cross-platform Qt/CMake build targets for macOS, Linux, Raspberry Pi OS, Windows, Android, and iOS
+* The desktop Qt/CMake build path for macOS, Linux, Raspberry Pi OS, and Windows, with a shared source structure that also keeps Android and iOS targets in the tree
 * The main FairWindSK shell: Top Bar, Application Area, Bottom Bar, Bottom Bar horizontal drawer, and Application Area vertical drawer
-* Signal K server connection, web-app discovery, and application hosting
-* Automatic Signal K restart detection, reconnect, subscription restore, and server-backed resource refresh
-* The alternate mobile-safe Qt WebView runtime path used on Android and iOS, including shared restart placeholder and reconnect handling
+* Signal K discovery, authentication, REST/websocket connectivity, web-app discovery, and hosted application lifecycle management
+* Automatic Signal K restart recovery, including rediscovery, reconnect, subscription restore, health reporting, and refresh of server-backed UI state
 * The desktop launcher with application tiles, OpenBridge-style page/application management actions, and local desktop app support on desktop targets
-* The setup and configuration of units, window preferences, Signal K paths, and server settings
-* The Qt virtual keyboard integration for touch-oriented deployments
+* Core settings flows for main preferences, comfort presets, connection parameters, Signal K path mapping, units, applications, and system/configuration management
 * Comfort preset management for `Default`, `Dawn`, `Day`, `Sunset`, `Dusk`, and `Night`, including QSS editing, configurable palette items, and theme image support
-* Shared touch-first reusable UI components and drawer-hosted dialogs, including touch file, color, and icon browsers used by the shell workflows
-* Touch-oriented diagnostics controls with persistent per-run logs, stored crash-report bundles, lightweight interaction history, and in-app diagnostics exploration through the shared Bottom Bar horizontal drawer
-* Native vessel-operation surfaces: Autopilot, POB (Person over board), Anchor, and Alarms bars
-* MyData core workflows: waypoints, tracks, routes, Signal K resource browsing, file browsing/search, and file viewing for images, PDF, and text files
-* Embedded geographic preview integration for MyData resources and waypoints, including GeoJSON preview surfaces and Freeboard-assisted focusing where available
+* Shared touch-first UI building blocks and drawer-hosted dialogs, including touch combo boxes, check boxes, spin boxes, file browsers, icon browsers, color pickers, and scroll surfaces
+* Qt virtual keyboard integration for touch-oriented deployments
+* Touch-oriented diagnostics with per-run logs, crash-report bundle handling, lightweight interaction history, and in-app diagnostics exploration through the shared Bottom Bar drawer
+* Native vessel-operation surfaces for POB (Person Over Board), autopilot, anchor, alarms, and Signal K server status
+* Mature MyData workflows for waypoints, historical track samples, local/remote file browsing and search, and file viewing for images, PDF, and text content
+* The shared MyData resource infrastructure used to list, import, export, edit, and refresh Signal K resources through common models and dialogs
+* Embedded geographic preview support for waypoints and GeoJSON-shaped resources, including Freeboard-assisted focusing when the supporting app is available
 
 Those bars relay on SK web apps invoking their APIs or access the Signal K APIs directly. 
 
@@ -54,10 +54,11 @@ Applications can also be local desktop applications (as OpenCPN) characterized b
 A mechanism to be back on the FairWindSK desktop after being launched is implemented as a SHIFT+TAB hot key on desktop builds.
 
 ### Components under active development ###
-* Deeper MyData editing workflows and UX polish for advanced chart, region, route, and bulk-management scenarios
-* Final Android/iOS platform validation and parity verification for the alternate Qt WebView path on real mobile deployments
-* Residual Comfort-system cleanup in legacy designer-driven snippets and specialized embedded/custom-painted surfaces
-* Continued marine-MFD tuning of reusable touch components on a per-platform basis as helm-distance and touch ergonomics are validated in use
+* Final Android and iOS validation of the alternate Qt WebView runtime path, including real-device parity checks against the more established desktop WebEngine behavior
+* Deeper MyData authoring and UX polish for routes, regions, notes, and charts, especially for geometry-heavy editing, preview depth, and bulk-management workflows
+* Continued hardening of the newer shared MyData resource editors and collection pages as they expand beyond the long-standing waypoint and file-centric flows
+* Residual Comfort-system cleanup in older designer-driven or custom-painted surfaces so every shell region follows the same preset and contrast rules
+* Continued marine-MFD tuning of touch targets, spacing, and readability across desktop, embedded, and mobile deployments as platform-specific ergonomics are validated in use
 
 # Building
 
