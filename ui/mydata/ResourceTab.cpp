@@ -38,6 +38,13 @@
 #include "ui_ResourceTab.h"
 
 namespace {
+    constexpr bool kUseLightweightResourceTableOnThisPlatform =
+#if defined(Q_OS_LINUX) && (defined(__arm__) || defined(__aarch64__))
+        true;
+#else
+        false;
+#endif
+
     QJsonObject featureObject(const QJsonObject &resource) {
         return resource["feature"].toObject();
     }
@@ -263,6 +270,7 @@ namespace fairwindsk::ui::mydata {
     }
 
     void ResourceTab::rebuildTable() {
+        const bool useActionsColumn = !kUseLightweightResourceTableOnThisPlatform;
         const int actionsColumn = m_model->columnCount();
         const QString filter = m_searchEdit->text().trimmed();
         const QStringList headers = [&]() {
@@ -270,7 +278,9 @@ namespace fairwindsk::ui::mydata {
             for (int column = 0; column < m_model->columnCount(); ++column) {
                 values.append(m_model->headerData(column, Qt::Horizontal, Qt::DisplayRole).toString());
             }
-            values.append(tr("Actions"));
+            if (useActionsColumn) {
+                values.append(tr("Actions"));
+            }
             return values;
         }();
 
@@ -316,64 +326,68 @@ namespace fairwindsk::ui::mydata {
                 m_tableWidget->setItem(visibleRow, column, item);
             }
 
-            auto *actionsWidget = new QWidget();
-            auto *actionsLayout = new QHBoxLayout(actionsWidget);
-            actionsLayout->setContentsMargins(4, 0, 4, 0);
-            actionsLayout->setSpacing(2);
+            if (useActionsColumn) {
+                auto *actionsWidget = new QWidget();
+                auto *actionsLayout = new QHBoxLayout(actionsWidget);
+                actionsLayout->setContentsMargins(4, 0, 4, 0);
+                actionsLayout->setSpacing(2);
 
-            auto *navigateButton = new QToolButton(actionsWidget);
-            navigateButton->setAutoRaise(true);
-            navigateButton->setIcon(primaryRowActionIcon());
-            fairwindsk::ui::applyTintedButtonIcon(
-                navigateButton,
-                fairwindsk::ui::bestContrastingColor(
-                    m_tableWidget->palette().color(QPalette::Base),
-                    {m_tableWidget->palette().color(QPalette::Text),
-                     m_tableWidget->palette().color(QPalette::ButtonText),
-                     m_tableWidget->palette().color(QPalette::WindowText)}),
-                QSize(22, 22));
-            navigateButton->setToolTip(primaryRowActionToolTip());
-            navigateButton->setProperty("resourceId", id);
-            connect(navigateButton, &QToolButton::clicked, this, &ResourceTab::onPrimaryRowClicked);
-            actionsLayout->addWidget(navigateButton);
+                auto *navigateButton = new QToolButton(actionsWidget);
+                navigateButton->setAutoRaise(true);
+                navigateButton->setIcon(primaryRowActionIcon());
+                fairwindsk::ui::applyTintedButtonIcon(
+                    navigateButton,
+                    fairwindsk::ui::bestContrastingColor(
+                        m_tableWidget->palette().color(QPalette::Base),
+                        {m_tableWidget->palette().color(QPalette::Text),
+                         m_tableWidget->palette().color(QPalette::ButtonText),
+                         m_tableWidget->palette().color(QPalette::WindowText)}),
+                    QSize(22, 22));
+                navigateButton->setToolTip(primaryRowActionToolTip());
+                navigateButton->setProperty("resourceId", id);
+                connect(navigateButton, &QToolButton::clicked, this, &ResourceTab::onPrimaryRowClicked);
+                actionsLayout->addWidget(navigateButton);
 
-            auto *editButton = new QToolButton(actionsWidget);
-            editButton->setAutoRaise(true);
-            editButton->setIcon(QIcon(":/resources/svg/OpenBridge/edit-google.svg"));
-            fairwindsk::ui::applyTintedButtonIcon(
-                editButton,
-                fairwindsk::ui::bestContrastingColor(
-                    m_tableWidget->palette().color(QPalette::Base),
-                    {m_tableWidget->palette().color(QPalette::Text),
-                     m_tableWidget->palette().color(QPalette::ButtonText),
-                     m_tableWidget->palette().color(QPalette::WindowText)}),
-                QSize(22, 22));
-            editButton->setToolTip(tr("Edit resource"));
-            editButton->setProperty("resourceId", id);
-            connect(editButton, &QToolButton::clicked, this, &ResourceTab::onEditRowClicked);
-            actionsLayout->addWidget(editButton);
+                auto *editButton = new QToolButton(actionsWidget);
+                editButton->setAutoRaise(true);
+                editButton->setIcon(QIcon(":/resources/svg/OpenBridge/edit-google.svg"));
+                fairwindsk::ui::applyTintedButtonIcon(
+                    editButton,
+                    fairwindsk::ui::bestContrastingColor(
+                        m_tableWidget->palette().color(QPalette::Base),
+                        {m_tableWidget->palette().color(QPalette::Text),
+                         m_tableWidget->palette().color(QPalette::ButtonText),
+                         m_tableWidget->palette().color(QPalette::WindowText)}),
+                    QSize(22, 22));
+                editButton->setToolTip(tr("Edit resource"));
+                editButton->setProperty("resourceId", id);
+                connect(editButton, &QToolButton::clicked, this, &ResourceTab::onEditRowClicked);
+                actionsLayout->addWidget(editButton);
 
-            auto *removeButton = new QToolButton(actionsWidget);
-            removeButton->setAutoRaise(true);
-            removeButton->setIcon(QIcon(":/resources/svg/OpenBridge/delete-google.svg"));
-            fairwindsk::ui::applyTintedButtonIcon(
-                removeButton,
-                fairwindsk::ui::bestContrastingColor(
-                    m_tableWidget->palette().color(QPalette::Base),
-                    {m_tableWidget->palette().color(QPalette::Text),
-                     m_tableWidget->palette().color(QPalette::ButtonText),
-                     m_tableWidget->palette().color(QPalette::WindowText)}),
-                QSize(22, 22));
-            removeButton->setToolTip(tr("Remove resource"));
-            removeButton->setProperty("resourceId", id);
-            connect(removeButton, &QToolButton::clicked, this, &ResourceTab::onRemoveRowClicked);
-            actionsLayout->addWidget(removeButton);
+                auto *removeButton = new QToolButton(actionsWidget);
+                removeButton->setAutoRaise(true);
+                removeButton->setIcon(QIcon(":/resources/svg/OpenBridge/delete-google.svg"));
+                fairwindsk::ui::applyTintedButtonIcon(
+                    removeButton,
+                    fairwindsk::ui::bestContrastingColor(
+                        m_tableWidget->palette().color(QPalette::Base),
+                        {m_tableWidget->palette().color(QPalette::Text),
+                         m_tableWidget->palette().color(QPalette::ButtonText),
+                         m_tableWidget->palette().color(QPalette::WindowText)}),
+                    QSize(22, 22));
+                removeButton->setToolTip(tr("Remove resource"));
+                removeButton->setProperty("resourceId", id);
+                connect(removeButton, &QToolButton::clicked, this, &ResourceTab::onRemoveRowClicked);
+                actionsLayout->addWidget(removeButton);
 
-            actionsLayout->addStretch(1);
-            m_tableWidget->setCellWidget(visibleRow, actionsColumn, actionsWidget);
+                actionsLayout->addStretch(1);
+                m_tableWidget->setCellWidget(visibleRow, actionsColumn, actionsWidget);
+            }
         }
 
-        m_tableWidget->setColumnWidth(actionsColumn, 152);
+        if (useActionsColumn) {
+            m_tableWidget->setColumnWidth(actionsColumn, 152);
+        }
     }
 
     void ResourceTab::selectResource(const QString &id) {
