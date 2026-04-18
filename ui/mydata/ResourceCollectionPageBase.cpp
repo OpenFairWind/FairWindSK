@@ -546,19 +546,27 @@ namespace fairwindsk::ui::mydata {
     }
 
     void ResourceCollectionPageBase::configureTable() {
+        qInfo() << "Configuring MyData table selection for" << pageTitle();
         m_tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
         m_tableWidget->setSelectionMode(QAbstractItemView::SingleSelection);
         m_tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
         m_tableWidget->setAlternatingRowColors(true);
         m_tableWidget->setWordWrap(false);
-        m_tableWidget->setSortingEnabled(true);
+        m_tableWidget->setSortingEnabled(!kUseSafeTextOnlyToolbarOnThisPlatform);
+        qInfo() << "Configuring MyData table headers for" << pageTitle();
         m_tableWidget->verticalHeader()->setVisible(false);
         m_tableWidget->verticalHeader()->setDefaultSectionSize(kTouchRowHeight);
         m_tableWidget->horizontalHeader()->setStretchLastSection(true);
-        m_tableWidget->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
-        for (int column = 1; column < m_model->columnCount(); ++column) {
-            m_tableWidget->horizontalHeader()->setSectionResizeMode(column, QHeaderView::ResizeToContents);
+        if (kUseSafeTextOnlyToolbarOnThisPlatform) {
+            m_tableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
+        } else {
+            m_tableWidget->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+            for (int column = 1; column < m_model->columnCount(); ++column) {
+                m_tableWidget->horizontalHeader()->setSectionResizeMode(column, QHeaderView::ResizeToContents);
+            }
         }
+        qInfo() << "Configured MyData table columns for" << pageTitle()
+                << "safeLayout =" << kUseSafeTextOnlyToolbarOnThisPlatform;
     }
 
     void ResourceCollectionPageBase::openEditor(const QString &resourceId, const QJsonObject &resource, const bool creating) {
