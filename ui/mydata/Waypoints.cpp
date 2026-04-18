@@ -558,7 +558,6 @@ namespace fairwindsk::ui::mydata {
         waypointHeader->setMinimumSectionSize(96);
         waypointHeader->setSectionResizeMode(QHeaderView::Interactive);
         waypointHeader->setSectionResizeMode(kWaypointNameColumn, QHeaderView::Stretch);
-        waypointHeader->setSectionResizeMode(m_model->columnCount(), QHeaderView::Fixed);
         waypointHeader->setStretchLastSection(false);
 
         m_tableWidget->setColumnWidth(kWaypointDescriptionColumn, 220);
@@ -566,7 +565,6 @@ namespace fairwindsk::ui::mydata {
         m_tableWidget->setColumnWidth(kWaypointLatitudeColumn, 150);
         m_tableWidget->setColumnWidth(kWaypointLongitudeColumn, 150);
         m_tableWidget->setColumnWidth(kWaypointTimestampColumn, 190);
-        m_tableWidget->setColumnWidth(m_model->columnCount(), 196);
     }
 
     QString Waypoints::currentWaypointIdFromSelection() const {
@@ -587,12 +585,10 @@ namespace fairwindsk::ui::mydata {
             m_rebuildTimer->stop();
         }
 
-        const int actionsColumn = m_model->columnCount();
         QStringList headers;
         for (int column = 0; column < m_model->columnCount(); ++column) {
             headers.append(m_model->headerData(column, Qt::Horizontal, Qt::DisplayRole).toString());
         }
-        headers.append(tr("Actions"));
         const QSignalBlocker blocker(m_tableWidget);
         m_tableWidget->clearContents();
         m_tableWidget->setColumnCount(headers.size());
@@ -634,7 +630,6 @@ namespace fairwindsk::ui::mydata {
     }
 
     void Waypoints::appendTableRow(const int sourceRow) {
-        const int actionsColumn = m_model->columnCount();
         const auto resource = m_model->resourceAtRow(sourceRow);
         const QString id = m_model->resourceIdAtRow(sourceRow);
         QString haystack = displayNameForWaypoint(resource) + " " + descriptionForWaypoint(resource);
@@ -669,88 +664,7 @@ namespace fairwindsk::ui::mydata {
 
         m_searchHaystacks.append(haystack);
 
-        auto *actionsWidget = new QWidget();
-        actionsWidget->setStyleSheet(QStringLiteral("QWidget { background: transparent; }"));
-        auto *actionsLayout = new QHBoxLayout(actionsWidget);
-        actionsLayout->setContentsMargins(6, 4, 6, 4);
-        actionsLayout->setSpacing(4);
-        actionsLayout->setAlignment(Qt::AlignCenter);
-        auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
-        auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
-        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
-        const auto chromeColors = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, m_tableWidget->palette(), false);
-        const QString rowActionStyle = actionButtonStyle(chromeColors);
-
-        auto *navigateButton = new QToolButton(actionsWidget);
-        navigateButton->setIcon(QIcon(":/resources/svg/mydata/waypoint-navigate-to.svg"));
-        navigateButton->setToolTip(tr("Navigate to waypoint"));
-        navigateButton->setProperty("waypointId", id);
-        navigateButton->setStyleSheet(rowActionStyle);
-        navigateButton->setIconSize(QSize(20, 20));
-        fairwindsk::ui::applyTintedButtonIcon(
-            navigateButton,
-            fairwindsk::ui::bestContrastingColor(
-                m_tableWidget->palette().color(QPalette::Base),
-                {m_tableWidget->palette().color(QPalette::Text),
-                 m_tableWidget->palette().color(QPalette::ButtonText),
-                 m_tableWidget->palette().color(QPalette::WindowText)}),
-            QSize(20, 20));
-        connect(navigateButton, &QToolButton::clicked, this, &Waypoints::onNavigateRowClicked);
-        actionsLayout->addWidget(navigateButton);
-
-        auto *detailsButton = new QToolButton(actionsWidget);
-        detailsButton->setIcon(QIcon(":/resources/svg/mydata/waypoint-details.svg"));
-        detailsButton->setToolTip(tr("Waypoint details"));
-        detailsButton->setProperty("waypointId", id);
-        detailsButton->setStyleSheet(rowActionStyle);
-        detailsButton->setIconSize(QSize(20, 20));
-        fairwindsk::ui::applyTintedButtonIcon(
-            detailsButton,
-            fairwindsk::ui::bestContrastingColor(
-                m_tableWidget->palette().color(QPalette::Base),
-                {m_tableWidget->palette().color(QPalette::Text),
-                 m_tableWidget->palette().color(QPalette::ButtonText),
-                 m_tableWidget->palette().color(QPalette::WindowText)}),
-            QSize(20, 20));
-        connect(detailsButton, &QToolButton::clicked, this, &Waypoints::onDetailsRowClicked);
-        actionsLayout->addWidget(detailsButton);
-
-        auto *editButton = new QToolButton(actionsWidget);
-        editButton->setIcon(QIcon(":/resources/svg/mydata/waypoint-edit.svg"));
-        editButton->setToolTip(tr("Edit waypoint"));
-        editButton->setProperty("waypointId", id);
-        editButton->setStyleSheet(rowActionStyle);
-        editButton->setIconSize(QSize(20, 20));
-        fairwindsk::ui::applyTintedButtonIcon(
-            editButton,
-            fairwindsk::ui::bestContrastingColor(
-                m_tableWidget->palette().color(QPalette::Base),
-                {m_tableWidget->palette().color(QPalette::Text),
-                 m_tableWidget->palette().color(QPalette::ButtonText),
-                 m_tableWidget->palette().color(QPalette::WindowText)}),
-            QSize(20, 20));
-        connect(editButton, &QToolButton::clicked, this, &Waypoints::onEditRowClicked);
-        actionsLayout->addWidget(editButton);
-
-        auto *removeButton = new QToolButton(actionsWidget);
-        removeButton->setIcon(QIcon(":/resources/svg/mydata/waypoint-remove.svg"));
-        removeButton->setToolTip(tr("Remove waypoint"));
-        removeButton->setProperty("waypointId", id);
-        removeButton->setStyleSheet(rowActionStyle);
-        removeButton->setIconSize(QSize(20, 20));
-        fairwindsk::ui::applyTintedButtonIcon(
-            removeButton,
-            fairwindsk::ui::bestContrastingColor(
-                m_tableWidget->palette().color(QPalette::Base),
-                {m_tableWidget->palette().color(QPalette::Text),
-                 m_tableWidget->palette().color(QPalette::ButtonText),
-                 m_tableWidget->palette().color(QPalette::WindowText)}),
-            QSize(20, 20));
-        connect(removeButton, &QToolButton::clicked, this, &Waypoints::onRemoveRowClicked);
-        actionsLayout->addWidget(removeButton);
-
-        m_tableWidget->setCellWidget(visibleRow, actionsColumn, actionsWidget);
-        m_tableWidget->setRowHeight(visibleRow, 50);
+        m_tableWidget->setRowHeight(visibleRow, 58);
 
         const QString filter = m_searchEdit->text().trimmed();
         const bool matches = filter.isEmpty() || haystack.contains(filter, Qt::CaseInsensitive);

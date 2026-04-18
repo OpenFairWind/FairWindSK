@@ -15,8 +15,10 @@
 #include <QMimeDatabase>
 #include <QFileDialog>
 #include <QHeaderView>
+#include <QPushButton>
 #include <QScroller>
 #include <QStorageInfo>
+#include <QTreeView>
 
 #include "FairWindSK.hpp"
 #include "FileInfoListModel.hpp"
@@ -35,56 +37,49 @@ int qt_ntfs_permission_lookup = 0; //dummy
 
 namespace fairwindsk::ui::mydata {
     namespace {
-        QString touchToolButtonStyle(const fairwindsk::ui::ComfortChromeColors &colors, const bool accent = false) {
+        QString touchToolbarButtonStyle(const fairwindsk::ui::ComfortChromeColors &colors, const bool accent = false) {
             const QColor top = accent ? colors.accentTop : colors.buttonBackground.lighter(112);
             const QColor mid = accent ? colors.accentTop.darker(103) : colors.buttonBackground;
             const QColor bottom = accent ? colors.accentBottom : colors.buttonBackground.darker(118);
             const QColor border = accent ? colors.accentBottom : colors.border;
-            const QColor text = accent ? colors.accentText : colors.buttonText;
             const QColor checkedTop = colors.accentTop.lighter(accent ? 108 : 102);
             const QColor checkedBottom = colors.accentBottom;
             return QStringLiteral(
-                "QToolButton {"
+                "QPushButton {"
                 " min-width: 58px;"
-                " min-height: 56px;"
-                " padding: 6px 8px;"
+                " max-width: 58px;"
+                " min-height: 58px;"
+                " max-height: 58px;"
+                " padding: 0px;"
                 " border-radius: 14px;"
                 " border: 1px solid %1;"
                 " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
                 " stop:0 %2, stop:0.52 %3, stop:1 %4);"
-                " color: %5;"
-                " font-size: 15px;"
-                " font-weight: 700;"
                 " }"
-                "QToolButton:hover { border-color: %6; }"
-                "QToolButton:checked {"
-                " border-color: %7;"
+                "QPushButton:hover { border-color: %5; }"
+                "QPushButton:checked {"
+                " border-color: %6;"
                 " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
-                " stop:0 %8, stop:0.52 %3, stop:1 %9);"
-                " color: %10;"
+                " stop:0 %7, stop:0.52 %3, stop:1 %8);"
                 " }"
-                "QToolButton:pressed {"
+                "QPushButton:pressed {"
                 " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
-                " stop:0 %11, stop:0.52 %3, stop:1 %12);"
+                " stop:0 %9, stop:0.52 %3, stop:1 %10);"
                 " }"
-                "QToolButton:disabled {"
-                " color: %13;"
-                " border-color: %14;"
-                " background: %15;"
+                "QPushButton:disabled {"
+                " border-color: %11;"
+                " background: %12;"
                 " }")
                 .arg(border.name(),
                      top.name(),
                      mid.name(),
                      bottom.name(),
-                     text.name(),
                      colors.icon.lighter(115).name(),
                      colors.accentTop.name(),
                      checkedTop.name(),
                      checkedBottom.name(),
-                     colors.accentText.name(),
                      top.darker(118).name(),
                      bottom.darker(118).name(),
-                     colors.disabledText.name(),
                      colors.border.darker(135).name(),
                      colors.window.darker(105).name());
         }
@@ -104,30 +99,44 @@ namespace fairwindsk::ui::mydata {
                 .arg(colors.border.name(), baseColor.name(), colors.text.name(), colors.accentTop.name());
         }
 
-        QString touchListStyle(const fairwindsk::ui::ComfortChromeColors &colors, const QColor &baseColor) {
+        QString touchBrowserTreeStyle(const fairwindsk::ui::ComfortChromeColors &colors, const QColor &baseColor, const QColor &panelColor) {
             return QStringLiteral(
-                "QListView {"
+                "QTreeView {"
                 " background: %1;"
                 " color: %2;"
                 " border: 1px solid %3;"
                 " border-radius: 14px;"
                 " outline: none;"
                 " font-size: 18px;"
+                " alternate-background-color: %4;"
+                " show-decoration-selected: 1;"
                 " }"
-                "QListView::item {"
-                " padding: 10px;"
-                " margin: 4px;"
-                " border-radius: 12px;"
+                "QTreeView::item {"
+                " min-height: 58px;"
+                " padding: 8px 12px;"
+                " border-radius: 10px;"
                 " }"
-                "QListView::item:selected {"
-                " background: %4;"
-                " color: %5;"
+                "QTreeView::item:selected {"
+                " background: %5;"
+                " color: %6;"
+                " }"
+                "QHeaderView::section {"
+                " min-height: 46px;"
+                " padding: 0 12px;"
+                " background: %7;"
+                " color: %2;"
+                " border: none;"
+                " border-bottom: 1px solid %3;"
+                " font-size: 16px;"
+                " font-weight: 700;"
                 " }")
                 .arg(baseColor.name(),
                      colors.text.name(),
                      colors.border.name(),
+                     panelColor.name(),
                      colors.accentTop.name(),
-                     colors.accentText.name());
+                     colors.accentText.name(),
+                     panelColor.darker(104).name());
         }
 
         QString touchTableStyle(const fairwindsk::ui::ComfortChromeColors &colors, const QColor &baseColor, const QColor &panelColor) {
@@ -216,10 +225,26 @@ namespace fairwindsk::ui::mydata {
         m_fileSystemModel->setFilter(QDir::AllEntries | QDir::NoDotAndDotDot | QDir::AllDirs);
 	    m_fileSystemModel->setRootPath(QDir::homePath());
 
-		ui->listView_Files->resize(0, 0);
-		ui->listView_Files->adjustSize();
 		ui->listView_Files->setModel(m_fileSystemModel);
         ui->listView_Files->setSelectionMode(QAbstractItemView::ExtendedSelection);
+        ui->listView_Files->setSelectionBehavior(QAbstractItemView::SelectRows);
+        ui->listView_Files->setRootIsDecorated(false);
+        ui->listView_Files->setItemsExpandable(false);
+        ui->listView_Files->setUniformRowHeights(true);
+        ui->listView_Files->setIndentation(0);
+        ui->listView_Files->setAllColumnsShowFocus(true);
+        ui->listView_Files->setAlternatingRowColors(true);
+        ui->listView_Files->setSortingEnabled(true);
+        ui->listView_Files->setIconSize(QSize(36, 36));
+        ui->listView_Files->header()->setMinimumHeight(48);
+        ui->listView_Files->header()->setDefaultAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+        ui->listView_Files->header()->setStretchLastSection(true);
+        ui->listView_Files->header()->setSortIndicatorShown(false);
+        ui->listView_Files->header()->setSectionResizeMode(0, QHeaderView::Stretch);
+        ui->listView_Files->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+        ui->listView_Files->header()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
+        ui->listView_Files->sortByColumn(0, Qt::AscendingOrder);
+        ui->listView_Files->hideColumn(2);
         ui->tableView_Search->setSelectionBehavior(QAbstractItemView::SelectRows);
         ui->tableView_Search->setSelectionMode(QAbstractItemView::ExtendedSelection);
         ui->tableView_Search->horizontalHeader()->setStretchLastSection(true);
@@ -233,25 +258,25 @@ namespace fairwindsk::ui::mydata {
 		connect(ui->listView_Files, &QAbstractItemView::doubleClicked, this, &Files::onFileViewItemDoubleClicked);
 		connect(ui->listView_Files, &QAbstractItemView::clicked, this, &Files::onFileViewItemClicked);
 
-		connect(ui->toolButton_Up, &QToolButton::clicked, this, &Files::onUpClicked);
+		connect(ui->toolButton_Up, &QPushButton::clicked, this, &Files::onUpClicked);
 		connect(ui->lineEdit_Path, &QLineEdit::returnPressed, this, &Files::onPathReturnPressed);
 
-		connect(ui->toolButton_Filters, &QToolButton::clicked, this, &Files::onFiltersClicked);
-		connect(ui->toolButton_Search, &QToolButton::clicked, this, &Files::onSearchClicked);
+		connect(ui->toolButton_Filters, &QPushButton::clicked, this, &Files::onFiltersClicked);
+		connect(ui->toolButton_Search, &QPushButton::clicked, this, &Files::onSearchClicked);
 		connect(ui->lineEdit_Search,&QLineEdit::returnPressed, this, &Files::onSearchClicked);
 
-		connect(ui->toolButton_Cut, &QToolButton::clicked, this, &Files::onCutClicked);
-		connect(ui->toolButton_Copy, &QToolButton::clicked, this, &Files::onCopyClicked);
-		connect(ui->toolButton_Paste, &QToolButton::clicked, this, &Files::onPasteClicked);
+		connect(ui->toolButton_Cut, &QPushButton::clicked, this, &Files::onCutClicked);
+		connect(ui->toolButton_Copy, &QPushButton::clicked, this, &Files::onCopyClicked);
+		connect(ui->toolButton_Paste, &QPushButton::clicked, this, &Files::onPasteClicked);
 
-		connect(ui->toolButton_Open, &QToolButton::clicked, this, &Files::onOpenClicked);
+		connect(ui->toolButton_Open, &QPushButton::clicked, this, &Files::onOpenClicked);
 
-		connect(ui->toolButton_NewFolder, &QToolButton::clicked, this, &Files::onNewFolderClicked);
+		connect(ui->toolButton_NewFolder, &QPushButton::clicked, this, &Files::onNewFolderClicked);
 
-		connect(ui->toolButton_Delete, &QToolButton::clicked, this, &Files::onDeleteClicked);
-		connect(ui->toolButton_Rename, &QToolButton::clicked, this, &Files::onRenameClicked);
+		connect(ui->toolButton_Delete, &QPushButton::clicked, this, &Files::onDeleteClicked);
+		connect(ui->toolButton_Rename, &QPushButton::clicked, this, &Files::onRenameClicked);
 
-		connect(ui->toolButton_Home, &QToolButton::clicked, this, &Files::onHome);
+		connect(ui->toolButton_Home, &QPushButton::clicked, this, &Files::onHome);
 
 		m_fileListModel = new FileInfoListModel(this);
 		ui->tableView_Search->setModel(m_fileListModel);
@@ -308,33 +333,23 @@ namespace fairwindsk::ui::mydata {
     }
 
     void Files::configureTouchFriendlyUi() {
-        const auto configureIconButton = [](QToolButton *button, const QString &toolTip, const bool accent = false) {
+        const auto configureIconButton = [](QPushButton *button, const QString &toolTip, const bool accent = false) {
             if (!button) {
                 return;
             }
             button->setText(QString());
             button->setToolTip(toolTip);
-            button->setToolButtonStyle(Qt::ToolButtonIconOnly);
-            button->setMinimumSize(accent ? QSize(62, 58) : QSize(58, 56));
+            button->setFlat(false);
+            button->setMinimumSize(accent ? QSize(62, 58) : QSize(58, 58));
             button->setIconSize(QSize(28, 28));
-        };
-
-        const auto configureLabeledButton = [](QToolButton *button, const QString &text, const bool accent = false) {
-            if (!button) {
-                return;
-            }
-            button->setText(text);
-            button->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-            button->setMinimumSize(accent ? QSize(96, 58) : QSize(88, 56));
-            button->setIconSize(QSize(26, 26));
         };
 
         configureIconButton(ui->toolButton_Home, tr("Home"));
         configureIconButton(ui->toolButton_Up, tr("Up"));
         configureIconButton(ui->toolButton_Filters, tr("Clear search"));
-        configureLabeledButton(ui->toolButton_CaseSensitive, tr("Case"));
-        configureLabeledButton(ui->toolButton_SearchHidden, tr("Hidden"));
-        configureLabeledButton(ui->toolButton_SearchSystem, tr("System"));
+        configureIconButton(ui->toolButton_CaseSensitive, tr("Case-sensitive search"));
+        configureIconButton(ui->toolButton_SearchHidden, tr("Include hidden files"));
+        configureIconButton(ui->toolButton_SearchSystem, tr("Include system files"));
         configureIconButton(ui->toolButton_Search, tr("Search in current folder"), true);
         configureIconButton(ui->toolButton_Cut, tr("Cut selection"));
         configureIconButton(ui->toolButton_Copy, tr("Copy selection"));
@@ -347,14 +362,11 @@ namespace fairwindsk::ui::mydata {
         ui->lineEdit_Path->setClearButtonEnabled(true);
         ui->lineEdit_Search->setClearButtonEnabled(true);
         ui->lineEdit_Path->setMinimumHeight(66);
-        ui->lineEdit_Search->setMinimumHeight(58);
+        ui->lineEdit_Search->setMinimumHeight(66);
 
-        ui->listView_Files->setIconSize(QSize(76, 76));
-        ui->listView_Files->setGridSize(QSize(164, 124));
-        ui->listView_Files->setSpacing(10);
         ui->listView_Files->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
         ui->listView_Files->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
-        ui->listView_Files->setWrapping(true);
+        ui->listView_Files->setTextElideMode(Qt::ElideMiddle);
 
         ui->tableView_Search->verticalHeader()->setDefaultSectionSize(58);
         ui->tableView_Search->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
@@ -364,6 +376,10 @@ namespace fairwindsk::ui::mydata {
         ui->label_Searching->setMinimumHeight(44);
         ui->groupBox_ItemInfo->setMinimumHeight(88);
         ui->groupBox_ItemInfo->setTitle(tr("Selection"));
+
+        ui->toolButton_CaseSensitive->setIcon(QIcon(":/resources/svg/OpenBridge/sort-google.svg"));
+        ui->toolButton_SearchHidden->setIcon(QIcon(":/resources/svg/OpenBridge/show-page-details.svg"));
+        ui->toolButton_SearchSystem->setIcon(QIcon(":/resources/svg/OpenBridge/database.svg"));
     }
 
     void Files::applyComfortChrome() {
@@ -385,16 +401,16 @@ namespace fairwindsk::ui::mydata {
             .arg(chrome.text.name()));
         applyStyleIfChanged(ui->lineEdit_Path, touchLineEditStyle(chrome, baseColor));
         applyStyleIfChanged(ui->lineEdit_Search, touchLineEditStyle(chrome, baseColor));
-        for (auto *button : findChildren<QToolButton *>()) {
+        for (auto *button : findChildren<QPushButton *>()) {
             const bool accent = button == ui->toolButton_Search || button == ui->toolButton_Open;
-            applyStyleIfChanged(button, touchToolButtonStyle(chrome, accent));
+            applyStyleIfChanged(button, touchToolbarButtonStyle(chrome, accent));
         }
         for (auto *rowFrame : ui->group_ToolBar->findChildren<QFrame *>()) {
             if (rowFrame->objectName().startsWith(QStringLiteral("frame_Files"))) {
                 applyStyleIfChanged(rowFrame, toolRowStyle(chrome, panelColor));
             }
         }
-        applyStyleIfChanged(ui->listView_Files, touchListStyle(chrome, baseColor) + fairwindsk::ui::widgets::TouchScrollArea::scrollBarStyleSheet());
+        applyStyleIfChanged(ui->listView_Files, touchBrowserTreeStyle(chrome, baseColor, panelColor) + fairwindsk::ui::widgets::TouchScrollArea::scrollBarStyleSheet());
         applyStyleIfChanged(ui->tableView_Search, touchTableStyle(chrome, baseColor, panelColor) + fairwindsk::ui::widgets::TouchScrollArea::scrollBarStyleSheet());
         applyStyleIfChanged(ui->groupBox_ItemInfo, touchInfoStyle(chrome, panelColor));
         applyStyleIfChanged(ui->widget_Searching, QStringLiteral("QWidget { background: %1; border: 1px solid %2; border-radius: 12px; } QLabel { color: %3; font-size: 17px; font-weight: 600; }").arg(panelColor.name(), chrome.border.name(), chrome.text.name()));
@@ -410,7 +426,7 @@ namespace fairwindsk::ui::mydata {
              palette().color(QPalette::ButtonText),
              palette().color(QPalette::WindowText)});
         const QColor buttonIconColor = fairwindsk::ui::comfortIconColor(configuration, preset, fallbackIconColor);
-        for (auto *button : findChildren<QToolButton *>()) {
+        for (auto *button : findChildren<QPushButton *>()) {
             fairwindsk::ui::applyTintedButtonIcon(button, buttonIconColor, QSize(32, 32));
         }
     }
