@@ -44,6 +44,7 @@
 #include "ui_Waypoints.h"
 
 namespace {
+    constexpr int kTouchButtonHeight = 58;
     constexpr int kWaypointTableBatchSize = 40;
     constexpr bool kDisableEmbeddedPreviewOnThisPlatform =
 #if defined(Q_OS_LINUX) && (defined(__arm__) || defined(__aarch64__))
@@ -80,6 +81,48 @@ namespace {
                  colors.transparentHoverBackground.name(QColor::HexArgb),
                  fairwindsk::ui::comfortAlpha(colors.accentBottom, 84).name(QColor::HexArgb),
                  colors.accentText.name());
+    }
+
+    QString toolbarButtonStyle(const fairwindsk::ui::ComfortChromeColors &colors, const bool accent = false) {
+        const QColor top = accent ? colors.accentTop : colors.buttonBackground.lighter(112);
+        const QColor mid = accent ? colors.accentTop.darker(103) : colors.buttonBackground;
+        const QColor bottom = accent ? colors.accentBottom : colors.buttonBackground.darker(118);
+        const QColor border = accent ? colors.accentBottom : colors.border;
+        return QStringLiteral(
+            "QToolButton {"
+            " min-width: 58px; max-width: 58px;"
+            " min-height: 58px; max-height: 58px;"
+            " padding: 0px;"
+            " border-radius: 16px;"
+            " border: 1px solid %1;"
+            " background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %2, stop:0.5 %3, stop:1 %4);"
+            " }"
+            "QToolButton:hover { border-color: %5; }"
+            "QToolButton:pressed { background: %6; }"
+            "QToolButton:disabled { background: %7; border-color: %8; }")
+            .arg(border.name(),
+                 top.name(),
+                 mid.name(),
+                 bottom.name(),
+                 colors.accentTop.name(),
+                 colors.pressedBackground.name(),
+                 colors.window.darker(104).name(),
+                 colors.border.darker(130).name());
+    }
+
+    QString touchLineEditStyle(const fairwindsk::ui::ComfortChromeColors &colors, const QColor &baseColor) {
+        return QStringLiteral(
+            "QLineEdit {"
+            " min-height: 54px;"
+            " border: 1px solid %1;"
+            " border-radius: 14px;"
+            " padding: 6px 14px;"
+            " background: %2;"
+            " color: %3;"
+            " font-size: 18px;"
+            " }"
+            "QLineEdit:focus { border-color: %4; }")
+            .arg(colors.border.name(), baseColor.name(), colors.text.name(), colors.accentTop.name());
     }
 
     void processWaypointUiEvents() {
@@ -281,17 +324,22 @@ namespace fairwindsk::ui::mydata {
         m_progressBar->setTextVisible(true);
         m_progressBar->setVisible(false);
         m_searchStack->setCurrentWidget(ui->pageSearch);
-        m_searchEdit->setMaximumHeight(28);
+        m_searchEdit->setMinimumHeight(54);
+        m_searchEdit->setMaximumHeight(54);
         m_searchStack->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
         m_refreshButton->setIcon(QIcon(":/resources/svg/OpenBridge/refresh-google.svg"));
         m_refreshButton->setToolTip(tr("Refresh"));
         connect(m_refreshButton, &QToolButton::clicked, this, &Waypoints::onRefreshClicked);
 
-        m_importButton->setText(tr("Import"));
+        m_importButton->setIcon(QIcon(":/resources/svg/OpenBridge/route-import-iec.svg"));
+        m_importButton->setToolTip(tr("Import"));
+        m_importButton->setText(QString());
         connect(m_importButton, &QToolButton::clicked, this, &Waypoints::onImportClicked);
 
-        m_exportButton->setText(tr("Export"));
+        m_exportButton->setIcon(QIcon(":/resources/svg/OpenBridge/file-export-google.svg"));
+        m_exportButton->setToolTip(tr("Export"));
+        m_exportButton->setText(QString());
         connect(m_exportButton, &QToolButton::clicked, this, &Waypoints::onExportClicked);
 
         m_addButton->setIcon(QIcon(":/resources/svg/OpenBridge/widget-add-google.svg"));
@@ -334,11 +382,13 @@ namespace fairwindsk::ui::mydata {
         connect(m_editButton, &QToolButton::clicked, this, &Waypoints::onEditClicked);
 
         m_saveButton->setIcon(QIcon(":/resources/svg/OpenBridge/edit-google.svg"));
-        m_saveButton->setText(tr("Save"));
+        m_saveButton->setToolTip(tr("Save"));
+        m_saveButton->setText(QString());
         connect(m_saveButton, &QToolButton::clicked, this, &Waypoints::onSaveClicked);
 
         m_cancelButton->setIcon(QIcon(":/resources/svg/OpenBridge/close-google.svg"));
-        m_cancelButton->setText(tr("Cancel"));
+        m_cancelButton->setToolTip(tr("Cancel"));
+        m_cancelButton->setText(QString());
         connect(m_cancelButton, &QToolButton::clicked, this, &Waypoints::onCancelClicked);
 
         m_deleteButton->setIcon(QIcon(":/resources/svg/OpenBridge/delete-google.svg"));
@@ -371,6 +421,7 @@ namespace fairwindsk::ui::mydata {
         m_coordinateDisplayEdit->setPlaceholderText(tr("No position"));
         m_coordinateEditButton->setIcon(QIcon(":/resources/svg/OpenBridge/edit-google.svg"));
         m_coordinateEditButton->setToolTip(tr("Edit coordinates"));
+        m_coordinateEditButton->setText(QString());
         m_contactsEdit->setMaximumHeight(72);
         m_propertiesEditor->setLabels(tr("Properties Tree"), tr("Properties JSON"));
         m_propertiesEditor->setHiddenKeys({QStringLiteral("name"), QStringLiteral("description"), QStringLiteral("contacts"), QStringLiteral("seaFloor"), QStringLiteral("slips")});
@@ -399,6 +450,7 @@ namespace fairwindsk::ui::mydata {
         connect(m_coordinateEditButton, &QToolButton::clicked, this, &Waypoints::onCoordinateEditClicked);
 
         retintToolButtons();
+        applyTouchFriendlyStyling();
 
         showListPage();
 
@@ -426,6 +478,7 @@ namespace fairwindsk::ui::mydata {
         QWidget::changeEvent(event);
         if (event->type() == QEvent::PaletteChange || event->type() == QEvent::ApplicationPaletteChange) {
             retintToolButtons();
+            applyTouchFriendlyStyling();
             auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
             auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
             const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
@@ -458,6 +511,38 @@ namespace fairwindsk::ui::mydata {
                  m_coordinateEditButton
              }) {
             fairwindsk::ui::applyTintedButtonIcon(button, buttonIconColor, QSize(28, 28));
+        }
+    }
+
+    void Waypoints::applyTouchFriendlyStyling() const {
+        auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+        auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("day");
+        const auto colors = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), false);
+        const QColor baseColor = colors.window.lighter(106);
+
+        m_searchEdit->setStyleSheet(touchLineEditStyle(colors, baseColor));
+
+        for (auto *button : {
+                 m_refreshButton,
+                 m_importButton,
+                 m_exportButton,
+                 m_addButton,
+                 m_selectAllButton,
+                 m_bulkRemoveButton,
+                 m_backButton,
+                 m_newButton,
+                 m_navigateButton,
+                 m_editButton,
+                 m_saveButton,
+                 m_cancelButton,
+                 m_deleteButton,
+                 m_coordinateEditButton
+             }) {
+            const bool accent = button == m_addButton || button == m_newButton || button == m_saveButton || button == m_navigateButton;
+            button->setStyleSheet(toolbarButtonStyle(colors, accent));
+            button->setMinimumSize(kTouchButtonHeight, kTouchButtonHeight);
+            button->setIconSize(QSize(28, 28));
         }
     }
 

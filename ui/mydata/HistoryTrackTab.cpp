@@ -13,10 +13,10 @@
 #include <QHeaderView>
 #include <QLabel>
 #include <QMessageBox>
+#include <QPushButton>
 #include <QTableWidget>
 #include <QTableWidgetItem>
 #include <QTimer>
-#include <QToolButton>
 #include <QVBoxLayout>
 #include <QSignalBlocker>
 
@@ -38,36 +38,32 @@ namespace {
         false;
 #endif
 
-    QString touchToolButtonStyle(const fairwindsk::ui::ComfortChromeColors &colors, const bool accent = false) {
+    QString touchToolbarButtonStyle(const fairwindsk::ui::ComfortChromeColors &colors, const bool accent = false) {
         const QColor top = accent ? colors.accentTop : colors.buttonBackground.lighter(112);
         const QColor mid = accent ? colors.accentTop.darker(103) : colors.buttonBackground;
         const QColor bottom = accent ? colors.accentBottom : colors.buttonBackground.darker(118);
         const QColor border = accent ? colors.accentBottom : colors.border;
-        const QColor text = accent ? colors.accentText : colors.buttonText;
         return QStringLiteral(
-            "QToolButton {"
-            " min-width: 76px;"
+            "QPushButton {"
+            " min-width: 58px;"
+            " max-width: 58px;"
             " min-height: 58px;"
-            " padding: 6px 10px;"
+            " max-height: 58px;"
+            " padding: 0px;"
             " border-radius: 16px;"
             " border: 1px solid %1;"
             " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
             " stop:0 %2, stop:0.5 %3, stop:1 %4);"
-            " color: %5;"
-            " font-size: 15px;"
-            " font-weight: 700;"
             " }"
-            "QToolButton:hover { border-color: %6; }"
-            "QToolButton:pressed { background: %7; }"
-            "QToolButton:disabled { color: %8; background: %9; border-color: %10; }")
+            "QPushButton:hover { border-color: %5; }"
+            "QPushButton:pressed { background: %6; }"
+            "QPushButton:disabled { background: %7; border-color: %8; }")
             .arg(border.name(),
                  top.name(),
                  mid.name(),
                  bottom.name(),
-                 text.name(),
                  colors.accentTop.name(),
                  colors.pressedBackground.name(),
-                 colors.disabledText.name(),
                  colors.window.darker(104).name(),
                  colors.border.darker(130).name());
     }
@@ -227,13 +223,20 @@ namespace fairwindsk::ui::mydata {
         m_durationCombo->setMinimumHeight(kTouchButtonHeight);
         m_durationCombo->setMaximumHeight(kTouchButtonHeight);
 
-        m_openButton->setText(tr("Open"));
-        m_editButton->setText(tr("Edit"));
-        m_addButton->setText(tr("New"));
-        m_deleteButton->setText(tr("Delete"));
-        m_importButton->setText(tr("Import"));
-        m_exportButton->setText(tr("Export"));
-        m_refreshButton->setText(tr("Refresh"));
+        m_openButton->setText(QString());
+        m_editButton->setText(QString());
+        m_addButton->setText(QString());
+        m_deleteButton->setText(QString());
+        m_importButton->setText(QString());
+        m_exportButton->setText(QString());
+        m_refreshButton->setText(QString());
+        m_openButton->setToolTip(tr("Open"));
+        m_editButton->setToolTip(tr("Edit"));
+        m_addButton->setToolTip(tr("New"));
+        m_deleteButton->setToolTip(tr("Delete"));
+        m_importButton->setToolTip(tr("Import"));
+        m_exportButton->setToolTip(tr("Export"));
+        m_refreshButton->setToolTip(tr("Refresh"));
 
         if (!kUseSafeTextOnlyToolbarOnThisPlatform) {
             m_openButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/arrow-right-google.svg")));
@@ -245,16 +248,14 @@ namespace fairwindsk::ui::mydata {
             m_refreshButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/refresh-google.svg")));
         }
 
-        const QList<QToolButton *> buttons = {
+        const QList<QPushButton *> buttons = {
             m_openButton, m_editButton, m_addButton, m_deleteButton, m_importButton, m_exportButton, m_refreshButton
         };
-        for (QToolButton *button : buttons) {
-            button->setToolButtonStyle(kUseSafeTextOnlyToolbarOnThisPlatform ? Qt::ToolButtonTextOnly
-                                                                             : Qt::ToolButtonTextUnderIcon);
-            if (!kUseSafeTextOnlyToolbarOnThisPlatform) {
-                button->setIconSize(QSize(26, 26));
-            }
+        for (QPushButton *button : buttons) {
+            button->setFlat(false);
+            button->setIconSize(QSize(28, 28));
             button->setMinimumHeight(kTouchButtonHeight);
+            button->setMinimumWidth(kTouchButtonHeight);
         }
 
         configureTable();
@@ -264,13 +265,13 @@ namespace fairwindsk::ui::mydata {
                 qOverload<int>(&fairwindsk::ui::widgets::TouchComboBox::currentIndexChanged),
                 this,
                 &HistoryTrackTab::onDurationChanged);
-        connect(m_openButton, &QToolButton::clicked, this, &HistoryTrackTab::onOpenClicked);
-        connect(m_editButton, &QToolButton::clicked, this, &HistoryTrackTab::onEditClicked);
-        connect(m_addButton, &QToolButton::clicked, this, &HistoryTrackTab::onAddClicked);
-        connect(m_deleteButton, &QToolButton::clicked, this, &HistoryTrackTab::onDeleteClicked);
-        connect(m_importButton, &QToolButton::clicked, this, &HistoryTrackTab::onImportClicked);
-        connect(m_exportButton, &QToolButton::clicked, this, &HistoryTrackTab::onExportClicked);
-        connect(m_refreshButton, &QToolButton::clicked, this, &HistoryTrackTab::onRefreshClicked);
+        connect(m_openButton, &QPushButton::clicked, this, &HistoryTrackTab::onOpenClicked);
+        connect(m_editButton, &QPushButton::clicked, this, &HistoryTrackTab::onEditClicked);
+        connect(m_addButton, &QPushButton::clicked, this, &HistoryTrackTab::onAddClicked);
+        connect(m_deleteButton, &QPushButton::clicked, this, &HistoryTrackTab::onDeleteClicked);
+        connect(m_importButton, &QPushButton::clicked, this, &HistoryTrackTab::onImportClicked);
+        connect(m_exportButton, &QPushButton::clicked, this, &HistoryTrackTab::onExportClicked);
+        connect(m_refreshButton, &QPushButton::clicked, this, &HistoryTrackTab::onRefreshClicked);
         connect(m_tableWidget, &QTableWidget::cellDoubleClicked, this, &HistoryTrackTab::onTableDoubleClicked);
         connect(m_tableWidget, &QTableWidget::itemSelectionChanged, this, &HistoryTrackTab::updateActionState);
 
@@ -341,15 +342,13 @@ namespace fairwindsk::ui::mydata {
         m_tableWidget->setStyleSheet(touchTableStyle(colors, baseColor, panelColor));
         m_durationCombo->setAccentButton(true);
 
-        const QList<QToolButton *> buttons = {
+        const QList<QPushButton *> buttons = {
             m_openButton, m_editButton, m_addButton, m_deleteButton, m_importButton, m_exportButton, m_refreshButton
         };
-        for (QToolButton *button : buttons) {
+        for (QPushButton *button : buttons) {
             const bool accent = button == m_addButton || button == m_openButton;
-            button->setStyleSheet(touchToolButtonStyle(colors, accent));
-            if (!kUseSafeTextOnlyToolbarOnThisPlatform) {
-                fairwindsk::ui::applyTintedButtonIcon(button, accent ? colors.accentText : colors.buttonText, QSize(26, 26));
-            }
+            button->setStyleSheet(touchToolbarButtonStyle(colors, accent));
+            fairwindsk::ui::applyTintedButtonIcon(button, accent ? colors.accentText : colors.buttonText, QSize(28, 28));
         }
     }
 

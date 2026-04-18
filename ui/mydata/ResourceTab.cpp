@@ -38,6 +38,7 @@
 #include "ui_ResourceTab.h"
 
 namespace {
+    constexpr int kTouchButtonHeight = 58;
     constexpr bool kUseLightweightResourceTableOnThisPlatform =
 #if defined(Q_OS_LINUX) && (defined(__arm__) || defined(__aarch64__))
         true;
@@ -59,6 +60,75 @@ namespace {
 
     QJsonArray coordinateArray(const QJsonObject &resource) {
         return geometryObject(resource)["coordinates"].toArray();
+    }
+
+    QString touchToolButtonStyle(const fairwindsk::ui::ComfortChromeColors &colors, const bool accent = false) {
+        const QColor top = accent ? colors.accentTop : colors.buttonBackground.lighter(112);
+        const QColor mid = accent ? colors.accentTop.darker(103) : colors.buttonBackground;
+        const QColor bottom = accent ? colors.accentBottom : colors.buttonBackground.darker(118);
+        const QColor border = accent ? colors.accentBottom : colors.border;
+        return QStringLiteral(
+            "QToolButton {"
+            " min-width: 58px; max-width: 58px;"
+            " min-height: 58px; max-height: 58px;"
+            " padding: 0px;"
+            " border-radius: 16px;"
+            " border: 1px solid %1;"
+            " background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %2, stop:0.5 %3, stop:1 %4);"
+            " }"
+            "QToolButton:hover { border-color: %5; }"
+            "QToolButton:pressed { background: %6; }"
+            "QToolButton:disabled { background: %7; border-color: %8; }")
+            .arg(border.name(),
+                 top.name(),
+                 mid.name(),
+                 bottom.name(),
+                 colors.accentTop.name(),
+                 colors.pressedBackground.name(),
+                 colors.window.darker(104).name(),
+                 colors.border.darker(130).name());
+    }
+
+    QString touchPushButtonStyle(const fairwindsk::ui::ComfortChromeColors &colors, const bool accent = false) {
+        const QColor top = accent ? colors.accentTop : colors.buttonBackground.lighter(112);
+        const QColor mid = accent ? colors.accentTop.darker(103) : colors.buttonBackground;
+        const QColor bottom = accent ? colors.accentBottom : colors.buttonBackground.darker(118);
+        const QColor border = accent ? colors.accentBottom : colors.border;
+        return QStringLiteral(
+            "QPushButton {"
+            " min-width: 58px; max-width: 58px;"
+            " min-height: 58px; max-height: 58px;"
+            " padding: 0px;"
+            " border-radius: 16px;"
+            " border: 1px solid %1;"
+            " background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %2, stop:0.5 %3, stop:1 %4);"
+            " }"
+            "QPushButton:hover { border-color: %5; }"
+            "QPushButton:pressed { background: %6; }"
+            "QPushButton:disabled { background: %7; border-color: %8; }")
+            .arg(border.name(),
+                 top.name(),
+                 mid.name(),
+                 bottom.name(),
+                 colors.accentTop.name(),
+                 colors.pressedBackground.name(),
+                 colors.window.darker(104).name(),
+                 colors.border.darker(130).name());
+    }
+
+    QString touchLineEditStyle(const fairwindsk::ui::ComfortChromeColors &colors, const QColor &baseColor) {
+        return QStringLiteral(
+            "QLineEdit {"
+            " min-height: 54px;"
+            " border: 1px solid %1;"
+            " border-radius: 14px;"
+            " padding: 6px 14px;"
+            " background: %2;"
+            " color: %3;"
+            " font-size: 18px;"
+            " }"
+            "QLineEdit:focus { border-color: %4; }")
+            .arg(colors.border.name(), baseColor.name(), colors.text.name(), colors.accentTop.name());
     }
 }
 
@@ -120,7 +190,8 @@ namespace fairwindsk::ui::mydata {
         m_openChartSourceButton = ui->pushButtonOpenChartSource;
         m_chooseTileMapSourceButton = ui->pushButtonChooseTileMapSource;
 
-        m_searchEdit->setMaximumHeight(28);
+        m_searchEdit->setMinimumHeight(54);
+        m_searchEdit->setMaximumHeight(54);
         m_searchEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         connect(m_searchEdit, &QLineEdit::textChanged, this, &ResourceTab::onSearchTextChanged);
 
@@ -128,8 +199,14 @@ namespace fairwindsk::ui::mydata {
         m_refreshButton->setToolTip(tr("Refresh"));
         connect(m_refreshButton, &QToolButton::clicked, this, &ResourceTab::onRefreshClicked);
 
+        m_importButton->setIcon(QIcon(":/resources/svg/OpenBridge/route-import-iec.svg"));
+        m_importButton->setToolTip(tr("Import"));
+        m_importButton->setText(QString());
         connect(m_importButton, &QToolButton::clicked, this, &ResourceTab::onImportClicked);
 
+        m_exportButton->setIcon(QIcon(":/resources/svg/OpenBridge/file-export-google.svg"));
+        m_exportButton->setToolTip(tr("Export"));
+        m_exportButton->setText(QString());
         connect(m_exportButton, &QToolButton::clicked, this, &ResourceTab::onExportClicked);
 
         m_addButton->setIcon(QIcon(":/resources/svg/OpenBridge/widget-add-google.svg"));
@@ -160,11 +237,13 @@ namespace fairwindsk::ui::mydata {
         connect(m_editButton, &QToolButton::clicked, this, &ResourceTab::onEditClicked);
 
         m_saveButton->setIcon(QIcon(":/resources/svg/OpenBridge/edit-google.svg"));
-        m_saveButton->setText(tr("Save"));
+        m_saveButton->setToolTip(tr("Save"));
+        m_saveButton->setText(QString());
         connect(m_saveButton, &QToolButton::clicked, this, &ResourceTab::onSaveClicked);
 
         m_cancelButton->setIcon(QIcon(":/resources/svg/OpenBridge/close-google.svg"));
-        m_cancelButton->setText(tr("Cancel"));
+        m_cancelButton->setToolTip(tr("Cancel"));
+        m_cancelButton->setText(QString());
         connect(m_cancelButton, &QToolButton::clicked, this, &ResourceTab::onCancelClicked);
 
         m_deleteButton->setIcon(QIcon(":/resources/svg/OpenBridge/delete-google.svg"));
@@ -194,8 +273,26 @@ namespace fairwindsk::ui::mydata {
         m_coordinateDisplayEdit->setPlaceholderText(tr("No position"));
         m_coordinateEditButton->setIcon(QIcon(":/resources/svg/OpenBridge/edit-google.svg"));
         m_coordinateEditButton->setToolTip(tr("Edit coordinates"));
+        m_coordinateEditButton->setText(QString());
+
+        m_browseAttachmentButton->setIcon(QIcon(":/resources/svg/OpenBridge/route-import-iec.svg"));
+        m_browseAttachmentButton->setToolTip(tr("Browse attachment"));
+        m_browseAttachmentButton->setText(QString());
+        m_openAttachmentButton->setIcon(QIcon(":/resources/svg/OpenBridge/arrow-right-google.svg"));
+        m_openAttachmentButton->setToolTip(tr("Open attachment"));
+        m_openAttachmentButton->setText(QString());
+        m_chooseChartSourceButton->setIcon(QIcon(":/resources/svg/OpenBridge/chart-aton-iec.svg"));
+        m_chooseChartSourceButton->setToolTip(tr("Choose chart"));
+        m_chooseChartSourceButton->setText(QString());
+        m_openChartSourceButton->setIcon(QIcon(":/resources/svg/OpenBridge/arrow-right-google.svg"));
+        m_openChartSourceButton->setToolTip(tr("Open source"));
+        m_openChartSourceButton->setText(QString());
+        m_chooseTileMapSourceButton->setIcon(QIcon(":/resources/svg/OpenBridge/chart-aton-iec.svg"));
+        m_chooseTileMapSourceButton->setToolTip(tr("Choose tile map"));
+        m_chooseTileMapSourceButton->setText(QString());
 
         retintToolButtons();
+        applyTouchFriendlyStyling();
         connect(m_coordinateEditButton, &QToolButton::clicked, this, &ResourceTab::onCoordinateEditClicked);
         connect(m_notePositionCheckBox, &QCheckBox::toggled, this, [this](const bool checked) {
             if (m_kind == ResourceKind::Note) {
@@ -260,8 +357,8 @@ namespace fairwindsk::ui::mydata {
 
     void ResourceTab::refreshWorkflowTexts() {
         m_searchEdit->setPlaceholderText(searchPlaceholderText());
-        m_importButton->setText(importButtonText());
-        m_exportButton->setText(exportButtonText());
+        m_importButton->setToolTip(importButtonText());
+        m_exportButton->setToolTip(exportButtonText());
         m_nameEdit->setPlaceholderText(namePlaceholderText());
         m_descriptionEdit->setPlaceholderText(descriptionPlaceholderText());
         m_typeEdit->setPlaceholderText(typePlaceholderText());
@@ -1042,6 +1139,7 @@ namespace fairwindsk::ui::mydata {
         QWidget::changeEvent(event);
         if (event->type() == QEvent::PaletteChange || event->type() == QEvent::ApplicationPaletteChange) {
             retintToolButtons();
+            applyTouchFriendlyStyling();
             auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
             auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
             const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
@@ -1067,6 +1165,58 @@ namespace fairwindsk::ui::mydata {
                  m_coordinateEditButton
              }) {
             fairwindsk::ui::applyTintedButtonIcon(button, buttonIconColor, QSize(28, 28));
+        }
+
+        for (auto *button : {
+                 m_browseAttachmentButton,
+                 m_openAttachmentButton,
+                 m_chooseChartSourceButton,
+                 m_openChartSourceButton,
+                 m_chooseTileMapSourceButton
+             }) {
+            fairwindsk::ui::applyTintedButtonIcon(button, buttonIconColor, QSize(28, 28));
+        }
+    }
+
+    void ResourceTab::applyTouchFriendlyStyling() const {
+        auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+        auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+        const auto colors = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), false);
+        const QColor baseColor = colors.window.lighter(106);
+
+        m_searchEdit->setStyleSheet(touchLineEditStyle(colors, baseColor));
+
+        for (auto *button : {
+                 m_refreshButton,
+                 m_importButton,
+                 m_exportButton,
+                 m_addButton,
+                 m_backButton,
+                 m_newButton,
+                 m_editButton,
+                 m_saveButton,
+                 m_cancelButton,
+                 m_deleteButton,
+                 m_coordinateEditButton
+             }) {
+            const bool accent = button == m_addButton || button == m_newButton || button == m_saveButton;
+            button->setStyleSheet(touchToolButtonStyle(colors, accent));
+            button->setMinimumSize(kTouchButtonHeight, kTouchButtonHeight);
+            button->setIconSize(QSize(28, 28));
+        }
+
+        for (auto *button : {
+                 m_browseAttachmentButton,
+                 m_openAttachmentButton,
+                 m_chooseChartSourceButton,
+                 m_openChartSourceButton,
+                 m_chooseTileMapSourceButton
+             }) {
+            const bool accent = button == m_browseAttachmentButton || button == m_chooseChartSourceButton || button == m_chooseTileMapSourceButton;
+            button->setStyleSheet(touchPushButtonStyle(colors, accent));
+            button->setMinimumSize(kTouchButtonHeight, kTouchButtonHeight);
+            button->setIconSize(QSize(28, 28));
         }
     }
 

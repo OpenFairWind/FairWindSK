@@ -34,25 +34,25 @@
       <widget class="fairwindsk::ui::widgets::TouchComboBox" name="comboBoxDuration"/>
      </item>
      <item>
-      <widget class="QToolButton" name="toolButtonOpen"/>
+      <widget class="QPushButton" name="toolButtonOpen"/>
      </item>
      <item>
-      <widget class="QToolButton" name="toolButtonEdit"/>
+      <widget class="QPushButton" name="toolButtonEdit"/>
      </item>
      <item>
-      <widget class="QToolButton" name="toolButtonAdd"/>
+      <widget class="QPushButton" name="toolButtonAdd"/>
      </item>
      <item>
-      <widget class="QToolButton" name="toolButtonDelete"/>
+      <widget class="QPushButton" name="toolButtonDelete"/>
      </item>
      <item>
-      <widget class="QToolButton" name="toolButtonImport"/>
+      <widget class="QPushButton" name="toolButtonImport"/>
      </item>
      <item>
-      <widget class="QToolButton" name="toolButtonExport"/>
+      <widget class="QPushButton" name="toolButtonExport"/>
      </item>
      <item>
-      <widget class="QToolButton" name="toolButtonRefresh"/>
+      <widget class="QPushButton" name="toolButtonRefresh"/>
      </item>
     </layout>
    </item>

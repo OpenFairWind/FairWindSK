@@ -66,6 +66,7 @@ namespace fairwindsk::ui::mydata {
 
     private:
         void retintToolButtons() const;
+        void applyTouchFriendlyStyling() const;
         QString currentWaypointIdFromSelection() const;
         void rebuildTable();
         void appendTableBatch();

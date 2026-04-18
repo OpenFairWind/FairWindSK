@@ -13,8 +13,8 @@
 
 class QLabel;
 class QLineEdit;
+class QPushButton;
 class QTableWidget;
-class QToolButton;
 
 namespace fairwindsk::ui::mydata {
 
@@ -29,13 +29,13 @@ namespace fairwindsk::ui::mydata {
         void bindPageUi(QLabel *titleLabel,
                         QLineEdit *searchEdit,
                         QTableWidget *tableWidget,
-                        QToolButton *openButton,
-                        QToolButton *editButton,
-                        QToolButton *addButton,
-                        QToolButton *deleteButton,
-                        QToolButton *importButton,
-                        QToolButton *exportButton,
-                        QToolButton *refreshButton);
+                        QPushButton *openButton,
+                        QPushButton *editButton,
+                        QPushButton *addButton,
+                        QPushButton *deleteButton,
+                        QPushButton *importButton,
+                        QPushButton *exportButton,
+                        QPushButton *refreshButton);
 
         ResourceModel *model() const;
         ResourceKind kind() const;
@@ -84,13 +84,13 @@ namespace fairwindsk::ui::mydata {
         QLabel *m_titleLabel = nullptr;
         QLineEdit *m_searchEdit = nullptr;
         QTableWidget *m_tableWidget = nullptr;
-        QToolButton *m_openButton = nullptr;
-        QToolButton *m_editButton = nullptr;
-        QToolButton *m_addButton = nullptr;
-        QToolButton *m_deleteButton = nullptr;
-        QToolButton *m_importButton = nullptr;
-        QToolButton *m_exportButton = nullptr;
-        QToolButton *m_refreshButton = nullptr;
+        QPushButton *m_openButton = nullptr;
+        QPushButton *m_editButton = nullptr;
+        QPushButton *m_addButton = nullptr;
+        QPushButton *m_deleteButton = nullptr;
+        QPushButton *m_importButton = nullptr;
+        QPushButton *m_exportButton = nullptr;
+        QPushButton *m_refreshButton = nullptr;
         QStringList m_visibleResourceIds;
     };
 }

@@ -8,8 +8,8 @@
 #include <QWidget>
 
 class QLabel;
+class QPushButton;
 class QTableWidget;
-class QToolButton;
 class QTimer;
 namespace Ui { class HistoryTrackTab; }
 
@@ -62,13 +62,13 @@ namespace fairwindsk::ui::mydata {
         QLabel *m_statusLabel = nullptr;
         fairwindsk::ui::widgets::TouchComboBox *m_durationCombo = nullptr;
         QTableWidget *m_tableWidget = nullptr;
-        QToolButton *m_openButton = nullptr;
-        QToolButton *m_editButton = nullptr;
-        QToolButton *m_addButton = nullptr;
-        QToolButton *m_deleteButton = nullptr;
-        QToolButton *m_importButton = nullptr;
-        QToolButton *m_exportButton = nullptr;
-        QToolButton *m_refreshButton = nullptr;
+        QPushButton *m_openButton = nullptr;
+        QPushButton *m_editButton = nullptr;
+        QPushButton *m_addButton = nullptr;
+        QPushButton *m_deleteButton = nullptr;
+        QPushButton *m_importButton = nullptr;
+        QPushButton *m_exportButton = nullptr;
+        QPushButton *m_refreshButton = nullptr;
         QTimer *m_refreshTimer = nullptr;
         bool m_isShuttingDown = false;
     };
