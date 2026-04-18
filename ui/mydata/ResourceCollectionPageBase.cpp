@@ -26,6 +26,12 @@ namespace fairwindsk::ui::mydata {
     namespace {
         constexpr int kTouchButtonHeight = 58;
         constexpr int kTouchRowHeight = 64;
+        constexpr bool kUseSafeTextOnlyToolbarOnThisPlatform =
+#if defined(Q_OS_LINUX) && (defined(__arm__) || defined(__aarch64__))
+            true;
+#else
+            false;
+#endif
 
         QString touchToolButtonStyle(const fairwindsk::ui::ComfortChromeColors &colors, const bool accent = false) {
             const QColor top = accent ? colors.accentTop : colors.buttonBackground.lighter(112);
@@ -152,25 +158,35 @@ namespace fairwindsk::ui::mydata {
         m_refreshButton->setText(tr("Refresh"));
 
         qInfo() << "Binding MyData collection page UI for" << pageTitle();
-        m_openButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/arrow-right-google.svg")));
-        m_editButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/edit-google.svg")));
-        m_addButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/widget-add-google.svg")));
-        m_deleteButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/delete-google.svg")));
-        m_importButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/route-import-iec.svg")));
-        m_exportButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/file-export-google.svg")));
-        m_refreshButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/refresh-google.svg")));
+        if (!kUseSafeTextOnlyToolbarOnThisPlatform) {
+            m_openButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/arrow-right-google.svg")));
+            m_editButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/edit-google.svg")));
+            m_addButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/widget-add-google.svg")));
+            m_deleteButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/delete-google.svg")));
+            m_importButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/route-import-iec.svg")));
+            m_exportButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/file-export-google.svg")));
+            m_refreshButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/refresh-google.svg")));
+        }
+        qInfo() << "MyData collection page icons prepared for" << pageTitle()
+                << "textOnly =" << kUseSafeTextOnlyToolbarOnThisPlatform;
 
         const QList<QToolButton *> buttons = {
             m_openButton, m_editButton, m_addButton, m_deleteButton, m_importButton, m_exportButton, m_refreshButton
         };
         for (QToolButton *button : buttons) {
-            button->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-            button->setIconSize(QSize(26, 26));
+            button->setToolButtonStyle(kUseSafeTextOnlyToolbarOnThisPlatform ? Qt::ToolButtonTextOnly
+                                                                             : Qt::ToolButtonTextUnderIcon);
+            if (!kUseSafeTextOnlyToolbarOnThisPlatform) {
+                button->setIconSize(QSize(26, 26));
+            }
             button->setMinimumHeight(kTouchButtonHeight);
         }
+        qInfo() << "MyData collection page buttons prepared for" << pageTitle();
 
         configureTable();
+        qInfo() << "MyData collection page table configured for" << pageTitle();
         applyTouchFriendlyStyling();
+        qInfo() << "MyData collection page styling applied for" << pageTitle();
 
         connect(m_searchEdit, &QLineEdit::textChanged, this, &ResourceCollectionPageBase::onSearchTextChanged);
         connect(m_openButton, &QToolButton::clicked, this, &ResourceCollectionPageBase::onOpenClicked);
@@ -523,7 +539,9 @@ namespace fairwindsk::ui::mydata {
         for (QToolButton *button : buttons) {
             const bool accent = button == m_addButton || button == m_openButton;
             button->setStyleSheet(touchToolButtonStyle(colors, accent));
-            fairwindsk::ui::applyTintedButtonIcon(button, accent ? colors.accentText : colors.buttonText, QSize(26, 26));
+            if (!kUseSafeTextOnlyToolbarOnThisPlatform) {
+                fairwindsk::ui::applyTintedButtonIcon(button, accent ? colors.accentText : colors.buttonText, QSize(26, 26));
+            }
         }
     }
 
