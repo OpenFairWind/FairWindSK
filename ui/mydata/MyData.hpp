@@ -5,6 +5,7 @@
 #ifndef FAIRWINDSK_MYDATA_HPP
 #define FAIRWINDSK_MYDATA_HPP
 
+#include <QSet>
 #include <QVector>
 #include <QWidget>
 
@@ -41,6 +42,7 @@ namespace fairwindsk::ui::mydata {
         Ui::MyData *ui;
         QWidget *m_currentWidget = nullptr;
         QVector<QWidget *> m_loadedPages;
+        QSet<int> m_loadingPages;
     };
 } // fairwindsk::ui::mydata
 

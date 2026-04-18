@@ -34,6 +34,7 @@ namespace fairwindsk::ui::mydata {
  */
     void MyData::removeTabs() {
         m_loadedPages.clear();
+        m_loadingPages.clear();
 
         // While there is at least a tab in the tab widget...
         while (ui->tabWidget->count() > 0) {
@@ -77,8 +78,14 @@ namespace fairwindsk::ui::mydata {
         if (index < m_loadedPages.size() && m_loadedPages.at(index)) {
             return;
         }
+        if (m_loadingPages.contains(index)) {
+            qInfo() << "MyData tab" << index << "is already being created; skipping re-entrant load";
+            return;
+        }
 
+        m_loadingPages.insert(index);
         QWidget *page = createTabPage(index);
+        m_loadingPages.remove(index);
         if (!page) {
             return;
         }
