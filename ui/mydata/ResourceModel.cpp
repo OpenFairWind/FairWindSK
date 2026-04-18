@@ -11,6 +11,7 @@
 #include <QJsonValue>
 #include <QLocale>
 #include <QPointer>
+#include <QTimer>
 #include <QUuid>
 
 #include "FairWindSK.hpp"
@@ -284,7 +285,6 @@ namespace fairwindsk::ui::mydata {
           m_kind(kind) {
         const auto client = fairwindsk::FairWindSK::getInstance()->getSignalKClient();
         m_subscriptionPath = collection() + ".*";
-        reload(true);
         client->subscribeStream(
             "resources",
             m_subscriptionPath,
@@ -294,6 +294,9 @@ namespace fairwindsk::ui::mydata {
             if (recoveredFromDisconnect) {
                 reload(true);
             }
+        });
+        QTimer::singleShot(0, this, [this]() {
+            reload(true);
         });
     }
 
