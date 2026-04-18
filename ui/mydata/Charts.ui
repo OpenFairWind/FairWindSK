@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Charts</class>
+ <widget class="QWidget" name="Charts">
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="spacing">
+    <number>12</number>
+   </property>
+   <property name="leftMargin">
+    <number>16</number>
+   </property>
+   <property name="topMargin">
+    <number>16</number>
+   </property>
+   <property name="rightMargin">
+    <number>16</number>
+   </property>
+   <property name="bottomMargin">
+    <number>16</number>
+   </property>
+   <item>
+    <widget class="QLabel" name="labelTitle">
+     <property name="text">
+      <string>Charts</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayoutToolbar">
+     <property name="spacing">
+      <number>10</number>
+     </property>
+     <item><widget class="QLineEdit" name="lineEditSearch"/></item>
+     <item><widget class="QToolButton" name="toolButtonOpen"/></item>
+     <item><widget class="QToolButton" name="toolButtonEdit"/></item>
+     <item><widget class="QToolButton" name="toolButtonAdd"/></item>
+     <item><widget class="QToolButton" name="toolButtonDelete"/></item>
+     <item><widget class="QToolButton" name="toolButtonImport"/></item>
+     <item><widget class="QToolButton" name="toolButtonExport"/></item>
+     <item><widget class="QToolButton" name="toolButtonRefresh"/></item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QTableWidget" name="tableWidget"/>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

@@ -5,27 +5,25 @@
 #ifndef FAIRWINDSK_UI_MYDATA_ROUTES_HPP
 #define FAIRWINDSK_UI_MYDATA_ROUTES_HPP
 
-#include "ResourceTab.hpp"
+#include "ResourceCollectionPageBase.hpp"
+
+namespace Ui { class Routes; }
 
 namespace fairwindsk::ui::mydata {
 
-    class Routes final : public ResourceTab {
+    class Routes final : public ResourceCollectionPageBase {
         Q_OBJECT
 
     public:
         explicit Routes(QWidget *parent = nullptr);
-        ~Routes() override = default;
+        ~Routes() override;
 
     protected:
+        QString pageTitle() const override;
         QString searchPlaceholderText() const override;
-        QString namePlaceholderText() const override;
-        QString descriptionPlaceholderText() const override;
-        QString typePlaceholderText() const override;
-        QString coordinatesPlaceholderText() const override;
-        QString importButtonText() const override;
-        QString exportButtonText() const override;
-        QString primaryRowActionToolTip() const override;
-        QIcon primaryRowActionIcon() const override;
+
+    private:
+        ::Ui::Routes *ui = nullptr;
     };
 }
 

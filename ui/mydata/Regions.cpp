@@ -4,42 +4,35 @@
 
 #include "Regions.hpp"
 
+#include "ui_Regions.h"
+
 namespace fairwindsk::ui::mydata {
 
     Regions::Regions(QWidget *parent)
-        : ResourceTab(ResourceKind::Region, parent) {
-        refreshWorkflowTexts();
+        : ResourceCollectionPageBase(ResourceKind::Region, parent),
+          ui(new Ui::Regions) {
+        ui->setupUi(this);
+        bindPageUi(ui->labelTitle,
+                   ui->lineEditSearch,
+                   ui->tableWidget,
+                   ui->toolButtonOpen,
+                   ui->toolButtonEdit,
+                   ui->toolButtonAdd,
+                   ui->toolButtonDelete,
+                   ui->toolButtonImport,
+                   ui->toolButtonExport,
+                   ui->toolButtonRefresh);
+    }
+
+    Regions::~Regions() {
+        delete ui;
+    }
+
+    QString Regions::pageTitle() const {
+        return tr("Regions");
     }
 
     QString Regions::searchPlaceholderText() const {
-        return tr("Search regions by area name or operational note");
-    }
-
-    QString Regions::namePlaceholderText() const {
-        return tr("Region name");
-    }
-
-    QString Regions::descriptionPlaceholderText() const {
-        return tr("Anchorage, exclusion zone, race box, or harbor working note");
-    }
-
-    QString Regions::geometryPlaceholderText() const {
-        return tr("{\n  \"type\": \"Polygon\",\n  \"coordinates\": [[[12.4000, 41.9000], [12.5200, 41.9000], [12.5200, 42.0200], [12.4000, 41.9000]]]\n}");
-    }
-
-    QString Regions::importButtonText() const {
-        return tr("Import region");
-    }
-
-    QString Regions::exportButtonText() const {
-        return tr("Export region");
-    }
-
-    QString Regions::primaryRowActionToolTip() const {
-        return tr("Inspect region geometry");
-    }
-
-    QIcon Regions::primaryRowActionIcon() const {
-        return QIcon(QStringLiteral(":/resources/svg/OpenBridge/search.svg"));
+        return tr("Search regions by name, description, geometry, or timestamp");
     }
 }

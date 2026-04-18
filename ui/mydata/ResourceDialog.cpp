@@ -4,9 +4,14 @@
 
 #include "ResourceDialog.hpp"
 
+#include <QAbstractButton>
 #include <QCheckBox>
+#include <QDialogButtonBox>
 #include <QDoubleSpinBox>
+#include <QFont>
 #include <QJsonDocument>
+#include <QLabel>
+#include <QPushButton>
 #include <QUuid>
 
 #include "FairWindSK.hpp"
@@ -98,6 +103,41 @@ namespace fairwindsk::ui::mydata {
         m_mimeTypeEdit->setPlaceholderText("text/plain");
         m_chartLayersEdit->setPlaceholderText("base,depth");
         m_chartBoundsEdit->setPlaceholderText("[[12.0, 41.0], [13.0, 42.0]]");
+
+        const QList<QLineEdit *> lineEdits = findChildren<QLineEdit *>();
+        for (QLineEdit *lineEdit : lineEdits) {
+            lineEdit->setMinimumHeight(44);
+        }
+
+        const QList<QDoubleSpinBox *> spinBoxes = findChildren<QDoubleSpinBox *>();
+        for (QDoubleSpinBox *spinBox : spinBoxes) {
+            spinBox->setMinimumHeight(44);
+        }
+
+        const QList<QPlainTextEdit *> plainTextEdits = findChildren<QPlainTextEdit *>();
+        for (QPlainTextEdit *plainTextEdit : plainTextEdits) {
+            plainTextEdit->setMinimumHeight(108);
+        }
+
+        const QList<QCheckBox *> checkBoxes = findChildren<QCheckBox *>();
+        for (QCheckBox *checkBox : checkBoxes) {
+            checkBox->setMinimumHeight(40);
+        }
+
+        const QList<QLabel *> labels = findChildren<QLabel *>();
+        for (QLabel *label : labels) {
+            QFont font = label->font();
+            font.setPointSizeF(std::max(11.0, font.pointSizeF()));
+            label->setFont(font);
+        }
+
+        if (ui->buttonBox) {
+            const auto buttons = ui->buttonBox->buttons();
+            for (QAbstractButton *button : buttons) {
+                button->setMinimumHeight(46);
+                button->setMinimumWidth(110);
+            }
+        }
 
         switch (kind) {
             case ResourceKind::Waypoint:

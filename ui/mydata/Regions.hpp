@@ -5,26 +5,25 @@
 #ifndef FAIRWINDSK_UI_MYDATA_REGIONS_HPP
 #define FAIRWINDSK_UI_MYDATA_REGIONS_HPP
 
-#include "ResourceTab.hpp"
+#include "ResourceCollectionPageBase.hpp"
+
+namespace Ui { class Regions; }
 
 namespace fairwindsk::ui::mydata {
 
-    class Regions final : public ResourceTab {
+    class Regions final : public ResourceCollectionPageBase {
         Q_OBJECT
 
     public:
         explicit Regions(QWidget *parent = nullptr);
-        ~Regions() override = default;
+        ~Regions() override;
 
     protected:
+        QString pageTitle() const override;
         QString searchPlaceholderText() const override;
-        QString namePlaceholderText() const override;
-        QString descriptionPlaceholderText() const override;
-        QString geometryPlaceholderText() const override;
-        QString importButtonText() const override;
-        QString exportButtonText() const override;
-        QString primaryRowActionToolTip() const override;
-        QIcon primaryRowActionIcon() const override;
+
+    private:
+        ::Ui::Regions *ui = nullptr;
     };
 }
 

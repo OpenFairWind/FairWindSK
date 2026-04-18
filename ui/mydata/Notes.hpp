@@ -7,29 +7,25 @@
 
 #include <QJsonObject>
 
-#include "ResourceTab.hpp"
+#include "ResourceCollectionPageBase.hpp"
 
-class QPushButton;
+namespace Ui { class Notes; }
 
 namespace fairwindsk::ui::mydata {
 
-    class Notes final : public ResourceTab {
+    class Notes final : public ResourceCollectionPageBase {
         Q_OBJECT
 
     public:
         explicit Notes(QWidget *parent = nullptr);
-        ~Notes() override = default;
+        ~Notes() override;
 
     protected:
+        QString pageTitle() const override;
         QString searchPlaceholderText() const override;
-        QString namePlaceholderText() const override;
-        QString descriptionPlaceholderText() const override;
-        QString importButtonText() const override;
-        QString exportButtonText() const override;
         QString importFileFilter() const override;
         QString exportFileFilter() const override;
-        QString primaryRowActionToolTip() const override;
-        QIcon primaryRowActionIcon() const override;
+        QString importSuccessMessage(int importedCount) const override;
         void triggerPrimaryAction(const QString &id, const QJsonObject &resource) override;
         bool importResourcesFromPath(const QString &fileName,
                                      QList<QPair<QString, QJsonObject>> *resources,
@@ -39,11 +35,9 @@ namespace fairwindsk::ui::mydata {
                                    QString *message) const override;
 
     private:
-        void chooseAttachment();
         void openAttachmentPath(const QString &path) const;
 
-        QPushButton *m_browseAttachmentButton = nullptr;
-        QPushButton *m_openAttachmentButton = nullptr;
+        ::Ui::Notes *ui = nullptr;
     };
 }
 

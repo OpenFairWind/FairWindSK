@@ -4,62 +4,44 @@
 
 #include "Notes.hpp"
 
+#include <QDesktopServices>
 #include <QFile>
 #include <QFileInfo>
-#include <QJsonArray>
 #include <QJsonDocument>
 #include <QMimeDatabase>
-#include <QPushButton>
-#include <QDesktopServices>
 #include <QUrl>
 
 #include "signalk/Client.hpp"
-#include "ui/DrawerDialogHost.hpp"
+#include "ui_Notes.h"
 
 namespace fairwindsk::ui::mydata {
 
     Notes::Notes(QWidget *parent)
-        : ResourceTab(ResourceKind::Note, parent) {
-        refreshWorkflowTexts();
+        : ResourceCollectionPageBase(ResourceKind::Note, parent),
+          ui(new Ui::Notes) {
+        ui->setupUi(this);
+        bindPageUi(ui->labelTitle,
+                   ui->lineEditSearch,
+                   ui->tableWidget,
+                   ui->toolButtonOpen,
+                   ui->toolButtonEdit,
+                   ui->toolButtonAdd,
+                   ui->toolButtonDelete,
+                   ui->toolButtonImport,
+                   ui->toolButtonExport,
+                   ui->toolButtonRefresh);
+    }
 
-        m_browseAttachmentButton = browseAttachmentButton();
-        m_openAttachmentButton = openAttachmentButton();
+    Notes::~Notes() {
+        delete ui;
+    }
 
-        connect(m_browseAttachmentButton, &QPushButton::clicked, this, [this]() {
-            chooseAttachment();
-        });
-        connect(m_openAttachmentButton, &QPushButton::clicked, this, [this]() {
-            openAttachmentPath(hrefEdit() ? hrefEdit()->text().trimmed() : QString());
-        });
-        connect(hrefEdit(), &QLineEdit::textChanged, this, [this](const QString &text) {
-            if (m_openAttachmentButton) {
-                m_openAttachmentButton->setEnabled(!text.trimmed().isEmpty());
-            }
-        });
-
-        if (m_openAttachmentButton) {
-            m_openAttachmentButton->setEnabled(false);
-        }
+    QString Notes::pageTitle() const {
+        return tr("Notes");
     }
 
     QString Notes::searchPlaceholderText() const {
-        return tr("Search notes by title, summary, or attached link");
-    }
-
-    QString Notes::namePlaceholderText() const {
-        return tr("Note title");
-    }
-
-    QString Notes::descriptionPlaceholderText() const {
-        return tr("Bridge note, crew reminder, maintenance detail, or passage memo");
-    }
-
-    QString Notes::importButtonText() const {
-        return tr("Import notes");
-    }
-
-    QString Notes::exportButtonText() const {
-        return tr("Export notes");
+        return tr("Search notes by title, description, href, or MIME type");
     }
 
     QString Notes::importFileFilter() const {
@@ -70,12 +52,8 @@ namespace fairwindsk::ui::mydata {
         return tr("GeoJSON or JSON notes (*.geojson *.json);;Attachment copy (*)");
     }
 
-    QString Notes::primaryRowActionToolTip() const {
-        return tr("Open linked attachment or note details");
-    }
-
-    QIcon Notes::primaryRowActionIcon() const {
-        return QIcon(QStringLiteral(":/resources/svg/OpenBridge/arrow-right-google.svg"));
+    QString Notes::importSuccessMessage(const int importedCount) const {
+        return tr("Imported %1 note attachment(s).").arg(importedCount);
     }
 
     void Notes::triggerPrimaryAction(const QString &id, const QJsonObject &resource) {
@@ -84,7 +62,7 @@ namespace fairwindsk::ui::mydata {
             openAttachmentPath(href);
             return;
         }
-        ResourceTab::triggerPrimaryAction(id, resource);
+        ResourceCollectionPageBase::triggerPrimaryAction(id, resource);
     }
 
     bool Notes::importResourcesFromPath(const QString &fileName,
@@ -93,7 +71,7 @@ namespace fairwindsk::ui::mydata {
         const QFileInfo info(fileName);
         const QString suffix = info.suffix().toLower();
         if (suffix == QStringLiteral("geojson") || suffix == QStringLiteral("json")) {
-            return ResourceTab::importResourcesFromPath(fileName, resources, message);
+            return ResourceCollectionPageBase::importResourcesFromPath(fileName, resources, message);
         }
 
         const QMimeDatabase mimeDatabase;
@@ -158,47 +136,19 @@ namespace fairwindsk::ui::mydata {
             }
         }
 
-        return ResourceTab::exportResourcesToPath(fileName, resources, message);
-    }
-
-    void Notes::chooseAttachment() {
-        const QString selectedPath = fairwindsk::ui::drawer::getOpenFilePath(
-            this,
-            tr("Select attachment"),
-            QString(),
-            tr("All files (*)"));
-        if (selectedPath.isEmpty()) {
-            return;
-        }
-
-        const QFileInfo info(selectedPath);
-        const QMimeDatabase mimeDatabase;
-        const QMimeType mimeType = mimeDatabase.mimeTypeForFile(info, QMimeDatabase::MatchContent);
-
-        if (hrefEdit()) {
-            hrefEdit()->setText(info.absoluteFilePath());
-        }
-        if (mimeTypeEdit()) {
-            mimeTypeEdit()->setText(mimeType.isValid() ? mimeType.name() : QStringLiteral("application/octet-stream"));
-        }
-        if (nameEdit() && nameEdit()->text().trimmed().isEmpty()) {
-            nameEdit()->setText(info.completeBaseName().isEmpty() ? info.fileName() : info.completeBaseName());
-        }
-        if (descriptionEdit() && descriptionEdit()->text().trimmed().isEmpty()) {
-            descriptionEdit()->setText(tr("Attached file %1").arg(info.fileName()));
-        }
+        return ResourceCollectionPageBase::exportResourcesToPath(fileName, resources, message);
     }
 
     void Notes::openAttachmentPath(const QString &path) const {
         if (path.trimmed().isEmpty()) {
-            showWorkflowError(tr("This note does not reference an attachment or external link yet."));
+            showPageError(tr("This note does not reference an attachment or external link yet."));
             return;
         }
 
         const QFileInfo localInfo(path);
         const QUrl url = localInfo.exists() ? QUrl::fromLocalFile(localInfo.absoluteFilePath()) : QUrl::fromUserInput(path);
         if (!url.isValid() || !QDesktopServices::openUrl(url)) {
-            showWorkflowError(tr("Unable to open the selected attachment or link."));
+            showPageError(tr("Unable to open the selected attachment or link."));
         }
     }
 }

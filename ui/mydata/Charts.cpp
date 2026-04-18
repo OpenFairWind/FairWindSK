@@ -10,11 +10,10 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QPushButton>
 #include <QUrl>
 
 #include "signalk/Client.hpp"
-#include "ui/DrawerDialogHost.hpp"
+#include "ui_Charts.h"
 
 namespace {
     QString chartFormatFromPath(const QFileInfo &info) {
@@ -69,51 +68,31 @@ namespace {
 namespace fairwindsk::ui::mydata {
 
     Charts::Charts(QWidget *parent)
-        : ResourceTab(ResourceKind::Chart, parent) {
-        refreshWorkflowTexts();
+        : ResourceCollectionPageBase(ResourceKind::Chart, parent),
+          ui(new Ui::Charts) {
+        ui->setupUi(this);
+        bindPageUi(ui->labelTitle,
+                   ui->lineEditSearch,
+                   ui->tableWidget,
+                   ui->toolButtonOpen,
+                   ui->toolButtonEdit,
+                   ui->toolButtonAdd,
+                   ui->toolButtonDelete,
+                   ui->toolButtonImport,
+                   ui->toolButtonExport,
+                   ui->toolButtonRefresh);
+    }
 
-        m_browseChartButton = chooseChartSourceButton();
-        m_openChartButton = openChartSourceButton();
-        m_browseTileMapButton = chooseTileMapSourceButton();
+    Charts::~Charts() {
+        delete ui;
+    }
 
-        connect(m_browseChartButton, &QPushButton::clicked, this, [this]() {
-            chooseChartSource();
-        });
-        connect(m_openChartButton, &QPushButton::clicked, this, [this]() {
-            openChartSourcePath(chartUrlEdit() ? chartUrlEdit()->text().trimmed() : QString());
-        });
-        connect(m_browseTileMapButton, &QPushButton::clicked, this, [this]() {
-            chooseTileMapSource();
-        });
-        connect(chartUrlEdit(), &QLineEdit::textChanged, this, [this](const QString &text) {
-            if (m_openChartButton) {
-                m_openChartButton->setEnabled(!text.trimmed().isEmpty());
-            }
-        });
-
-        if (m_openChartButton) {
-            m_openChartButton->setEnabled(false);
-        }
+    QString Charts::pageTitle() const {
+        return tr("Charts");
     }
 
     QString Charts::searchPlaceholderText() const {
         return tr("Search charts by name, identifier, region, or format");
-    }
-
-    QString Charts::namePlaceholderText() const {
-        return tr("Chart display name");
-    }
-
-    QString Charts::descriptionPlaceholderText() const {
-        return tr("Coverage, source, scale usage, or onboard deployment note");
-    }
-
-    QString Charts::importButtonText() const {
-        return tr("Import package");
-    }
-
-    QString Charts::exportButtonText() const {
-        return tr("Export package");
     }
 
     QString Charts::importFileFilter() const {
@@ -128,21 +107,13 @@ namespace fairwindsk::ui::mydata {
         return QStringLiteral("charts-package.json");
     }
 
-    QString Charts::primaryRowActionToolTip() const {
-        return tr("Open chart source or inspect metadata");
-    }
-
-    QIcon Charts::primaryRowActionIcon() const {
-        return QIcon(QStringLiteral(":/resources/svg/OpenBridge/chart-aton-iec.svg"));
-    }
-
     void Charts::triggerPrimaryAction(const QString &id, const QJsonObject &resource) {
         const QString sourcePath = resource["chartUrl"].toString().trimmed();
         if (!sourcePath.isEmpty()) {
             openChartSourcePath(sourcePath);
             return;
         }
-        ResourceTab::triggerPrimaryAction(id, resource);
+        ResourceCollectionPageBase::triggerPrimaryAction(id, resource);
     }
 
     bool Charts::importResourcesFromPath(const QString &fileName,
@@ -151,7 +122,7 @@ namespace fairwindsk::ui::mydata {
         const QFileInfo info(fileName);
         const QString suffix = info.suffix().toLower();
         if (suffix == QStringLiteral("geojson")) {
-            return ResourceTab::importResourcesFromPath(fileName, resources, message);
+            return ResourceCollectionPageBase::importResourcesFromPath(fileName, resources, message);
         }
 
         if (suffix == QStringLiteral("json")) {
@@ -188,7 +159,7 @@ namespace fairwindsk::ui::mydata {
                 }
             }
 
-            return ResourceTab::importResourcesFromPath(fileName, resources, message);
+            return ResourceCollectionPageBase::importResourcesFromPath(fileName, resources, message);
         }
 
         resources->clear();
@@ -220,65 +191,19 @@ namespace fairwindsk::ui::mydata {
             return true;
         }
 
-        return ResourceTab::exportResourcesToPath(fileName, resources, message);
-    }
-
-    void Charts::chooseChartSource() {
-        const QString selectedPath = fairwindsk::ui::drawer::getOpenFilePath(
-            this,
-            tr("Select chart source"),
-            QString(),
-            tr("Chart sources (*.mbtiles *.kap *.bsb *.gemf *.xml *.zip);;All files (*)"));
-        if (selectedPath.isEmpty()) {
-            return;
-        }
-
-        const QFileInfo info(selectedPath);
-        if (chartUrlEdit()) {
-            chartUrlEdit()->setText(info.absoluteFilePath());
-        }
-        if (chartFormatEdit()) {
-            chartFormatEdit()->setText(chartFormatFromPath(info));
-        }
-        if (identifierEdit() && identifierEdit()->text().trimmed().isEmpty()) {
-            identifierEdit()->setText(info.completeBaseName().isEmpty() ? info.fileName() : info.completeBaseName());
-        }
-        if (nameEdit() && nameEdit()->text().trimmed().isEmpty()) {
-            nameEdit()->setText(info.completeBaseName().isEmpty() ? info.fileName() : info.completeBaseName());
-        }
-        if (descriptionEdit() && descriptionEdit()->text().trimmed().isEmpty()) {
-            descriptionEdit()->setText(tr("Local chart source %1").arg(info.fileName()));
-        }
-        if (info.fileName().compare(QStringLiteral("tilemapresource.xml"), Qt::CaseInsensitive) == 0 && tilemapUrlEdit()) {
-            tilemapUrlEdit()->setText(info.absoluteFilePath());
-        }
-    }
-
-    void Charts::chooseTileMapSource() {
-        const QString selectedPath = fairwindsk::ui::drawer::getOpenFilePath(
-            this,
-            tr("Select tile map source"),
-            QString(),
-            tr("Tile map sources (*.xml *.json);;All files (*)"));
-        if (selectedPath.isEmpty()) {
-            return;
-        }
-
-        if (tilemapUrlEdit()) {
-            tilemapUrlEdit()->setText(QFileInfo(selectedPath).absoluteFilePath());
-        }
+        return ResourceCollectionPageBase::exportResourcesToPath(fileName, resources, message);
     }
 
     void Charts::openChartSourcePath(const QString &path) const {
         if (path.trimmed().isEmpty()) {
-            showWorkflowError(tr("This chart does not have a source path yet."));
+            showPageError(tr("This chart does not have a source path yet."));
             return;
         }
 
         const QFileInfo localInfo(path);
         const QUrl url = localInfo.exists() ? QUrl::fromLocalFile(localInfo.absoluteFilePath()) : QUrl::fromUserInput(path);
         if (!url.isValid() || !QDesktopServices::openUrl(url)) {
-            showWorkflowError(tr("Unable to open the selected chart source."));
+            showPageError(tr("Unable to open the selected chart source."));
         }
     }
 }

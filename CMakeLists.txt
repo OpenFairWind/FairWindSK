@@ -262,14 +262,14 @@ set(FAIRWINDSK_SOURCES
         ui/bottombar/AutopilotBar.cpp ui/bottombar/AutopilotBar.hpp ui/bottombar/AutopilotBar.ui
         ui/mydata/MyData.cpp ui/mydata/MyData.hpp ui/mydata/MyData.ui
         ui/mydata/Waypoints.cpp ui/mydata/Waypoints.hpp ui/mydata/Waypoints.ui
-        ui/mydata/Routes.cpp ui/mydata/Routes.hpp
-        ui/mydata/RoutesLite.cpp ui/mydata/RoutesLite.hpp
-        ui/mydata/Regions.cpp ui/mydata/Regions.hpp
-        ui/mydata/Notes.cpp ui/mydata/Notes.hpp
-        ui/mydata/Charts.cpp ui/mydata/Charts.hpp
+        ui/mydata/Routes.cpp ui/mydata/Routes.hpp ui/mydata/Routes.ui
+        ui/mydata/Regions.cpp ui/mydata/Regions.hpp ui/mydata/Regions.ui
+        ui/mydata/Notes.cpp ui/mydata/Notes.hpp ui/mydata/Notes.ui
+        ui/mydata/Charts.cpp ui/mydata/Charts.hpp ui/mydata/Charts.ui
         ui/mydata/GeoJsonUtils.cpp ui/mydata/GeoJsonUtils.hpp
         ui/mydata/GeoJsonPreviewWidget.cpp ui/mydata/GeoJsonPreviewWidget.hpp ui/mydata/GeoJsonPreviewWidget.ui
         ui/mydata/JsonObjectEditorWidget.cpp ui/mydata/JsonObjectEditorWidget.hpp ui/mydata/JsonObjectEditorWidget.ui
+        ui/mydata/ResourceCollectionPageBase.cpp ui/mydata/ResourceCollectionPageBase.hpp
         ui/mydata/ResourceDialog.cpp ui/mydata/ResourceDialog.hpp ui/mydata/ResourceDialog.ui
         ui/mydata/ResourceModel.cpp ui/mydata/ResourceModel.hpp
         ui/mydata/ResourceTab.cpp ui/mydata/ResourceTab.hpp ui/mydata/ResourceTab.ui

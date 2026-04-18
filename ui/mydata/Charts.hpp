@@ -7,30 +7,25 @@
 
 #include <QJsonObject>
 
-#include "ResourceTab.hpp"
+#include "ResourceCollectionPageBase.hpp"
 
-class QPushButton;
+namespace Ui { class Charts; }
 
 namespace fairwindsk::ui::mydata {
 
-    class Charts final : public ResourceTab {
+    class Charts final : public ResourceCollectionPageBase {
         Q_OBJECT
 
     public:
         explicit Charts(QWidget *parent = nullptr);
-        ~Charts() override = default;
+        ~Charts() override;
 
     protected:
+        QString pageTitle() const override;
         QString searchPlaceholderText() const override;
-        QString namePlaceholderText() const override;
-        QString descriptionPlaceholderText() const override;
-        QString importButtonText() const override;
-        QString exportButtonText() const override;
         QString importFileFilter() const override;
         QString exportFileFilter() const override;
         QString exportDefaultFileName() const override;
-        QString primaryRowActionToolTip() const override;
-        QIcon primaryRowActionIcon() const override;
         void triggerPrimaryAction(const QString &id, const QJsonObject &resource) override;
         bool importResourcesFromPath(const QString &fileName,
                                      QList<QPair<QString, QJsonObject>> *resources,
@@ -40,13 +35,9 @@ namespace fairwindsk::ui::mydata {
                                    QString *message) const override;
 
     private:
-        void chooseChartSource();
-        void chooseTileMapSource();
         void openChartSourcePath(const QString &path) const;
 
-        QPushButton *m_browseChartButton = nullptr;
-        QPushButton *m_openChartButton = nullptr;
-        QPushButton *m_browseTileMapButton = nullptr;
+        ::Ui::Charts *ui = nullptr;
     };
 }
 

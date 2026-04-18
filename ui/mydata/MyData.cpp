@@ -17,7 +17,6 @@
 #include "Regions.hpp"
 #include "ResourceTab.hpp"
 #include "Routes.hpp"
-#include "RoutesLite.hpp"
 #include "Waypoints.hpp"
 
 namespace fairwindsk::ui::mydata {
@@ -111,11 +110,7 @@ namespace fairwindsk::ui::mydata {
             case 0:
                 return new Waypoints(const_cast<MyData *>(this));
             case 1:
-#if defined(Q_OS_LINUX) && (defined(__arm__) || defined(__aarch64__))
-                return new RoutesLite(const_cast<MyData *>(this));
-#else
                 return new Routes(const_cast<MyData *>(this));
-#endif
             case 2:
                 return new Regions(const_cast<MyData *>(this));
             case 3:
