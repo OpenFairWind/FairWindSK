@@ -6,6 +6,8 @@
 
 #include <algorithm>
 
+#include <QSignalBlocker>
+
 #include "MyData.hpp"
 #include "ui_MyData.h"
 #include "Charts.hpp"
@@ -20,6 +22,7 @@
 namespace fairwindsk::ui::mydata {
     MyData::MyData(QWidget *parent, QWidget *currenWidget): QWidget(parent), ui(new Ui::MyData) {
         ui->setupUi(this);
+        connect(ui->tabWidget, &QTabWidget::currentChanged, this, &MyData::ensureTabPage);
         initTabs(0);
 
         m_currentWidget = currenWidget;
@@ -30,6 +33,8 @@ namespace fairwindsk::ui::mydata {
  * Remove all  tabs
  */
     void MyData::removeTabs() {
+        m_loadedPages.clear();
+
         // While there is at least a tab in the tab widget...
         while (ui->tabWidget->count() > 0) {
 
@@ -49,18 +54,48 @@ namespace fairwindsk::ui::mydata {
  * Add tabs, then set the current index
  */
     void MyData::initTabs(const int currentIndex) {
+        const QSignalBlocker blocker(ui->tabWidget);
 
         // Remove tabs if present
         removeTabs();
 
+        m_loadedPages.resize(7);
         for (int index = 0; index < 7; ++index) {
-            if (QWidget *page = createTabPage(index)) {
-                ui->tabWidget->addTab(page, tabTitle(index));
-            }
+            ui->tabWidget->addTab(new QWidget(ui->tabWidget), tabTitle(index));
         }
 
         // Set the current tab index
         ui->tabWidget->setCurrentIndex(std::clamp(currentIndex, 0, std::max(0, ui->tabWidget->count() - 1)));
+        ensureTabPage(ui->tabWidget->currentIndex());
+    }
+
+    void MyData::ensureTabPage(const int index) {
+        if (!ui || !ui->tabWidget || index < 0 || index >= ui->tabWidget->count()) {
+            return;
+        }
+
+        if (index < m_loadedPages.size() && m_loadedPages.at(index)) {
+            return;
+        }
+
+        QWidget *page = createTabPage(index);
+        if (!page) {
+            return;
+        }
+
+        QWidget *existingPage = ui->tabWidget->widget(index);
+        ui->tabWidget->removeTab(index);
+        ui->tabWidget->insertTab(index, page, tabTitle(index));
+        ui->tabWidget->setCurrentIndex(index);
+
+        if (index >= m_loadedPages.size()) {
+            m_loadedPages.resize(index + 1);
+        }
+        m_loadedPages[index] = page;
+
+        if (existingPage) {
+            delete existingPage;
+        }
     }
 
     QWidget *MyData::createTabPage(const int index) const {

@@ -5,6 +5,7 @@
 #ifndef FAIRWINDSK_MYDATA_HPP
 #define FAIRWINDSK_MYDATA_HPP
 
+#include <QVector>
 #include <QWidget>
 
 namespace fairwindsk::ui::mydata {
@@ -33,11 +34,13 @@ namespace fairwindsk::ui::mydata {
     private:
         void initTabs(int currentIndex);
         void removeTabs();
+        void ensureTabPage(int index);
         QWidget *createTabPage(int index) const;
         QString tabTitle(int index) const;
 
         Ui::MyData *ui;
         QWidget *m_currentWidget = nullptr;
+        QVector<QWidget *> m_loadedPages;
     };
 } // fairwindsk::ui::mydata
 
