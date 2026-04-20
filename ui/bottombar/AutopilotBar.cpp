@@ -182,8 +182,6 @@ namespace fairwindsk::ui::bottombar {
         auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
         const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("day");
         const auto colors = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), true);
-        const_cast<AutopilotBar *>(this)->setStyleSheet(QStringLiteral("QWidget#AutopilotBar { background: transparent; }"));
-
         for (auto *button : findChildren<QToolButton *>()) {
             const bool isTransparentIconButton =
                 button == ui->toolButton_Autopilot || button == ui->toolButton_Hide;

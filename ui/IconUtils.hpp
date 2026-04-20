@@ -91,7 +91,22 @@ namespace fairwindsk::ui {
         }
 
         const QSize iconSize = button->iconSize().isValid() ? button->iconSize() : fallbackSize;
-        button->setIcon(tintedIcon(button->icon(), color, iconSize));
+        const QVariant baseIconVariant = button->property("_fw_base_icon");
+        const QIcon baseIcon = baseIconVariant.canConvert<QIcon>() ? qvariant_cast<QIcon>(baseIconVariant) : button->icon();
+        if (!baseIconVariant.isValid()) {
+            button->setProperty("_fw_base_icon", baseIcon);
+        }
+
+        const QString tintKey = QStringLiteral("%1|%2x%3")
+            .arg(color.rgba(), 0, 16)
+            .arg(iconSize.width())
+            .arg(iconSize.height());
+        if (button->property("_fw_icon_tint_key").toString() == tintKey) {
+            return;
+        }
+
+        button->setIcon(tintedIcon(baseIcon, color, iconSize));
+        button->setProperty("_fw_icon_tint_key", tintKey);
     }
 
     inline QColor comfortIconColor(const fairwindsk::Configuration *configuration,
@@ -318,11 +333,23 @@ namespace fairwindsk::ui {
             return;
         }
 
-        button->setAutoRaise(true);
-        button->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-        button->setMinimumHeight(minHeight);
-        button->setIconSize(iconSize);
-        button->setStyleSheet(bottomBarButtonStyleSheet(colors, chrome));
+        if (!button->autoRaise()) {
+            button->setAutoRaise(true);
+        }
+        if (button->toolButtonStyle() != Qt::ToolButtonTextUnderIcon) {
+            button->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+        }
+        if (button->minimumHeight() != minHeight) {
+            button->setMinimumHeight(minHeight);
+        }
+        if (button->iconSize() != iconSize) {
+            button->setIconSize(iconSize);
+        }
+
+        const QString styleSheet = bottomBarButtonStyleSheet(colors, chrome);
+        if (button->styleSheet() != styleSheet) {
+            button->setStyleSheet(styleSheet);
+        }
 
         const QColor iconColor = chrome == BottomBarButtonChrome::Transparent
             ? colors.transparentIcon
@@ -374,8 +401,14 @@ namespace fairwindsk::ui {
             return;
         }
 
-        button->setMinimumHeight(minHeight);
-        button->setStyleSheet(bottomBarPushButtonStyleSheet(colors, accent));
+        if (button->minimumHeight() != minHeight) {
+            button->setMinimumHeight(minHeight);
+        }
+
+        const QString styleSheet = bottomBarPushButtonStyleSheet(colors, accent);
+        if (button->styleSheet() != styleSheet) {
+            button->setStyleSheet(styleSheet);
+        }
     }
 
     inline void applySectionTitleLabelStyle(QLabel *label,

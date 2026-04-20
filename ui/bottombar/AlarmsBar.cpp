@@ -80,8 +80,6 @@ namespace fairwindsk::ui::bottombar {
         auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
         const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("day");
         const auto colors = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), false);
-        const_cast<AlarmsBar *>(this)->setStyleSheet(QStringLiteral("QWidget#AlarmsBar { background: transparent; }"));
-
         for (auto *button : findChildren<QToolButton *>()) {
             const bool isTransparentIconButton =
                 button == ui->toolButton_Alarms || button == ui->toolButton_Hide;
