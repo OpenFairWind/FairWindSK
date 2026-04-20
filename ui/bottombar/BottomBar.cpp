@@ -27,33 +27,6 @@ namespace fairwindsk::ui::bottombar {
         constexpr int kBottomBarIconSize = 44;
         constexpr int kBottomBarButtonHeight = 90;
         constexpr int kPortAreaHeight = 84;
-        QString chromeToolButtonStyle(const fairwindsk::ui::ComfortChromeColors &colors) {
-            return QStringLiteral(
-                "QToolButton {"
-                " background: transparent;"
-                " border: none;"
-                " padding: 2px 4px;"
-                " color: %1;"
-                " }"
-                "QToolButton:hover {"
-                " background: %2;"
-                " border-radius: 8px;"
-                " color: %1;"
-                " }"
-                "QToolButton:pressed, QToolButton:checked {"
-                " background: %3;"
-                " border-radius: 8px;"
-                " color: %4;"
-                " }"
-                "QToolButton:disabled {"
-                " color: %5;"
-                " }")
-                .arg(colors.transparentIcon.name(),
-                     colors.transparentHoverBackground.name(QColor::HexArgb),
-                     fairwindsk::ui::comfortAlpha(colors.accentBottom, 84).name(QColor::HexArgb),
-                     colors.accentText.name(),
-                     colors.disabledText.name());
-        }
     }
 /*
  * BottomBar
@@ -260,7 +233,6 @@ namespace fairwindsk::ui::bottombar {
         auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
         const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("day");
         const auto colors = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), false);
-        const QString buttonStyle = chromeToolButtonStyle(colors);
         const QList<QToolButton *> navigationButtons = {
             ui->toolButton_MyData,
             ui->toolButton_POB,
@@ -274,8 +246,12 @@ namespace fairwindsk::ui::bottombar {
             if (!button) {
                 continue;
             }
-            button->setStyleSheet(buttonStyle);
-            fairwindsk::ui::applyTintedButtonIcon(button, colors.transparentIcon, QSize(m_iconSize, m_iconSize));
+            fairwindsk::ui::applyBottomBarToolButtonChrome(
+                button,
+                colors,
+                fairwindsk::ui::BottomBarButtonChrome::Transparent,
+                QSize(m_iconSize, m_iconSize),
+                kBottomBarButtonHeight);
         }
     }
 
@@ -436,8 +412,12 @@ namespace fairwindsk::ui::bottombar {
                 auto *styleFairWind = fairwindsk::FairWindSK::getInstance();
                 auto *styleConfiguration = styleFairWind ? styleFairWind->getConfiguration() : nullptr;
                 const QString stylePreset = styleFairWind ? styleFairWind->getActiveComfortViewPreset(styleConfiguration) : QStringLiteral("day");
-                button->setStyleSheet(chromeToolButtonStyle(
-                    fairwindsk::ui::resolveComfortChromeColors(styleConfiguration, stylePreset, palette(), false)));
+                fairwindsk::ui::applyBottomBarToolButtonChrome(
+                    button,
+                    fairwindsk::ui::resolveComfortChromeColors(styleConfiguration, stylePreset, palette(), false),
+                    fairwindsk::ui::BottomBarButtonChrome::Transparent,
+                    QSize(m_iconSize, m_iconSize),
+                    kBottomBarButtonHeight);
 
                 // Check if the icon is available
                 if (!pixmap.isNull()) {
@@ -450,9 +430,6 @@ namespace fairwindsk::ui::bottombar {
                     // Give the button's icon a fixed square
                     button->setIconSize(QSize(m_iconSize, m_iconSize));
                 }
-
-                // Set the button's style to have an icon and some text beneath it
-                //button->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 
                 // Launch the app when the button is clicked
                 connect(button, &QToolButton::released, this, &BottomBar::app_clicked);

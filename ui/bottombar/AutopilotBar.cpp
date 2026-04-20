@@ -19,6 +19,13 @@
 namespace fairwindsk::ui::bottombar {
     namespace {
         constexpr auto kDefaultAutopilotId = "_default";
+
+        void setOpenBridgeIcon(QToolButton *button, const QString &resourcePath) {
+            if (!button || resourcePath.isEmpty()) {
+                return;
+            }
+            button->setIcon(QIcon(resourcePath));
+        }
     }
 
     AutopilotBar::AutopilotBar(QWidget *parent) :
@@ -93,6 +100,20 @@ namespace fairwindsk::ui::bottombar {
         ui->label_Port->hide();
         ui->label_Starboard->hide();
 
+        setOpenBridgeIcon(ui->toolButton_StandBy, QStringLiteral(":/resources/svg/OpenBridge/close-google.svg"));
+        setOpenBridgeIcon(ui->toolButton_Auto, QStringLiteral(":/resources/svg/OpenBridge/command-autopilot.svg"));
+        setOpenBridgeIcon(ui->toolButton_Route, QStringLiteral(":/resources/svg/OpenBridge/navigation-route.svg"));
+        setOpenBridgeIcon(ui->toolButton_Wind, QStringLiteral(":/resources/svg/OpenBridge/up-iec.svg"));
+        setOpenBridgeIcon(ui->toolButton_PTack, QStringLiteral(":/resources/svg/OpenBridge/arrow-left-google.svg"));
+        setOpenBridgeIcon(ui->toolButton_STack, QStringLiteral(":/resources/svg/OpenBridge/arrow-right-google.svg"));
+        setOpenBridgeIcon(ui->toolButton_PGybe, QStringLiteral(":/resources/svg/OpenBridge/chevron-double-left-google.svg"));
+        setOpenBridgeIcon(ui->toolButton_SGybe, QStringLiteral(":/resources/svg/OpenBridge/chevron-double-right-google.svg"));
+        setOpenBridgeIcon(ui->toolButton_Minus1, QStringLiteral(":/resources/svg/OpenBridge/spinbox-minus.svg"));
+        setOpenBridgeIcon(ui->toolButton_Minus10, QStringLiteral(":/resources/svg/OpenBridge/chevron-double-left-google.svg"));
+        setOpenBridgeIcon(ui->toolButton_Plus1, QStringLiteral(":/resources/svg/OpenBridge/spinbox-plus.svg"));
+        setOpenBridgeIcon(ui->toolButton_Plus10, QStringLiteral(":/resources/svg/OpenBridge/chevron-double-right-google.svg"));
+        setOpenBridgeIcon(ui->toolButton_NextWPT, QStringLiteral(":/resources/svg/OpenBridge/waypoint-optional-iec.svg"));
+        setOpenBridgeIcon(ui->toolButton_Dodge, QStringLiteral(":/resources/svg/OpenBridge/alerts.svg"));
 
 
         // Get the configuration json object
@@ -161,52 +182,19 @@ namespace fairwindsk::ui::bottombar {
         auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
         const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("day");
         const auto colors = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), true);
-        const QString style = QStringLiteral(
-            "QToolButton {"
-            " border: 1px solid %1;"
-            " border-radius: 8px;"
-            " padding: 6px;"
-            " background: %2;"
-            " color: %3;"
-            " }"
-            "QToolButton:hover { background: %4; }"
-            "QToolButton:pressed, QToolButton:checked { background: %5; color: %6; border-color: %5; }"
-            "QToolButton:disabled { color: %7; }")
-            .arg(colors.border.name(),
-                 colors.buttonBackground.name(),
-                 colors.icon.name(),
-                 colors.hoverBackground.name(),
-                 colors.pressedBackground.name(),
-                 colors.accentText.name(),
-                 colors.disabledText.name());
-        const QString transparentStyle = QStringLiteral(
-            "QToolButton {"
-            " border: 0px;"
-            " padding: 6px;"
-            " background: transparent;"
-            " color: %1;"
-            " }"
-            "QToolButton:hover, QToolButton:pressed, QToolButton:checked {"
-            " background: %2;"
-            " border: 0px;"
-            " color: %3;"
-            " }")
-            .arg(colors.transparentIcon.name(),
-                 colors.transparentHoverBackground.name(QColor::HexArgb),
-                 colors.accentText.name());
+        const_cast<AutopilotBar *>(this)->setStyleSheet(QStringLiteral("QWidget#AutopilotBar { background: transparent; }"));
 
         for (auto *button : findChildren<QToolButton *>()) {
-            button->setAutoRaise(false);
             const bool isTransparentIconButton =
                 button == ui->toolButton_Autopilot || button == ui->toolButton_Hide;
-            button->setStyleSheet(isTransparentIconButton ? transparentStyle : style);
-            if (!button->iconSize().isValid()) {
-                button->setIconSize(QSize(32, 32));
-            }
-            fairwindsk::ui::applyTintedButtonIcon(
+            fairwindsk::ui::applyBottomBarToolButtonChrome(
                 button,
-                isTransparentIconButton ? colors.transparentIcon : colors.icon,
-                QSize(32, 32));
+                colors,
+                isTransparentIconButton
+                    ? fairwindsk::ui::BottomBarButtonChrome::Transparent
+                    : fairwindsk::ui::BottomBarButtonChrome::Flat,
+                QSize(40, 40),
+                88);
         }
     }
 

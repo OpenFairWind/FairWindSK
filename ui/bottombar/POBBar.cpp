@@ -114,54 +114,22 @@ namespace fairwindsk::ui::bottombar {
         auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
         const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("day");
         const auto colors = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), true);
-        const QString style = QStringLiteral(
-            "QToolButton {"
-            " border: 1px solid %1;"
-            " border-radius: 8px;"
-            " padding: 6px;"
-            " background: %2;"
-            " color: %3;"
-            " }"
-            "QToolButton:hover { background: %4; }"
-            "QToolButton:pressed, QToolButton:checked { background: %5; color: %6; border-color: %5; }"
-            "QToolButton:disabled { color: %7; }")
-            .arg(colors.border.name(),
-                 colors.buttonBackground.name(),
-                 colors.icon.name(),
-                 colors.hoverBackground.name(),
-                 colors.pressedBackground.name(),
-                 colors.accentText.name(),
-                 colors.disabledText.name());
-        const QString transparentStyle = QStringLiteral(
-            "QToolButton {"
-            " border: 0px;"
-            " padding: 6px;"
-            " background: transparent;"
-            " color: %1;"
-            " }"
-            "QToolButton:hover, QToolButton:pressed, QToolButton:checked {"
-            " background: %2;"
-            " border: 0px;"
-            " color: %3;"
-            " }")
-            .arg(colors.transparentIcon.name(),
-                 colors.transparentHoverBackground.name(QColor::HexArgb),
-                 colors.accentText.name());
+        const_cast<POBBar *>(this)->setStyleSheet(QStringLiteral("QWidget#POBBar { background: transparent; }"));
 
         for (auto *button : findChildren<QToolButton *>()) {
-            button->setAutoRaise(false);
             const bool isTransparentIconButton =
                 button == ui->toolButton_POB || button == ui->toolButton_Hide;
-            button->setStyleSheet(isTransparentIconButton ? transparentStyle : style);
-            if (!button->iconSize().isValid()) {
-                button->setIconSize(QSize(32, 32));
-            }
-            fairwindsk::ui::applyTintedButtonIcon(
+            fairwindsk::ui::applyBottomBarToolButtonChrome(
                 button,
-                isTransparentIconButton ? colors.transparentIcon : colors.icon,
-                QSize(32, 32));
+                colors,
+                isTransparentIconButton
+                    ? fairwindsk::ui::BottomBarButtonChrome::Transparent
+                    : fairwindsk::ui::BottomBarButtonChrome::Flat,
+                QSize(40, 40),
+                88);
         }
 
+        fairwindsk::ui::applyBottomBarPushButtonChrome(ui->pushButton_POB_Cancel, colors, true, 54);
         if (ui->comboBox_currentPOB) {
             ui->comboBox_currentPOB->setAccentButton(true);
         }
