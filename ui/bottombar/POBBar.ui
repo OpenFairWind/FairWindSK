@@ -205,9 +205,45 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="pushButton_POB_Cancel">
+         <widget class="QPushButton" name="pushButton_POB_Cancel">
            <property name="text">
             <string>Cancel POB</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButton_SpiralSearch">
+           <property name="toolTip">
+            <string>Create SAR area and spiral runlines</string>
+           </property>
+           <property name="icon">
+            <iconset resource="../../resources.qrc">
+             <normaloff>:/resources/svg/OpenBridge/search.svg</normaloff>
+             <normalon>:/resources/svg/OpenBridge/search.svg</normalon>:/resources/svg/OpenBridge/search.svg</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>28</width>
+             <height>28</height>
+            </size>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButton_ParallelSearch">
+           <property name="toolTip">
+            <string>Create SAR area and parallel runlines</string>
+           </property>
+           <property name="icon">
+            <iconset resource="../../resources.qrc">
+             <normaloff>:/resources/svg/OpenBridge/navigation-route.svg</normaloff>
+             <normalon>:/resources/svg/OpenBridge/navigation-route.svg</normalon>:/resources/svg/OpenBridge/navigation-route.svg</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>28</width>
+             <height>28</height>
+            </size>
            </property>
           </widget>
          </item>

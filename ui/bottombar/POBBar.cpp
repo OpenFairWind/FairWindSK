@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cmath>
 #include <QGeoCoordinate>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QSignalBlocker>
 #include <QTimer>
@@ -18,12 +19,18 @@
 #include <QUuid>
 
 #include "FairWindSK.hpp"
+#include "ui/DrawerDialogHost.hpp"
 #include "ui/GeoCoordinateUtils.hpp"
 #include "ui/IconUtils.hpp"
 #include "ui/widgets/TouchComboBox.hpp"
 #include "ui_POBBar.h"
 
 namespace {
+    constexpr double kSarHalfSideMeters = 250.0;
+    constexpr double kSarSpiralSpacingMeters = 50.0;
+    constexpr int kSarSpiralLegs = 10;
+    constexpr double kSarParallelSpacingMeters = 60.0;
+
     QString standardPobUuid() {
         return QStringLiteral("__signalk_standard_mob__");
     }
@@ -72,6 +79,30 @@ namespace {
         return dateTime;
     }
 
+    QJsonArray coordinateArray(const QGeoCoordinate &coordinate) {
+        QJsonArray values;
+        values.append(coordinate.longitude());
+        values.append(coordinate.latitude());
+        if (!std::isnan(coordinate.altitude())) {
+            values.append(coordinate.altitude());
+        }
+        return values;
+    }
+
+    QGeoCoordinate offsetCoordinate(const QGeoCoordinate &origin, const double eastMeters, const double northMeters) {
+        QGeoCoordinate result = origin;
+        if (!origin.isValid()) {
+            return result;
+        }
+        if (std::abs(northMeters) > 0.001) {
+            result = result.atDistanceAndAzimuth(std::abs(northMeters), northMeters >= 0.0 ? 0.0 : 180.0);
+        }
+        if (std::abs(eastMeters) > 0.001) {
+            result = result.atDistanceAndAzimuth(std::abs(eastMeters), eastMeters >= 0.0 ? 90.0 : 270.0);
+        }
+        return result;
+    }
+
     QTimeZone utcTimeZone() {
         return QTimeZone(QByteArrayLiteral("UTC"));
     }
@@ -111,6 +142,8 @@ namespace fairwindsk::ui::bottombar {
 
         // emit a signal when the MyData tool button from the UI is clicked
         connect(ui->toolButton_Hide, &QToolButton::clicked, this, &POBBar::onHideClicked);
+        connect(ui->toolButton_SpiralSearch, &QToolButton::clicked, this, &POBBar::onCreateSpiralSearchClicked);
+        connect(ui->toolButton_ParallelSearch, &QToolButton::clicked, this, &POBBar::onCreateParallelSearchClicked);
 
         // When the current POB has changed
         connect(ui->comboBox_currentPOB,
@@ -180,6 +213,9 @@ namespace fairwindsk::ui::bottombar {
         if (ui->comboBox_currentPOB) {
             ui->comboBox_currentPOB->setAccentButton(true);
         }
+
+        ui->toolButton_SpiralSearch->setText(tr("Spiral"));
+        ui->toolButton_ParallelSearch->setText(tr("Parallel"));
     }
 
     void POBBar::updateUnitLabels() const {
@@ -287,6 +323,14 @@ namespace fairwindsk::ui::bottombar {
         Q_UNUSED(index);
         navigateToSelectedPob();
         refreshCurrentPobUi();
+    }
+
+    void POBBar::onCreateSpiralSearchClicked() {
+        createSarSearch(SearchPattern::Spiral);
+    }
+
+    void POBBar::onCreateParallelSearchClicked() {
+        createSarSearch(SearchPattern::Parallel);
     }
 
 
@@ -506,6 +550,49 @@ namespace fairwindsk::ui::bottombar {
         return coordinate;
     }
 
+    QGeoCoordinate POBBar::currentPobCoordinate() const {
+        const QString uuid = currentPobUuid();
+        if (!uuid.isEmpty()) {
+            const auto value = m_pobValues.value(uuid);
+            if (value.contains("position") && value["position"].isObject()) {
+                QGeoCoordinate coordinate;
+                const auto position = value["position"].toObject();
+                if (position.contains("latitude")) {
+                    coordinate.setLatitude(position["latitude"].toDouble());
+                }
+                if (position.contains("longitude")) {
+                    coordinate.setLongitude(position["longitude"].toDouble());
+                }
+                if (position.contains("altitude")) {
+                    coordinate.setAltitude(position["altitude"].toDouble());
+                }
+                if (coordinate.isValid()) {
+                    return coordinate;
+                }
+            }
+
+            if (uuid != standardPobUuid()) {
+                auto waypoint = FairWindSK::getInstance()->getSignalKClient()->getWaypointByHref(QStringLiteral("/resources/waypoints/") + uuid);
+                if (!waypoint.isEmpty()) {
+                    const auto coordinate = waypoint.getCoordinates();
+                    if (coordinate.isValid()) {
+                        return coordinate;
+                    }
+                }
+            }
+        }
+
+        return currentVesselPosition();
+    }
+
+    QString POBBar::currentPobLabel() const {
+        const QString uuid = currentPobUuid();
+        if (uuid.isEmpty()) {
+            return tr("POB");
+        }
+        return m_pobLabels.value(uuid, uuid == standardPobUuid() ? tr("Signal K MOB") : uuid);
+    }
+
     QString POBBar::createManagedPob() {
         const auto client = FairWindSK::getInstance()->getSignalKClient();
         const auto coordinate = currentVesselPosition();
@@ -530,6 +617,159 @@ namespace fairwindsk::ui::bottombar {
         value["position"] = positionObjectFromCoordinate(coordinate);
         upsertPobValue(persistedId, value, true);
         return persistedId;
+    }
+
+    bool POBBar::createSarSearch(const SearchPattern pattern) {
+        const auto center = currentPobCoordinate();
+        if (!center.isValid()) {
+            fairwindsk::ui::drawer::warning(this, tr("POB"), tr("Unable to determine the selected POB position."));
+            return false;
+        }
+
+        const QString pobUuid = currentPobUuid();
+        const QString pobLabel = currentPobLabel();
+        const QString timestamp = QDateTime::currentDateTimeUtc().toString(QStringLiteral("HH:mm:ss"));
+        const QString patternLabel = pattern == SearchPattern::Spiral ? tr("Spiral") : tr("Parallel");
+        const QString regionName = tr("%1 SAR Area %2").arg(pobLabel, timestamp);
+        const QString routeName = tr("%1 %2 Runlines %3").arg(pobLabel, patternLabel, timestamp);
+        const QString baseDescription = tr("Generated from %1 at %2").arg(pobLabel, QDateTime::currentDateTimeUtc().toString(Qt::ISODate));
+
+        const auto client = FairWindSK::getInstance()->getSignalKClient();
+        const QJsonObject region = buildSarRegionResource(regionName, baseDescription, pobUuid, center, kSarHalfSideMeters);
+        const QJsonArray routeCoordinates = pattern == SearchPattern::Spiral
+            ? buildSpiralRouteCoordinates(center, kSarSpiralSpacingMeters, kSarSpiralLegs)
+            : buildParallelRouteCoordinates(center, kSarHalfSideMeters, kSarParallelSpacingMeters);
+        const QJsonObject route = buildSarRouteResource(
+            routeName,
+            tr("%1 using %2 runlines.").arg(baseDescription, patternLabel.toLower()),
+            pattern == SearchPattern::Spiral ? QStringLiteral("sar-spiral") : QStringLiteral("sar-parallel"),
+            pobUuid,
+            routeCoordinates);
+
+        const auto regionResponse = client->createResource(QStringLiteral("regions"), region);
+        const auto routeResponse = client->createResource(QStringLiteral("routes"), route);
+        if (regionResponse.isEmpty() || routeResponse.isEmpty()) {
+            fairwindsk::ui::drawer::warning(this, tr("POB"), tr("Unable to create the SAR region and route on the Signal K server."));
+            return false;
+        }
+
+        fairwindsk::ui::drawer::information(
+            this,
+            tr("POB"),
+            tr("Created the SAR region \"%1\" and route \"%2\".").arg(regionName, routeName));
+        return true;
+    }
+
+    QJsonObject POBBar::buildSarRegionResource(const QString &name,
+                                               const QString &description,
+                                               const QString &pobUuid,
+                                               const QGeoCoordinate &center,
+                                               const double halfSideMeters) const {
+        QJsonObject properties;
+        properties["name"] = name;
+        properties["description"] = description;
+        properties["source"] = QStringLiteral("fairwindsk-pob");
+        properties["searchPattern"] = QStringLiteral("area");
+        if (!pobUuid.isEmpty()) {
+            properties["pobUuid"] = pobUuid;
+        }
+
+        QJsonObject geometry;
+        geometry["type"] = QStringLiteral("Polygon");
+        geometry["coordinates"] = QJsonArray{buildSquareRegionCoordinates(center, halfSideMeters)};
+
+        QJsonObject feature;
+        feature["id"] = QUuid::createUuid().toString(QUuid::WithoutBraces);
+        feature["type"] = QStringLiteral("Feature");
+        feature["geometry"] = geometry;
+        feature["properties"] = properties;
+
+        QJsonObject resource;
+        resource["timestamp"] = fairwindsk::signalk::Client::currentISO8601TimeUTC();
+        resource["name"] = name;
+        resource["description"] = description;
+        resource["feature"] = feature;
+        return resource;
+    }
+
+    QJsonObject POBBar::buildSarRouteResource(const QString &name,
+                                              const QString &description,
+                                              const QString &type,
+                                              const QString &pobUuid,
+                                              const QJsonArray &coordinates) const {
+        QJsonObject properties;
+        properties["name"] = name;
+        properties["description"] = description;
+        properties["source"] = QStringLiteral("fairwindsk-pob");
+        if (!pobUuid.isEmpty()) {
+            properties["pobUuid"] = pobUuid;
+        }
+
+        QJsonObject geometry;
+        geometry["type"] = QStringLiteral("LineString");
+        geometry["coordinates"] = coordinates;
+
+        QJsonObject feature;
+        feature["id"] = QUuid::createUuid().toString(QUuid::WithoutBraces);
+        feature["type"] = QStringLiteral("Feature");
+        feature["geometry"] = geometry;
+        feature["properties"] = properties;
+
+        QJsonObject resource;
+        resource["timestamp"] = fairwindsk::signalk::Client::currentISO8601TimeUTC();
+        resource["name"] = name;
+        resource["description"] = description;
+        resource["type"] = type;
+        resource["feature"] = feature;
+        return resource;
+    }
+
+    QJsonArray POBBar::buildSquareRegionCoordinates(const QGeoCoordinate &center, const double halfSideMeters) const {
+        const double diagonalMeters = std::sqrt(2.0) * halfSideMeters;
+        QJsonArray ring;
+        ring.append(coordinateArray(center.atDistanceAndAzimuth(diagonalMeters, 315.0)));
+        ring.append(coordinateArray(center.atDistanceAndAzimuth(diagonalMeters, 45.0)));
+        ring.append(coordinateArray(center.atDistanceAndAzimuth(diagonalMeters, 135.0)));
+        ring.append(coordinateArray(center.atDistanceAndAzimuth(diagonalMeters, 225.0)));
+        ring.append(coordinateArray(center.atDistanceAndAzimuth(diagonalMeters, 315.0)));
+        return ring;
+    }
+
+    QJsonArray POBBar::buildSpiralRouteCoordinates(const QGeoCoordinate &center, const double spacingMeters, const int legs) const {
+        QJsonArray coordinates;
+        coordinates.append(coordinateArray(center));
+
+        QGeoCoordinate current = center;
+        const QVector<double> bearings = {90.0, 180.0, 270.0, 0.0};
+        for (int leg = 0; leg < legs; ++leg) {
+            const double distance = spacingMeters * (1 + (leg / 2));
+            current = current.atDistanceAndAzimuth(distance, bearings.at(leg % bearings.size()));
+            coordinates.append(coordinateArray(current));
+        }
+
+        return coordinates;
+    }
+
+    QJsonArray POBBar::buildParallelRouteCoordinates(const QGeoCoordinate &center,
+                                                     const double halfSideMeters,
+                                                     const double spacingMeters) const {
+        QJsonArray coordinates;
+        const int lineCount = std::max(2, static_cast<int>(std::floor((halfSideMeters * 2.0) / spacingMeters)) + 1);
+        for (int index = 0; index < lineCount; ++index) {
+            const double northMeters = halfSideMeters - (index * spacingMeters);
+            const double clampedNorthMeters = std::max(-halfSideMeters, northMeters);
+            const QGeoCoordinate west = offsetCoordinate(center, -halfSideMeters, clampedNorthMeters);
+            const QGeoCoordinate east = offsetCoordinate(center, halfSideMeters, clampedNorthMeters);
+            if (index % 2 == 0) {
+                coordinates.append(coordinateArray(west));
+                coordinates.append(coordinateArray(east));
+            } else {
+                coordinates.append(coordinateArray(east));
+                coordinates.append(coordinateArray(west));
+            }
+        }
+
+        return coordinates;
     }
 
     void POBBar::syncManagedNotificationState() const {

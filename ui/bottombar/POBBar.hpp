@@ -11,6 +11,7 @@
 #include <QGeoCoordinate>
 #include <QHash>
 #include <QSet>
+#include <QString>
 #include <QTimer>
 #include <QEvent>
 #include <QWidget>
@@ -25,6 +26,11 @@ namespace fairwindsk::ui::bottombar {
     Q_OBJECT
 
     public:
+        enum class SearchPattern {
+            Spiral,
+            Parallel
+        };
+
         explicit POBBar(QWidget *parent = nullptr);
 
         ~POBBar() override;
@@ -42,6 +48,8 @@ namespace fairwindsk::ui::bottombar {
         void onCancelClicked();
         void onHideClicked();
         void onCurrentIndexChanged(int index);
+        void onCreateSpiralSearchClicked();
+        void onCreateParallelSearchClicked();
         void updateElapsed();
 
 
@@ -59,7 +67,17 @@ namespace fairwindsk::ui::bottombar {
         bool hasManagedPobs() const;
         bool isManagedPob(const QString &uuid) const;
         QGeoCoordinate currentVesselPosition() const;
+        QGeoCoordinate currentPobCoordinate() const;
+        QString currentPobLabel() const;
         QString createManagedPob();
+        bool createSarSearch(SearchPattern pattern);
+        QJsonObject buildSarRegionResource(const QString &name, const QString &description, const QString &pobUuid,
+                                           const QGeoCoordinate &center, double halfSideMeters) const;
+        QJsonObject buildSarRouteResource(const QString &name, const QString &description, const QString &type,
+                                          const QString &pobUuid, const QJsonArray &coordinates) const;
+        QJsonArray buildSquareRegionCoordinates(const QGeoCoordinate &center, double halfSideMeters) const;
+        QJsonArray buildSpiralRouteCoordinates(const QGeoCoordinate &center, double spacingMeters, int legs) const;
+        QJsonArray buildParallelRouteCoordinates(const QGeoCoordinate &center, double halfSideMeters, double spacingMeters) const;
         void syncManagedNotificationState() const;
         void navigateToSelectedPob() const;
         void applyStandardNotificationUpdate(const QJsonObject &value);
