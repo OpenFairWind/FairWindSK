@@ -27,4 +27,4 @@ FairWindSK provides a kiosk-like desktop for running Signal K web applications a
 
 - Set `main.windowMode` to `fullscreen` and adjust window geometry for the target display resolution in `fairwindsk.json`.
 - Enable the Qt virtual keyboard via `main.virtualKeyboard=true` for touch-only installations.
-- Utilize the provided autostart entries (`extras/fairwindsk-startup.desktop` and `extras/fairwindsk-startup`) on Raspberry Pi OS to launch at boot.
+- Utilize the provided autostart entries (`extras/fairwindsk-startup.desktop` and `extras/fairwindsk-startup`) on Raspberry Pi OS to launch at boot. Desktop installs now wire this automatically on Raspberry Pi OS, and also try to surface FairWindSK in the OpenPlotter menu when OpenPlotter is detected.

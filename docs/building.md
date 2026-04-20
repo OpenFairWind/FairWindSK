@@ -142,6 +142,7 @@ Notes:
 
 - The desktop dependency libraries are added to the build-tree rpath, so running from `build/` works without setting `LD_LIBRARY_PATH`.
 - `cmake --install build` installs the executable to `${CMAKE_INSTALL_BINDIR}`, the bundled icon directory to `${CMAKE_INSTALL_BINDIR}/icons`, and the desktop helper libraries to `${CMAKE_INSTALL_LIBDIR}`.
+- On Linux desktop targets, `cmake --install build` also installs a `fairwindsk.desktop` launcher and a `fairwindsk.png` menu icon into the standard XDG applications/icon locations under the chosen prefix.
 - For packaging, use your normal Linux deployment workflow and include the Qt runtime plus the desktop dependencies built under `build/external/lib`.
 
 ## Raspberry Pi OS
@@ -179,6 +180,8 @@ sudo touch /usr/lib/aarch64-linux-gnu/cmake/Qt6VirtualKeyboard/Qt6VirtualKeyboar
 - For kiosk deployments, see `extras/fairwindsk-startup.desktop` and `extras/fairwindsk-startup`.
 - The `fairwindsk-startup` helper now waits briefly for the configured Signal K web-app catalog to come online before launching FairWindSK, which improves plugin icon/artwork availability during Raspberry Pi autostart boots.
 - `cmake --install build` uses the same Linux desktop install layout, so the binary lands in `${CMAKE_INSTALL_BINDIR}` and the icon/runtime helper assets are installed beside it.
+- When the install runs on Raspberry Pi OS, the generated `fairwindsk-startup.desktop` entry is also installed to `/etc/xdg/autostart` (respecting `DESTDIR` when packaging) so FairWindSK autostarts automatically after installation.
+- When an OpenPlotter installation is detected during install, FairWindSK keeps the normal XDG launcher entry and also performs a best-effort copy into any detected OpenPlotter menu directories.
 
 ## Windows
 
@@ -326,6 +329,7 @@ Notes:
 
 - Desktop builds copy the bundled icon directory to the target output folder after the build.
 - Desktop installs now ship the application target, the bundled icon directory, and the desktop-only helper libraries through `cmake --install build`.
+- Linux desktop installs also ship the generated desktop launcher and menu icon; Raspberry Pi OS installs additionally enable system autostart through the shipped startup helper.
 - The first clean desktop build requires internet access for third-party dependency download steps.
 - Desktop external dependencies are pinned in CMake so the same revisions are used across machines.
 - For redistribution:

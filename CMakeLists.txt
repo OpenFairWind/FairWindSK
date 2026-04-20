@@ -33,6 +33,16 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
+configure_file(${CMAKE_SOURCE_DIR}/cmake/fairwindsk.desktop.in
+        ${CMAKE_CURRENT_BINARY_DIR}/fairwindsk.desktop
+        @ONLY)
+configure_file(${CMAKE_SOURCE_DIR}/cmake/fairwindsk-startup.desktop.in
+        ${CMAKE_CURRENT_BINARY_DIR}/fairwindsk-startup.desktop
+        @ONLY)
+configure_file(${CMAKE_SOURCE_DIR}/cmake/InstallRaspberryDesktopIntegration.cmake.in
+        ${CMAKE_CURRENT_BINARY_DIR}/InstallRaspberryDesktopIntegration.cmake
+        @ONLY)
+
 set(FAIRWINDSK_MOBILE FALSE)
 if(ANDROID OR IOS)
     set(FAIRWINDSK_MOBILE TRUE)
@@ -359,6 +369,17 @@ if(NOT FAIRWINDSK_MOBILE)
         install(FILES ${LIBQTZEROCONF} ${LIBQHOTKEY}
                 DESTINATION ${CMAKE_INSTALL_LIBDIR})
     endif()
+endif()
+
+if(UNIX AND NOT APPLE AND NOT FAIRWINDSK_MOBILE)
+    install(PROGRAMS ${CMAKE_SOURCE_DIR}/extras/fairwindsk-startup
+            DESTINATION ${CMAKE_INSTALL_BINDIR})
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/fairwindsk.desktop
+            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
+    install(FILES ${CMAKE_SOURCE_DIR}/resources/images/icons/signalkbrowser_icon.png
+            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/256x256/apps
+            RENAME fairwindsk.png)
+    install(SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/InstallRaspberryDesktopIntegration.cmake)
 endif()
 
 qt_finalize_executable(${PROJECT_NAME})

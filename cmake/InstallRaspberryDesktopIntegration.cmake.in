@@ -1,0 +1,82 @@
+set(_fairwindsk_destdir "$ENV{DESTDIR}")
+set(_fairwindsk_install_prefix "@CMAKE_INSTALL_PREFIX@")
+set(_fairwindsk_sysconfdir "@CMAKE_INSTALL_FULL_SYSCONFDIR@")
+set(_fairwindsk_generated_autostart "@CMAKE_CURRENT_BINARY_DIR@/fairwindsk-startup.desktop")
+set(_fairwindsk_generated_launcher "@CMAKE_CURRENT_BINARY_DIR@/fairwindsk.desktop")
+
+function(_fairwindsk_log message_text)
+    message(STATUS "[FairWindSK install] ${message_text}")
+endfunction()
+
+set(_fairwindsk_os_release_candidates
+        "/etc/os-release"
+        "${_fairwindsk_destdir}/etc/os-release")
+
+set(_fairwindsk_os_release_contents "")
+foreach(_fairwindsk_os_release IN LISTS _fairwindsk_os_release_candidates)
+    if(EXISTS "${_fairwindsk_os_release}")
+        file(READ "${_fairwindsk_os_release}" _fairwindsk_os_release_contents)
+        break()
+    endif()
+endforeach()
+
+set(_fairwindsk_is_raspberry_pi_os FALSE)
+if(_fairwindsk_os_release_contents MATCHES "(^|\\n)ID=raspbian(\\n|$)")
+    set(_fairwindsk_is_raspberry_pi_os TRUE)
+elseif(_fairwindsk_os_release_contents MATCHES "(^|\\n)NAME=\"?Raspberry Pi OS\"?(\\n|$)")
+    set(_fairwindsk_is_raspberry_pi_os TRUE)
+endif()
+
+if(_fairwindsk_is_raspberry_pi_os)
+    set(_fairwindsk_autostart_dir "${_fairwindsk_destdir}/etc/xdg/autostart")
+    file(MAKE_DIRECTORY "${_fairwindsk_autostart_dir}")
+    file(INSTALL DESTINATION "${_fairwindsk_autostart_dir}" TYPE FILE FILES "${_fairwindsk_generated_autostart}")
+    _fairwindsk_log("Installed Raspberry Pi OS autostart entry to ${_fairwindsk_autostart_dir}.")
+else()
+    _fairwindsk_log("Raspberry Pi OS not detected; skipping automatic autostart installation.")
+endif()
+
+set(_fairwindsk_openplotter_detected FALSE)
+set(_fairwindsk_openplotter_markers
+        "/usr/share/openplotter"
+        "/usr/share/applications/openplotter-settings.desktop"
+        "/usr/share/applications/openplotter.desktop"
+        "/usr/lib/python3/dist-packages/openplotterSettings"
+        "${_fairwindsk_destdir}/usr/share/openplotter"
+        "${_fairwindsk_destdir}/usr/share/applications/openplotter-settings.desktop"
+        "${_fairwindsk_destdir}/usr/share/applications/openplotter.desktop"
+        "${_fairwindsk_destdir}/usr/lib/python3/dist-packages/openplotterSettings")
+
+foreach(_fairwindsk_marker IN LISTS _fairwindsk_openplotter_markers)
+    if(EXISTS "${_fairwindsk_marker}")
+        set(_fairwindsk_openplotter_detected TRUE)
+        break()
+    endif()
+endforeach()
+
+if(_fairwindsk_openplotter_detected)
+    set(_fairwindsk_openplotter_menu_dirs
+            "/usr/share/openplotter/apps"
+            "/usr/share/openplotter/applications"
+            "/usr/share/openplotter/desktop"
+            "/usr/share/openplotter/desktop-apps"
+            "${_fairwindsk_destdir}/usr/share/openplotter/apps"
+            "${_fairwindsk_destdir}/usr/share/openplotter/applications"
+            "${_fairwindsk_destdir}/usr/share/openplotter/desktop"
+            "${_fairwindsk_destdir}/usr/share/openplotter/desktop-apps")
+
+    set(_fairwindsk_openplotter_menu_installed FALSE)
+    foreach(_fairwindsk_menu_dir IN LISTS _fairwindsk_openplotter_menu_dirs)
+        if(EXISTS "${_fairwindsk_menu_dir}")
+            file(INSTALL DESTINATION "${_fairwindsk_menu_dir}" TYPE FILE FILES "${_fairwindsk_generated_launcher}")
+            set(_fairwindsk_openplotter_menu_installed TRUE)
+            _fairwindsk_log("Installed OpenPlotter launcher entry to ${_fairwindsk_menu_dir}.")
+        endif()
+    endforeach()
+
+    if(NOT _fairwindsk_openplotter_menu_installed)
+        _fairwindsk_log("OpenPlotter detected, but no dedicated menu directory was found. The standard desktop launcher still advertises the OpenPlotter category.")
+    endif()
+else()
+    _fairwindsk_log("OpenPlotter not detected; skipping OpenPlotter menu integration.")
+endif()

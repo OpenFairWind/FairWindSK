@@ -69,6 +69,7 @@ Quick summary:
 - macOS, Linux, Raspberry Pi OS, and Windows keep the desktop Qt WebEngine Widgets implementation.
 - Android and iOS now build through an alternate mobile web layer based on Qt WebView and QQuickWidget hosts.
 - Desktop targets download `nlohmann/json`, `QtZeroConf`, and `QHotkey` during the first clean build.
+- On Linux desktop installs, `cmake --install build` now also installs the FairWindSK desktop launcher. On Raspberry Pi OS installs it additionally enables the system autostart entry, and when OpenPlotter is detected it performs a best-effort copy into the OpenPlotter menu directories.
 
 Generic workflow:
 

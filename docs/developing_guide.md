@@ -401,6 +401,7 @@ FairWindSK has one codebase and multiple build/runtime targets.
 - follows the Linux desktop path
 - important target for helm-adjacent touch screens
 - kiosk and autostart helpers live in `extras/`
+- installation now also includes Raspberry Pi OS specific desktop integration: the startup helper is installed into the system autostart path and OpenPlotter-aware menu integration is attempted when OpenPlotter is detected on the target system
 - interaction density and rendering performance matter more here than on a desktop workstation
 
 ### macOS

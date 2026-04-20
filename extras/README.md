@@ -14,3 +14,11 @@ It also prints simple startup diagnostics to standard output so kiosk and autost
 The companion `fairwindsk-startup.desktop` file is now a fuller desktop-entry definition with a stable name/comment, `Terminal=false`, disabled startup notifications, and explicit autostart enablement so it behaves more consistently across Raspberry Pi OS desktop sessions.
 
 For the Raspberry Pi OS applications menu, `fairwindsk.desktop` provides a normal launcher entry for FairWindSK itself. Unlike the autostart entry, it launches `FairWindSK` directly and is intended to be copied into the desktop environment's application-menu directory.
+
+The CMake install flow now generates installed variants of both desktop entries with absolute `Exec=` paths pointing at the installed binaries. On Linux desktop installs:
+
+- `fairwindsk.desktop` is installed into the standard XDG applications directory together with a `fairwindsk` launcher icon
+- Raspberry Pi OS detection triggers automatic installation of `fairwindsk-startup.desktop` into `/etc/xdg/autostart` (respecting `DESTDIR` for package builds)
+- OpenPlotter detection triggers a best-effort copy of the launcher entry into any known OpenPlotter menu directories that exist on the target system
+
+Because OpenPlotter packaging conventions vary across images, the OpenPlotter integration is intentionally best-effort rather than hard-coded to a single menu path.
