@@ -126,6 +126,8 @@
         <file>resources/svg/OpenBridge/route-export-iec.svg</file>
         <file>resources/svg/OpenBridge/route-import-iec.svg</file>
         <file>resources/svg/OpenBridge/search.svg</file>
+        <file>resources/svg/OpenBridge/search-spiral.svg</file>
+        <file>resources/svg/OpenBridge/search-parallel.svg</file>
         <file>resources/svg/OpenBridge/sort-google.svg</file>
         <file>resources/svg/OpenBridge/file-export-google.svg</file>
         <file>resources/svg/OpenBridge/navigation-route.svg</file>

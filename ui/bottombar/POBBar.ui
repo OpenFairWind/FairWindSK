@@ -218,8 +218,8 @@
            </property>
            <property name="icon">
             <iconset resource="../../resources.qrc">
-             <normaloff>:/resources/svg/OpenBridge/search.svg</normaloff>
-             <normalon>:/resources/svg/OpenBridge/search.svg</normalon>:/resources/svg/OpenBridge/search.svg</iconset>
+             <normaloff>:/resources/svg/OpenBridge/search-spiral.svg</normaloff>
+             <normalon>:/resources/svg/OpenBridge/search-spiral.svg</normalon>:/resources/svg/OpenBridge/search-spiral.svg</iconset>
            </property>
            <property name="iconSize">
             <size>
@@ -236,8 +236,8 @@
            </property>
            <property name="icon">
             <iconset resource="../../resources.qrc">
-             <normaloff>:/resources/svg/OpenBridge/navigation-route.svg</normaloff>
-             <normalon>:/resources/svg/OpenBridge/navigation-route.svg</normalon>:/resources/svg/OpenBridge/navigation-route.svg</iconset>
+             <normaloff>:/resources/svg/OpenBridge/search-parallel.svg</normaloff>
+             <normalon>:/resources/svg/OpenBridge/search-parallel.svg</normalon>:/resources/svg/OpenBridge/search-parallel.svg</iconset>
            </property>
            <property name="iconSize">
             <size>
