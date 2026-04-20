@@ -81,7 +81,7 @@ FairWindSK now prefers Signal K server unit preferences when the server exposes 
 
 The legacy `units` object is still kept for compatibility with parts of the UI that have not yet moved to the server-driven metadata path. FairWindSK updates those legacy keys when you save local category overrides from the Units tab.
 
-These mappings drive UI bars (autopilot, anchor, alarms, POB) and instrument readouts. Ensure any custom paths exist on your Signal K server.
+These mappings drive UI bars (autopilot, anchor, alarms, POB) and instrument readouts. For the POB workflow on a regular Signal K server, keep `notifications.pob` mapped to the standard `notifications.mob` path unless you intentionally need a custom server extension.
 
 ## Window and input settings
 

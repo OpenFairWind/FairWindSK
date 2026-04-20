@@ -192,7 +192,8 @@ An example of a Signal K web application running wrapped by FairWindSK: The [KIP
 ![The Signal K KIP application](images/fairwindsk-kip.png)
 
 The Person over Board bar. If the POB button is pressed, the POB bar popup.
-A waypoint is dropped automatically and set as destination.
+FairWindSK raises the standard `notifications.mob` alarm on the connected Signal K server,
+creates a regular waypoint resource for the incident, and sets that waypoint as destination.
 The bar shows the last known position, the bearing to and the distance from the last known position,
 and the elapsed time.
 ![The Person Over Board (POB) Bar](images/fairwindsk-pob.png)

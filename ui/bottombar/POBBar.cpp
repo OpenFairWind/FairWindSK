@@ -15,6 +15,7 @@
 #include <QDateTime>
 #include <QToolButton>
 #include <QTimeZone>
+#include <QUuid>
 
 #include "FairWindSK.hpp"
 #include "ui/GeoCoordinateUtils.hpp"
@@ -23,6 +24,54 @@
 #include "ui_POBBar.h"
 
 namespace {
+    QString standardPobUuid() {
+        return QStringLiteral("__signalk_standard_mob__");
+    }
+
+    QString managedPobType() {
+        return QStringLiteral("alarm-mob");
+    }
+
+    QString managedPobDescriptionPrefix() {
+        return QStringLiteral("FairWindSK POB");
+    }
+
+    QString resourceIdFromResponse(const QJsonObject &response) {
+        if (response.contains("id") && response["id"].isString()) {
+            return response["id"].toString();
+        }
+        if (response.contains("identifier") && response["identifier"].isString()) {
+            return response["identifier"].toString();
+        }
+        if (response.contains("feature") && response["feature"].isObject()) {
+            const auto feature = response["feature"].toObject();
+            if (feature.contains("id") && feature["id"].isString()) {
+                return feature["id"].toString();
+            }
+        }
+        return {};
+    }
+
+    QJsonObject positionObjectFromCoordinate(const QGeoCoordinate &coordinate) {
+        QJsonObject position;
+        if (coordinate.isValid()) {
+            position["latitude"] = coordinate.latitude();
+            position["longitude"] = coordinate.longitude();
+            if (!std::isnan(coordinate.altitude())) {
+                position["altitude"] = coordinate.altitude();
+            }
+        }
+        return position;
+    }
+
+    QDateTime parseIsoDateTime(const QString &value) {
+        auto dateTime = QDateTime::fromString(value, Qt::ISODateWithMs);
+        if (!dateTime.isValid()) {
+            dateTime = QDateTime::fromString(value, Qt::ISODate);
+        }
+        return dateTime;
+    }
+
     QTimeZone utcTimeZone() {
         return QTimeZone(QByteArrayLiteral("UTC"));
     }
@@ -160,25 +209,17 @@ namespace fairwindsk::ui::bottombar {
             return;
         }
 
-        const auto notificationObject = signalKClient->signalkGet("vessels.self." + path + ".value");
-        if (notificationObject.isEmpty() || (
-            notificationObject.contains("state") &&
-            notificationObject["state"].isString() &&
-            notificationObject["state"].toString() == "normal")) {
+        const QString uuid = createManagedPob();
+        if (uuid.isEmpty()) {
             if (m_pobUUIDs.isEmpty()) {
                 clearDisplayedPob();
-            } else {
-                refreshCurrentPobUi();
             }
-            setVisible(true);
-
-            const auto notificationUrl = QUrl(signalKClient->server().toString() + "/signalk/v2/api/notifications/" + apiKey);
-            const auto message = apiKey == "mob" ? QStringLiteral("POB") : apiKey.toUpper();
-            auto payload = QString(R"({"message":"%1"})").arg(message);
-            signalKClient->signalkPut(notificationUrl, payload);
+            setVisible(!m_pobUUIDs.isEmpty());
             return;
         }
 
+        syncManagedNotificationState();
+        navigateToSelectedPob();
         refreshCurrentPobUi();
         setVisible(true);
     }
@@ -199,18 +240,26 @@ namespace fairwindsk::ui::bottombar {
             return;
         }
 
-        const auto url = signalKClient->server().toString() + "/signalk/v2/api/notifications/" + apiKey + "/" + currentPOB.toString();
-        signalKClient->signalkDelete(QUrl(url));
-
-        m_pobUUIDs.remove(currentPOB.toString());
-        m_pobValues.remove(currentPOB.toString());
-        removePOB(currentPOB.toString());
+        const QString uuid = currentPOB.toString();
+        if (uuid == standardPobUuid()) {
+            signalKClient->signalkDelete(QUrl(signalKClient->server().toString() + "/signalk/v2/api/notifications/" + apiKey));
+            removePobEntry(uuid);
+        } else if (isManagedPob(uuid)) {
+            signalKClient->deleteResource(QStringLiteral("waypoints"), uuid);
+            removePobEntry(uuid);
+            syncManagedNotificationState();
+        } else {
+            const auto url = signalKClient->server().toString() + "/signalk/v2/api/notifications/" + apiKey + "/" + uuid;
+            signalKClient->signalkDelete(QUrl(url));
+            removePobEntry(uuid);
+        }
 
         if (m_pobUUIDs.isEmpty()) {
             setMetricSubscriptionsActive(false);
             clearDisplayedPob();
             setVisible(false);
         } else {
+            navigateToSelectedPob();
             refreshCurrentPobUi();
         }
 
@@ -236,6 +285,7 @@ namespace fairwindsk::ui::bottombar {
      */
     void POBBar::onCurrentIndexChanged(int index) {
         Q_UNUSED(index);
+        navigateToSelectedPob();
         refreshCurrentPobUi();
     }
 
@@ -259,7 +309,7 @@ namespace fairwindsk::ui::bottombar {
  * Method called in accordance to signalk to update the navigation position
  */
     void POBBar::updatePOB(const QJsonObject &update) {
-        if (update.isEmpty()) {
+        if (update.isEmpty() || !update.contains("updates") || !update["updates"].isArray()) {
             return;
         }
 
@@ -268,42 +318,68 @@ namespace fairwindsk::ui::bottombar {
             return;
         }
 
-        auto value = fairwindsk::signalk::Client::getObjectFromUpdateByPath(update, path);
-        if (value.isEmpty()) {
-            return;
-        }
-
-        const auto pobUUID = value["subPath"].toString();
-        if (pobUUID.isEmpty() || !value.contains("state") || !value["state"].isString()) {
-            return;
-        }
-
-        const auto state = value["state"].toString();
-        if (state == "normal") {
-            m_pobUUIDs.remove(pobUUID);
-            m_pobValues.remove(pobUUID);
-            removePOB(pobUUID);
-
-            if (m_pobUUIDs.isEmpty()) {
-                setMetricSubscriptionsActive(false);
-                clearDisplayedPob();
-                setVisible(false);
-            } else {
-                refreshCurrentPobUi();
+        for (const auto &updateItem : update["updates"].toArray()) {
+            if (!updateItem.isObject()) {
+                continue;
             }
-            return;
-        }
+            const auto updateObject = updateItem.toObject();
+            if (!updateObject.contains("values") || !updateObject["values"].isArray()) {
+                continue;
+            }
 
-        if (state != "emergency" && state != "alarm") {
-            return;
-        }
+            for (const auto &valueItem : updateObject["values"].toArray()) {
+                if (!valueItem.isObject()) {
+                    continue;
+                }
 
-        m_pobUUIDs.insert(pobUUID);
-        m_pobValues.insert(pobUUID, value);
-        addOrSelectPOB(pobUUID);
-        setMetricSubscriptionsActive(true);
-        refreshCurrentPobUi();
-        setVisible(true);
+                const auto updateValue = valueItem.toObject();
+                if (!updateValue.contains("path") || !updateValue["path"].isString()) {
+                    continue;
+                }
+
+                const QString valuePath = updateValue["path"].toString();
+                if (!valuePath.startsWith(path)) {
+                    continue;
+                }
+                if (!updateValue.contains("value") || !updateValue["value"].isObject()) {
+                    continue;
+                }
+
+                auto value = updateValue["value"].toObject();
+                const bool exactPath = valuePath == path;
+                if (exactPath) {
+                    applyStandardNotificationUpdate(value);
+                    continue;
+                }
+
+                const QString pobUUID = valuePath.mid(path.size() + 1);
+                if (pobUUID.isEmpty() || !value.contains("state") || !value["state"].isString()) {
+                    continue;
+                }
+
+                const QString state = value["state"].toString();
+                if (state == "normal") {
+                    removePobEntry(pobUUID);
+                    if (m_pobUUIDs.isEmpty()) {
+                        setMetricSubscriptionsActive(false);
+                        clearDisplayedPob();
+                        setVisible(false);
+                    } else {
+                        refreshCurrentPobUi();
+                    }
+                    continue;
+                }
+
+                if (state != "emergency" && state != "alarm") {
+                    continue;
+                }
+
+                upsertPobValue(pobUUID, value, false);
+                setMetricSubscriptionsActive(true);
+                refreshCurrentPobUi();
+                setVisible(true);
+            }
+        }
     }
 
     /*
@@ -392,6 +468,123 @@ namespace fairwindsk::ui::bottombar {
         return apiKey;
     }
 
+    QString POBBar::currentPobUuid() const {
+        const auto currentData = ui->comboBox_currentPOB->currentData();
+        return currentData.isValid() ? currentData.toString() : QString();
+    }
+
+    bool POBBar::hasManagedPobs() const {
+        for (auto it = m_pobValues.cbegin(); it != m_pobValues.cend(); ++it) {
+            if (it.value().value(QStringLiteral("managedByFairWindSK")).toBool()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool POBBar::isManagedPob(const QString &uuid) const {
+        return m_pobValues.value(uuid).value(QStringLiteral("managedByFairWindSK")).toBool();
+    }
+
+    QGeoCoordinate POBBar::currentVesselPosition() const {
+        const auto path = configuredPath("pos");
+        if (path.isEmpty()) {
+            return {};
+        }
+
+        const auto jsonObject = FairWindSK::getInstance()->getSignalKClient()->signalkGet("vessels.self." + path + ".value");
+        QGeoCoordinate coordinate;
+        if (jsonObject.contains("latitude")) {
+            coordinate.setLatitude(jsonObject["latitude"].toDouble());
+        }
+        if (jsonObject.contains("longitude")) {
+            coordinate.setLongitude(jsonObject["longitude"].toDouble());
+        }
+        if (jsonObject.contains("altitude")) {
+            coordinate.setAltitude(jsonObject["altitude"].toDouble());
+        }
+        return coordinate;
+    }
+
+    QString POBBar::createManagedPob() {
+        const auto client = FairWindSK::getInstance()->getSignalKClient();
+        const auto coordinate = currentVesselPosition();
+        if (!coordinate.isValid()) {
+            return {};
+        }
+
+        const auto timestamp = QDateTime::currentDateTimeUtc();
+        const QString id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+        const QString name = tr("POB %1").arg(timestamp.toString(QStringLiteral("HH:mm:ss")));
+        const QString description = QStringLiteral("%1 %2")
+            .arg(managedPobDescriptionPrefix(), timestamp.toString(Qt::ISODate));
+        fairwindsk::signalk::Waypoint waypoint(id, name, description, managedPobType(), coordinate);
+
+        const auto response = client->createResource(QStringLiteral("waypoints"), waypoint);
+        const QString persistedId = resourceIdFromResponse(response).isEmpty() ? id : resourceIdFromResponse(response);
+
+        QJsonObject value;
+        value["state"] = QStringLiteral("emergency");
+        value["message"] = QStringLiteral("POB");
+        value["createdAt"] = timestamp.toString(Qt::ISODateWithMs);
+        value["position"] = positionObjectFromCoordinate(coordinate);
+        upsertPobValue(persistedId, value, true);
+        return persistedId;
+    }
+
+    void POBBar::syncManagedNotificationState() const {
+        const auto apiKey = pobNotificationApiKey();
+        if (apiKey.isEmpty()) {
+            return;
+        }
+
+        const auto client = FairWindSK::getInstance()->getSignalKClient();
+        const auto notificationUrl = QUrl(client->server().toString() + "/signalk/v2/api/notifications/" + apiKey);
+        if (hasManagedPobs()) {
+            QString payload = QStringLiteral(R"({"message":"POB"})");
+            client->signalkPut(notificationUrl, payload);
+            return;
+        }
+
+        client->signalkDelete(notificationUrl);
+    }
+
+    void POBBar::navigateToSelectedPob() const {
+        const QString uuid = currentPobUuid();
+        if (uuid.isEmpty() || uuid == standardPobUuid()) {
+            return;
+        }
+
+        FairWindSK::getInstance()->getSignalKClient()->navigateToWaypoint(QStringLiteral("/resources/waypoints/") + uuid);
+    }
+
+    void POBBar::applyStandardNotificationUpdate(const QJsonObject &value) {
+        if (!value.contains("state") || !value["state"].isString()) {
+            return;
+        }
+
+        const QString state = value["state"].toString();
+        if (state == QStringLiteral("normal")) {
+            removePobEntry(standardPobUuid());
+            if (m_pobUUIDs.isEmpty()) {
+                setMetricSubscriptionsActive(false);
+                clearDisplayedPob();
+                setVisible(false);
+            } else {
+                refreshCurrentPobUi();
+            }
+            return;
+        }
+
+        if ((state == QStringLiteral("emergency") || state == QStringLiteral("alarm")) &&
+            !hasManagedPobs()) {
+            upsertPobValue(standardPobUuid(), value, false);
+            setMetricSubscriptionsActive(true);
+            refreshCurrentPobUi();
+            setVisible(true);
+        }
+    }
+
     void POBBar::loadExistingPobs() {
         const auto client = FairWindSK::getInstance()->getSignalKClient();
         const auto path = pobNotificationPath();
@@ -409,8 +602,37 @@ namespace fairwindsk::ui::bottombar {
             }
         }
 
-        const auto pobs = client->signalkGet("vessels.self." + path);
+        const auto waypointResources = client->getResources(QStringLiteral("waypoints"));
         QString preferredUuid;
+        {
+            const QSignalBlocker blocker(ui->comboBox_currentPOB);
+            for (auto it = waypointResources.cbegin(); it != waypointResources.cend(); ++it) {
+                if (!it.value().contains("type") || !it.value()["type"].isString() ||
+                    it.value()["type"].toString() != managedPobType()) {
+                    continue;
+                }
+
+                QJsonObject value;
+                value["state"] = QStringLiteral("emergency");
+                value["message"] = QStringLiteral("POB");
+                value["managedByFairWindSK"] = true;
+                if (it.value().contains("timestamp") && it.value()["timestamp"].isString()) {
+                    value["createdAt"] = it.value()["timestamp"].toString();
+                }
+                if (it.value().contains("position") && it.value()["position"].isObject()) {
+                    value["position"] = it.value()["position"].toObject();
+                }
+
+                m_pobUUIDs.insert(it.key());
+                m_pobValues.insert(it.key(), value);
+                addOrSelectPOB(it.key());
+                if (it.key() == nextPointId) {
+                    preferredUuid = it.key();
+                }
+            }
+        }
+
+        const auto pobs = client->signalkGet("vessels.self." + path);
         {
             const QSignalBlocker blocker(ui->comboBox_currentPOB);
             for (const auto &key : pobs.keys()) {
@@ -432,12 +654,20 @@ namespace fairwindsk::ui::bottombar {
                     continue;
                 }
 
-                m_pobUUIDs.insert(key);
-                m_pobValues.insert(key, value);
-                addOrSelectPOB(key);
+                upsertPobValue(key, value, false);
                 if (key == nextPointId) {
                     preferredUuid = key;
                 }
+            }
+        }
+
+        const auto standardNotification = client->signalkGet("vessels.self." + path + ".value");
+        if (!hasManagedPobs() &&
+            standardNotification.contains("state") &&
+            standardNotification["state"].isString()) {
+            const QString state = standardNotification["state"].toString();
+            if (state == QStringLiteral("emergency") || state == QStringLiteral("alarm")) {
+                upsertPobValue(standardPobUuid(), standardNotification, false);
             }
         }
 
@@ -574,8 +804,30 @@ namespace fairwindsk::ui::bottombar {
     void POBBar::updateStartTime() {
         m_currentStartTimeUtc = {};
 
+        const QString uuid = currentPobUuid();
+        if (uuid.isEmpty()) {
+            return;
+        }
+
+        const auto value = m_pobValues.value(uuid);
+        const QStringList localTimeKeys = {
+            QStringLiteral("createdAt"),
+            QStringLiteral("timestamp"),
+            QStringLiteral("startTime")
+        };
+        for (const auto &key : localTimeKeys) {
+            if (value.contains(key) && value[key].isString()) {
+                auto startDateTimeUtc = parseIsoDateTime(value[key].toString());
+                if (startDateTimeUtc.isValid()) {
+                    startDateTimeUtc.setTimeZone(utcTimeZone());
+                    m_currentStartTimeUtc = startDateTimeUtc;
+                    return;
+                }
+            }
+        }
+
         const auto startTimePath = configuredPath("pob.startTime");
-        if (startTimePath.isEmpty() || ui->comboBox_currentPOB->count() == 0) {
+        if (startTimePath.isEmpty()) {
             return;
         }
 
@@ -587,14 +839,30 @@ namespace fairwindsk::ui::bottombar {
             return;
         }
 
-        auto startDateTimeUtc = QDateTime::fromString(startTimeIso8601, Qt::ISODateWithMs);
-        if (!startDateTimeUtc.isValid()) {
-            startDateTimeUtc = QDateTime::fromString(startTimeIso8601, Qt::ISODate);
-        }
+        auto startDateTimeUtc = parseIsoDateTime(startTimeIso8601);
         if (startDateTimeUtc.isValid()) {
             startDateTimeUtc.setTimeZone(utcTimeZone());
             m_currentStartTimeUtc = startDateTimeUtc;
         }
+    }
+
+    void POBBar::upsertPobValue(const QString &uuid, const QJsonObject &value, const bool managed) {
+        if (uuid.isEmpty()) {
+            return;
+        }
+
+        auto storedValue = value;
+        storedValue["managedByFairWindSK"] = managed;
+        m_pobUUIDs.insert(uuid);
+        m_pobValues.insert(uuid, storedValue);
+        addOrSelectPOB(uuid);
+    }
+
+    void POBBar::removePobEntry(const QString &uuid) {
+        m_pobUUIDs.remove(uuid);
+        m_pobValues.remove(uuid);
+        m_pobLabels.remove(uuid);
+        removePOB(uuid);
     }
 
     void POBBar::addOrSelectPOB(const QString& uuid) {
@@ -609,8 +877,14 @@ namespace fairwindsk::ui::bottombar {
         }
 
         if (!m_pobLabels.contains(uuid)) {
-            auto waypoint = FairWindSK::getInstance()->getSignalKClient()->getWaypointByHref("/resources/waypoints/" + uuid);
-            m_pobLabels.insert(uuid, waypoint.isEmpty() ? uuid : waypoint.getName());
+            QString label;
+            if (uuid == standardPobUuid()) {
+                label = tr("Signal K MOB");
+            } else {
+                auto waypoint = FairWindSK::getInstance()->getSignalKClient()->getWaypointByHref("/resources/waypoints/" + uuid);
+                label = waypoint.isEmpty() ? uuid : waypoint.getName();
+            }
+            m_pobLabels.insert(uuid, label);
         }
 
         const QString label = m_pobLabels.value(uuid, uuid);

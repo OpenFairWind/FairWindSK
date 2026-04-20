@@ -8,6 +8,7 @@
 #include <nlohmann/json.hpp>
 #include <QJsonObject>
 #include <QDateTime>
+#include <QGeoCoordinate>
 #include <QHash>
 #include <QSet>
 #include <QTimer>
@@ -54,6 +55,14 @@ namespace fairwindsk::ui::bottombar {
         QString configuredPath(const char *key) const;
         QString pobNotificationPath() const;
         QString pobNotificationApiKey() const;
+        QString currentPobUuid() const;
+        bool hasManagedPobs() const;
+        bool isManagedPob(const QString &uuid) const;
+        QGeoCoordinate currentVesselPosition() const;
+        QString createManagedPob();
+        void syncManagedNotificationState() const;
+        void navigateToSelectedPob() const;
+        void applyStandardNotificationUpdate(const QJsonObject &value);
         void loadExistingPobs();
         void setMetricSubscriptionsActive(bool active);
         void refreshCurrentPobUi();
@@ -62,6 +71,8 @@ namespace fairwindsk::ui::bottombar {
         void updateUnitLabels() const;
         void updateDisplayedPosition(const QJsonObject& position);
         void updateStartTime();
+        void upsertPobValue(const QString &uuid, const QJsonObject &value, bool managed);
+        void removePobEntry(const QString &uuid);
         void addOrSelectPOB(const QString& uuid);
         void removePOB(const QString& uuid);
 

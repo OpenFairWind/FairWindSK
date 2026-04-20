@@ -18,7 +18,7 @@ The formal shell vocabulary used below is defined in [docs/ui_shell.md](./ui_she
 - **Bottom-bar functions**: Dedicated widgets for:
   - **Autopilot**: Shows autopilot state, target heading/wind angle, and rudder information using paths from the `signalk` configuration block.
   - **Anchor**: Displays anchor position, radius, rode length, and actions such as drop, raise, and radius adjustments (mapped to plugin action paths).
-  - **POB (Person over board)**: Drops a waypoint, sets it as destination, and shows bearing/distance/time from the incident position.
+  - **POB (Person over board)**: Raises the standard Signal K `notifications.mob` alarm, creates a normal waypoint resource for the incident, sets it as destination, and shows bearing/distance/time from the incident position.
   - **Alarms**: Surfaces Signal K notifications (e.g., fire, piracy, abandon, sinking) and the anchor alarm state.
 
 Availability of these bars depends on the configured plugin identifiers (`applications.autopilot`, `applications.anchor`) and the presence of the corresponding Signal K data paths.
