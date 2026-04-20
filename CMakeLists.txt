@@ -336,4 +336,29 @@ if(NOT FAIRWINDSK_MOBILE)
             ${FAIRWINDSK_POST_BUILD_COMMANDS})
 endif()
 
+install(TARGETS ${PROJECT_NAME}
+        BUNDLE DESTINATION .
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
+if(NOT FAIRWINDSK_MOBILE)
+    if(NOT APPLE)
+        install(DIRECTORY ${CMAKE_SOURCE_DIR}/resources/images/icons/
+                DESTINATION ${CMAKE_INSTALL_BINDIR}/icons)
+    endif()
+endif()
+
+if(NOT FAIRWINDSK_MOBILE)
+    if(WIN32)
+        install(FILES ${RUNTIMEQTZEROCONF} ${RUNTIMEQHOTKEY}
+                DESTINATION ${CMAKE_INSTALL_BINDIR})
+    elseif(APPLE)
+        install(FILES ${LIBQTZEROCONF} ${LIBQHOTKEY}
+                DESTINATION ${PROJECT_NAME}.app/Contents/Frameworks)
+    else()
+        install(FILES ${LIBQTZEROCONF} ${LIBQHOTKEY}
+                DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    endif()
+endif()
+
 qt_finalize_executable(${PROJECT_NAME})

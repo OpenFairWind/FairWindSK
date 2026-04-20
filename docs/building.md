@@ -68,6 +68,7 @@ git clone https://github.com/OpenFairWind/FairWindSK.git
 cd FairWindSK
 cmake -S . -B build
 cmake --build build --parallel
+cmake --install build
 ```
 
 Run from the build tree:
@@ -75,6 +76,20 @@ Run from the build tree:
 - macOS: `open build/FairWindSK.app`
 - Linux / Raspberry Pi OS: `./build/FairWindSK`
 - Windows: `build\\FairWindSK.exe`
+
+Install into the default prefix:
+
+- macOS: `/usr/local/FairWindSK.app` (or the active `CMAKE_INSTALL_PREFIX`)
+- Linux / Raspberry Pi OS: `/usr/local/bin/FairWindSK`
+- Windows: `<prefix>\\bin\\FairWindSK.exe`
+
+Override the install prefix when needed:
+
+```bash
+cmake -S . -B build -DCMAKE_INSTALL_PREFIX=/desired/prefix
+cmake --build build --parallel
+cmake --install build
+```
 
 If Qt is installed outside the default search path, pass `-DCMAKE_PREFIX_PATH=...` during configure.
 
@@ -98,6 +113,7 @@ open build/FairWindSK.app
 Notes:
 
 - The build uses the CMake build-tree rpath so the app can run from the build folder with the downloaded desktop dependencies.
+- `cmake --install build` installs `FairWindSK.app`, preserves the bundled icon directory inside the app bundle, and installs the desktop helper libraries inside `Contents/Frameworks`.
 - For redistribution outside the build tree, use `macdeployqt` on the generated app bundle.
 
 ## Linux
@@ -125,6 +141,7 @@ cmake --build build --parallel
 Notes:
 
 - The desktop dependency libraries are added to the build-tree rpath, so running from `build/` works without setting `LD_LIBRARY_PATH`.
+- `cmake --install build` installs the executable to `${CMAKE_INSTALL_BINDIR}`, the bundled icon directory to `${CMAKE_INSTALL_BINDIR}/icons`, and the desktop helper libraries to `${CMAKE_INSTALL_LIBDIR}`.
 - For packaging, use your normal Linux deployment workflow and include the Qt runtime plus the desktop dependencies built under `build/external/lib`.
 
 ## Raspberry Pi OS
@@ -161,6 +178,7 @@ sudo touch /usr/lib/aarch64-linux-gnu/cmake/Qt6VirtualKeyboard/Qt6VirtualKeyboar
 
 - For kiosk deployments, see `extras/fairwindsk-startup.desktop` and `extras/fairwindsk-startup`.
 - The `fairwindsk-startup` helper now waits briefly for the configured Signal K web-app catalog to come online before launching FairWindSK, which improves plugin icon/artwork availability during Raspberry Pi autostart boots.
+- `cmake --install build` uses the same Linux desktop install layout, so the binary lands in `${CMAKE_INSTALL_BINDIR}` and the icon/runtime helper assets are installed beside it.
 
 ## Windows
 
@@ -177,6 +195,7 @@ git clone https://github.com/OpenFairWind/FairWindSK.git
 cd FairWindSK
 cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH="C:\Qt\6.x.x\msvc2022_64"
 cmake --build build --parallel
+cmake --install build
 build\FairWindSK.exe
 ```
 
@@ -189,6 +208,7 @@ windeployqt build\FairWindSK.exe
 Notes:
 
 - The CMake build handles `QtZeroConf` and `QHotkey` as desktop-only dependencies and copies their DLLs next to the executable after the build.
+- `cmake --install build` installs `FairWindSK.exe`, the bundled icon directory under `bin\\icons`, and the desktop helper DLLs into the same `bin` directory.
 - Local `file://` applications remain a desktop-only integration and are supported on Windows.
 
 ## Android
@@ -305,6 +325,7 @@ Notes:
 ## Runtime and deployment notes
 
 - Desktop builds copy the bundled icon directory to the target output folder after the build.
+- Desktop installs now ship the application target, the bundled icon directory, and the desktop-only helper libraries through `cmake --install build`.
 - The first clean desktop build requires internet access for third-party dependency download steps.
 - Desktop external dependencies are pinned in CMake so the same revisions are used across machines.
 - For redistribution:

@@ -77,6 +77,7 @@ git clone https://github.com/OpenFairWind/FairWindSK.git
 cd FairWindSK
 cmake -S . -B build
 cmake --build build --parallel
+cmake --install build
 ```
 
 For platform-specific package lists, Qt kit selection, Windows deployment, Raspberry Pi notes, and the current desktop/mobile feature notes, see [docs/building.md](docs/building.md).
