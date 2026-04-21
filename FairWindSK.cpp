@@ -54,19 +54,6 @@ namespace fairwindsk {
 
         constexpr int kAppsRequestTimeoutMs = 5000;
 
-        void waitWithUiEvents(const int delayMs) {
-            if (delayMs <= 0) {
-                return;
-            }
-
-            QElapsedTimer timer;
-            timer.start();
-            while (timer.elapsed() < delayMs) {
-                QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
-                QThread::msleep(10);
-            }
-        }
-
         QString defaultConfigFilename() {
             QString configDir = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
             if (configDir.trimmed().isEmpty()) {
@@ -663,6 +650,24 @@ namespace fairwindsk {
                 mainWindow->applyRuntimeConfiguration();
             }
         });
+        connect(&m_signalkClient, &signalk::Client::connectivityChanged, this, [this](const bool restHealthy,
+                                                                                       const bool streamHealthy,
+                                                                                       const QString &statusText) {
+            Q_UNUSED(statusText)
+            if (!restHealthy && !streamHealthy) {
+                return;
+            }
+
+            const QString token = m_signalkClient.getToken();
+            if (token.isEmpty()) {
+                return;
+            }
+
+            if (fairwindsk::Configuration::getToken() != token) {
+                fairwindsk::Configuration::setToken(token);
+            }
+            updateWebProfileCookie();
+        });
 
         updateWebProfileCookie();
     }
@@ -1009,65 +1014,16 @@ namespace fairwindsk {
                 params["token"] = token;
             }
 
-            // Number of connection tentatives
-            int count = 1;
-
-            // Start the connection
-            do {
-                qInfo() << "FairWindSK::startSignalK attempt" << count << "of" << m_nRetry;
-
-                // Check if the debug is active
-                if (isDebug()) {
-
-                    // Write a message
-                    qDebug() << "Trying to connect to the " << signalKServerUrl << " Signal K server ("
-                             << count
-                             << "/" << m_nRetry << ")...";
-                }
-
-                // Try to connect
-                qInfo() << "FairWindSK::startSignalK calling Client::init";
-                result = m_signalkClient.init(params);
-                qInfo() << "FairWindSK::startSignalK Client::init returned" << result;
-
-                // Check if the connection is successful
-                if (result) {
-
-                    // Set the token
-                    fairwindsk::Configuration::setToken(m_signalkClient.getToken());
-                    updateWebProfileCookie();
-                    Units::getInstance()->refreshSignalKPreferences();
-                    refreshAutomaticComfortViewAvailability();
-                    if (m_configuration.getComfortViewMode() == "auto") {
-                        applyUiPreferences();
-                    }
-                    qInfo() << "FairWindSK::startSignalK connected successfully";
-
-                    // Exit the loop
-                    break;
-                }
-
-                // Increase the number of retry
-                count++;
-
-                // Back off between retries without freezing touch and pointer input.
-                waitWithUiEvents(m_mSleep);
-
-                // Loop until the number of retry
-            } while (count < m_nRetry);
+            qInfo() << "FairWindSK::startSignalK starting non-blocking client initialization";
+            result = m_signalkClient.init(params);
+            qInfo() << "FairWindSK::startSignalK Client::init returned" << result;
 
             // Check if the debug is active
             if (isDebug()) {
-
-                // Check if the client is connected
                 if (result) {
-
-                    // Write a message
-                    qDebug() << "Connected to " << signalKServerUrl;
+                    qDebug() << "Signal K startup initiated for" << signalKServerUrl;
                 } else {
-
-                    // Write a message
-                    qDebug() << "No response from the " << signalKServerUrl << " Signal K server!";
+                    qDebug() << "Signal K startup disabled or unavailable for" << signalKServerUrl;
                 }
             }
         } else {

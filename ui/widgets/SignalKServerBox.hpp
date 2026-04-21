@@ -5,8 +5,11 @@
 #ifndef FAIRWINDSK_SIGNALKSERVERBOX_HPP
 #define FAIRWINDSK_SIGNALKSERVERBOX_HPP
 
+#include <QDateTime>
 #include <QResizeEvent>
 #include <QWidget>
+
+#include "signalk/Client.hpp"
 
 namespace fairwindsk::ui::widgets {
     QT_BEGIN_NAMESPACE
@@ -26,12 +29,21 @@ namespace fairwindsk::ui::widgets {
     private slots:
         void onServerHealthChanged(bool healthy, const QString &statusText);
         void onConnectivityChanged(bool restHealthy, bool streamHealthy, const QString &statusText);
+        void onConnectionHealthStateChanged(fairwindsk::signalk::Client::ConnectionHealthState state,
+                                            const QString &stateText,
+                                            const QDateTime &lastStreamUpdate,
+                                            const QString &statusText);
         void onServerMessageChanged(const QString &message);
 
     private:
         void updateStatusLabel(const QString &text);
+        void updateFreshnessMessage();
 
         Ui::SignalKServerBox *ui = nullptr;
+        QString m_statusText;
+        QString m_stateText;
+        QString m_serverMessage;
+        QDateTime m_lastStreamUpdate;
     };
 }
 

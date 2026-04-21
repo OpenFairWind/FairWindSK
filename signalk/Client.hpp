@@ -28,6 +28,16 @@ namespace fairwindsk::signalk {
     Q_OBJECT
 
     public:
+        enum class ConnectionHealthState {
+            Disconnected,
+            Connecting,
+            Live,
+            Stale,
+            Reconnecting,
+            Degraded
+        };
+        Q_ENUM(ConnectionHealthState)
+
         explicit Client(QObject *parent = nullptr);
         ~Client() override;
 
@@ -103,7 +113,10 @@ namespace fairwindsk::signalk {
         QJsonObject getPathMeta(const QString &path, const QString &context = QStringLiteral("vessels/self"));
         bool isRestHealthy() const;
         bool isStreamHealthy() const;
+        ConnectionHealthState connectionHealthState() const;
         QString connectionStatusText() const;
+        QString connectionHealthStateText() const;
+        QDateTime lastStreamUpdate() const;
         void beginPlannedServerRestart(int gracePeriodMs = 45000);
 
         static QString getStringFromUpdateByPath(const QJsonObject &update, const QString& path = "");
@@ -123,6 +136,10 @@ namespace fairwindsk::signalk {
         void requestCountChanged(int activeRequests);
         void serverHealthChanged(bool healthy, const QString &statusText);
         void connectivityChanged(bool restHealthy, bool streamHealthy, const QString &statusText);
+        void connectionHealthStateChanged(ConnectionHealthState state,
+                                          const QString &stateText,
+                                          const QDateTime &lastStreamUpdate,
+                                          const QString &statusText);
         void serverMessageChanged(const QString &message);
         void serverStateResynchronized(bool recoveredFromDisconnect);
 
@@ -170,6 +187,8 @@ namespace fairwindsk::signalk {
         void setStreamHealth(bool healthy, const QString &statusText = QString());
         void emitConnectivityState(const QString &statusText = QString());
         void markStreamActivity(const QString &statusText = QString());
+        ConnectionHealthState currentConnectionHealthState() const;
+        QString connectionHealthStateLabel(ConnectionHealthState state) const;
         QString normalizedSubscriptionContext(const QString &context) const;
         QString subscriptionMessage(const QString &context, const QString &path, int period, const QString &policy, int minPeriod) const;
         bool refreshServerDiscovery();

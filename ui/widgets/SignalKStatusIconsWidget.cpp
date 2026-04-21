@@ -15,6 +15,15 @@ namespace fairwindsk::ui::widgets {
     namespace {
         constexpr int kIndicatorSize = 10;
         constexpr int kThrobberSize = 18;
+
+        QString tooltipLastUpdate(const QDateTime &lastStreamUpdate) {
+            if (!lastStreamUpdate.isValid()) {
+                return SignalKStatusIconsWidget::tr("No live data yet");
+            }
+
+            const QDateTime localUpdate = lastStreamUpdate.toLocalTime();
+            return SignalKStatusIconsWidget::tr("Last update %1").arg(localUpdate.toString(QStringLiteral("dd-MM hh:mm:ss")));
+        }
     }
 
     SignalKStatusIconsWidget::SignalKStatusIconsWidget(QWidget *parent)
@@ -55,12 +64,16 @@ namespace fairwindsk::ui::widgets {
                     this, &SignalKStatusIconsWidget::onServerHealthChanged);
             connect(client, &fairwindsk::signalk::Client::connectivityChanged,
                     this, &SignalKStatusIconsWidget::onConnectivityChanged);
+            connect(client, &fairwindsk::signalk::Client::connectionHealthStateChanged,
+                    this, &SignalKStatusIconsWidget::onConnectionHealthStateChanged);
             connect(client, &fairwindsk::signalk::Client::requestActivityChanged,
                     this, &SignalKStatusIconsWidget::onRequestActivityChanged);
 
             m_restHealthy = client->isRestHealthy();
             m_streamHealthy = client->isStreamHealthy();
             m_serverHealthy = m_restHealthy && m_streamHealthy;
+            m_stateText = client->connectionHealthStateText();
+            m_lastStreamUpdate = client->lastStreamUpdate();
             refreshIndicators(m_serverHealthy,
                               m_restHealthy,
                               m_streamHealthy,
@@ -102,6 +115,16 @@ namespace fairwindsk::ui::widgets {
     void SignalKStatusIconsWidget::onRequestActivityChanged(const bool active) {
         m_requestActive = active;
         refreshIndicators(m_serverHealthy, m_restHealthy, m_streamHealthy, m_requestActive, QString());
+    }
+
+    void SignalKStatusIconsWidget::onConnectionHealthStateChanged(const fairwindsk::signalk::Client::ConnectionHealthState state,
+                                                                  const QString &stateText,
+                                                                  const QDateTime &lastStreamUpdate,
+                                                                  const QString &statusText) {
+        Q_UNUSED(state)
+        m_stateText = stateText.trimmed();
+        m_lastStreamUpdate = lastStreamUpdate;
+        refreshIndicators(m_serverHealthy, m_restHealthy, m_streamHealthy, m_requestActive, statusText);
     }
 
     void SignalKStatusIconsWidget::applyIndicatorColor(QLabel *label, const QColor &color) const {
@@ -205,9 +228,10 @@ namespace fairwindsk::ui::widgets {
 
         setBusyVisible(requestActive);
 
-        m_serverIndicator->setToolTip(tr("Signal K server"));
+        const QString overallState = m_stateText.trimmed().isEmpty() ? tr("Disconnected") : m_stateText.trimmed();
+        m_serverIndicator->setToolTip(tr("Signal K %1\n%2").arg(overallState, tooltipLastUpdate(m_lastStreamUpdate)));
         m_busyIndicator->setToolTip(requestActive ? tr("Signal K activity in progress") : tr("Signal K idle"));
         m_restIndicator->setToolTip(tr("Signal K REST API"));
-        m_streamIndicator->setToolTip(tr("Signal K stream"));
+        m_streamIndicator->setToolTip(tr("Signal K stream\n%1").arg(tooltipLastUpdate(m_lastStreamUpdate)));
     }
 }
