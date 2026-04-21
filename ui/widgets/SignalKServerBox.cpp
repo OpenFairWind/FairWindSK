@@ -76,7 +76,10 @@ namespace fairwindsk::ui::widgets {
         if (auto *fairWindSK = FairWindSK::getInstance()) {
             connect(fairWindSK, &fairwindsk::FairWindSK::appsStateChanged,
                     this, &SignalKServerBox::onAppsStateChanged);
+            connect(fairWindSK, &fairwindsk::FairWindSK::runtimeHealthChanged,
+                    this, &SignalKServerBox::onRuntimeHealthChanged);
             m_appsStateText = fairWindSK->appsStateText();
+            m_runtimeSummary = fairWindSK->runtimeHealthSummary();
         }
         updateFreshnessMessage();
     }
@@ -132,6 +135,15 @@ namespace fairwindsk::ui::widgets {
         updateFreshnessMessage();
     }
 
+    void SignalKServerBox::onRuntimeHealthChanged(const fairwindsk::FairWindSK::RuntimeHealthState state,
+                                                  const QString &summary,
+                                                  const QString &badgeText) {
+        Q_UNUSED(state)
+        Q_UNUSED(badgeText)
+        m_runtimeSummary = summary.trimmed();
+        updateFreshnessMessage();
+    }
+
     void SignalKServerBox::updateStatusLabel(const QString &text) {
         if (!ui || !ui->labelStatus) {
             return;
@@ -150,7 +162,9 @@ namespace fairwindsk::ui::widgets {
 
         const QStringList lines = {
             m_serverMessage.trimmed().isEmpty() ? tr("Waiting for server") : m_serverMessage.trimmed(),
-            tr("%1 • %2").arg(m_stateText.trimmed().isEmpty() ? tr("Disconnected") : m_stateText.trimmed(),
+            tr("%1 • %2").arg(m_runtimeSummary.trimmed().isEmpty()
+                                  ? (m_stateText.trimmed().isEmpty() ? tr("Disconnected") : m_stateText.trimmed())
+                                  : m_runtimeSummary.trimmed(),
                               formatLastUpdateText(m_lastStreamUpdate)),
             m_appsStateText.trimmed().isEmpty() ? tr("Apps idle") : m_appsStateText.trimmed()
         };

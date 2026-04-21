@@ -34,6 +34,7 @@
 #include <QElapsedTimer>
 #include <QUrl>
 #include <algorithm>
+#include <cmath>
 
 #include "Units.hpp"
 #include "ui/MainWindow.hpp"
@@ -200,11 +201,7 @@ namespace fairwindsk {
             return preset;
         }
 
-        QString resolvedComfortViewPreset(const Configuration &configuration) {
-            if (configuration.getComfortViewMode() != "auto") {
-                return normalizedComfortViewPreset(configuration.getComfortViewPreset());
-            }
-
+        QString resolveComfortViewPresetFromClock() {
             const QTime now = QTime::currentTime();
             if (now >= QTime(5, 30) && now < QTime(7, 0)) {
                 return QStringLiteral("dawn");
@@ -219,6 +216,98 @@ namespace fairwindsk {
                 return QStringLiteral("dusk");
             }
             return QStringLiteral("night");
+        }
+
+        double normalizedSunAngleDegrees(const double rawValue) {
+            if (std::isnan(rawValue)) {
+                return rawValue;
+            }
+
+            const double absoluteValue = std::abs(rawValue);
+            constexpr double pi = 3.14159265358979323846;
+            if (absoluteValue <= (2.0 * pi + 0.001)) {
+                return rawValue * (180.0 / pi);
+            }
+            return rawValue;
+        }
+
+        QString comfortPresetFromSunAngle(double angleDegrees) {
+            angleDegrees = normalizedSunAngleDegrees(angleDegrees);
+            if (std::isnan(angleDegrees)) {
+                return {};
+            }
+
+            if (angleDegrees >= 6.0) {
+                return QStringLiteral("day");
+            }
+            if (angleDegrees >= -2.0) {
+                return QTime::currentTime() < QTime(12, 0) ? QStringLiteral("dawn") : QStringLiteral("sunset");
+            }
+            if (angleDegrees >= -8.0) {
+                return QStringLiteral("dusk");
+            }
+            return QStringLiteral("night");
+        }
+
+        QString comfortPresetFromSunUpdate(const QJsonObject &update) {
+            if (update.isEmpty()) {
+                return {};
+            }
+
+            const QJsonObject objectValue = fairwindsk::signalk::Client::getObjectFromUpdateByPath(update);
+            const auto fromString = [](QString value) {
+                value = normalizedComfortViewPreset(value);
+                return value == QStringLiteral("default") ? QString() : value;
+            };
+
+            if (!objectValue.isEmpty()) {
+                const QString state = fromString(objectValue.value(QStringLiteral("state")).toString());
+                if (!state.isEmpty()) {
+                    return state;
+                }
+
+                const QString mode = fromString(objectValue.value(QStringLiteral("mode")).toString());
+                if (!mode.isEmpty()) {
+                    return mode;
+                }
+
+                const QString phase = fromString(objectValue.value(QStringLiteral("phase")).toString());
+                if (!phase.isEmpty()) {
+                    return phase;
+                }
+
+                const double altitude = objectValue.value(QStringLiteral("altitude")).toDouble(std::numeric_limits<double>::quiet_NaN());
+                const QString altitudePreset = comfortPresetFromSunAngle(altitude);
+                if (!altitudePreset.isEmpty()) {
+                    return altitudePreset;
+                }
+
+                const double elevation = objectValue.value(QStringLiteral("elevation")).toDouble(std::numeric_limits<double>::quiet_NaN());
+                const QString elevationPreset = comfortPresetFromSunAngle(elevation);
+                if (!elevationPreset.isEmpty()) {
+                    return elevationPreset;
+                }
+            }
+
+            const QString directValue = fromString(fairwindsk::signalk::Client::getStringFromUpdateByPath(update));
+            if (!directValue.isEmpty()) {
+                return directValue;
+            }
+
+            return comfortPresetFromSunAngle(fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update));
+        }
+
+        QString resolvedComfortViewPreset(const Configuration &configuration, const QJsonObject &sunUpdate) {
+            if (configuration.getComfortViewMode() != "auto") {
+                return normalizedComfortViewPreset(configuration.getComfortViewPreset());
+            }
+
+            const QString environmentPreset = comfortPresetFromSunUpdate(sunUpdate);
+            if (!environmentPreset.isEmpty()) {
+                return environmentPreset;
+            }
+
+            return resolveComfortViewPresetFromClock();
         }
 
         QString comfortThemeResourcePath(const QString &preset) {
@@ -311,15 +400,6 @@ namespace fairwindsk {
                 + buildCheckboxRule(
                     QStringLiteral("checkbox-selected"),
                     QStringLiteral("QCheckBox::indicator:checked"));
-        }
-
-        bool isAutomaticComfortViewSupported(const Configuration &configuration, signalk::Client *client) {
-            const QString configuredSunPath = configuration.getSignalKPath(QStringLiteral("environment.sun")).trimmed();
-            if (configuredSunPath.isEmpty() || client == nullptr || client->url().isEmpty() || !client->isRestHealthy()) {
-                return false;
-            }
-
-            return !client->signalkGet(configuredSunPath).isEmpty();
         }
 
         UiComfortPalette uiComfortPaletteForPreset(const QString &preset) {
@@ -614,16 +694,24 @@ namespace fairwindsk {
                 mainWindow->applyRuntimeConfiguration();
             }
         });
+        connect(&m_signalkClient, &signalk::Client::connectionHealthStateChanged, this, [this](const signalk::Client::ConnectionHealthState,
+                                                                                                 const QString &,
+                                                                                                 const QDateTime &,
+                                                                                                 const QString &) {
+            refreshRuntimeHealth();
+        });
         connect(&m_signalkClient, &signalk::Client::connectivityChanged, this, [this](const bool restHealthy,
                                                                                        const bool streamHealthy,
                                                                                        const QString &statusText) {
             Q_UNUSED(statusText)
             if (!restHealthy && !streamHealthy) {
+                refreshRuntimeHealth();
                 return;
             }
 
             const QString token = m_signalkClient.getToken();
             if (token.isEmpty()) {
+                refreshRuntimeHealth();
                 return;
             }
 
@@ -631,9 +719,11 @@ namespace fairwindsk {
                 fairwindsk::Configuration::setToken(token);
             }
             updateWebProfileCookie();
+            refreshRuntimeHealth();
         });
 
         updateWebProfileCookie();
+        refreshRuntimeHealth();
     }
 
 
@@ -763,20 +853,7 @@ namespace fairwindsk {
             return preset;
         }
 
-        const QTime now = QTime::currentTime();
-        if (now >= QTime(5, 30) && now < QTime(7, 0)) {
-            return QStringLiteral("dawn");
-        }
-        if (now >= QTime(7, 0) && now < QTime(17, 30)) {
-            return QStringLiteral("default");
-        }
-        if (now >= QTime(17, 30) && now < QTime(19, 0)) {
-            return QStringLiteral("sunset");
-        }
-        if (now >= QTime(19, 0) && now < QTime(20, 30)) {
-            return QStringLiteral("dusk");
-        }
-        return QStringLiteral("night");
+        return resolvedComfortViewPreset(effectiveConfiguration, m_automaticComfortEnvironmentUpdate);
     }
 
     UiScrollPalette FairWindSK::getActiveComfortScrollPalette(const Configuration *configuration) const {
@@ -802,7 +879,7 @@ namespace fairwindsk {
         const QString comfortPreset =
             effectiveConfiguration.getComfortViewMode() == "auto" && !isAutomaticComfortViewAvailable(&effectiveConfiguration)
                 ? normalizedComfortViewPreset(effectiveConfiguration.getComfortViewPreset())
-                : resolvedComfortViewPreset(effectiveConfiguration);
+                : resolvedComfortViewPreset(effectiveConfiguration, m_automaticComfortEnvironmentUpdate);
         const auto comfortPalette = uiComfortPaletteForPreset(comfortPreset);
 
         const QColor applicationBackgroundColor = comfortOverrideColor(effectiveConfiguration, comfortPreset, QStringLiteral("applicationBackground"), QColor(comfortPalette.panel));
@@ -900,7 +977,7 @@ namespace fairwindsk {
             return;
         }
 
-        const QString resolvedPreset = resolvedComfortViewPreset(m_configuration);
+        const QString resolvedPreset = resolvedComfortViewPreset(m_configuration, m_automaticComfortEnvironmentUpdate);
         if (resolvedPreset != m_activeComfortViewPreset) {
             applyUiPreferences();
         }
@@ -908,7 +985,24 @@ namespace fairwindsk {
 
     void FairWindSK::refreshAutomaticComfortViewAvailability(const Configuration *configuration) {
         const Configuration &effectiveConfiguration = configuration ? *configuration : m_configuration;
-        m_automaticComfortViewAvailable = isAutomaticComfortViewSupported(effectiveConfiguration, &m_signalkClient);
+        const QString configuredSunPath = effectiveConfiguration.getSignalKPath(QStringLiteral("environment.sun")).trimmed();
+        if (configuredSunPath != m_automaticComfortViewPath) {
+            if (!m_automaticComfortViewPath.isEmpty()) {
+                m_signalkClient.removeSubscription(m_automaticComfortViewPath, this);
+            }
+            m_automaticComfortViewPath = configuredSunPath;
+            m_automaticComfortEnvironmentUpdate = {};
+            if (!m_automaticComfortViewPath.isEmpty()) {
+                m_signalkClient.subscribeStream(QStringLiteral("vessels.self"),
+                                                m_automaticComfortViewPath,
+                                                this,
+                                                SLOT(onAutomaticComfortEnvironmentUpdate(QJsonObject)));
+            }
+        }
+
+        m_automaticComfortViewAvailable =
+            isAutomaticComfortViewConfigured(&effectiveConfiguration)
+            && !comfortPresetFromSunUpdate(m_automaticComfortEnvironmentUpdate).isEmpty();
     }
 
     void FairWindSK::reconfigureRuntime(const quint32 runtimeChanges) {
@@ -1171,6 +1265,7 @@ namespace fairwindsk {
         m_appsState = state;
         m_appsStateText = normalizedStateText;
         emit appsStateChanged(m_appsState, m_appsStateText);
+        refreshRuntimeHealth();
     }
 
     void FairWindSK::startAppsRequest(const QUrl &url, const quint64 generation, const bool fallbackRequest) {
@@ -1281,6 +1376,114 @@ namespace fairwindsk {
 
     QString FairWindSK::appsStateText() const {
         return m_appsStateText;
+    }
+
+    FairWindSK::RuntimeHealthState FairWindSK::runtimeHealthState() const {
+        return m_runtimeHealthState;
+    }
+
+    QString FairWindSK::runtimeHealthSummary() const {
+        return m_runtimeHealthSummary;
+    }
+
+    QString FairWindSK::runtimeHealthBadgeText() const {
+        return m_runtimeHealthBadgeText;
+    }
+
+    void FairWindSK::setForegroundAppHealth(const QString &summary, const bool degraded) {
+        const QString normalizedSummary = summary.trimmed();
+        if (m_foregroundAppHealthSummary == normalizedSummary && m_foregroundAppDegraded == degraded) {
+            return;
+        }
+
+        m_foregroundAppHealthSummary = normalizedSummary;
+        m_foregroundAppDegraded = degraded;
+        refreshRuntimeHealth();
+    }
+
+    void FairWindSK::clearForegroundAppHealth() {
+        setForegroundAppHealth(QString(), false);
+    }
+
+    void FairWindSK::refreshRuntimeHealth() {
+        RuntimeHealthState nextState = RuntimeHealthState::Disconnected;
+        QString nextSummary = tr("Signal K disconnected");
+        QString nextBadge = QStringLiteral("DISC");
+
+        const auto connectionState = m_signalkClient.connectionHealthState();
+        const bool restHealthy = m_signalkClient.isRestHealthy();
+        const bool streamHealthy = m_signalkClient.isStreamHealthy();
+
+        if (m_foregroundAppDegraded) {
+            nextState = RuntimeHealthState::ForegroundAppDegraded;
+            nextSummary = m_foregroundAppHealthSummary.isEmpty() ? tr("Foreground app degraded") : m_foregroundAppHealthSummary;
+            nextBadge = QStringLiteral("APP");
+        } else if (connectionState == signalk::Client::ConnectionHealthState::Connecting) {
+            nextState = RuntimeHealthState::Connecting;
+            nextSummary = tr("Connecting to Signal K");
+            nextBadge = QStringLiteral("CONN");
+        } else if (connectionState == signalk::Client::ConnectionHealthState::Reconnecting) {
+            nextState = RuntimeHealthState::Reconnecting;
+            nextSummary = tr("Reconnecting to Signal K");
+            nextBadge = QStringLiteral("RECN");
+        } else if (!restHealthy && streamHealthy) {
+            nextState = RuntimeHealthState::RestDegraded;
+            nextSummary = tr("REST degraded");
+            nextBadge = QStringLiteral("REST");
+        } else if (restHealthy && !streamHealthy) {
+            nextState = RuntimeHealthState::StreamDegraded;
+            nextSummary = tr("Stream degraded");
+            nextBadge = QStringLiteral("STRM");
+        } else if (connectionState == signalk::Client::ConnectionHealthState::Stale) {
+            nextState = RuntimeHealthState::ConnectedStale;
+            nextSummary = tr("Live data stale");
+            nextBadge = QStringLiteral("STAL");
+        } else if (connectionState == signalk::Client::ConnectionHealthState::Live) {
+            if (m_appsState == AppsState::Loading) {
+                nextState = RuntimeHealthState::AppsLoading;
+                nextSummary = m_appsStateText.trimmed().isEmpty() ? tr("Refreshing apps") : m_appsStateText.trimmed();
+                nextBadge = QStringLiteral("APPS");
+            } else if (m_appsState == AppsState::Failed || m_appsState == AppsState::Stale) {
+                nextState = RuntimeHealthState::AppsStale;
+                nextSummary = m_appsStateText.trimmed().isEmpty() ? tr("Apps stale") : m_appsStateText.trimmed();
+                nextBadge = QStringLiteral("APPS");
+            } else {
+                nextState = RuntimeHealthState::ConnectedLive;
+                nextSummary = tr("Signal K live");
+                nextBadge = QStringLiteral("LIVE");
+            }
+        } else if (connectionState == signalk::Client::ConnectionHealthState::Degraded) {
+            nextState = RuntimeHealthState::ConnectedStale;
+            nextSummary = tr("Signal K degraded");
+            nextBadge = QStringLiteral("DEGD");
+        }
+
+        if (m_runtimeHealthState == nextState
+            && m_runtimeHealthSummary == nextSummary
+            && m_runtimeHealthBadgeText == nextBadge) {
+            return;
+        }
+
+        m_runtimeHealthState = nextState;
+        m_runtimeHealthSummary = nextSummary;
+        m_runtimeHealthBadgeText = nextBadge;
+        emit runtimeHealthChanged(m_runtimeHealthState, m_runtimeHealthSummary, m_runtimeHealthBadgeText);
+    }
+
+    void FairWindSK::handleAutomaticComfortEnvironmentUpdate(const QJsonObject &update) {
+        m_automaticComfortEnvironmentUpdate = update;
+        const bool wasAvailable = m_automaticComfortViewAvailable;
+        const QString previousPreset = getActiveComfortViewPreset();
+        refreshAutomaticComfortViewAvailability();
+        if (m_configuration.getComfortViewMode() == "auto"
+            && (m_automaticComfortViewAvailable != wasAvailable
+                || getActiveComfortViewPreset() != previousPreset)) {
+            applyUiPreferences();
+        }
+    }
+
+    void FairWindSK::onAutomaticComfortEnvironmentUpdate(const QJsonObject &update) {
+        handleAutomaticComfortEnvironmentUpdate(update);
     }
 
     WebProfileHandle *FairWindSK::getWebEngineProfile() {

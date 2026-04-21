@@ -28,6 +28,19 @@ The formal names and behavioral rules for the shell surfaces are defined in [doc
 - REST-backed models such as MyData resource collections listen for the reconnect resynchronization event and reload their data after the stream recovers.
 - `FairWindSK` itself refreshes unit preferences, app discovery, and automatic comfort-view availability after a recovered connection so the overall runtime state matches the restarted server.
 
+## Shell health and operator trust
+
+- `FairWindSK` now aggregates Signal K connectivity, app-catalog refresh status, and foreground hosted-app degradation into a compact runtime-health model that feeds the shell chrome.
+- `ui/widgets/SignalKStatusIconsWidget` presents that model as a helm-readable badge plus REST/stream indicators, while `ui/widgets/SignalKServerBox` echoes the same state with last-live-update freshness text.
+- Critical operational readouts in the Top Bar and the anchor/autopilot bars now render explicit `live`, `stale`, and `missing` states instead of silently disappearing or leaving stale values looking current.
+- Alarm buttons in the bottom bar use accent styling when active so emergency conditions remain visually dominant across comfort presets, including low-glare/night modes.
+
+## Comfort auto mode
+
+- Automatic comfort view selection no longer probes `environment.sun` through a synchronous REST lookup during runtime reconfiguration.
+- When the `environment.sun` Signal K path is configured, `FairWindSK` now listens for streamed environment updates and resolves the active comfort preset from the received sun state or elevation when available.
+- If no usable environment context has arrived yet, comfort auto mode falls back to the deterministic clock-based preset mapping already used by the shell.
+
 ## Authentication model
 
 Tokens are stored outside the main JSON configuration to avoid accidental check-in. `Configuration::getToken()` and `setToken()` read/write `fairwindsk.ini`. On desktop builds, `FairWindSK` injects the token into the shared `QWebEngineProfile` cookie store as `JAUTHENTICATION`, so embedded web apps reuse that authentication context. Mobile builds use the alternate Qt WebView backend and therefore have a narrower shared-cookie integration surface than desktop.

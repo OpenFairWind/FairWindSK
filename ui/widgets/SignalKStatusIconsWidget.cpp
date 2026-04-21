@@ -13,7 +13,8 @@
 
 namespace fairwindsk::ui::widgets {
     namespace {
-        constexpr int kIndicatorSize = 10;
+        constexpr int kIndicatorWidth = 48;
+        constexpr int kIndicatorHeight = 18;
         constexpr int kThrobberSize = 18;
 
         QString tooltipLastUpdate(const QDateTime &lastStreamUpdate) {
@@ -35,7 +36,8 @@ namespace fairwindsk::ui::widgets {
         layout->setSpacing(4);
 
         m_serverIndicator = new QLabel(this);
-        m_serverIndicator->setFixedSize(kIndicatorSize, kIndicatorSize);
+        m_serverIndicator->setMinimumSize(kIndicatorWidth, kIndicatorHeight);
+        m_serverIndicator->setMaximumSize(kIndicatorWidth, kIndicatorHeight);
         layout->addWidget(m_serverIndicator, 0, Qt::AlignVCenter);
 
         m_busyIndicator = new QLabel(this);
@@ -74,6 +76,8 @@ namespace fairwindsk::ui::widgets {
             m_serverHealthy = m_restHealthy && m_streamHealthy;
             m_stateText = client->connectionHealthStateText();
             m_lastStreamUpdate = client->lastStreamUpdate();
+            m_runtimeSummary = fairWindSK ? fairWindSK->runtimeHealthSummary() : m_stateText;
+            m_runtimeBadgeText = fairWindSK ? fairWindSK->runtimeHealthBadgeText() : tr("DISC");
             refreshIndicators(m_serverHealthy,
                               m_restHealthy,
                               m_streamHealthy,
@@ -86,7 +90,11 @@ namespace fairwindsk::ui::widgets {
         if (fairWindSK) {
             connect(fairWindSK, &fairwindsk::FairWindSK::appsStateChanged,
                     this, &SignalKStatusIconsWidget::onAppsStateChanged);
+            connect(fairWindSK, &fairwindsk::FairWindSK::runtimeHealthChanged,
+                    this, &SignalKStatusIconsWidget::onRuntimeHealthChanged);
             m_appsStateText = fairWindSK->appsStateText();
+            m_runtimeSummary = fairWindSK->runtimeHealthSummary();
+            m_runtimeBadgeText = fairWindSK->runtimeHealthBadgeText();
         }
     }
 
@@ -140,6 +148,15 @@ namespace fairwindsk::ui::widgets {
         refreshIndicators(m_serverHealthy, m_restHealthy, m_streamHealthy, m_requestActive, statusText);
     }
 
+    void SignalKStatusIconsWidget::onRuntimeHealthChanged(const fairwindsk::FairWindSK::RuntimeHealthState state,
+                                                          const QString &summary,
+                                                          const QString &badgeText) {
+        Q_UNUSED(state)
+        m_runtimeSummary = summary.trimmed();
+        m_runtimeBadgeText = badgeText.trimmed();
+        refreshIndicators(m_serverHealthy, m_restHealthy, m_streamHealthy, m_requestActive, QString());
+    }
+
     void SignalKStatusIconsWidget::applyIndicatorColor(QLabel *label, const QColor &color) const {
         if (!label) {
             return;
@@ -150,12 +167,19 @@ namespace fairwindsk::ui::widgets {
         const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
         const QColor borderColor = fairwindsk::ui::comfortThemeColor(configuration, preset, QStringLiteral("border"), palette().color(QPalette::Mid));
 
+        label->setAlignment(Qt::AlignCenter);
         label->setStyleSheet(QStringLiteral(
             "QLabel {"
             " background: %1;"
-            " border: 1px solid %2;"
-            " border-radius: 5px;"
-            " }").arg(color.name(), borderColor.name()));
+            " color: %2;"
+            " border: 1px solid %3;"
+            " border-radius: 9px;"
+            " font-size: 10px;"
+            " font-weight: 700;"
+            " padding: 0px 4px;"
+            " }").arg(color.name(),
+                      fairwindsk::ui::bestContrastingColor(color, {palette().color(QPalette::WindowText), palette().color(QPalette::Text)}).name(),
+                      borderColor.name()));
     }
 
     void SignalKStatusIconsWidget::applyStatusBadge(QLabel *label,
@@ -222,13 +246,14 @@ namespace fairwindsk::ui::widgets {
         const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
         const auto colors = fairwindsk::ui::resolveComfortStatusColors(configuration, preset, palette());
 
+        QColor runtimeFill = colors.errorFill;
         if (serverHealthy) {
-            applyIndicatorColor(m_serverIndicator, colors.healthyFill);
+            runtimeFill = colors.healthyFill;
         } else if (restHealthy || streamHealthy) {
-            applyIndicatorColor(m_serverIndicator, colors.warningFill);
-        } else {
-            applyIndicatorColor(m_serverIndicator, colors.errorFill);
+            runtimeFill = colors.warningFill;
         }
+        applyIndicatorColor(m_serverIndicator, runtimeFill);
+        m_serverIndicator->setText(m_runtimeBadgeText.trimmed().isEmpty() ? tr("DISC") : m_runtimeBadgeText.trimmed());
 
         applyStatusBadge(m_restIndicator,
                          tr("REST"),
@@ -241,7 +266,9 @@ namespace fairwindsk::ui::widgets {
 
         setBusyVisible(requestActive);
 
-        const QString overallState = m_stateText.trimmed().isEmpty() ? tr("Disconnected") : m_stateText.trimmed();
+        const QString overallState = m_runtimeSummary.trimmed().isEmpty()
+                                         ? (m_stateText.trimmed().isEmpty() ? tr("Disconnected") : m_stateText.trimmed())
+                                         : m_runtimeSummary.trimmed();
         const QString appsState = m_appsStateText.trimmed().isEmpty() ? tr("Apps idle") : m_appsStateText.trimmed();
         m_serverIndicator->setToolTip(tr("Signal K %1\n%2\n%3").arg(overallState, tooltipLastUpdate(m_lastStreamUpdate), appsState));
         m_busyIndicator->setToolTip(requestActive ? tr("Signal K activity in progress") : tr("Signal K idle"));

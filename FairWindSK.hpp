@@ -49,6 +49,20 @@ namespace fairwindsk {
         Q_OBJECT
 
     public:
+        enum class RuntimeHealthState {
+            Disconnected,
+            Connecting,
+            ConnectedLive,
+            ConnectedStale,
+            Reconnecting,
+            RestDegraded,
+            StreamDegraded,
+            AppsLoading,
+            AppsStale,
+            ForegroundAppDegraded
+        };
+        Q_ENUM(RuntimeHealthState)
+
         enum class AppsState {
             Idle,
             Loading,
@@ -104,6 +118,11 @@ namespace fairwindsk {
         signalk::Client *getSignalKClient();
         AppsState appsState() const;
         QString appsStateText() const;
+        RuntimeHealthState runtimeHealthState() const;
+        QString runtimeHealthSummary() const;
+        QString runtimeHealthBadgeText() const;
+        void setForegroundAppHealth(const QString &summary, bool degraded);
+        void clearForegroundAppHealth();
 
         // Load the configuration from the json file
         void loadConfig();
@@ -124,17 +143,24 @@ namespace fairwindsk {
         void appsReloadStarted();
         void appsReloadFinished(bool success);
         void appsStateChanged(AppsState state, const QString &stateText);
+        void runtimeHealthChanged(RuntimeHealthState state, const QString &summary, const QString &badgeText);
 
     private:
         bool eventFilter(QObject *watched, QEvent *event) override;
         void updateWebProfileCookie();
         void refreshAutomaticComfortView();
         void refreshAutomaticComfortViewAvailability(const Configuration *configuration = nullptr);
+        void refreshRuntimeHealth();
         bool rebuildAppRegistry(const nlohmann::json *appsPayload = nullptr);
         void setAppsState(AppsState state, const QString &stateText = QString());
         void startAppsRequest(const QUrl &url, quint64 generation, bool fallbackRequest);
         void finalizeAppsReload(bool success, const QString &statusText, const nlohmann::json *appsPayload = nullptr);
+        void handleAutomaticComfortEnvironmentUpdate(const QJsonObject &update);
 
+    private slots:
+        void onAutomaticComfortEnvironmentUpdate(const QJsonObject &update);
+
+    private:
         // The private constructor
         FairWindSK();
 
@@ -178,6 +204,13 @@ namespace fairwindsk {
         quint64 m_appsReloadGeneration = 0;
         AppsState m_appsState = AppsState::Idle;
         QString m_appsStateText = QStringLiteral("Apps idle");
+        RuntimeHealthState m_runtimeHealthState = RuntimeHealthState::Disconnected;
+        QString m_runtimeHealthSummary = QStringLiteral("Signal K disconnected");
+        QString m_runtimeHealthBadgeText = QStringLiteral("DISC");
+        QString m_foregroundAppHealthSummary;
+        bool m_foregroundAppDegraded = false;
+        QString m_automaticComfortViewPath;
+        QJsonObject m_automaticComfortEnvironmentUpdate;
 
     };
 }

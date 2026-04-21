@@ -333,6 +333,7 @@ namespace fairwindsk::ui {
     void MainWindow::showLauncher() {
         m_currentApp = nullptr;
         m_currentAppStatusSummary.clear();
+        FairWindSK::getInstance()->clearForegroundAppHealth();
         if (m_launcher && ui->stackedWidget_Center->indexOf(m_launcher) >= 0) {
             ui->stackedWidget_Center->setCurrentWidget(m_launcher);
         }
@@ -347,6 +348,10 @@ namespace fairwindsk::ui {
             auto *currentWidget = ui->stackedWidget_Center->currentWidget();
             if (m_currentApp && m_currentApp->getWidget() != currentWidget) {
                 m_currentApp = nullptr;
+            }
+
+            if (!m_currentApp) {
+                FairWindSK::getInstance()->clearForegroundAppHealth();
             }
 
             if (currentWidget == m_launcher) {
@@ -523,11 +528,12 @@ namespace fairwindsk::ui {
                     appItem->setParent(web);
                 }
 
-                connect(web, &web::Web::statusSummaryChanged, this, [this, web](const QString &summary) {
+                connect(web, &web::Web::statusSummaryChanged, this, [this, web](const QString &summary, const bool degraded) {
                     if (ui->stackedWidget_Center->currentWidget() != web) {
                         return;
                     }
                     m_currentAppStatusSummary = summary;
+                    FairWindSK::getInstance()->setForegroundAppHealth(summary, degraded);
                     syncTopBarToCurrentPage();
                 });
 
@@ -563,6 +569,7 @@ namespace fairwindsk::ui {
             // Set the current app
             m_currentApp = appItem;
             m_currentAppStatusSummary.clear();
+            FairWindSK::getInstance()->clearForegroundAppHealth();
 
             // Update the UI with the new widget
             ui->stackedWidget_Center->setCurrentWidget(widgetApp);
@@ -621,6 +628,7 @@ namespace fairwindsk::ui {
              m_currentApp->getName() == name)) {
             m_currentApp = nullptr;
             m_currentAppStatusSummary.clear();
+            FairWindSK::getInstance()->clearForegroundAppHealth();
             m_topBar->setCurrentApp(nullptr);
         }
 

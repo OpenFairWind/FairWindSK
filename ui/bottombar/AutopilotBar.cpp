@@ -9,6 +9,7 @@
 
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QLabel>
 #include <QToolButton>
 
 #include "FairWindSK.hpp"
@@ -19,12 +20,73 @@
 namespace fairwindsk::ui::bottombar {
     namespace {
         constexpr auto kDefaultAutopilotId = "_default";
+        enum class MetricFreshnessState {
+            Live,
+            Stale,
+            Missing
+        };
 
         void setOpenBridgeIcon(QToolButton *button, const QString &resourcePath) {
             if (!button || resourcePath.isEmpty()) {
                 return;
             }
             button->setIcon(QIcon(resourcePath));
+        }
+
+        MetricFreshnessState signalKMetricFreshnessState(const bool hasValue) {
+            if (!hasValue) {
+                return MetricFreshnessState::Missing;
+            }
+
+            const auto *client = fairwindsk::FairWindSK::getInstance()->getSignalKClient();
+            if (!client) {
+                return MetricFreshnessState::Stale;
+            }
+
+            return client->connectionHealthState() == fairwindsk::signalk::Client::ConnectionHealthState::Live
+                       ? MetricFreshnessState::Live
+                       : MetricFreshnessState::Stale;
+        }
+
+        void applyAutopilotLabelPresentation(QLabel *label,
+                                             const QString &title,
+                                             const QString &text,
+                                             const MetricFreshnessState state) {
+            if (!label) {
+                return;
+            }
+
+            auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+            const auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+            const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+            const auto chrome = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, label->palette(), false);
+            const auto status = fairwindsk::ui::resolveComfortStatusColors(configuration, preset, label->palette());
+
+            QColor color = chrome.text;
+            QFont font = label->font();
+            font.setItalic(false);
+            font.setBold(false);
+            QString stateText = AutopilotBar::tr("Missing");
+
+            switch (state) {
+                case MetricFreshnessState::Live:
+                    stateText = AutopilotBar::tr("Live");
+                    break;
+                case MetricFreshnessState::Stale:
+                    color = status.warningFill;
+                    font.setBold(true);
+                    stateText = AutopilotBar::tr("Stale");
+                    break;
+                case MetricFreshnessState::Missing:
+                    color = chrome.disabledText;
+                    font.setItalic(true);
+                    break;
+            }
+
+            label->setFont(font);
+            label->setStyleSheet(QStringLiteral("QLabel { color: %1; }").arg(color.name()));
+            label->setText(state == MetricFreshnessState::Missing ? QStringLiteral("--") : text);
+            label->setToolTip(AutopilotBar::tr("%1: %2").arg(title, stateText));
         }
     }
 
@@ -163,6 +225,16 @@ namespace fairwindsk::ui::bottombar {
 
         refreshAutopilotOptions();
         applyComfortStyle();
+        if (auto *client = FairWindSK::getInstance()->getSignalKClient()) {
+            connect(client, &fairwindsk::signalk::Client::connectionHealthStateChanged, this,
+                    [this](const fairwindsk::signalk::Client::ConnectionHealthState,
+                           const QString &,
+                           const QDateTime &,
+                           const QString &) {
+                        updateTargetHeading(m_lastTargetHeadingUpdate);
+                        updateState(m_lastStateUpdate);
+                    });
+        }
     }
 
     void AutopilotBar::refreshFromConfiguration() {
@@ -201,6 +273,7 @@ namespace fairwindsk::ui::bottombar {
  * Method called in accordance to signalk to update the rudder angle
  */
     void AutopilotBar::updateRSA(const QJsonObject &update) {
+        m_lastRsaUpdate = update;
 
         // Check if for any reason the update is empty
         if (!update.isEmpty()) {
@@ -239,25 +312,14 @@ namespace fairwindsk::ui::bottombar {
  * Method called in accordance to signalk to update the autopilot state
  */
     void AutopilotBar::updateState(const QJsonObject &update) {
+        m_lastStateUpdate = update;
 
-        // Check if for any reason the update is empty
-        if (!update.isEmpty()) {
-
-            // Get the value
-            auto value = fairwindsk::signalk::Client::getStringFromUpdateByPath(update);
-
-            if (!value.isEmpty()) {
-                // Build the formatted value
-                const QString& text = value;
-
-                // Set the course over ground label from the UI to the formatted value
-                ui->label_State->setText(text);
-
-                // Return the method
-                return;
-            }
-        }
-        ui->label_State->setText("NO PILOT");
+        const QString value = fairwindsk::signalk::Client::getStringFromUpdateByPath(update);
+        const bool hasValue = !update.isEmpty() && !value.isEmpty();
+        applyAutopilotLabelPresentation(ui->label_State,
+                                        tr("Autopilot state"),
+                                        hasValue ? value : tr("NO PILOT"),
+                                        signalKMetricFreshnessState(hasValue));
     }
 
     /*
@@ -265,32 +327,21 @@ namespace fairwindsk::ui::bottombar {
  * Method called in accordance to signalk to update the navigation course over ground
  */
     void AutopilotBar::updateTargetHeading(const QJsonObject &update) {
+        m_lastTargetHeadingUpdate = update;
 
-        // Check if for any reason the update is empty
-        if (!update.isEmpty()) {
-
-            // Get the value
-            auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
-
-            if (!std::isnan(value))
-            {
-                // Convert rad to deg
-                value = m_units->convert("rad","deg", value);
-
-                // Build the formatted value
-                const QString text = m_units->format("deg", value);
-
-                // Set the course over ground label from the UI to the formatted value
-                ui->label_TargetHeading->setText(text);
-
-                if (!ui->label_TargetHeading->isVisible()) {
-                    ui->label_TargetHeading->setVisible(true);
-                }
-
-                return;
-            }
+        auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
+        const bool hasValue = !update.isEmpty() && !std::isnan(value);
+        QString text;
+        if (hasValue) {
+            value = m_units->convert("rad","deg", value);
+            text = m_units->format("deg", value);
         }
-        ui->label_TargetHeading->setVisible(false);
+
+        applyAutopilotLabelPresentation(ui->label_TargetHeading,
+                                        tr("Autopilot target heading"),
+                                        text,
+                                        signalKMetricFreshnessState(hasValue));
+        ui->label_TargetHeading->setVisible(true);
     }
 
     void AutopilotBar::onStandByClicked() {

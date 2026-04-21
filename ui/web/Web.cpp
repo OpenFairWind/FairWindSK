@@ -103,8 +103,7 @@ namespace fairwindsk::ui::web {
         connect(m_webView, &WebView::loadFinished, this, &Web::handleLoadFinished);
         connect(m_webView, &WebView::urlChanged, this, [this]() { syncNavigationState(); });
         connect(m_webView, &WebView::healthStateChanged, this, [this](const WebView::HealthState state, const QString &summary) {
-            Q_UNUSED(state)
-            emit statusSummaryChanged(summary);
+            emit statusSummaryChanged(summary, state != WebView::HealthState::Normal);
         });
 
         syncNavigationState();

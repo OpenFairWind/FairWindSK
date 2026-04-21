@@ -37,6 +37,9 @@ namespace fairwindsk::ui::widgets {
                                             const QString &statusText);
         void onAppsStateChanged(fairwindsk::FairWindSK::AppsState state, const QString &stateText);
         void onRequestActivityChanged(bool active);
+        void onRuntimeHealthChanged(fairwindsk::FairWindSK::RuntimeHealthState state,
+                                    const QString &summary,
+                                    const QString &badgeText);
 
     private:
         void applyIndicatorColor(QLabel *label, const QColor &color) const;
@@ -59,6 +62,8 @@ namespace fairwindsk::ui::widgets {
         bool m_streamHealthy = false;
         bool m_requestActive = false;
         QString m_stateText;
+        QString m_runtimeSummary;
+        QString m_runtimeBadgeText;
         QString m_appsStateText;
         QDateTime m_lastStreamUpdate;
     };

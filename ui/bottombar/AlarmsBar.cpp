@@ -72,6 +72,7 @@ namespace fairwindsk::ui::bottombar {
         }
 
         m_alarmToolButtons[apiKey]->setChecked(active);
+        applyComfortStyle();
         emit alarmed(alarmUiKey(apiKey), active);
     }
 
@@ -83,12 +84,15 @@ namespace fairwindsk::ui::bottombar {
         for (auto *button : findChildren<QToolButton *>()) {
             const bool isTransparentIconButton =
                 button == ui->toolButton_Alarms || button == ui->toolButton_Hide;
+            const bool criticalAlarmActive = button->isCheckable() && button->isChecked() && !isTransparentIconButton;
             fairwindsk::ui::applyBottomBarToolButtonChrome(
                 button,
                 colors,
                 isTransparentIconButton
                     ? fairwindsk::ui::BottomBarButtonChrome::Transparent
-                    : fairwindsk::ui::BottomBarButtonChrome::Flat,
+                    : (criticalAlarmActive
+                           ? fairwindsk::ui::BottomBarButtonChrome::Accent
+                           : fairwindsk::ui::BottomBarButtonChrome::Flat),
                 QSize(40, 40),
                 88);
         }

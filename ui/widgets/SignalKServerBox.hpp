@@ -35,6 +35,9 @@ namespace fairwindsk::ui::widgets {
                                             const QDateTime &lastStreamUpdate,
                                             const QString &statusText);
         void onAppsStateChanged(fairwindsk::FairWindSK::AppsState state, const QString &stateText);
+        void onRuntimeHealthChanged(fairwindsk::FairWindSK::RuntimeHealthState state,
+                                    const QString &summary,
+                                    const QString &badgeText);
         void onServerMessageChanged(const QString &message);
 
     private:
@@ -44,6 +47,7 @@ namespace fairwindsk::ui::widgets {
         Ui::SignalKServerBox *ui = nullptr;
         QString m_statusText;
         QString m_stateText;
+        QString m_runtimeSummary;
         QString m_appsStateText;
         QString m_serverMessage;
         QDateTime m_lastStreamUpdate;
