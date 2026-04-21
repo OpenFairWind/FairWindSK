@@ -102,6 +102,8 @@ namespace fairwindsk::ui::web {
         connect(m_webView, &WebView::loadProgress, this, &Web::handleWebViewLoadProgress);
         connect(m_webView, &WebView::loadFinished, this, &Web::handleLoadFinished);
         connect(m_webView, &WebView::urlChanged, this, [this]() { syncNavigationState(); });
+        connect(m_webView, &WebView::mobileFocusChanged, this, &Web::mobileFocusChanged);
+        connect(m_webView, &WebView::mobileViewportChanged, this, &Web::mobileViewportChanged);
         connect(m_webView, &WebView::healthStateChanged, this, [this](const WebView::HealthState state, const QString &summary) {
             QString statusSummary = summary.trimmed();
             if (statusSummary.isEmpty()) {
@@ -150,6 +152,29 @@ namespace fairwindsk::ui::web {
 
         // Set the new navigation bar status
         m_NavigationBar->setVisible(status);
+    }
+
+    void Web::releaseMobileFocus() {
+        if (m_webView) {
+            m_webView->releaseMobileFocus();
+        }
+    }
+
+    void Web::applyMobileShellMetrics(const QMargins &safeAreaMargins,
+                                      const int keyboardInset,
+                                      const bool keyboardVisible,
+                                      const bool compactMode) {
+        setProperty("mobileSafeAreaLeft", safeAreaMargins.left());
+        setProperty("mobileSafeAreaTop", safeAreaMargins.top());
+        setProperty("mobileSafeAreaRight", safeAreaMargins.right());
+        setProperty("mobileSafeAreaBottom", safeAreaMargins.bottom());
+        setProperty("mobileKeyboardInset", keyboardInset);
+        setProperty("softwareKeyboardVisible", keyboardVisible);
+        setProperty("compactShellMode", compactMode);
+
+        if (m_webView) {
+            m_webView->applyMobileShellMetrics(safeAreaMargins, keyboardInset, keyboardVisible, compactMode);
+        }
     }
 
     /*

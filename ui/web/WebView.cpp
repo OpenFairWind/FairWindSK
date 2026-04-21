@@ -325,6 +325,40 @@ namespace fairwindsk::ui::web {
         applyZoom();
     }
 
+    void WebView::releaseMobileFocus() {
+#if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
+        m_mobileWebContentFocused = false;
+        m_mobileTextInputActive = false;
+        if (m_quickRoot) {
+            QMetaObject::invokeMethod(m_quickRoot, "releaseWebFocus");
+        }
+#endif
+    }
+
+    void WebView::applyMobileShellMetrics(const QMargins &safeAreaMargins,
+                                          const int keyboardInset,
+                                          const bool keyboardVisible,
+                                          const bool compactMode) {
+#if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
+        if (m_quickRoot) {
+            QMetaObject::invokeMethod(m_quickRoot,
+                                      "applyShellMetrics",
+                                      Q_ARG(QVariant, safeAreaMargins.left()),
+                                      Q_ARG(QVariant, safeAreaMargins.top()),
+                                      Q_ARG(QVariant, safeAreaMargins.right()),
+                                      Q_ARG(QVariant, safeAreaMargins.bottom()),
+                                      Q_ARG(QVariant, keyboardInset),
+                                      Q_ARG(QVariant, keyboardVisible),
+                                      Q_ARG(QVariant, compactMode));
+        }
+#else
+        Q_UNUSED(safeAreaMargins);
+        Q_UNUSED(keyboardInset);
+        Q_UNUSED(keyboardVisible);
+        Q_UNUSED(compactMode);
+#endif
+    }
+
     QString WebView::zoomScript(const double zoomPercent) {
         const QString factorText = QString::number(qBound(0.25, zoomPercent / 100.0, 4.0), 'f', 2);
         return QStringLiteral(
@@ -725,6 +759,9 @@ namespace fairwindsk::ui::web {
         connect(m_quickRoot, SIGNAL(loadFinished(bool)), this, SLOT(handleMobileLoadFinished(bool)));
         connect(m_quickRoot, SIGNAL(currentUrlNotified(QString)), this, SLOT(handleMobileCurrentUrlNotified(QString)));
         connect(m_quickRoot, SIGNAL(titleChanged(QString)), this, SLOT(handleMobileTitleChanged(QString)));
+        connect(m_quickRoot, SIGNAL(webFocusChanged(bool)), this, SLOT(handleMobileFocusChanged(bool)));
+        connect(m_quickRoot, SIGNAL(textInputActiveChanged(bool)), this, SLOT(handleMobileTextInputChanged(bool)));
+        connect(m_quickRoot, SIGNAL(viewportMetricsChanged(qreal,qreal,bool)), this, SLOT(handleMobileViewportChanged(qreal,qreal,bool)));
     }
 
     void WebView::handleMobileLoadStarted() {
@@ -773,6 +810,33 @@ namespace fairwindsk::ui::web {
 
     void WebView::handleMobileTitleChanged(const QString &titleText) {
         emit titleChanged(titleText);
+    }
+
+    void WebView::handleMobileFocusChanged(const bool focused) {
+        m_mobileWebContentFocused = focused;
+        if (!focused) {
+            m_mobileTextInputActive = false;
+        }
+        emit mobileFocusChanged(m_mobileWebContentFocused, m_mobileTextInputActive);
+    }
+
+    void WebView::handleMobileTextInputChanged(const bool active) {
+        m_mobileTextInputActive = active;
+        if (active) {
+            m_mobileWebContentFocused = true;
+        }
+        emit mobileFocusChanged(m_mobileWebContentFocused, m_mobileTextInputActive);
+    }
+
+    void WebView::handleMobileViewportChanged(const qreal width, const qreal height, const bool keyboardVisible) {
+        const QRect viewport(0, 0, qMax(0, qRound(width)), qMax(0, qRound(height)));
+        if (viewport == m_mobileViewport) {
+            emit mobileViewportChanged(m_mobileViewport, keyboardVisible);
+            return;
+        }
+
+        m_mobileViewport = viewport;
+        emit mobileViewportChanged(m_mobileViewport, keyboardVisible);
     }
 #endif
 }

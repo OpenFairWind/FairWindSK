@@ -44,8 +44,10 @@ The formal names and behavioral rules for the shell surfaces are defined in [doc
 
 ## Mobile shell policy
 
-- `ui/MainWindow` now tracks mobile keyboard geometry through `QInputMethod` and applies the resulting bottom inset when sizing the drawer layer, so transient shell controls do not assume the full screen remains available once the keyboard is raised.
-- The shell also publishes compact-mode and keyboard-visible properties to the main widget tree, which gives widget/QML layers a single place to key off narrow-layout and soft-keyboard behavior instead of inferring it ad hoc.
+- `ui/MainWindow` now owns the shell-level mobile geometry policy. It combines `QInputMethod` keyboard data with screen available-geometry changes, publishes safe-area and keyboard properties through the widget tree, and reapplies those metrics when orientation or screen attachment changes.
+- The shell layout now reserves explicit notch/gesture safe-area margins instead of assuming the full mobile window is available. Drawer sizing uses the adjusted shell geometry, so the drawer can stay usable through rotation and soft-keyboard transitions.
+- Mobile hosted apps also participate in that policy through `ui/web/WebView` and `ui/web/MobileWebView.qml`. The Qt WebView wrapper now accepts shell metrics from `MainWindow`, reports focus/viewport changes back to the shell, and releases web focus explicitly when native drawers or native text inputs take over.
+- The shell publishes compact-mode, keyboard-visible, native-input-focused, and web-content-focused properties to the main widget tree so widget/QML layers can react to one coordinated mobile state instead of inferring keyboard and focus behavior ad hoc.
 
 ## Comfort auto mode
 

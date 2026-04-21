@@ -7,6 +7,7 @@
 
 #include <QMainWindow>
 #include <QMap>
+#include <QMargins>
 #include <QPointer>
 #include <QDebug>
 #include <QCloseEvent>
@@ -31,6 +32,7 @@ namespace Ui { class MainWindow; }
 class QLabel;
 class QHBoxLayout;
 class QFrame;
+class QScreen;
 class QVBoxLayout;
 
 namespace fairwindsk::ui {
@@ -45,6 +47,7 @@ namespace fairwindsk::ui {
     namespace launcher {class Launcher;}
     namespace bottombar {class BottomBar;}
     namespace settings {class Settings;}
+    namespace web { class Web; }
 
     class MainWindow : public QMainWindow {
         Q_OBJECT
@@ -96,6 +99,15 @@ namespace fairwindsk::ui {
         void updateDrawerGeometry();
         void updateAdaptiveShellMode();
         void updateMobileShellMetrics();
+        void updateMobileShellProperties();
+        void attachWindowScreenSignals();
+        void handleWindowScreenChanged();
+        void handleApplicationFocusChanged(QWidget *old, QWidget *now);
+        bool isNativeTextInputWidget(QWidget *widget) const;
+        void releaseCurrentWebInputFocus();
+        void applyCurrentWebMobileMetrics();
+        QMargins resolvedMobileSafeAreaMargins() const;
+        int resolvedKeyboardInset() const;
 
         // Close Event handler
         void closeEvent(QCloseEvent *bar) override;
@@ -168,9 +180,16 @@ namespace fairwindsk::ui {
 
         // The pointer to the foreground app
         QPointer<fairwindsk::AppItem> m_currentApp;
+        QPointer<fairwindsk::ui::web::Web> m_currentWebApp;
         QString m_currentAppStatusSummary;
+        QMargins m_mobileSafeAreaMargins;
+        int m_mobileKeyboardInset = 0;
         int m_mobileBottomInset = 0;
         bool m_softwareKeyboardVisible = false;
+        bool m_mobileWebContentFocused = false;
+        bool m_mobileNativeTextInputFocused = false;
+        bool m_mobileLandscape = false;
+        QPointer<QScreen> m_attachedScreen;
 
         // The hotkey
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)

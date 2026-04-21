@@ -15,6 +15,11 @@
 #include <QHBoxLayout>
 #include <QScreen>
 #include <QInputMethod>
+#include <QLineEdit>
+#include <QPlainTextEdit>
+#include <QTextEdit>
+#include <QAbstractSpinBox>
+#include <QDateTimeEdit>
 #include <cmath>
 
 #include "MainWindow.hpp"
@@ -145,6 +150,8 @@ namespace fairwindsk::ui {
                 updateMobileShellMetrics();
             });
         }
+        connect(qApp, &QApplication::focusChanged, this, &MainWindow::handleApplicationFocusChanged);
+        QTimer::singleShot(0, this, [this]() { attachWindowScreenSignals(); });
 
         QTimer::singleShot(750, this, [this]() {
             ensureSettingsPage(m_launcher);
@@ -228,6 +235,7 @@ namespace fairwindsk::ui {
         }
         clearDrawer();
         setDrawerEnabled(true);
+        updateMobileShellMetrics();
 
         if (finishedHandler) {
             finishedHandler(resolvedResult);
@@ -250,6 +258,7 @@ namespace fairwindsk::ui {
             finishActiveDrawer(defaultResult);
         }
 
+        releaseCurrentWebInputFocus();
         clearDrawer();
         m_activeDrawerFinishedHandler = std::move(onFinished);
         m_activeDrawerDefaultResult = defaultResult;
@@ -292,7 +301,7 @@ namespace fairwindsk::ui {
         }
 
         const int availableCenterHeight = ui->stackedWidget_Center ? ui->stackedWidget_Center->height() : 0;
-        const int availableDrawerHeight = std::max(0, availableCenterHeight + (m_bottomBar ? m_bottomBar->height() : 0) - m_mobileBottomInset);
+        const int availableDrawerHeight = std::max(0, availableCenterHeight + (m_bottomBar ? m_bottomBar->height() : 0));
         int requestedDrawerHeight = m_dialogDrawer->layout()
                                         ? m_dialogDrawer->layout()->sizeHint().height()
                                         : m_dialogDrawer->sizeHint().height();
@@ -322,41 +331,212 @@ namespace fairwindsk::ui {
         const QSize availableSize = size().isValid() ? size() : QSize(width(), height());
         const int shortestSide = std::min(availableSize.width(), availableSize.height());
         const bool compactMode = shortestSide > 0 && shortestSide <= 720;
+        const bool landscape = availableSize.width() > availableSize.height();
 
         setProperty("compactShellMode", compactMode);
+        setProperty("phoneCompanionMode", compactMode);
+        setProperty("mobileLandscape", landscape);
         if (centralWidget()) {
             centralWidget()->setProperty("compactShellMode", compactMode);
+            centralWidget()->setProperty("phoneCompanionMode", compactMode);
+            centralWidget()->setProperty("mobileLandscape", landscape);
         }
         if (m_topBar) {
             m_topBar->setProperty("compactShellMode", compactMode);
+            m_topBar->setProperty("mobileLandscape", landscape);
         }
         if (m_bottomBar) {
             m_bottomBar->setProperty("compactShellMode", compactMode);
+            m_bottomBar->setProperty("phoneCompanionMode", compactMode);
+            m_bottomBar->setProperty("mobileLandscape", landscape);
         }
+        m_mobileLandscape = landscape;
+        applyCurrentWebMobileMetrics();
     }
 
     void MainWindow::updateMobileShellMetrics() {
-        int bottomInset = 0;
-        bool keyboardVisible = false;
-        if (qApp && qApp->inputMethod()) {
-            const QRectF keyboardRect = qApp->inputMethod()->keyboardRectangle();
-            keyboardVisible = qApp->inputMethod()->isVisible() && !keyboardRect.isEmpty();
-            if (keyboardVisible) {
-                bottomInset = std::max(0, int(std::ceil(keyboardRect.height())));
-            }
+        m_mobileSafeAreaMargins = resolvedMobileSafeAreaMargins();
+        m_mobileKeyboardInset = resolvedKeyboardInset();
+        m_softwareKeyboardVisible = m_mobileKeyboardInset > 0;
+        m_mobileBottomInset = std::max(m_mobileSafeAreaMargins.bottom(), m_mobileKeyboardInset);
+
+        if (ui && ui->gridLayout) {
+            ui->gridLayout->setContentsMargins(m_mobileSafeAreaMargins.left(),
+                                               m_mobileSafeAreaMargins.top(),
+                                               m_mobileSafeAreaMargins.right(),
+                                               m_mobileBottomInset);
         }
 
-        m_mobileBottomInset = bottomInset;
-        m_softwareKeyboardVisible = keyboardVisible;
+        updateMobileShellProperties();
+        updateDrawerGeometry();
+        applyCurrentWebMobileMetrics();
+    }
+
+    void MainWindow::updateMobileShellProperties() {
+        const bool compactMode = property("compactShellMode").toBool();
+
+        setProperty("softwareKeyboardVisible", m_softwareKeyboardVisible);
+        setProperty("mobileKeyboardInset", m_mobileKeyboardInset);
+        setProperty("mobileBottomInset", m_mobileBottomInset);
+        setProperty("mobileSafeAreaLeft", m_mobileSafeAreaMargins.left());
+        setProperty("mobileSafeAreaTop", m_mobileSafeAreaMargins.top());
+        setProperty("mobileSafeAreaRight", m_mobileSafeAreaMargins.right());
+        setProperty("mobileSafeAreaBottom", m_mobileSafeAreaMargins.bottom());
+        setProperty("mobileWebContentFocused", m_mobileWebContentFocused);
+        setProperty("mobileNativeTextInputFocused", m_mobileNativeTextInputFocused);
+        setProperty("phoneCompanionMode", compactMode);
 
         if (centralWidget()) {
-            centralWidget()->setProperty("softwareKeyboardVisible", keyboardVisible);
-            centralWidget()->setProperty("mobileBottomInset", bottomInset);
+            centralWidget()->setProperty("softwareKeyboardVisible", m_softwareKeyboardVisible);
+            centralWidget()->setProperty("mobileKeyboardInset", m_mobileKeyboardInset);
+            centralWidget()->setProperty("mobileBottomInset", m_mobileBottomInset);
+            centralWidget()->setProperty("mobileSafeAreaLeft", m_mobileSafeAreaMargins.left());
+            centralWidget()->setProperty("mobileSafeAreaTop", m_mobileSafeAreaMargins.top());
+            centralWidget()->setProperty("mobileSafeAreaRight", m_mobileSafeAreaMargins.right());
+            centralWidget()->setProperty("mobileSafeAreaBottom", m_mobileSafeAreaMargins.bottom());
+            centralWidget()->setProperty("mobileWebContentFocused", m_mobileWebContentFocused);
+            centralWidget()->setProperty("mobileNativeTextInputFocused", m_mobileNativeTextInputFocused);
+            centralWidget()->setProperty("phoneCompanionMode", compactMode);
         }
         if (m_dialogDrawer) {
-            m_dialogDrawer->setProperty("softwareKeyboardVisible", keyboardVisible);
+            m_dialogDrawer->setProperty("softwareKeyboardVisible", m_softwareKeyboardVisible);
+            m_dialogDrawer->setProperty("mobileKeyboardInset", m_mobileKeyboardInset);
+            m_dialogDrawer->setProperty("mobileSafeAreaBottom", m_mobileSafeAreaMargins.bottom());
+            m_dialogDrawer->setProperty("mobileWebContentFocused", m_mobileWebContentFocused);
         }
-        updateDrawerGeometry();
+    }
+
+    void MainWindow::attachWindowScreenSignals() {
+        auto *window = windowHandle();
+        if (!window) {
+            return;
+        }
+
+        connect(window, &QWindow::screenChanged, this, [this]() {
+            handleWindowScreenChanged();
+        }, Qt::UniqueConnection);
+        handleWindowScreenChanged();
+    }
+
+    void MainWindow::handleWindowScreenChanged() {
+        auto *window = windowHandle();
+        auto *screen = window ? window->screen() : nullptr;
+        if (m_attachedScreen == screen) {
+            updateMobileShellMetrics();
+            return;
+        }
+
+        if (m_attachedScreen) {
+            disconnect(m_attachedScreen, nullptr, this, nullptr);
+        }
+
+        m_attachedScreen = screen;
+        if (screen) {
+            connect(screen, &QScreen::geometryChanged, this, [this]() {
+                updateMobileShellMetrics();
+            }, Qt::UniqueConnection);
+            connect(screen, &QScreen::availableGeometryChanged, this, [this]() {
+                updateMobileShellMetrics();
+            }, Qt::UniqueConnection);
+            connect(screen, &QScreen::orientationChanged, this, [this](Qt::ScreenOrientation) {
+                updateAdaptiveShellMode();
+                updateMobileShellMetrics();
+            }, Qt::UniqueConnection);
+        }
+
+        updateAdaptiveShellMode();
+        updateMobileShellMetrics();
+    }
+
+    void MainWindow::handleApplicationFocusChanged(QWidget *old, QWidget *now) {
+        Q_UNUSED(old);
+
+        const bool nativeTextInputFocused = isNativeTextInputWidget(now);
+        if (m_mobileNativeTextInputFocused == nativeTextInputFocused && !nativeTextInputFocused) {
+            updateMobileShellProperties();
+            return;
+        }
+
+        m_mobileNativeTextInputFocused = nativeTextInputFocused;
+
+        if (nativeTextInputFocused) {
+            releaseCurrentWebInputFocus();
+        }
+
+        updateMobileShellProperties();
+        updateMobileShellMetrics();
+    }
+
+    bool MainWindow::isNativeTextInputWidget(QWidget *widget) const {
+        while (widget) {
+            if (qobject_cast<QLineEdit *>(widget)
+                || qobject_cast<QTextEdit *>(widget)
+                || qobject_cast<QPlainTextEdit *>(widget)
+                || qobject_cast<QAbstractSpinBox *>(widget)
+                || qobject_cast<QDateTimeEdit *>(widget)) {
+                return true;
+            }
+            widget = widget->parentWidget();
+        }
+        return false;
+    }
+
+    void MainWindow::releaseCurrentWebInputFocus() {
+        if (m_currentWebApp) {
+            m_currentWebApp->releaseMobileFocus();
+        }
+    }
+
+    void MainWindow::applyCurrentWebMobileMetrics() {
+        if (!m_currentWebApp) {
+            return;
+        }
+
+        m_currentWebApp->applyMobileShellMetrics(m_mobileSafeAreaMargins,
+                                                 m_mobileKeyboardInset,
+                                                 m_softwareKeyboardVisible,
+                                                 property("compactShellMode").toBool());
+    }
+
+    QMargins MainWindow::resolvedMobileSafeAreaMargins() const {
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+        return {};
+#else
+        QScreen *screen = nullptr;
+        if (windowHandle()) {
+            screen = windowHandle()->screen();
+        }
+        if (!screen) {
+            screen = this->screen();
+        }
+        if (!screen) {
+            return {};
+        }
+
+        const QRect screenGeometry = screen->geometry();
+        const QRect availableGeometry = screen->availableGeometry();
+
+        return QMargins(std::max(0, availableGeometry.left() - screenGeometry.left()),
+                        std::max(0, availableGeometry.top() - screenGeometry.top()),
+                        std::max(0, screenGeometry.right() - availableGeometry.right()),
+                        std::max(0, screenGeometry.bottom() - availableGeometry.bottom()));
+#endif
+    }
+
+    int MainWindow::resolvedKeyboardInset() const {
+        if (!qApp || !qApp->inputMethod()) {
+            return 0;
+        }
+
+        const QRectF keyboardRect = qApp->inputMethod()->keyboardRectangle();
+        if (!qApp->inputMethod()->isVisible() || keyboardRect.isEmpty()) {
+            return 0;
+        }
+
+        const int keyboardTop = int(std::floor(keyboardRect.top()));
+        const int overlapFromTop = height() - keyboardTop;
+        const int directHeight = int(std::ceil(keyboardRect.height()));
+        return std::max(0, std::max(overlapFromTop, directHeight));
     }
 
     void MainWindow::showOverlay(QWidget *page) {
@@ -367,6 +547,7 @@ namespace fairwindsk::ui {
             return;
         }
 
+        releaseCurrentWebInputFocus();
         m_activeOverlay = page;
         setChromeEnabled(false);
         ui->stackedWidget_Center->addWidget(page);
@@ -397,6 +578,8 @@ namespace fairwindsk::ui {
 
     void MainWindow::showLauncher() {
         m_currentApp = nullptr;
+        m_currentWebApp = nullptr;
+        m_mobileWebContentFocused = false;
         m_currentAppStatusSummary.clear();
         FairWindSK::getInstance()->clearForegroundAppHealth();
         if (m_launcher && ui->stackedWidget_Center->indexOf(m_launcher) >= 0) {
@@ -405,6 +588,7 @@ namespace fairwindsk::ui {
         fairwindsk::runtime::recordUserInteraction(QStringLiteral("navigation"),
                                                    QStringLiteral("show_launcher"),
                                                    m_launcher ? m_launcher->currentPageTitle() : tr("Home"));
+        updateMobileShellProperties();
         syncTopBarToCurrentPage();
     }
 
@@ -413,6 +597,7 @@ namespace fairwindsk::ui {
             auto *currentWidget = ui->stackedWidget_Center->currentWidget();
             if (m_currentApp && m_currentApp->getWidget() != currentWidget) {
                 m_currentApp = nullptr;
+                m_currentWebApp = nullptr;
             }
 
             if (!m_currentApp) {
@@ -601,6 +786,36 @@ namespace fairwindsk::ui {
                     FairWindSK::getInstance()->setForegroundAppHealth(summary, degraded);
                     syncTopBarToCurrentPage();
                 });
+                connect(web, &web::Web::mobileFocusChanged, this, [this, web](const bool webContentFocused, const bool textInputLikely) {
+                    if (ui->stackedWidget_Center->currentWidget() != web) {
+                        return;
+                    }
+
+                    m_mobileWebContentFocused = webContentFocused;
+                    if (webContentFocused && m_mobileNativeTextInputFocused) {
+                        if (auto *focusWidget = QApplication::focusWidget()) {
+                            focusWidget->clearFocus();
+                        }
+                        m_mobileNativeTextInputFocused = false;
+                    }
+
+                    if (!textInputLikely && !webContentFocused && qApp && qApp->inputMethod()) {
+                        qApp->inputMethod()->hide();
+                    }
+
+                    updateMobileShellProperties();
+                    updateMobileShellMetrics();
+                });
+                connect(web, &web::Web::mobileViewportChanged, this, [this, web](const QRect &, const bool keyboardVisible) {
+                    if (ui->stackedWidget_Center->currentWidget() != web) {
+                        return;
+                    }
+
+                    if (!keyboardVisible && !m_mobileNativeTextInputFocused) {
+                        m_mobileWebContentFocused = false;
+                    }
+                    updateMobileShellMetrics();
+                });
 
                 // Connect the remove app signal to the onRemoveApp member
                 connect(web, &web::Web::removeApp, this, &MainWindow::onRemoveApp);
@@ -633,6 +848,7 @@ namespace fairwindsk::ui {
 
             // Set the current app
             m_currentApp = appItem;
+            m_currentWebApp = qobject_cast<web::Web *>(widgetApp);
             m_currentAppStatusSummary.clear();
             FairWindSK::getInstance()->clearForegroundAppHealth();
 
@@ -648,8 +864,9 @@ namespace fairwindsk::ui {
                                                            {QStringLiteral("displayName"), appItem->getDisplayName()},
                                                            {QStringLiteral("kind"), appItem->getName().startsWith("file://")
                                                                                         ? QStringLiteral("native")
-                                                                                        : QStringLiteral("web")}
+                                                                                       : QStringLiteral("web")}
                                                        });
+            applyCurrentWebMobileMetrics();
 
             // Set the window size
             //setSize();
@@ -692,6 +909,8 @@ namespace fairwindsk::ui {
              m_currentApp->getName() == hash ||
              m_currentApp->getName() == name)) {
             m_currentApp = nullptr;
+            m_currentWebApp = nullptr;
+            m_mobileWebContentFocused = false;
             m_currentAppStatusSummary.clear();
             FairWindSK::getInstance()->clearForegroundAppHealth();
             m_topBar->setCurrentApp(nullptr);
@@ -716,6 +935,7 @@ namespace fairwindsk::ui {
 
         // Set the launcher as current application
         showLauncher();
+        updateMobileShellMetrics();
     }
 /*
  * onApps

@@ -5,6 +5,7 @@
 #ifndef FAIRWINDSK_WEB_HPP
 #define FAIRWINDSK_WEB_HPP
 
+#include <QMargins>
 #include <QWidget>
 
 #include <FairWindSK.hpp>
@@ -32,6 +33,11 @@ namespace fairwindsk::ui::web {
         ~Web() override;
 
         void toggleNavigationBar();
+        void releaseMobileFocus();
+        void applyMobileShellMetrics(const QMargins &safeAreaMargins,
+                                     int keyboardInset,
+                                     bool keyboardVisible,
+                                     bool compactMode);
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         DownloadManagerWidget &downloadManagerWidget() { return m_downloadManagerWidget; }
@@ -40,6 +46,8 @@ namespace fairwindsk::ui::web {
         signals:
         void removeApp(QString name);
         void statusSummaryChanged(const QString &summary, bool degraded);
+        void mobileFocusChanged(bool webContentFocused, bool textInputLikely);
+        void mobileViewportChanged(const QRect &viewport, bool keyboardVisible);
 
     public slots:
         void onHomeClicked();

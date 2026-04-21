@@ -6,6 +6,7 @@
 #define FAIRWINDSK_WEBVIEW_HPP
 
 #include <QIcon>
+#include <QMargins>
 #include <QRect>
 #include <QTimer>
 #include <QUrl>
@@ -46,6 +47,11 @@ namespace fairwindsk::ui::web {
         void runJavaScript(const QString &script);
         double zoomPercent() const;
         void setZoomPercent(double zoomPercent);
+        void releaseMobileFocus();
+        void applyMobileShellMetrics(const QMargins &safeAreaMargins,
+                                     int keyboardInset,
+                                     bool keyboardVisible,
+                                     bool compactMode);
 
     signals:
         void loadStarted();
@@ -56,6 +62,8 @@ namespace fairwindsk::ui::web {
         void geometryChangeRequested(const QRect &newGeometry);
         void windowCloseRequested();
         void healthStateChanged(fairwindsk::ui::web::WebView::HealthState state, const QString &summary);
+        void mobileFocusChanged(bool webContentFocused, bool textInputLikely);
+        void mobileViewportChanged(const QRect &viewport, bool keyboardVisible);
 
     private slots:
 #if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
@@ -64,6 +72,9 @@ namespace fairwindsk::ui::web {
         void handleMobileLoadFinished(bool ok);
         void handleMobileCurrentUrlNotified(const QString &url);
         void handleMobileTitleChanged(const QString &title);
+        void handleMobileFocusChanged(bool focused);
+        void handleMobileTextInputChanged(bool active);
+        void handleMobileViewportChanged(qreal width, qreal height, bool keyboardVisible);
 #endif
         void handleConnectivityChanged(bool restHealthy, bool streamHealthy, const QString &statusText);
         void handleServerStateResynchronized(bool recoveredFromDisconnect);
@@ -93,6 +104,8 @@ namespace fairwindsk::ui::web {
         HealthState m_healthState = HealthState::Normal;
         QString m_healthSummary = QStringLiteral("Web view ready");
         QTimer m_loadTimeoutTimer;
+        bool m_mobileWebContentFocused = false;
+        bool m_mobileTextInputActive = false;
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         QWebEngineView *m_desktopView = nullptr;
@@ -103,6 +116,7 @@ namespace fairwindsk::ui::web {
         QUrl m_currentUrl;
         bool m_canGoBack = false;
         bool m_canGoForward = false;
+        QRect m_mobileViewport;
 #endif
     };
 }
