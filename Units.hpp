@@ -10,6 +10,7 @@
 #include <QList>
 #include <QObject>
 #include <QSet>
+#include <QJsonObject>
 #include <functional>
 #include <nlohmann/json.hpp>
 
@@ -46,6 +47,7 @@ namespace fairwindsk {
         QString getSignalKUnitLabel(const QString &path, const QString &fallbackUnit = QString());
         QString getSignalKActivePresetName();
         QList<UnitPreferenceItem> getSignalKUnitPreferenceItems();
+        static bool runSignalKLookupRegressionSelfTest(QString *failureReason = nullptr);
         QString getLocalUnitOverride(const QString &category) const;
         void setLocalUnitOverride(const QString &category, const QString &targetUnit);
         void clearLocalUnitOverride(const QString &category);
@@ -84,6 +86,7 @@ namespace fairwindsk {
 
         nlohmann::json m_units;
         bool m_signalKPreferencesLoaded = false;
+        bool m_signalKLookupInProgress = false;
         QString m_signalKActivePresetName;
         QMap<QString, DisplayUnitsInfo> m_categoryDisplayUnits;
         QMap<QString, QMap<QString, DisplayUnitsInfo>> m_definitionsByBaseUnit;

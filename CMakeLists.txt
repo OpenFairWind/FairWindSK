@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 project(FairWindSK VERSION 0.1.0 LANGUAGES CXX)
 
+include(CTest)
+
 execute_process(
         COMMAND git -C ${CMAKE_SOURCE_DIR} describe --tags --always --dirty
         OUTPUT_VARIABLE FAIRWINDSK_GIT_VERSION
@@ -392,3 +394,8 @@ if(UNIX AND NOT APPLE AND NOT FAIRWINDSK_MOBILE)
 endif()
 
 qt_finalize_executable(${PROJECT_NAME})
+
+if(BUILD_TESTING)
+    add_test(NAME units_reentrancy_self_test
+            COMMAND $<TARGET_FILE:${PROJECT_NAME}> --self-test-units-reentrancy)
+endif()

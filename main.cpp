@@ -1,3 +1,4 @@
+#include <QCoreApplication>
 #include <QApplication>
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
 #include <QSplashScreen>
@@ -21,6 +22,7 @@
 
 #include "FairWindSK.hpp"
 #include "Configuration.hpp"
+#include "Units.hpp"
 #include "runtime/DiagnosticsSupport.hpp"
 #include "ui/MainWindow.hpp"
 
@@ -145,6 +147,37 @@ namespace {
 #endif
 
 namespace {
+    bool hasArgument(const int argc, char *argv[], const char *argument) {
+        if (!argument) {
+            return false;
+        }
+
+        const QString expected = QString::fromUtf8(argument);
+        for (int index = 1; index < argc; ++index) {
+            if (argv[index] && QString::fromUtf8(argv[index]) == expected) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    int runUnitsReentrancySelfTest(int argc, char *argv[]) {
+        QCoreApplication app(argc, argv);
+        QCoreApplication::setOrganizationName("uniparthenope.it");
+        QCoreApplication::setApplicationName("FairWindSK");
+
+        QString failureReason;
+        const bool passed = fairwindsk::Units::runSignalKLookupRegressionSelfTest(&failureReason);
+        if (passed) {
+            qInfo() << "Units re-entrancy self-test passed";
+            return 0;
+        }
+
+        qCritical() << "Units re-entrancy self-test failed:" << failureReason;
+        return 1;
+    }
+
     QString resolveConfigurationPathFromSettings() {
         const QString settingsPath = fairwindsk::Configuration::settingsFilename();
         QSettings settings(settingsPath, QSettings::IniFormat);
@@ -175,6 +208,9 @@ namespace {
 }
 
 int main(int argc, char *argv[]) {
+    if (hasArgument(argc, argv, "--self-test-units-reentrancy")) {
+        return runUnitsReentrancySelfTest(argc, argv);
+    }
 
     // The translator
     QTranslator translator;

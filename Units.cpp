@@ -10,6 +10,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QRegularExpression>
+#include <QScopedValueRollback>
 
 #include "FairWindSK.hpp"
 
@@ -122,6 +123,49 @@ namespace fairwindsk {
         return m_instance;
     }
 
+    bool Units::runSignalKLookupRegressionSelfTest(QString *failureReason) {
+        auto fail = [failureReason](const QString &message) {
+            if (failureReason) {
+                *failureReason = message;
+            }
+            return false;
+        };
+
+        auto *units = getInstance();
+        if (!units) {
+            return fail(QStringLiteral("Units singleton is unavailable"));
+        }
+
+        const QString path = QStringLiteral("navigation.courseOverGroundTrue");
+        const QString expectedLabel = units->getLabel(QStringLiteral("deg"));
+        const QScopedValueRollback<bool> lookupGuard(units->m_signalKLookupInProgress, true);
+
+        const auto info = units->displayUnitsForPath(path);
+        if (info.valid) {
+            return fail(QStringLiteral("Re-entrant lookup unexpectedly returned Signal K display units"));
+        }
+
+        const QString formatted = units->formatSignalKValue(path, 1.0, QStringLiteral("rad"), QStringLiteral("deg"));
+        if (formatted.isEmpty()) {
+            return fail(QStringLiteral("Fallback formatting returned an empty value during re-entrant lookup"));
+        }
+
+        const QString label = units->getSignalKUnitLabel(path, QStringLiteral("deg"));
+        if (label != expectedLabel) {
+            return fail(QStringLiteral("Fallback unit label mismatch during re-entrant lookup"));
+        }
+
+        const double converted = units->convertSignalKValue(path, 1.0, QStringLiteral("m"), QStringLiteral("nm"));
+        if (converted <= 0.0) {
+            return fail(QStringLiteral("Fallback unit conversion did not return a positive converted value"));
+        }
+
+        if (failureReason) {
+            failureReason->clear();
+        }
+        return true;
+    }
+
 /*
  * convert
  * Converts a value from a unit to another
@@ -199,6 +243,7 @@ namespace fairwindsk {
 
     void Units::refreshSignalKPreferences() {
         m_signalKPreferencesLoaded = false;
+        m_signalKLookupInProgress = false;
         m_signalKActivePresetName.clear();
         m_categoryDisplayUnits.clear();
         m_definitionsByBaseUnit.clear();
@@ -209,9 +254,11 @@ namespace fairwindsk {
     }
 
     void Units::loadSignalKPreferences() {
-        if (m_signalKPreferencesLoaded) {
+        if (m_signalKPreferencesLoaded || m_signalKLookupInProgress) {
             return;
         }
+
+        const QScopedValueRollback<bool> lookupGuard(m_signalKLookupInProgress, true);
 
         const auto fairWindSK = FairWindSK::getInstance();
         if (!fairWindSK) {
@@ -386,11 +433,14 @@ namespace fairwindsk {
             return {};
         }
 
-        loadSignalKPreferences();
-
         if (m_displayUnitsCache.contains(path)) {
             return m_displayUnitsCache.value(path);
         }
+
+        if (m_signalKLookupInProgress) {
+            return {};
+        }
+        loadSignalKPreferences();
 
         if (!m_attemptedDisplayUnitsPaths.contains(path)) {
             m_attemptedDisplayUnitsPaths.insert(path);
@@ -398,6 +448,7 @@ namespace fairwindsk {
             const auto fairWindSK = FairWindSK::getInstance();
             const auto client = fairWindSK ? fairWindSK->getSignalKClient() : nullptr;
             if (client && !client->url().isEmpty()) {
+                const QScopedValueRollback<bool> lookupGuard(m_signalKLookupInProgress, true);
                 const auto metaObject = client->getPathMeta(path);
                 if (metaObject.contains("displayUnits") && metaObject["displayUnits"].isObject()) {
                     auto info = parseDisplayUnits(metaObject["displayUnits"].toObject());
