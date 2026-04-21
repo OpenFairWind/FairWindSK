@@ -96,7 +96,14 @@ namespace fairwindsk::ui::bottombar {
         void setRegularBarVisible(bool visible) const;
         void setPanelVisibility(QWidget *panel, bool visible) const;
         void hideTransientPanels(QWidget *except = nullptr) const;
+        void updateHealthChrome();
 
+    private slots:
+        void onRuntimeHealthChanged(fairwindsk::FairWindSK::RuntimeHealthState state,
+                                    const QString &summary,
+                                    const QString &badgeText);
+
+    private:
         // Pointer to UI
         Ui::BottomBar *ui = nullptr;
 
@@ -116,6 +123,8 @@ namespace fairwindsk::ui::bottombar {
 
         int m_iconSize;
         QMap<QString, QToolButton *> m_buttons;
+        fairwindsk::FairWindSK::RuntimeHealthState m_runtimeHealthState = fairwindsk::FairWindSK::RuntimeHealthState::Disconnected;
+        QString m_runtimeHealthSummary;
     };
 }
 

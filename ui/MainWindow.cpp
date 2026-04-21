@@ -14,6 +14,8 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QScreen>
+#include <QInputMethod>
+#include <cmath>
 
 #include "MainWindow.hpp"
 #include "ui/topbar/TopBar.hpp"
@@ -130,9 +132,19 @@ namespace fairwindsk::ui {
         // Set the window size
         setSize();
         updateAdaptiveShellMode();
+        updateMobileShellMetrics();
         fairwindsk::runtime::recordUserInteraction(QStringLiteral("navigation"),
                                                    QStringLiteral("main_window_ready"),
                                                    QStringLiteral("launcher"));
+
+        if (qApp && qApp->inputMethod()) {
+            connect(qApp->inputMethod(), &QInputMethod::keyboardRectangleChanged, this, [this]() {
+                updateMobileShellMetrics();
+            });
+            connect(qApp->inputMethod(), &QInputMethod::visibleChanged, this, [this]() {
+                updateMobileShellMetrics();
+            });
+        }
 
         QTimer::singleShot(750, this, [this]() {
             ensureSettingsPage(m_launcher);
@@ -280,7 +292,7 @@ namespace fairwindsk::ui {
         }
 
         const int availableCenterHeight = ui->stackedWidget_Center ? ui->stackedWidget_Center->height() : 0;
-        const int availableDrawerHeight = availableCenterHeight + (m_bottomBar ? m_bottomBar->height() : 0);
+        const int availableDrawerHeight = std::max(0, availableCenterHeight + (m_bottomBar ? m_bottomBar->height() : 0) - m_mobileBottomInset);
         int requestedDrawerHeight = m_dialogDrawer->layout()
                                         ? m_dialogDrawer->layout()->sizeHint().height()
                                         : m_dialogDrawer->sizeHint().height();
@@ -321,6 +333,30 @@ namespace fairwindsk::ui {
         if (m_bottomBar) {
             m_bottomBar->setProperty("compactShellMode", compactMode);
         }
+    }
+
+    void MainWindow::updateMobileShellMetrics() {
+        int bottomInset = 0;
+        bool keyboardVisible = false;
+        if (qApp && qApp->inputMethod()) {
+            const QRectF keyboardRect = qApp->inputMethod()->keyboardRectangle();
+            keyboardVisible = qApp->inputMethod()->isVisible() && !keyboardRect.isEmpty();
+            if (keyboardVisible) {
+                bottomInset = std::max(0, int(std::ceil(keyboardRect.height())));
+            }
+        }
+
+        m_mobileBottomInset = bottomInset;
+        m_softwareKeyboardVisible = keyboardVisible;
+
+        if (centralWidget()) {
+            centralWidget()->setProperty("softwareKeyboardVisible", keyboardVisible);
+            centralWidget()->setProperty("mobileBottomInset", bottomInset);
+        }
+        if (m_dialogDrawer) {
+            m_dialogDrawer->setProperty("softwareKeyboardVisible", keyboardVisible);
+        }
+        updateDrawerGeometry();
     }
 
     void MainWindow::showOverlay(QWidget *page) {
@@ -853,6 +889,7 @@ namespace fairwindsk::ui {
         }
         setSize();
         updateAdaptiveShellMode();
+        updateMobileShellMetrics();
         updateDrawerGeometry();
 
         if (m_launcher) {
@@ -1036,6 +1073,7 @@ namespace fairwindsk::ui {
     void MainWindow::resizeEvent(QResizeEvent *event) {
         QMainWindow::resizeEvent(event);
         updateAdaptiveShellMode();
+        updateMobileShellMetrics();
         updateDrawerGeometry();
     }
 

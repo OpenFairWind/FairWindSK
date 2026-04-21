@@ -37,6 +37,7 @@ namespace fairwindsk::ui::bottombar {
             ui(new Ui::BottomBar) {
 
         m_iconSize = kBottomBarIconSize;
+        const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
         // Set the UI
         ui->setupUi(this);
@@ -144,8 +145,16 @@ namespace fairwindsk::ui::bottombar {
         connect(m_POBBar, &POBBar::hidden, this, [this]() { setPanelVisibility(m_POBBar, false); });
         connect(m_AutopilotBar, &AutopilotBar::hidden, this, [this]() { setPanelVisibility(m_AutopilotBar, false); });
         connect(m_AnchorBar, &AnchorBar::hidden, this, [this]() { setPanelVisibility(m_AnchorBar, false); });
-        connect(m_AlarmsBar, &AlarmsBar::hidden, this, [this]() { setPanelVisibility(m_AlarmsBar, false); });
+            connect(m_AlarmsBar, &AlarmsBar::hidden, this, [this]() { setPanelVisibility(m_AlarmsBar, false); });
 
+        if (fairWindSK) {
+            m_runtimeHealthState = fairWindSK->runtimeHealthState();
+            m_runtimeHealthSummary = fairWindSK->runtimeHealthSummary();
+            connect(fairWindSK, &fairwindsk::FairWindSK::runtimeHealthChanged,
+                    this, &BottomBar::onRuntimeHealthChanged);
+        }
+
+        updateHealthChrome();
         QTimer::singleShot(0, this, [this]() { rebalanceNavigationBlock(); });
     }
 
@@ -198,6 +207,7 @@ namespace fairwindsk::ui::bottombar {
         if (m_AnchorBar) {
             m_AnchorBar->refreshFromConfiguration();
         }
+        const_cast<BottomBar *>(this)->updateHealthChrome();
     }
 
     void BottomBar::changeEvent(QEvent *event) {
@@ -253,6 +263,64 @@ namespace fairwindsk::ui::bottombar {
                 QSize(m_iconSize, m_iconSize),
                 kBottomBarButtonHeight);
         }
+        const_cast<BottomBar *>(this)->updateHealthChrome();
+    }
+
+    void BottomBar::updateHealthChrome() {
+        if (!ui) {
+            return;
+        }
+
+        auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+        auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("day");
+        const auto colors = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), false);
+
+        fairwindsk::ui::BottomBarButtonChrome appsChrome = fairwindsk::ui::BottomBarButtonChrome::Transparent;
+        switch (m_runtimeHealthState) {
+            case fairwindsk::FairWindSK::RuntimeHealthState::ConnectedLive:
+                appsChrome = fairwindsk::ui::BottomBarButtonChrome::Transparent;
+                break;
+            case fairwindsk::FairWindSK::RuntimeHealthState::AppsLoading:
+            case fairwindsk::FairWindSK::RuntimeHealthState::Connecting:
+            case fairwindsk::FairWindSK::RuntimeHealthState::Reconnecting:
+            case fairwindsk::FairWindSK::RuntimeHealthState::ConnectedStale:
+            case fairwindsk::FairWindSK::RuntimeHealthState::AppsStale:
+            case fairwindsk::FairWindSK::RuntimeHealthState::RestDegraded:
+            case fairwindsk::FairWindSK::RuntimeHealthState::StreamDegraded:
+                appsChrome = fairwindsk::ui::BottomBarButtonChrome::Flat;
+                break;
+            case fairwindsk::FairWindSK::RuntimeHealthState::ForegroundAppDegraded:
+            case fairwindsk::FairWindSK::RuntimeHealthState::Disconnected:
+                appsChrome = fairwindsk::ui::BottomBarButtonChrome::Accent;
+                break;
+        }
+
+        fairwindsk::ui::applyBottomBarToolButtonChrome(
+            ui->toolButton_Apps,
+            colors,
+            appsChrome,
+            QSize(m_iconSize, m_iconSize),
+            kBottomBarButtonHeight);
+        ui->toolButton_Apps->setToolTip(
+            m_runtimeHealthSummary.trimmed().isEmpty()
+                ? tr("Application launcher")
+                : tr("Application launcher\n%1").arg(m_runtimeHealthSummary.trimmed()));
+        if (ui->toolButton_Settings) {
+            ui->toolButton_Settings->setToolTip(
+                m_runtimeHealthSummary.trimmed().isEmpty()
+                    ? tr("Settings")
+                    : tr("Settings\n%1").arg(m_runtimeHealthSummary.trimmed()));
+        }
+    }
+
+    void BottomBar::onRuntimeHealthChanged(const fairwindsk::FairWindSK::RuntimeHealthState state,
+                                           const QString &summary,
+                                           const QString &badgeText) {
+        Q_UNUSED(badgeText)
+        m_runtimeHealthState = state;
+        m_runtimeHealthSummary = summary.trimmed();
+        updateHealthChrome();
     }
 
     void BottomBar::rebalanceNavigationBlock() const {

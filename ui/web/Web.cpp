@@ -103,7 +103,18 @@ namespace fairwindsk::ui::web {
         connect(m_webView, &WebView::loadFinished, this, &Web::handleLoadFinished);
         connect(m_webView, &WebView::urlChanged, this, [this]() { syncNavigationState(); });
         connect(m_webView, &WebView::healthStateChanged, this, [this](const WebView::HealthState state, const QString &summary) {
-            emit statusSummaryChanged(summary, state != WebView::HealthState::Normal);
+            QString statusSummary = summary.trimmed();
+            if (statusSummary.isEmpty()) {
+                statusSummary = tr("Hosted app ready");
+            }
+
+            if (state == WebView::HealthState::Restarting) {
+                statusSummary += tr(" • Recovery is automatic");
+            } else if (state == WebView::HealthState::Failed || state == WebView::HealthState::Unsupported) {
+                statusSummary += tr(" • Use Reload, Home, or Close for recovery");
+            }
+
+            emit statusSummaryChanged(statusSummary, state != WebView::HealthState::Normal);
         });
 
         syncNavigationState();
@@ -305,6 +316,7 @@ namespace fairwindsk::ui::web {
         if (m_NavigationBar) {
             m_NavigationBar->setReloadActive(true);
         }
+        emit statusSummaryChanged(tr("Hosted app loading"), false);
         syncNavigationState();
     }
 

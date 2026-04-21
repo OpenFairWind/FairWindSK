@@ -10,6 +10,7 @@
 #include <QPointer>
 #include <QDebug>
 #include <QCloseEvent>
+#include <QRectF>
 #include <functional>
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
@@ -94,6 +95,7 @@ namespace fairwindsk::ui {
         void prewarmPersistentPages();
         void updateDrawerGeometry();
         void updateAdaptiveShellMode();
+        void updateMobileShellMetrics();
 
         // Close Event handler
         void closeEvent(QCloseEvent *bar) override;
@@ -167,6 +169,8 @@ namespace fairwindsk::ui {
         // The pointer to the foreground app
         QPointer<fairwindsk::AppItem> m_currentApp;
         QString m_currentAppStatusSummary;
+        int m_mobileBottomInset = 0;
+        bool m_softwareKeyboardVisible = false;
 
         // The hotkey
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
