@@ -25,6 +25,33 @@ namespace fairwindsk::ui::widgets {
             const QDateTime localUpdate = lastStreamUpdate.toLocalTime();
             return SignalKStatusIconsWidget::tr("Last update %1").arg(localUpdate.toString(QStringLiteral("dd-MM hh:mm:ss")));
         }
+
+        QString runtimeStateLabel(const fairwindsk::FairWindSK::RuntimeHealthState state) {
+            switch (state) {
+                case fairwindsk::FairWindSK::RuntimeHealthState::Disconnected:
+                    return SignalKStatusIconsWidget::tr("Disconnected");
+                case fairwindsk::FairWindSK::RuntimeHealthState::Connecting:
+                    return SignalKStatusIconsWidget::tr("Connecting");
+                case fairwindsk::FairWindSK::RuntimeHealthState::ConnectedLive:
+                    return SignalKStatusIconsWidget::tr("Live");
+                case fairwindsk::FairWindSK::RuntimeHealthState::ConnectedStale:
+                    return SignalKStatusIconsWidget::tr("Stale");
+                case fairwindsk::FairWindSK::RuntimeHealthState::Reconnecting:
+                    return SignalKStatusIconsWidget::tr("Reconnecting");
+                case fairwindsk::FairWindSK::RuntimeHealthState::RestDegraded:
+                    return SignalKStatusIconsWidget::tr("REST degraded");
+                case fairwindsk::FairWindSK::RuntimeHealthState::StreamDegraded:
+                    return SignalKStatusIconsWidget::tr("Stream degraded");
+                case fairwindsk::FairWindSK::RuntimeHealthState::AppsLoading:
+                    return SignalKStatusIconsWidget::tr("Apps loading");
+                case fairwindsk::FairWindSK::RuntimeHealthState::AppsStale:
+                    return SignalKStatusIconsWidget::tr("Apps stale");
+                case fairwindsk::FairWindSK::RuntimeHealthState::ForegroundAppDegraded:
+                    return SignalKStatusIconsWidget::tr("Foreground app degraded");
+            }
+
+            return SignalKStatusIconsWidget::tr("Disconnected");
+        }
     }
 
     SignalKStatusIconsWidget::SignalKStatusIconsWidget(QWidget *parent)
@@ -78,6 +105,8 @@ namespace fairwindsk::ui::widgets {
             m_lastStreamUpdate = client->lastStreamUpdate();
             m_runtimeSummary = fairWindSK ? fairWindSK->runtimeHealthSummary() : m_stateText;
             m_runtimeBadgeText = fairWindSK ? fairWindSK->runtimeHealthBadgeText() : tr("DISC");
+            m_runtimeState = fairWindSK ? fairWindSK->runtimeHealthState()
+                                        : fairwindsk::FairWindSK::RuntimeHealthState::Disconnected;
             refreshIndicators(m_serverHealthy,
                               m_restHealthy,
                               m_streamHealthy,
@@ -95,6 +124,7 @@ namespace fairwindsk::ui::widgets {
             m_appsStateText = fairWindSK->appsStateText();
             m_runtimeSummary = fairWindSK->runtimeHealthSummary();
             m_runtimeBadgeText = fairWindSK->runtimeHealthBadgeText();
+            m_runtimeState = fairWindSK->runtimeHealthState();
         }
     }
 
@@ -151,7 +181,7 @@ namespace fairwindsk::ui::widgets {
     void SignalKStatusIconsWidget::onRuntimeHealthChanged(const fairwindsk::FairWindSK::RuntimeHealthState state,
                                                           const QString &summary,
                                                           const QString &badgeText) {
-        Q_UNUSED(state)
+        m_runtimeState = state;
         m_runtimeSummary = summary.trimmed();
         m_runtimeBadgeText = badgeText.trimmed();
         refreshIndicators(m_serverHealthy, m_restHealthy, m_streamHealthy, m_requestActive, QString());
@@ -247,10 +277,25 @@ namespace fairwindsk::ui::widgets {
         const auto colors = fairwindsk::ui::resolveComfortStatusColors(configuration, preset, palette());
 
         QColor runtimeFill = colors.errorFill;
-        if (serverHealthy) {
-            runtimeFill = colors.healthyFill;
-        } else if (restHealthy || streamHealthy) {
-            runtimeFill = colors.warningFill;
+        switch (m_runtimeState) {
+            case fairwindsk::FairWindSK::RuntimeHealthState::ConnectedLive:
+                runtimeFill = colors.healthyFill;
+                break;
+            case fairwindsk::FairWindSK::RuntimeHealthState::Connecting:
+            case fairwindsk::FairWindSK::RuntimeHealthState::Reconnecting:
+            case fairwindsk::FairWindSK::RuntimeHealthState::AppsLoading:
+                runtimeFill = colors.warningFill;
+                break;
+            case fairwindsk::FairWindSK::RuntimeHealthState::ConnectedStale:
+            case fairwindsk::FairWindSK::RuntimeHealthState::RestDegraded:
+            case fairwindsk::FairWindSK::RuntimeHealthState::StreamDegraded:
+            case fairwindsk::FairWindSK::RuntimeHealthState::AppsStale:
+            case fairwindsk::FairWindSK::RuntimeHealthState::ForegroundAppDegraded:
+                runtimeFill = colors.warningFill.darker(112);
+                break;
+            case fairwindsk::FairWindSK::RuntimeHealthState::Disconnected:
+                runtimeFill = colors.errorFill;
+                break;
         }
         applyIndicatorColor(m_serverIndicator, runtimeFill);
         m_serverIndicator->setText(m_runtimeBadgeText.trimmed().isEmpty() ? tr("DISC") : m_runtimeBadgeText.trimmed());
@@ -270,9 +315,11 @@ namespace fairwindsk::ui::widgets {
                                          ? (m_stateText.trimmed().isEmpty() ? tr("Disconnected") : m_stateText.trimmed())
                                          : m_runtimeSummary.trimmed();
         const QString appsState = m_appsStateText.trimmed().isEmpty() ? tr("Apps idle") : m_appsStateText.trimmed();
-        m_serverIndicator->setToolTip(tr("Signal K %1\n%2\n%3").arg(overallState, tooltipLastUpdate(m_lastStreamUpdate), appsState));
+        m_serverIndicator->setToolTip(tr("Shell health: %1\n%2\n%3")
+                                          .arg(runtimeStateLabel(m_runtimeState), overallState, appsState));
         m_busyIndicator->setToolTip(requestActive ? tr("Signal K activity in progress") : tr("Signal K idle"));
-        m_restIndicator->setToolTip(tr("Signal K REST API"));
-        m_streamIndicator->setToolTip(tr("Signal K stream\n%1").arg(tooltipLastUpdate(m_lastStreamUpdate)));
+        m_restIndicator->setToolTip(tr("Signal K REST API\n%1").arg(restHealthy ? tr("Healthy") : tr("Unavailable")));
+        m_streamIndicator->setToolTip(tr("Signal K stream\n%1\n%2").arg(streamHealthy ? tr("Healthy") : tr("Unavailable"),
+                                                                         tooltipLastUpdate(m_lastStreamUpdate)));
     }
 }

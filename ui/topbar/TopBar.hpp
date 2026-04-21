@@ -62,6 +62,32 @@ namespace fairwindsk::ui::topbar {
         void clickedToolbuttonUR();
 
     private:
+        struct MetricRenderTarget {
+            QWidget *container = nullptr;
+            QLabel *valueLabel = nullptr;
+            QLabel *unitLabel = nullptr;
+        };
+
+        void renderNumericMetric(const MetricRenderTarget &target,
+                                 const QString &title,
+                                 const QString &path,
+                                 const QJsonObject &update,
+                                 const QString &sourceUnit,
+                                 const QString &targetUnit);
+        void renderAngularMetric(const MetricRenderTarget &target,
+                                 const QString &title,
+                                 const QString &path,
+                                 const QJsonObject &update);
+        void renderDateMetric(const MetricRenderTarget &target,
+                              const QString &title,
+                              const QJsonObject &update,
+                              const QString &format);
+        void renderWaypointMetric(const MetricRenderTarget &target,
+                                  const QString &title,
+                                  const QJsonObject &update);
+        void renderPositionMetric(const MetricRenderTarget &target,
+                                  const QString &title,
+                                  const QJsonObject &update);
         void changeEvent(QEvent *event) override;
         void updateComfortViewIcon() const;
         void updateDistanceLabels() const;

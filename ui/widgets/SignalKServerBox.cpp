@@ -80,6 +80,7 @@ namespace fairwindsk::ui::widgets {
                     this, &SignalKServerBox::onRuntimeHealthChanged);
             m_appsStateText = fairWindSK->appsStateText();
             m_runtimeSummary = fairWindSK->runtimeHealthSummary();
+            m_runtimeState = fairWindSK->runtimeHealthState();
         }
         updateFreshnessMessage();
     }
@@ -138,8 +139,8 @@ namespace fairwindsk::ui::widgets {
     void SignalKServerBox::onRuntimeHealthChanged(const fairwindsk::FairWindSK::RuntimeHealthState state,
                                                   const QString &summary,
                                                   const QString &badgeText) {
-        Q_UNUSED(state)
         Q_UNUSED(badgeText)
+        m_runtimeState = state;
         m_runtimeSummary = summary.trimmed();
         updateFreshnessMessage();
     }
@@ -166,7 +167,23 @@ namespace fairwindsk::ui::widgets {
                                   ? (m_stateText.trimmed().isEmpty() ? tr("Disconnected") : m_stateText.trimmed())
                                   : m_runtimeSummary.trimmed(),
                               formatLastUpdateText(m_lastStreamUpdate)),
-            m_appsStateText.trimmed().isEmpty() ? tr("Apps idle") : m_appsStateText.trimmed()
+            tr("Shell %1 • %2")
+                .arg([this]() {
+                    switch (m_runtimeState) {
+                        case fairwindsk::FairWindSK::RuntimeHealthState::Disconnected: return tr("disconnected");
+                        case fairwindsk::FairWindSK::RuntimeHealthState::Connecting: return tr("connecting");
+                        case fairwindsk::FairWindSK::RuntimeHealthState::ConnectedLive: return tr("live");
+                        case fairwindsk::FairWindSK::RuntimeHealthState::ConnectedStale: return tr("stale");
+                        case fairwindsk::FairWindSK::RuntimeHealthState::Reconnecting: return tr("reconnecting");
+                        case fairwindsk::FairWindSK::RuntimeHealthState::RestDegraded: return tr("REST degraded");
+                        case fairwindsk::FairWindSK::RuntimeHealthState::StreamDegraded: return tr("stream degraded");
+                        case fairwindsk::FairWindSK::RuntimeHealthState::AppsLoading: return tr("apps loading");
+                        case fairwindsk::FairWindSK::RuntimeHealthState::AppsStale: return tr("apps stale");
+                        case fairwindsk::FairWindSK::RuntimeHealthState::ForegroundAppDegraded: return tr("app degraded");
+                    }
+                    return tr("disconnected");
+                }(),
+                     m_appsStateText.trimmed().isEmpty() ? tr("Apps idle") : m_appsStateText.trimmed())
         };
 
         const QString text = lines.join(QLatin1Char('\n'));

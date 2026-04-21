@@ -106,6 +106,7 @@ namespace fairwindsk::ui::web {
         QTimer m_loadTimeoutTimer;
         bool m_mobileWebContentFocused = false;
         bool m_mobileTextInputActive = false;
+        int m_consecutiveFailureCount = 0;
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         QWebEngineView *m_desktopView = nullptr;

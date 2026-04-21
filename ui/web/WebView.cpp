@@ -436,9 +436,13 @@ namespace fairwindsk::ui::web {
             return;
         }
 
+        ++m_consecutiveFailureCount;
+
         showFallbackPlaceholder(HealthState::Failed,
-                                tr("Hosted app timeout"),
-                                tr("The page is taking too long to respond. Use reload to retry, home to return to the app start page, or close to go back to the launcher."),
+                                m_consecutiveFailureCount > 1 ? tr("Hosted app retry timeout") : tr("Hosted app timeout"),
+                                m_consecutiveFailureCount > 1
+                                    ? tr("The hosted app keeps timing out. Use reload to retry, home to return to the app start page, settings to inspect configuration, or close to go back to the launcher.")
+                                    : tr("The page is taking too long to respond. Use reload to retry, home to return to the app start page, settings to inspect configuration, or close to go back to the launcher."),
                                 m_requestedUrl);
         emit loadFinished(false);
     }
@@ -487,14 +491,16 @@ namespace fairwindsk::ui::web {
             stopLoadTimeoutWatch();
             m_loadProgress = success ? 100 : -1;
             if (success) {
+                m_consecutiveFailureCount = 0;
                 const QUrl currentUrl = m_desktopView ? m_desktopView->url() : QUrl();
                 if (!currentUrl.scheme().compare(QStringLiteral("data"), Qt::CaseInsensitive)) {
                     m_restartPlaceholderVisible = true;
                     setHealthState(HealthState::Failed, tr("Hosted app fallback active"));
                 } else if (!currentUrl.isValid() || currentUrl.isEmpty()) {
+                    ++m_consecutiveFailureCount;
                     showFallbackPlaceholder(HealthState::Failed,
-                                            tr("Hosted app blank page"),
-                                            tr("The app returned an empty page. Use reload to retry or return to the launcher."),
+                                            m_consecutiveFailureCount > 1 ? tr("Hosted app still blank") : tr("Hosted app blank page"),
+                                            tr("The app returned an empty page. Use reload to retry, home to return to the app start page, settings to inspect configuration, or close to go back to the launcher."),
                                             m_requestedUrl);
                 } else {
                     m_restartPlaceholderVisible = false;
@@ -503,9 +509,12 @@ namespace fairwindsk::ui::web {
                 }
                 applyZoom();
             } else if (m_requestedUrl.isValid()) {
+                ++m_consecutiveFailureCount;
                 showFallbackPlaceholder(HealthState::Failed,
-                                        tr("Hosted app unavailable"),
-                                        tr("The page could not be loaded. Use reload to retry, home to return to the app start page, or close to go back to the launcher."),
+                                        m_consecutiveFailureCount > 1 ? tr("Hosted app retry failed") : tr("Hosted app unavailable"),
+                                        m_consecutiveFailureCount > 1
+                                            ? tr("The page still could not be loaded. Use reload to retry again, home to return to the app start page, settings to inspect connectivity, or close to go back to the launcher.")
+                                            : tr("The page could not be loaded. Use reload to retry, home to return to the app start page, settings to inspect connectivity, or close to go back to the launcher."),
                                         m_requestedUrl);
             }
             emit loadFinished(success);
@@ -531,7 +540,7 @@ namespace fairwindsk::ui::web {
                     }
                     showFallbackPlaceholder(HealthState::Failed,
                                             status,
-                                            tr("The hosted app stopped unexpectedly (code %1). Use reload to try again or return to the launcher.")
+                                            tr("The hosted app stopped unexpectedly (code %1). Use reload to try again, home to return to the app start page, settings to inspect connectivity, or close to go back to the launcher.")
                                                 .arg(statusCode),
                                             m_requestedUrl);
                 });
@@ -779,19 +788,24 @@ namespace fairwindsk::ui::web {
         stopLoadTimeoutWatch();
         m_loadProgress = ok ? 100 : -1;
         if (ok) {
+            m_consecutiveFailureCount = 0;
             if (!m_currentUrl.isValid() || m_currentUrl.isEmpty()) {
+                ++m_consecutiveFailureCount;
                 showFallbackPlaceholder(HealthState::Unsupported,
-                                        tr("Hosted app blank page"),
-                                        tr("This mobile backend returned an empty page. Use reload to retry or close to go back to the launcher."),
+                                        m_consecutiveFailureCount > 1 ? tr("Hosted app still blank") : tr("Hosted app blank page"),
+                                        tr("This mobile backend returned an empty page. Use reload to retry, home to return to the app start page, settings to inspect configuration, or close to go back to the launcher."),
                                         m_requestedUrl);
             } else {
                 setHealthState(HealthState::Normal, tr("Hosted app live"));
             }
             applyZoom();
         } else if (m_requestedUrl.isValid()) {
+            ++m_consecutiveFailureCount;
             showFallbackPlaceholder(HealthState::Unsupported,
-                                    tr("Hosted app unavailable"),
-                                    tr("This page could not be shown on the current mobile backend. Use reload to retry, home to return to the app start page, or close to go back to the launcher."),
+                                    m_consecutiveFailureCount > 1 ? tr("Hosted app retry failed") : tr("Hosted app unavailable"),
+                                    m_consecutiveFailureCount > 1
+                                        ? tr("This page still could not be shown on the current mobile backend. Use reload to retry, home to return to the app start page, settings to inspect configuration, or close to go back to the launcher.")
+                                        : tr("This page could not be shown on the current mobile backend. Use reload to retry, home to return to the app start page, settings to inspect configuration, or close to go back to the launcher."),
                                     m_requestedUrl);
         }
         emit loadFinished(ok);

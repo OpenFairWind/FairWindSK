@@ -66,6 +66,7 @@ namespace fairwindsk::ui::widgets {
         QString m_runtimeBadgeText;
         QString m_appsStateText;
         QDateTime m_lastStreamUpdate;
+        fairwindsk::FairWindSK::RuntimeHealthState m_runtimeState = fairwindsk::FairWindSK::RuntimeHealthState::Disconnected;
     };
 }
 

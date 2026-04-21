@@ -1437,6 +1437,8 @@ namespace fairwindsk {
         const auto connectionState = m_signalkClient.connectionHealthState();
         const bool restHealthy = m_signalkClient.isRestHealthy();
         const bool streamHealthy = m_signalkClient.isStreamHealthy();
+        const QString connectionSummary = m_signalkClient.connectionStatusText().trimmed();
+        const QString appsSummary = m_appsStateText.trimmed();
 
         if (m_foregroundAppDegraded) {
             nextState = RuntimeHealthState::ForegroundAppDegraded;
@@ -1444,41 +1446,41 @@ namespace fairwindsk {
             nextBadge = QStringLiteral("APP");
         } else if (connectionState == signalk::Client::ConnectionHealthState::Connecting) {
             nextState = RuntimeHealthState::Connecting;
-            nextSummary = tr("Connecting to Signal K");
+            nextSummary = connectionSummary.isEmpty() ? tr("Connecting to Signal K") : connectionSummary;
             nextBadge = QStringLiteral("CONN");
         } else if (connectionState == signalk::Client::ConnectionHealthState::Reconnecting) {
             nextState = RuntimeHealthState::Reconnecting;
-            nextSummary = tr("Reconnecting to Signal K");
+            nextSummary = connectionSummary.isEmpty() ? tr("Reconnecting to Signal K") : connectionSummary;
             nextBadge = QStringLiteral("RECN");
         } else if (!restHealthy && streamHealthy) {
             nextState = RuntimeHealthState::RestDegraded;
-            nextSummary = tr("REST degraded");
+            nextSummary = connectionSummary.isEmpty() ? tr("REST degraded") : connectionSummary;
             nextBadge = QStringLiteral("REST");
         } else if (restHealthy && !streamHealthy) {
             nextState = RuntimeHealthState::StreamDegraded;
-            nextSummary = tr("Stream degraded");
+            nextSummary = connectionSummary.isEmpty() ? tr("Stream degraded") : connectionSummary;
             nextBadge = QStringLiteral("STRM");
         } else if (connectionState == signalk::Client::ConnectionHealthState::Stale) {
             nextState = RuntimeHealthState::ConnectedStale;
-            nextSummary = tr("Live data stale");
+            nextSummary = connectionSummary.isEmpty() ? tr("Live data stale") : connectionSummary;
             nextBadge = QStringLiteral("STAL");
         } else if (connectionState == signalk::Client::ConnectionHealthState::Live) {
             if (m_appsState == AppsState::Loading) {
                 nextState = RuntimeHealthState::AppsLoading;
-                nextSummary = m_appsStateText.trimmed().isEmpty() ? tr("Refreshing apps") : m_appsStateText.trimmed();
+                nextSummary = appsSummary.isEmpty() ? tr("Signal K live • Refreshing apps") : tr("Signal K live • %1").arg(appsSummary);
                 nextBadge = QStringLiteral("APPS");
             } else if (m_appsState == AppsState::Failed || m_appsState == AppsState::Stale) {
                 nextState = RuntimeHealthState::AppsStale;
-                nextSummary = m_appsStateText.trimmed().isEmpty() ? tr("Apps stale") : m_appsStateText.trimmed();
+                nextSummary = appsSummary.isEmpty() ? tr("Signal K live • Apps stale") : tr("Signal K live • %1").arg(appsSummary);
                 nextBadge = QStringLiteral("APPS");
             } else {
                 nextState = RuntimeHealthState::ConnectedLive;
-                nextSummary = tr("Signal K live");
+                nextSummary = connectionSummary.isEmpty() ? tr("Signal K live") : connectionSummary;
                 nextBadge = QStringLiteral("LIVE");
             }
         } else if (connectionState == signalk::Client::ConnectionHealthState::Degraded) {
             nextState = RuntimeHealthState::ConnectedStale;
-            nextSummary = tr("Signal K degraded");
+            nextSummary = connectionSummary.isEmpty() ? tr("Signal K degraded") : connectionSummary;
             nextBadge = QStringLiteral("DEGD");
         }
 

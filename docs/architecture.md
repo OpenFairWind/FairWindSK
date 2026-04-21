@@ -34,12 +34,15 @@ The formal names and behavioral rules for the shell surfaces are defined in [doc
 - `ui/widgets/SignalKStatusIconsWidget` presents that model as a helm-readable badge plus REST/stream indicators, while `ui/widgets/SignalKServerBox` echoes the same state with last-live-update freshness text.
 - The Bottom Bar launcher/settings affordances also mirror the runtime-health state so recovery remains obvious even when the operator is focused on the lower shell chrome.
 - Top Bar navigation metrics now share one trust grammar across position, waypoint, bearings, distances, ETA/TTG, and speed/depth values so stale and missing states stay visible instead of reverting to mixed legacy hide/show behavior.
+- The same Top Bar path now keeps critical navigation widgets visible even when the configured Signal K path is missing or unconfigured, using explicit placeholder text and tooltips instead of silently dropping the field.
 - Critical operational readouts in the anchor/autopilot bars now render explicit `live`, `stale`, and `missing` states instead of silently disappearing or leaving stale values looking current.
 - Alarm buttons in the bottom bar use accent styling when active so emergency conditions remain visually dominant across comfort presets, including low-glare/night modes.
+- Shell chrome health summaries now prefer the aggregated runtime-health model over raw REST/stream booleans, so the helmsman sees one compact status story for connection state, app refresh state, and foreground app degradation.
 
 ## Hosted web resilience
 
 - `ui/web/WebView` keeps the existing Signal K restart placeholder, but now also treats long-running page loads and blank-page outcomes as explicit degraded hosted-app states instead of leaving the operator with an apparently stuck page.
+- Hosted web fallbacks now escalate repeated failures into clearer retry-oriented operator language and include settings/launcher escape paths in the fallback guidance instead of only offering a generic retry.
 - Hosted web degradation still routes through the shared shell status model, so the chrome can reflect that the foreground app is degraded while keeping reload, home, and launcher recovery paths available.
 
 ## Mobile shell policy
