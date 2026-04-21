@@ -250,6 +250,64 @@ namespace fairwindsk {
             return QStringLiteral("night");
         }
 
+        QDateTime comfortDateTimeFromValue(const QJsonValue &value) {
+            if (value.isString()) {
+                const QDateTime parsed = QDateTime::fromString(value.toString(), Qt::ISODate);
+                if (parsed.isValid()) {
+                    return parsed;
+                }
+            }
+            if (value.isObject()) {
+                const auto object = value.toObject();
+                const QString isoValue = object.value(QStringLiteral("value")).toString();
+                const QDateTime parsed = QDateTime::fromString(isoValue, Qt::ISODate);
+                if (parsed.isValid()) {
+                    return parsed;
+                }
+            }
+            return {};
+        }
+
+        QString comfortPresetFromSunSchedule(const QJsonObject &objectValue) {
+            const QDateTime now = QDateTime::currentDateTimeUtc();
+
+            const QDateTime dawn = comfortDateTimeFromValue(objectValue.value(QStringLiteral("dawn")));
+            const QDateTime sunrise = comfortDateTimeFromValue(objectValue.value(QStringLiteral("sunrise")));
+            const QDateTime sunriseEnd = comfortDateTimeFromValue(objectValue.value(QStringLiteral("sunriseEnd")));
+            const QDateTime sunset = comfortDateTimeFromValue(objectValue.value(QStringLiteral("sunset")));
+            const QDateTime dusk = comfortDateTimeFromValue(objectValue.value(QStringLiteral("dusk")));
+
+            if (dawn.isValid() && sunrise.isValid() && now >= dawn && now < sunrise) {
+                return QStringLiteral("dawn");
+            }
+            if (sunrise.isValid() && sunriseEnd.isValid() && now >= sunrise && now < sunriseEnd) {
+                return QStringLiteral("day");
+            }
+            if (sunriseEnd.isValid() && sunset.isValid() && now >= sunriseEnd && now < sunset) {
+                return QStringLiteral("day");
+            }
+            if (sunset.isValid() && dusk.isValid() && now >= sunset && now < dusk) {
+                return QStringLiteral("sunset");
+            }
+            if (dusk.isValid() && now >= dusk) {
+                return QStringLiteral("night");
+            }
+            if (dawn.isValid() && now < dawn) {
+                return QStringLiteral("night");
+            }
+
+            const QDateTime civilDawn = comfortDateTimeFromValue(objectValue.value(QStringLiteral("civilDawn")));
+            const QDateTime civilDusk = comfortDateTimeFromValue(objectValue.value(QStringLiteral("civilDusk")));
+            if (civilDawn.isValid() && sunrise.isValid() && now >= civilDawn && now < sunrise) {
+                return QStringLiteral("dawn");
+            }
+            if (sunset.isValid() && civilDusk.isValid() && now >= sunset && now < civilDusk) {
+                return QStringLiteral("dusk");
+            }
+
+            return {};
+        }
+
         QString comfortPresetFromSunUpdate(const QJsonObject &update) {
             if (update.isEmpty()) {
                 return {};
@@ -275,6 +333,11 @@ namespace fairwindsk {
                 const QString phase = fromString(objectValue.value(QStringLiteral("phase")).toString());
                 if (!phase.isEmpty()) {
                     return phase;
+                }
+
+                const QString scheduledPreset = comfortPresetFromSunSchedule(objectValue);
+                if (!scheduledPreset.isEmpty()) {
+                    return scheduledPreset;
                 }
 
                 const double altitude = objectValue.value(QStringLiteral("altitude")).toDouble(std::numeric_limits<double>::quiet_NaN());

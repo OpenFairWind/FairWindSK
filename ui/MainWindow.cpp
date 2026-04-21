@@ -301,7 +301,6 @@ namespace fairwindsk::ui {
         }
 
         const int availableCenterHeight = ui->stackedWidget_Center ? ui->stackedWidget_Center->height() : 0;
-        const int availableDrawerHeight = std::max(0, availableCenterHeight + (m_bottomBar ? m_bottomBar->height() : 0));
         int requestedDrawerHeight = m_dialogDrawer->layout()
                                         ? m_dialogDrawer->layout()->sizeHint().height()
                                         : m_dialogDrawer->sizeHint().height();
@@ -316,11 +315,19 @@ namespace fairwindsk::ui {
         }
 
         const bool fillCenterArea = m_dialogDrawerContentHost->property("drawerFillCenterArea").toBool();
+        const bool compactMode = property("compactShellMode").toBool();
+        const int bottomBarHeight = m_bottomBar ? m_bottomBar->height() : 0;
+        int availableDrawerHeight = std::max(0, availableCenterHeight + (fillCenterArea ? 0 : bottomBarHeight));
         int targetDrawerHeight = qMax(minimumDrawerHeight, requestedDrawerHeight);
         if (availableDrawerHeight > 0) {
             targetDrawerHeight = fillCenterArea
                                      ? availableDrawerHeight
                                      : std::min(targetDrawerHeight, availableDrawerHeight);
+        }
+        if (compactMode && m_softwareKeyboardVisible && !fillCenterArea && availableDrawerHeight > 0) {
+            const int compactKeyboardCap = std::max(minimumDrawerHeight,
+                                                    int(std::floor(double(availableDrawerHeight) * 0.72)));
+            targetDrawerHeight = std::min(targetDrawerHeight, compactKeyboardCap);
         }
 
         m_dialogDrawer->setMinimumHeight(targetDrawerHeight);
@@ -403,6 +410,15 @@ namespace fairwindsk::ui {
             m_dialogDrawer->setProperty("mobileKeyboardInset", m_mobileKeyboardInset);
             m_dialogDrawer->setProperty("mobileSafeAreaBottom", m_mobileSafeAreaMargins.bottom());
             m_dialogDrawer->setProperty("mobileWebContentFocused", m_mobileWebContentFocused);
+            m_dialogDrawer->setProperty("compactShellMode", compactMode);
+            m_dialogDrawer->setProperty("phoneCompanionMode", compactMode);
+            m_dialogDrawer->setProperty("mobileLandscape", m_mobileLandscape);
+        }
+        if (ui && ui->widgetDialogDrawerButtonRow) {
+            ui->widgetDialogDrawerButtonRow->setProperty("softwareKeyboardVisible", m_softwareKeyboardVisible);
+            ui->widgetDialogDrawerButtonRow->setProperty("compactShellMode", compactMode);
+            ui->widgetDialogDrawerButtonRow->setProperty("phoneCompanionMode", compactMode);
+            ui->widgetDialogDrawerButtonRow->setProperty("mobileLandscape", m_mobileLandscape);
         }
     }
 

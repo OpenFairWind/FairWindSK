@@ -110,7 +110,9 @@ namespace fairwindsk::ui::web {
                 statusSummary = tr("Hosted app ready");
             }
 
-            if (state == WebView::HealthState::Restarting) {
+            if (state == WebView::HealthState::Degraded) {
+                statusSummary += tr(" • Confirm with Home, Reload, or Settings");
+            } else if (state == WebView::HealthState::Restarting) {
                 statusSummary += tr(" • Recovery is automatic");
             } else if (state == WebView::HealthState::Failed || state == WebView::HealthState::Unsupported) {
                 statusSummary += tr(" • Use Reload, Home, or Close for recovery");
@@ -171,6 +173,12 @@ namespace fairwindsk::ui::web {
         setProperty("mobileKeyboardInset", keyboardInset);
         setProperty("softwareKeyboardVisible", keyboardVisible);
         setProperty("compactShellMode", compactMode);
+        setProperty("phoneCompanionMode", compactMode);
+        if (m_NavigationBar) {
+            m_NavigationBar->setProperty("compactShellMode", compactMode);
+            m_NavigationBar->setProperty("softwareKeyboardVisible", keyboardVisible);
+            m_NavigationBar->setProperty("phoneCompanionMode", compactMode);
+        }
 
         if (m_webView) {
             m_webView->applyMobileShellMetrics(safeAreaMargins, keyboardInset, keyboardVisible, compactMode);

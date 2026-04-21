@@ -41,6 +41,8 @@
 namespace fairwindsk::ui::web {
     namespace {
         constexpr int kHostedAppLoadTimeoutMs = 15000;
+        constexpr int kHostedAppAuthLoopWindowMs = 15000;
+        constexpr int kHostedAppAuthLoopThreshold = 3;
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
 #if QT_VERSION < QT_VERSION_CHECK(6, 8, 0)
         QString questionForFeature(const QWebEnginePage::Feature feature) {
@@ -431,6 +433,47 @@ namespace fairwindsk::ui::web {
         }
     }
 
+    bool WebView::isSignalKHostedUrl(const QUrl &url) const {
+        if (!url.isValid() || url.isEmpty()) {
+            return false;
+        }
+
+        auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+        auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        if (!configuration) {
+            return false;
+        }
+
+        const QUrl serverUrl = QUrl::fromUserInput(configuration->getSignalKServerUrl().trimmed());
+        return serverUrl.isValid()
+               && !serverUrl.isEmpty()
+               && serverUrl.scheme().compare(url.scheme(), Qt::CaseInsensitive) == 0
+               && serverUrl.host().compare(url.host(), Qt::CaseInsensitive) == 0
+               && (serverUrl.port() == url.port() || (serverUrl.port() < 0 && url.port() < 0));
+    }
+
+    bool WebView::noteAuthenticationChallenge(const QString &originLabel) {
+        const QDateTime now = QDateTime::currentDateTimeUtc();
+        if (!m_lastAuthChallengeAt.isValid()
+            || m_lastAuthChallengeAt.msecsTo(now) > kHostedAppAuthLoopWindowMs) {
+            m_authChallengeCount = 0;
+        }
+
+        m_lastAuthChallengeAt = now;
+        ++m_authChallengeCount;
+        if (m_authChallengeCount < kHostedAppAuthLoopThreshold) {
+            return false;
+        }
+
+        showFallbackPlaceholder(
+            HealthState::Failed,
+            tr("Hosted app authentication loop"),
+            tr("The hosted app keeps requesting credentials for %1. Use reload to retry, home to return to the app start page, settings to inspect server access, or close to go back to the launcher.")
+                .arg(originLabel.isEmpty() ? tr("this service") : originLabel),
+            m_requestedUrl);
+        return true;
+    }
+
     void WebView::handleLoadTimeout() {
         if (!m_requestedUrl.isValid() || m_requestedUrl.isEmpty()) {
             return;
@@ -458,7 +501,17 @@ namespace fairwindsk::ui::web {
     }
 
     void WebView::handleConnectivityChanged(const bool, const bool streamHealthy, const QString &statusText) {
+        if (streamHealthy && m_healthState == HealthState::Degraded && isSignalKHostedUrl(m_requestedUrl)) {
+            setHealthState(HealthState::Normal, tr("Hosted app live"));
+        }
+
         if (streamHealthy || !statusText.contains(QStringLiteral("restart"), Qt::CaseInsensitive)) {
+            if ((!streamHealthy || !statusText.trimmed().isEmpty()) && isSignalKHostedUrl(m_requestedUrl)) {
+                setHealthState(HealthState::Degraded,
+                               statusText.trimmed().isEmpty()
+                                   ? tr("Hosted app server degraded")
+                                   : tr("Hosted app server degraded: %1").arg(statusText.trimmed()));
+            }
             return;
         }
 
@@ -606,6 +659,10 @@ namespace fairwindsk::ui::web {
 
         connect(page, &QWebEnginePage::authenticationRequired, this,
                 [this](const QUrl &requestUrl, QAuthenticator *auth) {
+                    if (noteAuthenticationChallenge(requestUrl.host())) {
+                        *auth = QAuthenticator();
+                        return;
+                    }
                     auto *dialog = new QDialog(window());
                     dialog->setWindowFlags(dialog->windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
@@ -672,6 +729,10 @@ namespace fairwindsk::ui::web {
 
         connect(page, &QWebEnginePage::proxyAuthenticationRequired, this,
                 [this](const QUrl &, QAuthenticator *auth, const QString &proxyHost) {
+                    if (noteAuthenticationChallenge(proxyHost)) {
+                        *auth = QAuthenticator();
+                        return;
+                    }
                     auto *dialog = new QDialog(window());
                     dialog->setWindowFlags(dialog->windowFlags() & ~Qt::WindowContextHelpButtonHint);
 

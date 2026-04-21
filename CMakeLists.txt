@@ -262,6 +262,7 @@ set(FAIRWINDSK_SOURCES
         ui/widgets/TouchIconBrowser.cpp ui/widgets/TouchIconBrowser.hpp
         ui/widgets/TouchScrollArea.cpp ui/widgets/TouchScrollArea.hpp
         ui/widgets/TouchSpinBox.cpp ui/widgets/TouchSpinBox.hpp ui/widgets/TouchSpinBox.ui
+        ui/widgets/SignalKMetricState.hpp
         ui/widgets/SignalKStatusIconsWidget.cpp ui/widgets/SignalKStatusIconsWidget.hpp
         ui/widgets/SignalKServerBox.cpp ui/widgets/SignalKServerBox.hpp ui/widgets/SignalKServerBox.ui
         ui/web/Web.cpp ui/web/Web.hpp ui/web/Web.ui

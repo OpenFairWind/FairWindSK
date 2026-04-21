@@ -15,92 +15,11 @@
 #include "FairWindSK.hpp"
 #include "ui/GeoCoordinateUtils.hpp"
 #include "ui/IconUtils.hpp"
+#include "ui/widgets/SignalKMetricState.hpp"
 #include "ui_AnchorBar.h"
 
 
 namespace fairwindsk::ui::bottombar {
-    namespace {
-        enum class MetricFreshnessState {
-            Live,
-            Stale,
-            Missing
-        };
-
-        MetricFreshnessState signalKMetricFreshnessState(const bool hasValue) {
-            if (!hasValue) {
-                return MetricFreshnessState::Missing;
-            }
-
-            const auto *client = fairwindsk::FairWindSK::getInstance()->getSignalKClient();
-            if (!client) {
-                return MetricFreshnessState::Stale;
-            }
-
-            return client->connectionHealthState() == fairwindsk::signalk::Client::ConnectionHealthState::Live
-                       ? MetricFreshnessState::Live
-                       : MetricFreshnessState::Stale;
-        }
-
-        QString metricTooltip(const QString &title, const MetricFreshnessState state) {
-            QString stateText = AnchorBar::tr("Missing");
-            if (state == MetricFreshnessState::Live) {
-                stateText = AnchorBar::tr("Live");
-            } else if (state == MetricFreshnessState::Stale) {
-                stateText = AnchorBar::tr("Stale");
-            }
-
-            return AnchorBar::tr("%1: %2").arg(title, stateText);
-        }
-
-        void applyMetricPresentation(QLabel *label,
-                                     QLabel *unitLabel,
-                                     QWidget *container,
-                                     const QString &title,
-                                     const QString &text,
-                                     const MetricFreshnessState state) {
-            if (!label || !container) {
-                return;
-            }
-
-            auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
-            const auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
-            const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
-            const auto chrome = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, label->palette(), false);
-            const auto status = fairwindsk::ui::resolveComfortStatusColors(configuration, preset, label->palette());
-
-            QColor color = chrome.text;
-            QFont font = label->font();
-            font.setItalic(false);
-            font.setBold(false);
-
-            switch (state) {
-                case MetricFreshnessState::Live:
-                    break;
-                case MetricFreshnessState::Stale:
-                    color = status.warningFill;
-                    font.setBold(true);
-                    break;
-                case MetricFreshnessState::Missing:
-                    color = chrome.disabledText;
-                    font.setItalic(true);
-                    break;
-            }
-
-            label->setFont(font);
-            label->setText(state == MetricFreshnessState::Missing ? QStringLiteral("--") : text);
-            label->setStyleSheet(QStringLiteral("QLabel { color: %1; }").arg(color.name()));
-            const QString tooltip = metricTooltip(title, state);
-            label->setToolTip(tooltip);
-            if (unitLabel) {
-                unitLabel->setStyleSheet(QStringLiteral("QLabel { color: %1; }")
-                                             .arg((state == MetricFreshnessState::Missing ? chrome.disabledText : color).name()));
-                unitLabel->setToolTip(tooltip);
-            }
-            container->setToolTip(tooltip);
-            container->setVisible(true);
-        }
-    }
-
     AnchorBar::AnchorBar(QWidget *parent) :
             QWidget(parent), ui(new Ui::AnchorBar) {
         ui->setupUi(this);
@@ -226,6 +145,7 @@ namespace fairwindsk::ui::bottombar {
                            const QString &,
                            const QDateTime &,
                            const QString &) {
+                        updatePosition(m_lastPositionUpdate);
                         updateDepth(m_lastDepthUpdate);
                         updateBearing(m_lastBearingUpdate);
                         updateDistance(m_lastDistanceUpdate);
@@ -570,37 +490,31 @@ namespace fairwindsk::ui::bottombar {
  */
     void AnchorBar::updatePosition(const QJsonObject &update) {
         m_lastPositionUpdate = update;
+        const auto value = fairwindsk::signalk::Client::getGeoCoordinateFromUpdateByPath(update);
+        const bool hasValue = !update.isEmpty() && value.isValid();
 
-        // Check if for any reason the update is empty
-        if (update.isEmpty()) {
-
-            // Exit the method
-            return;
-        }
-
-        // Get the value
-        auto value = fairwindsk::signalk::Client::getGeoCoordinateFromUpdateByPath(update);
-
-        if (!value.isValid())
-        {
-            ui->widget_Position->setVisible(false);
-        } else {
+        QString latitudeText;
+        QString longitudeText;
+        if (hasValue) {
             const auto configuration = FairWindSK::getInstance()->getConfiguration();
-            ui->label_Latitude->setText(
-                fairwindsk::ui::geo::formatSingleCoordinate(
-                    value.latitude(),
-                    true,
-                    configuration->getCoordinateFormat()));
-            ui->label_Longitude->setText(
-                fairwindsk::ui::geo::formatSingleCoordinate(
-                    value.longitude(),
-                    false,
-                    configuration->getCoordinateFormat()));
-
-            if (!ui->widget_Position->isVisible()) {
-                ui->widget_Position->setVisible(true);
-            }
+            latitudeText = fairwindsk::ui::geo::formatSingleCoordinate(
+                value.latitude(),
+                true,
+                configuration->getCoordinateFormat());
+            longitudeText = fairwindsk::ui::geo::formatSingleCoordinate(
+                value.longitude(),
+                false,
+                configuration->getCoordinateFormat());
         }
+
+        fairwindsk::ui::widgets::applySignalKDualMetricPresentation(
+            ui->label_Latitude,
+            ui->label_Longitude,
+            ui->widget_Position,
+            tr("Anchor position"),
+            latitudeText,
+            longitudeText,
+            fairwindsk::ui::widgets::signalKMetricState(hasValue));
     }
 
     /*
@@ -618,8 +532,13 @@ namespace fairwindsk::ui::bottombar {
                                        "m",
                                        FairWindSK::getInstance()->getConfiguration()->getDepthUnits())
                                  : QString();
-        applyMetricPresentation(ui->label_Depth, ui->label_unitDepth, ui->widget_Depth,
-                                tr("Anchor depth"), text, signalKMetricFreshnessState(hasValue));
+        fairwindsk::ui::widgets::applySignalKMetricPresentation(
+            ui->label_Depth,
+            ui->label_unitDepth,
+            ui->widget_Depth,
+            tr("Anchor depth"),
+            text,
+            fairwindsk::ui::widgets::signalKMetricState(hasValue));
     }
 
     /*
@@ -637,8 +556,13 @@ namespace fairwindsk::ui::bottombar {
                                        "rad",
                                        "deg")
                                  : QString();
-        applyMetricPresentation(ui->label_Bearing, ui->label_unitBearing, ui->widget_Bearing,
-                                tr("Anchor bearing"), text, signalKMetricFreshnessState(hasValue));
+        fairwindsk::ui::widgets::applySignalKMetricPresentation(
+            ui->label_Bearing,
+            ui->label_unitBearing,
+            ui->widget_Bearing,
+            tr("Anchor bearing"),
+            text,
+            fairwindsk::ui::widgets::signalKMetricState(hasValue));
     }
 
     /*
@@ -656,8 +580,13 @@ namespace fairwindsk::ui::bottombar {
                                        "m",
                                        FairWindSK::getInstance()->getConfiguration()->getDistanceUnits())
                                  : QString();
-        applyMetricPresentation(ui->label_Distance, ui->label_unitDistance, ui->widget_Distance,
-                                tr("Anchor distance"), text, signalKMetricFreshnessState(hasValue));
+        fairwindsk::ui::widgets::applySignalKMetricPresentation(
+            ui->label_Distance,
+            ui->label_unitDistance,
+            ui->widget_Distance,
+            tr("Anchor distance"),
+            text,
+            fairwindsk::ui::widgets::signalKMetricState(hasValue));
     }
 
     /*
@@ -675,8 +604,13 @@ namespace fairwindsk::ui::bottombar {
                                        "m",
                                        FairWindSK::getInstance()->getConfiguration()->getRangeUnits())
                                  : QString();
-        applyMetricPresentation(ui->label_Rode, ui->label_unitRode, ui->widget_Rode,
-                                tr("Anchor rode"), text, signalKMetricFreshnessState(hasValue));
+        fairwindsk::ui::widgets::applySignalKMetricPresentation(
+            ui->label_Rode,
+            ui->label_unitRode,
+            ui->widget_Rode,
+            tr("Anchor rode"),
+            text,
+            fairwindsk::ui::widgets::signalKMetricState(hasValue));
     }
 
     /*
@@ -701,8 +635,13 @@ namespace fairwindsk::ui::bottombar {
                 "m",
                 FairWindSK::getInstance()->getConfiguration()->getRangeUnits());
         }
-        applyMetricPresentation(ui->label_CurrentRadius, ui->label_unitCurrentRadius, ui->widget_Radius,
-                                tr("Anchor radius"), text, signalKMetricFreshnessState(hasValue));
+        fairwindsk::ui::widgets::applySignalKMetricPresentation(
+            ui->label_CurrentRadius,
+            ui->label_unitCurrentRadius,
+            ui->widget_Radius,
+            tr("Anchor radius"),
+            text,
+            fairwindsk::ui::widgets::signalKMetricState(hasValue));
     }
 
     /*
@@ -727,8 +666,13 @@ namespace fairwindsk::ui::bottombar {
                 "m",
                 FairWindSK::getInstance()->getConfiguration()->getRangeUnits());
         }
-        applyMetricPresentation(ui->label_MaxRadius, ui->label_unitMaxRadius, ui->widget_Radius,
-                                tr("Anchor max radius"), text, signalKMetricFreshnessState(hasValue));
+        fairwindsk::ui::widgets::applySignalKMetricPresentation(
+            ui->label_MaxRadius,
+            ui->label_unitMaxRadius,
+            ui->widget_Radius,
+            tr("Anchor max radius"),
+            text,
+            fairwindsk::ui::widgets::signalKMetricState(hasValue));
     }
 
 

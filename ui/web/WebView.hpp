@@ -25,6 +25,7 @@ namespace fairwindsk::ui::web {
     public:
         enum class HealthState {
             Normal,
+            Degraded,
             Restarting,
             Failed,
             Unsupported
@@ -90,6 +91,8 @@ namespace fairwindsk::ui::web {
         void setHealthState(HealthState state, const QString &summary);
         void startLoadTimeoutWatch();
         void stopLoadTimeoutWatch();
+        bool noteAuthenticationChallenge(const QString &originLabel);
+        bool isSignalKHostedUrl(const QUrl &url) const;
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         void setDesktopPage(class WebPage *page);
@@ -107,6 +110,8 @@ namespace fairwindsk::ui::web {
         bool m_mobileWebContentFocused = false;
         bool m_mobileTextInputActive = false;
         int m_consecutiveFailureCount = 0;
+        int m_authChallengeCount = 0;
+        QDateTime m_lastAuthChallengeAt;
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         QWebEngineView *m_desktopView = nullptr;
