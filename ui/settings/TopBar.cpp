@@ -7,6 +7,7 @@
 #include <QDropEvent>
 #include <QGridLayout>
 #include <QHBoxLayout>
+#include <QIcon>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLabel>
@@ -246,25 +247,56 @@ namespace fairwindsk::ui::settings {
         QScroller::grabGesture(m_previewWidget->viewport(), QScroller::LeftMouseButtonGesture);
         rootLayout->addWidget(m_previewWidget);
 
-        auto *controlsLayout = new QGridLayout();
+        auto *controlsLayout = new QHBoxLayout();
         controlsLayout->setContentsMargins(0, 0, 0, 0);
-        controlsLayout->setHorizontalSpacing(8);
-        controlsLayout->setVerticalSpacing(8);
+        controlsLayout->setSpacing(8);
 
-        m_expandWidthButton = new QPushButton(tr("Extend Width"), this);
-        m_expandHeightButton = new QPushButton(tr("Extend Height"), this);
-        m_removeSelectedButton = new QPushButton(tr("Remove Selected"), this);
-        m_resetDefaultsButton = new QPushButton(tr("Reset Defaults"), this);
-        for (auto *button : {m_expandWidthButton, m_expandHeightButton, m_removeSelectedButton, m_resetDefaultsButton}) {
-            button->setMinimumHeight(kControlHeight);
-            button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-        }
+        m_expandWidthButton = new QToolButton(this);
+        m_expandHeightButton = new QToolButton(this);
+        m_removeSelectedButton = new QToolButton(this);
+        m_resetDefaultsButton = new QToolButton(this);
+
+        auto configureActionButton = [kControlHeight](QToolButton *button,
+                                                      const QString &iconPath,
+                                                      const QString &toolTip,
+                                                      const bool checkable = false) {
+            if (!button) {
+                return;
+            }
+
+            button->setCheckable(checkable);
+            button->setAutoRaise(true);
+            button->setIcon(QIcon(iconPath));
+            button->setIconSize(QSize(24, 24));
+            button->setToolTip(toolTip);
+            button->setStatusTip(toolTip);
+            button->setMinimumSize(QSize(kControlHeight, kControlHeight));
+            button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+            button->setToolButtonStyle(Qt::ToolButtonIconOnly);
+        };
+
+        configureActionButton(m_expandWidthButton,
+                              QStringLiteral(":/resources/svg/OpenBridge/arrow-right-google.svg"),
+                              tr("Extend Width"),
+                              true);
+        configureActionButton(m_expandHeightButton,
+                              QStringLiteral(":/resources/svg/OpenBridge/arrow-down-google.svg"),
+                              tr("Extend Height"),
+                              true);
+        configureActionButton(m_removeSelectedButton,
+                              QStringLiteral(":/resources/svg/OpenBridge/delete-google.svg"),
+                              tr("Remove Selected"));
+        configureActionButton(m_resetDefaultsButton,
+                              QStringLiteral(":/resources/svg/OpenBridge/refresh-google.svg"),
+                              tr("Reset Defaults"));
+
         m_expandWidthButton->setCheckable(true);
         m_expandHeightButton->setCheckable(true);
-        controlsLayout->addWidget(m_expandWidthButton, 0, 0);
-        controlsLayout->addWidget(m_expandHeightButton, 0, 1);
-        controlsLayout->addWidget(m_removeSelectedButton, 1, 0);
-        controlsLayout->addWidget(m_resetDefaultsButton, 1, 1);
+        controlsLayout->addWidget(m_expandWidthButton);
+        controlsLayout->addWidget(m_expandHeightButton);
+        controlsLayout->addWidget(m_removeSelectedButton);
+        controlsLayout->addWidget(m_resetDefaultsButton);
+        controlsLayout->addStretch(1);
         rootLayout->addLayout(controlsLayout);
 
         m_paletteLabel = new QLabel(tr("Widget Palette"), this);
@@ -318,10 +350,10 @@ namespace fairwindsk::ui::settings {
         connect(m_previewWidget->model(), &QAbstractItemModel::rowsInserted, this, [this]() { onPreviewEdited(); });
         connect(m_previewWidget->model(), &QAbstractItemModel::rowsRemoved, this, [this]() { onPreviewEdited(); });
         connect(m_previewWidget->model(), &QAbstractItemModel::rowsMoved, this, [this]() { onPreviewEdited(); });
-        connect(m_expandWidthButton, &QPushButton::toggled, this, &TopBar::onExpandWidthToggled);
-        connect(m_expandHeightButton, &QPushButton::toggled, this, &TopBar::onExpandHeightToggled);
-        connect(m_removeSelectedButton, &QPushButton::clicked, this, &TopBar::onRemoveSelected);
-        connect(m_resetDefaultsButton, &QPushButton::clicked, this, &TopBar::onResetDefaults);
+        connect(m_expandWidthButton, &QToolButton::toggled, this, &TopBar::onExpandWidthToggled);
+        connect(m_expandHeightButton, &QToolButton::toggled, this, &TopBar::onExpandHeightToggled);
+        connect(m_removeSelectedButton, &QToolButton::clicked, this, &TopBar::onRemoveSelected);
+        connect(m_resetDefaultsButton, &QToolButton::clicked, this, &TopBar::onResetDefaults);
 
         updateInspector();
     }

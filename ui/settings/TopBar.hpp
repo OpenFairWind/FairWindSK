@@ -2,7 +2,7 @@
 #define FAIRWINDSK_UI_SETTINGS_TOPBAR_HPP
 
 #include <QListWidget>
-#include <QPushButton>
+#include <QToolButton>
 #include <QWidget>
 
 #include "Settings.hpp"
@@ -59,10 +59,10 @@ namespace fairwindsk::ui::settings {
         QLabel *m_hintLabel = nullptr;
         QLabel *m_previewLabel = nullptr;
         QListWidget *m_previewWidget = nullptr;
-        QPushButton *m_expandWidthButton = nullptr;
-        QPushButton *m_expandHeightButton = nullptr;
-        QPushButton *m_removeSelectedButton = nullptr;
-        QPushButton *m_resetDefaultsButton = nullptr;
+        QToolButton *m_expandWidthButton = nullptr;
+        QToolButton *m_expandHeightButton = nullptr;
+        QToolButton *m_removeSelectedButton = nullptr;
+        QToolButton *m_resetDefaultsButton = nullptr;
         QLabel *m_paletteLabel = nullptr;
         QListWidget *m_paletteWidget = nullptr;
     };
