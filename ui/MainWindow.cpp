@@ -414,7 +414,7 @@ namespace fairwindsk::ui {
 
         connect(window, &QWindow::screenChanged, this, [this]() {
             handleWindowScreenChanged();
-        }, Qt::UniqueConnection);
+        });
         handleWindowScreenChanged();
     }
 
@@ -434,14 +434,14 @@ namespace fairwindsk::ui {
         if (screen) {
             connect(screen, &QScreen::geometryChanged, this, [this]() {
                 updateMobileShellMetrics();
-            }, Qt::UniqueConnection);
+            });
             connect(screen, &QScreen::availableGeometryChanged, this, [this]() {
                 updateMobileShellMetrics();
-            }, Qt::UniqueConnection);
+            });
             connect(screen, &QScreen::orientationChanged, this, [this](Qt::ScreenOrientation) {
                 updateAdaptiveShellMode();
                 updateMobileShellMetrics();
-            }, Qt::UniqueConnection);
+            });
         }
 
         updateAdaptiveShellMode();
