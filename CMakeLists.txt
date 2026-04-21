@@ -247,6 +247,7 @@ set(FAIRWINDSK_SOURCES
         ui/layout/BarLayout.cpp ui/layout/BarLayout.hpp
         ui/settings/Settings.cpp ui/settings/Settings.hpp ui/settings/Settings.ui
         ui/settings/BarLayoutSettings.cpp ui/settings/BarLayoutSettings.hpp
+        ui/settings/TopBar.cpp ui/settings/TopBar.hpp
         ui/launcher/Launcher.cpp ui/launcher/Launcher.hpp ui/launcher/Launcher.ui
         ui/about/About.cpp ui/about/About.hpp ui/about/About.ui
         ui/topbar/TopBar.cpp ui/topbar/TopBar.hpp ui/topbar/TopBar.ui

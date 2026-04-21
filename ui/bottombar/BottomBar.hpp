@@ -5,6 +5,8 @@
 #ifndef BOTTOMBAR_HPP
 #define BOTTOMBAR_HPP
 
+#include <QHash>
+#include <QHBoxLayout>
 #include <QPointer>
 #include <QVector>
 #include <QWidget>
@@ -15,6 +17,7 @@
 #include "AlarmsBar.hpp"
 #include "AutopilotBar.hpp"
 #include "AnchorBar.hpp"
+#include "ui/layout/BarLayout.hpp"
 #include "ui/widgets/SignalKServerBox.hpp"
 
 namespace Ui { class BottomBar; }
@@ -104,6 +107,10 @@ namespace fairwindsk::ui::bottombar {
         void rebuildLayout();
         QWidget *createSeparatorWidget();
         void clearConfiguredLayout();
+        void applyEntrySizing(const fairwindsk::ui::layout::LayoutEntry &entry,
+                              const QString &itemId,
+                              QWidget *widget,
+                              QHBoxLayout *layout);
 
     private slots:
         void onRuntimeHealthChanged(fairwindsk::FairWindSK::RuntimeHealthState state,
@@ -132,6 +139,7 @@ namespace fairwindsk::ui::bottombar {
         QMap<QString, QToolButton *> m_buttons;
         fairwindsk::FairWindSK::RuntimeHealthState m_runtimeHealthState = fairwindsk::FairWindSK::RuntimeHealthState::Disconnected;
         QString m_runtimeHealthSummary;
+        QHash<QString, QSizePolicy> m_baseSizePolicies;
         QVector<QPointer<QWidget>> m_dynamicLayoutWidgets;
         inline static BottomBar *s_instance = nullptr;
     };

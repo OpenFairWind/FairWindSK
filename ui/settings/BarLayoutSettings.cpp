@@ -212,6 +212,7 @@ namespace fairwindsk::ui::settings {
         entry.kind = kind;
         entry.instanceId = QUuid::createUuid().toString(QUuid::WithoutBraces);
         entry.enabled = true;
+        entry.expandHorizontally = kind == EntryKind::Stretch;
 
         m_listWidget->addItem(createItem(entry));
         m_listWidget->setCurrentRow(m_listWidget->count() - 1);

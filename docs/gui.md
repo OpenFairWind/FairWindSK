@@ -26,6 +26,7 @@ Availability of these bars depends on the configured plugin identifiers (`applic
 ## Settings and configuration UI
 
 - The settings pane reads from `fairwindsk.json` to manage the application list, ordering, and activation. Server-discovered apps are merged with local overrides, and changes are saved back to the configuration.
+- The **Settings > Top Bar** page now uses a WYSIWYG editor with a live horizontal preview, a full-width bottom widget palette, drag-and-drop placement, and per-item width/height expansion toggles that are saved in the `barLayouts.top` configuration entries.
 - Unit selection, window sizing, and virtual keyboard toggles are reflected in the `main` and `units` sections of the configuration.
 - The **System** tab now includes touch-friendly diagnostics controls for:
   - logging level (`No logging`, `Critical`, `Warning`, `Info`, `Debug`, `Full`)

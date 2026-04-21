@@ -15,6 +15,7 @@
 
 #include "Main.hpp"
 #include "BarLayoutSettings.hpp"
+#include "TopBar.hpp"
 #include "Comfort.hpp"
 #include "Connection.hpp"
 #include "SignalK.hpp"
@@ -168,7 +169,7 @@ namespace fairwindsk::ui::settings {
             case 0:
                 return new Main(this);
             case 1:
-                return new BarLayoutSettings(this, fairwindsk::ui::layout::BarId::Top, this);
+                return new TopBar(this, this);
             case 2:
                 return new BarLayoutSettings(this, fairwindsk::ui::layout::BarId::Bottom, this);
             case 3:

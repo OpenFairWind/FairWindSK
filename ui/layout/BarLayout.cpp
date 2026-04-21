@@ -89,12 +89,21 @@ namespace fairwindsk::ui::layout {
             if (jsonEntry.contains("enabled") && jsonEntry["enabled"].is_boolean()) {
                 entry.enabled = jsonEntry["enabled"].get<bool>();
             }
+            if (jsonEntry.contains("expandHorizontally") && jsonEntry["expandHorizontally"].is_boolean()) {
+                entry.expandHorizontally = jsonEntry["expandHorizontally"].get<bool>();
+            }
+            if (jsonEntry.contains("expandVertically") && jsonEntry["expandVertically"].is_boolean()) {
+                entry.expandVertically = jsonEntry["expandVertically"].get<bool>();
+            }
 
             if (entry.kind == EntryKind::Widget && entry.instanceId.isEmpty()) {
                 entry.instanceId = entry.widgetId;
             }
             if (entry.kind != EntryKind::Widget && entry.instanceId.isEmpty()) {
                 entry.instanceId = entryKindToString(entry.kind);
+            }
+            if (entry.kind == EntryKind::Stretch && !jsonEntry.contains("expandHorizontally")) {
+                entry.expandHorizontally = true;
             }
 
             return entry;
@@ -110,6 +119,8 @@ namespace fairwindsk::ui::layout {
             if (!entry.instanceId.isEmpty()) {
                 jsonEntry["instanceId"] = entry.instanceId.toStdString();
             }
+            jsonEntry["expandHorizontally"] = entry.expandHorizontally;
+            jsonEntry["expandVertically"] = entry.expandVertically;
             return jsonEntry;
         }
 

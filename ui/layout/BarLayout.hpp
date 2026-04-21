@@ -29,6 +29,8 @@ namespace fairwindsk::ui::layout {
         QString widgetId;
         QString instanceId;
         bool enabled = false;
+        bool expandHorizontally = false;
+        bool expandVertically = false;
     };
 
     QList<WidgetDefinition> widgetDefinitions();

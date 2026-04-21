@@ -9,12 +9,14 @@
 #include <QHBoxLayout>
 #include <QJsonObject>
 #include <QPointer>
+#include <QHash>
 #include <QVector>
 #include <QWidget>
 
 #include <FairWindSK.hpp>
 #include "ui_TopBar.h"
 #include "Units.hpp"
+#include "ui/layout/BarLayout.hpp"
 #include "ui/widgets/SignalKStatusIconsWidget.hpp"
 
 namespace Ui { class TopBar; }
@@ -102,6 +104,10 @@ namespace fairwindsk::ui::topbar {
         QWidget *createContextWidget();
         QWidget *createSeparatorWidget();
         void clearConfiguredLayout();
+        void applyEntrySizing(const fairwindsk::ui::layout::LayoutEntry &entry,
+                              const QString &itemId,
+                              QWidget *widget,
+                              QHBoxLayout *layout);
 
         Ui::TopBar *ui;
         QPointer<AppItem> m_currentApp;
@@ -120,6 +126,7 @@ namespace fairwindsk::ui::topbar {
         QString m_pathDTG;
         QString m_pathXTE;
         QString m_pathVMG;
+        QHash<QString, QSizePolicy> m_baseSizePolicies;
         QJsonObject m_lastPosUpdate;
         QJsonObject m_lastCogUpdate;
         QJsonObject m_lastSogUpdate;

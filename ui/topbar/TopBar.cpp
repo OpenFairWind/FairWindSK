@@ -193,6 +193,32 @@ namespace fairwindsk::ui::topbar {
         }
     }
 
+    void TopBar::applyEntrySizing(const fairwindsk::ui::layout::LayoutEntry &entry,
+                                  const QString &itemId,
+                                  QWidget *widget,
+                                  QHBoxLayout *layout) {
+        if (!widget || !layout) {
+            return;
+        }
+
+        if (!m_baseSizePolicies.contains(itemId)) {
+            m_baseSizePolicies.insert(itemId, widget->sizePolicy());
+        }
+
+        const QSizePolicy basePolicy = m_baseSizePolicies.value(itemId, widget->sizePolicy());
+        QSizePolicy effectivePolicy = basePolicy;
+        if (entry.expandHorizontally) {
+            effectivePolicy.setHorizontalPolicy(QSizePolicy::Expanding);
+        }
+        if (entry.expandVertically) {
+            effectivePolicy.setVerticalPolicy(QSizePolicy::Expanding);
+        }
+        widget->setSizePolicy(effectivePolicy);
+
+        const Qt::Alignment alignment = entry.expandVertically ? Qt::Alignment() : Qt::AlignVCenter;
+        layout->addWidget(widget, entry.expandHorizontally ? 1 : 0, alignment);
+    }
+
     TopBar *TopBar::instance() {
         return s_instance;
     }
@@ -302,15 +328,26 @@ namespace fairwindsk::ui::topbar {
             }
 
             if (entry.kind == fairwindsk::ui::layout::EntryKind::Separator) {
-                ui->horizontalLayout->addWidget(createSeparatorWidget(), 0, Qt::AlignVCenter);
+                auto *separator = createSeparatorWidget();
+                QSizePolicy policy(QSizePolicy::Fixed,
+                                   entry.expandVertically ? QSizePolicy::Expanding : QSizePolicy::Fixed);
+                separator->setSizePolicy(policy);
+                ui->horizontalLayout->addWidget(separator,
+                                                entry.expandHorizontally ? 1 : 0,
+                                                entry.expandVertically ? Qt::Alignment() : Qt::AlignVCenter);
                 continue;
             }
 
             if (entry.kind == fairwindsk::ui::layout::EntryKind::Stretch) {
-                ui->horizontalLayout->addStretch(1);
+                ui->horizontalLayout->addSpacerItem(
+                    new QSpacerItem(0,
+                                    0,
+                                    entry.expandHorizontally ? QSizePolicy::Expanding : QSizePolicy::Preferred,
+                                    entry.expandVertically ? QSizePolicy::Expanding : QSizePolicy::Minimum));
                 continue;
             }
 
+            QString itemId = entry.widgetId;
             QWidget *widget = widgetForItemId(entry.widgetId);
             if (!widget && fairwindsk::ui::bottombar::BottomBar::instance()) {
                 widget = fairwindsk::ui::bottombar::BottomBar::instance()->widgetForItemId(entry.widgetId);
@@ -319,7 +356,7 @@ namespace fairwindsk::ui::topbar {
                 continue;
             }
 
-            ui->horizontalLayout->addWidget(widget, 0, Qt::AlignVCenter);
+            applyEntrySizing(entry, itemId, widget, ui->horizontalLayout);
         }
     }
 
