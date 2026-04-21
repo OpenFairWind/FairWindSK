@@ -15,6 +15,7 @@
 #include <QStandardPaths>
 #include <QFile>
 #include <QStyle>
+#include <QStackedWidget>
 
 
 #include <QLoggingCategory>
@@ -652,6 +653,28 @@ namespace fairwindsk {
                 fairwindJsonObject["order"] = order;
             }
         }
+
+        bool isOnHiddenStackPage(QWidget *widget) {
+            if (!widget) {
+                return false;
+            }
+
+            QWidget *current = widget;
+            while (current) {
+                auto *parentWidget = current->parentWidget();
+                if (!parentWidget) {
+                    return false;
+                }
+
+                if (auto *stackedWidget = qobject_cast<QStackedWidget *>(parentWidget)) {
+                    return stackedWidget->currentWidget() != current;
+                }
+
+                current = parentWidget;
+            }
+
+            return false;
+        }
     }
 /*
  * FairWind
@@ -946,22 +969,23 @@ namespace fairwindsk {
 
         const auto widgets = QApplication::allWidgets();
         for (auto *widget : widgets) {
-            if (!widget) {
+            if (!widget || isOnHiddenStackPage(widget)) {
                 continue;
             }
 
-            if (metricsChanged) {
+            const bool widgetVisible = widget->isVisible();
+            if (metricsChanged && widgetVisible) {
                 applyIconMetrics(widget, metrics);
             }
-            if (themeChanged && widget->isVisible() && qApp->style()) {
+            if (themeChanged && widgetVisible && qApp->style()) {
                 auto *style = qApp->style();
                 style->unpolish(widget);
                 style->polish(widget);
             }
-            if (metricsChanged && widget->isVisible()) {
+            if (metricsChanged && widgetVisible) {
                 widget->updateGeometry();
             }
-            if (widget->isVisible()) {
+            if (widgetVisible) {
                 widget->update();
             }
         }

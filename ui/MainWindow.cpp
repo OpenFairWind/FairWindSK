@@ -13,6 +13,7 @@
 #include <QWindow>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QScreen>
 
 #include "MainWindow.hpp"
 #include "ui/topbar/TopBar.hpp"
@@ -128,6 +129,7 @@ namespace fairwindsk::ui {
 
         // Set the window size
         setSize();
+        updateAdaptiveShellMode();
         fairwindsk::runtime::recordUserInteraction(QStringLiteral("navigation"),
                                                    QStringLiteral("main_window_ready"),
                                                    QStringLiteral("launcher"));
@@ -241,6 +243,7 @@ namespace fairwindsk::ui {
         m_activeDrawerDefaultResult = defaultResult;
         m_dialogDrawerTitle->setText(title);
         content->setParent(m_dialogDrawerContentHost);
+        m_dialogDrawerContentHost->setProperty("drawerFillCenterArea", content->property("drawerFillCenterArea"));
         m_dialogDrawerContentLayout->addWidget(content);
         ui->widgetDialogDrawerButtonRow->setVisible(!buttons.isEmpty());
 
@@ -261,6 +264,21 @@ namespace fairwindsk::ui {
             m_dialogDrawerContentHost->layout()->activate();
         }
 
+        if (content->property("drawerFillCenterArea").toBool() && ui->stackedWidget_Center) {
+            ui->stackedWidget_Center->setVisible(false);
+        }
+
+        setDrawerEnabled(false);
+        updateDrawerGeometry();
+        m_dialogDrawer->show();
+        m_dialogDrawer->raise();
+    }
+
+    void MainWindow::updateDrawerGeometry() {
+        if (!m_dialogDrawer || !m_dialogDrawerContentHost) {
+            return;
+        }
+
         const int availableCenterHeight = ui->stackedWidget_Center ? ui->stackedWidget_Center->height() : 0;
         const int availableDrawerHeight = availableCenterHeight + (m_bottomBar ? m_bottomBar->height() : 0);
         int requestedDrawerHeight = m_dialogDrawer->layout()
@@ -275,23 +293,34 @@ namespace fairwindsk::ui {
                 requestedDrawerHeight = qMax(requestedDrawerHeight, drawerLayout->totalHeightForWidth(drawerWidth));
             }
         }
-        const bool fillCenterArea = content->property("drawerFillCenterArea").toBool();
+
+        const bool fillCenterArea = m_dialogDrawerContentHost->property("drawerFillCenterArea").toBool();
         int targetDrawerHeight = qMax(minimumDrawerHeight, requestedDrawerHeight);
         if (availableDrawerHeight > 0) {
             targetDrawerHeight = fillCenterArea
                                      ? availableDrawerHeight
                                      : std::min(targetDrawerHeight, availableDrawerHeight);
         }
+
         m_dialogDrawer->setMinimumHeight(targetDrawerHeight);
         m_dialogDrawer->setMaximumHeight(targetDrawerHeight);
+    }
 
-        if (fillCenterArea && ui->stackedWidget_Center) {
-            ui->stackedWidget_Center->setVisible(false);
+    void MainWindow::updateAdaptiveShellMode() {
+        const QSize availableSize = size().isValid() ? size() : QSize(width(), height());
+        const int shortestSide = std::min(availableSize.width(), availableSize.height());
+        const bool compactMode = shortestSide > 0 && shortestSide <= 720;
+
+        setProperty("compactShellMode", compactMode);
+        if (centralWidget()) {
+            centralWidget()->setProperty("compactShellMode", compactMode);
         }
-
-        setDrawerEnabled(false);
-        m_dialogDrawer->show();
-        m_dialogDrawer->raise();
+        if (m_topBar) {
+            m_topBar->setProperty("compactShellMode", compactMode);
+        }
+        if (m_bottomBar) {
+            m_bottomBar->setProperty("compactShellMode", compactMode);
+        }
     }
 
     void MainWindow::showOverlay(QWidget *page) {
@@ -823,6 +852,8 @@ namespace fairwindsk::ui {
             m_bottomBar->refreshFromConfiguration();
         }
         setSize();
+        updateAdaptiveShellMode();
+        updateDrawerGeometry();
 
         if (m_launcher) {
             m_launcher->refreshFromConfiguration(true);
@@ -1000,6 +1031,12 @@ namespace fairwindsk::ui {
                             }
                         },
                         int(QMessageBox::No));
+    }
+
+    void MainWindow::resizeEvent(QResizeEvent *event) {
+        QMainWindow::resizeEvent(event);
+        updateAdaptiveShellMode();
+        updateDrawerGeometry();
     }
 
     /*

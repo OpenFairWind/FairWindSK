@@ -92,9 +92,12 @@ namespace fairwindsk::ui {
         void ensureMyDataPage(QWidget *fallbackWidget = nullptr);
         void ensureSettingsPage(QWidget *fallbackWidget = nullptr);
         void prewarmPersistentPages();
+        void updateDrawerGeometry();
+        void updateAdaptiveShellMode();
 
         // Close Event handler
         void closeEvent(QCloseEvent *bar) override;
+        void resizeEvent(QResizeEvent *event) override;
 
         // Get Window Id using the Process Id
         static WId getWIdByPId(qint64 pId);

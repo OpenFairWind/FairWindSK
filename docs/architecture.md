@@ -32,8 +32,14 @@ The formal names and behavioral rules for the shell surfaces are defined in [doc
 
 - `FairWindSK` now aggregates Signal K connectivity, app-catalog refresh status, and foreground hosted-app degradation into a compact runtime-health model that feeds the shell chrome.
 - `ui/widgets/SignalKStatusIconsWidget` presents that model as a helm-readable badge plus REST/stream indicators, while `ui/widgets/SignalKServerBox` echoes the same state with last-live-update freshness text.
-- Critical operational readouts in the Top Bar and the anchor/autopilot bars now render explicit `live`, `stale`, and `missing` states instead of silently disappearing or leaving stale values looking current.
+- Top Bar navigation metrics now share one trust grammar across position, waypoint, bearings, distances, ETA/TTG, and speed/depth values so stale and missing states stay visible instead of reverting to mixed legacy hide/show behavior.
+- Critical operational readouts in the anchor/autopilot bars now render explicit `live`, `stale`, and `missing` states instead of silently disappearing or leaving stale values looking current.
 - Alarm buttons in the bottom bar use accent styling when active so emergency conditions remain visually dominant across comfort presets, including low-glare/night modes.
+
+## Hosted web resilience
+
+- `ui/web/WebView` keeps the existing Signal K restart placeholder, but now also treats long-running page loads and blank-page outcomes as explicit degraded hosted-app states instead of leaving the operator with an apparently stuck page.
+- Hosted web degradation still routes through the shared shell status model, so the chrome can reflect that the foreground app is degraded while keeping reload, home, and launcher recovery paths available.
 
 ## Comfort auto mode
 

@@ -158,6 +158,21 @@ namespace fairwindsk::ui::topbar {
             widget->setToolTip(valueLabel->toolTip());
             widget->setVisible(showWhenMissing || state != MetricFreshnessState::Missing);
         }
+
+        void applyDateMetricPresentation(QWidget *widget,
+                                         QLabel *valueLabel,
+                                         const QString &title,
+                                         const QDateTime &value,
+                                         const QString &format) {
+            const bool hasValue = value.isValid() && !value.isNull();
+            const QString text = hasValue ? value.toLocalTime().toString(format) : QString();
+            applyMetricPresentation(widget,
+                                    valueLabel,
+                                    nullptr,
+                                    title,
+                                    text,
+                                    signalKMetricFreshnessState(hasValue));
+        }
     }
 
     void TopBar::refreshMetricLabelWidths() const {
@@ -281,11 +296,19 @@ namespace fairwindsk::ui::topbar {
                            const QString &,
                            const QDateTime &,
                            const QString &) {
+                        updatePOS(m_lastPosUpdate);
                         updateCOG(m_lastCogUpdate);
                         updateSOG(m_lastSogUpdate);
                         updateHDG(m_lastHdgUpdate);
                         updateSTW(m_lastStwUpdate);
                         updateDPT(m_lastDptUpdate);
+                        updateWPT(m_lastWptUpdate);
+                        updateBTW(m_lastBtwUpdate);
+                        updateDTG(m_lastDtgUpdate);
+                        updateTTG(m_lastTtgUpdate);
+                        updateETA(m_lastEtaUpdate);
+                        updateXTE(m_lastXteUpdate);
+                        updateVMG(m_lastVmgUpdate);
                     });
         }
 
@@ -604,32 +627,15 @@ namespace fairwindsk::ui::topbar {
  */
     void TopBar::updatePOS(const QJsonObject &update) {
         m_lastPosUpdate = update;
-
-        // Check if for any reason the update is empty
-        if (update.isEmpty()) {
-            return;
-        }
-
-
-        // Get the value
         const auto value = fairwindsk::signalk::Client::getGeoCoordinateFromUpdateByPath(update);
-
-        if (!value.isValid()) {
-            ui->widget_POS->setVisible(false);
-        } else {
-
-
-            const auto text = fairwindsk::ui::geo::formatCoordinate(
-                value,
-                FairWindSK::getInstance()->getConfiguration()->getCoordinateFormat());
-
-            // Set the course over ground label from the UI to the formatted value
-            ui->label_POS->setText(text);
-
-            if (!ui->widget_POS->isVisible()) {
-                ui->widget_POS->setVisible(true);
-            }
-        }
+        const bool hasValue = value.isValid();
+        const QString text = hasValue
+                                 ? fairwindsk::ui::geo::formatCoordinate(
+                                       value,
+                                       FairWindSK::getInstance()->getConfiguration()->getCoordinateFormat())
+                                 : QString();
+        applyMetricPresentation(ui->widget_POS, ui->label_POS, nullptr,
+                                tr("Position"), text, signalKMetricFreshnessState(hasValue));
     }
 
 
@@ -708,210 +714,75 @@ namespace fairwindsk::ui::topbar {
 
     void TopBar::updateWPT(const QJsonObject &update) {
         m_lastWptUpdate = update;
-
-        // Check if for any reason the update is empty
-        if (update.isEmpty()) {
-            return;
+        const auto value = fairwindsk::signalk::Client::getObjectFromUpdateByPath(update);
+        QString text;
+        bool hasValue = false;
+        if (value.contains("href") && value["href"].isString()) {
+            const auto href = value["href"].toString();
+            auto waypoint = FairWindSK::getInstance()->getSignalKClient()->getWaypointByHref(href);
+            text = waypoint.getName();
+            hasValue = !text.trimmed().isEmpty();
         }
 
-        // Get the value
-        auto value =fairwindsk::signalk::Client::getObjectFromUpdateByPath(update);
-
-
-
-        if (value.isEmpty()) {
-            ui->widget_WPT->setVisible(false);
-        } else {
-            if (value.contains("href") && value["href"].isString()) {
-                auto href = value["href"].toString();
-
-                auto waypoint = FairWindSK::getInstance()->getSignalKClient()->getWaypointByHref(href);
-
-                ui->label_WPT->setText(waypoint.getName());
-
-                if (!ui->widget_WPT->isVisible()) {
-                    ui->widget_WPT->setVisible(true);
-                }
-            }
-        }
-
+        applyMetricPresentation(ui->widget_WPT, ui->label_WPT, nullptr,
+                                tr("Waypoint"), text, signalKMetricFreshnessState(hasValue));
     }
 
     void TopBar::updateBTW(const QJsonObject &update) {
         m_lastBtwUpdate = update;
-
-        // Check if for any reason the update is empty
-        if (update.isEmpty()) {
-            return;
-        }
-
-        // Get the value
-        auto value =fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
-
-        if (std::isnan(value)) {
-            ui->widget_BTW->setVisible(false);
-        } else {
-
-            // Convert rad to deg
-            const auto text = m_units->formatSignalKValue(m_pathBTW, value, "rad", "deg");
-
-            // Set the course over ground label from the UI to the formatted value
-            ui->label_BTW->setText(text);
-
-            if (!ui->widget_BTW->isVisible()) {
-                ui->widget_BTW->setVisible(true);
-            }
-        }
-
+        const auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
+        const bool hasValue = !update.isEmpty() && !std::isnan(value);
+        const QString text = hasValue ? m_units->formatSignalKValue(m_pathBTW, value, "rad", "deg") : QString();
+        applyMetricPresentation(ui->widget_BTW, ui->label_BTW, ui->label_unitBTW,
+                                tr("Bearing to waypoint"), text, signalKMetricFreshnessState(hasValue));
     }
 
     void TopBar::updateDTG(const QJsonObject &update) {
         m_lastDtgUpdate = update;
-
-        // Check if for any reason the update is empty
-        if (update.isEmpty()) {
-            return;
-        }
-
-        // Get the value
-        auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
-
-        if (std::isnan(value)) {
-            ui->widget_DTG->setVisible(false);
-        } else {
-
-            const auto distanceUnits = FairWindSK::getInstance()->getConfiguration()->getDistanceUnits();
-            const auto text = m_units->formatSignalKValue(m_pathDTG, value, "m", distanceUnits);
-
-            // Set the course over ground label from the UI to the formatted value
-            ui->label_DTG->setText(text);
-
-            if (!ui->widget_DTG->isVisible()) {
-                ui->widget_DTG->setVisible(true);
-            }
-        }
-
+        const auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
+        const bool hasValue = !update.isEmpty() && !std::isnan(value);
+        const auto distanceUnits = FairWindSK::getInstance()->getConfiguration()->getDistanceUnits();
+        const QString text = hasValue ? m_units->formatSignalKValue(m_pathDTG, value, "m", distanceUnits) : QString();
+        applyMetricPresentation(ui->widget_DTG, ui->label_DTG, ui->label_unitDTG,
+                                tr("Distance to go"), text, signalKMetricFreshnessState(hasValue));
     }
 
     void TopBar::updateTTG(const QJsonObject &update) {
         m_lastTtgUpdate = update;
-
-        // Check if for any reason the update is empty
-        if (update.isEmpty()) {
-            return;
-        }
-
-        // Get the value
-        auto value = fairwindsk::signalk::Client::getDateTimeFromUpdateByPath(update);
-
-        if (value.isNull()) {
-            ui->widget_TTG->setVisible(false);
-        } else {
-
-            // Convert meters to nautical miles
-            //value = m_units->convert("m","nm", value);
-
-            // Build the formatted value
-            //text = m_units->format("nm", value);
-            const auto text = value.toLocalTime().toString("hh:mm");
-
-            // Set the course over ground label from the UI to the formatted value
-            ui->label_TTG->setText(text);
-
-            if (!ui->widget_TTG->isVisible()) {
-                ui->widget_TTG->setVisible(true);
-            }
-        }
-
+        applyDateMetricPresentation(ui->widget_TTG,
+                                    ui->label_TTG,
+                                    tr("Time to go"),
+                                    fairwindsk::signalk::Client::getDateTimeFromUpdateByPath(update),
+                                    QStringLiteral("hh:mm"));
     }
 
     void TopBar::updateETA(const QJsonObject &update) {
         m_lastEtaUpdate = update;
-
-        // Check if for any reason the update is empty
-        if (update.isEmpty()) {
-            return;
-        }
-
-        // Get the value
-        auto value = fairwindsk::signalk::Client::getDateTimeFromUpdateByPath(update);
-
-        if (value.isNull()) {
-            ui->widget_ETA->setVisible(false);
-        } else {
-
-            // Convert meters to nautical miles
-            //value = m_units->convert("m","nm", value);
-
-            // Build the formatted value
-            //text = m_units->format("nm", value);
-            const auto text = value.toLocalTime().toString("dd-MM-yyyy hh:mm");
-
-            // Set the course over ground label from the UI to the formatted value
-            ui->label_ETA->setText(text);
-
-            if (!ui->widget_ETA->isVisible()) {
-                ui->widget_ETA->setVisible(true);
-            }
-        }
-
+        applyDateMetricPresentation(ui->widget_ETA,
+                                    ui->label_ETA,
+                                    tr("Estimated time of arrival"),
+                                    fairwindsk::signalk::Client::getDateTimeFromUpdateByPath(update),
+                                    QStringLiteral("dd-MM-yyyy hh:mm"));
     }
 
     void TopBar::updateXTE(const QJsonObject &update) {
         m_lastXteUpdate = update;
-
-        // Check if for any reason the update is empty
-        if (update.isEmpty()) {
-            return;
-        }
-
-        // Get the value
-        auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
-
-        if (std::isnan(value)) {
-            ui->widget_XTE->setVisible(false);
-        } else {
-
-            const auto distanceUnits = FairWindSK::getInstance()->getConfiguration()->getDistanceUnits();
-            const auto text = m_units->formatSignalKValue(m_pathXTE, value, "m", distanceUnits);
-
-            // Set the course over ground label from the UI to the formatted value
-            ui->label_XTE->setText(text);
-
-            if (!ui->widget_XTE->isVisible()) {
-                ui->widget_XTE->setVisible(true);
-            }
-        }
-
+        const auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
+        const bool hasValue = !update.isEmpty() && !std::isnan(value);
+        const auto distanceUnits = FairWindSK::getInstance()->getConfiguration()->getDistanceUnits();
+        const QString text = hasValue ? m_units->formatSignalKValue(m_pathXTE, value, "m", distanceUnits) : QString();
+        applyMetricPresentation(ui->widget_XTE, ui->label_XTE, ui->label_unitXTE,
+                                tr("Cross track error"), text, signalKMetricFreshnessState(hasValue));
     }
 
     void TopBar::updateVMG(const QJsonObject &update) {
         m_lastVmgUpdate = update;
-
-        // Check if for any reason the update is empty
-        if (update.isEmpty()) {
-            return;
-        }
-
-        // Get the value
-        auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
-
-        if (std::isnan(value)) {
-            ui->widget_VMG->setVisible(false);
-        } else {
-
-            const auto vesselSpeedUnits = FairWindSK::getInstance()->getConfiguration()->getVesselSpeedUnits();
-            const auto text = m_units->formatSignalKValue(m_pathVMG, value, "ms-1", vesselSpeedUnits);
-
-            // Set the course over ground label from the UI to the formatted value
-            ui->label_VMG->setText(text);
-
-            if (!ui->widget_VMG->isVisible()) {
-                ui->widget_VMG->setVisible(true);
-            }
-        }
-
-
+        const auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
+        const bool hasValue = !update.isEmpty() && !std::isnan(value);
+        const auto vesselSpeedUnits = FairWindSK::getInstance()->getConfiguration()->getVesselSpeedUnits();
+        const QString text = hasValue ? m_units->formatSignalKValue(m_pathVMG, value, "ms-1", vesselSpeedUnits) : QString();
+        applyMetricPresentation(ui->widget_VMG, ui->label_VMG, ui->label_unitVMG,
+                                tr("Velocity made good"), text, signalKMetricFreshnessState(hasValue));
     }
 
     void TopBar::setCurrentApp(AppItem *appItem) {

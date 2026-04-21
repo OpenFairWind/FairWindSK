@@ -40,6 +40,7 @@
 
 namespace fairwindsk::ui::web {
     namespace {
+        constexpr int kHostedAppLoadTimeoutMs = 15000;
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
 #if QT_VERSION < QT_VERSION_CHECK(6, 8, 0)
         QString questionForFeature(const QWebEnginePage::Feature feature) {
@@ -150,6 +151,9 @@ namespace fairwindsk::ui::web {
         auto *layout = new QVBoxLayout(this);
         layout->setContentsMargins(0, 0, 0, 0);
         layout->setSpacing(0);
+        m_loadTimeoutTimer.setSingleShot(true);
+        m_loadTimeoutTimer.setInterval(kHostedAppLoadTimeoutMs);
+        connect(&m_loadTimeoutTimer, &QTimer::timeout, this, &WebView::handleLoadTimeout);
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         initializeDesktop(profile);
@@ -187,6 +191,7 @@ namespace fairwindsk::ui::web {
         if (url.isValid() && !url.isEmpty() && url.scheme().compare(QStringLiteral("data"), Qt::CaseInsensitive) != 0) {
             m_requestedUrl = url;
         }
+        stopLoadTimeoutWatch();
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         if (m_desktopView) {
@@ -215,6 +220,7 @@ namespace fairwindsk::ui::web {
     }
 
     void WebView::setHtml(const QString &html, const QUrl &baseUrl) {
+        stopLoadTimeoutWatch();
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         if (m_desktopView) {
             m_desktopView->setHtml(html, baseUrl);
@@ -358,6 +364,7 @@ namespace fairwindsk::ui::web {
                                           const QString &body,
                                           const QUrl &resumeUrl) {
         stop();
+        stopLoadTimeoutWatch();
         if (resumeUrl.isValid() && !resumeUrl.isEmpty() && resumeUrl.scheme().compare(QStringLiteral("data"), Qt::CaseInsensitive) != 0) {
             m_requestedUrl = resumeUrl;
         }
@@ -376,6 +383,30 @@ namespace fairwindsk::ui::web {
         m_healthState = state;
         m_healthSummary = normalizedSummary;
         emit healthStateChanged(m_healthState, m_healthSummary);
+    }
+
+    void WebView::startLoadTimeoutWatch() {
+        if (m_requestedUrl.isValid() && !m_requestedUrl.isEmpty()) {
+            m_loadTimeoutTimer.start();
+        }
+    }
+
+    void WebView::stopLoadTimeoutWatch() {
+        if (m_loadTimeoutTimer.isActive()) {
+            m_loadTimeoutTimer.stop();
+        }
+    }
+
+    void WebView::handleLoadTimeout() {
+        if (!m_requestedUrl.isValid() || m_requestedUrl.isEmpty()) {
+            return;
+        }
+
+        showFallbackPlaceholder(HealthState::Failed,
+                                tr("Hosted app timeout"),
+                                tr("The page is taking too long to respond. Use reload to retry, home to return to the app start page, or close to go back to the launcher."),
+                                m_requestedUrl);
+        emit loadFinished(false);
     }
 
     void WebView::handleServerStateResynchronized(const bool recoveredFromDisconnect) {
@@ -411,6 +442,7 @@ namespace fairwindsk::ui::web {
 
         connect(m_desktopView, &QWebEngineView::loadStarted, this, [this]() {
             m_loadProgress = 0;
+            startLoadTimeoutWatch();
             emit loadStarted();
         });
         connect(m_desktopView, &QWebEngineView::loadProgress, this, [this](const int progress) {
@@ -418,11 +450,18 @@ namespace fairwindsk::ui::web {
             emit loadProgress(progress);
         });
         connect(m_desktopView, &QWebEngineView::loadFinished, this, [this](const bool success) {
+            stopLoadTimeoutWatch();
             m_loadProgress = success ? 100 : -1;
             if (success) {
                 const QUrl currentUrl = m_desktopView ? m_desktopView->url() : QUrl();
                 if (!currentUrl.scheme().compare(QStringLiteral("data"), Qt::CaseInsensitive)) {
                     m_restartPlaceholderVisible = true;
+                    setHealthState(HealthState::Failed, tr("Hosted app fallback active"));
+                } else if (!currentUrl.isValid() || currentUrl.isEmpty()) {
+                    showFallbackPlaceholder(HealthState::Failed,
+                                            tr("Hosted app blank page"),
+                                            tr("The app returned an empty page. Use reload to retry or return to the launcher."),
+                                            m_requestedUrl);
                 } else {
                     m_restartPlaceholderVisible = false;
                     m_requestedUrl = currentUrl;
@@ -432,7 +471,7 @@ namespace fairwindsk::ui::web {
             } else if (m_requestedUrl.isValid()) {
                 showFallbackPlaceholder(HealthState::Failed,
                                         tr("Hosted app unavailable"),
-                                        tr("The page could not be loaded. Use reload to retry or return to the launcher."),
+                                        tr("The page could not be loaded. Use reload to retry, home to return to the app start page, or close to go back to the launcher."),
                                         m_requestedUrl);
             }
             emit loadFinished(success);
@@ -677,14 +716,21 @@ namespace fairwindsk::ui::web {
         m_viewWidget = m_quickView;
 
         if (!m_quickRoot) {
+            setHealthState(HealthState::Unsupported, tr("Mobile web backend unavailable"));
             return;
         }
 
-        connect(m_quickRoot, SIGNAL(loadStarted()), this, SIGNAL(loadStarted()));
+        connect(m_quickRoot, SIGNAL(loadStarted()), this, SLOT(handleMobileLoadStarted()));
         connect(m_quickRoot, SIGNAL(loadProgressChanged(int)), this, SLOT(handleMobileLoadProgressChanged(int)));
         connect(m_quickRoot, SIGNAL(loadFinished(bool)), this, SLOT(handleMobileLoadFinished(bool)));
         connect(m_quickRoot, SIGNAL(currentUrlNotified(QString)), this, SLOT(handleMobileCurrentUrlNotified(QString)));
         connect(m_quickRoot, SIGNAL(titleChanged(QString)), this, SLOT(handleMobileTitleChanged(QString)));
+    }
+
+    void WebView::handleMobileLoadStarted() {
+        m_loadProgress = 0;
+        startLoadTimeoutWatch();
+        emit loadStarted();
     }
 
     void WebView::handleMobileLoadProgressChanged(const int progress) {
@@ -693,14 +739,22 @@ namespace fairwindsk::ui::web {
     }
 
     void WebView::handleMobileLoadFinished(const bool ok) {
+        stopLoadTimeoutWatch();
         m_loadProgress = ok ? 100 : -1;
         if (ok) {
-            setHealthState(HealthState::Normal, tr("Hosted app live"));
+            if (!m_currentUrl.isValid() || m_currentUrl.isEmpty()) {
+                showFallbackPlaceholder(HealthState::Unsupported,
+                                        tr("Hosted app blank page"),
+                                        tr("This mobile backend returned an empty page. Use reload to retry or close to go back to the launcher."),
+                                        m_requestedUrl);
+            } else {
+                setHealthState(HealthState::Normal, tr("Hosted app live"));
+            }
             applyZoom();
         } else if (m_requestedUrl.isValid()) {
             showFallbackPlaceholder(HealthState::Unsupported,
                                     tr("Hosted app unavailable"),
-                                    tr("This page could not be shown on the current mobile backend. Use reload to retry or return to the launcher."),
+                                    tr("This page could not be shown on the current mobile backend. Use reload to retry, home to return to the app start page, or close to go back to the launcher."),
                                     m_requestedUrl);
         }
         emit loadFinished(ok);
@@ -709,6 +763,9 @@ namespace fairwindsk::ui::web {
     void WebView::handleMobileCurrentUrlNotified(const QString &urlText) {
         m_currentUrl = QUrl::fromUserInput(urlText);
         m_restartPlaceholderVisible = m_currentUrl.scheme().compare(QStringLiteral("data"), Qt::CaseInsensitive) == 0;
+        if (m_loadProgress <= 0 && m_currentUrl.isValid() && !m_currentUrl.isEmpty() && !m_restartPlaceholderVisible) {
+            startLoadTimeoutWatch();
+        }
         m_canGoBack = canGoBack();
         m_canGoForward = canGoForward();
         emit urlChanged(m_currentUrl);

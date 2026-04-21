@@ -7,6 +7,7 @@
 
 #include <QIcon>
 #include <QRect>
+#include <QTimer>
 #include <QUrl>
 #include <QWidget>
 
@@ -58,6 +59,7 @@ namespace fairwindsk::ui::web {
 
     private slots:
 #if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
+        void handleMobileLoadStarted();
         void handleMobileLoadProgressChanged(int progress);
         void handleMobileLoadFinished(bool ok);
         void handleMobileCurrentUrlNotified(const QString &url);
@@ -65,6 +67,7 @@ namespace fairwindsk::ui::web {
 #endif
         void handleConnectivityChanged(bool restHealthy, bool streamHealthy, const QString &statusText);
         void handleServerStateResynchronized(bool recoveredFromDisconnect);
+        void handleLoadTimeout();
 
     private:
         void initializeDesktop(fairwindsk::WebProfileHandle *profile);
@@ -74,6 +77,8 @@ namespace fairwindsk::ui::web {
         void showSignalKRestartPlaceholder();
         void showFallbackPlaceholder(HealthState state, const QString &title, const QString &body, const QUrl &resumeUrl = QUrl());
         void setHealthState(HealthState state, const QString &summary);
+        void startLoadTimeoutWatch();
+        void stopLoadTimeoutWatch();
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         void setDesktopPage(class WebPage *page);
@@ -87,6 +92,7 @@ namespace fairwindsk::ui::web {
         bool m_restartPlaceholderVisible = false;
         HealthState m_healthState = HealthState::Normal;
         QString m_healthSummary = QStringLiteral("Web view ready");
+        QTimer m_loadTimeoutTimer;
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         QWebEngineView *m_desktopView = nullptr;
