@@ -12,6 +12,7 @@
 #include <QFrame>
 #include <QScroller>
 #include <QScrollerProperties>
+#include <QLayoutItem>
 #include <QVBoxLayout>
 #include <QResizeEvent>
 #include "BottomBar.hpp"
@@ -21,12 +22,114 @@
 #include "FairWindSK.hpp"
 #include "runtime/DiagnosticsSupport.hpp"
 #include "ui/IconUtils.hpp"
+#include "ui/layout/BarLayout.hpp"
+#include "ui/topbar/TopBar.hpp"
 
 namespace fairwindsk::ui::bottombar {
     namespace {
         constexpr int kBottomBarIconSize = 44;
         constexpr int kBottomBarButtonHeight = 90;
         constexpr int kPortAreaHeight = 84;
+    }
+
+    BottomBar *BottomBar::instance() {
+        return s_instance;
+    }
+
+    QWidget *BottomBar::createSeparatorWidget() {
+        auto *line = new QFrame(this);
+        line->setFrameShape(QFrame::VLine);
+        line->setFrameShadow(QFrame::Plain);
+        line->setLineWidth(1);
+        m_dynamicLayoutWidgets.append(line);
+        return line;
+    }
+
+    void BottomBar::clearConfiguredLayout() {
+        if (!ui || !ui->horizontalLayoutButtons) {
+            return;
+        }
+
+        while (ui->horizontalLayoutButtons->count() > 0) {
+            auto *item = ui->horizontalLayoutButtons->takeAt(0);
+            delete item;
+        }
+
+        for (auto &widget : m_dynamicLayoutWidgets) {
+            if (widget) {
+                widget->deleteLater();
+            }
+        }
+        m_dynamicLayoutWidgets.clear();
+    }
+
+    QWidget *BottomBar::widgetForItemId(const QString &itemId) const {
+        if (itemId == QStringLiteral("open_apps")) {
+            return ui->scrollArea_Port;
+        }
+        if (itemId == QStringLiteral("mydata")) {
+            return ui->toolButton_MyData;
+        }
+        if (itemId == QStringLiteral("pob")) {
+            return ui->toolButton_POB;
+        }
+        if (itemId == QStringLiteral("autopilot")) {
+            return ui->toolButton_Autopilot;
+        }
+        if (itemId == QStringLiteral("apps")) {
+            return ui->toolButton_Apps;
+        }
+        if (itemId == QStringLiteral("anchor")) {
+            return ui->toolButton_Anchor;
+        }
+        if (itemId == QStringLiteral("alarms")) {
+            return ui->toolButton_Alarms;
+        }
+        if (itemId == QStringLiteral("settings")) {
+            return ui->toolButton_Settings;
+        }
+        if (itemId == QStringLiteral("signalk_status")) {
+            return m_signalKServerBox;
+        }
+
+        return nullptr;
+    }
+
+    void BottomBar::rebuildLayout() {
+        if (!ui || !ui->horizontalLayoutButtons) {
+            return;
+        }
+
+        clearConfiguredLayout();
+
+        const auto entries = fairwindsk::ui::layout::entriesForBar(
+            FairWindSK::getInstance()->getConfiguration()->getRoot(),
+            fairwindsk::ui::layout::BarId::Bottom);
+        for (const auto &entry : entries) {
+            if (!entry.enabled) {
+                continue;
+            }
+
+            if (entry.kind == fairwindsk::ui::layout::EntryKind::Separator) {
+                ui->horizontalLayoutButtons->addWidget(createSeparatorWidget(), 0, Qt::AlignVCenter);
+                continue;
+            }
+
+            if (entry.kind == fairwindsk::ui::layout::EntryKind::Stretch) {
+                ui->horizontalLayoutButtons->addStretch(1);
+                continue;
+            }
+
+            QWidget *widget = widgetForItemId(entry.widgetId);
+            if (!widget && fairwindsk::ui::topbar::TopBar::instance()) {
+                widget = fairwindsk::ui::topbar::TopBar::instance()->widgetForItemId(entry.widgetId);
+            }
+            if (!widget) {
+                continue;
+            }
+
+            ui->horizontalLayoutButtons->addWidget(widget, 0, Qt::AlignVCenter);
+        }
     }
 /*
  * BottomBar
@@ -35,6 +138,7 @@ namespace fairwindsk::ui::bottombar {
     fairwindsk::ui::bottombar::BottomBar::BottomBar(QWidget *parent) :
             QWidget(parent),
             ui(new Ui::BottomBar) {
+        s_instance = this;
 
         m_iconSize = kBottomBarIconSize;
         const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
@@ -155,7 +259,7 @@ namespace fairwindsk::ui::bottombar {
         }
 
         updateHealthChrome();
-        QTimer::singleShot(0, this, [this]() { rebalanceNavigationBlock(); });
+        rebuildLayout();
     }
 
     /*
@@ -195,6 +299,7 @@ namespace fairwindsk::ui::bottombar {
     }
 
     void BottomBar::refreshFromConfiguration() const {
+        const_cast<BottomBar *>(this)->rebuildLayout();
         if (m_POBBar) {
             m_POBBar->refreshFromConfiguration();
         }
@@ -324,30 +429,8 @@ namespace fairwindsk::ui::bottombar {
     }
 
     void BottomBar::rebalanceNavigationBlock() const {
-        if (!ui || !ui->scrollArea_Port || !ui->widget_Starboard || !ui->widget_CenterButtons) {
-            return;
-        }
-
-        if (!ui->scrollArea_Port->isVisible() || !ui->widget_Starboard->isVisible() || !ui->widget_CenterButtons->isVisible()) {
-            return;
-        }
-
-        const int totalWidth = width();
-        const int centerWidth = ui->widget_CenterButtons->sizeHint().width();
-        const int spacing = ui->horizontalLayoutButtons ? ui->horizontalLayoutButtons->spacing() : 0;
-        const int availableSideWidth = std::max(0, (totalWidth - centerWidth - (2 * spacing)) / 2);
-        const int portHintWidth = std::max(ui->scrollArea_Port->sizeHint().width(), ui->scrollArea_Port->minimumSizeHint().width());
-        const int starboardHintWidth = std::max(ui->widget_Starboard->sizeHint().width(), ui->widget_Starboard->minimumSizeHint().width());
-        const int balancedSideWidth = std::min(availableSideWidth, std::max(portHintWidth, starboardHintWidth));
-
-        if (balancedSideWidth <= 0) {
-            return;
-        }
-
-        ui->scrollArea_Port->setMinimumWidth(balancedSideWidth);
-        ui->scrollArea_Port->setMaximumWidth(balancedSideWidth);
-        ui->widget_Starboard->setMinimumWidth(balancedSideWidth);
-        ui->widget_Starboard->setMaximumWidth(balancedSideWidth);
+        // The bottom bar now supports arbitrary item placement, so the old
+        // three-block balancing logic no longer applies.
     }
 
 /*
@@ -631,6 +714,9 @@ namespace fairwindsk::ui::bottombar {
  * BottomBar's destructor
  */
     BottomBar::~BottomBar() {
+        if (s_instance == this) {
+            s_instance = nullptr;
+        }
 
         // Delete the application icons
         for (const auto button: m_buttons) {

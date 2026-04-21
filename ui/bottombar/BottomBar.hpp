@@ -5,6 +5,8 @@
 #ifndef BOTTOMBAR_HPP
 #define BOTTOMBAR_HPP
 
+#include <QPointer>
+#include <QVector>
 #include <QWidget>
 
 #include <FairWindSK.hpp>
@@ -24,6 +26,7 @@ namespace fairwindsk::ui::bottombar {
     public:
         // Constructor
         explicit BottomBar(QWidget *parent = 0);
+        static BottomBar *instance();
 
         // Set Autopilot Icon visibility
         void setAutopilotIcon(bool value) const;
@@ -34,6 +37,7 @@ namespace fairwindsk::ui::bottombar {
         // Set POB Icon visibility
         void setPOBIcon(bool value) const;
         void refreshFromConfiguration() const;
+        QWidget *widgetForItemId(const QString &itemId) const;
 
         // Add application icon to the shortcut
         void addApp(const QString& name);
@@ -97,6 +101,9 @@ namespace fairwindsk::ui::bottombar {
         void setPanelVisibility(QWidget *panel, bool visible) const;
         void hideTransientPanels(QWidget *except = nullptr) const;
         void updateHealthChrome();
+        void rebuildLayout();
+        QWidget *createSeparatorWidget();
+        void clearConfiguredLayout();
 
     private slots:
         void onRuntimeHealthChanged(fairwindsk::FairWindSK::RuntimeHealthState state,
@@ -125,6 +132,8 @@ namespace fairwindsk::ui::bottombar {
         QMap<QString, QToolButton *> m_buttons;
         fairwindsk::FairWindSK::RuntimeHealthState m_runtimeHealthState = fairwindsk::FairWindSK::RuntimeHealthState::Disconnected;
         QString m_runtimeHealthSummary;
+        QVector<QPointer<QWidget>> m_dynamicLayoutWidgets;
+        inline static BottomBar *s_instance = nullptr;
     };
 }
 

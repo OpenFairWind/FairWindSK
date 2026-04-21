@@ -244,7 +244,9 @@ set(FAIRWINDSK_SOURCES
         signalk/Subscription.cpp signalk/Subscription.hpp
         signalk/Client.cpp signalk/Client.hpp
         runtime/DiagnosticsSupport.cpp runtime/DiagnosticsSupport.hpp
+        ui/layout/BarLayout.cpp ui/layout/BarLayout.hpp
         ui/settings/Settings.cpp ui/settings/Settings.hpp ui/settings/Settings.ui
+        ui/settings/BarLayoutSettings.cpp ui/settings/BarLayoutSettings.hpp
         ui/launcher/Launcher.cpp ui/launcher/Launcher.hpp ui/launcher/Launcher.ui
         ui/about/About.cpp ui/about/About.hpp ui/about/About.ui
         ui/topbar/TopBar.cpp ui/topbar/TopBar.hpp ui/topbar/TopBar.ui

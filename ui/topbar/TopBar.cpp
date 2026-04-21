@@ -4,8 +4,10 @@
 
 #include <QTimer>
 #include <QAbstractButton>
+#include <QFrame>
 #include <QGeoCoordinate>
 #include <QHBoxLayout>
+#include <QLayoutItem>
 #include <QToolButton>
 #include <QString>
 #include <QFontMetrics>
@@ -14,9 +16,11 @@
 #include <nlohmann/json.hpp>
 
 #include "TopBar.hpp"
+#include "../bottombar/BottomBar.hpp"
 #include "../web/Web.hpp"
 #include "ui/IconUtils.hpp"
 #include "ui/GeoCoordinateUtils.hpp"
+#include "ui/layout/BarLayout.hpp"
 #include <signalk/Waypoint.hpp>
 
 namespace fairwindsk::ui::topbar {
@@ -189,6 +193,136 @@ namespace fairwindsk::ui::topbar {
         }
     }
 
+    TopBar *TopBar::instance() {
+        return s_instance;
+    }
+
+    QWidget *TopBar::createContextWidget() {
+        auto *container = new QWidget(this);
+        auto *layout = new QHBoxLayout(container);
+        layout->setContentsMargins(0, 0, 0, 0);
+        layout->setSpacing(6);
+        layout->addWidget(ui->label_ApplicationName, 0, Qt::AlignVCenter);
+        layout->addWidget(ui->toolButton_UR, 0, Qt::AlignVCenter);
+        m_contextLayout = layout;
+        return container;
+    }
+
+    QWidget *TopBar::createSeparatorWidget() {
+        auto *line = new QFrame(this);
+        line->setFrameShape(QFrame::VLine);
+        line->setFrameShadow(QFrame::Plain);
+        line->setLineWidth(1);
+        m_dynamicLayoutWidgets.append(line);
+        return line;
+    }
+
+    void TopBar::clearConfiguredLayout() {
+        if (!ui || !ui->horizontalLayout) {
+            return;
+        }
+
+        while (ui->horizontalLayout->count() > 0) {
+            auto *item = ui->horizontalLayout->takeAt(0);
+            delete item;
+        }
+
+        for (auto &widget : m_dynamicLayoutWidgets) {
+            if (widget) {
+                widget->deleteLater();
+            }
+        }
+        m_dynamicLayoutWidgets.clear();
+    }
+
+    QWidget *TopBar::widgetForItemId(const QString &itemId) const {
+        if (itemId == QStringLiteral("position")) {
+            return ui->widget_POS;
+        }
+        if (itemId == QStringLiteral("cog")) {
+            return ui->widget_COG;
+        }
+        if (itemId == QStringLiteral("sog")) {
+            return ui->widget_SOG;
+        }
+        if (itemId == QStringLiteral("hdg")) {
+            return ui->widget_HDG;
+        }
+        if (itemId == QStringLiteral("stw")) {
+            return ui->widget_STW;
+        }
+        if (itemId == QStringLiteral("dpt")) {
+            return ui->widget_DPT;
+        }
+        if (itemId == QStringLiteral("current_context")) {
+            return m_contextWidget;
+        }
+        if (itemId == QStringLiteral("wpt")) {
+            return ui->widget_WPT;
+        }
+        if (itemId == QStringLiteral("btw")) {
+            return ui->widget_BTW;
+        }
+        if (itemId == QStringLiteral("dtg")) {
+            return ui->widget_DTG;
+        }
+        if (itemId == QStringLiteral("ttg")) {
+            return ui->widget_TTG;
+        }
+        if (itemId == QStringLiteral("eta")) {
+            return ui->widget_ETA;
+        }
+        if (itemId == QStringLiteral("xte")) {
+            return ui->widget_XTE;
+        }
+        if (itemId == QStringLiteral("vmg")) {
+            return ui->widget_VMG;
+        }
+        if (itemId == QStringLiteral("clock_icons")) {
+            return ui->widget_ClockBlock;
+        }
+
+        return nullptr;
+    }
+
+    void TopBar::rebuildLayout() {
+        if (!ui || !ui->horizontalLayout) {
+            return;
+        }
+
+        clearConfiguredLayout();
+        ui->horizontalLayout->addWidget(ui->toolButton_UL, 0, Qt::AlignVCenter);
+
+        const auto entries = fairwindsk::ui::layout::entriesForBar(
+            FairWindSK::getInstance()->getConfiguration()->getRoot(),
+            fairwindsk::ui::layout::BarId::Top);
+        for (const auto &entry : entries) {
+            if (!entry.enabled) {
+                continue;
+            }
+
+            if (entry.kind == fairwindsk::ui::layout::EntryKind::Separator) {
+                ui->horizontalLayout->addWidget(createSeparatorWidget(), 0, Qt::AlignVCenter);
+                continue;
+            }
+
+            if (entry.kind == fairwindsk::ui::layout::EntryKind::Stretch) {
+                ui->horizontalLayout->addStretch(1);
+                continue;
+            }
+
+            QWidget *widget = widgetForItemId(entry.widgetId);
+            if (!widget && fairwindsk::ui::bottombar::BottomBar::instance()) {
+                widget = fairwindsk::ui::bottombar::BottomBar::instance()->widgetForItemId(entry.widgetId);
+            }
+            if (!widget) {
+                continue;
+            }
+
+            ui->horizontalLayout->addWidget(widget, 0, Qt::AlignVCenter);
+        }
+    }
+
     void TopBar::renderNumericMetric(const MetricRenderTarget &target,
                                      const QString &title,
                                      const QString &path,
@@ -324,6 +458,7 @@ namespace fairwindsk::ui::topbar {
             ui(new Ui::TopBar) {
         // Setup the UI
         ui->setupUi(this);
+        s_instance = this;
 
         // Get the FairWind singleton
         auto fairWindSK = fairwindsk::FairWindSK::getInstance();
@@ -335,6 +470,11 @@ namespace fairwindsk::ui::topbar {
 
         // Get units converter instance
         m_units = Units::getInstance();
+
+        m_contextWidget = createContextWidget();
+        ui->line_1->hide();
+        ui->line_2->hide();
+        ui->line_3->hide();
 
         ui->toolButton_UL->setIcon(QPixmap::fromImage(QImage(":/resources/images/mainwindow/fairwind_icon.png")));
         ui->toolButton_UL->setIconSize(QSize(32, 32));
@@ -610,6 +750,7 @@ namespace fairwindsk::ui::topbar {
         updateETA(m_lastEtaUpdate);
         updateXTE(m_lastXteUpdate);
         updateVMG(m_lastVmgUpdate);
+        rebuildLayout();
     }
 
     void TopBar::changeEvent(QEvent *event) {
@@ -689,6 +830,7 @@ namespace fairwindsk::ui::topbar {
 
     void TopBar::refreshFromConfiguration() {
         const auto configuration = FairWindSK::getInstance()->getConfiguration();
+        rebuildLayout();
         ui->label_unitCOG->setText(m_units->getSignalKUnitLabel(m_pathCOG, "deg"));
         ui->label_unitBTW->setText(m_units->getSignalKUnitLabel(m_pathBTW, "deg"));
         ui->label_unitHDG->setText(m_units->getSignalKUnitLabel(m_pathHDG, "deg"));
@@ -911,6 +1053,9 @@ namespace fairwindsk::ui::topbar {
  * TopBar's destructor
  */
     TopBar::~TopBar() {
+        if (s_instance == this) {
+            s_instance = nullptr;
+        }
 
         if (m_timer) {
             m_timer->stop();

@@ -6,8 +6,10 @@
 #define TOPBAR_HPP
 
 #include <QIcon>
+#include <QHBoxLayout>
 #include <QJsonObject>
 #include <QPointer>
+#include <QVector>
 #include <QWidget>
 
 #include <FairWindSK.hpp>
@@ -26,6 +28,7 @@ namespace fairwindsk::ui::topbar {
         explicit TopBar(QWidget *parent = nullptr);
 
         ~TopBar() override;
+        static TopBar *instance();
 
         void setCurrentApp(AppItem *appItem);
         void setCurrentAppStatusSummary(const QString &summary);
@@ -34,6 +37,7 @@ namespace fairwindsk::ui::topbar {
                                const QIcon &icon = QIcon(),
                                bool enableButton = false);
         void refreshFromConfiguration();
+        QWidget *widgetForItemId(const QString &itemId) const;
 
     public slots:
         void toolbuttonUL_clicked();
@@ -94,12 +98,19 @@ namespace fairwindsk::ui::topbar {
         void updateSpeedLabels() const;
         void refreshMetricLabelWidths() const;
         void resetCurrentAppPresentation() const;
+        void rebuildLayout();
+        QWidget *createContextWidget();
+        QWidget *createSeparatorWidget();
+        void clearConfiguredLayout();
 
         Ui::TopBar *ui;
         QPointer<AppItem> m_currentApp;
         widgets::SignalKStatusIconsWidget *m_signalKStatusIcons = nullptr;
         Units *m_units = nullptr;
         QTimer *m_timer = nullptr;
+        QWidget *m_contextWidget = nullptr;
+        QHBoxLayout *m_contextLayout = nullptr;
+        QVector<QPointer<QWidget>> m_dynamicLayoutWidgets;
         QString m_pathCOG;
         QString m_pathSOG;
         QString m_pathHDG;
@@ -122,6 +133,7 @@ namespace fairwindsk::ui::topbar {
         QJsonObject m_lastEtaUpdate;
         QJsonObject m_lastXteUpdate;
         QJsonObject m_lastVmgUpdate;
+        inline static TopBar *s_instance = nullptr;
     };
 }
 
