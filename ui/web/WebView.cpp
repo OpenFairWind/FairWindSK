@@ -184,6 +184,10 @@ namespace fairwindsk::ui::web {
     }
 
     void WebView::setUrl(const QUrl &url) {
+        if (url.isValid() && !url.isEmpty() && url.scheme().compare(QStringLiteral("data"), Qt::CaseInsensitive) != 0) {
+            m_requestedUrl = url;
+        }
+
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         if (m_desktopView) {
             m_desktopView->setUrl(url);
@@ -224,6 +228,13 @@ namespace fairwindsk::ui::web {
     }
 
     void WebView::reload() {
+        if (m_healthState != HealthState::Normal && m_requestedUrl.isValid()) {
+            m_restartPlaceholderVisible = false;
+            setHealthState(HealthState::Normal, tr("Retrying hosted app"));
+            setUrl(m_requestedUrl);
+            return;
+        }
+
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         if (m_desktopView) {
             m_desktopView->reload();
@@ -336,13 +347,35 @@ namespace fairwindsk::ui::web {
     }
 
     void WebView::showSignalKRestartPlaceholder() {
+        showFallbackPlaceholder(HealthState::Restarting,
+                                tr("Signal K is restarting"),
+                                tr("FairWindSK will reconnect automatically when the server is available again."),
+                                m_restartResumeUrl);
+    }
+
+    void WebView::showFallbackPlaceholder(const HealthState state,
+                                          const QString &title,
+                                          const QString &body,
+                                          const QUrl &resumeUrl) {
         stop();
-        m_restartPlaceholderVisible = true;
-        setHtml(signalKRestartPlaceholderHtml(
-                    palette(),
-                    tr("Signal K is restarting"),
-                    tr("FairWindSK will reconnect automatically when the server is available again.")));
+        if (resumeUrl.isValid() && !resumeUrl.isEmpty() && resumeUrl.scheme().compare(QStringLiteral("data"), Qt::CaseInsensitive) != 0) {
+            m_requestedUrl = resumeUrl;
+        }
+        m_restartPlaceholderVisible = state == HealthState::Restarting;
+        setHealthState(state, title);
+        setHtml(signalKRestartPlaceholderHtml(palette(), title, body));
         applyZoom();
+    }
+
+    void WebView::setHealthState(const HealthState state, const QString &summary) {
+        const QString normalizedSummary = summary.trimmed().isEmpty() ? tr("Web view ready") : summary.trimmed();
+        if (m_healthState == state && m_healthSummary == normalizedSummary) {
+            return;
+        }
+
+        m_healthState = state;
+        m_healthSummary = normalizedSummary;
+        emit healthStateChanged(m_healthState, m_healthSummary);
     }
 
     void WebView::handleServerStateResynchronized(const bool recoveredFromDisconnect) {
@@ -351,6 +384,7 @@ namespace fairwindsk::ui::web {
         }
 
         m_restartPlaceholderVisible = false;
+        setHealthState(HealthState::Normal, tr("Hosted app restored"));
         setUrl(m_restartResumeUrl);
     }
 
@@ -391,8 +425,15 @@ namespace fairwindsk::ui::web {
                     m_restartPlaceholderVisible = true;
                 } else {
                     m_restartPlaceholderVisible = false;
+                    m_requestedUrl = currentUrl;
+                    setHealthState(HealthState::Normal, tr("Hosted app live"));
                 }
                 applyZoom();
+            } else if (m_requestedUrl.isValid()) {
+                showFallbackPlaceholder(HealthState::Failed,
+                                        tr("Hosted app unavailable"),
+                                        tr("The page could not be loaded. Use reload to retry or return to the launcher."),
+                                        m_requestedUrl);
             }
             emit loadFinished(success);
         });
@@ -415,14 +456,11 @@ namespace fairwindsk::ui::web {
                             status = tr("Render process killed");
                             break;
                     }
-                    const QMessageBox::StandardButton btn = drawer::question(window(),
-                                                                            status,
-                                                                            tr("Render process exited with code: %1\nDo you want to reload the page ?").arg(statusCode),
-                                                                            QMessageBox::Yes | QMessageBox::No,
-                                                                            QMessageBox::No);
-                    if (btn == QMessageBox::Yes) {
-                        QTimer::singleShot(0, this, &WebView::reload);
-                    }
+                    showFallbackPlaceholder(HealthState::Failed,
+                                            status,
+                                            tr("The hosted app stopped unexpectedly (code %1). Use reload to try again or return to the launcher.")
+                                                .arg(statusCode),
+                                            m_requestedUrl);
                 });
 
         m_webPage = new WebPage(profile, m_desktopView);
@@ -657,7 +695,13 @@ namespace fairwindsk::ui::web {
     void WebView::handleMobileLoadFinished(const bool ok) {
         m_loadProgress = ok ? 100 : -1;
         if (ok) {
+            setHealthState(HealthState::Normal, tr("Hosted app live"));
             applyZoom();
+        } else if (m_requestedUrl.isValid()) {
+            showFallbackPlaceholder(HealthState::Unsupported,
+                                    tr("Hosted app unavailable"),
+                                    tr("This page could not be shown on the current mobile backend. Use reload to retry or return to the launcher."),
+                                    m_requestedUrl);
         }
         emit loadFinished(ok);
     }

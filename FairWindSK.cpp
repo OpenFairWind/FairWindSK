@@ -540,45 +540,8 @@ namespace fairwindsk {
             }
         }
 
-        nlohmann::json fetchJsonPayload(const QUrl &url, const bool debug) {
-            if (!url.isValid()) {
-                return {};
-            }
-
-            QNetworkAccessManager networkAccessManager;
-            QNetworkRequest request(url);
-            request.setTransferTimeout(kAppsRequestTimeoutMs);
-            QPointer<QNetworkReply> reply = networkAccessManager.get(request);
-            if (!reply) {
-                return {};
-            }
-
-            QEventLoop loop;
-            QTimer timeoutTimer;
-            timeoutTimer.setSingleShot(true);
-            QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
-            QObject::connect(&timeoutTimer, &QTimer::timeout, &loop, &QEventLoop::quit);
-            timeoutTimer.start(kAppsRequestTimeoutMs);
-            loop.exec();
-
-            if (!reply) {
-                return {};
-            }
-
-            const bool timedOut = !reply->isFinished();
-            if (timedOut) {
-                reply->abort();
-            }
-
-            const auto statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-            if (timedOut || !reply->isOpen() || reply->error() != QNetworkReply::NoError) {
-                reply->deleteLater();
-                return {};
-            }
-            const QByteArray payload = reply->readAll();
-            reply->deleteLater();
-
-            if (statusCode < 200 || statusCode >= 300 || payload.isEmpty()) {
+        nlohmann::json parseJsonPayload(const QByteArray &payload, const QUrl &url, const bool debug) {
+            if (payload.isEmpty()) {
                 return {};
             }
 
@@ -634,6 +597,7 @@ namespace fairwindsk {
         m_autoComfortTimer = new QTimer(this);
         m_autoComfortTimer->setInterval(60000);
         connect(m_autoComfortTimer, &QTimer::timeout, this, &FairWindSK::refreshAutomaticComfortView);
+        m_runtimeNetworkAccessManager = new QNetworkAccessManager(this);
         connect(&m_signalkClient, &signalk::Client::serverStateResynchronized, this, [this](const bool recoveredFromDisconnect) {
             if (!recoveredFromDisconnect) {
                 return;
@@ -641,7 +605,7 @@ namespace fairwindsk {
 
             qInfo() << "FairWindSK detected Signal K recovery; resynchronizing runtime state";
             Units::getInstance()->refreshSignalKPreferences();
-            loadApps();
+            reloadAppsAsync();
             refreshAutomaticComfortViewAvailability();
             if (m_configuration.getComfortViewMode() == "auto") {
                 applyUiPreferences();
@@ -850,6 +814,15 @@ namespace fairwindsk {
         const QColor accentTopColor = comfortOverrideColor(effectiveConfiguration, comfortPreset, QStringLiteral("accentTop"), QColor(comfortPalette.accentTop));
         const QColor accentTextColor = comfortOverrideColor(effectiveConfiguration, comfortPreset, QStringLiteral("accentText"), QColor(QStringLiteral("#eff6ff")));
         const QColor borderColor = comfortOverrideColor(effectiveConfiguration, comfortPreset, QStringLiteral("border"), QColor(comfortPalette.border));
+        const QString metricsSignature = QStringLiteral("%1|%2|%3|%4|%5|%6|%7|%8")
+            .arg(preset)
+            .arg(metrics.fontPointSize)
+            .arg(metrics.controlHeight)
+            .arg(metrics.tabHeight)
+            .arg(metrics.actionIconSize)
+            .arg(metrics.prominentIconSize)
+            .arg(metrics.toggleWidth)
+            .arg(metrics.toggleHeight);
 
         QFont appFont = qApp->font();
         appFont.setPointSize(metrics.fontPointSize);
@@ -870,11 +843,15 @@ namespace fairwindsk {
             buildUiMetricsStyleSheet(metrics)
             + loadComfortThemeStyleSheet(effectiveConfiguration, comfortPreset)
             + loadComfortBackgroundStyleSheet(effectiveConfiguration, comfortPreset);
-        if (qApp->styleSheet() != combinedStyleSheet) {
+        const bool metricsChanged = m_lastUiMetricsSignature != metricsSignature;
+        const bool themeChanged = m_lastUiThemeSignature != combinedStyleSheet;
+        if (themeChanged) {
             qApp->setStyleSheet(combinedStyleSheet);
         }
 
         m_activeComfortViewPreset = comfortPreset;
+        m_lastUiMetricsSignature = metricsSignature;
+        m_lastUiThemeSignature = combinedStyleSheet;
 
         if (m_autoComfortTimer) {
             if (effectiveConfiguration.getComfortViewMode() == "auto" && isAutomaticComfortViewAvailable(&effectiveConfiguration)) {
@@ -886,19 +863,30 @@ namespace fairwindsk {
             }
         }
 
+        if (!metricsChanged && !themeChanged) {
+            return;
+        }
+
         const auto widgets = QApplication::allWidgets();
         for (auto *widget : widgets) {
             if (!widget) {
                 continue;
             }
 
-            applyIconMetrics(widget, metrics);
-            if (auto *style = qApp->style()) {
+            if (metricsChanged) {
+                applyIconMetrics(widget, metrics);
+            }
+            if (themeChanged && widget->isVisible() && qApp->style()) {
+                auto *style = qApp->style();
                 style->unpolish(widget);
                 style->polish(widget);
             }
-            widget->updateGeometry();
-            widget->update();
+            if (metricsChanged && widget->isVisible()) {
+                widget->updateGeometry();
+            }
+            if (widget->isVisible()) {
+                widget->update();
+            }
         }
     }
 
@@ -1040,267 +1028,211 @@ namespace fairwindsk {
      * Load the applications
      */
     bool FairWindSK::loadApps() {
+        const bool hasRegistry = rebuildAppRegistry();
 
-        // Set the result value
-        bool result = false;
+        if (!m_configuration.getSignalKServerUrl().trimmed().isEmpty()) {
+            reloadAppsAsync();
+        } else {
+            setAppsState(hasRegistry ? AppsState::Loaded : AppsState::Idle,
+                         hasRegistry ? tr("Apps ready") : tr("Apps idle"));
+        }
 
-        // Get the configuration root JSON object
+        return hasRegistry;
+    }
+
+    void FairWindSK::reloadAppsAsync() {
+        const QString signalKServerUrl = m_configuration.getSignalKServerUrl().trimmed();
+        if (!m_runtimeNetworkAccessManager || signalKServerUrl.isEmpty()) {
+            setAppsState(m_mapHash2AppItem.isEmpty() ? AppsState::Idle : AppsState::Stale,
+                         m_mapHash2AppItem.isEmpty() ? tr("Apps idle") : tr("Apps cached"));
+            return;
+        }
+
+        ++m_appsReloadGeneration;
+        const quint64 generation = m_appsReloadGeneration;
+        if (m_appsReply) {
+            m_appsReply->abort();
+            m_appsReply->deleteLater();
+            m_appsReply = nullptr;
+        }
+
+        setAppsState(AppsState::Loading,
+                     m_mapHash2AppItem.isEmpty() ? tr("Loading apps") : tr("Refreshing apps"));
+        emit appsReloadStarted();
+        startAppsRequest(QUrl(signalKServerUrl + "/signalk/v1/apps/list"), generation, false);
+    }
+
+    bool FairWindSK::rebuildAppRegistry(const nlohmann::json *appsPayload) {
         auto &configurationJsonObject = m_configuration.getRoot();
-
-        // Check if apps is not defined in configuration
         if (!configurationJsonObject.contains("apps")) {
-
-            // Add the apps array
             configurationJsonObject["apps"] = nlohmann::json::array();
         }
 
-        // Get the app keys
-        auto keys = m_mapHash2AppItem.keys();
-
-        // Remove all app items
-        for (const auto& key: keys) {
-
-            // Remove the item
+        const auto keys = m_mapHash2AppItem.keys();
+        for (const auto &key : keys) {
             delete m_mapHash2AppItem[key];
         }
-
-        // Remove the map content
         m_mapHash2AppItem.clear();
         m_mapAppId2Hash.clear();
 
-        // Reset the counter
         int count = 100;
+        bool hadServerPayload = appsPayload && appsPayload->is_array();
 
-        // Get the signalk server url from the configuration
-        auto signalKServerUrl = m_configuration.getSignalKServerUrl();
+        if (hadServerPayload) {
+            for (auto appJsonObject : *appsPayload) {
+                if (!appJsonObject.is_object()) {
+                    continue;
+                }
 
-        // Check if it not empty
-        if (!signalKServerUrl.isEmpty()) {
-            auto appsPayload = fetchJsonPayload(QUrl(signalKServerUrl + "/signalk/v1/apps/list"), isDebug());
-            if (!appsPayload.is_array()) {
-                appsPayload = fetchJsonPayload(QUrl(signalKServerUrl + "/skServer/webapps"), isDebug());
-            }
-
-            if (appsPayload.is_array()) {
-                for (auto appJsonObject : appsPayload) {
-                    if (!appJsonObject.is_object()) {
+                if (appJsonObject.contains("keywords") && appJsonObject["keywords"].is_array()) {
+                    std::vector<std::string> keywords = appJsonObject["keywords"];
+                    QStringList stringListKeywords;
+                    std::transform(keywords.begin(), keywords.end(), std::back_inserter(stringListKeywords), [](const std::string &value) {
+                        return QString::fromStdString(value);
+                    });
+                    if (!stringListKeywords.contains("signalk-webapp")) {
                         continue;
                     }
+                }
 
-                    if (appJsonObject.contains("keywords") && appJsonObject["keywords"].is_array()) {
-                        std::vector<std::string> keywords = appJsonObject["keywords"];
-                        QStringList stringListKeywords;
-                        std::transform(
-                            keywords.begin(), keywords.end(),
-                            std::back_inserter(stringListKeywords), [](const std::string &value) {
-                                return QString::fromStdString(value);
-                            }
-                        );
-                        if (!stringListKeywords.contains("signalk-webapp")) {
-                            continue;
-                        }
-                    }
+                ensureFairwindMetadata(appJsonObject, count);
 
-                    ensureFairwindMetadata(appJsonObject, count);
+                auto *appItem = new AppItem(appJsonObject);
+                const QString appName = appItem->getName();
+                const int idx = m_configuration.findApp(appName);
 
-                    auto *appItem = new AppItem(appJsonObject);
-                    const QString appName = appItem->getName();
+                if (idx == -1) {
+                    m_configuration.getRoot()["apps"].push_back(appItem->asJson());
+                }
+
+                m_mapHash2AppItem[appName] = appItem;
+                m_mapAppId2Hash[appName] = appName;
+                count++;
+
+                if (isDebug()) {
+                    qDebug() << "Added (app from the Signal K Apps API): "
+                             << QString::fromStdString(appItem->asJson().dump(2));
+                }
+            }
+        }
+
+        const auto appsJsonArray = configurationJsonObject["apps"];
+        for (auto app : appsJsonArray) {
+            if (!app.is_object() || !app.contains("name") || !app["name"].is_string()) {
+                continue;
+            }
+
+            const auto appName = QString::fromStdString(app["name"].get<std::string>());
+            if (m_mapHash2AppItem.contains(appName)) {
+                auto *appItem = m_mapHash2AppItem[appName];
+                const int idx = m_configuration.findApp(appName);
+                if (idx != -1) {
+                    auto mergedJson = appItem->asJson();
+                    mergedJson.update(app, true);
+                    m_configuration.getRoot()["apps"].at(idx) = mergedJson;
+                    appItem->update(mergedJson);
+                }
+                continue;
+            }
+
+            if (appName.startsWith("http://") || appName.startsWith("https://") || appName.startsWith("file://")) {
+                auto *appItem = new AppItem(app);
+                if (appItem->getOrder() == 0) {
+                    appItem->setOrder(count);
                     const int idx = m_configuration.findApp(appName);
-
-                    if (idx == -1) {
-                        m_configuration.getRoot()["apps"].push_back(appItem->asJson());
+                    if (idx != -1) {
+                        m_configuration.getRoot()["apps"].at(idx)["fairwind"]["order"] = count;
                     }
-
-                    m_mapHash2AppItem[appName] = appItem;
-                    m_mapAppId2Hash[appName] = appName;
                     count++;
-
-                    if (isDebug()) {
-                        qDebug() << "Added (app from the Signal K Apps API): "
-                                 << QString::fromStdString(appItem->asJson().dump(2));
-                    }
                 }
-
-                result = true;
+                m_mapHash2AppItem[appName] = appItem;
+                m_mapAppId2Hash[appName] = appName;
+                continue;
             }
+
+            const int idx = m_configuration.findApp(appName);
+            if (idx != -1) {
+                auto &configuredApp = m_configuration.getRoot()["apps"].at(idx);
+                configuredApp["fairwind"]["order"] = 10000 + count;
+                configuredApp["fairwind"]["active"] = false;
+                count++;
+            }
+        }
+
+        return !m_mapHash2AppItem.isEmpty() || hadServerPayload;
+    }
+
+    void FairWindSK::setAppsState(const AppsState state, const QString &stateText) {
+        const QString normalizedStateText = stateText.trimmed().isEmpty() ? tr("Apps idle") : stateText.trimmed();
+        if (m_appsState == state && m_appsStateText == normalizedStateText) {
+            return;
+        }
+
+        m_appsState = state;
+        m_appsStateText = normalizedStateText;
+        emit appsStateChanged(m_appsState, m_appsStateText);
+    }
+
+    void FairWindSK::startAppsRequest(const QUrl &url, const quint64 generation, const bool fallbackRequest) {
+        if (!m_runtimeNetworkAccessManager || !url.isValid()) {
+            finalizeAppsReload(false, tr("Apps refresh failed"));
+            return;
+        }
+
+        QNetworkRequest request(url);
+        request.setTransferTimeout(kAppsRequestTimeoutMs);
+        auto *reply = m_runtimeNetworkAccessManager->get(request);
+        if (generation == m_appsReloadGeneration) {
+            m_appsReply = reply;
+        }
+
+        connect(reply, &QNetworkReply::finished, this, [this, reply, url, generation, fallbackRequest]() {
+            const QScopedPointer<QNetworkReply, QScopedPointerDeleteLater> guard(reply);
+            if (generation != m_appsReloadGeneration) {
+                return;
+            }
+
+            if (m_appsReply == reply) {
+                m_appsReply = nullptr;
+            }
+
+            const int statusCode = guard->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+            const bool success = guard->error() == QNetworkReply::NoError && statusCode >= 200 && statusCode < 300;
+            const nlohmann::json appsPayload = success ? parseJsonPayload(guard->readAll(), url, isDebug()) : nlohmann::json{};
+            if (appsPayload.is_array()) {
+                finalizeAppsReload(true, tr("Apps ready"), &appsPayload);
+                return;
+            }
+
+            if (!fallbackRequest) {
+                startAppsRequest(QUrl(m_configuration.getSignalKServerUrl().trimmed() + "/skServer/webapps"), generation, true);
+                return;
+            }
+
+            finalizeAppsReload(false,
+                               m_mapHash2AppItem.isEmpty()
+                                   ? tr("Apps refresh failed")
+                                   : tr("Apps cached"));
+        });
+    }
+
+    void FairWindSK::finalizeAppsReload(const bool success,
+                                        const QString &statusText,
+                                        const nlohmann::json *appsPayload) {
+        const bool hasRegistry = success ? rebuildAppRegistry(appsPayload) : !m_mapHash2AppItem.isEmpty();
+        if (success) {
+            setAppsState(AppsState::Loaded, statusText);
+        } else if (hasRegistry) {
+            setAppsState(AppsState::Stale, statusText);
         } else {
-
-            // Check if the debug is active
-            if (m_debug) {
-                // Show a message
-                qDebug() << "Troubles on getting apps from " << signalKServerUrl;
-            }
+            setAppsState(AppsState::Failed, statusText);
         }
 
-        // Get the apps array
-        auto appsJsonArray = configurationJsonObject["apps"];
+        emit appsReloadFinished(success);
 
-        // For each app in the apps array
-        for (auto app: appsJsonArray) {
-
-            // Check if the app is an object
-            if (app.is_object()) {
-
-                // Check if the app has the key name and if the value is a string
-                if (app.contains("name") && app["name"].is_string()) {
-
-                    // Get the app name
-                    auto appName = QString::fromStdString(app["name"].get<std::string>());
-
-                    // Check if the app is one of the ones already added
-                    if (m_mapHash2AppItem.contains(appName)) {
-
-                        // Get the app item object
-                        auto appItem = m_mapHash2AppItem[appName];
-
-                        // Get the index of the application within the apps array
-                        int idx = m_configuration.findApp(appName);
-
-                        // Check if the app is present
-                        if (idx != -1) {
-
-                            // Get the item as a json
-                            auto j = appItem->asJson();
-
-                            // Update the item with app data
-                            j.update(app, true);
-
-                            // Assign the item to the configuration
-                            m_configuration.getRoot()["apps"].at(idx) = j;
-
-                            // Update the app with the configuration
-                            m_mapHash2AppItem[appName]->update(j);
-
-                            // Check if the debug is active
-                            if (isDebug())
-                            {
-                                // Write a message
-                                qDebug() << "Updated (app from the Signal k server updated by the configuration file): " << QString::fromStdString(m_configuration.getRoot()["apps"].at(idx).dump(2));
-                            }
-                        }
-                    } else {
-
-                        // Check if it is not a Signal K app
-                        if (appName.startsWith("http://") || appName.startsWith("https://") || appName.startsWith("file://")) {
-
-                            // Create a new app item with the configuration
-                            auto appItem = new AppItem(app);
-
-                            // Check if the order is 0
-                            if (appItem->getOrder() == 0) {
-
-                                // Update the order
-                                appItem->setOrder(count);
-
-                                // Get the index of the application within the apps array
-                                int idx = m_configuration.findApp(appName);
-
-                                // Check if the app is present
-                                if (idx != -1) {
-
-                                    // Update the configuration
-                                    m_configuration.getRoot()["apps"].at(idx)["fairwind"]["order"] = count;
-
-                                    // Check if the debug is active
-                                    if (isDebug()) {
-
-                                        // Write a message
-                                        qDebug() << "Added (app from the configuration file): " << QString::fromStdString(m_configuration.getRoot()["apps"].at(idx).dump(2));
-                                    }
-
-                                    // Increase the counter
-                                    count++;
-                                }
-                            }
-
-                            // Add the application to the hash map
-                            m_mapHash2AppItem[appName] = appItem;
-                            m_mapAppId2Hash[appName] = appName;
-
-                            // Check if the debug is active
-                            if (isDebug()) {
-
-                                // Write a message
-                                qDebug() << "Added: " << QString::fromStdString(appItem->asJson().dump(2));
-                            }
-                        } else {
-
-                            // Get the index of the application within the apps array
-                            int idx = m_configuration.findApp(appName);
-
-                            // Check if the app is present
-                            if (idx != -1) {
-
-                                auto &configuredApp = m_configuration.getRoot()["apps"].at(idx);
-                                bool wasActive = false;
-                                if (configuredApp.contains("fairwind") &&
-                                    configuredApp["fairwind"].is_object() &&
-                                    configuredApp["fairwind"].contains("active") &&
-                                    configuredApp["fairwind"]["active"].is_boolean()) {
-                                    wasActive = configuredApp["fairwind"]["active"].get<bool>();
-                                }
-
-                                // Update the configuration
-                                configuredApp["fairwind"]["order"] = 10000+count;
-
-                                // Set the application as inactive by default
-                                configuredApp["fairwind"]["active"] = false;
-
-                                // Increase the caunter
-                                count++;
-
-                                if (wasActive || m_debug) {
-                                    qDebug() << "Deactivated (Signal K application present in the configuration file, but not on the Signal K server): "
-                                             << QString::fromStdString(configuredApp.dump(2));
-                                }
-
-                            } else {
-                                // Check if the debug is active
-                                if (isDebug()) {
-
-                                    // Write a message
-                                    qDebug() << "Error!";
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+        if (auto *mainWindow = fairwindsk::ui::MainWindow::instance()) {
+            mainWindow->applyRuntimeConfiguration();
         }
-
-        // Get the configuration json data root
-        auto jsonData =m_configuration.getRoot();
-
-        // Check if the debug is active
-        if (isDebug()) {
-
-            // Write a message
-            qDebug() << "Resume";
-        }
-
-        // Check if the configuration has an apps element and if it is an array
-        if (jsonData.contains("apps") && jsonData["apps"].is_array()) {
-
-            // For each item of the apps array...
-            for (const auto &app: jsonData["apps"].items()) {
-
-                // Get the application data
-                const auto& jsonApp = app.value();
-
-                // Create an application object
-                AppItem appItem(jsonApp);
-
-                // Check if the debug is active
-                if (isDebug())
-                {
-                    // Write a message
-                    qDebug() << "App: " << appItem.getName() << " active: " << appItem.getActive() << " order: " << appItem.getOrder();
-                }
-            }
-        }
-
-        // Return the result
-        return result;
     }
 
     QList<QString> FairWindSK::getAppsHashes() {
@@ -1341,6 +1273,14 @@ namespace fairwindsk {
 
     signalk::Client *FairWindSK::getSignalKClient() {
         return &m_signalkClient;
+    }
+
+    FairWindSK::AppsState FairWindSK::appsState() const {
+        return m_appsState;
+    }
+
+    QString FairWindSK::appsStateText() const {
+        return m_appsStateText;
     }
 
     WebProfileHandle *FairWindSK::getWebEngineProfile() {

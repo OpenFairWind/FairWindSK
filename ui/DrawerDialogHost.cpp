@@ -70,6 +70,49 @@ namespace fairwindsk::ui::drawer {
             return MainWindow::instance(parent);
         }
 
+        int runDrawerDialog(QWidget *parent,
+                            const QString &title,
+                            QWidget *content,
+                            const QList<ButtonSpec> &buttons,
+                            const int defaultResult) {
+            if (!content) {
+                return defaultResult;
+            }
+
+            QDialog dialog(resolveMainWindow(parent) ? static_cast<QWidget *>(resolveMainWindow(parent)) : parent);
+            dialog.setWindowTitle(title);
+            dialog.setModal(true);
+            dialog.setWindowFlags(dialog.windowFlags() & ~Qt::WindowContextHelpButtonHint);
+
+            auto *layout = new QVBoxLayout(&dialog);
+            layout->setContentsMargins(16, 16, 16, 16);
+            layout->setSpacing(12);
+            content->setParent(&dialog);
+            layout->addWidget(content);
+
+            if (content->metaObject()->indexOfSignal("finished(int)") != -1) {
+                QObject::connect(content, SIGNAL(finished(int)), &dialog, SLOT(done(int)));
+            }
+
+            if (!buttons.isEmpty()) {
+                auto *buttonsLayout = new QHBoxLayout();
+                buttonsLayout->setContentsMargins(0, 0, 0, 0);
+                buttonsLayout->addStretch(1);
+                for (const auto &buttonSpec : buttons) {
+                    auto *button = new QPushButton(buttonSpec.text, &dialog);
+                    button->setDefault(buttonSpec.isDefault);
+                    QObject::connect(button, &QPushButton::clicked, &dialog, [&dialog, buttonSpec]() {
+                        dialog.done(buttonSpec.result);
+                    });
+                    buttonsLayout->addWidget(button);
+                }
+                layout->addLayout(buttonsLayout);
+            }
+
+            dialog.resize(dialog.sizeHint().boundedTo(QSize(900, 720)));
+            return dialog.exec();
+        }
+
         QString buttonText(const QMessageBox::StandardButton button) {
             QMessageBox box;
             box.setStandardButtons(button);
@@ -1142,16 +1185,7 @@ namespace fairwindsk::ui::drawer {
     }
 
     int execDrawer(QWidget *parent, const QString &title, QWidget *content, const QList<ButtonSpec> &buttons, const int defaultResult) {
-        auto *mainWindow = resolveMainWindow(parent);
-        if (!mainWindow || !content) {
-            return defaultResult;
-        }
-        QList<DrawerButtonSpec> specs;
-        specs.reserve(buttons.size());
-        for (const auto &button : buttons) {
-            specs.append({button.text, button.result, button.isDefault});
-        }
-        return mainWindow->execDrawer(title, content, specs, defaultResult);
+        return runDrawerDialog(parent, title, content, buttons, defaultResult);
     }
 
     QMessageBox::StandardButton message(QWidget *parent,
@@ -1160,13 +1194,6 @@ namespace fairwindsk::ui::drawer {
                                         const QString &text,
                                         const QMessageBox::StandardButtons buttons,
                                         const QMessageBox::StandardButton defaultButton) {
-        auto *mainWindow = resolveMainWindow(parent);
-        if (!mainWindow) {
-            QMessageBox box(icon, title, text, buttons, parent);
-            box.setDefaultButton(defaultButton);
-            return static_cast<QMessageBox::StandardButton>(box.exec());
-        }
-
         auto *content = new QWidget();
         auto *layout = new QHBoxLayout(content);
         layout->setContentsMargins(0, 0, 0, 0);
@@ -1208,12 +1235,7 @@ namespace fairwindsk::ui::drawer {
             }
         }
 
-        QList<DrawerButtonSpec> drawerSpecs;
-        drawerSpecs.reserve(specs.size());
-        for (const auto &spec : specs) {
-            drawerSpecs.append({spec.text, spec.result, spec.isDefault});
-        }
-        const int result = mainWindow->execDrawer(title, content, drawerSpecs, int(defaultButton));
+        const int result = runDrawerDialog(parent, title, content, specs, int(defaultButton));
         return QMessageBox::StandardButton(result);
     }
 
@@ -1223,11 +1245,6 @@ namespace fairwindsk::ui::drawer {
                     const QString &text,
                     bool *ok,
                     const QLineEdit::EchoMode echo) {
-        auto *mainWindow = resolveMainWindow(parent);
-        if (!mainWindow) {
-            return QInputDialog::getText(parent, title, label, echo, text, ok);
-        }
-
         auto *content = new QWidget();
         auto *layout = new QVBoxLayout(content);
         layout->setContentsMargins(0, 0, 0, 0);
@@ -1242,11 +1259,11 @@ namespace fairwindsk::ui::drawer {
         lineEdit->setText(text);
         layout->addWidget(lineEdit);
 
-        const QList<DrawerButtonSpec> drawerSpecs = {
+        const QList<ButtonSpec> drawerSpecs = {
             {QObject::tr("OK"), int(QMessageBox::Ok), true},
             {QObject::tr("Cancel"), int(QMessageBox::Cancel), false}
         };
-        const int result = mainWindow->execDrawer(title, content, drawerSpecs, int(QMessageBox::Cancel));
+        const int result = runDrawerDialog(parent, title, content, drawerSpecs, int(QMessageBox::Cancel));
         if (ok) {
             *ok = result == QMessageBox::Ok;
         }
@@ -1291,21 +1308,23 @@ namespace fairwindsk::ui::drawer {
     QString getIconPath(QWidget *parent,
                         const QString &title,
                         const QString &currentPath) {
-        auto *mainWindow = resolveMainWindow(parent);
-        if (!mainWindow) {
-            return {};
-        }
-
         auto *picker = new fairwindsk::ui::widgets::TouchIconBrowser();
         picker->setCurrentPath(currentPath);
         QPointer<fairwindsk::ui::widgets::TouchIconBrowser> pickerGuard(picker);
-        QObject::connect(picker, &fairwindsk::ui::widgets::TouchIconBrowser::canceled, picker, [mainWindow]() {
-            mainWindow->finishActiveDrawer(int(QMessageBox::Cancel));
+        QDialog dialog(resolveMainWindow(parent) ? static_cast<QWidget *>(resolveMainWindow(parent)) : parent);
+        dialog.setWindowTitle(title);
+        dialog.setModal(true);
+        dialog.setWindowFlags(dialog.windowFlags() & ~Qt::WindowContextHelpButtonHint);
+        auto *layout = new QVBoxLayout(&dialog);
+        layout->setContentsMargins(16, 16, 16, 16);
+        layout->addWidget(picker);
+        QObject::connect(picker, &fairwindsk::ui::widgets::TouchIconBrowser::canceled, &dialog, [&dialog]() {
+            dialog.done(int(QMessageBox::Cancel));
         });
-        QObject::connect(picker, &fairwindsk::ui::widgets::TouchIconBrowser::pathActivated, picker, [mainWindow](const QString &) {
-            mainWindow->finishActiveDrawer(int(QMessageBox::Ok));
+        QObject::connect(picker, &fairwindsk::ui::widgets::TouchIconBrowser::pathActivated, &dialog, [&dialog](const QString &) {
+            dialog.done(int(QMessageBox::Ok));
         });
-        const int result = execDrawer(parent, title, picker, {}, int(QMessageBox::Cancel));
+        const int result = dialog.exec();
 
         if (!pickerGuard || result != QMessageBox::Ok) {
             return {};
@@ -1398,24 +1417,20 @@ namespace fairwindsk::ui::drawer {
             auto *editor = new fairwindsk::ui::GeoCoordinateEditorWidget();
             editor->setCoordinate(*latitude, *longitude, altitude ? *altitude : 0.0, currentFormat);
             QPointer<fairwindsk::ui::GeoCoordinateEditorWidget> editorGuard(editor);
-            auto *mainWindow = resolveMainWindow(parent);
-            QList<ButtonSpec> buttons;
-            if (mainWindow) {
-                QObject::connect(editor->applyButton(), &QPushButton::clicked, mainWindow, [mainWindow]() {
-                    mainWindow->finishActiveDrawer(int(QMessageBox::Ok));
-                });
-                QObject::connect(editor->cancelButton(), &QPushButton::clicked, mainWindow, [mainWindow]() {
-                    mainWindow->finishActiveDrawer(int(QMessageBox::Cancel));
-                });
-            } else {
-                buttons = {
-                    {QObject::tr("Apply"), int(QMessageBox::Ok), true},
-                    {QObject::tr("Cancel"), int(QMessageBox::Cancel), false}
-                };
-                editor->applyButton()->setVisible(false);
-                editor->cancelButton()->setVisible(false);
-            }
-            const int result = execDrawer(parent, title, editor, buttons, int(QMessageBox::Cancel));
+            QDialog dialog(resolveMainWindow(parent) ? static_cast<QWidget *>(resolveMainWindow(parent)) : parent);
+            dialog.setWindowTitle(title);
+            dialog.setModal(true);
+            dialog.setWindowFlags(dialog.windowFlags() & ~Qt::WindowContextHelpButtonHint);
+            auto *layout = new QVBoxLayout(&dialog);
+            layout->setContentsMargins(16, 16, 16, 16);
+            layout->addWidget(editor);
+            QObject::connect(editor->applyButton(), &QPushButton::clicked, &dialog, [&dialog]() {
+                dialog.done(int(QMessageBox::Ok));
+            });
+            QObject::connect(editor->cancelButton(), &QPushButton::clicked, &dialog, [&dialog]() {
+                dialog.done(int(QMessageBox::Cancel));
+            });
+            const int result = dialog.exec();
 
             if (!editorGuard || result != QMessageBox::Ok) {
                 return false;

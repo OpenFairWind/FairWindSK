@@ -28,6 +28,7 @@ namespace fairwindsk::ui::topbar {
         ~TopBar() override;
 
         void setCurrentApp(AppItem *appItem);
+        void setCurrentAppStatusSummary(const QString &summary);
         void setCurrentContext(const QString &name,
                                const QString &tooltip = QString(),
                                const QIcon &icon = QIcon(),

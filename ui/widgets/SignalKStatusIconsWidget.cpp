@@ -82,6 +82,12 @@ namespace fairwindsk::ui::widgets {
         } else {
             refreshIndicators(false, false, false, false, QString());
         }
+
+        if (fairWindSK) {
+            connect(fairWindSK, &fairwindsk::FairWindSK::appsStateChanged,
+                    this, &SignalKStatusIconsWidget::onAppsStateChanged);
+            m_appsStateText = fairWindSK->appsStateText();
+        }
     }
 
     SignalKStatusIconsWidget::~SignalKStatusIconsWidget() = default;
@@ -114,6 +120,13 @@ namespace fairwindsk::ui::widgets {
 
     void SignalKStatusIconsWidget::onRequestActivityChanged(const bool active) {
         m_requestActive = active;
+        refreshIndicators(m_serverHealthy, m_restHealthy, m_streamHealthy, m_requestActive, QString());
+    }
+
+    void SignalKStatusIconsWidget::onAppsStateChanged(const fairwindsk::FairWindSK::AppsState state,
+                                                      const QString &stateText) {
+        Q_UNUSED(state)
+        m_appsStateText = stateText.trimmed();
         refreshIndicators(m_serverHealthy, m_restHealthy, m_streamHealthy, m_requestActive, QString());
     }
 
@@ -229,7 +242,8 @@ namespace fairwindsk::ui::widgets {
         setBusyVisible(requestActive);
 
         const QString overallState = m_stateText.trimmed().isEmpty() ? tr("Disconnected") : m_stateText.trimmed();
-        m_serverIndicator->setToolTip(tr("Signal K %1\n%2").arg(overallState, tooltipLastUpdate(m_lastStreamUpdate)));
+        const QString appsState = m_appsStateText.trimmed().isEmpty() ? tr("Apps idle") : m_appsStateText.trimmed();
+        m_serverIndicator->setToolTip(tr("Signal K %1\n%2\n%3").arg(overallState, tooltipLastUpdate(m_lastStreamUpdate), appsState));
         m_busyIndicator->setToolTip(requestActive ? tr("Signal K activity in progress") : tr("Signal K idle"));
         m_restIndicator->setToolTip(tr("Signal K REST API"));
         m_streamIndicator->setToolTip(tr("Signal K stream\n%1").arg(tooltipLastUpdate(m_lastStreamUpdate)));

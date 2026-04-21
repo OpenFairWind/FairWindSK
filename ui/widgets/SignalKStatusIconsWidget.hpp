@@ -10,6 +10,7 @@
 #include <QPixmap>
 #include <QWidget>
 
+#include "FairWindSK.hpp"
 #include "signalk/Client.hpp"
 
 class QMovie;
@@ -34,6 +35,7 @@ namespace fairwindsk::ui::widgets {
                                             const QString &stateText,
                                             const QDateTime &lastStreamUpdate,
                                             const QString &statusText);
+        void onAppsStateChanged(fairwindsk::FairWindSK::AppsState state, const QString &stateText);
         void onRequestActivityChanged(bool active);
 
     private:
@@ -57,6 +59,7 @@ namespace fairwindsk::ui::widgets {
         bool m_streamHealthy = false;
         bool m_requestActive = false;
         QString m_stateText;
+        QString m_appsStateText;
         QDateTime m_lastStreamUpdate;
     };
 }

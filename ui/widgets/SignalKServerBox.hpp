@@ -9,6 +9,7 @@
 #include <QResizeEvent>
 #include <QWidget>
 
+#include "FairWindSK.hpp"
 #include "signalk/Client.hpp"
 
 namespace fairwindsk::ui::widgets {
@@ -33,6 +34,7 @@ namespace fairwindsk::ui::widgets {
                                             const QString &stateText,
                                             const QDateTime &lastStreamUpdate,
                                             const QString &statusText);
+        void onAppsStateChanged(fairwindsk::FairWindSK::AppsState state, const QString &stateText);
         void onServerMessageChanged(const QString &message);
 
     private:
@@ -42,6 +44,7 @@ namespace fairwindsk::ui::widgets {
         Ui::SignalKServerBox *ui = nullptr;
         QString m_statusText;
         QString m_stateText;
+        QString m_appsStateText;
         QString m_serverMessage;
         QDateTime m_lastStreamUpdate;
     };

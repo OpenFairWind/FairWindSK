@@ -913,6 +913,16 @@ namespace fairwindsk::ui::topbar {
         }
     }
 
+    void TopBar::setCurrentAppStatusSummary(const QString &summary) {
+        if (!m_currentApp) {
+            return;
+        }
+
+        const QString baseTooltip = m_currentApp->getDescription();
+        ui->label_ApplicationName->setToolTip(
+            summary.trimmed().isEmpty() ? baseTooltip : tr("%1\n%2").arg(baseTooltip, summary.trimmed()));
+    }
+
     void TopBar::setCurrentContext(const QString &name, const QString &tooltip, const QIcon &icon, const bool enableButton) {
         m_currentApp = nullptr;
         ui->toolButton_UR->setIcon(icon.isNull()

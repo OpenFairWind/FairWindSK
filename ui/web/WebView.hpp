@@ -21,6 +21,14 @@ namespace fairwindsk::ui::web {
         Q_OBJECT
 
     public:
+        enum class HealthState {
+            Normal,
+            Restarting,
+            Failed,
+            Unsupported
+        };
+        Q_ENUM(HealthState)
+
         explicit WebView(fairwindsk::WebProfileHandle *profile, QWidget *parent = nullptr);
         ~WebView() override;
 
@@ -46,6 +54,7 @@ namespace fairwindsk::ui::web {
         void titleChanged(const QString &title);
         void geometryChangeRequested(const QRect &newGeometry);
         void windowCloseRequested();
+        void healthStateChanged(fairwindsk::ui::web::WebView::HealthState state, const QString &summary);
 
     private slots:
 #if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
@@ -63,6 +72,8 @@ namespace fairwindsk::ui::web {
         void applyZoom();
         static QString zoomScript(double zoomPercent);
         void showSignalKRestartPlaceholder();
+        void showFallbackPlaceholder(HealthState state, const QString &title, const QString &body, const QUrl &resumeUrl = QUrl());
+        void setHealthState(HealthState state, const QString &summary);
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         void setDesktopPage(class WebPage *page);
@@ -71,8 +82,11 @@ namespace fairwindsk::ui::web {
         int m_loadProgress = 100;
         QWidget *m_viewWidget = nullptr;
         double m_zoomPercent = 100.0;
+        QUrl m_requestedUrl;
         QUrl m_restartResumeUrl;
         bool m_restartPlaceholderVisible = false;
+        HealthState m_healthState = HealthState::Normal;
+        QString m_healthSummary = QStringLiteral("Web view ready");
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         QWebEngineView *m_desktopView = nullptr;

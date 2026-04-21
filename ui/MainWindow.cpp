@@ -8,6 +8,7 @@
 #include <QMessageBox>
 #include <QPushButton>
 #include <QFrame>
+#include <QLabel>
 #include <QProcess>
 #include <QWindow>
 #include <QVBoxLayout>
@@ -196,29 +197,48 @@ namespace fairwindsk::ui {
     }
 
     bool MainWindow::isDrawerOpen() const {
-        return m_dialogDrawer && m_dialogDrawer->isVisible() && m_activeDrawerLoop != nullptr;
+        return m_dialogDrawer && m_dialogDrawer->isVisible() && static_cast<bool>(m_activeDrawerFinishedHandler);
     }
 
     void MainWindow::finishActiveDrawer(const int result) {
-        if (m_activeDrawerResult) {
-            *m_activeDrawerResult = result;
+        if (!m_dialogDrawer || !m_activeDrawerFinishedHandler) {
+            return;
         }
-        if (m_activeDrawerLoop) {
-            m_activeDrawerLoop->quit();
+
+        const int resolvedResult = result == 0 ? m_activeDrawerDefaultResult : result;
+        auto finishedHandler = std::move(m_activeDrawerFinishedHandler);
+        m_activeDrawerFinishedHandler = nullptr;
+        m_dialogDrawer->hide();
+        if (ui->stackedWidget_Center) {
+            ui->stackedWidget_Center->setVisible(true);
+        }
+        clearDrawer();
+        setDrawerEnabled(true);
+
+        if (finishedHandler) {
+            finishedHandler(resolvedResult);
         }
     }
 
-    int MainWindow::execDrawer(const QString &title, QWidget *content, const QList<DrawerButtonSpec> &buttons, const int defaultResult) {
-        if (!m_dialogDrawer || !content) {
-            return defaultResult;
+    void MainWindow::showDrawerAsync(const QString &title,
+                                     QWidget *content,
+                                     const QList<DrawerButtonSpec> &buttons,
+                                     std::function<void(int)> onFinished,
+                                     const int defaultResult) {
+        if (!m_dialogDrawer || !content || !onFinished) {
+            if (onFinished) {
+                onFinished(defaultResult);
+            }
+            return;
         }
 
-        const QSizePolicy previousDrawerSizePolicy = m_dialogDrawer->sizePolicy();
-        const int previousDrawerMinimumHeight = m_dialogDrawer->minimumHeight();
-        const int previousDrawerMaximumHeight = m_dialogDrawer->maximumHeight();
-        const bool centerWasVisible = ui->stackedWidget_Center && ui->stackedWidget_Center->isVisible();
+        if (isDrawerOpen()) {
+            finishActiveDrawer(defaultResult);
+        }
 
         clearDrawer();
+        m_activeDrawerFinishedHandler = std::move(onFinished);
+        m_activeDrawerDefaultResult = defaultResult;
         m_dialogDrawerTitle->setText(title);
         content->setParent(m_dialogDrawerContentHost);
         m_dialogDrawerContentLayout->addWidget(content);
@@ -269,27 +289,9 @@ namespace fairwindsk::ui {
             ui->stackedWidget_Center->setVisible(false);
         }
 
-        QEventLoop loop;
-        int result = defaultResult;
-        m_activeDrawerLoop = &loop;
-        m_activeDrawerResult = &result;
-
         setDrawerEnabled(false);
         m_dialogDrawer->show();
         m_dialogDrawer->raise();
-        loop.exec();
-        m_activeDrawerLoop = nullptr;
-        m_activeDrawerResult = nullptr;
-        m_dialogDrawer->hide();
-        if (ui->stackedWidget_Center) {
-            ui->stackedWidget_Center->setVisible(centerWasVisible);
-        }
-        m_dialogDrawer->setSizePolicy(previousDrawerSizePolicy);
-        m_dialogDrawer->setMinimumHeight(previousDrawerMinimumHeight);
-        m_dialogDrawer->setMaximumHeight(previousDrawerMaximumHeight);
-        clearDrawer();
-        setDrawerEnabled(true);
-        return result;
     }
 
     void MainWindow::showOverlay(QWidget *page) {
@@ -330,6 +332,7 @@ namespace fairwindsk::ui {
 
     void MainWindow::showLauncher() {
         m_currentApp = nullptr;
+        m_currentAppStatusSummary.clear();
         if (m_launcher && ui->stackedWidget_Center->indexOf(m_launcher) >= 0) {
             ui->stackedWidget_Center->setCurrentWidget(m_launcher);
         }
@@ -372,6 +375,9 @@ namespace fairwindsk::ui {
                     false);
             } else if (m_currentApp) {
                 m_topBar->setCurrentApp(m_currentApp);
+                if (!m_currentAppStatusSummary.trimmed().isEmpty()) {
+                    m_topBar->setCurrentAppStatusSummary(m_currentAppStatusSummary);
+                }
             } else {
                 m_topBar->setCurrentContext(
                     tr("Apps"),
@@ -446,6 +452,7 @@ namespace fairwindsk::ui {
             fairwindsk::runtime::recordUserInteraction(QStringLiteral("apps"),
                                                        QStringLiteral("launch_failed"),
                                                        hash);
+            m_currentAppStatusSummary.clear();
             showLauncher();
             return;
         }
@@ -516,6 +523,14 @@ namespace fairwindsk::ui {
                     appItem->setParent(web);
                 }
 
+                connect(web, &web::Web::statusSummaryChanged, this, [this, web](const QString &summary) {
+                    if (ui->stackedWidget_Center->currentWidget() != web) {
+                        return;
+                    }
+                    m_currentAppStatusSummary = summary;
+                    syncTopBarToCurrentPage();
+                });
+
                 // Connect the remove app signal to the onRemoveApp member
                 connect(web, &web::Web::removeApp, this, &MainWindow::onRemoveApp);
 
@@ -547,6 +562,7 @@ namespace fairwindsk::ui {
 
             // Set the current app
             m_currentApp = appItem;
+            m_currentAppStatusSummary.clear();
 
             // Update the UI with the new widget
             ui->stackedWidget_Center->setCurrentWidget(widgetApp);
@@ -604,6 +620,7 @@ namespace fairwindsk::ui {
              m_currentApp->getName() == hash ||
              m_currentApp->getName() == name)) {
             m_currentApp = nullptr;
+            m_currentAppStatusSummary.clear();
             m_topBar->setCurrentApp(nullptr);
         }
 
@@ -941,11 +958,6 @@ namespace fairwindsk::ui {
         if (isDrawerOpen()) {
             finishActiveDrawer(int(QMessageBox::Cancel));
             event->ignore();
-            QTimer::singleShot(0, this, [this]() {
-                if (isVisible()) {
-                    close();
-                }
-            });
             return;
         }
 
@@ -955,27 +967,31 @@ namespace fairwindsk::ui {
             m_settingsPage->saveChanges();
         }
 
-        QTimer::singleShot(0, this, [this]() {
-            fairwindsk::runtime::recordUserInteraction(QStringLiteral("lifecycle"),
-                                                       QStringLiteral("quit_confirmation_requested"),
-                                                       QStringLiteral("FairWindSK"));
-            const QMessageBox::StandardButton reply = drawer::question(this,
-                                                                       tr("Quit FairWindSK"),
-                                                                       tr("Are you sure you want to exit FairWindSK?"),
-                                                                       QMessageBox::Yes | QMessageBox::No,
-                                                                       QMessageBox::No);
-            if (reply == QMessageBox::Yes) {
-                m_quitConfirmed = true;
-                fairwindsk::runtime::recordUserInteraction(QStringLiteral("lifecycle"),
-                                                           QStringLiteral("quit_confirmed"),
-                                                           QStringLiteral("FairWindSK"));
-                close();
-            } else {
-                fairwindsk::runtime::recordUserInteraction(QStringLiteral("lifecycle"),
-                                                           QStringLiteral("quit_cancelled"),
-                                                           QStringLiteral("FairWindSK"));
-            }
-        });
+        fairwindsk::runtime::recordUserInteraction(QStringLiteral("lifecycle"),
+                                                   QStringLiteral("quit_confirmation_requested"),
+                                                   QStringLiteral("FairWindSK"));
+        auto *content = new QLabel(tr("Are you sure you want to exit FairWindSK?"), this);
+        content->setWordWrap(true);
+        showDrawerAsync(tr("Quit FairWindSK"),
+                        content,
+                        {
+                            {tr("Yes"), int(QMessageBox::Yes), false},
+                            {tr("No"), int(QMessageBox::No), true}
+                        },
+                        [this](const int result) {
+                            if (result == QMessageBox::Yes) {
+                                m_quitConfirmed = true;
+                                fairwindsk::runtime::recordUserInteraction(QStringLiteral("lifecycle"),
+                                                                           QStringLiteral("quit_confirmed"),
+                                                                           QStringLiteral("FairWindSK"));
+                                close();
+                            } else {
+                                fairwindsk::runtime::recordUserInteraction(QStringLiteral("lifecycle"),
+                                                                           QStringLiteral("quit_cancelled"),
+                                                                           QStringLiteral("FairWindSK"));
+                            }
+                        },
+                        int(QMessageBox::No));
     }
 
     /*

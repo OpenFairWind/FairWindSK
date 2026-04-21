@@ -39,6 +39,7 @@ namespace fairwindsk::ui::web {
 
         signals:
         void removeApp(QString name);
+        void statusSummaryChanged(const QString &summary);
 
     public slots:
         void onHomeClicked();
