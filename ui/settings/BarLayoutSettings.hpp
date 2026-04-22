@@ -2,10 +2,11 @@
 #define FAIRWINDSK_UI_SETTINGS_BARLAYOUTSETTINGS_HPP
 
 #include <QListWidget>
-#include <QPushButton>
+#include <QToolButton>
 #include <QWidget>
 
 #include "Settings.hpp"
+#include "WidgetPalette.hpp"
 #include "ui/layout/BarLayout.hpp"
 
 class QLabel;
@@ -26,8 +27,7 @@ namespace fairwindsk::ui::settings {
     private slots:
         void onItemChanged(QListWidgetItem *item);
         void onSelectionChanged();
-        void onAddSeparator();
-        void onAddStretch();
+        void onPaletteEntryActivated(const fairwindsk::ui::layout::LayoutEntry &entry);
         void onRemoveSelected();
         void onResetDefaults();
 
@@ -39,22 +39,23 @@ namespace fairwindsk::ui::settings {
         };
 
         void buildUi();
+        void applyChrome();
         void populateFromConfiguration();
         void persistToConfiguration();
         fairwindsk::ui::layout::LayoutEntry entryForItem(const QListWidgetItem *item) const;
         QListWidgetItem *createItem(const fairwindsk::ui::layout::LayoutEntry &entry);
         void updateActions();
         void appendPlaceholder(fairwindsk::ui::layout::EntryKind kind);
+        void activateWidgetEntry(const QString &widgetId);
         bool m_populating = false;
         Settings *m_settings = nullptr;
         fairwindsk::ui::layout::BarId m_barId = fairwindsk::ui::layout::BarId::Top;
         QLabel *m_titleLabel = nullptr;
         QLabel *m_hintLabel = nullptr;
         QListWidget *m_listWidget = nullptr;
-        QPushButton *m_addSeparatorButton = nullptr;
-        QPushButton *m_addStretchButton = nullptr;
-        QPushButton *m_removeSelectedButton = nullptr;
-        QPushButton *m_resetDefaultsButton = nullptr;
+        QToolButton *m_removeSelectedButton = nullptr;
+        QToolButton *m_resetDefaultsButton = nullptr;
+        WidgetPalette *m_paletteWidget = nullptr;
     };
 }
 

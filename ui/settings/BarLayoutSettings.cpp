@@ -1,9 +1,11 @@
 #include "BarLayoutSettings.hpp"
 
 #include <QAbstractItemModel>
-#include <QGridLayout>
+#include <QDragEnterEvent>
+#include <QDropEvent>
 #include <QLabel>
 #include <QListWidgetItem>
+#include <QMimeData>
 #include <QScroller>
 #include <QScrollerProperties>
 #include <QSignalBlocker>
@@ -11,11 +13,93 @@
 #include <QVBoxLayout>
 
 #include "FairWindSK.hpp"
+#include "ui/IconUtils.hpp"
 
 namespace fairwindsk::ui::settings {
     using fairwindsk::ui::layout::BarId;
     using fairwindsk::ui::layout::EntryKind;
     using fairwindsk::ui::layout::LayoutEntry;
+
+    namespace {
+        class PaletteAwareListWidget final : public QListWidget {
+        public:
+            explicit PaletteAwareListWidget(QWidget *parent = nullptr)
+                : QListWidget(parent) {
+            }
+
+        protected:
+            void dragEnterEvent(QDragEnterEvent *event) override {
+                if (event && (event->mimeData()->hasFormat(WidgetPalette::mimeType().toUtf8()) || event->source() == this)) {
+                    event->acceptProposedAction();
+                    return;
+                }
+
+                QListWidget::dragEnterEvent(event);
+            }
+
+            void dragMoveEvent(QDragMoveEvent *event) override {
+                if (event && (event->mimeData()->hasFormat(WidgetPalette::mimeType().toUtf8()) || event->source() == this)) {
+                    event->acceptProposedAction();
+                    return;
+                }
+
+                QListWidget::dragMoveEvent(event);
+            }
+
+            void dropEvent(QDropEvent *event) override {
+                if (!event || !event->mimeData()->hasFormat(WidgetPalette::mimeType().toUtf8())) {
+                    QListWidget::dropEvent(event);
+                    return;
+                }
+
+                LayoutEntry entry = WidgetPalette::decodeEntry(event->mimeData()->data(WidgetPalette::mimeType().toUtf8()));
+                if (entry.kind != EntryKind::Widget && entry.instanceId.isEmpty()) {
+                    entry.instanceId = QUuid::createUuid().toString(QUuid::WithoutBraces);
+                }
+
+                int insertRow = count();
+                const QModelIndex targetIndex = indexAt(event->position().toPoint());
+                if (targetIndex.isValid()) {
+                    insertRow = targetIndex.row();
+                }
+
+                if (entry.kind == EntryKind::Widget) {
+                    for (int row = 0; row < count(); ++row) {
+                        auto *existingItem = item(row);
+                        if (!existingItem || existingItem->data(Qt::UserRole + 2).toString() != entry.widgetId) {
+                            continue;
+                        }
+
+                        existingItem->setCheckState(Qt::Checked);
+                        QListWidgetItem *movedItem = takeItem(row);
+                        if (row < insertRow) {
+                            --insertRow;
+                        }
+                        insertItem(std::clamp(insertRow, 0, count()), movedItem);
+                        setCurrentItem(movedItem);
+                        event->setDropAction(Qt::MoveAction);
+                        event->accept();
+                        return;
+                    }
+                }
+
+                auto *newItem = new QListWidgetItem(layout::entryLabel(entry));
+                newItem->setData(Qt::UserRole + 1, static_cast<int>(entry.kind));
+                newItem->setData(Qt::UserRole + 2, entry.widgetId);
+                newItem->setData(Qt::UserRole + 3, entry.instanceId);
+                newItem->setFlags(Qt::ItemIsEnabled |
+                                  Qt::ItemIsSelectable |
+                                  Qt::ItemIsDragEnabled |
+                                  Qt::ItemIsUserCheckable);
+                newItem->setCheckState(Qt::Checked);
+                newItem->setSizeHint(QSize(0, 76));
+                insertItem(std::clamp(insertRow, 0, count()), newItem);
+                setCurrentItem(newItem);
+                event->setDropAction(Qt::CopyAction);
+                event->accept();
+            }
+        };
+    }
 
     BarLayoutSettings::BarLayoutSettings(Settings *settings,
                                          const BarId barId,
@@ -33,7 +117,6 @@ namespace fairwindsk::ui::settings {
 
     void BarLayoutSettings::buildUi() {
         constexpr int kControlHeight = 52;
-        constexpr int kRowHeight = 76;
 
         auto *rootLayout = new QVBoxLayout(this);
         rootLayout->setContentsMargins(12, 12, 12, 12);
@@ -43,31 +126,47 @@ namespace fairwindsk::ui::settings {
         rootLayout->addWidget(m_titleLabel);
 
         m_hintLabel = new QLabel(
-            tr("Tap a checkbox to place a widget on this bar. Press and drag a row to reorder it. Add separators and elastic extenders to build clear MFD-style groups."),
+            tr("Tap or drag palette items to place them on this bar. Drag rows to reorder them. Add separators and elastic extenders to build clear MFD-style groups."),
             this);
         m_hintLabel->setWordWrap(true);
         rootLayout->addWidget(m_hintLabel);
 
-        auto *buttonGrid = new QGridLayout();
-        buttonGrid->setContentsMargins(0, 0, 0, 0);
-        buttonGrid->setHorizontalSpacing(8);
-        buttonGrid->setVerticalSpacing(8);
-        rootLayout->addLayout(buttonGrid);
+        auto *controlsLayout = new QHBoxLayout();
+        controlsLayout->setContentsMargins(0, 0, 0, 0);
+        controlsLayout->setSpacing(8);
+        rootLayout->addLayout(controlsLayout);
 
-        m_addSeparatorButton = new QPushButton(tr("Add Separator"), this);
-        m_addStretchButton = new QPushButton(tr("Add Extender"), this);
-        m_removeSelectedButton = new QPushButton(tr("Remove Selected"), this);
-        m_resetDefaultsButton = new QPushButton(tr("Reset Defaults"), this);
-        for (auto *button : {m_addSeparatorButton, m_addStretchButton, m_removeSelectedButton, m_resetDefaultsButton}) {
-            button->setMinimumHeight(kControlHeight);
-            button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-        }
-        buttonGrid->addWidget(m_addSeparatorButton, 0, 0);
-        buttonGrid->addWidget(m_addStretchButton, 0, 1);
-        buttonGrid->addWidget(m_removeSelectedButton, 1, 0);
-        buttonGrid->addWidget(m_resetDefaultsButton, 1, 1);
+        auto configureActionButton = [kControlHeight](QToolButton *button,
+                                                      const QString &iconPath,
+                                                      const QString &toolTip) {
+            if (!button) {
+                return;
+            }
 
-        m_listWidget = new QListWidget(this);
+            button->setAutoRaise(true);
+            button->setIcon(QIcon(iconPath));
+            button->setIconSize(QSize(24, 24));
+            button->setToolTip(toolTip);
+            button->setStatusTip(toolTip);
+            button->setAccessibleName(toolTip);
+            button->setMinimumSize(QSize(kControlHeight, kControlHeight));
+            button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+            button->setToolButtonStyle(Qt::ToolButtonIconOnly);
+        };
+
+        m_removeSelectedButton = new QToolButton(this);
+        m_resetDefaultsButton = new QToolButton(this);
+        configureActionButton(m_removeSelectedButton,
+                              QStringLiteral(":/resources/svg/OpenBridge/delete-google.svg"),
+                              tr("Remove Selected"));
+        configureActionButton(m_resetDefaultsButton,
+                              QStringLiteral(":/resources/svg/OpenBridge/refresh-google.svg"),
+                              tr("Reset Defaults"));
+        controlsLayout->addWidget(m_removeSelectedButton);
+        controlsLayout->addWidget(m_resetDefaultsButton);
+        controlsLayout->addStretch(1);
+
+        m_listWidget = new PaletteAwareListWidget(this);
         m_listWidget->setSelectionMode(QAbstractItemView::SingleSelection);
         m_listWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
         m_listWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -89,20 +188,35 @@ namespace fairwindsk::ui::settings {
         scrollerProperties.setScrollMetric(QScrollerProperties::DragStartDistance, 0.01);
         scrollerProperties.setScrollMetric(QScrollerProperties::MaximumVelocity, 0.55);
         QScroller::scroller(m_listWidget->viewport())->setScrollerProperties(scrollerProperties);
-        m_listWidget->setStyleSheet(QStringLiteral(
-            "QListWidget {"
-            " border-radius: 10px;"
-            " }"
-            "QListWidget::item {"
-            " padding: 12px 14px;"
-            " border: 1px solid palette(mid);"
-            " border-radius: 8px;"
-            " }"
-            "QListWidget::item:selected {"
-            " border-color: palette(highlight);"
-            " font-weight: 600;"
-            " }"));
         rootLayout->addWidget(m_listWidget, 1);
+
+        auto *paletteLabel = new QLabel(tr("Widget Palette"), this);
+        rootLayout->addWidget(paletteLabel);
+
+        m_paletteWidget = new WidgetPalette(this);
+        rootLayout->addWidget(m_paletteWidget);
+
+        QList<LayoutEntry> paletteEntries;
+        LayoutEntry separatorEntry;
+        separatorEntry.kind = EntryKind::Separator;
+        separatorEntry.instanceId = QStringLiteral("separator");
+        paletteEntries.append(separatorEntry);
+
+        LayoutEntry stretchEntry;
+        stretchEntry.kind = EntryKind::Stretch;
+        stretchEntry.instanceId = QStringLiteral("stretch");
+        stretchEntry.expandHorizontally = true;
+        paletteEntries.append(stretchEntry);
+
+        const auto definitions = layout::widgetDefinitions();
+        for (const auto &definition : definitions) {
+            LayoutEntry entry;
+            entry.kind = EntryKind::Widget;
+            entry.widgetId = definition.id;
+            entry.instanceId = definition.id;
+            paletteEntries.append(entry);
+        }
+        m_paletteWidget->setEntries(paletteEntries);
 
         connect(m_listWidget, &QListWidget::itemChanged, this, &BarLayoutSettings::onItemChanged);
         connect(m_listWidget, &QListWidget::itemSelectionChanged, this, &BarLayoutSettings::onSelectionChanged);
@@ -111,12 +225,36 @@ namespace fairwindsk::ui::settings {
                 persistToConfiguration();
             }
         });
-        connect(m_addSeparatorButton, &QPushButton::clicked, this, &BarLayoutSettings::onAddSeparator);
-        connect(m_addStretchButton, &QPushButton::clicked, this, &BarLayoutSettings::onAddStretch);
-        connect(m_removeSelectedButton, &QPushButton::clicked, this, &BarLayoutSettings::onRemoveSelected);
-        connect(m_resetDefaultsButton, &QPushButton::clicked, this, &BarLayoutSettings::onResetDefaults);
+        connect(m_paletteWidget, &WidgetPalette::entryActivated, this, &BarLayoutSettings::onPaletteEntryActivated);
+        connect(m_removeSelectedButton, &QToolButton::clicked, this, &BarLayoutSettings::onRemoveSelected);
+        connect(m_resetDefaultsButton, &QToolButton::clicked, this, &BarLayoutSettings::onResetDefaults);
 
+        applyChrome();
         updateActions();
+    }
+
+    void BarLayoutSettings::applyChrome() {
+        auto *fairWindSK = FairWindSK::getInstance();
+        const auto *configuration = m_settings ? m_settings->getConfiguration() : (fairWindSK ? fairWindSK->getConfiguration() : nullptr);
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+        const auto chrome = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), false);
+
+        fairwindsk::ui::applySectionTitleLabelStyle(m_titleLabel, configuration, preset, palette(), 18.0);
+        if (m_listWidget) {
+            m_listWidget->setStyleSheet(QStringLiteral(
+                "QListWidget { border: 1px solid %1; border-radius: 10px; background: %2; }"
+                "QListWidget::item { padding: 12px 14px; border: 1px solid %3; border-radius: 8px; color: %4; }"
+                "QListWidget::item:selected { border-color: %5; background: %6; font-weight: 600; }")
+                                           .arg(chrome.border.name(),
+                                                chrome.window.name(),
+                                                chrome.border.name(),
+                                                chrome.text.name(),
+                                                chrome.accentTop.name(),
+                                                fairwindsk::ui::comfortAlpha(chrome.accentTop, 42).name(QColor::HexArgb)));
+        }
+
+        fairwindsk::ui::applyBottomBarToolButtonChrome(m_removeSelectedButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(24, 24), 52);
+        fairwindsk::ui::applyBottomBarToolButtonChrome(m_resetDefaultsButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(24, 24), 52);
     }
 
     QListWidgetItem *BarLayoutSettings::createItem(const LayoutEntry &entry) {
@@ -163,6 +301,9 @@ namespace fairwindsk::ui::settings {
         }
 
         m_populating = false;
+        if (m_paletteWidget) {
+            m_paletteWidget->setActiveEntries(entries);
+        }
         updateActions();
     }
 
@@ -192,6 +333,9 @@ namespace fairwindsk::ui::settings {
         }
 
         m_settings->markDirty(FairWindSK::RuntimeUi, 0);
+        if (m_paletteWidget) {
+            m_paletteWidget->setActiveEntries(entries);
+        }
     }
 
     void BarLayoutSettings::updateActions() {
@@ -230,12 +374,32 @@ namespace fairwindsk::ui::settings {
         updateActions();
     }
 
-    void BarLayoutSettings::onAddSeparator() {
-        appendPlaceholder(EntryKind::Separator);
+    void BarLayoutSettings::activateWidgetEntry(const QString &widgetId) {
+        if (widgetId.isEmpty() || !m_listWidget) {
+            return;
+        }
+
+        for (int row = 0; row < m_listWidget->count(); ++row) {
+            auto *item = m_listWidget->item(row);
+            if (!item || item->data(RoleWidgetId).toString() != widgetId) {
+                continue;
+            }
+
+            item->setCheckState(Qt::Checked);
+            m_listWidget->setCurrentItem(item);
+            persistToConfiguration();
+            updateActions();
+            return;
+        }
     }
 
-    void BarLayoutSettings::onAddStretch() {
-        appendPlaceholder(EntryKind::Stretch);
+    void BarLayoutSettings::onPaletteEntryActivated(const LayoutEntry &entry) {
+        if (entry.kind == EntryKind::Widget) {
+            activateWidgetEntry(entry.widgetId);
+            return;
+        }
+
+        appendPlaceholder(entry.kind);
     }
 
     void BarLayoutSettings::onRemoveSelected() {

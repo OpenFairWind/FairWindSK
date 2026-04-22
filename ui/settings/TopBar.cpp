@@ -2,20 +2,16 @@
 
 #include <algorithm>
 #include <QAbstractItemModel>
-#include <QDrag>
 #include <QDragEnterEvent>
 #include <QDropEvent>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QIcon>
-#include <QJsonDocument>
-#include <QJsonObject>
 #include <QLabel>
 #include <QMimeData>
 #include <QScroller>
 #include <QScrollerProperties>
 #include <QSignalBlocker>
-#include <QUuid>
 #include <QVBoxLayout>
 
 #include "FairWindSK.hpp"
@@ -27,11 +23,6 @@ namespace fairwindsk::ui::settings {
         using fairwindsk::ui::layout::BarId;
         using fairwindsk::ui::layout::EntryKind;
         using fairwindsk::ui::layout::LayoutEntry;
-
-        constexpr auto kTopBarPaletteMimeType = "application/x-fairwindsk-topbar-entry";
-        constexpr int kPaletteRowCount = 3;
-        constexpr int kPaletteItemHeight = 68;
-        constexpr int kPaletteVerticalPadding = 32;
 
         QString listWidgetChrome(const fairwindsk::ui::ComfortChromeColors &colors,
                                  const bool dashedItems = false) {
@@ -83,77 +74,6 @@ namespace fairwindsk::ui::settings {
             label->setPalette(palette);
         }
 
-        QByteArray mimePayloadForEntry(const LayoutEntry &entry) {
-            QJsonObject payload;
-            payload.insert(QStringLiteral("kind"), static_cast<int>(entry.kind));
-            payload.insert(QStringLiteral("widgetId"), entry.widgetId);
-            payload.insert(QStringLiteral("instanceId"), entry.instanceId);
-            payload.insert(QStringLiteral("expandHorizontally"), entry.expandHorizontally);
-            payload.insert(QStringLiteral("expandVertically"), entry.expandVertically);
-            return QJsonDocument(payload).toJson(QJsonDocument::Compact);
-        }
-
-        LayoutEntry entryFromMimePayload(const QByteArray &payload) {
-            LayoutEntry entry;
-            const auto document = QJsonDocument::fromJson(payload);
-            if (!document.isObject()) {
-                return entry;
-            }
-
-            const auto object = document.object();
-            entry.kind = static_cast<EntryKind>(object.value(QStringLiteral("kind")).toInt());
-            entry.widgetId = object.value(QStringLiteral("widgetId")).toString();
-            entry.instanceId = object.value(QStringLiteral("instanceId")).toString();
-            entry.expandHorizontally = object.value(QStringLiteral("expandHorizontally")).toBool();
-            entry.expandVertically = object.value(QStringLiteral("expandVertically")).toBool();
-            return entry;
-        }
-
-        class PaletteListWidget final : public QListWidget {
-        public:
-            explicit PaletteListWidget(QWidget *parent = nullptr)
-                : QListWidget(parent) {
-                setViewMode(QListView::IconMode);
-                setFlow(QListView::TopToBottom);
-                setWrapping(true);
-                setResizeMode(QListView::Adjust);
-                setMovement(QListView::Static);
-                setSelectionMode(QAbstractItemView::SingleSelection);
-                setDragEnabled(true);
-                setAcceptDrops(false);
-                setSpacing(8);
-                setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
-                setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-                setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-            }
-
-        protected:
-            void startDrag(Qt::DropActions supportedActions) override {
-                Q_UNUSED(supportedActions)
-
-                auto *item = currentItem();
-                if (!item) {
-                    return;
-                }
-
-                LayoutEntry entry;
-                entry.kind = static_cast<EntryKind>(item->data(TopBar::RolePaletteKind).toInt());
-                entry.widgetId = item->data(TopBar::RolePaletteWidgetId).toString();
-                entry.instanceId = entry.kind == EntryKind::Widget
-                                       ? entry.widgetId
-                                       : QUuid::createUuid().toString(QUuid::WithoutBraces);
-                entry.enabled = true;
-                entry.expandHorizontally = entry.kind == EntryKind::Stretch;
-
-                auto *mimeData = new QMimeData();
-                mimeData->setData(kTopBarPaletteMimeType, mimePayloadForEntry(entry));
-
-                auto *drag = new QDrag(this);
-                drag->setMimeData(mimeData);
-                drag->exec(Qt::CopyAction, Qt::CopyAction);
-            }
-        };
-
         class PreviewListWidget final : public QListWidget {
         public:
             explicit PreviewListWidget(QWidget *parent = nullptr)
@@ -176,7 +96,7 @@ namespace fairwindsk::ui::settings {
 
         protected:
             void dragEnterEvent(QDragEnterEvent *event) override {
-                if (event && (event->mimeData()->hasFormat(kTopBarPaletteMimeType) || event->source() == this)) {
+                if (event && (event->mimeData()->hasFormat(WidgetPalette::mimeType().toUtf8()) || event->source() == this)) {
                     event->acceptProposedAction();
                     return;
                 }
@@ -185,7 +105,7 @@ namespace fairwindsk::ui::settings {
             }
 
             void dragMoveEvent(QDragMoveEvent *event) override {
-                if (event && (event->mimeData()->hasFormat(kTopBarPaletteMimeType) || event->source() == this)) {
+                if (event && (event->mimeData()->hasFormat(WidgetPalette::mimeType().toUtf8()) || event->source() == this)) {
                     event->acceptProposedAction();
                     return;
                 }
@@ -194,12 +114,12 @@ namespace fairwindsk::ui::settings {
             }
 
             void dropEvent(QDropEvent *event) override {
-                if (!event || !event->mimeData()->hasFormat(kTopBarPaletteMimeType)) {
+                if (!event || !event->mimeData()->hasFormat(WidgetPalette::mimeType().toUtf8())) {
                     QListWidget::dropEvent(event);
                     return;
                 }
 
-                LayoutEntry entry = entryFromMimePayload(event->mimeData()->data(kTopBarPaletteMimeType));
+                LayoutEntry entry = WidgetPalette::decodeEntry(event->mimeData()->data(WidgetPalette::mimeType().toUtf8()));
                 if (entry.kind != EntryKind::Widget && entry.instanceId.isEmpty()) {
                     entry.instanceId = QUuid::createUuid().toString(QUuid::WithoutBraces);
                 }
@@ -340,36 +260,31 @@ namespace fairwindsk::ui::settings {
         m_paletteLabel = new QLabel(tr("Widget Palette"), this);
         rootLayout->addWidget(m_paletteLabel);
 
-        m_paletteWidget = new PaletteListWidget(this);
-        m_paletteWidget->setMinimumHeight((kPaletteRowCount * kPaletteItemHeight) + kPaletteVerticalPadding);
-        m_paletteWidget->setMaximumHeight((kPaletteRowCount * kPaletteItemHeight) + kPaletteVerticalPadding);
-        m_paletteWidget->viewport()->setAttribute(Qt::WA_AcceptTouchEvents, true);
-        QScroller::grabGesture(m_paletteWidget->viewport(), QScroller::TouchGesture);
-        QScroller::grabGesture(m_paletteWidget->viewport(), QScroller::LeftMouseButtonGesture);
+        m_paletteWidget = new WidgetPalette(this);
         m_paletteWidget->setToolTip(tr("Tap or drag a palette item to place it on the preview bar."));
         rootLayout->addWidget(m_paletteWidget);
 
+        QList<LayoutEntry> paletteEntries;
         LayoutEntry separatorEntry;
         separatorEntry.kind = EntryKind::Separator;
         separatorEntry.instanceId = QStringLiteral("separator");
-        m_paletteWidget->addItem(createPaletteItem(separatorEntry));
-
+        paletteEntries.append(separatorEntry);
         LayoutEntry stretchEntry;
         stretchEntry.kind = EntryKind::Stretch;
         stretchEntry.instanceId = QStringLiteral("stretch");
         stretchEntry.expandHorizontally = true;
-        m_paletteWidget->addItem(createPaletteItem(stretchEntry));
-
+        paletteEntries.append(stretchEntry);
         const auto definitions = layout::widgetDefinitions();
         for (const auto &definition : definitions) {
             LayoutEntry entry;
             entry.kind = EntryKind::Widget;
             entry.widgetId = definition.id;
             entry.instanceId = definition.id;
-            m_paletteWidget->addItem(createPaletteItem(entry));
+            paletteEntries.append(entry);
         }
+        m_paletteWidget->setEntries(paletteEntries);
 
-        connect(m_paletteWidget, &QListWidget::itemClicked, this, &TopBar::onPaletteItemClicked);
+        connect(m_paletteWidget, &WidgetPalette::entryActivated, this, &TopBar::onPaletteEntryActivated);
         connect(m_previewWidget, &QListWidget::itemSelectionChanged, this, &TopBar::onPreviewSelectionChanged);
         connect(m_previewWidget->model(), &QAbstractItemModel::rowsInserted, this, [this]() { onPreviewEdited(); });
         connect(m_previewWidget->model(), &QAbstractItemModel::rowsRemoved, this, [this]() { onPreviewEdited(); });
@@ -403,29 +318,17 @@ namespace fairwindsk::ui::settings {
             m_previewWidget->setStyleSheet(listWidgetChrome(chrome, false));
         }
         if (m_paletteWidget) {
-            m_paletteWidget->setStyleSheet(listWidgetChrome(chrome, true));
+            m_paletteWidget->setStyleSheet(QStringLiteral(
+                "QScrollArea { border: 1px solid %1; border-radius: 12px; background: %2; }"
+                "QWidget { background: transparent; }")
+                                               .arg(chrome.border.name(),
+                                                    chrome.window.name()));
         }
 
         fairwindsk::ui::applyBottomBarToolButtonChrome(m_expandWidthButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(24, 24), 52);
         fairwindsk::ui::applyBottomBarToolButtonChrome(m_expandHeightButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(24, 24), 52);
         fairwindsk::ui::applyBottomBarToolButtonChrome(m_removeSelectedButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(24, 24), 52);
         fairwindsk::ui::applyBottomBarToolButtonChrome(m_resetDefaultsButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(24, 24), 52);
-    }
-
-    fairwindsk::ui::layout::LayoutEntry TopBar::entryFromPaletteItem(const QListWidgetItem *item) const {
-        LayoutEntry entry;
-        if (!item) {
-            return entry;
-        }
-
-        entry.kind = static_cast<EntryKind>(item->data(RolePaletteKind).toInt());
-        entry.widgetId = item->data(RolePaletteWidgetId).toString();
-        entry.instanceId = entry.kind == EntryKind::Widget
-                               ? entry.widgetId
-                               : QUuid::createUuid().toString(QUuid::WithoutBraces);
-        entry.enabled = true;
-        entry.expandHorizontally = entry.kind == EntryKind::Stretch;
-        return entry;
     }
 
     fairwindsk::ui::layout::LayoutEntry TopBar::entryForPreviewItem(const QListWidgetItem *item) const {
@@ -518,23 +421,6 @@ namespace fairwindsk::ui::settings {
         item->setText(QStringLiteral("%1\n%2")
                           .arg(layout::entryLabel(entry), itemSummary(entry)));
         item->setSizeHint(itemSizeHint(entry));
-        item->setTextAlignment(Qt::AlignCenter);
-        return item;
-    }
-
-    QListWidgetItem *TopBar::createPaletteItem(const LayoutEntry &entry) const {
-        QString detail = tr("Tap or drag to add");
-        if (entry.kind == EntryKind::Stretch) {
-            detail = tr("Elastic spacer");
-        } else if (entry.kind == EntryKind::Separator) {
-            detail = tr("Visual divider");
-        }
-
-        auto *item = new QListWidgetItem(QStringLiteral("%1\n%2").arg(layout::entryLabel(entry), detail));
-        item->setData(RolePaletteKind, static_cast<int>(entry.kind));
-        item->setData(RolePaletteWidgetId, entry.widgetId);
-        item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsDragEnabled);
-        item->setSizeHint(QSize(entry.kind == EntryKind::Separator ? 44 : 140, 68));
         item->setTextAlignment(Qt::AlignCenter);
         return item;
     }
@@ -647,43 +533,17 @@ namespace fairwindsk::ui::settings {
         if (!m_paletteWidget) {
             return;
         }
-
-        for (int row = 0; row < m_paletteWidget->count(); ++row) {
-            auto *item = m_paletteWidget->item(row);
-            if (!item) {
-                continue;
+        QList<LayoutEntry> activeEntries;
+        for (int row = 0; row < m_previewWidget->count(); ++row) {
+            if (auto *item = m_previewWidget->item(row)) {
+                activeEntries.append(entryForPreviewItem(item));
             }
-
-            const auto kind = static_cast<EntryKind>(item->data(RolePaletteKind).toInt());
-            if (kind == EntryKind::Separator) {
-                item->setToolTip(tr("Tap or drag to add a separator to the preview bar."));
-                continue;
-            }
-            if (kind == EntryKind::Stretch) {
-                item->setToolTip(tr("Tap or drag to add an elastic extender to the preview bar."));
-                continue;
-            }
-            if (kind != EntryKind::Widget) {
-                continue;
-            }
-
-            const QString widgetId = item->data(RolePaletteWidgetId).toString();
-            const bool inUse = findPreviewWidgetItem(widgetId) != nullptr;
-            item->setText(QStringLiteral("%1\n%2")
-                              .arg(layout::entryLabel(LayoutEntry{EntryKind::Widget, widgetId, widgetId, false, false, false}),
-                                   inUse ? tr("Already on bar") : tr("Available")));
-            item->setToolTip(inUse
-                                 ? tr("Drag here again to move the existing item in the preview.")
-                                 : tr("Drag onto the preview bar to add this item."));
         }
+        m_paletteWidget->setActiveEntries(activeEntries);
     }
 
-    void TopBar::onPaletteItemClicked(QListWidgetItem *item) {
-        if (!item) {
-            return;
-        }
-
-        appendPaletteEntryToPreview(entryFromPaletteItem(item));
+    void TopBar::onPaletteEntryActivated(const LayoutEntry &entry) {
+        appendPaletteEntryToPreview(entry);
     }
 
     void TopBar::onPreviewSelectionChanged() {
