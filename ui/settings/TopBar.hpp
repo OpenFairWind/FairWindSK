@@ -32,6 +32,7 @@ namespace fairwindsk::ui::settings {
         };
 
     private slots:
+        void onPaletteItemClicked(QListWidgetItem *item);
         void onPreviewSelectionChanged();
         void onExpandWidthToggled(bool checked);
         void onExpandHeightToggled(bool checked);
@@ -42,11 +43,15 @@ namespace fairwindsk::ui::settings {
     private:
 
         void buildUi();
+        void applyChrome();
         void populateFromConfiguration();
         void persistToConfiguration();
         void updateInspector();
         void updatePaletteState();
+        fairwindsk::ui::layout::LayoutEntry entryFromPaletteItem(const QListWidgetItem *item) const;
         fairwindsk::ui::layout::LayoutEntry entryForPreviewItem(const QListWidgetItem *item) const;
+        void appendPaletteEntryToPreview(const fairwindsk::ui::layout::LayoutEntry &entry);
+        void refreshPreviewItem(QListWidgetItem *item) const;
         QListWidgetItem *createPreviewItem(const fairwindsk::ui::layout::LayoutEntry &entry) const;
         QListWidgetItem *createPaletteItem(const fairwindsk::ui::layout::LayoutEntry &entry) const;
         QListWidgetItem *findPreviewWidgetItem(const QString &widgetId) const;

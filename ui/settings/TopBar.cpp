@@ -19,6 +19,7 @@
 #include <QVBoxLayout>
 
 #include "FairWindSK.hpp"
+#include "ui/IconUtils.hpp"
 #include "ui/layout/BarLayout.hpp"
 
 namespace fairwindsk::ui::settings {
@@ -28,6 +29,56 @@ namespace fairwindsk::ui::settings {
         using fairwindsk::ui::layout::LayoutEntry;
 
         constexpr auto kTopBarPaletteMimeType = "application/x-fairwindsk-topbar-entry";
+
+        QString listWidgetChrome(const fairwindsk::ui::ComfortChromeColors &colors,
+                                 const bool dashedItems = false) {
+            return QStringLiteral(
+                "QListWidget {"
+                " border: 1px solid %1;"
+                " border-radius: 12px;"
+                " padding: 8px;"
+                " background: %2;"
+                " }"
+                "QListWidget::item {"
+                " margin: 4px;"
+                " padding: 10px 12px;"
+                " border: 1px %3 %4;"
+                " border-radius: 10px;"
+                " background: %5;"
+                " color: %6;"
+                " }"
+                "QListWidget::item:selected {"
+                " border-color: %7;"
+                " background: %8;"
+                " color: %9;"
+                " font-weight: 600;"
+                " }")
+                .arg(colors.border.name(),
+                     colors.window.name(),
+                     dashedItems ? QStringLiteral("dashed") : QStringLiteral("solid"),
+                     colors.border.name(),
+                     fairwindsk::ui::comfortAlpha(colors.buttonBackground, dashedItems ? 22 : 32).name(QColor::HexArgb),
+                     colors.text.name(),
+                     colors.accentTop.name(),
+                     fairwindsk::ui::comfortAlpha(colors.accentTop, 46).name(QColor::HexArgb),
+                     colors.text.name());
+        }
+
+        void applySecondaryLabelStyle(QLabel *label, const fairwindsk::ui::ComfortChromeColors &colors) {
+            if (!label) {
+                return;
+            }
+
+            QFont font = label->font();
+            font.setBold(true);
+            font.setPointSizeF(std::max(font.pointSizeF(), 13.0));
+            label->setFont(font);
+
+            QPalette palette = label->palette();
+            palette.setColor(QPalette::WindowText, colors.text);
+            palette.setColor(QPalette::Text, colors.text);
+            label->setPalette(palette);
+        }
 
         QByteArray mimePayloadForEntry(const LayoutEntry &entry) {
             QJsonObject payload;
@@ -223,28 +274,10 @@ namespace fairwindsk::ui::settings {
 
         m_previewWidget = new PreviewListWidget(this);
         m_previewWidget->setMinimumHeight(124);
-        m_previewWidget->setStyleSheet(QStringLiteral(
-            "QListWidget {"
-            " border: 1px solid palette(mid);"
-            " border-radius: 12px;"
-            " padding: 8px;"
-            " background: palette(base);"
-            " }"
-            "QListWidget::item {"
-            " margin: 4px;"
-            " padding: 10px 12px;"
-            " border: 1px solid palette(mid);"
-            " border-radius: 10px;"
-            " background: palette(alternate-base);"
-            " }"
-            "QListWidget::item:selected {"
-            " border-color: palette(highlight);"
-            " background: palette(light);"
-            " font-weight: 600;"
-            " }"));
         m_previewWidget->viewport()->setAttribute(Qt::WA_AcceptTouchEvents, true);
         QScroller::grabGesture(m_previewWidget->viewport(), QScroller::TouchGesture);
         QScroller::grabGesture(m_previewWidget->viewport(), QScroller::LeftMouseButtonGesture);
+        m_previewWidget->setToolTip(tr("Tap a widget to edit it. Drag within the preview to reorder the top bar."));
         rootLayout->addWidget(m_previewWidget);
 
         auto *controlsLayout = new QHBoxLayout();
@@ -270,6 +303,7 @@ namespace fairwindsk::ui::settings {
             button->setIconSize(QSize(24, 24));
             button->setToolTip(toolTip);
             button->setStatusTip(toolTip);
+            button->setAccessibleName(toolTip);
             button->setMinimumSize(QSize(kControlHeight, kControlHeight));
             button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
             button->setToolButtonStyle(Qt::ToolButtonIconOnly);
@@ -304,26 +338,10 @@ namespace fairwindsk::ui::settings {
 
         m_paletteWidget = new PaletteListWidget(this);
         m_paletteWidget->setMinimumHeight(124);
-        m_paletteWidget->setStyleSheet(QStringLiteral(
-            "QListWidget {"
-            " border: 1px solid palette(mid);"
-            " border-radius: 12px;"
-            " padding: 8px;"
-            " background: palette(window);"
-            " }"
-            "QListWidget::item {"
-            " margin: 4px;"
-            " padding: 10px 12px;"
-            " border: 1px dashed palette(mid);"
-            " border-radius: 10px;"
-            " }"
-            "QListWidget::item:selected {"
-            " border-color: palette(highlight);"
-            " font-weight: 600;"
-            " }"));
         m_paletteWidget->viewport()->setAttribute(Qt::WA_AcceptTouchEvents, true);
         QScroller::grabGesture(m_paletteWidget->viewport(), QScroller::TouchGesture);
         QScroller::grabGesture(m_paletteWidget->viewport(), QScroller::LeftMouseButtonGesture);
+        m_paletteWidget->setToolTip(tr("Tap or drag a palette item to place it on the preview bar."));
         rootLayout->addWidget(m_paletteWidget);
 
         LayoutEntry separatorEntry;
@@ -346,6 +364,7 @@ namespace fairwindsk::ui::settings {
             m_paletteWidget->addItem(createPaletteItem(entry));
         }
 
+        connect(m_paletteWidget, &QListWidget::itemClicked, this, &TopBar::onPaletteItemClicked);
         connect(m_previewWidget, &QListWidget::itemSelectionChanged, this, &TopBar::onPreviewSelectionChanged);
         connect(m_previewWidget->model(), &QAbstractItemModel::rowsInserted, this, [this]() { onPreviewEdited(); });
         connect(m_previewWidget->model(), &QAbstractItemModel::rowsRemoved, this, [this]() { onPreviewEdited(); });
@@ -355,7 +374,53 @@ namespace fairwindsk::ui::settings {
         connect(m_removeSelectedButton, &QToolButton::clicked, this, &TopBar::onRemoveSelected);
         connect(m_resetDefaultsButton, &QToolButton::clicked, this, &TopBar::onResetDefaults);
 
+        applyChrome();
         updateInspector();
+    }
+
+    void TopBar::applyChrome() {
+        auto *fairWindSK = FairWindSK::getInstance();
+        const auto *configuration = m_settings ? m_settings->getConfiguration() : (fairWindSK ? fairWindSK->getConfiguration() : nullptr);
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+        const auto chrome = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), false);
+
+        fairwindsk::ui::applySectionTitleLabelStyle(m_titleLabel, configuration, preset, palette(), 18.0);
+        applySecondaryLabelStyle(m_previewLabel, chrome);
+        applySecondaryLabelStyle(m_paletteLabel, chrome);
+
+        if (m_hintLabel) {
+            QPalette hintPalette = m_hintLabel->palette();
+            hintPalette.setColor(QPalette::WindowText, chrome.text);
+            hintPalette.setColor(QPalette::Text, chrome.text);
+            m_hintLabel->setPalette(hintPalette);
+        }
+        if (m_previewWidget) {
+            m_previewWidget->setStyleSheet(listWidgetChrome(chrome, false));
+        }
+        if (m_paletteWidget) {
+            m_paletteWidget->setStyleSheet(listWidgetChrome(chrome, true));
+        }
+
+        fairwindsk::ui::applyBottomBarToolButtonChrome(m_expandWidthButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(24, 24), 52);
+        fairwindsk::ui::applyBottomBarToolButtonChrome(m_expandHeightButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(24, 24), 52);
+        fairwindsk::ui::applyBottomBarToolButtonChrome(m_removeSelectedButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(24, 24), 52);
+        fairwindsk::ui::applyBottomBarToolButtonChrome(m_resetDefaultsButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(24, 24), 52);
+    }
+
+    fairwindsk::ui::layout::LayoutEntry TopBar::entryFromPaletteItem(const QListWidgetItem *item) const {
+        LayoutEntry entry;
+        if (!item) {
+            return entry;
+        }
+
+        entry.kind = static_cast<EntryKind>(item->data(RolePaletteKind).toInt());
+        entry.widgetId = item->data(RolePaletteWidgetId).toString();
+        entry.instanceId = entry.kind == EntryKind::Widget
+                               ? entry.widgetId
+                               : QUuid::createUuid().toString(QUuid::WithoutBraces);
+        entry.enabled = true;
+        entry.expandHorizontally = entry.kind == EntryKind::Stretch;
+        return entry;
     }
 
     fairwindsk::ui::layout::LayoutEntry TopBar::entryForPreviewItem(const QListWidgetItem *item) const {
@@ -371,6 +436,34 @@ namespace fairwindsk::ui::settings {
         entry.expandHorizontally = item->data(RoleExpandHorizontally).toBool();
         entry.expandVertically = item->data(RoleExpandVertically).toBool();
         return entry;
+    }
+
+    void TopBar::appendPaletteEntryToPreview(const LayoutEntry &entry) {
+        if (!m_previewWidget) {
+            return;
+        }
+
+        if (entry.kind == EntryKind::Widget) {
+            if (auto *existingItem = findPreviewWidgetItem(entry.widgetId)) {
+                m_previewWidget->setCurrentItem(existingItem);
+                refreshPreviewItem(existingItem);
+                return;
+            }
+        }
+
+        auto *item = createPreviewItem(entry);
+        m_previewWidget->addItem(item);
+        m_previewWidget->setCurrentItem(item);
+    }
+
+    void TopBar::refreshPreviewItem(QListWidgetItem *item) const {
+        if (!item) {
+            return;
+        }
+
+        const auto entry = entryForPreviewItem(item);
+        item->setText(QStringLiteral("%1\n%2").arg(layout::entryLabel(entry), itemSummary(entry)));
+        item->setSizeHint(itemSizeHint(entry));
     }
 
     QString TopBar::itemSummary(const LayoutEntry &entry) const {
@@ -425,9 +518,14 @@ namespace fairwindsk::ui::settings {
     }
 
     QListWidgetItem *TopBar::createPaletteItem(const LayoutEntry &entry) const {
-        auto *item = new QListWidgetItem(QStringLiteral("%1\n%2")
-                                             .arg(layout::entryLabel(entry),
-                                                  entry.kind == EntryKind::Stretch ? tr("Drag to add") : tr("Available")));
+        QString detail = tr("Tap or drag to add");
+        if (entry.kind == EntryKind::Stretch) {
+            detail = tr("Elastic spacer");
+        } else if (entry.kind == EntryKind::Separator) {
+            detail = tr("Visual divider");
+        }
+
+        auto *item = new QListWidgetItem(QStringLiteral("%1\n%2").arg(layout::entryLabel(entry), detail));
         item->setData(RolePaletteKind, static_cast<int>(entry.kind));
         item->setData(RolePaletteWidgetId, entry.widgetId);
         item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsDragEnabled);
@@ -456,6 +554,7 @@ namespace fairwindsk::ui::settings {
             return;
         }
 
+        applyChrome();
         m_populating = true;
         const QSignalBlocker blocker(m_previewWidget);
         m_previewWidget->clear();
@@ -551,6 +650,14 @@ namespace fairwindsk::ui::settings {
             }
 
             const auto kind = static_cast<EntryKind>(item->data(RolePaletteKind).toInt());
+            if (kind == EntryKind::Separator) {
+                item->setToolTip(tr("Tap or drag to add a separator to the preview bar."));
+                continue;
+            }
+            if (kind == EntryKind::Stretch) {
+                item->setToolTip(tr("Tap or drag to add an elastic extender to the preview bar."));
+                continue;
+            }
             if (kind != EntryKind::Widget) {
                 continue;
             }
@@ -566,6 +673,14 @@ namespace fairwindsk::ui::settings {
         }
     }
 
+    void TopBar::onPaletteItemClicked(QListWidgetItem *item) {
+        if (!item) {
+            return;
+        }
+
+        appendPaletteEntryToPreview(entryFromPaletteItem(item));
+    }
+
     void TopBar::onPreviewSelectionChanged() {
         updateInspector();
     }
@@ -577,9 +692,7 @@ namespace fairwindsk::ui::settings {
         }
 
         item->setData(RoleExpandHorizontally, checked);
-        const auto entry = entryForPreviewItem(item);
-        item->setText(QStringLiteral("%1\n%2").arg(layout::entryLabel(entry), itemSummary(entry)));
-        item->setSizeHint(itemSizeHint(entry));
+        refreshPreviewItem(item);
         persistToConfiguration();
     }
 
@@ -590,9 +703,7 @@ namespace fairwindsk::ui::settings {
         }
 
         item->setData(RoleExpandVertically, checked);
-        const auto entry = entryForPreviewItem(item);
-        item->setText(QStringLiteral("%1\n%2").arg(layout::entryLabel(entry), itemSummary(entry)));
-        item->setSizeHint(itemSizeHint(entry));
+        refreshPreviewItem(item);
         persistToConfiguration();
     }
 
@@ -635,12 +746,7 @@ namespace fairwindsk::ui::settings {
 
         for (int row = 0; row < m_previewWidget->count(); ++row) {
             auto *item = m_previewWidget->item(row);
-            if (!item) {
-                continue;
-            }
-            const auto entry = entryForPreviewItem(item);
-            item->setText(QStringLiteral("%1\n%2").arg(layout::entryLabel(entry), itemSummary(entry)));
-            item->setSizeHint(itemSizeHint(entry));
+            refreshPreviewItem(item);
         }
 
         persistToConfiguration();
