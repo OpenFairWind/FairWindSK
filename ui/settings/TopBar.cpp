@@ -29,6 +29,9 @@ namespace fairwindsk::ui::settings {
         using fairwindsk::ui::layout::LayoutEntry;
 
         constexpr auto kTopBarPaletteMimeType = "application/x-fairwindsk-topbar-entry";
+        constexpr int kPaletteRowCount = 3;
+        constexpr int kPaletteItemHeight = 68;
+        constexpr int kPaletteVerticalPadding = 32;
 
         QString listWidgetChrome(const fairwindsk::ui::ComfortChromeColors &colors,
                                  const bool dashedItems = false) {
@@ -111,13 +114,14 @@ namespace fairwindsk::ui::settings {
             explicit PaletteListWidget(QWidget *parent = nullptr)
                 : QListWidget(parent) {
                 setViewMode(QListView::IconMode);
-                setFlow(QListView::LeftToRight);
-                setWrapping(false);
+                setFlow(QListView::TopToBottom);
+                setWrapping(true);
                 setResizeMode(QListView::Adjust);
                 setMovement(QListView::Static);
                 setSelectionMode(QAbstractItemView::SingleSelection);
                 setDragEnabled(true);
                 setAcceptDrops(false);
+                setSpacing(8);
                 setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
                 setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
                 setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
@@ -337,7 +341,8 @@ namespace fairwindsk::ui::settings {
         rootLayout->addWidget(m_paletteLabel);
 
         m_paletteWidget = new PaletteListWidget(this);
-        m_paletteWidget->setMinimumHeight(124);
+        m_paletteWidget->setMinimumHeight((kPaletteRowCount * kPaletteItemHeight) + kPaletteVerticalPadding);
+        m_paletteWidget->setMaximumHeight((kPaletteRowCount * kPaletteItemHeight) + kPaletteVerticalPadding);
         m_paletteWidget->viewport()->setAttribute(Qt::WA_AcceptTouchEvents, true);
         QScroller::grabGesture(m_paletteWidget->viewport(), QScroller::TouchGesture);
         QScroller::grabGesture(m_paletteWidget->viewport(), QScroller::LeftMouseButtonGesture);
