@@ -264,7 +264,7 @@ namespace fairwindsk::ui::settings {
         rootLayout->addWidget(m_titleLabel);
 
         m_hintLabel = new QLabel(
-            tr("Drag items from the bottom palette onto the preview bar, then drag within the preview to reorder. Use Width and Height to decide which items should grow to fill available space."),
+            tr("Drag items from the bottom palette onto the preview bar, then drag within the preview to reorder. The FairWindSK button stays fixed on the left and the current-application button stays fixed on the right. Use Width and Height to decide which middle items should grow to fill available space."),
             this);
         m_hintLabel->setWordWrap(true);
         rootLayout->addWidget(m_hintLabel);

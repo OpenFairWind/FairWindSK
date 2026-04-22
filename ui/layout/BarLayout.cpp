@@ -36,7 +36,7 @@ namespace fairwindsk::ui::layout {
                 {QStringLiteral("hdg"), QObject::tr("HDG"), true, false},
                 {QStringLiteral("stw"), QObject::tr("STW"), true, false},
                 {QStringLiteral("dpt"), QObject::tr("DPT"), true, false},
-                {QStringLiteral("current_context"), QObject::tr("Current Application / Launcher Page"), true, false},
+                {QStringLiteral("current_context"), QObject::tr("Current Application / Launcher Page Label"), true, false},
                 {QStringLiteral("wpt"), QObject::tr("WPT"), true, false},
                 {QStringLiteral("btw"), QObject::tr("BTW"), true, false},
                 {QStringLiteral("dtg"), QObject::tr("DTG"), true, false},

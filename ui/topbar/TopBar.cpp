@@ -229,7 +229,6 @@ namespace fairwindsk::ui::topbar {
         layout->setContentsMargins(0, 0, 0, 0);
         layout->setSpacing(6);
         layout->addWidget(ui->label_ApplicationName, 0, Qt::AlignVCenter);
-        layout->addWidget(ui->toolButton_UR, 0, Qt::AlignVCenter);
         m_contextLayout = layout;
         return container;
     }
@@ -358,6 +357,8 @@ namespace fairwindsk::ui::topbar {
 
             applyEntrySizing(entry, itemId, widget, ui->horizontalLayout);
         }
+
+        ui->horizontalLayout->addWidget(ui->toolButton_UR, 0, Qt::AlignVCenter);
     }
 
     void TopBar::renderNumericMetric(const MetricRenderTarget &target,
