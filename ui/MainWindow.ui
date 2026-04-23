@@ -57,102 +57,121 @@
        <widget class="QWidget" name="widget_Top" native="true"/>
       </item>
       <item>
-       
-         <widget class="QStackedWidget" name="stackedWidget_Center">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-         </widget>
-        
-      </item>
-      <item>
-       <widget class="QFrame" name="frameDialogDrawer">
-        <property name="visible">
-         <bool>false</bool>
-        </property>
-        <property name="frameShape">
-         <enum>QFrame::StyledPanel</enum>
-        </property>
-        <property name="frameShadow">
-         <enum>QFrame::Plain</enum>
-        </property>
-        <layout class="QVBoxLayout" name="verticalLayoutDialogDrawer">
+       <widget class="QWidget" name="widget_CenterShell" native="true">
+        <layout class="QGridLayout" name="gridLayoutCenterShell">
          <property name="leftMargin">
-          <number>16</number>
+          <number>0</number>
          </property>
          <property name="topMargin">
-          <number>12</number>
+          <number>0</number>
          </property>
          <property name="rightMargin">
-          <number>16</number>
+          <number>0</number>
          </property>
          <property name="bottomMargin">
-          <number>12</number>
+          <number>0</number>
          </property>
          <property name="spacing">
-          <number>10</number>
+          <number>0</number>
          </property>
-         <item>
-          <widget class="QLabel" name="labelDialogDrawerTitle">
-           <property name="styleSheet">
-            <string notr="true">QLabel { font-size: 16px; font-weight: 700; }</string>
-           </property>
-           <property name="text">
-            <string>Dialog</string>
+         <item row="0" column="0">
+          <widget class="QStackedWidget" name="stackedWidget_Center">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
            </property>
           </widget>
          </item>
-         <item>
-          <widget class="QWidget" name="widgetDialogDrawerContentHost" native="true">
-           <layout class="QVBoxLayout" name="verticalLayoutDialogDrawerContent">
+         <item row="0" column="0">
+          <widget class="QFrame" name="frameDialogDrawer">
+           <property name="visible">
+            <bool>false</bool>
+           </property>
+           <property name="frameShape">
+            <enum>QFrame::StyledPanel</enum>
+           </property>
+           <property name="frameShadow">
+            <enum>QFrame::Plain</enum>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayoutDialogDrawer">
             <property name="leftMargin">
-             <number>0</number>
+             <number>16</number>
             </property>
             <property name="topMargin">
-             <number>0</number>
+             <number>12</number>
             </property>
             <property name="rightMargin">
-             <number>0</number>
+             <number>16</number>
             </property>
             <property name="bottomMargin">
-             <number>0</number>
-            </property>
-           </layout>
-          </widget>
-         </item>
-         <item>
-          <widget class="QWidget" name="widgetDialogDrawerButtonRow" native="true">
-           <layout class="QHBoxLayout" name="horizontalLayoutDialogDrawerButtons">
-            <property name="leftMargin">
-             <number>0</number>
-            </property>
-            <property name="topMargin">
-             <number>0</number>
-            </property>
-            <property name="rightMargin">
-             <number>0</number>
-            </property>
-            <property name="bottomMargin">
-             <number>0</number>
+             <number>12</number>
             </property>
             <property name="spacing">
-             <number>8</number>
+             <number>10</number>
             </property>
             <item>
-             <spacer name="horizontalSpacerDialogDrawerButtons">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
+             <widget class="QLabel" name="labelDialogDrawerTitle">
+              <property name="styleSheet">
+               <string notr="true">QLabel { font-size: 16px; font-weight: 700; }</string>
               </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>40</width>
-                <height>20</height>
-               </size>
+              <property name="text">
+               <string>Dialog</string>
               </property>
-             </spacer>
+             </widget>
+            </item>
+            <item>
+             <widget class="QWidget" name="widgetDialogDrawerContentHost" native="true">
+              <layout class="QVBoxLayout" name="verticalLayoutDialogDrawerContent">
+               <property name="leftMargin">
+                <number>0</number>
+               </property>
+               <property name="topMargin">
+                <number>0</number>
+               </property>
+               <property name="rightMargin">
+                <number>0</number>
+               </property>
+               <property name="bottomMargin">
+                <number>0</number>
+               </property>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QWidget" name="widgetDialogDrawerButtonRow" native="true">
+              <layout class="QHBoxLayout" name="horizontalLayoutDialogDrawerButtons">
+               <property name="leftMargin">
+                <number>0</number>
+               </property>
+               <property name="topMargin">
+                <number>0</number>
+               </property>
+               <property name="rightMargin">
+                <number>0</number>
+               </property>
+               <property name="bottomMargin">
+                <number>0</number>
+               </property>
+               <property name="spacing">
+                <number>8</number>
+               </property>
+               <item>
+                <spacer name="horizontalSpacerDialogDrawerButtons">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
+             </widget>
             </item>
            </layout>
           </widget>

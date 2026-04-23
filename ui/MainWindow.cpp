@@ -13,6 +13,7 @@
 #include <QWindow>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QGridLayout>
 #include <QScreen>
 #include <QInputMethod>
 #include <QLineEdit>
@@ -70,6 +71,11 @@ namespace fairwindsk::ui {
         m_dialogDrawerContentHost = ui->widgetDialogDrawerContentHost;
         m_dialogDrawerContentLayout = ui->verticalLayoutDialogDrawerContent;
         m_dialogDrawerButtonsLayout = ui->horizontalLayoutDialogDrawerButtons;
+        if (ui->widget_CenterShell) {
+            if (auto *centerShellLayout = qobject_cast<QGridLayout *>(ui->widget_CenterShell->layout())) {
+                centerShellLayout->setAlignment(m_dialogDrawer, Qt::AlignBottom);
+            }
+        }
         if (m_dialogDrawerButtonsLayout) {
             m_dialogDrawerButtonsLayout->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
         }
@@ -233,9 +239,6 @@ namespace fairwindsk::ui {
         auto finishedHandler = std::move(m_activeDrawerFinishedHandler);
         m_activeDrawerFinishedHandler = nullptr;
         m_dialogDrawer->hide();
-        if (ui->stackedWidget_Center) {
-            ui->stackedWidget_Center->setVisible(true);
-        }
         m_drawerOccupiesApplicationArea = false;
         if (m_dialogDrawerTitle) {
             m_dialogDrawerTitle->setVisible(true);
@@ -308,10 +311,6 @@ namespace fairwindsk::ui {
         }
         if (m_dialogDrawerContentHost && m_dialogDrawerContentHost->layout()) {
             m_dialogDrawerContentHost->layout()->activate();
-        }
-
-        if (m_drawerOccupiesApplicationArea && ui->stackedWidget_Center) {
-            ui->stackedWidget_Center->setVisible(false);
         }
 
         setDrawerEnabled(false);
