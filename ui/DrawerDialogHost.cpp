@@ -1308,23 +1308,47 @@ namespace fairwindsk::ui::drawer {
     QString getIconPath(QWidget *parent,
                         const QString &title,
                         const QString &currentPath) {
+        auto *mainWindow = resolveMainWindow(parent);
+        if (!mainWindow) {
+            auto *picker = new fairwindsk::ui::widgets::TouchIconBrowser();
+            picker->setCurrentPath(currentPath);
+            QPointer<fairwindsk::ui::widgets::TouchIconBrowser> pickerGuard(picker);
+            QDialog dialog(parent);
+            dialog.setWindowTitle(title);
+            dialog.setModal(true);
+            dialog.setWindowFlags(dialog.windowFlags() & ~Qt::WindowContextHelpButtonHint);
+            auto *layout = new QVBoxLayout(&dialog);
+            layout->setContentsMargins(16, 16, 16, 16);
+            layout->addWidget(picker);
+            QObject::connect(picker, &fairwindsk::ui::widgets::TouchIconBrowser::canceled, &dialog, [&dialog]() {
+                dialog.done(int(QMessageBox::Cancel));
+            });
+            QObject::connect(picker, &fairwindsk::ui::widgets::TouchIconBrowser::pathActivated, &dialog, [&dialog](const QString &) {
+                dialog.done(int(QMessageBox::Ok));
+            });
+            const int result = dialog.exec();
+
+            if (!pickerGuard || result != QMessageBox::Ok) {
+                return {};
+            }
+
+            return fairwindsk::ui::widgets::TouchIconBrowser::normalizedIconStoragePath(pickerGuard->selectedPath());
+        }
+
         auto *picker = new fairwindsk::ui::widgets::TouchIconBrowser();
         picker->setCurrentPath(currentPath);
+        QObject::connect(picker, &fairwindsk::ui::widgets::TouchIconBrowser::canceled, picker, [mainWindow]() {
+            if (mainWindow) {
+                mainWindow->finishActiveDrawer(QMessageBox::Cancel);
+            }
+        });
+        QObject::connect(picker, &fairwindsk::ui::widgets::TouchIconBrowser::pathActivated, picker, [mainWindow](const QString &) {
+            if (mainWindow) {
+                mainWindow->finishActiveDrawer(QMessageBox::Ok);
+            }
+        });
         QPointer<fairwindsk::ui::widgets::TouchIconBrowser> pickerGuard(picker);
-        QDialog dialog(resolveMainWindow(parent) ? static_cast<QWidget *>(resolveMainWindow(parent)) : parent);
-        dialog.setWindowTitle(title);
-        dialog.setModal(true);
-        dialog.setWindowFlags(dialog.windowFlags() & ~Qt::WindowContextHelpButtonHint);
-        auto *layout = new QVBoxLayout(&dialog);
-        layout->setContentsMargins(16, 16, 16, 16);
-        layout->addWidget(picker);
-        QObject::connect(picker, &fairwindsk::ui::widgets::TouchIconBrowser::canceled, &dialog, [&dialog]() {
-            dialog.done(int(QMessageBox::Cancel));
-        });
-        QObject::connect(picker, &fairwindsk::ui::widgets::TouchIconBrowser::pathActivated, &dialog, [&dialog](const QString &) {
-            dialog.done(int(QMessageBox::Ok));
-        });
-        const int result = dialog.exec();
+        const int result = execDrawer(parent, title, picker, {}, int(QMessageBox::Cancel));
 
         if (!pickerGuard || result != QMessageBox::Ok) {
             return {};

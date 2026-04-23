@@ -5,7 +5,6 @@
 #ifndef FAIRWINDSK_PAGEDETAILSWIDGET_HPP
 #define FAIRWINDSK_PAGEDETAILSWIDGET_HPP
 
-#include <QEvent>
 #include <QPixmap>
 #include <QWidget>
 
@@ -39,7 +38,6 @@ namespace fairwindsk::ui::settings {
         void iconPathSelected(const QString &path);
 
     private:
-        bool eventFilter(QObject *watched, QEvent *event) override;
         void applySelectedIcon();
         void updateIconPreview(const QString &path);
 

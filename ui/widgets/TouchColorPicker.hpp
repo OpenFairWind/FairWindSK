@@ -76,10 +76,10 @@ namespace fairwindsk::ui::widgets {
         QGridLayout *m_customSwatchesLayout = nullptr;
         QVBoxLayout *m_balanceLayout = nullptr;
         QVBoxLayout *m_fineTuneLayout = nullptr;
+        QLabel *m_hintLabel = nullptr;
         QPushButton *m_addCustomColorButton = nullptr;
         QPushButton *m_removeCustomColorButton = nullptr;
         QPushButton *m_cancelButton = nullptr;
-        QPushButton *m_applyButton = nullptr;
 
         QSlider *m_hueSlider = nullptr;
         QSlider *m_saturationSlider = nullptr;

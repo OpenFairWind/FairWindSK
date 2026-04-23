@@ -90,7 +90,7 @@ namespace fairwindsk::ui::widgets {
                 "QPushButton {"
                 " min-height: 64px;"
                 " min-width: 64px;"
-                " padding: 8px 14px;"
+                " padding: 10px 16px;"
                 " border-radius: 16px;"
                 " border: 1px solid %1;"
                 " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
@@ -126,10 +126,10 @@ namespace fairwindsk::ui::widgets {
         QString drawerLineEditStyle(const DrawerBrowserColors &colors) {
             return QStringLiteral(
                 "QLineEdit {"
-                " min-height: 66px;"
+                " min-height: 68px;"
                 " border: 1px solid %1;"
                 " border-radius: 16px;"
-                " padding: 8px 18px;"
+                " padding: 10px 18px;"
                 " background: %2;"
                 " color: %3;"
                 " font-size: 34px;"
@@ -169,29 +169,29 @@ namespace fairwindsk::ui::widgets {
                 "QTreeView {"
                 " background: transparent;"
                 " color: %1;"
-                " font-size: 20px;"
+                " font-size: 22px;"
                 " alternate-background-color: rgba(255, 255, 255, 0.03);"
                 " border: none;"
                 " outline: none;"
                 " show-decoration-selected: 1;"
                 " }"
                 "QTreeView::item {"
-                " min-height: 60px;"
-                " padding: 8px 14px;"
-                " border-radius: 10px;"
+                " min-height: 68px;"
+                " padding: 10px 16px;"
+                " border-radius: 12px;"
                 " }"
                 "QTreeView::item:selected {"
                 " background: %2;"
                 " color: %3;"
                 " }"
                 "QHeaderView::section {"
-                " min-height: 48px;"
-                " padding: 0 14px;"
+                " min-height: 52px;"
+                " padding: 0 16px;"
                 " background: %4;"
                 " color: %5;"
                 " border: none;"
                 " border-bottom: 1px solid %6;"
-                " font-size: 16px;"
+                " font-size: 18px;"
                 " font-weight: 700;"
                 " }"
                 "QHeaderView::section:first {"
@@ -231,10 +231,12 @@ namespace fairwindsk::ui::widgets {
         titleRow->setContentsMargins(0, 0, 0, 0);
         titleRow->setSpacing(12);
 
-        m_titleLabel = new QLabel(m_mode == Mode::SaveFile ? tr("Save file") : tr("Select file"), this);
-        if (m_mode == Mode::OpenFile) {
-            m_titleLabel->hide();
-        }
+        m_titleLabel = new QLabel(
+            m_mode == Mode::SaveFile
+                ? tr("Choose a destination, then double tap or double click a file to reuse its name or use Save.")
+                : tr("Choose a file. Tap once to highlight it, then double tap or double click to select it."),
+            this);
+        m_titleLabel->setWordWrap(true);
         titleRow->addWidget(m_titleLabel);
         titleRow->addStretch(1);
         layout->addLayout(titleRow);

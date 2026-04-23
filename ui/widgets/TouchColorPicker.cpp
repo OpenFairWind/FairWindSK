@@ -244,8 +244,8 @@ namespace fairwindsk::ui::widgets {
                 : QToolButton(parent),
                   m_color(color) {
                 setCheckable(true);
-                setMinimumSize(56, 56);
-                setIconSize(QSize(28, 28));
+                setMinimumSize(64, 64);
+                setIconSize(QSize(32, 32));
                 setAutoRaise(false);
                 setProperty("touchColorPickerSwatch", true);
             }
@@ -306,23 +306,35 @@ namespace fairwindsk::ui::widgets {
 
     TouchColorPicker::TouchColorPicker(QWidget *parent)
         : QWidget(parent) {
+        setObjectName(QStringLiteral("touchColorPicker"));
+        setProperty("drawerFillCenterArea", true);
+        setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        setMinimumHeight(0);
+
         auto *rootLayout = new QVBoxLayout(this);
         rootLayout->setContentsMargins(0, 0, 0, 0);
         rootLayout->setSpacing(12);
-
-        auto *hintLabel = new QLabel(
-            tr("Tap or drag in the shade area, use the sliders, type a hex value, or manage custom swatches for quick touch selection."),
-            this);
-        hintLabel->setWordWrap(true);
-        rootLayout->addWidget(hintLabel);
 
         auto *headerLayout = new QHBoxLayout();
         headerLayout->setContentsMargins(0, 0, 0, 0);
         headerLayout->setSpacing(12);
         rootLayout->addLayout(headerLayout);
 
+        m_cancelButton = new QPushButton(this);
+        m_cancelButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/arrow-left-google.svg")));
+        m_cancelButton->setIconSize(QSize(32, 32));
+        m_cancelButton->setMinimumSize(64, 64);
+        m_cancelButton->setToolTip(tr("Cancel"));
+        headerLayout->addWidget(m_cancelButton, 0, Qt::AlignTop);
+
+        m_hintLabel = new QLabel(
+            tr("Adjust the color with the shade area, sliders, hex value, or custom swatches. Double tap or double click a swatch, or double tap the preview, to select it."),
+            this);
+        m_hintLabel->setWordWrap(true);
+        headerLayout->addWidget(m_hintLabel, 1);
+
         auto *preview = new PreviewFrame(this);
-        preview->setMinimumSize(112, 92);
+        preview->setMinimumSize(124, 96);
         preview->setFrameShape(QFrame::StyledPanel);
         preview->onActivated = [this]() {
             emit colorActivated(m_color);
@@ -350,23 +362,9 @@ namespace fairwindsk::ui::widgets {
         summaryLayout->addWidget(m_hsvLabel);
         summaryLayout->addStretch(1);
 
-        m_cancelButton = new QPushButton(this);
-        m_cancelButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/close-google.svg")));
-        m_cancelButton->setIconSize(QSize(28, 28));
-        m_cancelButton->setMinimumSize(52, 52);
-        m_cancelButton->setToolTip(tr("Cancel"));
-        headerLayout->insertWidget(0, m_cancelButton, 0, Qt::AlignTop);
-
-        m_applyButton = new QPushButton(this);
-        m_applyButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/arrow-right-google.svg")));
-        m_applyButton->setIconSize(QSize(28, 28));
-        m_applyButton->setMinimumSize(52, 52);
-        m_applyButton->setToolTip(tr("Apply"));
-        headerLayout->addWidget(m_applyButton, 0, Qt::AlignTop);
-
         auto *contentLayout = new QHBoxLayout();
         contentLayout->setContentsMargins(0, 0, 0, 0);
-        contentLayout->setSpacing(14);
+        contentLayout->setSpacing(16);
         rootLayout->addLayout(contentLayout, 1);
 
         auto *leftColumnLayout = new QVBoxLayout();
@@ -429,11 +427,11 @@ namespace fairwindsk::ui::widgets {
         customHeaderLayout->addStretch(1);
 
         m_addCustomColorButton = new QPushButton(tr("Add current"), this);
-        m_addCustomColorButton->setMinimumHeight(42);
+        m_addCustomColorButton->setMinimumHeight(54);
         customHeaderLayout->addWidget(m_addCustomColorButton);
 
         m_removeCustomColorButton = new QPushButton(tr("Remove current"), this);
-        m_removeCustomColorButton->setMinimumHeight(42);
+        m_removeCustomColorButton->setMinimumHeight(54);
         customHeaderLayout->addWidget(m_removeCustomColorButton);
 
         m_customSwatchesHost = new QWidget(this);
@@ -529,9 +527,6 @@ namespace fairwindsk::ui::widgets {
         });
         connect(m_cancelButton, &QPushButton::clicked, this, [this]() {
             emit canceled();
-        });
-        connect(m_applyButton, &QPushButton::clicked, this, [this]() {
-            emit colorActivated(m_color);
         });
 
         loadCustomColors();
@@ -647,24 +642,21 @@ namespace fairwindsk::ui::widgets {
             m_cancelButton->setStyleSheet(QStringLiteral(
                 "QPushButton {"
                 " border: 1px solid %1;"
-                " border-radius: 10px;"
-                " background: transparent;"
+                " border-radius: 16px;"
+                " background: %3;"
                 " color: %2;"
-                " padding: 4px;"
+                " padding: 8px;"
                 " }"
                 "QPushButton:hover, QPushButton:pressed {"
-                " background: %3;"
-                " color: %4;"
+                " background: %4;"
+                " color: %5;"
                 " }")
                 .arg(colors.border.name(),
                      colors.text.name(),
+                     colors.buttonBackground.name(),
                      fairwindsk::ui::comfortAlpha(colors.accent, 48).name(QColor::HexArgb),
                      colors.accentText.name()));
-            fairwindsk::ui::applyTintedButtonIcon(m_cancelButton, colors.text, QSize(28, 28));
-        }
-
-        if (m_applyButton) {
-            fairwindsk::ui::applyTintedButtonIcon(m_applyButton, colors.buttonText, QSize(28, 28));
+            fairwindsk::ui::applyTintedButtonIcon(m_cancelButton, colors.text, QSize(30, 30));
         }
 
         updatePreview();
@@ -693,20 +685,20 @@ namespace fairwindsk::ui::widgets {
         auto *rowWidget = new QWidget(this);
         auto *rowLayout = new QHBoxLayout(rowWidget);
         rowLayout->setContentsMargins(0, 0, 0, 0);
-        rowLayout->setSpacing(8);
+        rowLayout->setSpacing(12);
 
         auto *label = new QLabel(labelText, this);
-        label->setMinimumWidth(72);
+        label->setMinimumWidth(92);
         rowLayout->addWidget(label);
 
         auto *slider = new QSlider(Qt::Horizontal, this);
         slider->setPageStep(8);
         slider->setSingleStep(1);
-        slider->setMinimumHeight(48);
+        slider->setMinimumHeight(56);
         rowLayout->addWidget(slider, 1);
 
         auto *valueLabel = new QLabel(this);
-        valueLabel->setMinimumWidth(44);
+        valueLabel->setMinimumWidth(56);
         valueLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
         rowLayout->addWidget(valueLabel);
 
