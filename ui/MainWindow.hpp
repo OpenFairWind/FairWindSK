@@ -167,6 +167,7 @@ namespace fairwindsk::ui {
         QHBoxLayout *m_dialogDrawerButtonsLayout = nullptr;
         std::function<void(int)> m_activeDrawerFinishedHandler;
         int m_activeDrawerDefaultResult = 0;
+        bool m_drawerOccupiesApplicationArea = false;
         bool m_quitConfirmed = false;
 
         // QWidget containing useful infos

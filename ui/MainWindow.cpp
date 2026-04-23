@@ -197,6 +197,9 @@ namespace fairwindsk::ui {
     }
 
     void MainWindow::clearDrawer() {
+        if (m_dialogDrawerContentHost) {
+            m_dialogDrawerContentHost->setProperty("drawerFillCenterArea", false);
+        }
         while (m_dialogDrawerButtonsLayout && m_dialogDrawerButtonsLayout->count() > 1) {
             auto *item = m_dialogDrawerButtonsLayout->takeAt(0);
             if (auto *widget = item->widget()) {
@@ -233,6 +236,17 @@ namespace fairwindsk::ui {
         if (ui->stackedWidget_Center) {
             ui->stackedWidget_Center->setVisible(true);
         }
+        m_drawerOccupiesApplicationArea = false;
+        if (m_dialogDrawerTitle) {
+            m_dialogDrawerTitle->setVisible(true);
+        }
+        if (ui->widgetDialogDrawerButtonRow) {
+            ui->widgetDialogDrawerButtonRow->setVisible(false);
+        }
+        if (auto *drawerLayout = qobject_cast<QVBoxLayout *>(m_dialogDrawer->layout())) {
+            drawerLayout->setContentsMargins(16, 12, 16, 12);
+            drawerLayout->setSpacing(10);
+        }
         clearDrawer();
         setDrawerEnabled(true);
         updateMobileShellMetrics();
@@ -262,11 +276,22 @@ namespace fairwindsk::ui {
         clearDrawer();
         m_activeDrawerFinishedHandler = std::move(onFinished);
         m_activeDrawerDefaultResult = defaultResult;
+        m_drawerOccupiesApplicationArea = content->property("drawerFillCenterArea").toBool();
         m_dialogDrawerTitle->setText(title);
         content->setParent(m_dialogDrawerContentHost);
         m_dialogDrawerContentHost->setProperty("drawerFillCenterArea", content->property("drawerFillCenterArea"));
         m_dialogDrawerContentLayout->addWidget(content);
-        ui->widgetDialogDrawerButtonRow->setVisible(!buttons.isEmpty());
+        if (m_dialogDrawerTitle) {
+            m_dialogDrawerTitle->setVisible(!m_drawerOccupiesApplicationArea && !title.trimmed().isEmpty());
+        }
+        if (ui->widgetDialogDrawerButtonRow) {
+            ui->widgetDialogDrawerButtonRow->setVisible(!m_drawerOccupiesApplicationArea && !buttons.isEmpty());
+        }
+        if (auto *drawerLayout = qobject_cast<QVBoxLayout *>(m_dialogDrawer->layout())) {
+            drawerLayout->setContentsMargins(m_drawerOccupiesApplicationArea ? QMargins(0, 0, 0, 0)
+                                                                             : QMargins(16, 12, 16, 12));
+            drawerLayout->setSpacing(m_drawerOccupiesApplicationArea ? 0 : 10);
+        }
 
         for (const auto &buttonSpec : buttons) {
             auto *button = new QPushButton(buttonSpec.text, m_dialogDrawer);
@@ -285,7 +310,7 @@ namespace fairwindsk::ui {
             m_dialogDrawerContentHost->layout()->activate();
         }
 
-        if (content->property("drawerFillCenterArea").toBool() && ui->stackedWidget_Center) {
+        if (m_drawerOccupiesApplicationArea && ui->stackedWidget_Center) {
             ui->stackedWidget_Center->setVisible(false);
         }
 
