@@ -11,6 +11,7 @@
 
 class QLabel;
 class QListWidgetItem;
+class QFrame;
 
 namespace fairwindsk::ui::settings {
     class BarLayoutSettings : public QWidget {
@@ -44,6 +45,7 @@ namespace fairwindsk::ui::settings {
         void persistToConfiguration();
         fairwindsk::ui::layout::LayoutEntry entryForItem(const QListWidgetItem *item) const;
         QListWidgetItem *createItem(const fairwindsk::ui::layout::LayoutEntry &entry);
+        void refreshPreviewItem(QListWidgetItem *item) const;
         void updateActions();
         void appendPlaceholder(fairwindsk::ui::layout::EntryKind kind);
         void activateWidgetEntry(const QString &widgetId);
@@ -52,6 +54,8 @@ namespace fairwindsk::ui::settings {
         fairwindsk::ui::layout::BarId m_barId = fairwindsk::ui::layout::BarId::Top;
         QLabel *m_titleLabel = nullptr;
         QLabel *m_hintLabel = nullptr;
+        QLabel *m_previewLabel = nullptr;
+        QFrame *m_previewFrame = nullptr;
         QListWidget *m_listWidget = nullptr;
         QToolButton *m_removeSelectedButton = nullptr;
         QToolButton *m_resetDefaultsButton = nullptr;

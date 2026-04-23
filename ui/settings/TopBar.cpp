@@ -4,6 +4,7 @@
 #include <QAbstractItemModel>
 #include <QDragEnterEvent>
 #include <QDropEvent>
+#include <QFrame>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QIcon>
@@ -12,6 +13,7 @@
 #include <QScroller>
 #include <QScrollerProperties>
 #include <QSignalBlocker>
+#include <QUuid>
 #include <QVBoxLayout>
 
 #include "FairWindSK.hpp"
@@ -56,6 +58,17 @@ namespace fairwindsk::ui::settings {
                      colors.accentTop.name(),
                      fairwindsk::ui::comfortAlpha(colors.accentTop, 46).name(QColor::HexArgb),
                      colors.text.name());
+        }
+
+        QString previewFrameChrome(const fairwindsk::ui::ComfortChromeColors &colors) {
+            return QStringLiteral(
+                "QFrame {"
+                " border: 1px solid %1;"
+                " border-radius: 14px;"
+                " background: %2;"
+                " }")
+                .arg(colors.border.name(),
+                     fairwindsk::ui::comfortAlpha(colors.buttonBackground, 18).name(QColor::HexArgb));
         }
 
         void applySecondaryLabelStyle(QLabel *label, const fairwindsk::ui::ComfortChromeColors &colors) {
@@ -196,13 +209,34 @@ namespace fairwindsk::ui::settings {
         m_previewLabel = new QLabel(tr("Preview"), this);
         rootLayout->addWidget(m_previewLabel);
 
-        m_previewWidget = new PreviewListWidget(this);
+        m_previewFrame = new QFrame(this);
+        auto *previewFrameLayout = new QHBoxLayout(m_previewFrame);
+        previewFrameLayout->setContentsMargins(8, 8, 8, 8);
+        previewFrameLayout->setSpacing(8);
+
+        m_leftShellButton = new QToolButton(m_previewFrame);
+        m_rightShellButton = new QToolButton(m_previewFrame);
+        for (auto *button : {m_leftShellButton, m_rightShellButton}) {
+            button->setAutoRaise(true);
+            button->setIconSize(QSize(28, 28));
+            button->setMinimumSize(QSize(56, 56));
+            button->setToolButtonStyle(Qt::ToolButtonIconOnly);
+            button->setEnabled(true);
+            button->setFocusPolicy(Qt::NoFocus);
+        }
+        m_leftShellButton->setToolTip(tr("Fixed FairWindSK shell button"));
+        m_rightShellButton->setToolTip(tr("Fixed current-application shell button"));
+
+        m_previewWidget = new PreviewListWidget(m_previewFrame);
         m_previewWidget->setMinimumHeight(124);
         m_previewWidget->viewport()->setAttribute(Qt::WA_AcceptTouchEvents, true);
         QScroller::grabGesture(m_previewWidget->viewport(), QScroller::TouchGesture);
         QScroller::grabGesture(m_previewWidget->viewport(), QScroller::LeftMouseButtonGesture);
         m_previewWidget->setToolTip(tr("Tap a widget to edit it. Drag within the preview to reorder the top bar."));
-        rootLayout->addWidget(m_previewWidget);
+        previewFrameLayout->addWidget(m_leftShellButton, 0, Qt::AlignVCenter);
+        previewFrameLayout->addWidget(m_previewWidget, 1);
+        previewFrameLayout->addWidget(m_rightShellButton, 0, Qt::AlignVCenter);
+        rootLayout->addWidget(m_previewFrame);
 
         auto *controlsLayout = new QHBoxLayout();
         controlsLayout->setContentsMargins(0, 0, 0, 0);
@@ -317,12 +351,24 @@ namespace fairwindsk::ui::settings {
         if (m_previewWidget) {
             m_previewWidget->setStyleSheet(listWidgetChrome(chrome, false));
         }
+        if (m_previewFrame) {
+            m_previewFrame->setStyleSheet(previewFrameChrome(chrome));
+        }
         if (m_paletteWidget) {
             m_paletteWidget->setStyleSheet(QStringLiteral(
                 "QScrollArea { border: 1px solid %1; border-radius: 12px; background: %2; }"
                 "QWidget { background: transparent; }")
                                                .arg(chrome.border.name(),
                                                     chrome.window.name()));
+        }
+
+        if (m_leftShellButton) {
+            m_leftShellButton->setIcon(QIcon(QStringLiteral(":/resources/images/mainwindow/fairwind_icon.png")));
+            fairwindsk::ui::applyBottomBarToolButtonChrome(m_leftShellButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(28, 28), 56);
+        }
+        if (m_rightShellButton) {
+            m_rightShellButton->setIcon(QIcon(QStringLiteral(":/resources/images/icons/apps_icon.png")));
+            fairwindsk::ui::applyBottomBarToolButtonChrome(m_rightShellButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(28, 28), 56);
         }
 
         fairwindsk::ui::applyBottomBarToolButtonChrome(m_expandWidthButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(24, 24), 52);
@@ -370,6 +416,7 @@ namespace fairwindsk::ui::settings {
         }
 
         const auto entry = entryForPreviewItem(item);
+        item->setIcon(WidgetPalette::entryIcon(entry));
         item->setText(QStringLiteral("%1\n%2").arg(layout::entryLabel(entry), itemSummary(entry)));
         item->setSizeHint(itemSizeHint(entry));
     }
@@ -409,6 +456,7 @@ namespace fairwindsk::ui::settings {
 
     QListWidgetItem *TopBar::createPreviewItem(const LayoutEntry &entry) const {
         auto *item = new QListWidgetItem();
+        item->setIcon(WidgetPalette::entryIcon(entry));
         item->setData(RoleKind, static_cast<int>(entry.kind));
         item->setData(RoleWidgetId, entry.widgetId);
         item->setData(RoleInstanceId, entry.instanceId);

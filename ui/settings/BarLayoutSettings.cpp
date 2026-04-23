@@ -3,6 +3,7 @@
 #include <QAbstractItemModel>
 #include <QDragEnterEvent>
 #include <QDropEvent>
+#include <QFrame>
 #include <QLabel>
 #include <QListWidgetItem>
 #include <QMimeData>
@@ -21,10 +22,27 @@ namespace fairwindsk::ui::settings {
     using fairwindsk::ui::layout::LayoutEntry;
 
     namespace {
+        QString previewListChrome(const fairwindsk::ui::ComfortChromeColors &colors) {
+            return QStringLiteral(
+                "QListWidget { border: 1px solid %1; border-radius: 12px; background: %2; padding: 8px; }"
+                "QListWidget::item { margin: 4px; padding: 10px; border: 1px solid %3; border-radius: 10px; color: %4; }"
+                "QListWidget::item:selected { border-color: %5; background: %6; font-weight: 600; }")
+                .arg(colors.border.name(),
+                     fairwindsk::ui::comfortAlpha(colors.buttonBackground, 18).name(QColor::HexArgb),
+                     colors.border.name(),
+                     colors.text.name(),
+                     colors.accentTop.name(),
+                     fairwindsk::ui::comfortAlpha(colors.accentTop, 42).name(QColor::HexArgb));
+        }
+
         class PaletteAwareListWidget final : public QListWidget {
         public:
             explicit PaletteAwareListWidget(QWidget *parent = nullptr)
                 : QListWidget(parent) {
+                setViewMode(QListView::IconMode);
+                setFlow(QListView::LeftToRight);
+                setWrapping(false);
+                setResizeMode(QListView::Adjust);
             }
 
         protected:
@@ -70,7 +88,6 @@ namespace fairwindsk::ui::settings {
                             continue;
                         }
 
-                        existingItem->setCheckState(Qt::Checked);
                         QListWidgetItem *movedItem = takeItem(row);
                         if (row < insertRow) {
                             --insertRow;
@@ -89,10 +106,9 @@ namespace fairwindsk::ui::settings {
                 newItem->setData(Qt::UserRole + 3, entry.instanceId);
                 newItem->setFlags(Qt::ItemIsEnabled |
                                   Qt::ItemIsSelectable |
-                                  Qt::ItemIsDragEnabled |
-                                  Qt::ItemIsUserCheckable);
-                newItem->setCheckState(Qt::Checked);
-                newItem->setSizeHint(QSize(0, 76));
+                                  Qt::ItemIsDragEnabled);
+                newItem->setIcon(WidgetPalette::entryIcon(entry));
+                newItem->setSizeHint(QSize(108, 84));
                 insertItem(std::clamp(insertRow, 0, count()), newItem);
                 setCurrentItem(newItem);
                 event->setDropAction(Qt::CopyAction);
@@ -131,10 +147,18 @@ namespace fairwindsk::ui::settings {
         m_hintLabel->setWordWrap(true);
         rootLayout->addWidget(m_hintLabel);
 
+        m_previewLabel = new QLabel(tr("Preview"), this);
+        rootLayout->addWidget(m_previewLabel);
+
+        m_previewFrame = new QFrame(this);
+        auto *previewLayout = new QVBoxLayout(m_previewFrame);
+        previewLayout->setContentsMargins(8, 8, 8, 8);
+        previewLayout->setSpacing(8);
+
         auto *controlsLayout = new QHBoxLayout();
         controlsLayout->setContentsMargins(0, 0, 0, 0);
         controlsLayout->setSpacing(8);
-        rootLayout->addLayout(controlsLayout);
+        previewLayout->addLayout(controlsLayout);
 
         auto configureActionButton = [kControlHeight](QToolButton *button,
                                                       const QString &iconPath,
@@ -169,16 +193,16 @@ namespace fairwindsk::ui::settings {
         m_listWidget = new PaletteAwareListWidget(this);
         m_listWidget->setSelectionMode(QAbstractItemView::SingleSelection);
         m_listWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
-        m_listWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        m_listWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
         m_listWidget->setDragDropMode(QAbstractItemView::InternalMove);
         m_listWidget->setDragEnabled(true);
         m_listWidget->setAcceptDrops(true);
         m_listWidget->setDragDropOverwriteMode(false);
         m_listWidget->setDefaultDropAction(Qt::MoveAction);
         m_listWidget->setDropIndicatorShown(true);
-        m_listWidget->setAlternatingRowColors(true);
         m_listWidget->setSpacing(8);
         m_listWidget->setUniformItemSizes(false);
+        m_listWidget->setMinimumHeight(128);
         m_listWidget->viewport()->setAttribute(Qt::WA_AcceptTouchEvents, true);
         QScroller::grabGesture(m_listWidget->viewport(), QScroller::TouchGesture);
         QScroller::grabGesture(m_listWidget->viewport(), QScroller::LeftMouseButtonGesture);
@@ -188,7 +212,9 @@ namespace fairwindsk::ui::settings {
         scrollerProperties.setScrollMetric(QScrollerProperties::DragStartDistance, 0.01);
         scrollerProperties.setScrollMetric(QScrollerProperties::MaximumVelocity, 0.55);
         QScroller::scroller(m_listWidget->viewport())->setScrollerProperties(scrollerProperties);
-        rootLayout->addWidget(m_listWidget, 1);
+        m_listWidget->setToolTip(tr("Drag inside the preview to reorder the bar."));
+        previewLayout->addWidget(m_listWidget, 1);
+        rootLayout->addWidget(m_previewFrame);
 
         auto *paletteLabel = new QLabel(tr("Widget Palette"), this);
         rootLayout->addWidget(paletteLabel);
@@ -240,17 +266,14 @@ namespace fairwindsk::ui::settings {
         const auto chrome = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), false);
 
         fairwindsk::ui::applySectionTitleLabelStyle(m_titleLabel, configuration, preset, palette(), 18.0);
+        if (m_previewFrame) {
+            m_previewFrame->setStyleSheet(QStringLiteral(
+                "QFrame { border: 1px solid %1; border-radius: 14px; background: %2; }")
+                                              .arg(chrome.border.name(),
+                                                   fairwindsk::ui::comfortAlpha(chrome.buttonBackground, 18).name(QColor::HexArgb)));
+        }
         if (m_listWidget) {
-            m_listWidget->setStyleSheet(QStringLiteral(
-                "QListWidget { border: 1px solid %1; border-radius: 10px; background: %2; }"
-                "QListWidget::item { padding: 12px 14px; border: 1px solid %3; border-radius: 8px; color: %4; }"
-                "QListWidget::item:selected { border-color: %5; background: %6; font-weight: 600; }")
-                                           .arg(chrome.border.name(),
-                                                chrome.window.name(),
-                                                chrome.border.name(),
-                                                chrome.text.name(),
-                                                chrome.accentTop.name(),
-                                                fairwindsk::ui::comfortAlpha(chrome.accentTop, 42).name(QColor::HexArgb)));
+            m_listWidget->setStyleSheet(previewListChrome(chrome));
         }
 
         fairwindsk::ui::applyBottomBarToolButtonChrome(m_removeSelectedButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(24, 24), 52);
@@ -258,19 +281,34 @@ namespace fairwindsk::ui::settings {
     }
 
     QListWidgetItem *BarLayoutSettings::createItem(const LayoutEntry &entry) {
-        constexpr int kRowHeight = 76;
+        constexpr int kRowHeight = 84;
 
         auto *item = new QListWidgetItem(layout::entryLabel(entry));
+        item->setIcon(WidgetPalette::entryIcon(entry));
         item->setData(RoleKind, static_cast<int>(entry.kind));
         item->setData(RoleWidgetId, entry.widgetId);
         item->setData(RoleInstanceId, entry.instanceId);
         item->setFlags(Qt::ItemIsEnabled |
                        Qt::ItemIsSelectable |
-                       Qt::ItemIsDragEnabled |
-                       Qt::ItemIsUserCheckable);
-        item->setCheckState(entry.enabled ? Qt::Checked : Qt::Unchecked);
-        item->setSizeHint(QSize(0, kRowHeight));
+                       Qt::ItemIsDragEnabled);
+        item->setSizeHint(QSize(108, kRowHeight));
+        refreshPreviewItem(item);
         return item;
+    }
+
+    void BarLayoutSettings::refreshPreviewItem(QListWidgetItem *item) const {
+        if (!item) {
+            return;
+        }
+
+        const auto entry = entryForItem(item);
+        const QString stateText = entry.kind == EntryKind::Stretch
+                                      ? tr("Elastic")
+                                      : entry.kind == EntryKind::Separator
+                                            ? tr("Divider")
+                                            : tr("Active");
+        item->setText(QStringLiteral("%1\n%2").arg(layout::entryLabel(entry), stateText));
+        item->setIcon(WidgetPalette::entryIcon(entry));
     }
 
     LayoutEntry BarLayoutSettings::entryForItem(const QListWidgetItem *item) const {
@@ -282,7 +320,7 @@ namespace fairwindsk::ui::settings {
         entry.kind = static_cast<EntryKind>(item->data(RoleKind).toInt());
         entry.widgetId = item->data(RoleWidgetId).toString();
         entry.instanceId = item->data(RoleInstanceId).toString();
-        entry.enabled = item->checkState() == Qt::Checked;
+        entry.enabled = true;
         return entry;
     }
 
@@ -297,6 +335,9 @@ namespace fairwindsk::ui::settings {
 
         const auto entries = layout::entriesForBar(m_settings->getConfiguration()->getRoot(), m_barId);
         for (const auto &entry : entries) {
+            if (!entry.enabled) {
+                continue;
+            }
             m_listWidget->addItem(createItem(entry));
         }
 
@@ -313,13 +354,32 @@ namespace fairwindsk::ui::settings {
         }
 
         QList<LayoutEntry> entries;
-        entries.reserve(m_listWidget->count());
+        entries.reserve(m_listWidget->count() + layout::widgetDefinitions().size());
+        QStringList enabledWidgetIds;
         for (int index = 0; index < m_listWidget->count(); ++index) {
             auto *item = m_listWidget->item(index);
             if (!item) {
                 continue;
             }
-            entries.append(entryForItem(item));
+            const auto entry = entryForItem(item);
+            entries.append(entry);
+            if (entry.kind == EntryKind::Widget) {
+                enabledWidgetIds.append(entry.widgetId);
+            }
+        }
+
+        const auto definitions = layout::widgetDefinitions();
+        for (const auto &definition : definitions) {
+            if (enabledWidgetIds.contains(definition.id)) {
+                continue;
+            }
+
+            LayoutEntry entry;
+            entry.kind = EntryKind::Widget;
+            entry.widgetId = definition.id;
+            entry.instanceId = definition.id;
+            entry.enabled = false;
+            entries.append(entry);
         }
 
         auto &root = m_settings->getConfiguration()->getRoot();
@@ -339,11 +399,8 @@ namespace fairwindsk::ui::settings {
     }
 
     void BarLayoutSettings::updateActions() {
-        const auto *selectedItem = m_listWidget ? m_listWidget->currentItem() : nullptr;
-        const auto selectedEntry = entryForItem(selectedItem);
-        const bool canRemove = selectedItem && layout::isPlaceholderEntry(selectedEntry);
         if (m_removeSelectedButton) {
-            m_removeSelectedButton->setEnabled(canRemove);
+            m_removeSelectedButton->setEnabled(m_listWidget && m_listWidget->currentItem());
         }
     }
 
@@ -365,7 +422,7 @@ namespace fairwindsk::ui::settings {
     }
 
     void BarLayoutSettings::onItemChanged(QListWidgetItem *item) {
-        Q_UNUSED(item)
+        refreshPreviewItem(item);
         persistToConfiguration();
         updateActions();
     }
@@ -385,12 +442,22 @@ namespace fairwindsk::ui::settings {
                 continue;
             }
 
-            item->setCheckState(Qt::Checked);
             m_listWidget->setCurrentItem(item);
+            refreshPreviewItem(item);
             persistToConfiguration();
             updateActions();
             return;
         }
+
+        LayoutEntry entry;
+        entry.kind = EntryKind::Widget;
+        entry.widgetId = widgetId;
+        entry.instanceId = widgetId;
+        entry.enabled = true;
+        m_listWidget->addItem(createItem(entry));
+        m_listWidget->setCurrentRow(m_listWidget->count() - 1);
+        persistToConfiguration();
+        updateActions();
     }
 
     void BarLayoutSettings::onPaletteEntryActivated(const LayoutEntry &entry) {
@@ -405,11 +472,6 @@ namespace fairwindsk::ui::settings {
     void BarLayoutSettings::onRemoveSelected() {
         const int row = m_listWidget ? m_listWidget->currentRow() : -1;
         if (row < 0) {
-            return;
-        }
-
-        const auto entry = entryForItem(m_listWidget->item(row));
-        if (!layout::isPlaceholderEntry(entry)) {
             return;
         }
 

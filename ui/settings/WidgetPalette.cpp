@@ -19,9 +19,9 @@ namespace fairwindsk::ui::settings {
 
         constexpr auto kWidgetPaletteMimeType = "application/x-fairwindsk-widget-palette-entry";
         constexpr int kPaletteRowCount = 3;
-        constexpr int kButtonWidth = 172;
-        constexpr int kButtonHeight = 76;
-        constexpr int kIconSize = 28;
+        constexpr int kButtonWidth = 72;
+        constexpr int kButtonHeight = 72;
+        constexpr int kIconSize = 34;
 
         class PalettePushButton final : public QPushButton {
         public:
@@ -135,9 +135,9 @@ namespace fairwindsk::ui::settings {
         QString buttonStyleSheet(const fairwindsk::ui::ComfortChromeColors &colors) {
             return QStringLiteral(
                 "QPushButton {"
-                " text-align: left;"
-                " padding: 12px 14px;"
-                " border-radius: 12px;"
+                " text-align: center;"
+                " padding: 8px;"
+                " border-radius: 14px;"
                 " border: 1px solid %1;"
                 " background: %2;"
                 " color: %3;"
@@ -155,9 +155,9 @@ namespace fairwindsk::ui::settings {
                 " border-color: %8;"
                 " }")
                 .arg(colors.border.name(),
-                     fairwindsk::ui::comfortAlpha(colors.buttonBackground, 28).name(QColor::HexArgb),
+                     fairwindsk::ui::comfortAlpha(colors.buttonBackground, 18).name(QColor::HexArgb),
                      colors.text.name(),
-                     fairwindsk::ui::comfortAlpha(colors.hoverBackground, 72).name(QColor::HexArgb),
+                     fairwindsk::ui::comfortAlpha(colors.hoverBackground, 84).name(QColor::HexArgb),
                      colors.accentBottom.name(),
                      colors.accentText.name(),
                      colors.disabledText.name(),
@@ -214,6 +214,10 @@ namespace fairwindsk::ui::settings {
         return entry;
     }
 
+    QIcon WidgetPalette::entryIcon(const LayoutEntry &entry) {
+        return iconForEntry(entry);
+    }
+
     void WidgetPalette::setEntries(const QList<LayoutEntry> &entries) {
         while (m_layout && m_layout->count() > 0) {
             auto *item = m_layout->takeAt(0);
@@ -230,9 +234,9 @@ namespace fairwindsk::ui::settings {
             button->setMinimumSize(QSize(kButtonWidth, kButtonHeight));
             button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
             button->setCheckable(entry.kind == EntryKind::Widget);
-            button->setIcon(iconForEntry(entry));
+            button->setIcon(entryIcon(entry));
             button->setIconSize(QSize(kIconSize, kIconSize));
-            button->setText(layout::entryLabel(entry));
+            button->setText(QString());
             button->setToolTip(layout::entryLabel(entry));
             button->setAccessibleName(layout::entryLabel(entry));
             connect(button, &QPushButton::clicked, this, [this, entry]() {

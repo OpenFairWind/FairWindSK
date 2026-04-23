@@ -1,6 +1,7 @@
 #ifndef FAIRWINDSK_UI_SETTINGS_WIDGETPALETTE_HPP
 #define FAIRWINDSK_UI_SETTINGS_WIDGETPALETTE_HPP
 
+#include <QIcon>
 #include <QScrollArea>
 
 #include "ui/layout/BarLayout.hpp"
@@ -23,6 +24,7 @@ namespace fairwindsk::ui::settings {
         static QString mimeType();
         static QByteArray encodeEntry(const fairwindsk::ui::layout::LayoutEntry &entry);
         static fairwindsk::ui::layout::LayoutEntry decodeEntry(const QByteArray &payload);
+        static QIcon entryIcon(const fairwindsk::ui::layout::LayoutEntry &entry);
 
     signals:
         void entryActivated(const fairwindsk::ui::layout::LayoutEntry &entry);

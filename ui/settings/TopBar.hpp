@@ -11,6 +11,7 @@
 
 class QLabel;
 class QListWidgetItem;
+class QFrame;
 
 namespace fairwindsk::ui::settings {
     class TopBar : public QWidget {
@@ -62,6 +63,9 @@ namespace fairwindsk::ui::settings {
         QLabel *m_titleLabel = nullptr;
         QLabel *m_hintLabel = nullptr;
         QLabel *m_previewLabel = nullptr;
+        QFrame *m_previewFrame = nullptr;
+        QToolButton *m_leftShellButton = nullptr;
+        QToolButton *m_rightShellButton = nullptr;
         QListWidget *m_previewWidget = nullptr;
         QToolButton *m_expandWidthButton = nullptr;
         QToolButton *m_expandHeightButton = nullptr;
