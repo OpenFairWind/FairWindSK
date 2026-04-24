@@ -13,7 +13,6 @@
 #include <QWindow>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
-#include <QGridLayout>
 #include <QScreen>
 #include <QInputMethod>
 #include <QLineEdit>
@@ -71,11 +70,6 @@ namespace fairwindsk::ui {
         m_dialogDrawerContentHost = ui->widgetDialogDrawerContentHost;
         m_dialogDrawerContentLayout = ui->verticalLayoutDialogDrawerContent;
         m_dialogDrawerButtonsLayout = ui->horizontalLayoutDialogDrawerButtons;
-        if (ui->widget_CenterShell) {
-            if (auto *centerShellLayout = qobject_cast<QGridLayout *>(ui->widget_CenterShell->layout())) {
-                centerShellLayout->setAlignment(m_dialogDrawer, Qt::AlignBottom);
-            }
-        }
         if (m_dialogDrawerButtonsLayout) {
             m_dialogDrawerButtonsLayout->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
         }

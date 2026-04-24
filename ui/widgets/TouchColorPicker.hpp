@@ -6,7 +6,6 @@
 #define FAIRWINDSK_UI_WIDGETS_TOUCHCOLORPICKER_HPP
 
 #include <QColor>
-#include <QDialog>
 #include <QList>
 #include <QWidget>
 
@@ -99,32 +98,13 @@ namespace fairwindsk::ui::widgets {
         QLabel *m_alphaValueLabel = nullptr;
     };
 
-    class TouchColorPickerDialog : public QDialog {
-        Q_OBJECT
-
+    class TouchColorPickerDialog {
     public:
-        explicit TouchColorPickerDialog(QWidget *parent = nullptr);
-
-        void setTitleText(const QString &title);
-        void setCurrentColor(const QColor &color);
-        QColor currentColor() const;
-        void setAlphaEnabled(bool enabled);
-        void openNear(QWidget *anchor);
-
         static QColor getColor(QWidget *parent,
                                const QString &title,
                                const QColor &initialColor,
                                bool *accepted = nullptr,
                                bool alphaEnabled = false);
-
-    protected:
-        void changeEvent(QEvent *event) override;
-
-    private:
-        void applyComfortStyle();
-        QLabel *m_titleLabel = nullptr;
-        QPushButton *m_closeButton = nullptr;
-        TouchColorPicker *m_picker = nullptr;
     };
 }
 

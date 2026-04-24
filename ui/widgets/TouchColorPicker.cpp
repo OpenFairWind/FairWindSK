@@ -12,6 +12,7 @@
 #include <QImage>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMessageBox>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPlainTextEdit>
@@ -848,111 +849,6 @@ namespace fairwindsk::ui::widgets {
         }
     }
 
-    TouchColorPickerDialog::TouchColorPickerDialog(QWidget *parent)
-        : QDialog(parent, Qt::Popup | Qt::FramelessWindowHint) {
-        setAttribute(Qt::WA_DeleteOnClose, false);
-        setModal(true);
-
-        auto *rootLayout = new QVBoxLayout(this);
-        rootLayout->setContentsMargins(16, 16, 16, 16);
-        rootLayout->setSpacing(12);
-
-        auto *headerLayout = new QHBoxLayout();
-        headerLayout->setContentsMargins(0, 0, 0, 0);
-        headerLayout->setSpacing(8);
-        rootLayout->addLayout(headerLayout);
-
-        m_titleLabel = new QLabel(this);
-        headerLayout->addWidget(m_titleLabel, 1);
-
-        m_closeButton = new QPushButton(this);
-        m_closeButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/close-google.svg")));
-        m_closeButton->setToolTip(tr("Use current color"));
-        m_closeButton->setMinimumSize(46, 46);
-        m_closeButton->setIconSize(QSize(28, 28));
-        headerLayout->addWidget(m_closeButton, 0, Qt::AlignTop);
-
-        m_picker = new TouchColorPicker(this);
-        rootLayout->addWidget(m_picker, 1);
-
-        connect(m_picker, &TouchColorPicker::colorActivated, this, [this](const QColor &) {
-            accept();
-        });
-        connect(m_closeButton, &QPushButton::clicked, this, [this]() {
-            accept();
-        });
-        applyComfortStyle();
-    }
-
-    void TouchColorPickerDialog::changeEvent(QEvent *event) {
-        QDialog::changeEvent(event);
-        if (event && (event->type() == QEvent::PaletteChange || event->type() == QEvent::ApplicationPaletteChange || event->type() == QEvent::StyleChange)) {
-            applyComfortStyle();
-        }
-    }
-
-    void TouchColorPickerDialog::applyComfortStyle() {
-        const PickerChrome colors = resolvePickerChrome(this);
-        if (m_closeButton) {
-            m_closeButton->setStyleSheet(QStringLiteral(
-                "QPushButton {"
-                " border: 1px solid %1;"
-                " border-radius: 10px;"
-                " background: transparent;"
-                " color: %2;"
-                " padding: 4px;"
-                " }"
-                "QPushButton:hover, QPushButton:pressed {"
-                " background: %3;"
-                " color: %4;"
-                " }")
-                .arg(colors.border.name(),
-                     colors.text.name(),
-                     fairwindsk::ui::comfortAlpha(colors.accent, 48).name(QColor::HexArgb),
-                     colors.accentText.name()));
-            fairwindsk::ui::applyTintedButtonIcon(m_closeButton, colors.text, QSize(28, 28));
-        }
-    }
-
-    void TouchColorPickerDialog::setTitleText(const QString &title) {
-        if (m_titleLabel) {
-            m_titleLabel->setText(title);
-        }
-    }
-
-    void TouchColorPickerDialog::setCurrentColor(const QColor &color) {
-        if (m_picker) {
-            m_picker->setCurrentColor(color);
-        }
-    }
-
-    QColor TouchColorPickerDialog::currentColor() const {
-        return m_picker ? m_picker->currentColor() : QColor();
-    }
-
-    void TouchColorPickerDialog::setAlphaEnabled(const bool enabled) {
-        if (m_picker) {
-            m_picker->setAlphaEnabled(enabled);
-        }
-    }
-
-    void TouchColorPickerDialog::openNear(QWidget *anchor) {
-        QWidget *windowWidget = anchor ? anchor->window() : nullptr;
-        if (!windowWidget) {
-            return;
-        }
-
-        const int horizontalMargin = 20;
-        const int verticalMargin = 12;
-        const int availableWidth = qMax(360, windowWidget->width() - (horizontalMargin * 2));
-        const int availableHeight = qMax(320, windowWidget->height() - (verticalMargin * 3));
-        const QSize targetSize(qMin(760, availableWidth), qMin(availableHeight, qMax(420, (windowWidget->height() * 2) / 3)));
-        resize(targetSize);
-        const QPoint topLeft = windowWidget->mapToGlobal(
-            QPoint((windowWidget->width() - width()) / 2, qMax(verticalMargin, windowWidget->height() - height() - verticalMargin)));
-        move(topLeft);
-    }
-
     QColor TouchColorPickerDialog::getColor(QWidget *parent,
                                             const QString &title,
                                             const QColor &initialColor,
@@ -960,17 +856,10 @@ namespace fairwindsk::ui::widgets {
                                             const bool alphaEnabled) {
         auto *mainWindow = fairwindsk::ui::MainWindow::instance(parent);
         if (!mainWindow) {
-            TouchColorPickerDialog dialog(parent);
-            dialog.setTitleText(title);
-            dialog.setAlphaEnabled(alphaEnabled);
-            dialog.setCurrentColor(initialColor);
-            dialog.openNear(parent);
-            const int result = dialog.exec();
-            const bool ok = result == QDialog::Accepted;
             if (accepted) {
-                *accepted = ok;
+                *accepted = false;
             }
-            return ok ? dialog.currentColor() : initialColor;
+            return initialColor;
         }
 
         auto *picker = new TouchColorPicker();
@@ -978,17 +867,17 @@ namespace fairwindsk::ui::widgets {
         picker->setAlphaEnabled(alphaEnabled);
         picker->setCurrentColor(initialColor);
         auto selectedColor = std::make_shared<QColor>(picker->currentColor());
-        connect(picker, &TouchColorPicker::currentColorChanged, picker, [selectedColor](const QColor &color) {
+        QObject::connect(picker, &TouchColorPicker::currentColorChanged, picker, [selectedColor](const QColor &color) {
             *selectedColor = color;
         });
-        connect(picker, &TouchColorPicker::canceled, picker, [mainWindow]() {
+        QObject::connect(picker, &TouchColorPicker::canceled, picker, [mainWindow]() {
             if (mainWindow) {
-                mainWindow->finishActiveDrawer(QDialog::Rejected);
+                mainWindow->finishActiveDrawer(QMessageBox::Cancel);
             }
         });
-        connect(picker, &TouchColorPicker::colorActivated, picker, [mainWindow]() {
+        QObject::connect(picker, &TouchColorPicker::colorActivated, picker, [mainWindow]() {
             if (mainWindow) {
-                mainWindow->finishActiveDrawer(QDialog::Accepted);
+                mainWindow->finishActiveDrawer(QMessageBox::Ok);
             }
         });
         const int result = fairwindsk::ui::drawer::execDrawer(
@@ -996,9 +885,9 @@ namespace fairwindsk::ui::widgets {
             title,
             picker,
             {},
-            QDialog::Rejected);
+            int(QMessageBox::Cancel));
 
-        const bool ok = result == QDialog::Accepted;
+        const bool ok = result == QMessageBox::Ok;
         if (accepted) {
             *accepted = ok;
         }

@@ -9,6 +9,7 @@
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QDir>
+#include <QEventLoop>
 #include <QFile>
 #include <QFileInfo>
 #include <QFileSystemModel>
@@ -79,38 +80,37 @@ namespace fairwindsk::ui::drawer {
                 return defaultResult;
             }
 
-            QDialog dialog(resolveMainWindow(parent) ? static_cast<QWidget *>(resolveMainWindow(parent)) : parent);
-            dialog.setWindowTitle(title);
-            dialog.setModal(true);
-            dialog.setWindowFlags(dialog.windowFlags() & ~Qt::WindowContextHelpButtonHint);
-
-            auto *layout = new QVBoxLayout(&dialog);
-            layout->setContentsMargins(16, 16, 16, 16);
-            layout->setSpacing(12);
-            content->setParent(&dialog);
-            layout->addWidget(content);
-
-            if (content->metaObject()->indexOfSignal("finished(int)") != -1) {
-                QObject::connect(content, SIGNAL(finished(int)), &dialog, SLOT(done(int)));
+            auto *mainWindow = resolveMainWindow(parent);
+            if (!mainWindow) {
+                content->deleteLater();
+                return defaultResult;
             }
 
-            if (!buttons.isEmpty()) {
-                auto *buttonsLayout = new QHBoxLayout();
-                buttonsLayout->setContentsMargins(0, 0, 0, 0);
-                buttonsLayout->addStretch(1);
-                for (const auto &buttonSpec : buttons) {
-                    auto *button = new QPushButton(buttonSpec.text, &dialog);
-                    button->setDefault(buttonSpec.isDefault);
-                    QObject::connect(button, &QPushButton::clicked, &dialog, [&dialog, buttonSpec]() {
-                        dialog.done(buttonSpec.result);
-                    });
-                    buttonsLayout->addWidget(button);
-                }
-                layout->addLayout(buttonsLayout);
+            QEventLoop loop;
+            int result = defaultResult;
+            bool completed = false;
+            QList<DrawerButtonSpec> drawerButtons;
+            drawerButtons.reserve(buttons.size());
+            for (const auto &button : buttons) {
+                drawerButtons.append({button.text, button.result, button.isDefault});
             }
 
-            dialog.resize(dialog.sizeHint().boundedTo(QSize(900, 720)));
-            return dialog.exec();
+            mainWindow->showDrawerAsync(
+                title,
+                content,
+                drawerButtons,
+                [&loop, &result, &completed](const int drawerResult) {
+                    result = drawerResult;
+                    completed = true;
+                    loop.quit();
+                },
+                defaultResult);
+
+            if (!completed) {
+                loop.exec();
+            }
+
+            return result;
         }
 
         QString buttonText(const QMessageBox::StandardButton button) {
@@ -1310,29 +1310,7 @@ namespace fairwindsk::ui::drawer {
                         const QString &currentPath) {
         auto *mainWindow = resolveMainWindow(parent);
         if (!mainWindow) {
-            auto *picker = new fairwindsk::ui::widgets::TouchIconBrowser();
-            picker->setCurrentPath(currentPath);
-            QPointer<fairwindsk::ui::widgets::TouchIconBrowser> pickerGuard(picker);
-            QDialog dialog(parent);
-            dialog.setWindowTitle(title);
-            dialog.setModal(true);
-            dialog.setWindowFlags(dialog.windowFlags() & ~Qt::WindowContextHelpButtonHint);
-            auto *layout = new QVBoxLayout(&dialog);
-            layout->setContentsMargins(16, 16, 16, 16);
-            layout->addWidget(picker);
-            QObject::connect(picker, &fairwindsk::ui::widgets::TouchIconBrowser::canceled, &dialog, [&dialog]() {
-                dialog.done(int(QMessageBox::Cancel));
-            });
-            QObject::connect(picker, &fairwindsk::ui::widgets::TouchIconBrowser::pathActivated, &dialog, [&dialog](const QString &) {
-                dialog.done(int(QMessageBox::Ok));
-            });
-            const int result = dialog.exec();
-
-            if (!pickerGuard || result != QMessageBox::Ok) {
-                return {};
-            }
-
-            return fairwindsk::ui::widgets::TouchIconBrowser::normalizedIconStoragePath(pickerGuard->selectedPath());
+            return {};
         }
 
         auto *picker = new fairwindsk::ui::widgets::TouchIconBrowser();
