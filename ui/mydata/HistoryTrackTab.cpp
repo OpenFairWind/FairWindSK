@@ -4,15 +4,15 @@
 
 #include "HistoryTrackTab.hpp"
 
+#include <QAbstractSpinBox>
 #include <QDateTimeEdit>
-#include <QDialog>
-#include <QDialogButtonBox>
 #include <QDoubleSpinBox>
 #include <QFile>
 #include <QFormLayout>
 #include <QHeaderView>
 #include <QLabel>
 #include <QMessageBox>
+#include <QPointer>
 #include <QPushButton>
 #include <QTableWidget>
 #include <QTableWidgetItem>
@@ -110,88 +110,99 @@ namespace {
             return false;
         }
 
-        QDialog dialog(parent);
-        dialog.setWindowTitle(title);
-        dialog.setModal(true);
+        QDateTime currentTimestamp = point->timestamp.toLocalTime();
+        double currentLatitude = point->coordinate.latitude();
+        double currentLongitude = point->coordinate.longitude();
+        double currentAltitude = std::isnan(point->coordinate.altitude()) ? 0.0 : point->coordinate.altitude();
 
-        auto *layout = new QVBoxLayout(&dialog);
-        layout->setContentsMargins(16, 16, 16, 16);
-        layout->setSpacing(12);
+        while (true) {
+            auto *content = new QWidget();
+            auto *layout = new QVBoxLayout(content);
+            layout->setContentsMargins(0, 0, 0, 0);
+            layout->setSpacing(12);
 
-        auto *formLayout = new QFormLayout();
-        formLayout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
-        formLayout->setHorizontalSpacing(10);
-        formLayout->setVerticalSpacing(10);
+            auto *formLayout = new QFormLayout();
+            formLayout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
+            formLayout->setHorizontalSpacing(10);
+            formLayout->setVerticalSpacing(10);
 
-        auto *timestampEdit = new QDateTimeEdit(point->timestamp.toLocalTime(), &dialog);
-        timestampEdit->setDisplayFormat(QStringLiteral("yyyy-MM-dd HH:mm:ss"));
-        timestampEdit->setCalendarPopup(true);
-        timestampEdit->setMinimumHeight(46);
-        timestampEdit->setReadOnly(readOnly);
-        timestampEdit->setButtonSymbols(readOnly ? QAbstractSpinBox::NoButtons : QAbstractSpinBox::UpDownArrows);
+            auto *timestampEdit = new QDateTimeEdit(currentTimestamp, content);
+            timestampEdit->setDisplayFormat(QStringLiteral("yyyy-MM-dd HH:mm:ss"));
+            timestampEdit->setCalendarPopup(false);
+            timestampEdit->setMinimumHeight(58);
+            timestampEdit->setReadOnly(readOnly);
+            timestampEdit->setButtonSymbols(readOnly ? QAbstractSpinBox::NoButtons : QAbstractSpinBox::UpDownArrows);
 
-        auto *latitudeSpinBox = new QDoubleSpinBox(&dialog);
-        latitudeSpinBox->setRange(-90.0, 90.0);
-        latitudeSpinBox->setDecimals(8);
-        latitudeSpinBox->setValue(point->coordinate.latitude());
-        latitudeSpinBox->setMinimumHeight(46);
-        latitudeSpinBox->setEnabled(!readOnly);
+            auto *latitudeSpinBox = new QDoubleSpinBox(content);
+            latitudeSpinBox->setRange(-90.0, 90.0);
+            latitudeSpinBox->setDecimals(8);
+            latitudeSpinBox->setValue(currentLatitude);
+            latitudeSpinBox->setMinimumHeight(58);
+            latitudeSpinBox->setEnabled(!readOnly);
 
-        auto *longitudeSpinBox = new QDoubleSpinBox(&dialog);
-        longitudeSpinBox->setRange(-180.0, 180.0);
-        longitudeSpinBox->setDecimals(8);
-        longitudeSpinBox->setValue(point->coordinate.longitude());
-        longitudeSpinBox->setMinimumHeight(46);
-        longitudeSpinBox->setEnabled(!readOnly);
+            auto *longitudeSpinBox = new QDoubleSpinBox(content);
+            longitudeSpinBox->setRange(-180.0, 180.0);
+            longitudeSpinBox->setDecimals(8);
+            longitudeSpinBox->setValue(currentLongitude);
+            longitudeSpinBox->setMinimumHeight(58);
+            longitudeSpinBox->setEnabled(!readOnly);
 
-        auto *altitudeSpinBox = new QDoubleSpinBox(&dialog);
-        altitudeSpinBox->setRange(-100000.0, 100000.0);
-        altitudeSpinBox->setDecimals(2);
-        altitudeSpinBox->setValue(std::isnan(point->coordinate.altitude()) ? 0.0 : point->coordinate.altitude());
-        altitudeSpinBox->setMinimumHeight(46);
-        altitudeSpinBox->setEnabled(!readOnly);
+            auto *altitudeSpinBox = new QDoubleSpinBox(content);
+            altitudeSpinBox->setRange(-100000.0, 100000.0);
+            altitudeSpinBox->setDecimals(2);
+            altitudeSpinBox->setValue(currentAltitude);
+            altitudeSpinBox->setMinimumHeight(58);
+            altitudeSpinBox->setEnabled(!readOnly);
 
-        formLayout->addRow(QObject::tr("Timestamp"), timestampEdit);
-        formLayout->addRow(QObject::tr("Latitude"), latitudeSpinBox);
-        formLayout->addRow(QObject::tr("Longitude"), longitudeSpinBox);
-        formLayout->addRow(QObject::tr("Altitude"), altitudeSpinBox);
-        layout->addLayout(formLayout);
+            formLayout->addRow(QObject::tr("Timestamp"), timestampEdit);
+            formLayout->addRow(QObject::tr("Latitude"), latitudeSpinBox);
+            formLayout->addRow(QObject::tr("Longitude"), longitudeSpinBox);
+            formLayout->addRow(QObject::tr("Altitude"), altitudeSpinBox);
+            layout->addLayout(formLayout);
 
-        auto *buttonBox = new QDialogButtonBox(readOnly ? QDialogButtonBox::Close
-                                                        : QDialogButtonBox::Ok | QDialogButtonBox::Cancel,
-                                               &dialog);
-        for (QAbstractButton *button : buttonBox->buttons()) {
-            button->setMinimumHeight(46);
-            button->setMinimumWidth(110);
-        }
-        layout->addWidget(buttonBox);
+            QPointer<QDateTimeEdit> timestampGuard(timestampEdit);
+            QPointer<QDoubleSpinBox> latitudeGuard(latitudeSpinBox);
+            QPointer<QDoubleSpinBox> longitudeGuard(longitudeSpinBox);
+            QPointer<QDoubleSpinBox> altitudeGuard(altitudeSpinBox);
 
-        if (readOnly) {
-            QObject::connect(buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
-            QObject::connect(buttonBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
-            dialog.exec();
-            return false;
-        }
+            const int result = fairwindsk::ui::drawer::execDrawer(
+                parent,
+                title,
+                content,
+                readOnly
+                    ? QList<fairwindsk::ui::drawer::ButtonSpec>{{QObject::tr("Close"), int(QMessageBox::Close), true}}
+                    : QList<fairwindsk::ui::drawer::ButtonSpec>{{QObject::tr("OK"), int(QMessageBox::Ok), true},
+                                                                {QObject::tr("Cancel"), int(QMessageBox::Cancel), false}},
+                readOnly ? int(QMessageBox::Close) : int(QMessageBox::Cancel));
 
-        QObject::connect(buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
-        QObject::connect(buttonBox, &QDialogButtonBox::accepted, &dialog, [&dialog, point, timestampEdit, latitudeSpinBox, longitudeSpinBox, altitudeSpinBox]() {
-            QGeoCoordinate coordinate;
-            coordinate.setLatitude(latitudeSpinBox->value());
-            coordinate.setLongitude(longitudeSpinBox->value());
-            coordinate.setAltitude(altitudeSpinBox->value());
-            if (!coordinate.isValid()) {
-                QMessageBox::warning(&dialog,
-                                     QObject::tr("Invalid Coordinates"),
-                                     QObject::tr("Please enter valid latitude and longitude values."));
-                return;
+            if (readOnly || result != QMessageBox::Ok) {
+                return false;
             }
 
-            point->timestamp = timestampEdit->dateTime().toUTC();
-            point->coordinate = coordinate;
-            dialog.accept();
-        });
+            if (!timestampGuard || !latitudeGuard || !longitudeGuard || !altitudeGuard) {
+                return false;
+            }
 
-        return dialog.exec() == QDialog::Accepted;
+            currentTimestamp = timestampGuard->dateTime();
+            currentLatitude = latitudeGuard->value();
+            currentLongitude = longitudeGuard->value();
+            currentAltitude = altitudeGuard->value();
+
+            QGeoCoordinate coordinate;
+            coordinate.setLatitude(currentLatitude);
+            coordinate.setLongitude(currentLongitude);
+            coordinate.setAltitude(currentAltitude);
+            if (!coordinate.isValid()) {
+                fairwindsk::ui::drawer::warning(parent,
+                                                QObject::tr("Invalid Coordinates"),
+                                                QObject::tr("Please enter valid latitude and longitude values."));
+                continue;
+            }
+
+            point->timestamp = currentTimestamp.toUTC();
+            point->coordinate = coordinate;
+            return true;
+        }
     }
 }
 

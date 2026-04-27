@@ -82,6 +82,22 @@ namespace fairwindsk::ui::web {
         selection.select(selection.certificates().at(0));
     }
 
+    QWebEnginePage *WebPage::createWindow(WebWindowType type) {
+        Q_UNUSED(type);
+
+        auto *popupPage = new WebPage(profile(), this);
+        connect(popupPage, &QWebEnginePage::urlChanged, this, [this, popupPage](const QUrl &url) {
+            if (!url.isValid() || url.isEmpty()) {
+                return;
+            }
+
+            setUrl(url);
+            popupPage->deleteLater();
+        });
+        connect(popupPage, &QWebEnginePage::windowCloseRequested, popupPage, &QObject::deleteLater);
+        return popupPage;
+    }
+
     void WebPage::javaScriptAlert(const QUrl &securityOrigin, const QString &message) {
         drawer::information(dialogParentForPage(this), javaScriptDialogTitle(securityOrigin), message);
     }

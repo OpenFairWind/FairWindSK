@@ -113,9 +113,6 @@ namespace fairwindsk::ui {
         void closeEvent(QCloseEvent *bar) override;
         void resizeEvent(QResizeEvent *event) override;
 
-        // Get Window Id using the Process Id
-        static WId getWIdByPId(qint64 pId);
-
     public slots:
         void prewarmPersistentPagesAfterStartup();
 

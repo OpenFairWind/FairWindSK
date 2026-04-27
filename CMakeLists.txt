@@ -310,7 +310,6 @@ set(FAIRWINDSK_SOURCES
 if(NOT FAIRWINDSK_MOBILE)
     list(APPEND FAIRWINDSK_SOURCES
             ui/web/WebPage.cpp ui/web/WebPage.hpp
-            ui/web/WebPopupWindow.cpp ui/web/WebPopupWindow.hpp
             ui/web/DownloadManagerWidget.cpp ui/web/DownloadManagerWidget.hpp ui/web/DownloadManagerWidget.ui
             ui/web/DownloadWidget.cpp ui/web/DownloadWidget.hpp ui/web/DownloadWidget.ui
     )

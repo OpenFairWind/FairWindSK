@@ -9,18 +9,14 @@
 
 #include <QFileSystemModel>
 #include <QClipboard>
-#include <QInputDialog>
 #include <QMessageBox>
 #include <QDirIterator>
 #include <QMimeDatabase>
-#include <QFileDialog>
 #include <QHeaderView>
-#include <QAction>
 #include <QFrame>
 #include <QGridLayout>
 #include <QLabel>
 #include <QHBoxLayout>
-#include <QMenu>
 #include <QPushButton>
 #include <QScroller>
 #include <QStorageInfo>
@@ -430,24 +426,13 @@ namespace fairwindsk::ui::mydata {
 
         m_searchOptionsButton = new QPushButton(tr("Options"), ui->frame_FilesSearchRow);
         m_searchOptionsButton->setObjectName(QStringLiteral("toolButton_SearchOptions"));
+        m_searchOptionsButton->setCheckable(true);
         ui->horizontalLayout_SearchRow->insertWidget(5, m_searchOptionsButton);
-        m_searchOptionsMenu = new QMenu(this);
-        m_caseSensitiveAction = m_searchOptionsMenu->addAction(tr("Case-sensitive"));
-        m_caseSensitiveAction->setCheckable(true);
-        m_searchHiddenAction = m_searchOptionsMenu->addAction(tr("Include hidden files"));
-        m_searchHiddenAction->setCheckable(true);
-        m_searchSystemAction = m_searchOptionsMenu->addAction(tr("Include system files"));
-        m_searchSystemAction->setCheckable(true);
-        connect(m_caseSensitiveAction, &QAction::toggled, ui->toolButton_CaseSensitive, &QPushButton::setChecked);
-        connect(m_searchHiddenAction, &QAction::toggled, ui->toolButton_SearchHidden, &QPushButton::setChecked);
-        connect(m_searchSystemAction, &QAction::toggled, ui->toolButton_SearchSystem, &QPushButton::setChecked);
-        connect(m_searchOptionsButton, &QPushButton::clicked, this, [this]() {
+        connect(m_searchOptionsButton, &QPushButton::toggled, this, [this](const bool visible) {
+            ui->toolButton_CaseSensitive->setVisible(visible);
+            ui->toolButton_SearchHidden->setVisible(visible);
+            ui->toolButton_SearchSystem->setVisible(visible);
             updateSearchOptionsButton();
-            if (!m_searchOptionsMenu || !m_searchOptionsButton) {
-                return;
-            }
-            const QPoint popupPoint = m_searchOptionsButton->mapToGlobal(QPoint(0, m_searchOptionsButton->height()));
-            m_searchOptionsMenu->popup(popupPoint);
         });
         connect(ui->toolButton_CaseSensitive, &QPushButton::toggled, this, &Files::updateSearchOptionsButton);
         connect(ui->toolButton_SearchHidden, &QPushButton::toggled, this, &Files::updateSearchOptionsButton);
@@ -1431,15 +1416,6 @@ namespace fairwindsk::ui::mydata {
             enabledCount += includeHidden ? 1 : 0;
             enabledCount += includeSystem ? 1 : 0;
 
-            if (m_caseSensitiveAction) {
-                m_caseSensitiveAction->setChecked(caseSensitive);
-            }
-            if (m_searchHiddenAction) {
-                m_searchHiddenAction->setChecked(includeHidden);
-            }
-            if (m_searchSystemAction) {
-                m_searchSystemAction->setChecked(includeSystem);
-            }
             if (m_searchOptionsButton) {
                 const QString buttonText = enabledCount > 0
                         ? tr("Options (%1)").arg(enabledCount)

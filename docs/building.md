@@ -212,7 +212,7 @@ Notes:
 
 - The CMake build handles `QtZeroConf` and `QHotkey` as desktop-only dependencies and copies their DLLs next to the executable after the build.
 - `cmake --install build` installs `FairWindSK.exe`, the bundled icon directory under `bin\\icons`, and the desktop helper DLLs into the same `bin` directory.
-- Local `file://` applications remain a desktop-only integration and are supported on Windows.
+- Local `file://` launcher entries remain readable for compatibility, but single-window mode blocks them from launching external native applications on Windows.
 
 ## Android
 
@@ -267,7 +267,7 @@ Qt Creator is still the recommended path for packaging and deployment because it
 
 Notes:
 
-- Desktop-only integrations such as `QHotkey`, Zeroconf browser discovery, desktop-native `file://` launcher apps, and the shared `QWebEngineProfile` cookie path remain disabled on Android.
+- Desktop-only integrations such as `QHotkey`, Zeroconf browser discovery, and the shared `QWebEngineProfile` cookie path remain disabled on Android. Native `file://` launcher apps are blocked on every target by the single-window model.
 - Embedded previews and web apps still load inside the application, but advanced desktop WebEngine-specific hooks are intentionally not compiled into the Android target.
 
 ## iOS / iPadOS
@@ -322,7 +322,7 @@ For simulator-only builds, use the simulator SDK and matching architecture value
 
 Notes:
 
-- Desktop-only integrations such as `QHotkey`, Zeroconf browser discovery, desktop-native `file://` launcher apps, and the shared `QWebEngineProfile` cookie path remain disabled on iOS and iPadOS.
+- Desktop-only integrations such as `QHotkey`, Zeroconf browser discovery, and the shared `QWebEngineProfile` cookie path remain disabled on iOS and iPadOS. Native `file://` launcher apps are blocked on every target by the single-window model.
 - Embedded previews and web apps still load inside the application, but advanced desktop WebEngine-specific hooks are intentionally not compiled into the Apple mobile targets.
 
 ## Runtime and deployment notes

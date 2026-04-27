@@ -26,6 +26,7 @@ namespace fairwindsk::ui::web {
         void signalKRestartConfirmed();
 
     protected:
+        QWebEnginePage *createWindow(WebWindowType type) override;
         void javaScriptAlert(const QUrl &securityOrigin, const QString &message) override;
         bool javaScriptConfirm(const QUrl &securityOrigin, const QString &message) override;
         bool javaScriptPrompt(const QUrl &securityOrigin,

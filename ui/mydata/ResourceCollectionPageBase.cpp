@@ -4,23 +4,30 @@
 
 #include "ResourceCollectionPageBase.hpp"
 
-#include <QDialog>
+#include <QDir>
 #include <QEvent>
 #include <QFile>
+#include <QFileInfo>
 #include <QHeaderView>
 #include <QJsonDocument>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMessageBox>
+#include <QPointer>
 #include <QPushButton>
 #include <QTableWidget>
 #include <QTableWidgetItem>
+#include <QUrl>
+#include <QVBoxLayout>
 
 #include "FairWindSK.hpp"
+#include "FileViewer.hpp"
 #include "GeoJsonUtils.hpp"
 #include "ResourceDialog.hpp"
 #include "ui/DrawerDialogHost.hpp"
 #include "ui/IconUtils.hpp"
+#include "ui/MainWindow.hpp"
+#include "ui/web/WebView.hpp"
 
 namespace fairwindsk::ui::mydata {
     namespace {
@@ -236,6 +243,97 @@ namespace fairwindsk::ui::mydata {
 
     void ResourceCollectionPageBase::showPageError(const QString &message) const {
         fairwindsk::ui::drawer::warning(const_cast<ResourceCollectionPageBase *>(this), pageTitle(), message);
+    }
+
+    bool ResourceCollectionPageBase::openPathInSingleWindow(const QString &path,
+                                                            const QString &emptyMessage,
+                                                            const QString &invalidMessage) const {
+        const QString trimmedPath = path.trimmed();
+        if (trimmedPath.isEmpty()) {
+            showPageError(emptyMessage);
+            return false;
+        }
+
+        const QFileInfo localInfo(trimmedPath);
+        if (localInfo.exists()) {
+            if (localInfo.isFile()) {
+                auto *viewer = new FileViewer(localInfo.absoluteFilePath(), nullptr, false);
+                viewer->setProperty("drawerFillCenterArea", true);
+                connect(viewer, &FileViewer::askedToBeClosed, viewer, [viewer]() {
+                    if (auto *mainWindow = fairwindsk::ui::MainWindow::instance(viewer)) {
+                        mainWindow->finishActiveDrawer(int(QMessageBox::Close));
+                    }
+                });
+                drawer::execDrawer(const_cast<ResourceCollectionPageBase *>(this),
+                                   QFileInfo(localInfo).fileName(),
+                                   viewer,
+                                   {},
+                                   int(QMessageBox::Close));
+                return true;
+            }
+
+            auto *content = new QWidget();
+            auto *layout = new QVBoxLayout(content);
+            layout->setContentsMargins(0, 0, 0, 0);
+            layout->setSpacing(10);
+
+            auto *messageLabel = new QLabel(tr("Single-window mode keeps folders inside FairWindSK. Use MyData Files to browse this folder."), content);
+            messageLabel->setWordWrap(true);
+            layout->addWidget(messageLabel);
+
+            auto *pathLabel = new QLabel(QDir::toNativeSeparators(localInfo.absoluteFilePath()), content);
+            pathLabel->setWordWrap(true);
+            pathLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+            layout->addWidget(pathLabel);
+
+            drawer::execDrawer(const_cast<ResourceCollectionPageBase *>(this),
+                               pageTitle(),
+                               content,
+                               {{tr("Close"), int(QMessageBox::Close), true}},
+                               int(QMessageBox::Close));
+            return true;
+        }
+
+        const QUrl url = QUrl::fromUserInput(trimmedPath);
+        if (!url.isValid() || url.isEmpty()) {
+            showPageError(invalidMessage);
+            return false;
+        }
+
+        if (url.isLocalFile()) {
+            showPageError(invalidMessage);
+            return false;
+        }
+
+        const QString scheme = url.scheme().toLower();
+        if (scheme != QStringLiteral("http") && scheme != QStringLiteral("https") && scheme != QStringLiteral("data")) {
+            showPageError(tr("Single-window mode cannot open %1 links.").arg(scheme.isEmpty() ? tr("unknown") : scheme));
+            return false;
+        }
+
+        auto *content = new QWidget();
+        auto *layout = new QVBoxLayout(content);
+        layout->setContentsMargins(0, 0, 0, 0);
+        layout->setSpacing(8);
+
+        auto *urlLabel = new QLabel(url.toDisplayString(), content);
+        urlLabel->setWordWrap(true);
+        urlLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+        layout->addWidget(urlLabel);
+
+        auto *webView = new fairwindsk::ui::web::WebView(
+            FairWindSK::getInstance() ? FairWindSK::getInstance()->getWebEngineProfile() : nullptr,
+            content);
+        webView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        layout->addWidget(webView, 1);
+        webView->load(url);
+
+        drawer::execDrawer(const_cast<ResourceCollectionPageBase *>(this),
+                           pageTitle(),
+                           content,
+                           {{tr("Close"), int(QMessageBox::Close), true}},
+                           int(QMessageBox::Close));
+        return true;
     }
 
     QString ResourceCollectionPageBase::importFileFilter() const {
@@ -569,21 +667,24 @@ namespace fairwindsk::ui::mydata {
     }
 
     void ResourceCollectionPageBase::openEditor(const QString &resourceId, const QJsonObject &resource, const bool creating) {
-        ResourceDialog dialog(m_kind, this);
+        auto *dialog = new ResourceDialog(m_kind);
+        QPointer<ResourceDialog> dialogGuard(dialog);
         if (!creating && !resourceId.isEmpty()) {
-            dialog.setResource(resourceId, resource);
+            dialog->setResource(resourceId, resource);
         }
 
-        if (dialog.exec() != QDialog::Accepted) {
+        const QString title = tr("%1 Editor").arg(resourceKindToSingularTitle(m_kind));
+        const int result = drawer::execDrawer(this, title, dialog, {}, int(QMessageBox::Cancel));
+        if (!dialogGuard || result != QMessageBox::Ok) {
             return;
         }
 
-        const QJsonObject resourceObject = dialog.resourceObject();
+        const QJsonObject resourceObject = dialogGuard->resourceObject();
         QString resultingId = resourceId;
         if (creating) {
             resultingId = m_model->createResource(resourceObject);
             if (resultingId.isEmpty()) {
-                resultingId = dialog.resourceId();
+                resultingId = dialogGuard->resourceId();
             }
         } else if (!m_model->updateResource(resourceId, resourceObject)) {
             showPageError(tr("Unable to save the selected %1.").arg(resourceKindToSingularTitle(m_kind).toLower()));

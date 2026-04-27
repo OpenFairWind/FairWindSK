@@ -9,7 +9,6 @@
 #include <QPushButton>
 #include <QFrame>
 #include <QLabel>
-#include <QProcess>
 #include <QWindow>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -293,6 +292,9 @@ namespace fairwindsk::ui {
         for (const auto &buttonSpec : buttons) {
             auto *button = new QPushButton(buttonSpec.text, m_dialogDrawer);
             button->setDefault(buttonSpec.isDefault);
+            button->setMinimumHeight(58);
+            button->setMinimumWidth(112);
+            button->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
             connect(button, &QPushButton::clicked, this, [this, buttonSpec]() {
                 finishActiveDrawer(buttonSpec.result);
             });
@@ -755,56 +757,22 @@ namespace fairwindsk::ui {
             // If yes, get its widget from mapWidgets
             widgetApp = m_mapHash2Widget[resolvedHash];
         } else {
-            // Check if the app is an executable
+            // Check if the app is a native executable.
             if (appItem->getName().startsWith("file://")) {
-
-#if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
-                qWarning() << "Native file:// applications are not supported on mobile builds:" << appItem->getName();
-                showLauncher();
-                return;
-#else
-
-                //https://forum.qt.io/topic/44091/embed-an-application-inside-a-qt-window-solved/16
-                //https://forum.qt.io/topic/101510/calling-a-process-in-the-main-app-and-return-the-process-s-window-id
-
-                // Get the path to the executable
-                const auto executable = appItem->getName().replace("file://", "");
-
-                // Get the executable arguments
-                const auto arguments = appItem->getArguments();
-
-                // Check if the debug is active
-                //if (fairWindSK->isDebug()) {
-                    // Write a message
-                    qDebug() << appItem->getName() << " Native APP:  " << executable << " " << arguments;
-                //}
-
-                // Create a process
-                const auto process = new QProcess(this);
-
-                // Set th executable
-                process->setProgram(executable);
-
-                // Set the parameters
-                process->setArguments(arguments);
-
-                // Start the process
-                process->start();
-
-                appItem->setProcess(process);
                 if (ownsFallbackAppItem) {
                     appItem->deleteLater();
                 }
                 fairwindsk::runtime::recordUserInteraction(QStringLiteral("apps"),
-                                                           QStringLiteral("launch_native"),
+                                                           QStringLiteral("launch_native_blocked"),
                                                            resolvedHash,
                                                            QJsonObject{
-                                                               {QStringLiteral("executable"), executable}
+                                                               {QStringLiteral("reason"), QStringLiteral("single_window_model")}
                                                            });
+                drawer::warning(this,
+                                tr("Single Window Mode"),
+                                tr("Native file applications cannot be launched because FairWindSK keeps all interaction inside the marine display window."));
                 showLauncher();
                 return;
-#endif
-
             } else {
                 // Create a new web instance
                 const auto web = new web::Web(nullptr, appItem, fairWindSK->getWebEngineProfile());
@@ -1345,20 +1313,6 @@ namespace fairwindsk::ui {
         updateAdaptiveShellMode();
         updateMobileShellMetrics();
         updateDrawerGeometry();
-    }
-
-    /*
-     * getWIdByPId
-     * Return the window id given a process id.
-     * This method is API dependant.
-     * Actually now it is just a placeholder
-     */
-    WId MainWindow::getWIdByPId(qint64 pid) {
-        WId result = 0;
-
-        // ToDo: Implement the actual code
-
-        return result;
     }
 
     /*

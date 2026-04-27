@@ -10,7 +10,6 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QDrag>
-#include <QFileDialog>
 #include <QFile>
 #include <QFormLayout>
 #include <QHeaderView>

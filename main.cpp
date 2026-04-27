@@ -1,8 +1,5 @@
 #include <QCoreApplication>
 #include <QApplication>
-#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
-#include <QSplashScreen>
-#endif
 #include <QByteArray>
 #include <QDir>
 #include <QFile>
@@ -311,20 +308,6 @@ int main(int argc, char *argv[]) {
     QApplication::setWindowIcon(QIcon(QPixmap::fromImage(QImage(":/resources/images/mainwindow/fairwind_icon.png"))));
     qInfo() << "Application icon set";
 
-#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
-    // Get the splash screen logo
-    const QPixmap pixmap(":/resources/images/other/splash_logo.png");
-
-    // Create a splash screen containing the logo
-    QSplashScreen splash(pixmap, Qt::WindowStaysOnTopHint);
-
-    // Show the logo
-    splash.show();
-
-    // Show message
-    splash.showMessage(QObject::tr("Welcome to FairWindSK a GUI for the Signal K server!"), 500, Qt::white);
-#endif
-
     // Get the FairWind singleton
     const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
     qInfo() << "FairWindSK singleton created";
@@ -332,9 +315,6 @@ int main(int argc, char *argv[]) {
     // Load the configuration inside the FairWind singleton itself
     fairWindSK->loadConfig();
     qInfo() << "Configuration loaded";
-
-#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
-#endif
 
     // Set web profile options
     // Create a new MainWindow object
@@ -352,19 +332,6 @@ int main(int argc, char *argv[]) {
     }
 #else
     qInfo() << "Mobile web profile uses Qt WebView backend";
-#endif
-
-#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
-    // Close the splash screen presenting the MainWindow UI
-    qInfo() << "About to close splash screen";
-#if defined(Q_OS_LINUX)
-    splash.hide();
-    splash.close();
-    qInfo() << "Splash screen closed with Linux-safe path";
-#else
-    splash.finish((QWidget *) &w);
-    qInfo() << "Splash screen finished";
-#endif
 #endif
 
     qInfo() << "Scheduling deferred startup tasks";

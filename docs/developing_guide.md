@@ -169,7 +169,7 @@ Examples:
 - diagnostics support
 - shared OpenGL contexts
 - Linux environment fallbacks for runtime directory and Qt platform plugins
-- desktop splash screen
+- single main-window startup
 - desktop WebEngine or mobile WebView backend initialization
 
 ### 2. Configuration load
@@ -395,9 +395,8 @@ Desktop builds keep features such as:
 
 - `QWebEngineProfile`
 - richer shared cookie handling
-- desktop-local `file://` application launching
 - `QHotkey`
-- desktop-specific popup/download handling
+- drawer-hosted download handling and single-window web popups
 
 ### Mobile constraints
 

@@ -5,14 +5,15 @@
 #ifndef FAIRWINDSK_UI_MYDATA_RESOURCEDIALOG_HPP
 #define FAIRWINDSK_UI_MYDATA_RESOURCEDIALOG_HPP
 
-#include <QDialog>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QWidget>
 
 #include "ResourceModel.hpp"
 
 class QCheckBox;
 class QDoubleSpinBox;
+class QLabel;
 class QLineEdit;
 class QPlainTextEdit;
 class QStackedWidget;
@@ -20,7 +21,7 @@ namespace Ui { class ResourceDialog; }
 
 namespace fairwindsk::ui::mydata {
 
-    class ResourceDialog final : public QDialog {
+    class ResourceDialog final : public QWidget {
         Q_OBJECT
 
     public:
@@ -32,7 +33,8 @@ namespace fairwindsk::ui::mydata {
         QJsonObject resourceObject() const;
 
     public slots:
-        void accept() override;
+        void accept();
+        void reject();
 
     private:
         QJsonArray coordinatesJson() const;
@@ -42,6 +44,7 @@ namespace fairwindsk::ui::mydata {
         ResourceKind m_kind;
         QString m_id;
         ::Ui::ResourceDialog *ui = nullptr;
+        QLabel *m_validationLabel = nullptr;
         QLineEdit *m_nameEdit = nullptr;
         QLineEdit *m_descriptionEdit = nullptr;
         QLineEdit *m_typeEdit = nullptr;

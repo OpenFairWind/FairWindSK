@@ -11,11 +11,12 @@
 #include <QFont>
 #include <QJsonDocument>
 #include <QLabel>
+#include <QMessageBox>
 #include <QPushButton>
 #include <QUuid>
 
 #include "FairWindSK.hpp"
-#include "ui/DrawerDialogHost.hpp"
+#include "ui/MainWindow.hpp"
 #include "ui_ResourceDialog.h"
 
 namespace {
@@ -53,11 +54,25 @@ namespace {
 
 namespace fairwindsk::ui::mydata {
     ResourceDialog::ResourceDialog(const ResourceKind kind, QWidget *parent)
-        : QDialog(parent),
+        : QWidget(parent),
           m_kind(kind),
-          ui(new Ui::ResourceDialog) {
+          ui(new ::Ui::ResourceDialog) {
         ui->setupUi(this);
         setWindowTitle(tr("%1 Editor").arg(resourceKindToSingularTitle(kind)));
+        connect(ui->buttonBox, &QDialogButtonBox::accepted, this, &ResourceDialog::accept);
+        connect(ui->buttonBox, &QDialogButtonBox::rejected, this, &ResourceDialog::reject);
+        m_validationLabel = new QLabel(this);
+        m_validationLabel->setWordWrap(true);
+        m_validationLabel->setMinimumHeight(44);
+        m_validationLabel->setStyleSheet(QStringLiteral(
+            "QLabel {"
+            " padding: 8px 12px;"
+            " border: 1px solid palette(highlight);"
+            " border-radius: 8px;"
+            " font-weight: 700;"
+            " }"));
+        m_validationLabel->hide();
+        ui->verticalLayout->insertWidget(0, m_validationLabel);
         m_nameEdit = ui->lineEditName;
         m_descriptionEdit = ui->lineEditDescription;
         m_typeEdit = ui->lineEditType;
@@ -460,10 +475,24 @@ namespace fairwindsk::ui::mydata {
     void ResourceDialog::accept() {
         QString message;
         if (!validate(&message)) {
-            drawer::warning(this, tr("Invalid %1").arg(resourceKindToSingularTitle(m_kind)), message);
+            if (m_validationLabel) {
+                m_validationLabel->setText(message);
+                m_validationLabel->show();
+            }
             return;
         }
 
-        QDialog::accept();
+        if (m_validationLabel) {
+            m_validationLabel->hide();
+        }
+        if (auto *mainWindow = fairwindsk::ui::MainWindow::instance(this)) {
+            mainWindow->finishActiveDrawer(int(QMessageBox::Ok));
+        }
+    }
+
+    void ResourceDialog::reject() {
+        if (auto *mainWindow = fairwindsk::ui::MainWindow::instance(this)) {
+            mainWindow->finishActiveDrawer(int(QMessageBox::Cancel));
+        }
     }
 }

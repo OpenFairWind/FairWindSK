@@ -28,7 +28,7 @@ Platform-specific dependencies, Qt kit selection, Windows deployment, Raspberry 
 2. If the JSON configuration file does not exist, the application seeds its settings from the bundled `resources/json/configuration.json`, preserving defaults such as UI sizing, unit choices, and a starter app list.
 3. Point the client at your Signal K server by editing the `connection.server` field in `fairwindsk.json` or by letting a platform integration layer provide the file.
 4. FairWindSK connects to the server, negotiates a token if available, and persists the token in `fairwindsk.ini` for subsequent launches.
-5. Discovered Signal K web applications are merged into the local configuration, preserving local overrides (ordering, activation state, and custom icons). Web apps appear on all targets; `file://` desktop-native app entries are desktop-only.
+5. Discovered Signal K web applications are merged into the local configuration, preserving local overrides (ordering, activation state, and custom icons). Web apps appear on all targets; native `file://` app entries are blocked by single-window mode.
 6. If the Signal K server restarts later, FairWindSK now attempts to recover automatically by rediscovering the server, reconnecting the websocket stream, restoring subscriptions, and refreshing server-backed resources.
 
 ## Running the desktop
@@ -36,8 +36,8 @@ Platform-specific dependencies, Qt kit selection, Windows deployment, Raspberry 
 - Start the application normally from the build output folder or after installing it into your system path. On Raspberry Pi OS the project includes a sample autostart entry in `extras/fairwindsk-startup.desktop` and a helper script in `extras/fairwindsk-startup`. The helper follows the same per-user Qt configuration directory used by the application, applies the virtual keyboard environment only when `main.virtualKeyboard` is enabled, and only relaunches FairWindSK when the application exits with code `1`. Direct launches now read the same startup setting too, but changing `main.virtualKeyboard` still requires an application restart.
 - `cmake --install build` now installs the desktop app together with the bundled icon directory and desktop helper libraries, so the installed target keeps the same local-app icon lookup behavior as the build-tree run.
 - On Raspberry Pi OS, `cmake --install build` now also installs the system autostart entry automatically. If OpenPlotter is present on the target, the install performs a best-effort addition of the FairWindSK launcher icon to the OpenPlotter menu.
-- The splash screen shows connection progress while the Signal K client initializes and downloads the web app catalog.
-- Once the main window appears, use the tiles to launch apps. On desktop targets, `SHIFT+TAB` brings you back to the FairWindSK desktop when a web app takes full focus.
+- The main window appears directly and then performs deferred Signal K startup, app loading, and page prewarming inside the single-window shell.
+- Use the tiles to launch apps. On desktop targets, `SHIFT+TAB` brings the FairWindSK window back to the foreground when a web app takes full focus.
 - The bottom bars expose quick controls for alarms, person overboard, anchor, and autopilot features. Availability depends on the configured Signal K data paths and installed plugins.
 
 ## Troubleshooting

@@ -42,13 +42,13 @@ Applications live under the `apps` array. Each entry represents a web or local a
 }
 ```
 
-- `name`: URL for the app (supports `https://`, `http://`, and `file://` for local desktop tools like OpenCPN).
+- `name`: URL for the app. Use `https://` or `http://` so the app stays embedded in the FairWindSK application area; `file://` app entries are retained for configuration compatibility but are blocked by single-window mode.
 - `fairwind.active`: Whether the app tile is shown.
 - `fairwind.order`: Ordering on the desktop (lower numbers appear first).
 - `fairwind.zoomPercent`: Per-app web zoom level, expressed as a percentage. The default is `100`.
 - `signalk.*`: Presentation metadata used by the UI. Icon paths support Qt resource prefixes (`:/resources/...`) or filesystem URLs.
 
-Apps discovered from the Signal K server (`signalk-webapp` entries) are merged with this list during startup. Local overrides for ordering and activation are preserved. `file://` entries are a desktop-only integration.
+Apps discovered from the Signal K server (`signalk-webapp` entries) are merged with this list during startup. Local overrides for ordering and activation are preserved. `file://` entries can still carry local metadata such as icons, but they are not launched as external native applications.
 
 ## Units and data paths
 
@@ -121,12 +121,12 @@ These mappings drive UI bars (autopilot, anchor, alarms, POB) and instrument rea
 - `logLevel`: Logging verbosity. Supported values are `off`, `critical`, `warning`, `info`, `debug`, and `full`. The default is `off` (`No logging` in the UI).
 - `persistentLogs`: When true, FairWindSK stores per-run message logs in the per-user application data directory. This is enabled by default.
 - `interactionHistory`: When true, FairWindSK stores a lightweight journal of operator navigation and control actions beside each run log. This is enabled by default.
-- `email`: Optional fallback email address. When set, FairWindSK still tries to open the platform email composer after storing a crash report bundle locally.
-- `subject`: Subject line used for the optional fallback email flow.
+- `email`: Optional fallback email address recorded in the diagnostics bundle manifest. Single-window mode does not open the platform email composer.
+- `subject`: Subject line recorded for the diagnostics handoff.
 
 At startup, FairWindSK checks whether the previous run ended gracefully. If it did not, it creates a persistent crash-report bundle in the per-user diagnostics reports directory. The bundle includes a text summary, a JSON manifest, the previous run log when available, the previous interaction journal when available, and platform details such as operating system, CPU architecture, Qt version, host information, and primary screen configuration.
 
-If a fallback email address is configured, FairWindSK also tries to open the platform email composer with a condensed summary that points at the stored report bundle. This keeps diagnostics available even when SMTP is not configured on the machine.
+If a fallback email address is configured, FairWindSK records it beside the stored report bundle so the operator can attach the files later without FairWindSK opening an external mail window.
 
 The **Settings > System** tab exposes the same diagnostics options in the touch-friendly UI and shows both the persistent log directory and the crash-report directory currently used by the application.
 It keeps the persistent-log and interaction-history toggles readable on compact touch layouts by separating each switch from its descriptive text and relies on the in-application log explorer so operators can inspect both stored run logs and stored crash summaries without leaving FairWindSK.

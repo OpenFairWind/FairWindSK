@@ -21,7 +21,7 @@ namespace fairwindsk::ui::mydata
         Q_OBJECT
 
         public:
-        explicit FileViewer(const QString& path, QWidget *parent = nullptr);
+        explicit FileViewer(const QString& path, QWidget *parent = nullptr, bool allowEditing = true);
         ~FileViewer() override;
 
         signals:
@@ -46,6 +46,7 @@ namespace fairwindsk::ui::mydata
         Ui::FileViewer *ui;
         QString m_path;
         fairwindsk::ui::web::WebView *m_previewView = nullptr;
+        bool m_allowEditing = true;
         bool m_isEditableTextMode = false;
     };
 }

@@ -41,9 +41,9 @@ Availability of these bars depends on the configured plugin identifiers (`applic
 - The **My Data > Files** page now keeps directory actions, search results, rename/create flows, and copy/move/paste behavior aligned so the same operations work more consistently from both the browser and search views.
 - The **Settings > Apps** layout now groups the right-pane toolbar into page actions and application palette actions, uses bundled marine-style SVG icons for the launcher-management buttons, includes bulk clear actions for removing applications from the current page or from every page, and lets operators tune each web app's zoom level (default `100%`) from the application details view.
 
-## Splash and status messages
+## Startup and status messages
 
-- On desktop targets, a splash screen shows progress as the application loads configuration, connects to Signal K, and fetches the web app catalog. Messages mirror the lifecycle in `main.cpp`.
+- FairWindSK opens directly into the main shell and performs startup work inside that single window. Runtime status messages mirror the lifecycle in `main.cpp`.
 - If the Signal K server restarts while FairWindSK is running, the status widgets now show the reconnect cycle and the UI refreshes once the server has been rediscovered and the stream is resynchronized. When the restart is triggered from the embedded Signal K admin web app, FairWindSK now treats it as a planned restart, pauses its reconnect loop briefly, and then resumes recovery automatically instead of fighting the restart sequence.
 
 ## Drawers and web dialogs

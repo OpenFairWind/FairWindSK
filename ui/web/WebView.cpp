@@ -11,7 +11,6 @@
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
 #include <QAuthenticator>
-#include <QDialog>
 #include <QMessageBox>
 #include <QTimer>
 #include <QStyle>
@@ -618,8 +617,7 @@ namespace fairwindsk::ui::web {
         }
 
         connect(page, &WebPage::createCertificateErrorDialog, this, [this](QWebEngineCertificateError error) {
-            auto *dialog = new QDialog(window());
-            dialog->setWindowFlags(dialog->windowFlags() & ~Qt::WindowContextHelpButtonHint);
+            auto *dialog = new QWidget(window());
 
             Ui::CertificateErrorDialog certificateDialog;
             certificateDialog.setupUi(dialog);
@@ -633,9 +631,9 @@ namespace fairwindsk::ui::web {
             if (drawer::execDrawer(this,
                                    tr("Certificate Error"),
                                    dialog,
-                                   {{tr("Continue"), QDialog::Accepted, false},
-                                    {tr("Cancel"), QDialog::Rejected, true}},
-                                   QDialog::Rejected) == QDialog::Accepted) {
+                                   {{tr("Continue"), int(QMessageBox::Ok), false},
+                                    {tr("Cancel"), int(QMessageBox::Cancel), true}},
+                                   int(QMessageBox::Cancel)) == QMessageBox::Ok) {
                 error.acceptCertificate();
             } else {
                 error.rejectCertificate();
@@ -663,8 +661,7 @@ namespace fairwindsk::ui::web {
                         *auth = QAuthenticator();
                         return;
                     }
-                    auto *dialog = new QDialog(window());
-                    dialog->setWindowFlags(dialog->windowFlags() & ~Qt::WindowContextHelpButtonHint);
+                    auto *dialog = new QWidget(window());
 
                     Ui::PasswordDialog passwordDialog;
                     passwordDialog.setupUi(dialog);
@@ -682,9 +679,9 @@ namespace fairwindsk::ui::web {
                     if (drawer::execDrawer(this,
                                            tr("Authentication Required"),
                                            dialog,
-                                           {{tr("OK"), QDialog::Accepted, true},
-                                            {tr("Cancel"), QDialog::Rejected, false}},
-                                           QDialog::Rejected) == QDialog::Accepted) {
+                                           {{tr("OK"), int(QMessageBox::Ok), true},
+                                            {tr("Cancel"), int(QMessageBox::Cancel), false}},
+                                           int(QMessageBox::Cancel)) == QMessageBox::Ok) {
                         auth->setUser(passwordDialog.m_userNameLineEdit->text());
                         auth->setPassword(passwordDialog.m_passwordLineEdit->text());
                     } else {
@@ -733,8 +730,7 @@ namespace fairwindsk::ui::web {
                         *auth = QAuthenticator();
                         return;
                     }
-                    auto *dialog = new QDialog(window());
-                    dialog->setWindowFlags(dialog->windowFlags() & ~Qt::WindowContextHelpButtonHint);
+                    auto *dialog = new QWidget(window());
 
                     Ui::PasswordDialog passwordDialog;
                     passwordDialog.setupUi(dialog);
@@ -749,9 +745,9 @@ namespace fairwindsk::ui::web {
                     if (drawer::execDrawer(this,
                                            tr("Proxy Authentication Required"),
                                            dialog,
-                                           {{tr("OK"), QDialog::Accepted, true},
-                                            {tr("Cancel"), QDialog::Rejected, false}},
-                                           QDialog::Rejected) == QDialog::Accepted) {
+                                           {{tr("OK"), int(QMessageBox::Ok), true},
+                                            {tr("Cancel"), int(QMessageBox::Cancel), false}},
+                                           int(QMessageBox::Cancel)) == QMessageBox::Ok) {
                         auth->setUser(passwordDialog.m_userNameLineEdit->text());
                         auth->setPassword(passwordDialog.m_passwordLineEdit->text());
                     } else {

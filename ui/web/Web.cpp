@@ -34,7 +34,13 @@ namespace fairwindsk::ui::web {
      * Web
      * Constructor
      */
-    Web::Web(QWidget *parent, fairwindsk::AppItem *appItem, fairwindsk::WebProfileHandle *profile): QWidget(parent), ui(new Ui::Web) {
+    Web::Web(QWidget *parent, fairwindsk::AppItem *appItem, fairwindsk::WebProfileHandle *profile)
+        : QWidget(parent),
+          ui(new Ui::Web)
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+          , m_downloadManagerWidget(this)
+#endif
+    {
 
         // Set the application pointer
         m_appItem = appItem;
@@ -90,6 +96,13 @@ namespace fairwindsk::ui::web {
 
         // Add the web view widget to the user interface
         ui->verticalLayout_WebView->addWidget(m_webView);
+
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+        m_downloadManagerWidget.setVisible(false);
+        m_downloadManagerWidget.setMaximumHeight(220);
+        m_downloadManagerWidget.setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
+        ui->verticalLayout_WebView->addWidget(&m_downloadManagerWidget);
+#endif
 
         m_progressBar = new QProgressBar(this);
         m_progressBar->setTextVisible(false);

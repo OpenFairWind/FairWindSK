@@ -6,8 +6,6 @@
 
 #include <QCoreApplication>
 #include <QDateTime>
-#include <QDialog>
-#include <QDialogButtonBox>
 #include <QDir>
 #include <QEventLoop>
 #include <QFile>
@@ -15,7 +13,6 @@
 #include <QFileSystemModel>
 #include <QHeaderView>
 #include <QHBoxLayout>
-#include <QInputDialog>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
@@ -1419,20 +1416,17 @@ namespace fairwindsk::ui::drawer {
             auto *editor = new fairwindsk::ui::GeoCoordinateEditorWidget();
             editor->setCoordinate(*latitude, *longitude, altitude ? *altitude : 0.0, currentFormat);
             QPointer<fairwindsk::ui::GeoCoordinateEditorWidget> editorGuard(editor);
-            QDialog dialog(resolveMainWindow(parent) ? static_cast<QWidget *>(resolveMainWindow(parent)) : parent);
-            dialog.setWindowTitle(title);
-            dialog.setModal(true);
-            dialog.setWindowFlags(dialog.windowFlags() & ~Qt::WindowContextHelpButtonHint);
-            auto *layout = new QVBoxLayout(&dialog);
-            layout->setContentsMargins(16, 16, 16, 16);
-            layout->addWidget(editor);
-            QObject::connect(editor->applyButton(), &QPushButton::clicked, &dialog, [&dialog]() {
-                dialog.done(int(QMessageBox::Ok));
+            QObject::connect(editor->applyButton(), &QPushButton::clicked, editor, [editor]() {
+                if (auto *mainWindow = resolveMainWindow(editor)) {
+                    mainWindow->finishActiveDrawer(int(QMessageBox::Ok));
+                }
             });
-            QObject::connect(editor->cancelButton(), &QPushButton::clicked, &dialog, [&dialog]() {
-                dialog.done(int(QMessageBox::Cancel));
+            QObject::connect(editor->cancelButton(), &QPushButton::clicked, editor, [editor]() {
+                if (auto *mainWindow = resolveMainWindow(editor)) {
+                    mainWindow->finishActiveDrawer(int(QMessageBox::Cancel));
+                }
             });
-            const int result = dialog.exec();
+            const int result = execDrawer(parent, title, editor, {}, int(QMessageBox::Cancel));
 
             if (!editorGuard || result != QMessageBox::Ok) {
                 return false;

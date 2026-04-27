@@ -160,7 +160,7 @@ namespace fairwindsk::ui::widgets {
 
         ui->pushButtonPopup->setObjectName(QStringLiteral("pushButton_touchComboBox"));
 
-        m_popup = new QFrame(nullptr, Qt::Popup | Qt::FramelessWindowHint);
+        m_popup = new QFrame(this);
         m_popup->setObjectName(QStringLiteral("frame_touchComboPopup"));
         m_popup->setFrameShape(QFrame::StyledPanel);
         m_popup->setLineWidth(1);
@@ -521,23 +521,37 @@ namespace fairwindsk::ui::widgets {
             return;
         }
 
-        const QPoint globalBottomLeft = mapToGlobal(rect().bottomLeft());
-        const QRect screenGeometry = screen() ? screen()->availableGeometry() : QRect(globalBottomLeft, QSize(width(), 240));
+        QWidget *host = window();
+        if (!host) {
+            host = parentWidget();
+        }
+        if (!host) {
+            host = this;
+        }
+        if (m_popup->parentWidget() != host) {
+            m_popup->setParent(host);
+        }
+
+        const QPoint hostBottomLeft = host->mapFromGlobal(mapToGlobal(rect().bottomLeft()));
+        const QRect hostGeometry = host->rect().isValid() ? host->rect() : QRect(hostBottomLeft, QSize(width(), 240));
         const int popupWidth = width();
-        const int popupHeight = qMin(popupHeightForItems(), screenGeometry.height());
+        const int popupHeight = qMin(popupHeightForItems(), hostGeometry.height());
 
-        int x = globalBottomLeft.x();
-        int y = globalBottomLeft.y();
+        int x = hostBottomLeft.x();
+        int y = hostBottomLeft.y();
 
-        if ((x + popupWidth) > screenGeometry.right()) {
-            x = screenGeometry.right() - popupWidth;
+        if ((x + popupWidth) > hostGeometry.right()) {
+            x = hostGeometry.right() - popupWidth;
         }
 
-        if ((y + popupHeight) > screenGeometry.bottom()) {
-            y = mapToGlobal(rect().topLeft()).y() - popupHeight;
+        if ((y + popupHeight) > hostGeometry.bottom()) {
+            y = host->mapFromGlobal(mapToGlobal(rect().topLeft())).y() - popupHeight;
         }
 
-        m_popup->setGeometry(x, y, popupWidth, popupHeight);
+        m_popup->setGeometry(qMax(hostGeometry.left(), x),
+                             qMax(hostGeometry.top(), y),
+                             popupWidth,
+                             popupHeight);
     }
 
     void TouchComboBox::ensureCurrentItemVisible() const {

@@ -42,6 +42,9 @@ namespace fairwindsk::ui::mydata {
         QString selectedResourceId() const;
         QJsonObject selectedResource() const;
         void showPageError(const QString &message) const;
+        bool openPathInSingleWindow(const QString &path,
+                                    const QString &emptyMessage,
+                                    const QString &invalidMessage) const;
 
         virtual QString pageTitle() const = 0;
         virtual QString searchPlaceholderText() const = 0;

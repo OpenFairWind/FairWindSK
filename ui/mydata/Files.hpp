@@ -15,11 +15,9 @@
 #include "FileInfoListModel.hpp"
 #include "FileViewer.hpp"
 
-class QAction;
 class QFrame;
 class QGridLayout;
 class QLabel;
-class QMenu;
 class QPushButton;
 class QResizeEvent;
 
@@ -145,10 +143,6 @@ private:
     QLabel *m_clipboardStatusLabel = nullptr;
     QPushButton *m_clearClipboardButton = nullptr;
     QPushButton *m_searchOptionsButton = nullptr;
-    QMenu *m_searchOptionsMenu = nullptr;
-    QAction *m_caseSensitiveAction = nullptr;
-    QAction *m_searchHiddenAction = nullptr;
-    QAction *m_searchSystemAction = nullptr;
     QFrame *m_actionsRow = nullptr;
     QGridLayout *m_actionsLayout = nullptr;
 
