@@ -15,6 +15,8 @@ These instructions apply to the entire repository.
 - Run available tests or sanity checks when feasible; note any environment limitations in your report if you cannot run them.
 - Be sure that each new modification is checked for behavior and build impact across macOS, Windows, Linux, Raspberry Pi OS, Android, and iOS; when a platform is not currently supported by the codebase, call out the limitation explicitly instead of implying coverage.
 - For every GUI change, explicitly verify touch-friendly behavior and marine electronics multi-functional display (MFD) consistency before considering the task done.
+- Enforce the single window model, don't create external windows.
+- Enforce the marine electronics Multi-Functional-Display UI and UX.
 - Touch targets must be finger-friendly by default (comfortable hit area, clear focus/pressed states, and readable high-contrast text at normal helm distance).
 - Layout, spacing, and visual hierarchy must remain stable in rough-use conditions: avoid dense controls, ambiguous labels, or low-contrast decorative styling that reduces operational clarity.
 - Ensure all comfort presets: 1) fit the marine electronics UI style; 2) ensure the best visibility for down, day, default, dusk, night, and sunset.
