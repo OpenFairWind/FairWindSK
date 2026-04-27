@@ -201,7 +201,7 @@ namespace fairwindsk::ui::settings {
         rootLayout->addWidget(m_titleLabel);
 
         m_hintLabel = new QLabel(
-            tr("Drag items from the bottom palette onto the preview bar, then drag within the preview to reorder. The FairWindSK button stays fixed on the left and the current-application button stays fixed on the right. Use Width and Height to decide which middle items should grow to fill available space."),
+            tr("Drag items from the bottom palette onto the preview bar, then drag within the preview to reorder. The FairWindSK button stays fixed on the left and the current-application button stays fixed on the right. Select a widget to choose whether it keeps the minimum needed size or grows to the maximum possible size."),
             this);
         m_hintLabel->setWordWrap(true);
         rootLayout->addWidget(m_hintLabel);
@@ -242,7 +242,8 @@ namespace fairwindsk::ui::settings {
         controlsLayout->setContentsMargins(0, 0, 0, 0);
         controlsLayout->setSpacing(8);
 
-        m_expandWidthButton = new QToolButton(this);
+        m_minimumWidthButton = new QToolButton(this);
+        m_maximumWidthButton = new QToolButton(this);
         m_expandHeightButton = new QToolButton(this);
         m_removeSelectedButton = new QToolButton(this);
         m_resetDefaultsButton = new QToolButton(this);
@@ -267,10 +268,6 @@ namespace fairwindsk::ui::settings {
             button->setToolButtonStyle(Qt::ToolButtonIconOnly);
         };
 
-        configureActionButton(m_expandWidthButton,
-                              QStringLiteral(":/resources/svg/OpenBridge/arrow-right-google.svg"),
-                              tr("Extend Width"),
-                              true);
         configureActionButton(m_expandHeightButton,
                               QStringLiteral(":/resources/svg/OpenBridge/arrow-down-google.svg"),
                               tr("Extend Height"),
@@ -282,9 +279,24 @@ namespace fairwindsk::ui::settings {
                               QStringLiteral(":/resources/svg/OpenBridge/refresh-google.svg"),
                               tr("Reset Defaults"));
 
-        m_expandWidthButton->setCheckable(true);
+        for (auto *button : {m_minimumWidthButton, m_maximumWidthButton}) {
+            button->setCheckable(true);
+            button->setAutoRaise(true);
+            button->setMinimumSize(QSize(132, kControlHeight));
+            button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+            button->setToolButtonStyle(Qt::ToolButtonTextOnly);
+        }
+        m_minimumWidthButton->setText(tr("Minimum"));
+        m_maximumWidthButton->setText(tr("Maximum"));
+        m_minimumWidthButton->setToolTip(tr("Keep the selected widget at the minimum needed size"));
+        m_maximumWidthButton->setToolTip(tr("Let the selected widget grow to the maximum possible size"));
+        m_minimumWidthButton->setStatusTip(m_minimumWidthButton->toolTip());
+        m_maximumWidthButton->setStatusTip(m_maximumWidthButton->toolTip());
+        m_minimumWidthButton->setAccessibleName(tr("Minimum needed size"));
+        m_maximumWidthButton->setAccessibleName(tr("Maximum possible size"));
         m_expandHeightButton->setCheckable(true);
-        controlsLayout->addWidget(m_expandWidthButton);
+        controlsLayout->addWidget(m_minimumWidthButton);
+        controlsLayout->addWidget(m_maximumWidthButton);
         controlsLayout->addWidget(m_expandHeightButton);
         controlsLayout->addWidget(m_removeSelectedButton);
         controlsLayout->addWidget(m_resetDefaultsButton);
@@ -323,7 +335,8 @@ namespace fairwindsk::ui::settings {
         connect(m_previewWidget->model(), &QAbstractItemModel::rowsInserted, this, [this]() { onPreviewEdited(); });
         connect(m_previewWidget->model(), &QAbstractItemModel::rowsRemoved, this, [this]() { onPreviewEdited(); });
         connect(m_previewWidget->model(), &QAbstractItemModel::rowsMoved, this, [this]() { onPreviewEdited(); });
-        connect(m_expandWidthButton, &QToolButton::toggled, this, &TopBar::onExpandWidthToggled);
+        connect(m_minimumWidthButton, &QToolButton::clicked, this, &TopBar::onMinimumWidthSelected);
+        connect(m_maximumWidthButton, &QToolButton::clicked, this, &TopBar::onMaximumWidthSelected);
         connect(m_expandHeightButton, &QToolButton::toggled, this, &TopBar::onExpandHeightToggled);
         connect(m_removeSelectedButton, &QToolButton::clicked, this, &TopBar::onRemoveSelected);
         connect(m_resetDefaultsButton, &QToolButton::clicked, this, &TopBar::onResetDefaults);
@@ -371,7 +384,14 @@ namespace fairwindsk::ui::settings {
             fairwindsk::ui::applyBottomBarToolButtonChrome(m_rightShellButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(28, 28), 56);
         }
 
-        fairwindsk::ui::applyBottomBarToolButtonChrome(m_expandWidthButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(24, 24), 52);
+        fairwindsk::ui::applyBottomBarToolButtonChrome(m_minimumWidthButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(), 52);
+        fairwindsk::ui::applyBottomBarToolButtonChrome(m_maximumWidthButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(), 52);
+        if (m_minimumWidthButton) {
+            m_minimumWidthButton->setToolButtonStyle(Qt::ToolButtonTextOnly);
+        }
+        if (m_maximumWidthButton) {
+            m_maximumWidthButton->setToolButtonStyle(Qt::ToolButtonTextOnly);
+        }
         fairwindsk::ui::applyBottomBarToolButtonChrome(m_expandHeightButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(24, 24), 52);
         fairwindsk::ui::applyBottomBarToolButtonChrome(m_removeSelectedButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(24, 24), 52);
         fairwindsk::ui::applyBottomBarToolButtonChrome(m_resetDefaultsButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(24, 24), 52);
@@ -423,18 +443,17 @@ namespace fairwindsk::ui::settings {
 
     QString TopBar::itemSummary(const LayoutEntry &entry) const {
         QStringList summary;
-        if (entry.expandHorizontally) {
-            summary.append(tr("Width"));
-        }
+        summary.append(layout::horizontalSizeLabel(entry));
         if (entry.expandVertically) {
             summary.append(tr("Height"));
         }
 
-        if (entry.kind == EntryKind::Stretch && summary.isEmpty()) {
+        if (entry.kind == EntryKind::Stretch) {
+            summary.clear();
             summary.append(tr("Elastic"));
         }
 
-        return summary.isEmpty() ? tr("Fixed") : summary.join(QStringLiteral(" + "));
+        return summary.join(QStringLiteral(" + "));
     }
 
     QSize TopBar::itemSizeHint(const LayoutEntry &entry) const {
@@ -562,10 +581,15 @@ namespace fairwindsk::ui::settings {
         const auto entry = entryForPreviewItem(m_previewWidget ? m_previewWidget->currentItem() : nullptr);
         const bool hasSelection = m_previewWidget && m_previewWidget->currentItem();
 
-        if (m_expandWidthButton) {
-            const QSignalBlocker blocker(m_expandWidthButton);
-            m_expandWidthButton->setEnabled(hasSelection);
-            m_expandWidthButton->setChecked(hasSelection && entry.expandHorizontally);
+        if (m_minimumWidthButton) {
+            const QSignalBlocker blocker(m_minimumWidthButton);
+            m_minimumWidthButton->setEnabled(hasSelection && entry.kind == EntryKind::Widget);
+            m_minimumWidthButton->setChecked(hasSelection && entry.kind == EntryKind::Widget && !entry.expandHorizontally);
+        }
+        if (m_maximumWidthButton) {
+            const QSignalBlocker blocker(m_maximumWidthButton);
+            m_maximumWidthButton->setEnabled(hasSelection && entry.kind == EntryKind::Widget);
+            m_maximumWidthButton->setChecked(hasSelection && entry.kind == EntryKind::Widget && entry.expandHorizontally);
         }
         if (m_expandHeightButton) {
             const QSignalBlocker blocker(m_expandHeightButton);
@@ -598,15 +622,28 @@ namespace fairwindsk::ui::settings {
         updateInspector();
     }
 
-    void TopBar::onExpandWidthToggled(const bool checked) {
+    void TopBar::onMinimumWidthSelected() {
         auto *item = m_previewWidget ? m_previewWidget->currentItem() : nullptr;
         if (!item) {
             return;
         }
 
-        item->setData(RoleExpandHorizontally, checked);
+        item->setData(RoleExpandHorizontally, false);
         refreshPreviewItem(item);
         persistToConfiguration();
+        updateInspector();
+    }
+
+    void TopBar::onMaximumWidthSelected() {
+        auto *item = m_previewWidget ? m_previewWidget->currentItem() : nullptr;
+        if (!item) {
+            return;
+        }
+
+        item->setData(RoleExpandHorizontally, true);
+        refreshPreviewItem(item);
+        persistToConfiguration();
+        updateInspector();
     }
 
     void TopBar::onExpandHeightToggled(const bool checked) {

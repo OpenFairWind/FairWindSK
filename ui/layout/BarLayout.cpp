@@ -71,6 +71,17 @@ namespace fairwindsk::ui::layout {
             return barId == BarId::Top ? QStringLiteral("top") : QStringLiteral("bottom");
         }
 
+        bool shouldDefaultToMaximumWidth(const BarId barId, const QString &widgetId) {
+            if (barId == BarId::Top) {
+                return widgetId == QStringLiteral("position") ||
+                       widgetId == QStringLiteral("current_context") ||
+                       widgetId == QStringLiteral("clock_icons");
+            }
+
+            return widgetId == QStringLiteral("open_apps") ||
+                   widgetId == QStringLiteral("signalk_status");
+        }
+
         LayoutEntry parseEntry(const nlohmann::json &jsonEntry) {
             LayoutEntry entry;
             if (!jsonEntry.is_object()) {
@@ -170,6 +181,16 @@ namespace fairwindsk::ui::layout {
         return entry.widgetId;
     }
 
+    QString horizontalSizeLabel(const LayoutEntry &entry) {
+        if (entry.kind == EntryKind::Stretch) {
+            return QObject::tr("Maximum possible size");
+        }
+
+        return entry.expandHorizontally
+                   ? QObject::tr("Maximum possible size")
+                   : QObject::tr("Minimum needed size");
+    }
+
     bool isWidgetEntry(const LayoutEntry &entry) {
         return entry.kind == EntryKind::Widget;
     }
@@ -187,6 +208,7 @@ namespace fairwindsk::ui::layout {
             entry.widgetId = definition.id;
             entry.instanceId = definition.id;
             entry.enabled = barId == BarId::Top ? definition.defaultTopEnabled : definition.defaultBottomEnabled;
+            entry.expandHorizontally = entry.enabled && shouldDefaultToMaximumWidth(barId, definition.id);
             entries.append(entry);
         }
         return entries;

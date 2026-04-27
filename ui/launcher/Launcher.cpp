@@ -75,8 +75,8 @@ namespace fairwindsk::ui::launcher {
                 if (left.first->getOrder() != right.first->getOrder()) {
                     return left.first->getOrder() < right.first->getOrder();
                 }
-                const int displayNameCompare = QString::compare(left.first->getDisplayName(),
-                                                                right.first->getDisplayName(),
+                const int displayNameCompare = QString::compare(left.first->getDisplayName(true),
+                                                                right.first->getDisplayName(true),
                                                                 Qt::CaseInsensitive);
                 if (displayNameCompare != 0) {
                     return displayNameCompare < 0;
@@ -312,12 +312,12 @@ namespace fairwindsk::ui::launcher {
 
             if (liveApp) {
                 AppItem presentationApp = mergedLauncherAppItem(liveApp, configuredAppJson);
-                return qMakePair(presentationApp.getDisplayName(), presentationApp.getIcon());
+                return qMakePair(presentationApp.getDisplayName(true), presentationApp.getIcon(true));
             }
 
             if (configuredAppJson) {
                 AppItem configApp(*configuredAppJson);
-                return qMakePair(configApp.getDisplayName(), configApp.getIcon());
+                return qMakePair(configApp.getDisplayName(true), configApp.getIcon(true));
             }
 
             if (!appId.trimmed().isEmpty()) {
@@ -419,18 +419,18 @@ namespace fairwindsk::ui::launcher {
                                     entry.app = app;
                                     entry.id = appLookupKey;
                                     entry.appId = slot;
-                                    entry.title = presentationApp.getDisplayName();
+                                    entry.title = presentationApp.getDisplayName(true);
                                     entry.description = presentationApp.getDescription();
-                                    entry.pixmap = presentationApp.getIcon();
+                                    entry.pixmap = presentationApp.getIcon(true);
                                 } else {
                                     if (idx != -1) {
                                         AppItem configApp(configuration->getRoot()["apps"].at(idx));
                                         entry.kind = TileKind::App;
                                         entry.id = appLookupKey.isEmpty() ? configApp.getName() : appLookupKey;
                                         entry.appId = configApp.getName();
-                                        entry.title = configApp.getDisplayName();
+                                        entry.title = configApp.getDisplayName(true);
                                         entry.description = configApp.getDescription();
-                                        entry.pixmap = configApp.getIcon();
+                                        entry.pixmap = configApp.getIcon(true);
                                     }
                                 }
                                 entries.append(entry);
@@ -449,9 +449,9 @@ namespace fairwindsk::ui::launcher {
                         entry.app = item.first;
                         entry.id = item.second;
                         entry.appId = item.first->getName();
-                        entry.title = item.first->getDisplayName();
+                        entry.title = item.first->getDisplayName(true);
                         entry.description = item.first->getDescription();
-                        entry.pixmap = item.first->getIcon();
+                        entry.pixmap = item.first->getIcon(true);
                     }
                     entries.append(entry);
                 }

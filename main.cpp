@@ -25,6 +25,8 @@
 #include "Units.hpp"
 #include "runtime/DiagnosticsSupport.hpp"
 #include "ui/MainWindow.hpp"
+#include "ui/mydata/Files.hpp"
+#include "ui/settings/System.hpp"
 
 #if defined(Q_OS_LINUX)
 namespace {
@@ -178,6 +180,38 @@ namespace {
         return 1;
     }
 
+    int runDirectorySafetySelfTest(int argc, char *argv[]) {
+        QCoreApplication app(argc, argv);
+        QCoreApplication::setOrganizationName("uniparthenope.it");
+        QCoreApplication::setApplicationName("FairWindSK");
+
+        QString failureReason;
+        const bool passed = fairwindsk::ui::mydata::Files::runDirectorySafetySelfTest(&failureReason);
+        if (passed) {
+            qInfo() << "Directory safety self-test passed";
+            return 0;
+        }
+
+        qCritical() << "Directory safety self-test failed:" << failureReason;
+        return 1;
+    }
+
+    int runConfigurationImportSelfTest(int argc, char *argv[]) {
+        QCoreApplication app(argc, argv);
+        QCoreApplication::setOrganizationName("uniparthenope.it");
+        QCoreApplication::setApplicationName("FairWindSK");
+
+        QString failureReason;
+        const bool passed = fairwindsk::ui::settings::System::runConfigurationImportSelfTest(&failureReason);
+        if (passed) {
+            qInfo() << "Configuration import self-test passed";
+            return 0;
+        }
+
+        qCritical() << "Configuration import self-test failed:" << failureReason;
+        return 1;
+    }
+
     QString resolveConfigurationPathFromSettings() {
         const QString settingsPath = fairwindsk::Configuration::settingsFilename();
         QSettings settings(settingsPath, QSettings::IniFormat);
@@ -210,6 +244,12 @@ namespace {
 int main(int argc, char *argv[]) {
     if (hasArgument(argc, argv, "--self-test-units-reentrancy")) {
         return runUnitsReentrancySelfTest(argc, argv);
+    }
+    if (hasArgument(argc, argv, "--self-test-directory-safety")) {
+        return runDirectorySafetySelfTest(argc, argv);
+    }
+    if (hasArgument(argc, argv, "--self-test-configuration-import")) {
+        return runConfigurationImportSelfTest(argc, argv);
     }
 
     // The translator

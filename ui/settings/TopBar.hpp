@@ -36,7 +36,8 @@ namespace fairwindsk::ui::settings {
     private slots:
         void onPaletteEntryActivated(const fairwindsk::ui::layout::LayoutEntry &entry);
         void onPreviewSelectionChanged();
-        void onExpandWidthToggled(bool checked);
+        void onMinimumWidthSelected();
+        void onMaximumWidthSelected();
         void onExpandHeightToggled(bool checked);
         void onRemoveSelected();
         void onResetDefaults();
@@ -67,7 +68,8 @@ namespace fairwindsk::ui::settings {
         QToolButton *m_leftShellButton = nullptr;
         QToolButton *m_rightShellButton = nullptr;
         QListWidget *m_previewWidget = nullptr;
-        QToolButton *m_expandWidthButton = nullptr;
+        QToolButton *m_minimumWidthButton = nullptr;
+        QToolButton *m_maximumWidthButton = nullptr;
         QToolButton *m_expandHeightButton = nullptr;
         QToolButton *m_removeSelectedButton = nullptr;
         QToolButton *m_resetDefaultsButton = nullptr;

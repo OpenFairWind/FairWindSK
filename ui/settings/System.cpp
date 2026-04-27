@@ -19,8 +19,10 @@
 #include <QLineEdit>
 #include <QProgressBar>
 #include <QPushButton>
+#include <QSaveFile>
 #include <QSizePolicy>
 #include <QSignalBlocker>
+#include <QTemporaryDir>
 #include <QUrl>
 #include <QTimer>
 #include <QVBoxLayout>
@@ -70,6 +72,40 @@ namespace fairwindsk::ui::settings {
 
             return current;
         }
+
+        bool replaceFileContentsAtomically(const QString &sourcePath, const QString &targetPath, QString *errorMessage = nullptr) {
+            if (errorMessage) {
+                errorMessage->clear();
+            }
+
+            QFile sourceFile(sourcePath);
+            if (!sourceFile.open(QIODevice::ReadOnly)) {
+                if (errorMessage) {
+                    *errorMessage = QObject::tr("Unable to read the selected configuration file.");
+                }
+                return false;
+            }
+
+            QSaveFile targetFile(targetPath);
+            if (!targetFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+                if (errorMessage) {
+                    *errorMessage = QObject::tr("Unable to prepare the current configuration file for replacement.");
+                }
+                return false;
+            }
+
+            const QByteArray importedPayload = sourceFile.readAll();
+            if (sourceFile.error() != QFileDevice::NoError ||
+                targetFile.write(importedPayload) != importedPayload.size() ||
+                !targetFile.commit()) {
+                if (errorMessage) {
+                    *errorMessage = QObject::tr("Unable to replace the current configuration file.");
+                }
+                return false;
+            }
+
+            return true;
+        }
     }
 
     System::System(Settings *settings, QWidget *parent) : QWidget(parent), ui(new Ui::System), m_settings(settings) {
@@ -113,6 +149,61 @@ namespace fairwindsk::ui::settings {
     System::~System() {
         delete ui;
         ui = nullptr;
+    }
+
+    bool System::replaceConfigurationFile(const QString &sourcePath, const QString &targetPath, QString *errorMessage) {
+        return replaceFileContentsAtomically(sourcePath, targetPath, errorMessage);
+    }
+
+    bool System::runConfigurationImportSelfTest(QString *failureReason) {
+        auto fail = [failureReason](const QString &message) {
+            if (failureReason) {
+                *failureReason = message;
+            }
+            return false;
+        };
+
+        QTemporaryDir tempDir;
+        if (!tempDir.isValid()) {
+            return fail(QStringLiteral("Unable to create a temporary directory for the configuration import self-test"));
+        }
+
+        const QString targetPath = QDir(tempDir.path()).filePath(QStringLiteral("active.json"));
+        const QString sourcePath = QDir(tempDir.path()).filePath(QStringLiteral("import.json"));
+
+        QFile targetFile(targetPath);
+        if (!targetFile.open(QIODevice::WriteOnly | QIODevice::Truncate) ||
+            targetFile.write("{\"old\":true}") < 0) {
+            return fail(QStringLiteral("Unable to prepare the active configuration test fixture"));
+        }
+        targetFile.close();
+
+        QFile sourceFile(sourcePath);
+        const QByteArray expectedPayload("{\"new\":true}");
+        if (!sourceFile.open(QIODevice::WriteOnly | QIODevice::Truncate) ||
+            sourceFile.write(expectedPayload) != expectedPayload.size()) {
+            return fail(QStringLiteral("Unable to prepare the imported configuration test fixture"));
+        }
+        sourceFile.close();
+
+        QString errorMessage;
+        if (!replaceConfigurationFile(sourcePath, targetPath, &errorMessage)) {
+            return fail(QStringLiteral("Safe configuration replacement failed: %1").arg(errorMessage));
+        }
+
+        QFile updatedTarget(targetPath);
+        if (!updatedTarget.open(QIODevice::ReadOnly)) {
+            return fail(QStringLiteral("Unable to reopen the replaced configuration file"));
+        }
+
+        if (updatedTarget.readAll() != expectedPayload) {
+            return fail(QStringLiteral("The replaced configuration payload did not match the imported configuration"));
+        }
+
+        if (failureReason) {
+            failureReason->clear();
+        }
+        return true;
     }
 
     void System::refreshDiagnostics() {
@@ -504,13 +595,9 @@ namespace fairwindsk::ui::settings {
             return;
         }
 
-        if (QFileInfo::exists(currentPath) && !QFile::remove(currentPath)) {
-            fairwindsk::ui::drawer::warning(this, tr("System"), tr("Unable to replace the current configuration file."));
-            return;
-        }
-
-        if (!QFile::copy(sourcePath, currentPath)) {
-            fairwindsk::ui::drawer::warning(this, tr("System"), tr("Unable to copy the imported configuration into place."));
+        QString errorMessage;
+        if (!replaceConfigurationFile(sourcePath, currentPath, &errorMessage)) {
+            fairwindsk::ui::drawer::warning(this, tr("System"), errorMessage);
             return;
         }
 

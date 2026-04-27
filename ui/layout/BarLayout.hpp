@@ -37,6 +37,7 @@ namespace fairwindsk::ui::layout {
     QString barLabel(BarId barId);
     QString barConfigKey(BarId barId);
     QString entryLabel(const LayoutEntry &entry);
+    QString horizontalSizeLabel(const LayoutEntry &entry);
     bool isWidgetEntry(const LayoutEntry &entry);
     bool isPlaceholderEntry(const LayoutEntry &entry);
     QList<LayoutEntry> defaultEntries(BarId barId);

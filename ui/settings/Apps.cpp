@@ -164,7 +164,7 @@ namespace fairwindsk::ui::settings {
                 if (leftItem.getOrder() != rightItem.getOrder()) {
                     return leftItem.getOrder() < rightItem.getOrder();
                 }
-                return QString::compare(leftItem.getDisplayName(), rightItem.getDisplayName(), Qt::CaseInsensitive) < 0;
+                return QString::compare(leftItem.getDisplayName(true), rightItem.getDisplayName(true), Qt::CaseInsensitive) < 0;
             });
 
             for (const auto &jsonApp : jsonApps) {
@@ -958,12 +958,12 @@ namespace fairwindsk::ui::settings {
             if (leftItem.getOrder() != rightItem.getOrder()) {
                 return leftItem.getOrder() < rightItem.getOrder();
             }
-            return QString::compare(leftItem.getDisplayName(), rightItem.getDisplayName(), Qt::CaseInsensitive) < 0;
+            return QString::compare(leftItem.getDisplayName(true), rightItem.getDisplayName(true), Qt::CaseInsensitive) < 0;
         });
 
         for (const auto &jsonApp : jsonApps) {
             AppItem appItem(jsonApp);
-            auto *item = new QListWidgetItem(QIcon(appItem.getIcon()), appItem.getDisplayName());
+            auto *item = new QListWidgetItem(QIcon(appItem.getIcon(true)), appItem.getDisplayName(true));
             item->setData(Qt::UserRole, appItem.getName());
             item->setToolTip(appItem.getDescription());
             item->setFlags((item->flags() | Qt::ItemIsDragEnabled | Qt::ItemIsSelectable | Qt::ItemIsEnabled) & ~Qt::ItemIsUserCheckable);
@@ -1105,11 +1105,11 @@ namespace fairwindsk::ui::settings {
         m_appDetailsWidget->ui->label_Apps_Vendor_Text->setText(appItem.getVendor());
         m_appDetailsWidget->ui->lineEdit_Apps_Name->setText(appItem.getName());
         m_appDetailsWidget->ui->lineEdit_Apps_Description->setText(appItem.getDescription());
-        m_appDetailsWidget->ui->lineEdit_Apps_DisplayName->setText(appItem.getDisplayName());
+        m_appDetailsWidget->ui->lineEdit_Apps_DisplayName->setText(appItem.getDisplayName(true));
         m_appDetailsWidget->ui->spinBox_Apps_ZoomPercent->setValue(appItem.getZoomPercent());
         m_appDetailsWidget->setAppIconPath(appItem.getAppIcon());
 
-        QPixmap pixmap = appItem.getIcon();
+        QPixmap pixmap = appItem.getIcon(true);
         if (!pixmap.isNull()) {
             pixmap = pixmap.scaled(128, 128, Qt::KeepAspectRatio, Qt::SmoothTransformation);
         }
@@ -1938,7 +1938,7 @@ namespace fairwindsk::ui::settings {
         }
 
         AppItem appItem(m_settings->getConfiguration()->getRoot()["apps"].at(idx));
-        return qMakePair(appItem.getDisplayName(), appItem.getIcon());
+        return qMakePair(appItem.getDisplayName(true), appItem.getIcon(true));
     }
 
     QString Apps::selectedGridEntry() const {
@@ -2105,7 +2105,7 @@ namespace fairwindsk::ui::settings {
                 if (leftItem.getOrder() != rightItem.getOrder()) {
                     return leftItem.getOrder() < rightItem.getOrder();
                 }
-                return QString::compare(leftItem.getDisplayName(), rightItem.getDisplayName(), Qt::CaseInsensitive) < 0;
+                return QString::compare(leftItem.getDisplayName(true), rightItem.getDisplayName(true), Qt::CaseInsensitive) < 0;
             });
 
             for (const auto &jsonApp : jsonApps) {

@@ -895,7 +895,7 @@ namespace fairwindsk::ui {
                                                        QStringLiteral("launch"),
                                                        resolvedHash,
                                                        QJsonObject{
-                                                           {QStringLiteral("displayName"), appItem->getDisplayName()},
+                                                           {QStringLiteral("displayName"), appItem->getDisplayName(true)},
                                                            {QStringLiteral("kind"), appItem->getName().startsWith("file://")
                                                                                         ? QStringLiteral("native")
                                                                                        : QStringLiteral("web")}
@@ -1037,9 +1037,19 @@ namespace fairwindsk::ui {
         if (!m_settingsPage) {
             m_settingsPage = new settings::Settings(this, fallbackWidget ? fallbackWidget : m_launcher);
             ui->stackedWidget_Center->addWidget(m_settingsPage);
+            connect(m_settingsPage, &settings::Settings::layoutEditHighlightModeChanged, this, [this](const bool topBarActive, const bool bottomBarActive) {
+                if (m_topBar) {
+                    m_topBar->setLayoutEditHighlightEnabled(topBarActive);
+                }
+                if (m_bottomBar) {
+                    m_bottomBar->setLayoutEditHighlightEnabled(bottomBarActive);
+                }
+            });
         } else {
             m_settingsPage->setCurrentWidget(fallbackWidget ? fallbackWidget : m_launcher);
         }
+
+        m_settingsPage->refreshLayoutEditHighlightMode();
     }
 
     void MainWindow::prewarmPersistentPages() {
@@ -1250,6 +1260,12 @@ namespace fairwindsk::ui {
         QWidget *targetFallback = fallbackWidget ? fallbackWidget : m_settingsPage->getCurrentWidget();
         if (m_settingsPage->hasPendingChanges()) {
             m_settingsPage->saveChanges();
+        }
+        if (m_topBar) {
+            m_topBar->setLayoutEditHighlightEnabled(false);
+        }
+        if (m_bottomBar) {
+            m_bottomBar->setLayoutEditHighlightEnabled(false);
         }
         m_settingsPage->setCurrentWidget(targetFallback);
 

@@ -493,7 +493,7 @@ namespace fairwindsk {
         }
 
         const QString appName = getName();
-        const QString displayName = getDisplayName();
+        const QString displayName = getDisplayName(false);
         const QString appUrl = getUrl();
         // Use a default pixmap so the UI never shows an empty placeholder.
         QPixmap pixmap = bundledFallbackIcon(appName, displayName, appUrl);
@@ -602,7 +602,7 @@ namespace fairwindsk {
      * getHash
      * Returns the app's generated hash
      */
-    QString AppItem::getDisplayName() {
+    QString AppItem::getDisplayName(const bool allowRemoteFetch) {
         QString displayName = getName();
         if (m_jsonApp.contains("displayName") && m_jsonApp["displayName"].is_string()) {
             displayName = QString::fromStdString(m_jsonApp["displayName"].get<std::string>());
@@ -613,7 +613,7 @@ namespace fairwindsk {
                 displayName = QString::fromStdString(signalkJsonObject["displayName"].get<std::string>());
             }
         }
-        if (displayName.isEmpty() || displayName == getName()) {
+        if (allowRemoteFetch && (displayName.isEmpty() || displayName == getName())) {
             const auto signalKServerUrl = FairWindSK::getInstance()->getConfiguration()->getSignalKServerUrl();
             const auto legacyDisplayName = displayNameFromLegacyCatalog(signalKServerUrl, getName());
             if (!legacyDisplayName.isEmpty()) {

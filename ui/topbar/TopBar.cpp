@@ -11,6 +11,7 @@
 #include <QToolButton>
 #include <QString>
 #include <QFontMetrics>
+#include <QGraphicsDropShadowEffect>
 #include <QLabel>
 #include <QPixmap>
 #include <nlohmann/json.hpp>
@@ -359,6 +360,61 @@ namespace fairwindsk::ui::topbar {
         }
 
         ui->horizontalLayout->addWidget(ui->toolButton_UR, 0, Qt::AlignVCenter);
+        applyLayoutEditHints(entries);
+    }
+
+    void TopBar::clearLayoutEditHints() {
+        for (auto it = m_layoutHintEffects.begin(); it != m_layoutHintEffects.end(); ++it) {
+            if (!it.key()) {
+                continue;
+            }
+            if (it.key()->graphicsEffect() == it.value()) {
+                it.key()->setGraphicsEffect(nullptr);
+            }
+            if (it.value()) {
+                it.value()->deleteLater();
+            }
+        }
+        m_layoutHintEffects.clear();
+    }
+
+    void TopBar::applyLayoutEditHints(const QList<fairwindsk::ui::layout::LayoutEntry> &entries) {
+        clearLayoutEditHints();
+        if (!m_layoutEditHighlightEnabled) {
+            return;
+        }
+
+        auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+        const auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+        const auto chromeColors = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), false);
+
+        for (const auto &entry : entries) {
+            if (!entry.enabled || entry.kind != fairwindsk::ui::layout::EntryKind::Widget || !entry.expandHorizontally) {
+                continue;
+            }
+
+            QWidget *widget = widgetForItemId(entry.widgetId);
+            if (!widget) {
+                continue;
+            }
+
+            auto *effect = new QGraphicsDropShadowEffect(widget);
+            effect->setOffset(0, 0);
+            effect->setBlurRadius(18);
+            effect->setColor(fairwindsk::ui::comfortAlpha(chromeColors.accentTop.lighter(112), 180));
+            widget->setGraphicsEffect(effect);
+            m_layoutHintEffects.insert(widget, effect);
+        }
+    }
+
+    void TopBar::setLayoutEditHighlightEnabled(const bool enabled) {
+        if (m_layoutEditHighlightEnabled == enabled) {
+            return;
+        }
+
+        m_layoutEditHighlightEnabled = enabled;
+        rebuildLayout();
     }
 
     void TopBar::renderNumericMetric(const MetricRenderTarget &target,
@@ -1034,9 +1090,9 @@ namespace fairwindsk::ui::topbar {
         m_currentApp = appItem;
         if (m_currentApp) {
             auto *widget = m_currentApp->getWidget();
-            ui->toolButton_UR->setIcon(m_currentApp->getIcon());
+            ui->toolButton_UR->setIcon(m_currentApp->getIcon(true));
             ui->toolButton_UR->setIconSize(QSize(32, 32));
-            ui->label_ApplicationName->setText(m_currentApp->getDisplayName());
+            ui->label_ApplicationName->setText(m_currentApp->getDisplayName(true));
             ui->label_ApplicationName->setToolTip(m_currentApp->getDescription());
             ui->toolButton_UR->setEnabled(qobject_cast<fairwindsk::ui::web::Web *>(widget) != nullptr);
         } else {
@@ -1094,6 +1150,8 @@ namespace fairwindsk::ui::topbar {
         if (s_instance == this) {
             s_instance = nullptr;
         }
+
+        clearLayoutEditHints();
 
         if (m_timer) {
             m_timer->stop();

@@ -21,6 +21,7 @@
 #include "ui/widgets/SignalKServerBox.hpp"
 
 namespace Ui { class BottomBar; }
+class QGraphicsEffect;
 
 namespace fairwindsk::ui::bottombar {
 
@@ -40,6 +41,7 @@ namespace fairwindsk::ui::bottombar {
         // Set POB Icon visibility
         void setPOBIcon(bool value) const;
         void refreshFromConfiguration() const;
+        void setLayoutEditHighlightEnabled(bool enabled);
         QWidget *widgetForItemId(const QString &itemId) const;
 
         // Add application icon to the shortcut
@@ -111,6 +113,8 @@ namespace fairwindsk::ui::bottombar {
                               const QString &itemId,
                               QWidget *widget,
                               QHBoxLayout *layout);
+        void clearLayoutEditHints();
+        void applyLayoutEditHints(const QList<fairwindsk::ui::layout::LayoutEntry> &entries);
 
     private slots:
         void onRuntimeHealthChanged(fairwindsk::FairWindSK::RuntimeHealthState state,
@@ -140,6 +144,8 @@ namespace fairwindsk::ui::bottombar {
         fairwindsk::FairWindSK::RuntimeHealthState m_runtimeHealthState = fairwindsk::FairWindSK::RuntimeHealthState::Disconnected;
         QString m_runtimeHealthSummary;
         QHash<QString, QSizePolicy> m_baseSizePolicies;
+        QHash<QWidget *, QPointer<QGraphicsEffect>> m_layoutHintEffects;
+        bool m_layoutEditHighlightEnabled = false;
         QVector<QPointer<QWidget>> m_dynamicLayoutWidgets;
         inline static BottomBar *s_instance = nullptr;
     };

@@ -228,6 +228,12 @@ namespace fairwindsk::ui::settings {
         } else if (auto *barLayoutTab = qobject_cast<BarLayoutSettings *>(page)) {
             barLayoutTab->refreshFromConfiguration();
         }
+
+        emitLayoutEditHighlightModeChanged();
+    }
+
+    void Settings::refreshLayoutEditHighlightMode() {
+        emitLayoutEditHighlightModeChanged();
     }
 
     /*
@@ -306,6 +312,16 @@ namespace fairwindsk::ui::settings {
         m_applyTimer->start(std::max(0, delayMs));
     }
 
+    void Settings::emitLayoutEditHighlightModeChanged() {
+        if (!ui || !ui->tabWidget) {
+            emit layoutEditHighlightModeChanged(false, false);
+            return;
+        }
+
+        const int currentIndex = ui->tabWidget->currentIndex();
+        emit layoutEditHighlightModeChanged(currentIndex == 1, currentIndex == 2);
+    }
+
     void Settings::resetToCurrentConfiguration() {
         resetFromCurrentConfiguration(ui->tabWidget->currentIndex());
         FairWindSK::getInstance()->applyUiPreferences(&m_configuration);
@@ -344,6 +360,7 @@ namespace fairwindsk::ui::settings {
      * Class destructor
      */
     Settings::~Settings() {
+        emit layoutEditHighlightModeChanged(false, false);
         m_rebuildingTabs = true;
         if (m_applyTimer) {
             m_applyTimer->stop();

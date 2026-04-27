@@ -10,6 +10,7 @@
 #include <QJsonObject>
 #include <QPointer>
 #include <QHash>
+#include <QPointer>
 #include <QVector>
 #include <QWidget>
 
@@ -20,6 +21,7 @@
 #include "ui/widgets/SignalKStatusIconsWidget.hpp"
 
 namespace Ui { class TopBar; }
+class QGraphicsEffect;
 
 namespace fairwindsk::ui::topbar {
 
@@ -39,6 +41,7 @@ namespace fairwindsk::ui::topbar {
                                const QIcon &icon = QIcon(),
                                bool enableButton = false);
         void refreshFromConfiguration();
+        void setLayoutEditHighlightEnabled(bool enabled);
         QWidget *widgetForItemId(const QString &itemId) const;
 
     public slots:
@@ -108,6 +111,8 @@ namespace fairwindsk::ui::topbar {
                               const QString &itemId,
                               QWidget *widget,
                               QHBoxLayout *layout);
+        void clearLayoutEditHints();
+        void applyLayoutEditHints(const QList<fairwindsk::ui::layout::LayoutEntry> &entries);
 
         Ui::TopBar *ui;
         QPointer<AppItem> m_currentApp;
@@ -127,6 +132,8 @@ namespace fairwindsk::ui::topbar {
         QString m_pathXTE;
         QString m_pathVMG;
         QHash<QString, QSizePolicy> m_baseSizePolicies;
+        QHash<QWidget *, QPointer<QGraphicsEffect>> m_layoutHintEffects;
+        bool m_layoutEditHighlightEnabled = false;
         QJsonObject m_lastPosUpdate;
         QJsonObject m_lastCogUpdate;
         QJsonObject m_lastSogUpdate;

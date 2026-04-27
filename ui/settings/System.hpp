@@ -35,6 +35,8 @@ namespace fairwindsk::ui::settings {
     public:
         explicit System(Settings *settings, QWidget *parent = nullptr);
         ~System() override;
+        static bool replaceConfigurationFile(const QString &sourcePath, const QString &targetPath, QString *errorMessage = nullptr);
+        static bool runConfigurationImportSelfTest(QString *failureReason = nullptr);
 
     private slots:
         void refreshDiagnostics();

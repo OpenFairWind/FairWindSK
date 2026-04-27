@@ -13,6 +13,7 @@
 #include <QScroller>
 #include <QScrollerProperties>
 #include <QLayoutItem>
+#include <QGraphicsDropShadowEffect>
 #include <QVBoxLayout>
 #include <QResizeEvent>
 #include "BottomBar.hpp"
@@ -167,6 +168,62 @@ namespace fairwindsk::ui::bottombar {
 
             applyEntrySizing(entry, itemId, widget, ui->horizontalLayoutButtons);
         }
+
+        applyLayoutEditHints(entries);
+    }
+
+    void BottomBar::clearLayoutEditHints() {
+        for (auto it = m_layoutHintEffects.begin(); it != m_layoutHintEffects.end(); ++it) {
+            if (!it.key()) {
+                continue;
+            }
+            if (it.key()->graphicsEffect() == it.value()) {
+                it.key()->setGraphicsEffect(nullptr);
+            }
+            if (it.value()) {
+                it.value()->deleteLater();
+            }
+        }
+        m_layoutHintEffects.clear();
+    }
+
+    void BottomBar::applyLayoutEditHints(const QList<fairwindsk::ui::layout::LayoutEntry> &entries) {
+        clearLayoutEditHints();
+        if (!m_layoutEditHighlightEnabled) {
+            return;
+        }
+
+        auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+        const auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+        const auto chromeColors = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), false);
+
+        for (const auto &entry : entries) {
+            if (!entry.enabled || entry.kind != fairwindsk::ui::layout::EntryKind::Widget || !entry.expandHorizontally) {
+                continue;
+            }
+
+            QWidget *widget = widgetForItemId(entry.widgetId);
+            if (!widget) {
+                continue;
+            }
+
+            auto *effect = new QGraphicsDropShadowEffect(widget);
+            effect->setOffset(0, -1);
+            effect->setBlurRadius(30);
+            effect->setColor(fairwindsk::ui::comfortAlpha(chromeColors.accentBottom, 230));
+            widget->setGraphicsEffect(effect);
+            m_layoutHintEffects.insert(widget, effect);
+        }
+    }
+
+    void BottomBar::setLayoutEditHighlightEnabled(const bool enabled) {
+        if (m_layoutEditHighlightEnabled == enabled) {
+            return;
+        }
+
+        m_layoutEditHighlightEnabled = enabled;
+        rebuildLayout();
     }
 /*
  * BottomBar
@@ -571,14 +628,14 @@ namespace fairwindsk::ui::bottombar {
             QString displayName;
             QPixmap pixmap;
             if (appItem) {
-                displayName = appItem->getDisplayName();
-                pixmap = appItem->getIcon();
+                displayName = appItem->getDisplayName(true);
+                pixmap = appItem->getIcon(true);
             } else {
                 const int idx = fairWindSK->getConfiguration()->findApp(name);
                 if (idx != -1) {
                     fairwindsk::AppItem configApp(fairWindSK->getConfiguration()->getRoot()["apps"].at(idx));
-                    displayName = configApp.getDisplayName();
-                    pixmap = configApp.getIcon();
+                    displayName = configApp.getDisplayName(true);
+                    pixmap = configApp.getIcon(true);
                     resolvedHash = configApp.getName();
                 }
             }
@@ -754,6 +811,8 @@ namespace fairwindsk::ui::bottombar {
         if (s_instance == this) {
             s_instance = nullptr;
         }
+
+        clearLayoutEditHints();
 
         // Delete the application icons
         for (const auto button: m_buttons) {

@@ -29,7 +29,7 @@ namespace fairwindsk::ui::web {
 
             const QStringList candidates = {
                 appItem->getName(),
-                appItem->getDisplayName(),
+                appItem->getDisplayName(true),
                 appItem->getUrl()
             };
 

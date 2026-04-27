@@ -36,7 +36,7 @@ namespace fairwindsk {
 
             void update(const nlohmann::json&  jsonApp);
 
-            QString getDisplayName();
+            QString getDisplayName(bool allowRemoteFetch = false);
             void setDisplayName(const QString& displayName);
 
             bool getActive();
@@ -57,7 +57,7 @@ namespace fairwindsk {
             QString getAuthor();
             QVector<QString> getContributors();
             QString getUrl();
-            QPixmap getIcon(bool allowRemoteFetch = true);
+            QPixmap getIcon(bool allowRemoteFetch = false);
             QString getAppIcon();
             void setAppIcon(const QString& appIcon);
             double getZoomPercent() const;

@@ -29,6 +29,8 @@ namespace fairwindsk::ui::settings {
         void onItemChanged(QListWidgetItem *item);
         void onSelectionChanged();
         void onPaletteEntryActivated(const fairwindsk::ui::layout::LayoutEntry &entry);
+        void onMinimumWidthSelected();
+        void onMaximumWidthSelected();
         void onRemoveSelected();
         void onResetDefaults();
 
@@ -36,7 +38,8 @@ namespace fairwindsk::ui::settings {
         enum ItemRoles {
             RoleKind = Qt::UserRole + 1,
             RoleWidgetId,
-            RoleInstanceId
+            RoleInstanceId,
+            RoleExpandHorizontally
         };
 
         void buildUi();
@@ -57,6 +60,8 @@ namespace fairwindsk::ui::settings {
         QLabel *m_previewLabel = nullptr;
         QFrame *m_previewFrame = nullptr;
         QListWidget *m_listWidget = nullptr;
+        QToolButton *m_minimumWidthButton = nullptr;
+        QToolButton *m_maximumWidthButton = nullptr;
         QToolButton *m_removeSelectedButton = nullptr;
         QToolButton *m_resetDefaultsButton = nullptr;
         WidgetPalette *m_paletteWidget = nullptr;

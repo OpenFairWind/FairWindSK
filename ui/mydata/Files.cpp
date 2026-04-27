@@ -15,9 +15,16 @@
 #include <QMimeDatabase>
 #include <QFileDialog>
 #include <QHeaderView>
+#include <QAction>
+#include <QFrame>
+#include <QGridLayout>
+#include <QLabel>
+#include <QHBoxLayout>
+#include <QMenu>
 #include <QPushButton>
 #include <QScroller>
 #include <QStorageInfo>
+#include <QTemporaryDir>
 #include <QTreeView>
 
 #include "FairWindSK.hpp"
@@ -37,6 +44,34 @@ int qt_ntfs_permission_lookup = 0; //dummy
 
 namespace fairwindsk::ui::mydata {
     namespace {
+        QString normalizedAbsolutePath(const QString &path) {
+            if (path.trimmed().isEmpty()) {
+                return {};
+            }
+
+            const QFileInfo info(path);
+            const QString canonicalPath = info.canonicalFilePath();
+            if (!canonicalPath.isEmpty()) {
+                return QDir::cleanPath(canonicalPath);
+            }
+
+            return QDir::cleanPath(info.absoluteFilePath());
+        }
+
+        bool isSameOrDescendantPath(const QString &candidatePath, const QString &basePath) {
+            const QString normalizedCandidate = normalizedAbsolutePath(candidatePath);
+            const QString normalizedBase = normalizedAbsolutePath(basePath);
+            if (normalizedCandidate.isEmpty() || normalizedBase.isEmpty()) {
+                return false;
+            }
+
+            if (normalizedCandidate == normalizedBase) {
+                return true;
+            }
+
+            return normalizedCandidate.startsWith(normalizedBase + QDir::separator());
+        }
+
         QString touchToolbarButtonStyle(const fairwindsk::ui::ComfortChromeColors &colors, const bool accent = false) {
             const QColor top = accent ? colors.accentTop : colors.buttonBackground.lighter(112);
             const QColor mid = accent ? colors.accentTop.darker(103) : colors.buttonBackground;
@@ -81,6 +116,44 @@ namespace fairwindsk::ui::mydata {
                      top.darker(118).name(),
                      bottom.darker(118).name(),
                      colors.border.darker(135).name(),
+                     colors.window.darker(105).name());
+        }
+
+        QString touchTextButtonStyle(const fairwindsk::ui::ComfortChromeColors &colors, const bool accent = false) {
+            const QColor top = accent ? colors.accentTop : colors.buttonBackground.lighter(112);
+            const QColor mid = accent ? colors.accentTop.darker(103) : colors.buttonBackground;
+            const QColor bottom = accent ? colors.accentBottom : colors.buttonBackground.darker(118);
+            const QColor border = accent ? colors.accentBottom : colors.border;
+            return QStringLiteral(
+                "QPushButton {"
+                " min-height: 50px;"
+                " padding: 0 16px;"
+                " border-radius: 14px;"
+                " border: 1px solid %1;"
+                " color: %2;"
+                " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
+                " stop:0 %3, stop:0.52 %4, stop:1 %5);"
+                " }"
+                "QPushButton:hover { border-color: %6; }"
+                "QPushButton:pressed {"
+                " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
+                " stop:0 %7, stop:0.52 %4, stop:1 %8);"
+                " }"
+                "QPushButton:disabled {"
+                " border-color: %9;"
+                " color: %10;"
+                " background: %11;"
+                " }")
+                .arg(border.name(),
+                     colors.text.name(),
+                     top.name(),
+                     mid.name(),
+                     bottom.name(),
+                     colors.icon.lighter(115).name(),
+                     top.darker(118).name(),
+                     bottom.darker(118).name(),
+                     colors.border.darker(135).name(),
+                     colors.text.darker(150).name(),
                      colors.window.darker(105).name());
         }
 
@@ -206,6 +279,83 @@ namespace fairwindsk::ui::mydata {
                 " }")
                 .arg(panelColor.name(), colors.border.name());
         }
+
+        QString statusPanelStyle(const fairwindsk::ui::ComfortChromeColors &colors, const QColor &panelColor) {
+            return QStringLiteral(
+                "QWidget {"
+                " background: %1;"
+                " border: 1px solid %2;"
+                " border-radius: 14px;"
+                " }"
+                "QLabel {"
+                " color: %3;"
+                " font-size: 16px;"
+                " font-weight: 600;"
+                " padding: 0 12px;"
+                " }")
+                .arg(panelColor.name(), colors.border.name(), colors.text.name());
+        }
+	    }
+
+    bool Files::wouldPasteDirectoryIntoOwnTree(const QString &sourcePath, const QString &destinationPath) {
+        return isSameOrDescendantPath(destinationPath, sourcePath);
+    }
+
+    bool Files::runDirectorySafetySelfTest(QString *failureReason) {
+        auto fail = [failureReason](const QString &message) {
+            if (failureReason) {
+                *failureReason = message;
+            }
+            return false;
+        };
+
+        QTemporaryDir tempDir;
+        if (!tempDir.isValid()) {
+            return fail(QStringLiteral("Unable to create a temporary directory for the directory safety self-test"));
+        }
+
+        QDir root(tempDir.path());
+        const QString sourcePath = root.filePath(QStringLiteral("source"));
+        const QString childPath = QDir(sourcePath).filePath(QStringLiteral("nested"));
+        const QString siblingDestination = root.filePath(QStringLiteral("destination"));
+
+        if (!root.mkpath(QStringLiteral("source/nested")) || !root.mkpath(QStringLiteral("destination"))) {
+            return fail(QStringLiteral("Unable to create the directory safety self-test fixtures"));
+        }
+
+        if (!wouldPasteDirectoryIntoOwnTree(sourcePath, sourcePath)) {
+            return fail(QStringLiteral("Self-paste detection failed for identical source and destination directories"));
+        }
+
+        if (!wouldPasteDirectoryIntoOwnTree(sourcePath, childPath)) {
+            return fail(QStringLiteral("Self-paste detection failed for a descendant destination directory"));
+        }
+
+        if (wouldPasteDirectoryIntoOwnTree(sourcePath, siblingDestination)) {
+            return fail(QStringLiteral("Self-paste detection incorrectly rejected a sibling destination directory"));
+        }
+
+        QFile sampleFile(QDir(sourcePath).filePath(QStringLiteral("sample.txt")));
+        if (!sampleFile.open(QIODevice::WriteOnly | QIODevice::Truncate) ||
+            sampleFile.write("payload") != 7) {
+            return fail(QStringLiteral("Unable to create the directory copy self-test fixture"));
+        }
+        sampleFile.close();
+
+        QString errorMessage;
+        if (!copyOrMoveDirectorySubtree(sourcePath, siblingDestination, false, false, &errorMessage)) {
+            return fail(QStringLiteral("Copying to a sibling directory failed unexpectedly: %1").arg(errorMessage));
+        }
+
+        const QString copiedFilePath = QDir(siblingDestination).filePath(QStringLiteral("source/sample.txt"));
+        if (!QFileInfo::exists(copiedFilePath)) {
+            return fail(QStringLiteral("The copied directory subtree did not contain the expected file"));
+        }
+
+        if (failureReason) {
+            failureReason->clear();
+        }
+        return true;
     }
 
 	Files::Files(QWidget *parent) : QWidget(parent), ui(new Ui::Files) {
@@ -278,6 +428,63 @@ namespace fairwindsk::ui::mydata {
 
 		connect(ui->toolButton_Home, &QPushButton::clicked, this, &Files::onHome);
 
+        m_searchOptionsButton = new QPushButton(tr("Options"), ui->frame_FilesSearchRow);
+        m_searchOptionsButton->setObjectName(QStringLiteral("toolButton_SearchOptions"));
+        ui->horizontalLayout_SearchRow->insertWidget(5, m_searchOptionsButton);
+        m_searchOptionsMenu = new QMenu(this);
+        m_caseSensitiveAction = m_searchOptionsMenu->addAction(tr("Case-sensitive"));
+        m_caseSensitiveAction->setCheckable(true);
+        m_searchHiddenAction = m_searchOptionsMenu->addAction(tr("Include hidden files"));
+        m_searchHiddenAction->setCheckable(true);
+        m_searchSystemAction = m_searchOptionsMenu->addAction(tr("Include system files"));
+        m_searchSystemAction->setCheckable(true);
+        connect(m_caseSensitiveAction, &QAction::toggled, ui->toolButton_CaseSensitive, &QPushButton::setChecked);
+        connect(m_searchHiddenAction, &QAction::toggled, ui->toolButton_SearchHidden, &QPushButton::setChecked);
+        connect(m_searchSystemAction, &QAction::toggled, ui->toolButton_SearchSystem, &QPushButton::setChecked);
+        connect(m_searchOptionsButton, &QPushButton::clicked, this, [this]() {
+            updateSearchOptionsButton();
+            if (!m_searchOptionsMenu || !m_searchOptionsButton) {
+                return;
+            }
+            const QPoint popupPoint = m_searchOptionsButton->mapToGlobal(QPoint(0, m_searchOptionsButton->height()));
+            m_searchOptionsMenu->popup(popupPoint);
+        });
+        connect(ui->toolButton_CaseSensitive, &QPushButton::toggled, this, &Files::updateSearchOptionsButton);
+        connect(ui->toolButton_SearchHidden, &QPushButton::toggled, this, &Files::updateSearchOptionsButton);
+        connect(ui->toolButton_SearchSystem, &QPushButton::toggled, this, &Files::updateSearchOptionsButton);
+        ui->toolButton_CaseSensitive->hide();
+        ui->toolButton_SearchHidden->hide();
+        ui->toolButton_SearchSystem->hide();
+
+        m_actionsRow = new QFrame(ui->group_ToolBar);
+        m_actionsRow->setObjectName(QStringLiteral("frame_FilesActionsRow"));
+        m_actionsLayout = new QGridLayout(m_actionsRow);
+        m_actionsLayout->setContentsMargins(8, 6, 8, 6);
+        m_actionsLayout->setHorizontalSpacing(4);
+        m_actionsLayout->setVerticalSpacing(6);
+        ui->horizontalLayout_SearchRow->removeWidget(ui->toolButton_NewFolder);
+        ui->horizontalLayout_SearchRow->removeWidget(ui->toolButton_Rename);
+        ui->horizontalLayout_SearchRow->removeWidget(ui->toolButton_Delete);
+        ui->horizontalLayout_SearchRow->removeWidget(ui->toolButton_Cut);
+        ui->horizontalLayout_SearchRow->removeWidget(ui->toolButton_Copy);
+        ui->horizontalLayout_SearchRow->removeWidget(ui->toolButton_Paste);
+        ui->verticalLayout_Toolbar->insertWidget(2, m_actionsRow);
+
+        auto *clipboardStatusRow = new QWidget(ui->group_ToolBar);
+        clipboardStatusRow->setObjectName(QStringLiteral("widget_ClipboardStatus"));
+        auto *clipboardStatusLayout = new QHBoxLayout(clipboardStatusRow);
+        clipboardStatusLayout->setContentsMargins(0, 0, 0, 0);
+        clipboardStatusLayout->setSpacing(8);
+        m_clipboardStatusLabel = new QLabel(clipboardStatusRow);
+        m_clipboardStatusLabel->setObjectName(QStringLiteral("label_ClipboardStatus"));
+        m_clipboardStatusLabel->setWordWrap(true);
+        m_clearClipboardButton = new QPushButton(tr("Clear"), clipboardStatusRow);
+        m_clearClipboardButton->setObjectName(QStringLiteral("pushButton_ClearClipboard"));
+        clipboardStatusLayout->addWidget(m_clipboardStatusLabel, 1);
+        clipboardStatusLayout->addWidget(m_clearClipboardButton, 0, Qt::AlignRight);
+        ui->verticalLayout_Toolbar->insertWidget(3, clipboardStatusRow);
+        connect(m_clearClipboardButton, &QPushButton::clicked, this, &Files::clearClipboardState);
+
 		m_fileListModel = new FileInfoListModel(this);
 		ui->tableView_Search->setModel(m_fileListModel);
         ui->lineEdit_Path->setPlaceholderText(tr("Enter a path"));
@@ -291,9 +498,9 @@ namespace fairwindsk::ui::mydata {
         ui->toolButton_Paste->setToolTip(tr("Paste into current folder"));
         ui->toolButton_Search->setToolTip(tr("Search in current folder"));
         ui->toolButton_Filters->setToolTip(tr("Clear search results"));
-        ui->toolButton_CaseSensitive->setToolTip(tr("Case-sensitive search"));
-        ui->toolButton_SearchHidden->setToolTip(tr("Include hidden files"));
-        ui->toolButton_SearchSystem->setToolTip(tr("Include system files"));
+        if (m_searchOptionsButton) {
+            m_searchOptionsButton->setToolTip(tr("Search options"));
+        }
 
 		connect(&m_searchingWatcher, &QFutureWatcher<QFileInfo>::finished, this, &Files::searchFinished);
 		connect(&m_searchingWatcher, &QFutureWatcher<QFileInfo>::progressValueChanged, this, &Files::searchProgressValueChanged);
@@ -318,6 +525,9 @@ namespace fairwindsk::ui::mydata {
         retintToolButtons();
         applyComfortChrome();
         clearItemInfo();
+        updateClipboardStatus();
+        updateSearchOptionsButton();
+        updateActionRowLayout();
         updateActionStates();
         updateTitleLabel();
 		
@@ -329,11 +539,18 @@ namespace fairwindsk::ui::mydata {
         if (event->type() == QEvent::PaletteChange || event->type() == QEvent::ApplicationPaletteChange) {
             retintToolButtons();
             applyComfortChrome();
+            updateSearchOptionsButton();
+            updateActionRowLayout();
             updateActionStates();
         }
     }
 
-    void Files::configureTouchFriendlyUi() {
+    void Files::resizeEvent(QResizeEvent *event) {
+        QWidget::resizeEvent(event);
+        updateActionRowLayout();
+    }
+
+	    void Files::configureTouchFriendlyUi() {
         const auto configureIconButton = [](QPushButton *button, const QString &toolTip, const bool accent = false) {
             if (!button) {
                 return;
@@ -348,17 +565,15 @@ namespace fairwindsk::ui::mydata {
         configureIconButton(ui->toolButton_Home, tr("Home"));
         configureIconButton(ui->toolButton_Up, tr("Up"));
         configureIconButton(ui->toolButton_Filters, tr("Clear search"));
-        configureIconButton(ui->toolButton_CaseSensitive, tr("Case-sensitive search"));
-        configureIconButton(ui->toolButton_SearchHidden, tr("Include hidden files"));
-        configureIconButton(ui->toolButton_SearchSystem, tr("Include system files"));
         configureIconButton(ui->toolButton_Search, tr("Search in current folder"), true);
         configureIconButton(ui->toolButton_Cut, tr("Cut selection"));
         configureIconButton(ui->toolButton_Copy, tr("Copy selection"));
-        configureIconButton(ui->toolButton_Paste, tr("Paste into current folder"));
+	        configureIconButton(ui->toolButton_Paste, tr("Paste into current folder"));
         configureIconButton(ui->toolButton_Rename, tr("Rename selected item"));
         configureIconButton(ui->toolButton_Delete, tr("Delete selected items"));
         configureIconButton(ui->toolButton_NewFolder, tr("Create folder"), true);
         configureIconButton(ui->toolButton_Open, tr("Open selected item"), true);
+        configureIconButton(m_searchOptionsButton, tr("Search options"));
 
         ui->labelTitle->setTextFormat(Qt::RichText);
         ui->labelTitle->setWordWrap(true);
@@ -376,11 +591,18 @@ namespace fairwindsk::ui::mydata {
         ui->tableView_Search->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
         ui->tableView_Search->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
 
-        ui->progressBar_Searching->setMinimumHeight(16);
-        ui->label_Searching->setMinimumHeight(44);
-        ui->groupBox_ItemInfo->setMinimumHeight(88);
-        ui->groupBox_ItemInfo->setTitle(tr("Selection"));
-        ui->verticalLayout_Main->setStretch(0, 1);
+	        ui->progressBar_Searching->setMinimumHeight(16);
+	        ui->label_Searching->setMinimumHeight(44);
+	        ui->groupBox_ItemInfo->setMinimumHeight(88);
+	        ui->groupBox_ItemInfo->setTitle(tr("Selection"));
+            if (m_clearClipboardButton) {
+                m_clearClipboardButton->setMinimumHeight(50);
+                m_clearClipboardButton->setMinimumWidth(96);
+            }
+            if (m_clipboardStatusLabel) {
+                m_clipboardStatusLabel->setMinimumHeight(50);
+            }
+	        ui->verticalLayout_Main->setStretch(0, 1);
         ui->verticalLayout_Main->setStretch(1, 1);
         ui->verticalLayout_Main->setStretch(2, 0);
         ui->verticalLayout_Main->setStretch(3, 0);
@@ -388,6 +610,9 @@ namespace fairwindsk::ui::mydata {
         ui->toolButton_CaseSensitive->setIcon(QIcon(":/resources/svg/OpenBridge/sort-google.svg"));
         ui->toolButton_SearchHidden->setIcon(QIcon(":/resources/svg/OpenBridge/show-page-details.svg"));
         ui->toolButton_SearchSystem->setIcon(QIcon(":/resources/svg/OpenBridge/database.svg"));
+        if (m_searchOptionsButton) {
+            m_searchOptionsButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/configure.svg")));
+        }
     }
 
     void Files::applyComfortChrome() {
@@ -413,12 +638,26 @@ namespace fairwindsk::ui::mydata {
             const bool accent = button == ui->toolButton_Search || button == ui->toolButton_Open;
             applyStyleIfChanged(button, touchToolbarButtonStyle(chrome, accent));
         }
-        for (auto *rowFrame : ui->group_ToolBar->findChildren<QFrame *>()) {
-            if (rowFrame->objectName().startsWith(QStringLiteral("frame_Files"))) {
-                applyStyleIfChanged(rowFrame, toolRowStyle(chrome, panelColor));
+	        for (auto *rowFrame : ui->group_ToolBar->findChildren<QFrame *>()) {
+	            if (rowFrame->objectName().startsWith(QStringLiteral("frame_Files"))) {
+	                applyStyleIfChanged(rowFrame, toolRowStyle(chrome, panelColor));
+	            }
+	        }
+            if (auto *statusWidget = ui->group_ToolBar->findChild<QWidget *>(QStringLiteral("widget_ClipboardStatus"))) {
+                applyStyleIfChanged(statusWidget, statusPanelStyle(chrome, panelColor));
             }
-        }
-        applyStyleIfChanged(ui->listView_Files, touchBrowserTreeStyle(chrome, baseColor, panelColor) + fairwindsk::ui::widgets::TouchScrollArea::scrollBarStyleSheet());
+            if (m_clearClipboardButton) {
+                applyStyleIfChanged(m_clearClipboardButton, touchTextButtonStyle(chrome));
+                m_clearClipboardButton->setText(tr("Clear"));
+                m_clearClipboardButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/close-google.svg")));
+                m_clearClipboardButton->setIconSize(QSize(22, 22));
+            }
+            if (m_searchOptionsButton) {
+                applyStyleIfChanged(m_searchOptionsButton, touchTextButtonStyle(chrome));
+                m_searchOptionsButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/configure.svg")));
+                m_searchOptionsButton->setIconSize(QSize(22, 22));
+            }
+	        applyStyleIfChanged(ui->listView_Files, touchBrowserTreeStyle(chrome, baseColor, panelColor) + fairwindsk::ui::widgets::TouchScrollArea::scrollBarStyleSheet());
         applyStyleIfChanged(ui->tableView_Search, touchTableStyle(chrome, baseColor, panelColor) + fairwindsk::ui::widgets::TouchScrollArea::scrollBarStyleSheet());
         applyStyleIfChanged(ui->groupBox_ItemInfo, touchInfoStyle(chrome, panelColor));
         applyStyleIfChanged(ui->widget_Searching, QStringLiteral("QWidget { background: %1; border: 1px solid %2; border-radius: 12px; } QLabel { color: %3; font-size: 17px; font-weight: 600; }").arg(panelColor.name(), chrome.border.name(), chrome.text.name()));
@@ -801,22 +1040,32 @@ namespace fairwindsk::ui::mydata {
 				                  QMessageBox::Ok | QMessageBox::Cancel,
 				                  QMessageBox::Cancel);
 			if (choice == QMessageBox::Ok) {
-				foreach (QString path, paths_to_delete) {
-					if (QFileInfo fileInfo(path); fileInfo.isDir()) {
-						QDir dir(path);
-						if (!dir.removeRecursively()) {
-							qDebug() << "Failed to delete folder: " << path;
-						}
-					} else {
-						if (QFile file(path); !file.remove()) {
-							qDebug() << "Failed to delete file: " << path;
+                    QStringList issues;
+                    int deletedCount = 0;
+					foreach (QString path, paths_to_delete) {
+						if (QFileInfo fileInfo(path); fileInfo.isDir()) {
+							QDir dir(path);
+							if (!dir.removeRecursively()) {
+								issues.append(tr("Could not delete folder %1.").arg(QDir::toNativeSeparators(path)));
+                            } else {
+                                ++deletedCount;
+							}
+						} else {
+							if (QFile file(path); !file.remove()) {
+								issues.append(tr("Could not delete file %1.").arg(QDir::toNativeSeparators(path)));
+                            } else {
+                                ++deletedCount;
+							}
 						}
 					}
+	                refreshCurrentView();
+	                clearItemInfo();
+	                updateActionStates();
+                    const QString summary = issues.isEmpty()
+                            ? tr("Removed %1 item(s).").arg(deletedCount)
+                            : tr("Removed %1 of %2 item(s).").arg(deletedCount).arg(paths_to_delete.size());
+                    showOperationSummary(tr("Delete completed"), summary, issues);
 				}
-                refreshCurrentView();
-                clearItemInfo();
-                updateActionStates();
-			}
 
 	}
 
@@ -859,64 +1108,108 @@ namespace fairwindsk::ui::mydata {
 
 	}
 
-	void Files::onCutClicked() {
+		void Files::onCutClicked() {
 
-			m_itemsToCopy.clear();
-			m_itemsToMove = getSelection();
-			qDebug() << "Cut successfully";
+				m_itemsToCopy.clear();
+				m_itemsToMove = getSelection();
+                updateClipboardStatus();
+                updateActionStates();
 
-	}
+		}
 
-	void Files::onCopyClicked() {
+		void Files::onCopyClicked() {
 
-			m_itemsToMove.clear();
-			m_itemsToCopy = getSelection();
-			qDebug() << "Copied successfully";
+				m_itemsToMove.clear();
+				m_itemsToCopy = getSelection();
+                updateClipboardStatus();
+                updateActionStates();
 
-	}
+		}
 
-	void Files::onPasteClicked() {
-            const QString destinationDir = currentDestinationDir();
-			foreach (QString path, m_itemsToCopy) {
-				QFileInfo item(path);
-				if (item.isFile()) {
-					QString newPath = QDir(destinationDir).absoluteFilePath(item.fileName());
-                    if (QFileInfo::exists(newPath)) {
-                        showWarning(tr("Skipping %1 because it already exists in the destination.").arg(item.fileName()));
-                        continue;
-                    }
-					if (!QFile::copy(path, newPath)) {
-                        showWarning(tr("Unable to copy %1.").arg(item.fileName()));
-                    }
-				} else {
-					copyOrMoveDirectorySubtree(path, destinationDir, false, false);
-				}
-			}
-			foreach (QString path, m_itemsToMove) {
-				QFileInfo item(path);
-				if (item.isFile()) {
-					QString newPath = QDir(destinationDir).absoluteFilePath(item.fileName());
-                    if (QFileInfo::exists(newPath)) {
-                        showWarning(tr("Skipping %1 because it already exists in the destination.").arg(item.fileName()));
-                        continue;
-                    }
-                    bool moved = QFile::rename(path, newPath);
-                    if (!moved) {
-					    moved = QFile::copy(path, newPath) && QFile::remove(path);
-                    }
-					if (!moved) {
-                        showWarning(tr("Unable to move %1.").arg(item.fileName()));
-                    }
-				} else {
-					copyOrMoveDirectorySubtree(path, destinationDir, true, false);
-				}
-			}
-            m_itemsToCopy.clear();
-            m_itemsToMove.clear();
-            refreshCurrentView();
-            updateActionStates();
+		void Files::onPasteClicked() {
+	            const QString destinationDir = currentDestinationDir();
+                QStringList issues;
+                int copiedCount = 0;
+                int movedCount = 0;
+					foreach (QString path, m_itemsToCopy) {
+						QFileInfo item(path);
+						if (item.isFile()) {
+							QString newPath = QDir(destinationDir).absoluteFilePath(item.fileName());
+	                    if (QFileInfo::exists(newPath)) {
+	                        issues.append(tr("Skipped %1 because it already exists in the destination.").arg(item.fileName()));
+	                        continue;
+	                    }
+							if (!QFile::copy(path, newPath)) {
+		                        issues.append(tr("Unable to copy %1.").arg(item.fileName()));
+                            } else {
+                                ++copiedCount;
+		                    }
+						} else {
+	                        const QString newPath = QDir(destinationDir).absoluteFilePath(item.fileName());
+	                        if (wouldPasteDirectoryIntoOwnTree(path, newPath)) {
+	                            issues.append(tr("Unable to copy %1 into itself or one of its subfolders.").arg(item.fileName()));
+	                            continue;
+	                        }
+	                        if (QFileInfo::exists(newPath)) {
+	                            issues.append(tr("Skipped %1 because it already exists in the destination.").arg(item.fileName()));
+	                            continue;
+	                        }
+	                        QString errorMessage;
+							if (!copyOrMoveDirectorySubtree(path, destinationDir, false, false, &errorMessage)) {
+                                issues.append(errorMessage.isEmpty()
+	                                            ? tr("Unable to copy %1.").arg(item.fileName())
+	                                            : errorMessage);
+                            } else {
+                                ++copiedCount;
+	                        }
+						}
+					}
+					foreach (QString path, m_itemsToMove) {
+						QFileInfo item(path);
+					if (item.isFile()) {
+						QString newPath = QDir(destinationDir).absoluteFilePath(item.fileName());
+	                    if (QFileInfo::exists(newPath)) {
+	                        issues.append(tr("Skipped %1 because it already exists in the destination.").arg(item.fileName()));
+	                        continue;
+	                    }
+	                    bool moved = QFile::rename(path, newPath);
+	                    if (!moved) {
+						    moved = QFile::copy(path, newPath) && QFile::remove(path);
+	                    }
+							if (!moved) {
+		                        issues.append(tr("Unable to move %1.").arg(item.fileName()));
+                            } else {
+                                ++movedCount;
+		                    }
+						} else {
+	                        const QString newPath = QDir(destinationDir).absoluteFilePath(item.fileName());
+	                        if (wouldPasteDirectoryIntoOwnTree(path, newPath)) {
+	                            issues.append(tr("Unable to move %1 into itself or one of its subfolders.").arg(item.fileName()));
+	                            continue;
+	                        }
+	                        if (QFileInfo::exists(newPath)) {
+	                            issues.append(tr("Skipped %1 because it already exists in the destination.").arg(item.fileName()));
+	                            continue;
+	                        }
+	                        QString errorMessage;
+							if (!copyOrMoveDirectorySubtree(path, destinationDir, true, false, &errorMessage)) {
+                                issues.append(errorMessage.isEmpty()
+	                                            ? tr("Unable to move %1.").arg(item.fileName())
+	                                            : errorMessage);
+                            } else {
+                                ++movedCount;
+	                        }
+						}
+					}
+                const QString summary = tr("Copied %1 item(s) and moved %2 item(s).")
+                        .arg(copiedCount)
+                        .arg(movedCount);
+                clearClipboardState();
+	            refreshCurrentView();
+	            updateActionStates();
+                showOperationSummary(tr("Paste completed"), summary, issues);
 
-	}
+		}
 
     QString Files::format_bytes(qint64 bytes)
     {
@@ -931,22 +1224,45 @@ namespace fairwindsk::ui::mydata {
         return result;
     }
 
-    void Files::copyOrMoveDirectorySubtree(const QString &from,
+	    bool Files::copyOrMoveDirectorySubtree(const QString &from,
                                     const QString &to,
                                     const bool copyAndRemove,
-                                    const bool overwriteExistingFiles)
-    {
-        QDirIterator diritems(from, QDirIterator::Subdirectories);
-        QDir fromDir(from);
-        QDir toDir(to);
+                                    const bool overwriteExistingFiles,
+                                    QString *errorMessage)
+	    {
+            if (errorMessage) {
+                errorMessage->clear();
+            }
 
-        const auto absSourcePathLength = fromDir.absolutePath().length();
+	        QDirIterator diritems(from, QDirIterator::Subdirectories);
+	        QDir fromDir(from);
+	        QDir toDir(to);
 
-        toDir.mkdir(fromDir.dirName());
-        toDir.cd(fromDir.dirName());
+            if (!fromDir.exists()) {
+                if (errorMessage) {
+                    *errorMessage = QObject::tr("The source folder %1 is no longer available.").arg(QDir::toNativeSeparators(from));
+                }
+                return false;
+            }
 
-        while (diritems.hasNext()) {
-            const QFileInfo fileInfo = diritems.nextFileInfo();
+	        const auto absSourcePathLength = fromDir.absolutePath().length();
+
+	        if (!toDir.mkdir(fromDir.dirName()) && !toDir.cd(fromDir.dirName())) {
+                if (errorMessage) {
+                    *errorMessage = QObject::tr("Unable to create the destination folder %1.").arg(fromDir.dirName());
+                }
+                return false;
+            }
+
+	        if (!toDir.cd(fromDir.dirName())) {
+                if (errorMessage) {
+                    *errorMessage = QObject::tr("Unable to access the destination folder %1.").arg(fromDir.dirName());
+                }
+                return false;
+            }
+
+	        while (diritems.hasNext()) {
+	            const QFileInfo fileInfo = diritems.nextFileInfo();
 
             if (fileInfo.fileName().compare(".") == 0
                 || fileInfo.fileName().compare("..") == 0) //filters dot and dotdot
@@ -956,23 +1272,42 @@ namespace fairwindsk::ui::mydata {
             const QString constructedAbsolutePath = toDir.canonicalPath() + subPathStructure;
             qDebug() << "constructedAbsolutePath: " << constructedAbsolutePath;
 
-            if (fileInfo.isDir()) {
-                //Create directory in target folder
-                toDir.mkpath(constructedAbsolutePath);
-            } else if (fileInfo.isFile()) {
-                //Copy File to target directory
+	            if (fileInfo.isDir()) {
+	                //Create directory in target folder
+	                if (!toDir.mkpath(constructedAbsolutePath)) {
+                        if (errorMessage) {
+                            *errorMessage = QObject::tr("Unable to create the destination folder %1.")
+                                    .arg(QDir::toNativeSeparators(constructedAbsolutePath));
+                        }
+                        return false;
+                    }
+	            } else if (fileInfo.isFile()) {
+	                //Copy File to target directory
 
-                if (overwriteExistingFiles) {
-                    //Remove file at target location, if it exists, or QFile::copy will fail
-                    QFile::remove(constructedAbsolutePath);
+	                if (overwriteExistingFiles) {
+	                    //Remove file at target location, if it exists, or QFile::copy will fail
+	                    QFile::remove(constructedAbsolutePath);
+	                }
+	                if (!QFile::copy(fileInfo.absoluteFilePath(), constructedAbsolutePath)) {
+                        if (errorMessage) {
+                            *errorMessage = QObject::tr("Unable to copy %1.")
+                                    .arg(QDir::toNativeSeparators(fileInfo.absoluteFilePath()));
+                        }
+                        return false;
+                    }
+	            }
+	        }
+
+	        if (copyAndRemove && !fromDir.removeRecursively()) {
+                if (errorMessage) {
+                    *errorMessage = QObject::tr("Unable to remove the original folder %1 after copying.")
+                            .arg(QDir::toNativeSeparators(fromDir.absolutePath()));
                 }
-                QFile::copy(fileInfo.absoluteFilePath(), constructedAbsolutePath);
+                return false;
             }
-        }
 
-        if (copyAndRemove)
-            fromDir.removeRecursively();
-    }
+            return true;
+	    }
 
 
 
@@ -1026,7 +1361,7 @@ namespace fairwindsk::ui::mydata {
         }
     }
 
-    void Files::updateActionStates() {
+	    void Files::updateActionStates() {
         const QStringList selection = getSelection();
         const bool hasSelection = !selection.isEmpty();
         const bool singleSelection = selection.size() == 1;
@@ -1039,23 +1374,140 @@ namespace fairwindsk::ui::mydata {
         ui->toolButton_Delete->setEnabled(hasSelection);
         ui->toolButton_Copy->setEnabled(hasSelection);
         ui->toolButton_Cut->setEnabled(hasSelection);
-        ui->toolButton_Paste->setEnabled(hasClipboardItems && m_fileViewer == nullptr);
+	        ui->toolButton_Paste->setEnabled(hasClipboardItems && m_fileViewer == nullptr);
         ui->toolButton_NewFolder->setEnabled(m_fileViewer == nullptr);
         ui->toolButton_Home->setEnabled(m_fileViewer == nullptr);
         ui->toolButton_Up->setEnabled(m_fileViewer == nullptr && !getCurrentDir().isEmpty() && QDir(getCurrentDir()).absolutePath() != QDir::rootPath());
         ui->toolButton_Search->setEnabled(m_fileViewer == nullptr && !getCurrentDir().isEmpty());
+        if (m_searchOptionsButton) {
+            m_searchOptionsButton->setEnabled(m_fileViewer == nullptr && !getCurrentDir().isEmpty());
+        }
         ui->toolButton_Filters->setEnabled(m_fileViewer == nullptr && (ui->tableView_Search->isVisible() || !ui->lineEdit_Search->text().trimmed().isEmpty()));
         ui->lineEdit_Path->setEnabled(m_fileViewer == nullptr);
         ui->lineEdit_Search->setEnabled(m_fileViewer == nullptr);
 
-        if (singleSelection && selectedInfo.exists()) {
-            ui->toolButton_Open->setToolTip(selectedInfo.isDir() ? tr("Open selected folder") : tr("Open selected file"));
-        } else {
-            ui->toolButton_Open->setToolTip(tr("Open selected item"));
+	        if (singleSelection && selectedInfo.exists()) {
+	            ui->toolButton_Open->setToolTip(selectedInfo.isDir() ? tr("Open selected folder") : tr("Open selected file"));
+	        } else {
+	            ui->toolButton_Open->setToolTip(tr("Open selected item"));
+	        }
+            if (!m_itemsToMove.isEmpty()) {
+                ui->toolButton_Paste->setToolTip(tr("Move %1 staged item(s) into the current folder").arg(m_itemsToMove.size()));
+            } else if (!m_itemsToCopy.isEmpty()) {
+                ui->toolButton_Paste->setToolTip(tr("Copy %1 staged item(s) into the current folder").arg(m_itemsToCopy.size()));
+            } else {
+                ui->toolButton_Paste->setToolTip(tr("Paste into current folder"));
         }
     }
 
-    void Files::updateTitleLabel() const {
+    void Files::updateClipboardStatus() {
+            const int moveCount = m_itemsToMove.size();
+            const int copyCount = m_itemsToCopy.size();
+            const bool hasClipboardItems = moveCount > 0 || copyCount > 0;
+            if (m_clipboardStatusLabel) {
+                if (moveCount > 0) {
+                    m_clipboardStatusLabel->setText(tr("Move %1 item(s) staged for paste").arg(moveCount));
+                } else if (copyCount > 0) {
+                    m_clipboardStatusLabel->setText(tr("Copy %1 item(s) staged for paste").arg(copyCount));
+                } else {
+                    m_clipboardStatusLabel->setText(tr("No staged copy or move action"));
+                }
+            }
+            if (auto *statusWidget = ui->group_ToolBar->findChild<QWidget *>(QStringLiteral("widget_ClipboardStatus"))) {
+                statusWidget->setVisible(hasClipboardItems);
+            }
+            if (m_clearClipboardButton) {
+                m_clearClipboardButton->setVisible(hasClipboardItems);
+                m_clearClipboardButton->setEnabled(hasClipboardItems && m_fileViewer == nullptr);
+            }
+        }
+
+        void Files::updateSearchOptionsButton() {
+            const bool caseSensitive = ui->toolButton_CaseSensitive->isChecked();
+            const bool includeHidden = ui->toolButton_SearchHidden->isChecked();
+            const bool includeSystem = ui->toolButton_SearchSystem->isChecked();
+            int enabledCount = 0;
+            enabledCount += caseSensitive ? 1 : 0;
+            enabledCount += includeHidden ? 1 : 0;
+            enabledCount += includeSystem ? 1 : 0;
+
+            if (m_caseSensitiveAction) {
+                m_caseSensitiveAction->setChecked(caseSensitive);
+            }
+            if (m_searchHiddenAction) {
+                m_searchHiddenAction->setChecked(includeHidden);
+            }
+            if (m_searchSystemAction) {
+                m_searchSystemAction->setChecked(includeSystem);
+            }
+            if (m_searchOptionsButton) {
+                const QString buttonText = enabledCount > 0
+                        ? tr("Options (%1)").arg(enabledCount)
+                        : tr("Options");
+                QStringList enabledLabels;
+                if (caseSensitive) {
+                    enabledLabels.append(tr("case-sensitive"));
+                }
+                if (includeHidden) {
+                    enabledLabels.append(tr("hidden"));
+                }
+                if (includeSystem) {
+                    enabledLabels.append(tr("system"));
+                }
+                const QString tooltip = enabledLabels.isEmpty()
+                        ? tr("Search options")
+                        : tr("Search options: %1").arg(enabledLabels.join(QStringLiteral(", ")));
+                m_searchOptionsButton->setText(buttonText);
+                m_searchOptionsButton->setToolTip(tooltip);
+            }
+        }
+
+        void Files::updateActionRowLayout() {
+            if (!m_actionsLayout || !m_actionsRow) {
+                return;
+            }
+
+            while (QLayoutItem *item = m_actionsLayout->takeAt(0)) {
+                delete item;
+            }
+
+            const QList<QPushButton *> actionButtons = {
+                ui->toolButton_NewFolder,
+                ui->toolButton_Rename,
+                ui->toolButton_Delete,
+                ui->toolButton_Cut,
+                ui->toolButton_Copy,
+                ui->toolButton_Paste
+            };
+
+            const bool narrowLayout = width() <= 900;
+            const int columnCount = narrowLayout ? 3 : actionButtons.size();
+            const int rowCount = narrowLayout ? 2 : 1;
+
+            for (int row = 0; row < rowCount; ++row) {
+                m_actionsLayout->setRowStretch(row, 0);
+            }
+            for (int column = 0; column < columnCount; ++column) {
+                m_actionsLayout->setColumnStretch(column, 1);
+            }
+
+            for (int index = 0; index < actionButtons.size(); ++index) {
+                auto *button = actionButtons.at(index);
+                if (!button) {
+                    continue;
+                }
+
+                int row = 0;
+                int column = index;
+                if (narrowLayout) {
+                    row = index / 3;
+                    column = index % 3;
+                }
+                m_actionsLayout->addWidget(button, row, column);
+            }
+        }
+
+	    void Files::updateTitleLabel() const {
         const QString path = ui->lineEdit_Path->text().trimmed();
         if (path.isEmpty()) {
             ui->labelTitle->setText(tr("Files"));
@@ -1112,7 +1564,7 @@ namespace fairwindsk::ui::mydata {
         ui->groupBox_ItemInfo->show();
     }
 
-    void Files::clearItemInfo() {
+	    void Files::clearItemInfo() {
         ui->groupBox_ItemInfo->hide();
         ui->groupBox_ItemInfo->setTitle(QString());
         ui->label_Size->clear();
@@ -1120,11 +1572,28 @@ namespace fairwindsk::ui::mydata {
         ui->label_Permissions->clear();
     }
 
-    QString Files::selectedOrCurrentPath() const {
+	    QString Files::selectedOrCurrentPath() const {
         const QStringList selection = getSelection();
         if (!selection.isEmpty()) {
             return selection.first();
         }
-        return m_currentFilePath;
-    }
+	        return m_currentFilePath;
+	    }
+
+        void Files::clearClipboardState() {
+            m_itemsToCopy.clear();
+            m_itemsToMove.clear();
+            updateClipboardStatus();
+            updateActionStates();
+        }
+
+        void Files::showOperationSummary(const QString &title, const QString &summary, const QStringList &issues) const {
+            QString message = summary;
+            if (!issues.isEmpty()) {
+                message += QStringLiteral("\n\n") + issues.join(QStringLiteral("\n"));
+                drawer::warning(const_cast<Files *>(this), title, message);
+            } else {
+                drawer::information(const_cast<Files *>(this), title, message);
+            }
+        }
 } // fairwindsk::ui::mydata

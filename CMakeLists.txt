@@ -403,4 +403,8 @@ qt_finalize_executable(${PROJECT_NAME})
 if(BUILD_TESTING)
     add_test(NAME units_reentrancy_self_test
             COMMAND $<TARGET_FILE:${PROJECT_NAME}> --self-test-units-reentrancy)
+    add_test(NAME directory_safety_self_test
+            COMMAND $<TARGET_FILE:${PROJECT_NAME}> --self-test-directory-safety)
+    add_test(NAME configuration_import_self_test
+            COMMAND $<TARGET_FILE:${PROJECT_NAME}> --self-test-configuration-import)
 endif()

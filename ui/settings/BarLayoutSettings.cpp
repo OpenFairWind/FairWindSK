@@ -104,6 +104,7 @@ namespace fairwindsk::ui::settings {
                 newItem->setData(Qt::UserRole + 1, static_cast<int>(entry.kind));
                 newItem->setData(Qt::UserRole + 2, entry.widgetId);
                 newItem->setData(Qt::UserRole + 3, entry.instanceId);
+                newItem->setData(Qt::UserRole + 4, entry.expandHorizontally);
                 newItem->setFlags(Qt::ItemIsEnabled |
                                   Qt::ItemIsSelectable |
                                   Qt::ItemIsDragEnabled);
@@ -142,7 +143,7 @@ namespace fairwindsk::ui::settings {
         rootLayout->addWidget(m_titleLabel);
 
         m_hintLabel = new QLabel(
-            tr("Tap or drag palette items to place them on this bar. Drag rows to reorder them. Add separators and elastic extenders to build clear MFD-style groups."),
+            tr("Tap or drag palette items to place them on this bar. Drag rows to reorder them. Select a widget and choose whether it should keep the minimum needed size or grow to the maximum possible size."),
             this);
         m_hintLabel->setWordWrap(true);
         rootLayout->addWidget(m_hintLabel);
@@ -178,14 +179,32 @@ namespace fairwindsk::ui::settings {
             button->setToolButtonStyle(Qt::ToolButtonIconOnly);
         };
 
+        m_minimumWidthButton = new QToolButton(this);
+        m_maximumWidthButton = new QToolButton(this);
         m_removeSelectedButton = new QToolButton(this);
         m_resetDefaultsButton = new QToolButton(this);
+        m_minimumWidthButton->setCheckable(true);
+        m_maximumWidthButton->setCheckable(true);
+        m_minimumWidthButton->setText(tr("Minimum"));
+        m_maximumWidthButton->setText(tr("Maximum"));
+        m_minimumWidthButton->setToolTip(tr("Keep the selected widget at the minimum needed size"));
+        m_maximumWidthButton->setToolTip(tr("Let the selected widget grow to the maximum possible size"));
+        m_minimumWidthButton->setStatusTip(m_minimumWidthButton->toolTip());
+        m_maximumWidthButton->setStatusTip(m_maximumWidthButton->toolTip());
+        m_minimumWidthButton->setAccessibleName(tr("Minimum needed size"));
+        m_maximumWidthButton->setAccessibleName(tr("Maximum possible size"));
+        m_minimumWidthButton->setMinimumSize(QSize(132, kControlHeight));
+        m_maximumWidthButton->setMinimumSize(QSize(132, kControlHeight));
+        m_minimumWidthButton->setToolButtonStyle(Qt::ToolButtonTextOnly);
+        m_maximumWidthButton->setToolButtonStyle(Qt::ToolButtonTextOnly);
         configureActionButton(m_removeSelectedButton,
                               QStringLiteral(":/resources/svg/OpenBridge/delete-google.svg"),
                               tr("Remove Selected"));
         configureActionButton(m_resetDefaultsButton,
                               QStringLiteral(":/resources/svg/OpenBridge/refresh-google.svg"),
                               tr("Reset Defaults"));
+        controlsLayout->addWidget(m_minimumWidthButton);
+        controlsLayout->addWidget(m_maximumWidthButton);
         controlsLayout->addWidget(m_removeSelectedButton);
         controlsLayout->addWidget(m_resetDefaultsButton);
         controlsLayout->addStretch(1);
@@ -252,6 +271,8 @@ namespace fairwindsk::ui::settings {
             }
         });
         connect(m_paletteWidget, &WidgetPalette::entryActivated, this, &BarLayoutSettings::onPaletteEntryActivated);
+        connect(m_minimumWidthButton, &QToolButton::clicked, this, &BarLayoutSettings::onMinimumWidthSelected);
+        connect(m_maximumWidthButton, &QToolButton::clicked, this, &BarLayoutSettings::onMaximumWidthSelected);
         connect(m_removeSelectedButton, &QToolButton::clicked, this, &BarLayoutSettings::onRemoveSelected);
         connect(m_resetDefaultsButton, &QToolButton::clicked, this, &BarLayoutSettings::onResetDefaults);
 
@@ -276,6 +297,14 @@ namespace fairwindsk::ui::settings {
             m_listWidget->setStyleSheet(previewListChrome(chrome));
         }
 
+        fairwindsk::ui::applyBottomBarToolButtonChrome(m_minimumWidthButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(), 52);
+        fairwindsk::ui::applyBottomBarToolButtonChrome(m_maximumWidthButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(), 52);
+        if (m_minimumWidthButton) {
+            m_minimumWidthButton->setToolButtonStyle(Qt::ToolButtonTextOnly);
+        }
+        if (m_maximumWidthButton) {
+            m_maximumWidthButton->setToolButtonStyle(Qt::ToolButtonTextOnly);
+        }
         fairwindsk::ui::applyBottomBarToolButtonChrome(m_removeSelectedButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(24, 24), 52);
         fairwindsk::ui::applyBottomBarToolButtonChrome(m_resetDefaultsButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(24, 24), 52);
     }
@@ -288,6 +317,7 @@ namespace fairwindsk::ui::settings {
         item->setData(RoleKind, static_cast<int>(entry.kind));
         item->setData(RoleWidgetId, entry.widgetId);
         item->setData(RoleInstanceId, entry.instanceId);
+        item->setData(RoleExpandHorizontally, entry.expandHorizontally);
         item->setFlags(Qt::ItemIsEnabled |
                        Qt::ItemIsSelectable |
                        Qt::ItemIsDragEnabled);
@@ -306,7 +336,7 @@ namespace fairwindsk::ui::settings {
                                       ? tr("Elastic")
                                       : entry.kind == EntryKind::Separator
                                             ? tr("Divider")
-                                            : tr("Active");
+                                            : layout::horizontalSizeLabel(entry);
         item->setText(QStringLiteral("%1\n%2").arg(layout::entryLabel(entry), stateText));
         item->setIcon(WidgetPalette::entryIcon(entry));
     }
@@ -321,6 +351,7 @@ namespace fairwindsk::ui::settings {
         entry.widgetId = item->data(RoleWidgetId).toString();
         entry.instanceId = item->data(RoleInstanceId).toString();
         entry.enabled = true;
+        entry.expandHorizontally = item->data(RoleExpandHorizontally).toBool();
         return entry;
     }
 
@@ -402,6 +433,20 @@ namespace fairwindsk::ui::settings {
         if (m_removeSelectedButton) {
             m_removeSelectedButton->setEnabled(m_listWidget && m_listWidget->currentItem());
         }
+        const auto entry = entryForItem(m_listWidget ? m_listWidget->currentItem() : nullptr);
+        const bool hasWidgetSelection = m_listWidget &&
+                                        m_listWidget->currentItem() &&
+                                        entry.kind == EntryKind::Widget;
+        if (m_minimumWidthButton) {
+            const QSignalBlocker blocker(m_minimumWidthButton);
+            m_minimumWidthButton->setEnabled(hasWidgetSelection);
+            m_minimumWidthButton->setChecked(hasWidgetSelection && !entry.expandHorizontally);
+        }
+        if (m_maximumWidthButton) {
+            const QSignalBlocker blocker(m_maximumWidthButton);
+            m_maximumWidthButton->setEnabled(hasWidgetSelection);
+            m_maximumWidthButton->setChecked(hasWidgetSelection && entry.expandHorizontally);
+        }
     }
 
     void BarLayoutSettings::appendPlaceholder(const EntryKind kind) {
@@ -431,6 +476,30 @@ namespace fairwindsk::ui::settings {
         updateActions();
     }
 
+    void BarLayoutSettings::onMinimumWidthSelected() {
+        auto *item = m_listWidget ? m_listWidget->currentItem() : nullptr;
+        if (!item) {
+            return;
+        }
+
+        item->setData(RoleExpandHorizontally, false);
+        refreshPreviewItem(item);
+        persistToConfiguration();
+        updateActions();
+    }
+
+    void BarLayoutSettings::onMaximumWidthSelected() {
+        auto *item = m_listWidget ? m_listWidget->currentItem() : nullptr;
+        if (!item) {
+            return;
+        }
+
+        item->setData(RoleExpandHorizontally, true);
+        refreshPreviewItem(item);
+        persistToConfiguration();
+        updateActions();
+    }
+
     void BarLayoutSettings::activateWidgetEntry(const QString &widgetId) {
         if (widgetId.isEmpty() || !m_listWidget) {
             return;
@@ -454,6 +523,7 @@ namespace fairwindsk::ui::settings {
         entry.widgetId = widgetId;
         entry.instanceId = widgetId;
         entry.enabled = true;
+        entry.expandHorizontally = false;
         m_listWidget->addItem(createItem(entry));
         m_listWidget->setCurrentRow(m_listWidget->count() - 1);
         persistToConfiguration();
