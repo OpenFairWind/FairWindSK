@@ -90,6 +90,7 @@ namespace fairwindsk {
 
         // Starts the Signal K websocket client
         bool startSignalK();
+        bool stopSignalK();
 
         // Load the application
         bool loadApps();

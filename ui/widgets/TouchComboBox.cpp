@@ -243,7 +243,11 @@ namespace fairwindsk::ui::widgets {
 
     QString TouchComboBox::currentText() const {
         const auto *item = m_listWidget->item(m_currentIndex);
-        return item ? item->text() : QString();
+        if (item) {
+            return item->text();
+        }
+
+        return m_editable && m_editor ? m_editor->text() : QString();
     }
 
     QVariant TouchComboBox::currentData(const int role) const {

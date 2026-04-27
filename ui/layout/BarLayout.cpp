@@ -199,6 +199,10 @@ namespace fairwindsk::ui::layout {
         return entry.kind == EntryKind::Separator || entry.kind == EntryKind::Stretch;
     }
 
+    bool defaultExpandHorizontally(const BarId barId, const QString &widgetId) {
+        return shouldDefaultToMaximumWidth(barId, widgetId);
+    }
+
     QList<LayoutEntry> defaultEntries(const BarId barId) {
         QList<LayoutEntry> entries;
         const auto definitions = widgetDefinitionsStorage();

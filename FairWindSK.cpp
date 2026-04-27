@@ -1103,8 +1103,12 @@ namespace fairwindsk {
             Units::getInstance()->refreshSignalKPreferences();
         }
 
-        if (signalKSettingsChanged && !m_configuration.getSignalKServerUrl().isEmpty()) {
-            startSignalK();
+        if (signalKSettingsChanged) {
+            if (m_configuration.getSignalKConnectionEnabled() && !m_configuration.getSignalKServerUrl().isEmpty()) {
+                startSignalK();
+            } else {
+                stopSignalK();
+            }
         }
 
         if (signalKSettingsChanged) {
@@ -1159,7 +1163,10 @@ namespace fairwindsk {
         qInfo() << "FairWindSK::startSignalK server URL =" << signalKServerUrl;
 
         // Check if the Signal K URL is not empty
-        if (!signalKServerUrl.isEmpty()) {
+        if (!m_configuration.getSignalKConnectionEnabled()) {
+            qInfo() << "FairWindSK::startSignalK skipped because connection is paused";
+            stopSignalK();
+        } else if (!signalKServerUrl.isEmpty()) {
 
             // Define the parameters map
             QMap<QString, QVariant> params;
@@ -1202,6 +1209,24 @@ namespace fairwindsk {
         // Return the result
         qInfo() << "FairWindSK::startSignalK exiting with result" << result;
         return result;
+    }
+
+    bool FairWindSK::stopSignalK() {
+        qInfo() << "FairWindSK::stopSignalK entered";
+
+        QMap<QString, QVariant> params;
+        params["active"] = false;
+        params["debug"] = m_debug;
+        const QString signalKServerUrl = m_configuration.getSignalKServerUrl();
+        if (!signalKServerUrl.isEmpty()) {
+            params["url"] = signalKServerUrl + "/signalk";
+        }
+
+        m_signalkClient.init(params);
+        refreshRuntimeHealth();
+
+        qInfo() << "FairWindSK::stopSignalK exiting";
+        return true;
     }
 
     /*

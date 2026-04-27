@@ -33,6 +33,7 @@ namespace fairwindsk::ui::settings {
         void onMaximumWidthSelected();
         void onRemoveSelected();
         void onResetDefaults();
+        void onPreviewEdited();
 
     private:
         enum ItemRoles {
@@ -49,9 +50,11 @@ namespace fairwindsk::ui::settings {
         fairwindsk::ui::layout::LayoutEntry entryForItem(const QListWidgetItem *item) const;
         QListWidgetItem *createItem(const fairwindsk::ui::layout::LayoutEntry &entry);
         void refreshPreviewItem(QListWidgetItem *item) const;
+        QSize itemSizeHint(const fairwindsk::ui::layout::LayoutEntry &entry) const;
         void updateActions();
         void appendPlaceholder(fairwindsk::ui::layout::EntryKind kind);
         void activateWidgetEntry(const QString &widgetId);
+        bool defaultExpandHorizontally(const QString &widgetId) const;
         bool m_populating = false;
         Settings *m_settings = nullptr;
         fairwindsk::ui::layout::BarId m_barId = fairwindsk::ui::layout::BarId::Top;
@@ -64,6 +67,7 @@ namespace fairwindsk::ui::settings {
         QToolButton *m_maximumWidthButton = nullptr;
         QToolButton *m_removeSelectedButton = nullptr;
         QToolButton *m_resetDefaultsButton = nullptr;
+        QLabel *m_paletteLabel = nullptr;
         WidgetPalette *m_paletteWidget = nullptr;
     };
 }

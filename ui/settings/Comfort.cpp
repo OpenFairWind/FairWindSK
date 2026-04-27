@@ -4,29 +4,19 @@
 
 #include "Comfort.hpp"
 
-#include <QFile>
-#include <QFileInfo>
-#include <QFormLayout>
-#include <QGridLayout>
-#include <QGroupBox>
+#include <QEvent>
+#include <QFrame>
 #include <QHBoxLayout>
 #include <QIcon>
 #include <QLabel>
-#include <QLineEdit>
-#include <QPlainTextEdit>
 #include <QPushButton>
-#include <QCheckBox>
-#include <QRegularExpression>
 #include <QSignalBlocker>
-#include <QTextStream>
-#include <QUrl>
+#include <QStringList>
 #include <QVBoxLayout>
 
 #include "FairWindSK.hpp"
-#include "ui/IconUtils.hpp"
 #include "Settings.hpp"
-#include "ui/DrawerDialogHost.hpp"
-#include "ui/widgets/TouchColorPicker.hpp"
+#include "ui/IconUtils.hpp"
 #include "ui/widgets/TouchComboBox.hpp"
 #include "ui/widgets/TouchScrollArea.hpp"
 
@@ -43,92 +33,6 @@ namespace fairwindsk::ui::settings {
             };
         }
 
-        constexpr const char *kColorWindow = "window";
-        constexpr const char *kColorApplicationBackground = "applicationBackground";
-        constexpr const char *kColorPanel = "panel";
-        constexpr const char *kColorBase = "base";
-        constexpr const char *kColorText = "text";
-        constexpr const char *kColorSelectionBackground = "selectionBackground";
-        constexpr const char *kColorSelectionText = "selectionText";
-        constexpr const char *kColorButtonBackground = "buttonBackground";
-        constexpr const char *kColorButtonText = "buttonText";
-        constexpr const char *kColorButtonHover = "buttonHover";
-        constexpr const char *kColorButtonPressed = "buttonPressed";
-        constexpr const char *kColorScrollBarBackground = "scrollBarBackground";
-        constexpr const char *kColorScrollBarKnob = "scrollBarKnob";
-        constexpr const char *kColorBorder = "border";
-        constexpr const char *kColorAccentTop = "accentTop";
-        constexpr const char *kColorAccentBottom = "accentBottom";
-        constexpr const char *kColorAccentText = "accentText";
-        constexpr const char *kColorHeaderBackground = "headerBackground";
-        constexpr const char *kColorHeaderText = "headerText";
-        constexpr const char *kColorGroupTitleText = "groupTitleText";
-        constexpr const char *kColorDisabledText = "disabledText";
-        constexpr const char *kColorIconDefault = "iconDefault";
-
-        QString normalizedPreset(QString preset) {
-            preset = preset.trimmed().toLower();
-            if (preset == QStringLiteral("sunrise")) {
-                return QStringLiteral("dawn");
-            }
-            if (preset != QStringLiteral("default") &&
-                preset != QStringLiteral("dawn") &&
-                preset != QStringLiteral("day") &&
-                preset != QStringLiteral("sunset") &&
-                preset != QStringLiteral("dusk") &&
-                preset != QStringLiteral("night")) {
-                return QStringLiteral("default");
-            }
-            return preset;
-        }
-
-        QString comfortThemeResourcePath(const QString &preset) {
-            return QStringLiteral(":/resources/stylesheets/%1.qss").arg(normalizedPreset(preset));
-        }
-
-        QString buildBackgroundRule(const QString &objectName, const QString &imagePath) {
-            if (imagePath.trimmed().isEmpty()) {
-                return QString();
-            }
-
-            return QStringLiteral(
-                "QWidget#%1 {"
-                " border-image: url(\"%2\") 0 0 0 0 stretch stretch;"
-                " background-position: center;"
-                " }")
-                .arg(objectName, QUrl::fromLocalFile(imagePath).toString());
-        }
-
-        QString buildSelectorBorderImageRule(const QString &selector, const QString &imagePath) {
-            if (imagePath.trimmed().isEmpty()) {
-                return QString();
-            }
-
-            return QStringLiteral(
-                "%1 {"
-                " border-image: url(\"%2\") 0 0 0 0 stretch stretch;"
-                " background: transparent;"
-                " border: 0px;"
-                " }")
-                .arg(selector, QUrl::fromLocalFile(imagePath).toString());
-        }
-
-        QString buildCheckboxIndicatorRule(const QString &selector, const QString &imagePath) {
-            if (imagePath.trimmed().isEmpty()) {
-                return QString();
-            }
-
-            return QStringLiteral(
-                "%1 {"
-                " image: url(\"%2\");"
-                " border: 0px;"
-                " background: transparent;"
-                " width: 28px;"
-                " height: 28px;"
-                " }")
-                .arg(selector, QUrl::fromLocalFile(imagePath).toString());
-        }
-
         QStringList comfortBackgroundAreas() {
             return {
                 QStringLiteral("topbar"),
@@ -143,6 +47,27 @@ namespace fairwindsk::ui::settings {
             };
         }
 
+        QString normalizedPreset(QString preset) {
+            preset = preset.trimmed().toLower();
+            if (preset == QStringLiteral("sunrise")) {
+                return QStringLiteral("dawn");
+            }
+            if (!comfortPresetIds().contains(preset)) {
+                return QStringLiteral("default");
+            }
+            return preset;
+        }
+
+        void applyTextPalette(QWidget *widget, const QColor &color) {
+            if (!widget) {
+                return;
+            }
+
+            QPalette palette = widget->palette();
+            palette.setColor(QPalette::WindowText, color);
+            palette.setColor(QPalette::Text, color);
+            widget->setPalette(palette);
+        }
     }
 
     Comfort::Comfort(Settings *settings, QWidget *parent)
@@ -152,13 +77,18 @@ namespace fairwindsk::ui::settings {
 
         const QString currentPreset = normalizedPreset(m_settings->getConfiguration()->getComfortViewPreset());
         const int currentIndex = m_presetComboBox->findData(currentPreset);
-        m_presetComboBox->setCurrentIndex(currentIndex >= 0 ? currentIndex : 0);
-        loadPresetEditor();
+        {
+            const QSignalBlocker blocker(m_presetComboBox);
+            m_isUpdating = true;
+            m_presetComboBox->setCurrentIndex(currentIndex >= 0 ? currentIndex : 0);
+            m_isUpdating = false;
+        }
+        updateStatusLabel();
     }
 
     bool Comfort::event(QEvent *event) {
         if (event && (event->type() == QEvent::PaletteChange || event->type() == QEvent::ApplicationPaletteChange)) {
-            refreshEditorChrome();
+            refreshChrome();
         }
         return QWidget::event(event);
     }
@@ -177,914 +107,153 @@ namespace fairwindsk::ui::settings {
         scrollArea->setWidget(content);
 
         auto *contentLayout = new QVBoxLayout(content);
-        contentLayout->setContentsMargins(6, 6, 6, 6);
+        contentLayout->setContentsMargins(12, 12, 12, 12);
         contentLayout->setSpacing(12);
 
-        auto *titleLabel = new QLabel(tr("Comfort Theme Presets"), content);
-        m_editorLabels.append(titleLabel);
-        contentLayout->addWidget(titleLabel);
+        m_titleLabel = new QLabel(tr("Comfort Theme Presets"), content);
+        contentLayout->addWidget(m_titleLabel);
+
+        m_hintLabel = new QLabel(
+            tr("Select the active visibility preset for the helm display. Custom theme overrides remain supported in the configuration file, but this page keeps the underway controls compact."),
+            content);
+        m_hintLabel->setWordWrap(true);
+        contentLayout->addWidget(m_hintLabel);
+
+        m_controlFrame = new QFrame(content);
+        auto *controlLayout = new QVBoxLayout(m_controlFrame);
+        controlLayout->setContentsMargins(12, 12, 12, 12);
+        controlLayout->setSpacing(12);
+        contentLayout->addWidget(m_controlFrame);
 
         auto *presetRow = new QHBoxLayout();
         presetRow->setContentsMargins(0, 0, 0, 0);
-        presetRow->setSpacing(8);
-        contentLayout->addLayout(presetRow);
+        presetRow->setSpacing(12);
+        controlLayout->addLayout(presetRow);
 
-        auto *presetLabel = new QLabel(tr("Preset"), content);
-        m_editorLabels.append(presetLabel);
-        presetRow->addWidget(presetLabel);
+        m_presetLabel = new QLabel(tr("Preset"), m_controlFrame);
+        presetRow->addWidget(m_presetLabel);
 
-        m_presetComboBox = new fairwindsk::ui::widgets::TouchComboBox(content);
+        m_presetComboBox = new fairwindsk::ui::widgets::TouchComboBox(m_controlFrame);
         m_presetComboBox->addItem(QIcon(QStringLiteral(":/resources/svg/OpenBridge/comfort-default.svg")), tr("Default"), QStringLiteral("default"));
         m_presetComboBox->addItem(QIcon(QStringLiteral(":/resources/svg/OpenBridge/comfort-dawn.svg")), tr("Dawn"), QStringLiteral("dawn"));
         m_presetComboBox->addItem(QIcon(QStringLiteral(":/resources/svg/OpenBridge/comfort-day.svg")), tr("Day"), QStringLiteral("day"));
         m_presetComboBox->addItem(QIcon(QStringLiteral(":/resources/svg/OpenBridge/comfort-sunset.svg")), tr("Sunset"), QStringLiteral("sunset"));
         m_presetComboBox->addItem(QIcon(QStringLiteral(":/resources/svg/OpenBridge/comfort-dusk.svg")), tr("Dusk"), QStringLiteral("dusk"));
         m_presetComboBox->addItem(QIcon(QStringLiteral(":/resources/svg/OpenBridge/comfort-night.svg")), tr("Night"), QStringLiteral("night"));
+        m_presetComboBox->setMinimumHeight(52);
         presetRow->addWidget(m_presetComboBox, 1);
 
         auto *buttonRow = new QHBoxLayout();
         buttonRow->setContentsMargins(0, 0, 0, 0);
         buttonRow->setSpacing(8);
-        contentLayout->addLayout(buttonRow);
+        controlLayout->addLayout(buttonRow);
 
-        m_importButton = new QPushButton(tr("Import QSS"), content);
-        m_exportButton = new QPushButton(tr("Export QSS"), content);
-        m_editorButton = new QPushButton(tr("Editor"), content);
-        m_editorButton->setCheckable(true);
-        m_resetCurrentButton = new QPushButton(tr("Reset current preset"), content);
-        m_resetAllButton = new QPushButton(tr("Reset all presets"), content);
-        buttonRow->addWidget(m_importButton);
-        buttonRow->addWidget(m_exportButton);
-        buttonRow->addWidget(m_editorButton);
+        m_resetCurrentButton = new QPushButton(tr("Reset Current"), m_controlFrame);
+        m_resetAllButton = new QPushButton(tr("Reset All"), m_controlFrame);
+        m_resetCurrentButton->setToolTip(tr("Clear custom colors, images, and QSS for the selected comfort preset"));
+        m_resetAllButton->setToolTip(tr("Clear custom colors, images, and QSS for every comfort preset"));
+        m_resetCurrentButton->setAccessibleName(tr("Reset current comfort preset"));
+        m_resetAllButton->setAccessibleName(tr("Reset all comfort presets"));
         buttonRow->addWidget(m_resetCurrentButton);
         buttonRow->addWidget(m_resetAllButton);
         buttonRow->addStretch(1);
 
         m_statusLabel = new QLabel(content);
-        m_editorLabels.append(m_statusLabel);
-        m_statusLabel->hide();
-
-        m_paletteGroup = new QGroupBox(tr("Palette"), content);
-        auto *paletteGroupLayout = new QVBoxLayout(m_paletteGroup);
-        paletteGroupLayout->setContentsMargins(8, 8, 8, 8);
-        paletteGroupLayout->setSpacing(8);
-
-        auto *paletteHint = new QLabel(tr("Tap a swatch to adjust the saved colors for the selected comfort preset."), m_paletteGroup);
-        paletteHint->setWordWrap(true);
-        m_editorLabels.append(paletteHint);
-        paletteGroupLayout->addWidget(paletteHint);
-
-        m_visualEditorWidget = new QWidget(m_paletteGroup);
-        auto *visualLayout = new QGridLayout(m_visualEditorWidget);
-        visualLayout->setContentsMargins(0, 0, 0, 0);
-        visualLayout->setHorizontalSpacing(12);
-        visualLayout->setVerticalSpacing(8);
-        createColorControl(QString::fromLatin1(kColorWindow), tr("Window"), m_visualEditorWidget, visualLayout, 0);
-        createColorControl(QString::fromLatin1(kColorApplicationBackground), tr("Application background"), m_visualEditorWidget, visualLayout, 1);
-        createColorControl(QString::fromLatin1(kColorPanel), tr("Panel"), m_visualEditorWidget, visualLayout, 2);
-        createColorControl(QString::fromLatin1(kColorBase), tr("Field background"), m_visualEditorWidget, visualLayout, 3);
-        createColorControl(QString::fromLatin1(kColorText), tr("Text"), m_visualEditorWidget, visualLayout, 4);
-        createColorControl(QString::fromLatin1(kColorSelectionBackground), tr("Selection background"), m_visualEditorWidget, visualLayout, 5);
-        createColorControl(QString::fromLatin1(kColorSelectionText), tr("Selection text"), m_visualEditorWidget, visualLayout, 6);
-        createColorControl(QString::fromLatin1(kColorButtonBackground), tr("Button background"), m_visualEditorWidget, visualLayout, 7);
-        createColorControl(QString::fromLatin1(kColorButtonText), tr("Button text"), m_visualEditorWidget, visualLayout, 8);
-        createColorControl(QString::fromLatin1(kColorButtonHover), tr("Button hover"), m_visualEditorWidget, visualLayout, 9);
-        createColorControl(QString::fromLatin1(kColorButtonPressed), tr("Button pressed"), m_visualEditorWidget, visualLayout, 10);
-        createColorControl(QString::fromLatin1(kColorScrollBarBackground), tr("Scroll bar background"), m_visualEditorWidget, visualLayout, 11);
-        createColorControl(QString::fromLatin1(kColorScrollBarKnob), tr("Scroll bar knob"), m_visualEditorWidget, visualLayout, 12);
-        createColorControl(QString::fromLatin1(kColorBorder), tr("Borders"), m_visualEditorWidget, visualLayout, 13);
-        createColorControl(QString::fromLatin1(kColorAccentTop), tr("Accent top"), m_visualEditorWidget, visualLayout, 14);
-        createColorControl(QString::fromLatin1(kColorAccentBottom), tr("Accent bottom"), m_visualEditorWidget, visualLayout, 15);
-        createColorControl(QString::fromLatin1(kColorAccentText), tr("Accent text"), m_visualEditorWidget, visualLayout, 16);
-        createColorControl(QString::fromLatin1(kColorHeaderBackground), tr("Header background"), m_visualEditorWidget, visualLayout, 17);
-        createColorControl(QString::fromLatin1(kColorHeaderText), tr("Header text"), m_visualEditorWidget, visualLayout, 18);
-        createColorControl(QString::fromLatin1(kColorGroupTitleText), tr("Group title"), m_visualEditorWidget, visualLayout, 19);
-        createColorControl(QString::fromLatin1(kColorDisabledText), tr("Disabled text"), m_visualEditorWidget, visualLayout, 20);
-        createColorControl(QString::fromLatin1(kColorIconDefault), tr("SVG icon color"), m_visualEditorWidget, visualLayout, 21);
-        paletteGroupLayout->addWidget(m_visualEditorWidget);
-        contentLayout->addWidget(m_paletteGroup);
-
-        m_imagesGroup = new QGroupBox(tr("Theme Images"), content);
-        auto *imagesLayout = new QVBoxLayout(m_imagesGroup);
-        imagesLayout->setContentsMargins(8, 8, 8, 8);
-        imagesLayout->setSpacing(10);
-
-        auto *imagesHint = new QLabel(tr("Choose optional images for major surfaces and control states. Clear any entry to fall back to the QSS colors."), m_imagesGroup);
-        imagesHint->setWordWrap(true);
-        m_editorLabels.append(imagesHint);
-        imagesLayout->addWidget(imagesHint);
-
-        imagesLayout->addWidget(createImageGroup(
-            tr("Surface Images"),
-            m_imagesGroup,
-            {
-                {QStringLiteral("topbar"), tr("Top bar")},
-                {QStringLiteral("launcher"), tr("Launcher")},
-                {QStringLiteral("bottombar"), tr("Bottom bar")}
-            }));
-        imagesLayout->addWidget(createImageGroup(
-            tr("Control Images"),
-            m_imagesGroup,
-            {
-                {QStringLiteral("buttons-default"), tr("Buttons")},
-                {QStringLiteral("buttons-selected"), tr("Buttons selected")},
-                {QStringLiteral("tabs-default"), tr("Tabs")},
-                {QStringLiteral("tabs-selected"), tr("Tabs selected")},
-                {QStringLiteral("checkbox-default"), tr("Checkbox")},
-                {QStringLiteral("checkbox-selected"), tr("Checkbox selected")}
-            }));
-        contentLayout->addWidget(m_imagesGroup);
-
-        m_advancedGroup = new QGroupBox(tr("Advanced QSS"), content);
-        m_advancedGroup->setVisible(false);
-        auto *advancedLayout = new QVBoxLayout(m_advancedGroup);
-        advancedLayout->setContentsMargins(8, 8, 8, 8);
-        advancedLayout->setSpacing(8);
-        m_styleEditor = new QPlainTextEdit(m_advancedGroup);
-        m_styleEditor->setPlaceholderText(tr("Edit the full QSS for the selected comfort preset."));
-        m_styleEditor->setMinimumHeight(320);
-        advancedLayout->addWidget(m_styleEditor);
-        contentLayout->addWidget(m_advancedGroup, 1);
+        m_statusLabel->setWordWrap(true);
+        contentLayout->addWidget(m_statusLabel);
+        contentLayout->addStretch(1);
 
         connect(m_presetComboBox,
                 qOverload<int>(&fairwindsk::ui::widgets::TouchComboBox::currentIndexChanged),
                 this,
                 &Comfort::onPresetChanged);
-        connect(m_styleEditor, &QPlainTextEdit::textChanged, this, &Comfort::onStyleSheetChanged);
-        connect(m_importButton, &QPushButton::clicked, this, &Comfort::importStyleSheet);
-        connect(m_exportButton, &QPushButton::clicked, this, &Comfort::exportStyleSheet);
-        connect(m_editorButton, &QPushButton::toggled, this, [this](const bool) {
-            updateEditorModeUi();
-        });
         connect(m_resetCurrentButton, &QPushButton::clicked, this, &Comfort::resetCurrentPreset);
         connect(m_resetAllButton, &QPushButton::clicked, this, &Comfort::resetAllPresets);
-        updateEditorModeUi();
-        refreshEditorChrome();
-    }
 
-    void Comfort::createColorControl(const QString &key, const QString &labelText, QWidget *parent, QGridLayout *layout, const int row) {
-        auto *label = new QLabel(labelText, parent);
-        m_editorLabels.append(label);
-        auto *button = new QPushButton(parent);
-        button->setMinimumHeight(44);
-        button->setObjectName(QStringLiteral("button_%1").arg(key));
-        layout->addWidget(label, row, 0);
-        layout->addWidget(button, row, 1);
-        m_colorButtons.insert(key, button);
-        connect(button, &QPushButton::clicked, this, [this, key]() {
-            pickColor(key);
-        });
-    }
-
-    void Comfort::createBackgroundImageControl(const QString &area, const QString &labelText, QWidget *parent, QGridLayout *layout, const int row) {
-        auto *label = new QLabel(labelText, parent);
-        auto *pathLabel = new QLabel(tr("None"), parent);
-        pathLabel->setWordWrap(true);
-        m_editorLabels.append(label);
-        m_editorLabels.append(pathLabel);
-        auto *browseButton = new QPushButton(tr("Browse"), parent);
-        auto *clearButton = new QPushButton(tr("Clear"), parent);
-        browseButton->setMinimumHeight(40);
-        clearButton->setMinimumHeight(40);
-
-        layout->addWidget(label, row, 0);
-        layout->addWidget(pathLabel, row, 1);
-        layout->addWidget(browseButton, row, 2);
-        layout->addWidget(clearButton, row, 3);
-
-        m_backgroundPathLabels.insert(area, pathLabel);
-        connect(browseButton, &QPushButton::clicked, this, [this, area]() {
-            browseBackgroundImage(area);
-        });
-        connect(clearButton, &QPushButton::clicked, this, [this, area]() {
-            clearBackgroundImage(area);
-        });
-    }
-
-    QGroupBox *Comfort::createImageGroup(const QString &title, QWidget *parent, const QList<QPair<QString, QString>> &entries) {
-        auto *group = new QGroupBox(title, parent);
-        auto *layout = new QGridLayout(group);
-        layout->setHorizontalSpacing(12);
-        layout->setVerticalSpacing(8);
-
-        int row = 0;
-        for (const auto &entry : entries) {
-            createBackgroundImageControl(entry.first, entry.second, group, layout, row);
-            ++row;
-        }
-
-        return group;
+        refreshChrome();
     }
 
     void Comfort::onPresetChanged(const int) {
-        if (m_settings && m_settings->getConfiguration()) {
-            m_settings->getConfiguration()->setComfortViewPreset(selectedPreset());
-        }
-        loadPresetEditor();
-        if (m_settings) {
-            m_settings->markDirty(FairWindSK::RuntimeUi, 0);
-        }
-    }
-
-    void Comfort::onStyleSheetChanged() {
-        if (m_isUpdating || !m_settings || !m_styleEditor) {
+        if (m_isUpdating || !m_settings || !m_settings->getConfiguration()) {
             return;
         }
 
-        const QString preset = selectedPreset();
-        m_settings->getConfiguration()->setComfortThemeStyleSheet(preset, m_styleEditor->toPlainText());
-        if (!m_isSyncingVisualControls) {
-            syncVisualControlsFromStyleSheet();
-            persistVisualColorsToConfiguration();
-        }
-        updateColorButtons();
-        updateBackgroundImageLabels();
+        m_settings->getConfiguration()->setComfortViewPreset(selectedPreset());
         updateStatusLabel();
         m_settings->markDirty(FairWindSK::RuntimeUi, 0);
     }
 
-    void Comfort::importStyleSheet() {
-        const QString fileName = fairwindsk::ui::drawer::getOpenFilePath(
-            this,
-            tr("Import Comfort Theme"),
-            QString(),
-            tr("Style Sheets (*.qss *.css);;All Files (*)"));
-        if (fileName.isEmpty()) {
-            return;
-        }
-
-        QFile file(fileName);
-        if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            return;
-        }
-
-        m_styleEditor->setPlainText(QString::fromUtf8(file.readAll()));
-    }
-
-    void Comfort::exportStyleSheet() {
-        const QString preset = selectedPreset();
-        const QString fileName = fairwindsk::ui::drawer::getSaveFilePath(
-            this,
-            tr("Export Comfort Theme"),
-            QStringLiteral("%1.qss").arg(preset),
-            tr("Style Sheets (*.qss);;All Files (*)"));
-        if (fileName.isEmpty()) {
-            return;
-        }
-
-        QFile file(fileName);
-        if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)) {
-            return;
-        }
-
-        QTextStream stream(&file);
-        stream << m_styleEditor->toPlainText();
-    }
-
     void Comfort::resetCurrentPreset() {
-        const QString preset = selectedPreset();
-        m_settings->getConfiguration()->clearComfortThemeStyleSheet(preset);
-        m_settings->getConfiguration()->clearComfortThemeColors(preset);
-        for (const QString &area : comfortBackgroundAreas()) {
-            m_settings->getConfiguration()->clearComfortBackgroundImagePath(preset, area);
+        if (!m_settings || !m_settings->getConfiguration()) {
+            return;
         }
-        loadPresetEditor();
+
+        const QString preset = selectedPreset();
+        clearPresetCustomization(preset);
+        updateStatusLabel(tr("Preset reset."));
         m_settings->markDirty(FairWindSK::RuntimeUi, 0);
     }
 
     void Comfort::resetAllPresets() {
-        auto *configuration = m_settings ? m_settings->getConfiguration() : nullptr;
-        if (!configuration) {
+        if (!m_settings || !m_settings->getConfiguration()) {
             return;
         }
 
         for (const QString &preset : comfortPresetIds()) {
-            configuration->clearComfortThemeStyleSheet(preset);
-            configuration->clearComfortThemeColors(preset);
-            for (const QString &area : comfortBackgroundAreas()) {
-                configuration->clearComfortBackgroundImagePath(preset, area);
-            }
+            clearPresetCustomization(preset);
         }
-
-        loadPresetEditor();
+        updateStatusLabel(tr("All presets reset."));
         m_settings->markDirty(FairWindSK::RuntimeUi, 0);
-    }
-
-    void Comfort::updateEditorModeUi() {
-        const bool editorMode = m_editorButton && m_editorButton->isChecked();
-
-        if (m_paletteGroup) {
-            m_paletteGroup->setVisible(!editorMode);
-        }
-        if (m_imagesGroup) {
-            m_imagesGroup->setVisible(!editorMode);
-        }
-        if (m_advancedGroup) {
-            m_advancedGroup->setVisible(editorMode);
-        }
     }
 
     QString Comfort::selectedPreset() const {
         return normalizedPreset(m_presetComboBox ? m_presetComboBox->currentData().toString() : QString());
     }
 
-    QString Comfort::defaultStyleSheetForPreset(const QString &preset) const {
-        QFile file(comfortThemeResourcePath(preset));
-        if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            return QString();
+    void Comfort::refreshChrome() {
+        auto *fairWindSK = FairWindSK::getInstance();
+        const auto *configuration = m_settings ? m_settings->getConfiguration() : (fairWindSK ? fairWindSK->getConfiguration() : nullptr);
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+        const auto chrome = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), false);
+
+        fairwindsk::ui::applySectionTitleLabelStyle(m_titleLabel, configuration, preset, palette(), 18.0);
+        applyTextPalette(m_hintLabel, chrome.text);
+        applyTextPalette(m_presetLabel, chrome.text);
+        applyTextPalette(m_statusLabel, chrome.text);
+
+        if (m_controlFrame) {
+            m_controlFrame->setStyleSheet(QStringLiteral(
+                "QFrame { border: 1px solid %1; border-radius: 14px; background: %2; }")
+                                              .arg(chrome.border.name(),
+                                                   fairwindsk::ui::comfortAlpha(chrome.buttonBackground, 18).name(QColor::HexArgb)));
         }
 
-        return QString::fromUtf8(file.readAll());
+        fairwindsk::ui::applyBottomBarPushButtonChrome(m_resetCurrentButton, chrome, false, 52);
+        fairwindsk::ui::applyBottomBarPushButtonChrome(m_resetAllButton, chrome, false, 52);
     }
 
-    QString Comfort::effectiveStyleSheetForPreset(const QString &preset) const {
-        const QString configured = m_settings->getConfiguration()->getComfortThemeStyleSheet(preset);
-        return configured.isEmpty() ? defaultStyleSheetForPreset(preset) : configured;
-    }
-
-    QString Comfort::effectiveBackgroundStyleSheetForPreset(const QString &preset) const {
-        const auto *configuration = m_settings->getConfiguration();
-        return buildBackgroundRule(QStringLiteral("TopBar"), configuration->getComfortBackgroundImagePath(preset, QStringLiteral("topbar")))
-            + buildBackgroundRule(QStringLiteral("Launcher"), configuration->getComfortBackgroundImagePath(preset, QStringLiteral("launcher")))
-            + buildBackgroundRule(QStringLiteral("BottomBar"), configuration->getComfortBackgroundImagePath(preset, QStringLiteral("bottombar")))
-            + buildSelectorBorderImageRule(
-                QStringLiteral("QToolButton, QPushButton"),
-                configuration->getComfortBackgroundImagePath(preset, QStringLiteral("buttons-default")))
-            + buildSelectorBorderImageRule(
-                QStringLiteral("QToolButton:pressed, QPushButton:pressed, QToolButton:checked, QPushButton:checked"),
-                configuration->getComfortBackgroundImagePath(preset, QStringLiteral("buttons-selected")))
-            + buildSelectorBorderImageRule(
-                QStringLiteral("QTabBar::tab"),
-                configuration->getComfortBackgroundImagePath(preset, QStringLiteral("tabs-default")))
-            + buildSelectorBorderImageRule(
-                QStringLiteral("QTabBar::tab:selected"),
-                configuration->getComfortBackgroundImagePath(preset, QStringLiteral("tabs-selected")))
-            + buildCheckboxIndicatorRule(
-                QStringLiteral("QCheckBox::indicator:unchecked"),
-                configuration->getComfortBackgroundImagePath(preset, QStringLiteral("checkbox-default")))
-            + buildCheckboxIndicatorRule(
-                QStringLiteral("QCheckBox::indicator:checked"),
-                configuration->getComfortBackgroundImagePath(preset, QStringLiteral("checkbox-selected")));
-    }
-
-    void Comfort::loadPresetEditor() {
-        if (!m_styleEditor) {
-            return;
-        }
-
-        const QString preset = selectedPreset();
-        const QString styleSheet = effectiveStyleSheetForPreset(preset);
-        {
-            const QSignalBlocker blocker(m_styleEditor);
-            m_isUpdating = true;
-            m_styleEditor->setPlainText(styleSheet);
-            m_isUpdating = false;
-        }
-
-        const bool hasGeneratedOverrideBlock =
-            styleSheet.contains(generatedOverrideStartMarker(), Qt::CaseInsensitive) &&
-            styleSheet.contains(generatedOverrideEndMarker(), Qt::CaseInsensitive);
-
-        if (hasGeneratedOverrideBlock) {
-            syncVisualControlsFromStyleSheet();
-            persistVisualColorsToConfiguration();
-        } else if (!loadVisualColorsFromConfiguration()) {
-            syncVisualControlsFromStyleSheet();
-            persistVisualColorsToConfiguration();
-        }
-        updateColorButtons();
-        updateBackgroundImageLabels();
-        refreshEditorChrome();
-        updateStatusLabel();
-    }
-
-    void Comfort::updateStatusLabel() {
-        if (m_statusLabel) {
-            m_statusLabel->clear();
-            m_statusLabel->hide();
-        }
-    }
-
-    void Comfort::refreshEditorChrome() {
-        const QPalette activePalette = palette();
-        const QColor editorBackground = activePalette.color(QPalette::Window);
-        const QColor readableText = fairwindsk::ui::bestContrastingColor(
-            editorBackground,
-            {
-                activePalette.color(QPalette::WindowText),
-                activePalette.color(QPalette::Text),
-                activePalette.color(QPalette::ButtonText),
-                QColor(QStringLiteral("#f7fbff")),
-                QColor(QStringLiteral("#111111"))
-            });
-        const QString labelStyle = QStringLiteral("QLabel { color: %1; background: transparent; }").arg(readableText.name());
-
-        for (QLabel *label : std::as_const(m_editorLabels)) {
-            if (label) {
-                label->setStyleSheet(labelStyle);
-            }
-        }
-    }
-
-    void Comfort::updateColorButtons() {
-        for (auto it = m_colorButtons.cbegin(); it != m_colorButtons.cend(); ++it) {
-            QPushButton *button = it.value();
-            if (!button) {
-                continue;
-            }
-
-            const QColor color = m_visualColors.value(it.key());
-            button->setText(color.name(QColor::HexRgb).toUpper());
-            const QColor textColor = color.lightnessF() > 0.55 ? QColor(QStringLiteral("#111111")) : QColor(QStringLiteral("#f8f8f8"));
-            button->setStyleSheet(QStringLiteral(
-                                      "QPushButton {"
-                                      " background: %1;"
-                                      " color: %2;"
-                                      " border: 1px solid %3;"
-                                      " border-radius: 6px;"
-                                      " }")
-                                      .arg(color.name(), textColor.name(), color.darker(130).name()));
-        }
-    }
-
-    void Comfort::updateBackgroundImageLabels() {
-        const QString preset = selectedPreset();
-        for (auto it = m_backgroundPathLabels.cbegin(); it != m_backgroundPathLabels.cend(); ++it) {
-            QLabel *label = it.value();
-            if (!label) {
-                continue;
-            }
-
-            const QString path = m_settings->getConfiguration()->getComfortBackgroundImagePath(preset, it.key());
-            label->setText(path.isEmpty() ? tr("None") : QFileInfo(path).fileName());
-            label->setToolTip(path);
-        }
-    }
-
-    QString Comfort::colorLabel(const QString &key) const {
-        if (!m_colorButtons.contains(key) || !m_colorButtons.value(key)) {
-            return key;
-        }
-
-        const auto *layout = qobject_cast<QGridLayout *>(
-            m_colorButtons.value(key)->parentWidget() ? m_colorButtons.value(key)->parentWidget()->layout() : nullptr);
-        if (!layout) {
-            return key;
-        }
-
-        for (int row = 0; row < layout->rowCount(); ++row) {
-            if (layout->itemAtPosition(row, 1) && layout->itemAtPosition(row, 1)->widget() == m_colorButtons.value(key)) {
-                if (auto *label = qobject_cast<QLabel *>(layout->itemAtPosition(row, 0)->widget())) {
-                    return label->text();
-                }
-            }
-        }
-
-        return key;
-    }
-
-    void Comfort::pickColor(const QString &key) {
-        bool accepted = false;
-        const QColor color = fairwindsk::ui::widgets::TouchColorPickerDialog::getColor(
-            this,
-            tr("Choose %1").arg(colorLabel(key)),
-            colorValue(key),
-            &accepted,
-            false);
-        if (!accepted) {
-            return;
-        }
-
-        m_visualColors.insert(key, color);
-        applyVisualThemeOverride();
-    }
-
-    void Comfort::browseBackgroundImage(const QString &area) {
-        const QString fileName = fairwindsk::ui::drawer::getOpenFilePath(
-            this,
-            tr("Choose Background Image"),
-            QString(),
-            tr("Images (*.png *.jpg *.jpeg *.bmp *.webp);;All Files (*)"));
-        if (fileName.isEmpty()) {
-            return;
-        }
-
-        m_settings->getConfiguration()->setComfortBackgroundImagePath(selectedPreset(), area, fileName);
-        updateBackgroundImageLabels();
-        m_settings->markDirty(FairWindSK::RuntimeUi, 0);
-    }
-
-    void Comfort::clearBackgroundImage(const QString &area) {
-        m_settings->getConfiguration()->clearComfortBackgroundImagePath(selectedPreset(), area);
-        updateBackgroundImageLabels();
-        m_settings->markDirty(FairWindSK::RuntimeUi, 0);
-    }
-
-    void Comfort::applyVisualThemeOverride() {
-        const QString preset = selectedPreset();
-        const QString updatedStyleSheet = styleSheetWithVisualOverride();
-        {
-            const QSignalBlocker blocker(m_styleEditor);
-            m_isUpdating = true;
-            m_styleEditor->setPlainText(updatedStyleSheet);
-            m_isUpdating = false;
-        }
-
-        auto *configuration = m_settings->getConfiguration();
-        configuration->setComfortThemeStyleSheet(preset, updatedStyleSheet);
-        for (auto it = m_visualColors.cbegin(); it != m_visualColors.cend(); ++it) {
-            configuration->setComfortThemeColor(preset, it.key(), it.value());
-        }
-        updateColorButtons();
-        updateStatusLabel();
-        m_settings->markDirty(FairWindSK::RuntimeUi, 0);
-    }
-
-    bool Comfort::loadVisualColorsFromConfiguration() {
-        const QString preset = selectedPreset();
-        auto *configuration = m_settings ? m_settings->getConfiguration() : nullptr;
-        if (!configuration) {
-            return false;
-        }
-
-        const QString baselineStyleSheet = defaultStyleSheetForPreset(preset);
-        const QColor baselineTextColor = extractColor(
-            baselineStyleSheet,
-            QStringLiteral("QWidget\\s*\\{[^}]*color\\s*:\\s*(#[0-9A-Fa-f]{6,8})"),
-            QColor(QStringLiteral("#e9f3ff")));
-        const QColor baselineAccentTextColor = extractColor(
-            baselineStyleSheet,
-            QStringLiteral("QTabBar::tab:selected\\s*\\{[^}]*color\\s*:\\s*(#[0-9A-Fa-f]{6,8})"),
-            QColor(QStringLiteral("#f7fbff")));
-
-        const QList<QPair<QString, QColor>> defaults = {
-            {QString::fromLatin1(kColorWindow), extractColor(baselineStyleSheet, QStringLiteral("QWidget\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#0f1622")))},
-            {QString::fromLatin1(kColorApplicationBackground), extractColor(baselineStyleSheet, QStringLiteral("QMainWindow[\\s\\S]*?QAbstractScrollArea\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#15283d")))},
-            {QString::fromLatin1(kColorPanel), extractColor(baselineStyleSheet, QStringLiteral("QMenuBar,\\s*QMenu,\\s*QStatusBar,\\s*QToolTip\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#1d3146")))},
-            {QString::fromLatin1(kColorBase), extractColor(baselineStyleSheet, QStringLiteral("QLineEdit[\\s\\S]*?QDateTimeEdit\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#dce7f2")))},
-            {QString::fromLatin1(kColorText), baselineTextColor},
-            {QString::fromLatin1(kColorSelectionBackground), extractColor(baselineStyleSheet, QStringLiteral("QLineEdit[\\s\\S]*?QDateTimeEdit\\s*\\{[^}]*selection-background-color\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#2d5ea6")))},
-            {QString::fromLatin1(kColorSelectionText), extractColor(baselineStyleSheet, QStringLiteral("QLineEdit[\\s\\S]*?QDateTimeEdit\\s*\\{[^}]*selection-color\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#f7fbff")))},
-            {QString::fromLatin1(kColorButtonBackground), extractColor(baselineStyleSheet, QStringLiteral("QToolButton,\\s*QPushButton\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#d8be74")))},
-            {QString::fromLatin1(kColorButtonText), extractColor(baselineStyleSheet, QStringLiteral("QToolButton,\\s*QPushButton\\s*\\{[^}]*color\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), baselineTextColor)},
-            {QString::fromLatin1(kColorButtonHover), extractColor(baselineStyleSheet, QStringLiteral("QToolButton:hover[\\s\\S]*?QPushButton:hover\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#e0c889")))},
-            {QString::fromLatin1(kColorButtonPressed), extractColor(baselineStyleSheet, QStringLiteral("QToolButton:pressed[\\s\\S]*?QPushButton:checked\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#2d5ea6")))},
-            {QString::fromLatin1(kColorScrollBarBackground), extractColor(baselineStyleSheet, QStringLiteral("QScrollBar:vertical,\\s*QScrollBar:horizontal\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#22354a")))},
-            {QString::fromLatin1(kColorScrollBarKnob), extractColor(baselineStyleSheet, QStringLiteral("QScrollBar::handle:vertical,\\s*QScrollBar::handle:horizontal\\s*\\{[^}]*stop:0\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#c8d8e8")))},
-            {QString::fromLatin1(kColorBorder), extractColor(baselineStyleSheet, QStringLiteral("QToolTip\\s*\\{[^}]*border\\s*:\\s*1px solid\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#7690ac")))},
-            {QString::fromLatin1(kColorAccentTop), extractColor(baselineStyleSheet, QStringLiteral("QTabBar::tab:selected\\s*\\{[^}]*stop:0\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#2d5ea6")))},
-            {QString::fromLatin1(kColorAccentBottom), extractColor(baselineStyleSheet, QStringLiteral("QTabBar::tab:selected\\s*\\{[^}]*stop:1\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#1f447a")))},
-            {QString::fromLatin1(kColorAccentText), baselineAccentTextColor},
-            {QString::fromLatin1(kColorHeaderBackground), extractColor(baselineStyleSheet, QStringLiteral("QHeaderView::section,\\s*QTableCornerButton::section\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#1d3146")))},
-            {QString::fromLatin1(kColorHeaderText), extractColor(baselineStyleSheet, QStringLiteral("QHeaderView::section,\\s*QTableCornerButton::section\\s*\\{[^}]*color\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), baselineTextColor)},
-            {QString::fromLatin1(kColorGroupTitleText), extractColor(baselineStyleSheet, QStringLiteral("QGroupBox::title\\s*\\{[^}]*color\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#2d5ea6")))},
-            {QString::fromLatin1(kColorDisabledText), extractColor(baselineStyleSheet, QStringLiteral("QToolButton:disabled[\\s\\S]*?QGroupBox:disabled\\s*\\{[^}]*color\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), baselineTextColor.darker(150))},
-            {QString::fromLatin1(kColorIconDefault), baselineAccentTextColor}
-        };
-
-        bool hasConfiguredColors = false;
-        QMap<QString, QColor> restoredColors;
-        for (const auto &entry : defaults) {
-            const QColor storedColor = configuration->getComfortThemeColor(preset, entry.first, QColor());
-            if (storedColor.isValid()) {
-                restoredColors.insert(entry.first, storedColor);
-                hasConfiguredColors = true;
-            } else {
-                restoredColors.insert(entry.first, entry.second);
-            }
-        }
-
-        if (!hasConfiguredColors) {
-            return false;
-        }
-
-        m_visualColors = restoredColors;
-        return true;
-    }
-
-    void Comfort::persistVisualColorsToConfiguration() const {
+    void Comfort::clearPresetCustomization(const QString &preset) const {
         auto *configuration = m_settings ? m_settings->getConfiguration() : nullptr;
         if (!configuration) {
             return;
         }
 
-        const QString preset = selectedPreset();
-        for (auto it = m_visualColors.cbegin(); it != m_visualColors.cend(); ++it) {
-            configuration->setComfortThemeColor(preset, it.key(), it.value());
+        const QString normalized = normalizedPreset(preset);
+        configuration->clearComfortThemeStyleSheet(normalized);
+        configuration->clearComfortThemeColors(normalized);
+        for (const QString &area : comfortBackgroundAreas()) {
+            configuration->clearComfortBackgroundImagePath(normalized, area);
         }
     }
 
-    void Comfort::syncVisualControlsFromStyleSheet() {
-        m_isSyncingVisualControls = true;
+    void Comfort::updateStatusLabel(const QString &message) {
+        if (!m_statusLabel) {
+            return;
+        }
 
-        const QString styleSheet = m_styleEditor ? m_styleEditor->toPlainText() : QString();
-        m_visualColors.insert(QString::fromLatin1(kColorWindow), extractColor(styleSheet, QStringLiteral("QWidget\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#0f1622"))));
-        m_visualColors.insert(QString::fromLatin1(kColorApplicationBackground), extractColor(styleSheet, QStringLiteral("QMainWindow[\\s\\S]*?QAbstractScrollArea\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#15283d"))));
-        m_visualColors.insert(QString::fromLatin1(kColorPanel), extractColor(styleSheet, QStringLiteral("QMenuBar,\\s*QMenu,\\s*QStatusBar,\\s*QToolTip\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#1d3146"))));
-        m_visualColors.insert(QString::fromLatin1(kColorBase), extractColor(styleSheet, QStringLiteral("QLineEdit[\\s\\S]*?QDateTimeEdit\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#dce7f2"))));
-        m_visualColors.insert(QString::fromLatin1(kColorText), extractColor(styleSheet, QStringLiteral("QWidget\\s*\\{[^}]*color\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#e9f3ff"))));
-        m_visualColors.insert(QString::fromLatin1(kColorSelectionBackground), extractColor(styleSheet, QStringLiteral("QLineEdit[\\s\\S]*?QDateTimeEdit\\s*\\{[^}]*selection-background-color\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#2d5ea6"))));
-        m_visualColors.insert(QString::fromLatin1(kColorSelectionText), extractColor(styleSheet, QStringLiteral("QLineEdit[\\s\\S]*?QDateTimeEdit\\s*\\{[^}]*selection-color\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#f7fbff"))));
-        m_visualColors.insert(QString::fromLatin1(kColorButtonBackground), extractColor(styleSheet, QStringLiteral("QToolButton,\\s*QPushButton\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#d8be74"))));
-        m_visualColors.insert(QString::fromLatin1(kColorButtonText), extractColor(styleSheet, QStringLiteral("QToolButton,\\s*QPushButton\\s*\\{[^}]*color\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), m_visualColors.value(QString::fromLatin1(kColorText))));
-        m_visualColors.insert(QString::fromLatin1(kColorButtonHover), extractColor(styleSheet, QStringLiteral("QToolButton:hover[\\s\\S]*?QPushButton:hover\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), m_visualColors.value(QString::fromLatin1(kColorButtonBackground)).lighter(110)));
-        m_visualColors.insert(QString::fromLatin1(kColorButtonPressed), extractColor(styleSheet, QStringLiteral("QToolButton:pressed[\\s\\S]*?QPushButton:checked\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), m_visualColors.value(QString::fromLatin1(kColorAccentTop))));
-        m_visualColors.insert(QString::fromLatin1(kColorScrollBarBackground), extractColor(styleSheet, QStringLiteral("QScrollBar:vertical,\\s*QScrollBar:horizontal\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#22354a"))));
-        m_visualColors.insert(QString::fromLatin1(kColorScrollBarKnob), extractColor(styleSheet, QStringLiteral("QScrollBar::handle:vertical,\\s*QScrollBar::handle:horizontal\\s*\\{[^}]*stop:0\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#c8d8e8"))));
-        m_visualColors.insert(QString::fromLatin1(kColorBorder), extractColor(styleSheet, QStringLiteral("QToolTip\\s*\\{[^}]*border\\s*:\\s*1px solid\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#7690ac"))));
-        m_visualColors.insert(QString::fromLatin1(kColorAccentTop), extractColor(styleSheet, QStringLiteral("QTabBar::tab:selected\\s*\\{[^}]*stop:0\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#2d5ea6"))));
-        m_visualColors.insert(QString::fromLatin1(kColorAccentBottom), extractColor(styleSheet, QStringLiteral("QTabBar::tab:selected\\s*\\{[^}]*stop:1\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#1f447a"))));
-        m_visualColors.insert(QString::fromLatin1(kColorAccentText), extractColor(styleSheet, QStringLiteral("QTabBar::tab:selected\\s*\\{[^}]*color\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), QColor(QStringLiteral("#f7fbff"))));
-        m_visualColors.insert(QString::fromLatin1(kColorHeaderBackground), extractColor(styleSheet, QStringLiteral("QHeaderView::section,\\s*QTableCornerButton::section\\s*\\{[^}]*background\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), m_visualColors.value(QString::fromLatin1(kColorPanel))));
-        m_visualColors.insert(QString::fromLatin1(kColorHeaderText), extractColor(styleSheet, QStringLiteral("QHeaderView::section,\\s*QTableCornerButton::section\\s*\\{[^}]*color\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), m_visualColors.value(QString::fromLatin1(kColorText))));
-        m_visualColors.insert(QString::fromLatin1(kColorGroupTitleText), extractColor(styleSheet, QStringLiteral("QGroupBox::title\\s*\\{[^}]*color\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), m_visualColors.value(QString::fromLatin1(kColorAccentTop))));
-        m_visualColors.insert(QString::fromLatin1(kColorDisabledText), extractColor(styleSheet, QStringLiteral("QToolButton:disabled[\\s\\S]*?QGroupBox:disabled\\s*\\{[^}]*color\\s*:\\s*(#[0-9A-Fa-f]{6,8})"), m_visualColors.value(QString::fromLatin1(kColorText)).darker(150)));
-        m_visualColors.insert(
-            QString::fromLatin1(kColorIconDefault),
-            m_settings && m_settings->getConfiguration()
-                ? m_settings->getConfiguration()->getComfortThemeColor(
-                    selectedPreset(),
-                    QString::fromLatin1(kColorIconDefault),
-                    m_visualColors.value(QString::fromLatin1(kColorAccentText), QColor(QStringLiteral("#f7fbff"))))
-                : QColor(QStringLiteral("#f7fbff")));
-
-        m_isSyncingVisualControls = false;
-    }
-
-    QString Comfort::buildVisualOverrideBlock() const {
-        const QColor windowColor = colorValue(QString::fromLatin1(kColorWindow));
-        const QColor applicationBackgroundColor = colorValue(QString::fromLatin1(kColorApplicationBackground));
-        const QColor panelColor = colorValue(QString::fromLatin1(kColorPanel));
-        const QColor baseColor = colorValue(QString::fromLatin1(kColorBase));
-        const QColor textColor = colorValue(QString::fromLatin1(kColorText));
-        const QColor selectionBackgroundColor = colorValue(QString::fromLatin1(kColorSelectionBackground));
-        const QColor selectionTextColor = colorValue(QString::fromLatin1(kColorSelectionText));
-        const QColor buttonBackgroundColor = colorValue(QString::fromLatin1(kColorButtonBackground));
-        const QColor buttonTextColor = colorValue(QString::fromLatin1(kColorButtonText));
-        const QColor buttonHoverColor = colorValue(QString::fromLatin1(kColorButtonHover));
-        const QColor buttonPressedColor = colorValue(QString::fromLatin1(kColorButtonPressed));
-        const QColor scrollBarBackgroundColor = colorValue(QString::fromLatin1(kColorScrollBarBackground));
-        const QColor scrollBarKnobColor = colorValue(QString::fromLatin1(kColorScrollBarKnob));
-        const QColor borderColor = colorValue(QString::fromLatin1(kColorBorder));
-        const QColor accentTopColor = colorValue(QString::fromLatin1(kColorAccentTop));
-        const QColor accentBottomColor = colorValue(QString::fromLatin1(kColorAccentBottom));
-        const QColor accentTextColor = colorValue(QString::fromLatin1(kColorAccentText));
-        const QColor headerBackgroundColor = colorValue(QString::fromLatin1(kColorHeaderBackground));
-        const QColor headerTextColor = colorValue(QString::fromLatin1(kColorHeaderText));
-        const QColor groupTitleTextColor = colorValue(QString::fromLatin1(kColorGroupTitleText));
-        const QColor disabledTextColor = colorValue(QString::fromLatin1(kColorDisabledText));
-
-        return QStringLiteral(
-                   "%1\n"
-                   "QWidget {\n"
-                   "    color: %2;\n"
-                   "    background: %3;\n"
-                   "}\n"
-                   "QMainWindow, QDialog, QWidget, QFrame, QStackedWidget, QSplitter, QScrollArea, QAbstractScrollArea {\n"
-                   "    background: %4;\n"
-                   "}\n"
-                   "QMenuBar, QMenu, QStatusBar, QToolTip, QToolBar {\n"
-                   "    background: %5;\n"
-                   "    color: %2;\n"
-                   "}\n"
-                   "QMenuBar::item:selected, QToolBar {\n"
-                   "    background: %15;\n"
-                   "}\n"
-                   "QToolTip {\n"
-                   "    border: 1px solid %6;\n"
-                   "}\n"
-                   "QAbstractScrollArea {\n"
-                   "    background: %4;\n"
-                   "    border: 1px solid %6;\n"
-                   "    border-radius: 6px;\n"
-                   "}\n"
-                   "QScrollBar:vertical, QScrollBar:horizontal {\n"
-                   "    background: %7;\n"
-                   "    border: 1px solid %6;\n"
-                   "    border-radius: 8px;\n"
-                   "}\n"
-                   "QScrollBar::handle:vertical, QScrollBar::handle:horizontal {\n"
-                   "    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %8, stop:1 %9);\n"
-                   "    border: 1px solid %6;\n"
-                   "    border-radius: 7px;\n"
-                   "    min-height: 28px;\n"
-                   "    min-width: 28px;\n"
-                   "}\n"
-                   "QScrollBar::add-line, QScrollBar::sub-line, QScrollBar::add-page, QScrollBar::sub-page {\n"
-                   "    background: transparent;\n"
-                   "    border: none;\n"
-                   "}\n"
-                   "QLineEdit, QTextEdit, QPlainTextEdit, QListView, QListWidget, QTreeView, QTreeWidget, QTableView, QTableWidget,\n"
-                   "QComboBox, QAbstractSpinBox, QDateTimeEdit {\n"
-                   "    background: %10;\n"
-                   "    color: %2;\n"
-                   "    border: 1px solid %6;\n"
-                   "    border-radius: 6px;\n"
-                   "    selection-background-color: %11;\n"
-                   "    selection-color: %12;\n"
-                   "}\n"
-                   "QComboBox QAbstractItemView {\n"
-                   "    background: %10;\n"
-                   "    color: %2;\n"
-                   "    border: 1px solid %6;\n"
-                   "    selection-background-color: %11;\n"
-                   "    selection-color: %12;\n"
-                   "}\n"
-                   "QComboBox::drop-down {\n"
-                   "    border-left: 1px solid %6;\n"
-                   "    background: %5;\n"
-                   "}\n"
-                   "QComboBox::down-arrow {\n"
-                   "    image: none;\n"
-                   "    width: 0px;\n"
-                   "    height: 0px;\n"
-                   "}\n"
-                   "QAbstractItemView::item:selected, QListView::item:selected, QListWidget::item:selected,\n"
-                   "QTreeView::item:selected, QTreeWidget::item:selected, QTableView::item:selected, QTableWidget::item:selected {\n"
-                   "    background: %11;\n"
-                   "    color: %12;\n"
-                   "}\n"
-                   "QAbstractItemView::item:hover, QListView::item:hover, QListWidget::item:hover,\n"
-                   "QTreeView::item:hover, QTreeWidget::item:hover, QTableView::item:hover, QTableWidget::item:hover {\n"
-                   "    background: %15;\n"
-                   "    color: %2;\n"
-                   "}\n"
-                   "QToolButton, QPushButton {\n"
-                   "    background: %13;\n"
-                   "    color: %14;\n"
-                   "    border: 1px solid %6;\n"
-                   "    border-radius: 6px;\n"
-                   "}\n"
-                   "QToolButton:disabled, QPushButton:disabled, QLineEdit:disabled, QTextEdit:disabled,\n"
-                   "QPlainTextEdit:disabled, QListView:disabled, QListWidget:disabled, QTreeView:disabled,\n"
-                   "QTreeWidget:disabled, QTableView:disabled, QTableWidget:disabled, QComboBox:disabled,\n"
-                   "QAbstractSpinBox:disabled, QDateTimeEdit:disabled, QLabel:disabled, QCheckBox:disabled,\n"
-                   "QRadioButton:disabled, QGroupBox:disabled {\n"
-                   "    color: %23;\n"
-                   "}\n"
-                   "QToolButton:hover, QPushButton:hover {\n"
-                   "    background: %15;\n"
-                   "}\n"
-                   "QToolButton:pressed, QPushButton:pressed, QToolButton:checked, QPushButton:checked {\n"
-                   "    background: %16;\n"
-                   "    color: %12;\n"
-                   "}\n"
-                   "QToolButton[autoRaise=\"true\"] {\n"
-                   "    color: %2;\n"
-                   "}\n"
-                   "QToolButton[autoRaise=\"true\"]:hover,\n"
-                   "QToolButton[autoRaise=\"true\"]:pressed,\n"
-                   "QToolButton[autoRaise=\"true\"]:checked {\n"
-                   "    color: %12;\n"
-                   "}\n"
-                   "QTabWidget::pane {\n"
-                   "    border: 1px solid %6;\n"
-                   "    top: -1px;\n"
-                   "}\n"
-                   "QTabBar::tab {\n"
-                   "    color: %14;\n"
-                   "    background: %13;\n"
-                   "    border: 1px solid %6;\n"
-                   "}\n"
-                   "QTabBar::tab:selected {\n"
-                   "    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %17, stop:1 %18);\n"
-                   "    color: %19;\n"
-                   "    border-color: %17;\n"
-                   "}\n"
-                   "QTabBar::tab:hover:!selected {\n"
-                   "    background: %15;\n"
-                   "}\n"
-                   "QCheckBox, QRadioButton, QLabel, QGroupBox {\n"
-                   "    color: %2;\n"
-                   "}\n"
-                   "QLabel {\n"
-                   "    background: transparent;\n"
-                   "}\n"
-                   "QMenu::item:selected {\n"
-                   "    background: %11;\n"
-                   "    color: %12;\n"
-                   "}\n"
-                   "QGroupBox {\n"
-                   "    background: transparent;\n"
-                   "    border: 1px solid %6;\n"
-                   "}\n"
-                   "QGroupBox::title {\n"
-                   "    subcontrol-origin: margin;\n"
-                   "    color: %22;\n"
-                   "}\n"
-                   "QCheckBox::indicator, QRadioButton::indicator {\n"
-                   "    border: 1px solid %6;\n"
-                   "    background: %13;\n"
-                   "}\n"
-                   "QCheckBox::indicator:checked, QRadioButton::indicator:checked {\n"
-                   "    border-color: %17;\n"
-                   "    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %17, stop:1 %18);\n"
-                   "}\n"
-                   "QHeaderView::section, QTableCornerButton::section {\n"
-                   "    background: %20;\n"
-                   "    color: %21;\n"
-                   "    border: 1px solid %6;\n"
-                   "}\n"
-                   "QHeaderView::section:checked {\n"
-                   "    background: %17;\n"
-                   "    color: %12;\n"
-                   "}\n"
-                   "QSlider::groove:horizontal, QSlider::groove:vertical {\n"
-                   "    background: %10;\n"
-                   "    border: 1px solid %6;\n"
-                   "    border-radius: 6px;\n"
-                   "}\n"
-                   "QSlider::sub-page:horizontal, QSlider::add-page:vertical {\n"
-                   "    background: %17;\n"
-                   "    border-radius: 6px;\n"
-                   "}\n"
-                   "QSlider::add-page:horizontal, QSlider::sub-page:vertical {\n"
-                   "    background: %5;\n"
-                   "    border-radius: 6px;\n"
-                   "}\n"
-                   "QSlider::handle:horizontal, QSlider::handle:vertical {\n"
-                   "    background: %13;\n"
-                   "    border: 1px solid %6;\n"
-                   "    border-radius: 9px;\n"
-                   "}\n"
-                   "QSplitter::handle {\n"
-                   "    background: %5;\n"
-                   "}\n"
-                   "QProgressBar {\n"
-                   "    border: 1px solid %6;\n"
-                   "    border-radius: 6px;\n"
-                   "    background: %5;\n"
-                   "    color: %2;\n"
-                   "    text-align: center;\n"
-                   "}\n"
-                   "QProgressBar::chunk {\n"
-                   "    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 %17, stop:1 %18);\n"
-                   "    border-radius: 5px;\n"
-                   "}\n"
-                   "%24\n")
-            .arg(generatedOverrideStartMarker(),
-                 textColor.name(),
-                 windowColor.name(),
-                 applicationBackgroundColor.name(),
-                 panelColor.name(),
-                 borderColor.name(),
-                 scrollBarBackgroundColor.name(),
-                 scrollBarKnobColor.lighter(108).name(),
-                 scrollBarKnobColor.darker(108).name(),
-                 baseColor.name(),
-                 selectionBackgroundColor.name(),
-                 selectionTextColor.name(),
-                 buttonBackgroundColor.name(),
-                 buttonTextColor.name(),
-                 buttonHoverColor.name(),
-                 buttonPressedColor.name(),
-                 accentTopColor.name(),
-                 accentBottomColor.name(),
-                 accentTextColor.name(),
-                 headerBackgroundColor.name(),
-                 headerTextColor.name(),
-                 groupTitleTextColor.name(),
-                 disabledTextColor.name(),
-                 generatedOverrideEndMarker());
-    }
-
-    QString Comfort::styleSheetWithVisualOverride() const {
-        return removeGeneratedOverrideBlock(m_styleEditor ? m_styleEditor->toPlainText() : QString())
-            + buildVisualOverrideBlock();
-    }
-
-    QColor Comfort::colorValue(const QString &key) const {
-        return m_visualColors.value(key, QColor(QStringLiteral("#808080")));
-    }
-
-    QColor Comfort::extractColor(const QString &styleSheet, const QString &pattern, const QColor &fallback) const {
-        const QString value = extractCapturedValue(styleSheet, pattern);
-        const QColor color(value);
-        return color.isValid() ? color : fallback;
-    }
-
-    QString Comfort::extractCapturedValue(const QString &styleSheet, const QString &pattern, const QString &fallback) const {
-        const QRegularExpression expression(
-            pattern,
-            QRegularExpression::CaseInsensitiveOption | QRegularExpression::DotMatchesEverythingOption);
-        const QRegularExpressionMatch match = expression.match(styleSheet);
-        return match.hasMatch() ? match.captured(1) : fallback;
-    }
-
-    QString Comfort::generatedOverrideStartMarker() {
-        return QStringLiteral("\n/* FairWindSK comfort visual override start */\n");
-    }
-
-    QString Comfort::generatedOverrideEndMarker() {
-        return QStringLiteral("/* FairWindSK comfort visual override end */\n");
-    }
-
-    QString Comfort::removeGeneratedOverrideBlock(QString styleSheet) {
-        const QRegularExpression overrideExpression(
-            QStringLiteral(
-                "\\n?/\\* FairWindSK comfort visual override start \\*/[\\s\\S]*?/\\* FairWindSK comfort visual override end \\*/\\n?"),
-            QRegularExpression::CaseInsensitiveOption);
-        styleSheet.remove(overrideExpression);
-        return styleSheet.trimmed() + QLatin1Char('\n');
+        const QString normalizedMessage = message.trimmed();
+        m_statusLabel->setText(normalizedMessage.isEmpty()
+                                   ? tr("Active preset: %1").arg(m_presetComboBox ? m_presetComboBox->currentText() : QString())
+                                   : normalizedMessage);
     }
 }

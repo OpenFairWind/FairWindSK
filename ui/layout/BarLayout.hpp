@@ -40,6 +40,7 @@ namespace fairwindsk::ui::layout {
     QString horizontalSizeLabel(const LayoutEntry &entry);
     bool isWidgetEntry(const LayoutEntry &entry);
     bool isPlaceholderEntry(const LayoutEntry &entry);
+    bool defaultExpandHorizontally(BarId barId, const QString &widgetId);
     QList<LayoutEntry> defaultEntries(BarId barId);
     QList<LayoutEntry> entriesForBar(const nlohmann::json &root, BarId barId);
     void setEntriesForBar(nlohmann::json &root, BarId barId, const QList<LayoutEntry> &entries);

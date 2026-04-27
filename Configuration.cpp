@@ -148,6 +148,14 @@ namespace fairwindsk {
         ensureObject("connection")["server"] = signalKServerUrl.toStdString();
     }
 
+    bool Configuration::getSignalKConnectionEnabled() const {
+        return getBool("connection", "active", true);
+    }
+
+    void Configuration::setSignalKConnectionEnabled(const bool enabled) {
+        ensureObject("connection")["active"] = enabled;
+    }
+
     QString Configuration::getAutopilotApp() {
         return getString("applications", "autopilot");
     }

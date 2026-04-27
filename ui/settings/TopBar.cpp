@@ -17,6 +17,7 @@
 #include <QVBoxLayout>
 
 #include "FairWindSK.hpp"
+#include "BarSettingsUi.hpp"
 #include "ui/IconUtils.hpp"
 #include "ui/layout/BarLayout.hpp"
 
@@ -25,67 +26,6 @@ namespace fairwindsk::ui::settings {
         using fairwindsk::ui::layout::BarId;
         using fairwindsk::ui::layout::EntryKind;
         using fairwindsk::ui::layout::LayoutEntry;
-
-        QString listWidgetChrome(const fairwindsk::ui::ComfortChromeColors &colors,
-                                 const bool dashedItems = false) {
-            return QStringLiteral(
-                "QListWidget {"
-                " border: 1px solid %1;"
-                " border-radius: 12px;"
-                " padding: 8px;"
-                " background: %2;"
-                " }"
-                "QListWidget::item {"
-                " margin: 4px;"
-                " padding: 10px 12px;"
-                " border: 1px %3 %4;"
-                " border-radius: 10px;"
-                " background: %5;"
-                " color: %6;"
-                " }"
-                "QListWidget::item:selected {"
-                " border-color: %7;"
-                " background: %8;"
-                " color: %9;"
-                " font-weight: 600;"
-                " }")
-                .arg(colors.border.name(),
-                     colors.window.name(),
-                     dashedItems ? QStringLiteral("dashed") : QStringLiteral("solid"),
-                     colors.border.name(),
-                     fairwindsk::ui::comfortAlpha(colors.buttonBackground, dashedItems ? 22 : 32).name(QColor::HexArgb),
-                     colors.text.name(),
-                     colors.accentTop.name(),
-                     fairwindsk::ui::comfortAlpha(colors.accentTop, 46).name(QColor::HexArgb),
-                     colors.text.name());
-        }
-
-        QString previewFrameChrome(const fairwindsk::ui::ComfortChromeColors &colors) {
-            return QStringLiteral(
-                "QFrame {"
-                " border: 1px solid %1;"
-                " border-radius: 14px;"
-                " background: %2;"
-                " }")
-                .arg(colors.border.name(),
-                     fairwindsk::ui::comfortAlpha(colors.buttonBackground, 18).name(QColor::HexArgb));
-        }
-
-        void applySecondaryLabelStyle(QLabel *label, const fairwindsk::ui::ComfortChromeColors &colors) {
-            if (!label) {
-                return;
-            }
-
-            QFont font = label->font();
-            font.setBold(true);
-            font.setPointSizeF(std::max(font.pointSizeF(), 13.0));
-            label->setFont(font);
-
-            QPalette palette = label->palette();
-            palette.setColor(QPalette::WindowText, colors.text);
-            palette.setColor(QPalette::Text, colors.text);
-            label->setPalette(palette);
-        }
 
         class PreviewListWidget final : public QListWidget {
         public:
@@ -248,53 +188,29 @@ namespace fairwindsk::ui::settings {
         m_removeSelectedButton = new QToolButton(this);
         m_resetDefaultsButton = new QToolButton(this);
 
-        auto configureActionButton = [kControlHeight](QToolButton *button,
-                                                      const QString &iconPath,
-                                                      const QString &toolTip,
-                                                      const bool checkable = false) {
-            if (!button) {
-                return;
-            }
-
-            button->setCheckable(checkable);
-            button->setAutoRaise(true);
-            button->setIcon(QIcon(iconPath));
-            button->setIconSize(QSize(24, 24));
-            button->setToolTip(toolTip);
-            button->setStatusTip(toolTip);
-            button->setAccessibleName(toolTip);
-            button->setMinimumSize(QSize(kControlHeight, kControlHeight));
-            button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-            button->setToolButtonStyle(Qt::ToolButtonIconOnly);
-        };
-
-        configureActionButton(m_expandHeightButton,
-                              QStringLiteral(":/resources/svg/OpenBridge/arrow-down-google.svg"),
-                              tr("Extend Height"),
-                              true);
-        configureActionButton(m_removeSelectedButton,
-                              QStringLiteral(":/resources/svg/OpenBridge/delete-google.svg"),
-                              tr("Remove Selected"));
-        configureActionButton(m_resetDefaultsButton,
-                              QStringLiteral(":/resources/svg/OpenBridge/refresh-google.svg"),
-                              tr("Reset Defaults"));
-
-        for (auto *button : {m_minimumWidthButton, m_maximumWidthButton}) {
-            button->setCheckable(true);
-            button->setAutoRaise(true);
-            button->setMinimumSize(QSize(132, kControlHeight));
-            button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-            button->setToolButtonStyle(Qt::ToolButtonTextOnly);
-        }
-        m_minimumWidthButton->setText(tr("Minimum"));
-        m_maximumWidthButton->setText(tr("Maximum"));
-        m_minimumWidthButton->setToolTip(tr("Keep the selected widget at the minimum needed size"));
-        m_maximumWidthButton->setToolTip(tr("Let the selected widget grow to the maximum possible size"));
-        m_minimumWidthButton->setStatusTip(m_minimumWidthButton->toolTip());
-        m_maximumWidthButton->setStatusTip(m_maximumWidthButton->toolTip());
-        m_minimumWidthButton->setAccessibleName(tr("Minimum needed size"));
-        m_maximumWidthButton->setAccessibleName(tr("Maximum possible size"));
-        m_expandHeightButton->setCheckable(true);
+        barsettings::configureActionButton(m_expandHeightButton,
+                                           QStringLiteral(":/resources/svg/OpenBridge/arrow-down-google.svg"),
+                                           tr("Extend Height"),
+                                           kControlHeight,
+                                           true);
+        barsettings::configureActionButton(m_removeSelectedButton,
+                                           QStringLiteral(":/resources/svg/OpenBridge/delete-google.svg"),
+                                           tr("Remove Selected"),
+                                           kControlHeight);
+        barsettings::configureActionButton(m_resetDefaultsButton,
+                                           QStringLiteral(":/resources/svg/OpenBridge/refresh-google.svg"),
+                                           tr("Reset Defaults"),
+                                           kControlHeight);
+        barsettings::configureSizeButton(m_minimumWidthButton,
+                                         tr("Minimum"),
+                                         tr("Keep the selected widget at the minimum needed size"),
+                                         tr("Minimum needed size"),
+                                         kControlHeight);
+        barsettings::configureSizeButton(m_maximumWidthButton,
+                                         tr("Maximum"),
+                                         tr("Let the selected widget grow to the maximum possible size"),
+                                         tr("Maximum possible size"),
+                                         kControlHeight);
         controlsLayout->addWidget(m_minimumWidthButton);
         controlsLayout->addWidget(m_maximumWidthButton);
         controlsLayout->addWidget(m_expandHeightButton);
@@ -326,6 +242,7 @@ namespace fairwindsk::ui::settings {
             entry.kind = EntryKind::Widget;
             entry.widgetId = definition.id;
             entry.instanceId = definition.id;
+            entry.expandHorizontally = layout::defaultExpandHorizontally(BarId::Top, definition.id);
             paletteEntries.append(entry);
         }
         m_paletteWidget->setEntries(paletteEntries);
@@ -352,27 +269,17 @@ namespace fairwindsk::ui::settings {
         const auto chrome = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), false);
 
         fairwindsk::ui::applySectionTitleLabelStyle(m_titleLabel, configuration, preset, palette(), 18.0);
-        applySecondaryLabelStyle(m_previewLabel, chrome);
-        applySecondaryLabelStyle(m_paletteLabel, chrome);
-
-        if (m_hintLabel) {
-            QPalette hintPalette = m_hintLabel->palette();
-            hintPalette.setColor(QPalette::WindowText, chrome.text);
-            hintPalette.setColor(QPalette::Text, chrome.text);
-            m_hintLabel->setPalette(hintPalette);
-        }
+        barsettings::applySecondaryLabelStyle(m_previewLabel, chrome);
+        barsettings::applySecondaryLabelStyle(m_paletteLabel, chrome);
+        barsettings::applyHintLabelStyle(m_hintLabel, chrome);
         if (m_previewWidget) {
-            m_previewWidget->setStyleSheet(listWidgetChrome(chrome, false));
+            m_previewWidget->setStyleSheet(barsettings::listWidgetChrome(chrome, false));
         }
         if (m_previewFrame) {
-            m_previewFrame->setStyleSheet(previewFrameChrome(chrome));
+            m_previewFrame->setStyleSheet(barsettings::previewFrameChrome(chrome));
         }
         if (m_paletteWidget) {
-            m_paletteWidget->setStyleSheet(QStringLiteral(
-                "QScrollArea { border: 1px solid %1; border-radius: 12px; background: %2; }"
-                "QWidget { background: transparent; }")
-                                               .arg(chrome.border.name(),
-                                                    chrome.window.name()));
+            m_paletteWidget->setStyleSheet(barsettings::paletteChrome(chrome));
         }
 
         if (m_leftShellButton) {
@@ -384,17 +291,11 @@ namespace fairwindsk::ui::settings {
             fairwindsk::ui::applyBottomBarToolButtonChrome(m_rightShellButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(28, 28), 56);
         }
 
-        fairwindsk::ui::applyBottomBarToolButtonChrome(m_minimumWidthButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(), 52);
-        fairwindsk::ui::applyBottomBarToolButtonChrome(m_maximumWidthButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(), 52);
-        if (m_minimumWidthButton) {
-            m_minimumWidthButton->setToolButtonStyle(Qt::ToolButtonTextOnly);
-        }
-        if (m_maximumWidthButton) {
-            m_maximumWidthButton->setToolButtonStyle(Qt::ToolButtonTextOnly);
-        }
-        fairwindsk::ui::applyBottomBarToolButtonChrome(m_expandHeightButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(24, 24), 52);
-        fairwindsk::ui::applyBottomBarToolButtonChrome(m_removeSelectedButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(24, 24), 52);
-        fairwindsk::ui::applyBottomBarToolButtonChrome(m_resetDefaultsButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(24, 24), 52);
+        barsettings::applySizeButtonChrome(m_minimumWidthButton, chrome, 52);
+        barsettings::applySizeButtonChrome(m_maximumWidthButton, chrome, 52);
+        barsettings::applyActionButtonChrome(m_expandHeightButton, chrome, 52);
+        barsettings::applyActionButtonChrome(m_removeSelectedButton, chrome, 52);
+        barsettings::applyActionButtonChrome(m_resetDefaultsButton, chrome, 52);
     }
 
     fairwindsk::ui::layout::LayoutEntry TopBar::entryForPreviewItem(const QListWidgetItem *item) const {
@@ -562,6 +463,7 @@ namespace fairwindsk::ui::settings {
             entry.widgetId = definition.id;
             entry.instanceId = definition.id;
             entry.enabled = false;
+            entry.expandHorizontally = layout::defaultExpandHorizontally(BarId::Top, definition.id);
             entries.append(entry);
         }
 

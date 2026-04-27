@@ -45,6 +45,7 @@
         }
     ],
     "connection": {
+        "active": true,
         "server": ""
     },
     "signalk": {
