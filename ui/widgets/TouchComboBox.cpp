@@ -493,6 +493,10 @@ namespace fairwindsk::ui::widgets {
         const auto *item = m_listWidget->item(m_currentIndex);
         if (!m_editable || item) {
             m_editor->setText(item ? item->text() : QString());
+            if (!m_editable) {
+                m_editor->deselect();
+                m_editor->setCursorPosition(0);
+            }
         }
         if (m_iconLabel) {
             const QPalette activePalette = palette();

@@ -119,17 +119,41 @@ namespace fairwindsk::ui::settings {
         coresLayout->setSpacing(8);
 
         connect(ui->pushButton_Reset, &QPushButton::clicked, this, [this]() {
+            if (!confirmAction(
+                    tr("Reset Settings"),
+                    tr("This will discard the unsaved changes currently shown in Settings and reload the active configuration. FairWindSK will keep running."),
+                    tr("Reset"))) {
+                return;
+            }
             m_settings->resetToCurrentConfiguration();
         });
         connect(ui->pushButton_RestoreDefaults, &QPushButton::clicked, this, [this]() {
+            if (!confirmAction(
+                    tr("Restore Defaults"),
+                    tr("This will replace the current settings with the bundled default configuration, save the defaults, and apply them immediately."),
+                    tr("Restore"))) {
+                return;
+            }
             m_settings->restoreDefaultConfiguration();
         });
         connect(ui->pushButton_Import, &QPushButton::clicked, this, &System::importConfiguration);
         connect(ui->pushButton_Export, &QPushButton::clicked, this, &System::exportConfiguration);
         connect(ui->pushButton_Restart, &QPushButton::clicked, this, [this]() {
+            if (!confirmAction(
+                    tr("Restart FairWindSK"),
+                    tr("This will save and apply the current settings, close FairWindSK, and request a restart from the launcher or service supervisor."),
+                    tr("Restart"))) {
+                return;
+            }
             m_settings->restartApplication();
         });
         connect(ui->pushButton_Quit, &QPushButton::clicked, this, [this]() {
+            if (!confirmAction(
+                    tr("Quit FairWindSK"),
+                    tr("This will save and apply the current settings, then close FairWindSK. Live navigation displays and hosted applications will stop."),
+                    tr("Quit"))) {
+                return;
+            }
             m_settings->quitApplication();
         });
 
@@ -299,6 +323,23 @@ namespace fairwindsk::ui::settings {
         if (layout->count() == m_coreRows.size()) {
             layout->addStretch(1);
         }
+    }
+
+    bool System::confirmAction(const QString &title, const QString &message, const QString &confirmText) {
+        auto *content = new QLabel(message);
+        content->setWordWrap(true);
+        content->setMinimumWidth(360);
+        content->setContentsMargins(12, 12, 12, 12);
+
+        return fairwindsk::ui::drawer::execDrawer(
+            this,
+            title,
+            content,
+            {
+                {tr("Cancel"), int(QMessageBox::Cancel), true},
+                {confirmText, int(QMessageBox::Ok), false}
+            },
+            int(QMessageBox::Cancel)) == int(QMessageBox::Ok);
     }
 
     void System::ensureLoggingSettingsWidgets() {
