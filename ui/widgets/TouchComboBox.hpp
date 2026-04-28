@@ -70,12 +70,16 @@ namespace fairwindsk::ui::widgets {
     private:
         void applyTouchStyle();
         void updateDisplay();
+        void updateDisplayText();
         void positionPopup();
         void ensureCurrentItemVisible() const;
         int popupHeightForItems() const;
 
         Ui::TouchComboBox *ui = nullptr;
         QLineEdit *m_editor = nullptr;
+        QFrame *m_displayFace = nullptr;
+        QLabel *m_displayIconLabel = nullptr;
+        QLabel *m_displayTextLabel = nullptr;
         QFrame *m_popup = nullptr;
         QListWidget *m_listWidget = nullptr;
         QStyledItemDelegate *m_popupDelegate = nullptr;
@@ -83,6 +87,8 @@ namespace fairwindsk::ui::widgets {
         int m_currentIndex = -1;
         bool m_editable = false;
         bool m_accentButton = false;
+        QString m_displayText;
+        QString m_displayFaceStyleSheet;
         QString m_buttonStyleSheet;
         QString m_popupStyleSheet;
     };
