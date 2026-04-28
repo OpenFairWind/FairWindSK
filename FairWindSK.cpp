@@ -6,6 +6,7 @@
 #include <QThread>
 #include <QPluginLoader>
 #include <QDir>
+#include <QDirIterator>
 #include <QCoreApplication>
 #include <QEventLoop>
 #include <QSettings>
@@ -79,6 +80,91 @@ namespace fairwindsk {
 
             return QDir(QFileInfo(defaultConfigFilename()).absolutePath()).filePath(trimmed);
         }
+
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+        QString fallbackWritableDirectory(const QStandardPaths::StandardLocation location, const QString &fallbackName) {
+            QString basePath = QStandardPaths::writableLocation(location);
+            if (basePath.trimmed().isEmpty()) {
+                basePath = QDir(QFileInfo(defaultConfigFilename()).absolutePath()).filePath(fallbackName);
+            }
+            QDir().mkpath(basePath);
+            return basePath;
+        }
+
+        QString webProfileStoragePath() {
+            return QDir(fallbackWritableDirectory(QStandardPaths::AppDataLocation, QStringLiteral("data")))
+                .filePath(QStringLiteral("webengine/profile"));
+        }
+
+        QString webProfileCachePath() {
+            return QDir(fallbackWritableDirectory(QStandardPaths::CacheLocation, QStringLiteral("cache")))
+                .filePath(QStringLiteral("webengine/cache"));
+        }
+
+        bool directoryHasEntries(const QString &path) {
+            const QDir directory(path);
+            return directory.exists() &&
+                   !directory.entryList(QDir::NoDotAndDotDot | QDir::AllEntries | QDir::Hidden | QDir::System).isEmpty();
+        }
+
+        bool copyDirectoryContents(const QString &sourcePath, const QString &destinationPath) {
+            const QDir sourceDirectory(sourcePath);
+            if (!sourceDirectory.exists()) {
+                return false;
+            }
+
+            QDir().mkpath(destinationPath);
+            bool copiedAny = false;
+            QDirIterator iterator(sourcePath,
+                                  QDir::NoDotAndDotDot | QDir::AllEntries | QDir::Hidden | QDir::System,
+                                  QDirIterator::Subdirectories);
+            while (iterator.hasNext()) {
+                const QString sourceEntryPath = iterator.next();
+                const QFileInfo sourceInfo(sourceEntryPath);
+                const QString relativePath = sourceDirectory.relativeFilePath(sourceEntryPath);
+                const QString destinationEntryPath = QDir(destinationPath).filePath(relativePath);
+
+                if (sourceInfo.isDir()) {
+                    QDir().mkpath(destinationEntryPath);
+                    continue;
+                }
+
+                QDir().mkpath(QFileInfo(destinationEntryPath).absolutePath());
+                if (!QFileInfo::exists(destinationEntryPath) && QFile::copy(sourceEntryPath, destinationEntryPath)) {
+                    copiedAny = true;
+                }
+            }
+
+            return copiedAny;
+        }
+
+        void migrateWebProfileDirectory(const QString &legacyPath, const QString &stablePath, const QString &label) {
+            if (legacyPath.trimmed().isEmpty() ||
+                stablePath.trimmed().isEmpty() ||
+                QDir::cleanPath(legacyPath) == QDir::cleanPath(stablePath) ||
+                !QFileInfo::exists(legacyPath) ||
+                directoryHasEntries(stablePath)) {
+                return;
+            }
+
+            if (copyDirectoryContents(legacyPath, stablePath)) {
+                qInfo() << "Migrated WebEngine" << label << "from" << legacyPath << "to" << stablePath;
+            }
+        }
+
+        QString persistentCookiesPolicyName(const QWebEngineProfile::PersistentCookiesPolicy policy) {
+            switch (policy) {
+                case QWebEngineProfile::NoPersistentCookies:
+                    return QStringLiteral("NoPersistentCookies");
+                case QWebEngineProfile::AllowPersistentCookies:
+                    return QStringLiteral("AllowPersistentCookies");
+                case QWebEngineProfile::ForcePersistentCookies:
+                    return QStringLiteral("ForcePersistentCookies");
+            }
+
+            return QStringLiteral("Unknown");
+        }
+#endif
 
         struct UiMetrics {
             int fontPointSize = 12;
@@ -749,11 +835,28 @@ namespace fairwindsk {
         m_configFilename = defaultConfigFilename();
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
-        // Create the WebEngine profile file name
-        auto profileName = QString::fromLatin1("FairWindSK.%1").arg(qWebEngineChromiumVersion());
+        const QString legacyProfileName = QString::fromLatin1("FairWindSK.%1").arg(qWebEngineChromiumVersion());
+        QString legacyStoragePath;
+        QString legacyCachePath;
+        {
+            QWebEngineProfile legacyProfile(legacyProfileName);
+            legacyStoragePath = legacyProfile.persistentStoragePath();
+            legacyCachePath = legacyProfile.cachePath();
+        }
 
-        // Create the WebEngine profile
-        m_profile = new QWebEngineProfile(profileName, this);
+        const QString stableStoragePath = webProfileStoragePath();
+        const QString stableCachePath = webProfileCachePath();
+        migrateWebProfileDirectory(legacyStoragePath, stableStoragePath, QStringLiteral("storage"));
+        migrateWebProfileDirectory(legacyCachePath, stableCachePath, QStringLiteral("cache"));
+
+        m_profile = new QWebEngineProfile(QStringLiteral("FairWindSK"), this);
+        m_profile->setPersistentStoragePath(stableStoragePath);
+        m_profile->setCachePath(stableCachePath);
+        m_profile->setHttpCacheType(QWebEngineProfile::DiskHttpCache);
+        m_profile->setPersistentCookiesPolicy(QWebEngineProfile::ForcePersistentCookies);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+        m_profile->setPersistentPermissionsPolicy(QWebEngineProfile::PersistentPermissionsPolicy::StoreOnDisk);
+#endif
 #endif
 
         if (qApp) {
@@ -852,7 +955,11 @@ namespace fairwindsk {
             // Write a message
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
             if (m_profile) {
-                qDebug() << "QWebEngineProfile " << m_profile->isOffTheRecord() << " data store: " << m_profile->persistentStoragePath();
+                qDebug() << "QWebEngineProfile"
+                         << "offTheRecord=" << m_profile->isOffTheRecord()
+                         << "storage=" << m_profile->persistentStoragePath()
+                         << "cache=" << m_profile->cachePath()
+                         << "cookies=" << persistentCookiesPolicyName(m_profile->persistentCookiesPolicy());
             }
 #endif
 

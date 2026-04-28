@@ -81,6 +81,7 @@ FairWindSK is best understood as five cooperating layers:
    `main.cpp` configures Qt attributes, Linux runtime fallbacks, splash handling, desktop WebEngine or mobile WebView initialization, and deferred startup sequencing.
 2. **Runtime orchestration layer**
    `FairWindSK` owns the configuration, Signal K client, app registry, runtime reconfiguration, comfort preset application, and shared web profile handle.
+   The desktop WebEngine profile must use a stable storage/cache path and `ForcePersistentCookies` so Signal K, Freeboard-SK, and hosted apps keep session login state across FairWindSK restarts.
 3. **Data access layer**
    `Configuration` and `signalk::Client` provide persistent preferences and live vessel/server data.
 4. **Shell and navigation layer**
