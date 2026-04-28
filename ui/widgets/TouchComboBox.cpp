@@ -281,6 +281,7 @@ namespace fairwindsk::ui::widgets {
         m_popupDelegate = new PopupItemDelegate(m_listWidget);
         m_listWidget->setItemDelegate(m_popupDelegate);
         popupLayout->addWidget(m_listWidget);
+        m_popup->hide();
 
         connect(ui->pushButtonPopup, &QPushButton::clicked, this, &TouchComboBox::togglePopup);
         connect(m_listWidget, &QListWidget::itemClicked, this, &TouchComboBox::handleItemClicked);
