@@ -68,6 +68,7 @@ namespace fairwindsk::ui::widgets {
         void handleItemClicked(QListWidgetItem *item);
 
     private:
+        void appendItem(const QIcon &icon, const QString &text, const QVariant &userData, bool hasIcon);
         void applyTouchStyle();
         void updateDisplay();
         void positionPopup();

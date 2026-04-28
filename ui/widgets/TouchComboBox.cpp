@@ -31,6 +31,7 @@
 namespace fairwindsk::ui::widgets {
     namespace {
         constexpr int kRawIconRole = Qt::UserRole + 1;
+        constexpr int kHasIconRole = Qt::UserRole + 2;
         constexpr int kComboIconSize = 30;
         constexpr int kSelectedIconSize = 34;
         constexpr int kSelectedIconPadding = 10;
@@ -312,13 +313,23 @@ namespace fairwindsk::ui::widgets {
     }
 
     void TouchComboBox::addItem(const QString &text, const QVariant &userData) {
-        addItem(QIcon(), text, userData);
+        appendItem(QIcon(), text, userData, false);
     }
 
     void TouchComboBox::addItem(const QIcon &icon, const QString &text, const QVariant &userData) {
-        auto *item = new QListWidgetItem(icon, text, m_listWidget);
+        appendItem(icon, text, userData, !icon.isNull());
+    }
+
+    void TouchComboBox::appendItem(const QIcon &icon,
+                                   const QString &text,
+                                   const QVariant &userData,
+                                   const bool hasIcon) {
+        auto *item = hasIcon
+            ? new QListWidgetItem(icon, text, m_listWidget)
+            : new QListWidgetItem(text, m_listWidget);
         item->setData(Qt::UserRole, userData);
-        item->setData(kRawIconRole, icon);
+        item->setData(kRawIconRole, hasIcon ? QVariant::fromValue(icon) : QVariant());
+        item->setData(kHasIconRole, hasIcon);
         const QFont popupFont = m_editor ? m_editor->font() : font();
         item->setFont(popupFont);
         item->setSizeHint(QSize(item->sizeHint().width(), comboItemHeightForFont(popupFont)));
@@ -560,11 +571,13 @@ namespace fairwindsk::ui::widgets {
                 continue;
             }
 
-            const QIcon rawIcon = qvariant_cast<QIcon>(item->data(kRawIconRole));
             item->setFont(popupFont);
             item->setSizeHint(QSize(item->sizeHint().width(), comboItemHeightForFont(popupFont)));
-            if (!rawIcon.isNull()) {
+            if (item->data(kHasIconRole).toBool()) {
+                const QIcon rawIcon = qvariant_cast<QIcon>(item->data(kRawIconRole));
                 item->setIcon(fairwindsk::ui::tintedIcon(rawIcon, iconColor, QSize(kComboIconSize, kComboIconSize)));
+            } else {
+                item->setIcon(QIcon());
             }
         }
 
@@ -642,7 +655,7 @@ namespace fairwindsk::ui::widgets {
         }
 
         QIcon icon;
-        if (item) {
+        if (item && item->data(kHasIconRole).toBool()) {
             const QIcon rawIcon = qvariant_cast<QIcon>(item->data(kRawIconRole));
             if (!rawIcon.isNull()) {
                 const QPalette activePalette = palette();
