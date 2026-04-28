@@ -36,6 +36,7 @@ namespace fairwindsk::ui::settings {
                 setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
                 setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
                 setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+                setTextElideMode(Qt::ElideRight);
             }
 
         protected:
@@ -102,7 +103,7 @@ namespace fairwindsk::ui::settings {
                                   Qt::ItemIsSelectable |
                                   Qt::ItemIsDragEnabled);
                 newItem->setIcon(WidgetPalette::entryIcon(entry));
-                newItem->setSizeHint(QSize(108, 84));
+                newItem->setSizeHint(QSize(92, 66));
                 insertItem(std::clamp(insertRow, 0, count()), newItem);
                 setCurrentItem(newItem);
                 event->setDropAction(Qt::CopyAction);
@@ -129,37 +130,25 @@ namespace fairwindsk::ui::settings {
         constexpr int kControlHeight = 52;
 
         auto *rootLayout = new QVBoxLayout(this);
-        rootLayout->setContentsMargins(12, 12, 12, 12);
-        rootLayout->setSpacing(12);
-
-        m_titleLabel = new QLabel(layout::barLabel(m_barId), this);
-        rootLayout->addWidget(m_titleLabel);
-
-        m_hintLabel = new QLabel(
-            tr("Tap or drag palette items onto the preview bar, then drag within the preview to reorder. Select a widget to choose whether it keeps the minimum needed size or grows to the maximum possible size."),
-            this);
-        m_hintLabel->setWordWrap(true);
-        rootLayout->addWidget(m_hintLabel);
-
-        m_previewLabel = new QLabel(tr("Preview"), this);
-        rootLayout->addWidget(m_previewLabel);
+        rootLayout->setContentsMargins(8, 8, 8, 8);
+        rootLayout->setSpacing(8);
 
         m_previewFrame = new QFrame(this);
         auto *previewLayout = new QVBoxLayout(m_previewFrame);
-        previewLayout->setContentsMargins(8, 8, 8, 8);
-        previewLayout->setSpacing(8);
+        previewLayout->setContentsMargins(0, 0, 0, 0);
+        previewLayout->setSpacing(0);
 
         m_minimumWidthButton = new QToolButton(this);
         m_maximumWidthButton = new QToolButton(this);
         m_removeSelectedButton = new QToolButton(this);
         m_resetDefaultsButton = new QToolButton(this);
         barsettings::configureSizeButton(m_minimumWidthButton,
-                                         tr("Minimum"),
+                                         QStringLiteral(":/resources/svg/OpenBridge/lcd-minimum.svg"),
                                          tr("Keep the selected widget at the minimum needed size"),
                                          tr("Minimum needed size"),
                                          kControlHeight);
         barsettings::configureSizeButton(m_maximumWidthButton,
-                                         tr("Maximum"),
+                                         QStringLiteral(":/resources/svg/OpenBridge/lcd-maximum.svg"),
                                          tr("Let the selected widget grow to the maximum possible size"),
                                          tr("Maximum possible size"),
                                          kControlHeight);
@@ -184,7 +173,8 @@ namespace fairwindsk::ui::settings {
         m_listWidget->setDropIndicatorShown(true);
         m_listWidget->setSpacing(8);
         m_listWidget->setUniformItemSizes(false);
-        m_listWidget->setMinimumHeight(124);
+        m_listWidget->setIconSize(QSize(30, 30));
+        m_listWidget->setMinimumHeight(84);
         m_listWidget->viewport()->setAttribute(Qt::WA_AcceptTouchEvents, true);
         QScroller::grabGesture(m_listWidget->viewport(), QScroller::TouchGesture);
         QScroller::grabGesture(m_listWidget->viewport(), QScroller::LeftMouseButtonGesture);
@@ -207,9 +197,6 @@ namespace fairwindsk::ui::settings {
         controlsLayout->addWidget(m_resetDefaultsButton);
         controlsLayout->addStretch(1);
         rootLayout->addLayout(controlsLayout);
-
-        m_paletteLabel = new QLabel(tr("Widget Palette"), this);
-        rootLayout->addWidget(m_paletteLabel);
 
         m_paletteWidget = new WidgetPalette(this);
         m_paletteWidget->setToolTip(tr("Tap or drag a palette item to place it on the preview bar."));
@@ -305,26 +292,21 @@ namespace fairwindsk::ui::settings {
         }
 
         const auto entry = entryForItem(item);
-        const QString stateText = entry.kind == EntryKind::Stretch
-                                      ? tr("Elastic")
-                                      : entry.kind == EntryKind::Separator
-                                            ? tr("Divider")
-                                            : layout::horizontalSizeLabel(entry);
-        item->setText(QStringLiteral("%1\n%2").arg(layout::entryLabel(entry), stateText));
+        item->setText(layout::entryLabel(entry));
         item->setIcon(WidgetPalette::entryIcon(entry));
         item->setTextAlignment(Qt::AlignCenter);
         item->setSizeHint(itemSizeHint(entry));
     }
 
     QSize BarLayoutSettings::itemSizeHint(const LayoutEntry &entry) const {
-        int width = entry.expandHorizontally ? 180 : 108;
+        int width = entry.expandHorizontally ? 128 : 92;
         if (entry.kind == EntryKind::Separator) {
-            width = 36;
+            width = 32;
         } else if (entry.kind == EntryKind::Stretch) {
-            width = 180;
+            width = 128;
         }
 
-        return QSize(width, 84);
+        return QSize(width, 66);
     }
 
     LayoutEntry BarLayoutSettings::entryForItem(const QListWidgetItem *item) const {

@@ -45,6 +45,20 @@
         <file>resources/svg/OpenBridge/touch-checkbox-unchecked.svg</file>
         <file>resources/svg/OpenBridge/touch-checkbox-checked.svg</file>
         <file>resources/svg/OpenBridge/touch-checkbox-partial.svg</file>
+        <file>resources/svg/OpenBridge/lcd-btw.svg</file>
+        <file>resources/svg/OpenBridge/lcd-cog.svg</file>
+        <file>resources/svg/OpenBridge/lcd-dpt.svg</file>
+        <file>resources/svg/OpenBridge/lcd-dtg.svg</file>
+        <file>resources/svg/OpenBridge/lcd-eta.svg</file>
+        <file>resources/svg/OpenBridge/lcd-hdg.svg</file>
+        <file>resources/svg/OpenBridge/lcd-maximum.svg</file>
+        <file>resources/svg/OpenBridge/lcd-minimum.svg</file>
+        <file>resources/svg/OpenBridge/lcd-sog.svg</file>
+        <file>resources/svg/OpenBridge/lcd-stw.svg</file>
+        <file>resources/svg/OpenBridge/lcd-ttg.svg</file>
+        <file>resources/svg/OpenBridge/lcd-vmg.svg</file>
+        <file>resources/svg/OpenBridge/lcd-wpt.svg</file>
+        <file>resources/svg/OpenBridge/lcd-xte.svg</file>
 
         <!-- Bottom Apps icons from OpenBridge -->
         <file>resources/svg/OpenBridge/database.svg</file>

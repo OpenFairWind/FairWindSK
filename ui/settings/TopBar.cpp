@@ -44,7 +44,8 @@ namespace fairwindsk::ui::settings {
                 setDropIndicatorShown(true);
                 setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
                 setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-                setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+                setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+                setTextElideMode(Qt::ElideRight);
             }
 
         protected:
@@ -134,32 +135,20 @@ namespace fairwindsk::ui::settings {
         constexpr int kControlHeight = 52;
 
         auto *rootLayout = new QVBoxLayout(this);
-        rootLayout->setContentsMargins(12, 12, 12, 12);
-        rootLayout->setSpacing(12);
-
-        m_titleLabel = new QLabel(tr("Top Bar"), this);
-        rootLayout->addWidget(m_titleLabel);
-
-        m_hintLabel = new QLabel(
-            tr("Drag items from the bottom palette onto the preview bar, then drag within the preview to reorder. The FairWindSK button stays fixed on the left and the current-application button stays fixed on the right. Select a widget to choose whether it keeps the minimum needed size or grows to the maximum possible size."),
-            this);
-        m_hintLabel->setWordWrap(true);
-        rootLayout->addWidget(m_hintLabel);
-
-        m_previewLabel = new QLabel(tr("Preview"), this);
-        rootLayout->addWidget(m_previewLabel);
+        rootLayout->setContentsMargins(8, 8, 8, 8);
+        rootLayout->setSpacing(8);
 
         m_previewFrame = new QFrame(this);
         auto *previewFrameLayout = new QHBoxLayout(m_previewFrame);
-        previewFrameLayout->setContentsMargins(8, 8, 8, 8);
-        previewFrameLayout->setSpacing(8);
+        previewFrameLayout->setContentsMargins(0, 0, 0, 0);
+        previewFrameLayout->setSpacing(6);
 
         m_leftShellButton = new QToolButton(m_previewFrame);
         m_rightShellButton = new QToolButton(m_previewFrame);
         for (auto *button : {m_leftShellButton, m_rightShellButton}) {
             button->setAutoRaise(true);
-            button->setIconSize(QSize(28, 28));
-            button->setMinimumSize(QSize(56, 56));
+            button->setIconSize(QSize(26, 26));
+            button->setMinimumSize(QSize(52, 52));
             button->setToolButtonStyle(Qt::ToolButtonIconOnly);
             button->setEnabled(true);
             button->setFocusPolicy(Qt::NoFocus);
@@ -168,7 +157,9 @@ namespace fairwindsk::ui::settings {
         m_rightShellButton->setToolTip(tr("Fixed current-application shell button"));
 
         m_previewWidget = new PreviewListWidget(m_previewFrame);
-        m_previewWidget->setMinimumHeight(124);
+        m_previewWidget->setSpacing(4);
+        m_previewWidget->setIconSize(QSize(28, 28));
+        m_previewWidget->setMinimumHeight(62);
         m_previewWidget->viewport()->setAttribute(Qt::WA_AcceptTouchEvents, true);
         QScroller::grabGesture(m_previewWidget->viewport(), QScroller::TouchGesture);
         QScroller::grabGesture(m_previewWidget->viewport(), QScroller::LeftMouseButtonGesture);
@@ -202,12 +193,12 @@ namespace fairwindsk::ui::settings {
                                            tr("Reset Defaults"),
                                            kControlHeight);
         barsettings::configureSizeButton(m_minimumWidthButton,
-                                         tr("Minimum"),
+                                         QStringLiteral(":/resources/svg/OpenBridge/lcd-minimum.svg"),
                                          tr("Keep the selected widget at the minimum needed size"),
                                          tr("Minimum needed size"),
                                          kControlHeight);
         barsettings::configureSizeButton(m_maximumWidthButton,
-                                         tr("Maximum"),
+                                         QStringLiteral(":/resources/svg/OpenBridge/lcd-maximum.svg"),
                                          tr("Let the selected widget grow to the maximum possible size"),
                                          tr("Maximum possible size"),
                                          kControlHeight);
@@ -218,9 +209,6 @@ namespace fairwindsk::ui::settings {
         controlsLayout->addWidget(m_resetDefaultsButton);
         controlsLayout->addStretch(1);
         rootLayout->addLayout(controlsLayout);
-
-        m_paletteLabel = new QLabel(tr("Widget Palette"), this);
-        rootLayout->addWidget(m_paletteLabel);
 
         m_paletteWidget = new WidgetPalette(this);
         m_paletteWidget->setToolTip(tr("Tap or drag a palette item to place it on the preview bar."));
@@ -284,11 +272,11 @@ namespace fairwindsk::ui::settings {
 
         if (m_leftShellButton) {
             m_leftShellButton->setIcon(QIcon(QStringLiteral(":/resources/images/mainwindow/fairwind_icon.png")));
-            fairwindsk::ui::applyBottomBarToolButtonChrome(m_leftShellButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(28, 28), 56);
+            fairwindsk::ui::applyBottomBarToolButtonChrome(m_leftShellButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(26, 26), 52);
         }
         if (m_rightShellButton) {
             m_rightShellButton->setIcon(QIcon(QStringLiteral(":/resources/images/icons/apps_icon.png")));
-            fairwindsk::ui::applyBottomBarToolButtonChrome(m_rightShellButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(28, 28), 56);
+            fairwindsk::ui::applyBottomBarToolButtonChrome(m_rightShellButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(26, 26), 52);
         }
 
         barsettings::applySizeButtonChrome(m_minimumWidthButton, chrome, 52);
@@ -338,7 +326,7 @@ namespace fairwindsk::ui::settings {
 
         const auto entry = entryForPreviewItem(item);
         item->setIcon(WidgetPalette::entryIcon(entry));
-        item->setText(QStringLiteral("%1\n%2").arg(layout::entryLabel(entry), itemSummary(entry)));
+        item->setText(layout::entryLabel(entry));
         item->setSizeHint(itemSizeHint(entry));
     }
 
@@ -358,18 +346,18 @@ namespace fairwindsk::ui::settings {
     }
 
     QSize TopBar::itemSizeHint(const LayoutEntry &entry) const {
-        int width = 120;
+        int width = 60;
         if (entry.kind == EntryKind::Separator) {
-            width = 36;
+            width = 24;
         } else if (entry.kind == EntryKind::Stretch) {
-            width = entry.expandHorizontally ? 180 : 120;
+            width = entry.expandHorizontally ? 80 : 60;
         } else if (entry.expandHorizontally) {
-            width = 180;
+            width = 80;
         }
 
-        int height = entry.expandVertically ? 88 : 68;
+        int height = entry.expandVertically ? 58 : 52;
         if (entry.kind == EntryKind::Separator && entry.expandVertically) {
-            height = 96;
+            height = 58;
         }
         return QSize(width, height);
     }
@@ -386,8 +374,7 @@ namespace fairwindsk::ui::settings {
                        Qt::ItemIsSelectable |
                        Qt::ItemIsDragEnabled |
                        Qt::ItemIsDropEnabled);
-        item->setText(QStringLiteral("%1\n%2")
-                          .arg(layout::entryLabel(entry), itemSummary(entry)));
+        item->setText(layout::entryLabel(entry));
         item->setSizeHint(itemSizeHint(entry));
         item->setTextAlignment(Qt::AlignCenter);
         return item;

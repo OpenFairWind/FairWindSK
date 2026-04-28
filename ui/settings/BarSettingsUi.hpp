@@ -18,15 +18,15 @@ namespace fairwindsk::ui::settings::barsettings {
         return QStringLiteral(
             "QListWidget {"
             " border: 1px solid %1;"
-            " border-radius: 12px;"
-            " padding: 8px;"
+            " border-radius: 8px;"
+            " padding: 4px;"
             " background: %2;"
             " }"
             "QListWidget::item {"
-            " margin: 4px;"
-            " padding: 10px 12px;"
+            " margin: 2px;"
+            " padding: 6px 8px;"
             " border: 1px %3 %4;"
-            " border-radius: 10px;"
+            " border-radius: 6px;"
             " background: %5;"
             " color: %6;"
             " }"
@@ -40,7 +40,7 @@ namespace fairwindsk::ui::settings::barsettings {
                  colors.window.name(),
                  dashedItems ? QStringLiteral("dashed") : QStringLiteral("solid"),
                  colors.border.name(),
-                 fairwindsk::ui::comfortAlpha(colors.buttonBackground, dashedItems ? 22 : 32).name(QColor::HexArgb),
+                 fairwindsk::ui::comfortAlpha(colors.buttonBackground, dashedItems ? 12 : 20).name(QColor::HexArgb),
                  colors.text.name(),
                  colors.accentTop.name(),
                  fairwindsk::ui::comfortAlpha(colors.accentTop, 46).name(QColor::HexArgb),
@@ -48,22 +48,19 @@ namespace fairwindsk::ui::settings::barsettings {
     }
 
     inline QString previewFrameChrome(const fairwindsk::ui::ComfortChromeColors &colors) {
+        Q_UNUSED(colors)
         return QStringLiteral(
             "QFrame {"
-            " border: 1px solid %1;"
-            " border-radius: 14px;"
-            " background: %2;"
-            " }")
-            .arg(colors.border.name(),
-                 fairwindsk::ui::comfortAlpha(colors.buttonBackground, 18).name(QColor::HexArgb));
+            " border: none;"
+            " background: transparent;"
+            " }");
     }
 
     inline QString paletteChrome(const fairwindsk::ui::ComfortChromeColors &colors) {
+        Q_UNUSED(colors)
         return QStringLiteral(
-            "QScrollArea { border: 1px solid %1; border-radius: 12px; background: %2; }"
-            "QWidget { background: transparent; }")
-            .arg(colors.border.name(),
-                 colors.window.name());
+            "QScrollArea { border: none; background: transparent; }"
+            "QWidget { background: transparent; }");
     }
 
     inline void applySecondaryLabelStyle(QLabel *label,
@@ -96,7 +93,7 @@ namespace fairwindsk::ui::settings::barsettings {
     }
 
     inline void configureSizeButton(QToolButton *button,
-                                    const QString &text,
+                                    const QString &iconPath,
                                     const QString &toolTip,
                                     const QString &accessibleName,
                                     const int controlHeight) {
@@ -106,13 +103,14 @@ namespace fairwindsk::ui::settings::barsettings {
 
         button->setCheckable(true);
         button->setAutoRaise(true);
-        button->setText(text);
+        button->setIcon(QIcon(iconPath));
+        button->setIconSize(QSize(28, 28));
         button->setToolTip(toolTip);
         button->setStatusTip(toolTip);
         button->setAccessibleName(accessibleName);
-        button->setMinimumSize(QSize(132, controlHeight));
+        button->setMinimumSize(QSize(controlHeight, controlHeight));
         button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-        button->setToolButtonStyle(Qt::ToolButtonTextOnly);
+        button->setToolButtonStyle(Qt::ToolButtonIconOnly);
     }
 
     inline void configureActionButton(QToolButton *button,
@@ -143,10 +141,10 @@ namespace fairwindsk::ui::settings::barsettings {
             button,
             colors,
             fairwindsk::ui::BottomBarButtonChrome::Flat,
-            QSize(),
+            QSize(28, 28),
             controlHeight);
         if (button) {
-            button->setToolButtonStyle(Qt::ToolButtonTextOnly);
+            button->setToolButtonStyle(Qt::ToolButtonIconOnly);
         }
     }
 

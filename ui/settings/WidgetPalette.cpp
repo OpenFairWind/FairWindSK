@@ -19,9 +19,9 @@ namespace fairwindsk::ui::settings {
 
         constexpr auto kWidgetPaletteMimeType = "application/x-fairwindsk-widget-palette-entry";
         constexpr int kPaletteRowCount = 3;
-        constexpr int kButtonWidth = 72;
-        constexpr int kButtonHeight = 72;
-        constexpr int kIconSize = 34;
+        constexpr int kButtonWidth = 66;
+        constexpr int kButtonHeight = 60;
+        constexpr int kIconSize = 30;
 
         class PalettePushButton final : public QPushButton {
         public:
@@ -65,10 +65,53 @@ namespace fairwindsk::ui::settings {
             QPoint m_dragStartPosition;
         };
 
-        QIcon iconForWidgetId(const QString &widgetId) {
-            const QString genericNavigationIcon = QStringLiteral(":/resources/svg/OpenBridge/navigation-route.svg");
+        QString lcdMetricIconPath(const QString &widgetId) {
+            if (widgetId == QStringLiteral("cog")) {
+                return QStringLiteral(":/resources/svg/OpenBridge/lcd-cog.svg");
+            }
+            if (widgetId == QStringLiteral("sog")) {
+                return QStringLiteral(":/resources/svg/OpenBridge/lcd-sog.svg");
+            }
+            if (widgetId == QStringLiteral("hdg")) {
+                return QStringLiteral(":/resources/svg/OpenBridge/lcd-hdg.svg");
+            }
+            if (widgetId == QStringLiteral("stw")) {
+                return QStringLiteral(":/resources/svg/OpenBridge/lcd-stw.svg");
+            }
+            if (widgetId == QStringLiteral("dpt")) {
+                return QStringLiteral(":/resources/svg/OpenBridge/lcd-dpt.svg");
+            }
+            if (widgetId == QStringLiteral("wpt")) {
+                return QStringLiteral(":/resources/svg/OpenBridge/lcd-wpt.svg");
+            }
+            if (widgetId == QStringLiteral("btw")) {
+                return QStringLiteral(":/resources/svg/OpenBridge/lcd-btw.svg");
+            }
+            if (widgetId == QStringLiteral("dtg")) {
+                return QStringLiteral(":/resources/svg/OpenBridge/lcd-dtg.svg");
+            }
+            if (widgetId == QStringLiteral("ttg")) {
+                return QStringLiteral(":/resources/svg/OpenBridge/lcd-ttg.svg");
+            }
+            if (widgetId == QStringLiteral("eta")) {
+                return QStringLiteral(":/resources/svg/OpenBridge/lcd-eta.svg");
+            }
+            if (widgetId == QStringLiteral("xte")) {
+                return QStringLiteral(":/resources/svg/OpenBridge/lcd-xte.svg");
+            }
+            if (widgetId == QStringLiteral("vmg")) {
+                return QStringLiteral(":/resources/svg/OpenBridge/lcd-vmg.svg");
+            }
+            return {};
+        }
 
-            if (widgetId == QStringLiteral("position") || widgetId == QStringLiteral("wpt")) {
+        QIcon iconForWidgetId(const QString &widgetId) {
+            const QString lcdMetricIcon = lcdMetricIconPath(widgetId);
+            if (!lcdMetricIcon.isEmpty()) {
+                return QIcon(lcdMetricIcon);
+            }
+
+            if (widgetId == QStringLiteral("position")) {
                 return QIcon(QStringLiteral(":/resources/svg/OpenBridge/waypoint-optional-iec.svg"));
             }
             if (widgetId == QStringLiteral("open_apps") ||
@@ -94,19 +137,8 @@ namespace fairwindsk::ui::settings {
             if (widgetId == QStringLiteral("settings")) {
                 return QIcon(QStringLiteral(":/resources/svg/OpenBridge/settings-iec.svg"));
             }
-            if (widgetId == QStringLiteral("clock_icons") ||
-                widgetId == QStringLiteral("cog") ||
-                widgetId == QStringLiteral("sog") ||
-                widgetId == QStringLiteral("hdg") ||
-                widgetId == QStringLiteral("stw") ||
-                widgetId == QStringLiteral("dpt") ||
-                widgetId == QStringLiteral("btw") ||
-                widgetId == QStringLiteral("dtg") ||
-                widgetId == QStringLiteral("ttg") ||
-                widgetId == QStringLiteral("eta") ||
-                widgetId == QStringLiteral("xte") ||
-                widgetId == QStringLiteral("vmg")) {
-                return QIcon(genericNavigationIcon);
+            if (widgetId == QStringLiteral("clock_icons")) {
+                return QIcon(QStringLiteral(":/resources/svg/OpenBridge/navigation-route.svg"));
             }
 
             return {};
@@ -136,8 +168,8 @@ namespace fairwindsk::ui::settings {
             return QStringLiteral(
                 "QPushButton {"
                 " text-align: center;"
-                " padding: 8px;"
-                " border-radius: 14px;"
+                " padding: 6px;"
+                " border-radius: 8px;"
                 " border: 1px solid %1;"
                 " background: %2;"
                 " color: %3;"
@@ -180,8 +212,8 @@ namespace fairwindsk::ui::settings {
         m_container->setLayout(m_layout);
         setWidget(m_container);
 
-        setMinimumHeight((kPaletteRowCount * kButtonHeight) + 24);
-        setMaximumHeight((kPaletteRowCount * kButtonHeight) + 24);
+        setMinimumHeight((kPaletteRowCount * kButtonHeight) + 36);
+        setMaximumHeight((kPaletteRowCount * kButtonHeight) + 36);
     }
 
     QString WidgetPalette::mimeType() {
