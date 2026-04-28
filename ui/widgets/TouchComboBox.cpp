@@ -15,6 +15,7 @@
 #include <QPixmap>
 #include <QPushButton>
 #include <QScreen>
+#include <QSignalBlocker>
 #include <QSizePolicy>
 #include <QStyledItemDelegate>
 #include <QStyleOptionViewItem>
@@ -192,6 +193,8 @@ namespace fairwindsk::ui::widgets {
 
         m_displayFace = new QFrame(this);
         m_displayFace->setObjectName(QStringLiteral("frame_touchComboBoxFace"));
+        m_displayFace->setAttribute(Qt::WA_StyledBackground, true);
+        m_displayFace->setFrameShape(QFrame::StyledPanel);
         m_displayFace->setMinimumHeight(m_editor->minimumHeight());
         m_displayFace->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
         m_displayFace->setFocusPolicy(Qt::NoFocus);
@@ -407,10 +410,13 @@ namespace fairwindsk::ui::widgets {
             m_editor->setReadOnly(!editable);
             m_editor->setFocusPolicy(editable ? Qt::StrongFocus : Qt::NoFocus);
             m_editor->setAttribute(Qt::WA_InputMethodEnabled, editable);
+            m_editor->setEnabled(isEnabled() && editable);
             m_editor->setVisible(editable);
             if (!editable) {
                 m_editor->clearFocus();
                 m_editor->deselect();
+                const QSignalBlocker blocker(m_editor);
+                m_editor->clear();
             }
         }
         if (m_displayFace) {
@@ -431,7 +437,10 @@ namespace fairwindsk::ui::widgets {
     void TouchComboBox::setEnabled(const bool enabled) {
         QWidget::setEnabled(enabled);
         if (m_editor) {
-            m_editor->setEnabled(enabled);
+            m_editor->setEnabled(enabled && m_editable);
+        }
+        if (m_displayFace) {
+            m_displayFace->setEnabled(enabled);
         }
         if (ui && ui->pushButtonPopup) {
             ui->pushButtonPopup->setEnabled(enabled);
@@ -585,12 +594,11 @@ namespace fairwindsk::ui::widgets {
 
         const auto *item = m_listWidget->item(m_currentIndex);
         m_displayText = item ? item->text() : QString();
-        if (!m_editable || item) {
+        if (m_editable && item) {
             m_editor->setText(m_displayText);
-            if (!m_editable) {
-                m_editor->deselect();
-                m_editor->setCursorPosition(0);
-            }
+        } else if (!m_editable && !m_editor->text().isEmpty()) {
+            const QSignalBlocker blocker(m_editor);
+            m_editor->clear();
         }
         updateDisplayText();
 
