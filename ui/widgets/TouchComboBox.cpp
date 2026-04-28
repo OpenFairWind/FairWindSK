@@ -15,6 +15,7 @@
 #include <QListWidget>
 #include <QMouseEvent>
 #include <QPalette>
+#include <QPainter>
 #include <QPixmap>
 #include <QPushButton>
 #include <QScreen>
@@ -109,45 +110,6 @@ namespace fairwindsk::ui::widgets {
                      palette.color(QPalette::HighlightedText).name());
         }
 
-        QString displayFaceStyle(const QPalette &palette) {
-            const QColor base = palette.color(QPalette::Base);
-            const QColor text = fairwindsk::ui::bestContrastingColor(
-                base,
-                {palette.color(QPalette::Text),
-                 palette.color(QPalette::ButtonText),
-                 palette.color(QPalette::WindowText),
-                 QColor(Qt::white),
-                 QColor(Qt::black)});
-            const QColor border = palette.color(QPalette::Mid);
-            const QColor disabledBase = palette.color(QPalette::AlternateBase);
-            const QColor disabledText = palette.color(QPalette::Disabled, QPalette::Text);
-            const QColor disabledBorder = palette.color(QPalette::Disabled, QPalette::Mid);
-
-            return QStringLiteral(
-                "QFrame#frame_touchComboBoxFace {"
-                " background: %1;"
-                " color: %2;"
-                " border: 1px solid %3;"
-                " border-radius: 6px;"
-                " }"
-                "QFrame#frame_touchComboBoxFace:disabled {"
-                " background: %4;"
-                " color: %5;"
-                " border-color: %6;"
-                " }"
-                "QLabel#label_touchComboBoxIcon,"
-                "QLabel#label_touchComboBoxText {"
-                " background: transparent;"
-                " color: %2;"
-                " border: none;"
-                " }"
-                "QFrame#frame_touchComboBoxFace:disabled QLabel {"
-                " color: %5;"
-                " }")
-                .arg(base.name(), text.name(), border.name(),
-                     disabledBase.name(), disabledText.name(), disabledBorder.name());
-        }
-
         QColor comboForegroundColor(const QPalette &palette) {
             return fairwindsk::ui::bestContrastingColor(
                 palette.color(QPalette::Base),
@@ -188,6 +150,85 @@ namespace fairwindsk::ui::widgets {
         private:
             QFont m_popupFont;
         };
+
+        class ComboDisplayFace final : public QWidget {
+        public:
+            explicit ComboDisplayFace(QWidget *parent = nullptr)
+                : QWidget(parent) {
+                setAttribute(Qt::WA_OpaquePaintEvent, true);
+                setAttribute(Qt::WA_StyledBackground, false);
+            }
+
+            void setDisplayText(const QString &text) {
+                if (m_text == text) {
+                    return;
+                }
+                m_text = text;
+                update();
+            }
+
+            void setDisplayIcon(const QIcon &icon) {
+                m_icon = icon;
+                update();
+            }
+
+            void setChrome(const QPalette &palette) {
+                const QColor base = palette.color(QPalette::Base);
+                m_baseColor = base;
+                m_textColor = fairwindsk::ui::bestContrastingColor(
+                    base,
+                    {palette.color(QPalette::Text),
+                     palette.color(QPalette::ButtonText),
+                     palette.color(QPalette::WindowText),
+                     QColor(Qt::white),
+                     QColor(Qt::black)});
+                m_borderColor = palette.color(QPalette::Mid);
+                m_disabledBaseColor = palette.color(QPalette::AlternateBase);
+                m_disabledTextColor = palette.color(QPalette::Disabled, QPalette::Text);
+                m_disabledBorderColor = palette.color(QPalette::Disabled, QPalette::Mid);
+                update();
+            }
+
+        protected:
+            void paintEvent(QPaintEvent *) override {
+                QPainter painter(this);
+                painter.setRenderHint(QPainter::Antialiasing, true);
+
+                const bool active = isEnabled();
+                const QColor base = active ? m_baseColor : m_disabledBaseColor;
+                const QColor text = active ? m_textColor : m_disabledTextColor;
+                const QColor border = active ? m_borderColor : m_disabledBorderColor;
+                const QRectF fieldRect = QRectF(rect()).adjusted(0.5, 0.5, -0.5, -0.5);
+
+                painter.setPen(QPen(border, 1));
+                painter.setBrush(base);
+                painter.drawRoundedRect(fieldRect, 6.0, 6.0);
+
+                int textLeft = 8;
+                if (!m_icon.isNull()) {
+                    const QSize iconSize(kSelectedIconSize, kSelectedIconSize);
+                    const int iconY = qMax(0, (height() - iconSize.height()) / 2);
+                    m_icon.paint(&painter, QRect(QPoint(8, iconY), iconSize), Qt::AlignCenter);
+                    textLeft += iconSize.width() + 8;
+                }
+
+                const QRect textRect = rect().adjusted(textLeft, 0, -8, 0);
+                painter.setPen(text);
+                painter.drawText(textRect,
+                                 Qt::AlignLeft | Qt::AlignVCenter,
+                                 painter.fontMetrics().elidedText(m_text, Qt::ElideRight, textRect.width()));
+            }
+
+        private:
+            QString m_text;
+            QIcon m_icon;
+            QColor m_baseColor;
+            QColor m_textColor;
+            QColor m_borderColor;
+            QColor m_disabledBaseColor;
+            QColor m_disabledTextColor;
+            QColor m_disabledBorderColor;
+        };
     }
 
     TouchComboBox::TouchComboBox(QWidget *parent)
@@ -203,35 +244,12 @@ namespace fairwindsk::ui::widgets {
         m_editor->hide();
         m_editor->setParent(nullptr);
 
-        m_displayFace = new QFrame(this);
+        m_displayFace = new ComboDisplayFace(this);
         m_displayFace->setObjectName(QStringLiteral("frame_touchComboBoxFace"));
-        m_displayFace->setAttribute(Qt::WA_StyledBackground, true);
-        m_displayFace->setFrameShape(QFrame::StyledPanel);
         m_displayFace->setMinimumHeight(m_editor->minimumHeight());
         m_displayFace->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
         m_displayFace->setFocusPolicy(Qt::NoFocus);
         m_displayFace->installEventFilter(this);
-
-        auto *displayLayout = new QHBoxLayout(m_displayFace);
-        displayLayout->setContentsMargins(8, 0, 8, 0);
-        displayLayout->setSpacing(8);
-
-        m_displayIconLabel = new QLabel(m_displayFace);
-        m_displayIconLabel->setObjectName(QStringLiteral("label_touchComboBoxIcon"));
-        m_displayIconLabel->setFixedSize(kSelectedIconSize, kSelectedIconSize);
-        m_displayIconLabel->setAlignment(Qt::AlignCenter);
-        m_displayIconLabel->installEventFilter(this);
-        m_displayIconLabel->hide();
-        displayLayout->addWidget(m_displayIconLabel, 0, Qt::AlignVCenter);
-
-        m_displayTextLabel = new QLabel(m_displayFace);
-        m_displayTextLabel->setObjectName(QStringLiteral("label_touchComboBoxText"));
-        m_displayTextLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-        m_displayTextLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-        m_displayTextLabel->setTextInteractionFlags(Qt::NoTextInteraction);
-        m_displayTextLabel->installEventFilter(this);
-        displayLayout->addWidget(m_displayTextLabel, 1);
-
         ui->horizontalLayout->insertWidget(0, m_displayFace, 1);
 
         m_iconLabel = new QLabel(m_editor);
@@ -522,16 +540,12 @@ namespace fairwindsk::ui::widgets {
             }
         }
         if (m_displayFace) {
-            const QString faceStyleSheet = displayFaceStyle(activePalette);
-            if (m_displayFaceStyleSheet != faceStyleSheet) {
-                m_displayFaceStyleSheet = faceStyleSheet;
-                m_displayFace->setStyleSheet(m_displayFaceStyleSheet);
-            }
+            static_cast<ComboDisplayFace *>(m_displayFace)->setChrome(activePalette);
         }
 
         const QFont popupFont = m_editor ? m_editor->font() : font();
-        if (m_displayTextLabel) {
-            m_displayTextLabel->setFont(popupFont);
+        if (m_displayFace) {
+            m_displayFace->setFont(popupFont);
         }
         m_listWidget->setFont(popupFont);
         m_listWidget->setIconSize(QSize(kComboIconSize, kComboIconSize));
@@ -558,9 +572,7 @@ namespace fairwindsk::ui::widgets {
     }
 
     bool TouchComboBox::eventFilter(QObject *watched, QEvent *event) {
-        const bool displayWatched = watched == m_displayFace
-            || watched == m_displayIconLabel
-            || watched == m_displayTextLabel;
+        const bool displayWatched = watched == m_displayFace;
 
         if ((watched == m_editor || displayWatched) && event && event->type() == QEvent::MouseButtonRelease) {
             const auto *mouseEvent = static_cast<QMouseEvent *>(event);
@@ -586,7 +598,6 @@ namespace fairwindsk::ui::widgets {
         if (m_popup && m_popup->isVisible()) {
             positionPopup();
         }
-        updateDisplayText();
     }
 
     void TouchComboBox::togglePopup() {
@@ -629,7 +640,6 @@ namespace fairwindsk::ui::widgets {
             const QSignalBlocker blocker(m_editor);
             m_editor->clear();
         }
-        updateDisplayText();
 
         QIcon icon;
         if (item) {
@@ -654,32 +664,16 @@ namespace fairwindsk::ui::widgets {
                 m_editor->setTextMargins(8, 0, 8, 0);
             }
         }
-        if (m_displayIconLabel) {
-            if (!icon.isNull()) {
-                m_displayIconLabel->setPixmap(icon.pixmap(QSize(kSelectedIconSize, kSelectedIconSize)));
-                m_displayIconLabel->show();
-            } else {
-                m_displayIconLabel->clear();
-                m_displayIconLabel->hide();
-            }
+        if (m_displayFace) {
+            auto *face = static_cast<ComboDisplayFace *>(m_displayFace);
+            face->setDisplayText(m_displayText);
+            face->setDisplayIcon(icon);
         }
         if (item) {
             m_listWidget->setCurrentRow(m_currentIndex);
         } else {
             m_listWidget->clearSelection();
         }
-    }
-
-    void TouchComboBox::updateDisplayText() {
-        if (!m_displayTextLabel) {
-            return;
-        }
-
-        const int textWidth = qMax(0, m_displayTextLabel->width() - 2);
-        const QString text = textWidth > 0
-            ? QFontMetrics(m_displayTextLabel->font()).elidedText(m_displayText, Qt::ElideRight, textWidth)
-            : m_displayText;
-        m_displayTextLabel->setText(text);
     }
 
     void TouchComboBox::positionPopup() {
