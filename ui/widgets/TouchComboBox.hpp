@@ -87,6 +87,7 @@ namespace fairwindsk::ui::widgets {
         int m_currentIndex = -1;
         bool m_editable = false;
         bool m_accentButton = false;
+        bool m_editorInLayout = false;
         QString m_displayText;
         QString m_displayFaceStyleSheet;
         QString m_buttonStyleSheet;

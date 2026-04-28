@@ -7,6 +7,9 @@
 #include <QEvent>
 #include <QFrame>
 #include <QFontMetrics>
+#include <QGuiApplication>
+#include <QHBoxLayout>
+#include <QInputMethod>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
@@ -108,7 +111,13 @@ namespace fairwindsk::ui::widgets {
 
         QString displayFaceStyle(const QPalette &palette) {
             const QColor base = palette.color(QPalette::Base);
-            const QColor text = palette.color(QPalette::Text);
+            const QColor text = fairwindsk::ui::bestContrastingColor(
+                base,
+                {palette.color(QPalette::Text),
+                 palette.color(QPalette::ButtonText),
+                 palette.color(QPalette::WindowText),
+                 QColor(Qt::white),
+                 QColor(Qt::black)});
             const QColor border = palette.color(QPalette::Mid);
             const QColor disabledBase = palette.color(QPalette::AlternateBase);
             const QColor disabledText = palette.color(QPalette::Disabled, QPalette::Text);
@@ -190,6 +199,9 @@ namespace fairwindsk::ui::widgets {
         m_editor->setObjectName(QStringLiteral("lineEdit_touchComboBox"));
         m_editor->installEventFilter(this);
         m_editor->setAttribute(Qt::WA_InputMethodEnabled, false);
+        ui->horizontalLayout->removeWidget(m_editor);
+        m_editor->hide();
+        m_editor->setParent(nullptr);
 
         m_displayFace = new QFrame(this);
         m_displayFace->setObjectName(QStringLiteral("frame_touchComboBoxFace"));
@@ -264,6 +276,9 @@ namespace fairwindsk::ui::widgets {
     TouchComboBox::~TouchComboBox() {
         delete m_popup;
         m_popup = nullptr;
+        delete m_editor;
+        m_editor = nullptr;
+        m_iconLabel = nullptr;
         delete ui;
         ui = nullptr;
     }
@@ -407,6 +422,11 @@ namespace fairwindsk::ui::widgets {
     void TouchComboBox::setEditable(const bool editable) {
         m_editable = editable;
         if (m_editor) {
+            if (editable && !m_editorInLayout) {
+                m_editor->setParent(this);
+                ui->horizontalLayout->insertWidget(0, m_editor, 1);
+                m_editorInLayout = true;
+            }
             m_editor->setReadOnly(!editable);
             m_editor->setFocusPolicy(editable ? Qt::StrongFocus : Qt::NoFocus);
             m_editor->setAttribute(Qt::WA_InputMethodEnabled, editable);
@@ -417,6 +437,15 @@ namespace fairwindsk::ui::widgets {
                 m_editor->deselect();
                 const QSignalBlocker blocker(m_editor);
                 m_editor->clear();
+                if (auto *inputMethod = QGuiApplication::inputMethod()) {
+                    inputMethod->reset();
+                    inputMethod->hide();
+                }
+                if (m_editorInLayout) {
+                    ui->horizontalLayout->removeWidget(m_editor);
+                    m_editorInLayout = false;
+                }
+                m_editor->setParent(nullptr);
             }
         }
         if (m_displayFace) {
