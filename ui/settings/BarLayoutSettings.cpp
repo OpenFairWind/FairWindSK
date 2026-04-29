@@ -306,6 +306,7 @@ namespace fairwindsk::ui::settings {
             return;
         }
 
+        const QSignalBlocker blocker(m_listWidget);
         const auto entry = entryForItem(item);
         item->setText(barsettings::previewEntryText(entry));
         item->setIcon(WidgetPalette::entryIcon(entry));
@@ -458,7 +459,7 @@ namespace fairwindsk::ui::settings {
     }
 
     void BarLayoutSettings::onItemChanged(QListWidgetItem *item) {
-        refreshPreviewItem(item);
+        Q_UNUSED(item)
         persistToConfiguration();
         updateActions();
     }
