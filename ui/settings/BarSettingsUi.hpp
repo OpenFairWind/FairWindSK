@@ -11,8 +11,31 @@
 #include <QToolButton>
 
 #include "ui/IconUtils.hpp"
+#include "ui/layout/BarLayout.hpp"
 
 namespace fairwindsk::ui::settings::barsettings {
+    inline QString previewEntryText(const fairwindsk::ui::layout::LayoutEntry &entry) {
+        using fairwindsk::ui::layout::EntryKind;
+
+        if (entry.kind == EntryKind::Separator || entry.kind == EntryKind::Stretch) {
+            return {};
+        }
+        if (entry.widgetId == QStringLiteral("current_context")) {
+            return QObject::tr("APP");
+        }
+        if (entry.widgetId == QStringLiteral("clock_icons")) {
+            return QObject::tr("Clock");
+        }
+        if (entry.widgetId == QStringLiteral("open_apps")) {
+            return QObject::tr("Apps");
+        }
+        if (entry.widgetId == QStringLiteral("signalk_status")) {
+            return QObject::tr("Signal K");
+        }
+
+        return fairwindsk::ui::layout::entryLabel(entry);
+    }
+
     inline QString listWidgetChrome(const fairwindsk::ui::ComfortChromeColors &colors,
                                     const bool dashedItems = false) {
         return QStringLiteral(
@@ -104,7 +127,7 @@ namespace fairwindsk::ui::settings::barsettings {
         button->setCheckable(true);
         button->setAutoRaise(true);
         button->setIcon(QIcon(iconPath));
-        button->setIconSize(QSize(28, 28));
+        button->setIconSize(QSize(30, 30));
         button->setToolTip(toolTip);
         button->setStatusTip(toolTip);
         button->setAccessibleName(accessibleName);
@@ -125,7 +148,7 @@ namespace fairwindsk::ui::settings::barsettings {
         button->setCheckable(checkable);
         button->setAutoRaise(true);
         button->setIcon(QIcon(iconPath));
-        button->setIconSize(QSize(24, 24));
+        button->setIconSize(QSize(28, 28));
         button->setToolTip(toolTip);
         button->setStatusTip(toolTip);
         button->setAccessibleName(toolTip);
@@ -140,11 +163,12 @@ namespace fairwindsk::ui::settings::barsettings {
         fairwindsk::ui::applyBottomBarToolButtonChrome(
             button,
             colors,
-            fairwindsk::ui::BottomBarButtonChrome::Flat,
-            QSize(28, 28),
+            fairwindsk::ui::BottomBarButtonChrome::Accent,
+            QSize(30, 30),
             controlHeight);
         if (button) {
             button->setToolButtonStyle(Qt::ToolButtonIconOnly);
+            fairwindsk::ui::applyTintedButtonIcon(button, colors.text, QSize(30, 30));
         }
     }
 
@@ -154,9 +178,13 @@ namespace fairwindsk::ui::settings::barsettings {
         fairwindsk::ui::applyBottomBarToolButtonChrome(
             button,
             colors,
-            fairwindsk::ui::BottomBarButtonChrome::Flat,
-            QSize(24, 24),
+            fairwindsk::ui::BottomBarButtonChrome::Accent,
+            QSize(28, 28),
             controlHeight);
+        if (button) {
+            button->setToolButtonStyle(Qt::ToolButtonIconOnly);
+            fairwindsk::ui::applyTintedButtonIcon(button, colors.text, QSize(28, 28));
+        }
     }
 }
 

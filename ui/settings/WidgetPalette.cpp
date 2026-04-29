@@ -21,7 +21,7 @@ namespace fairwindsk::ui::settings {
         constexpr int kPaletteRowCount = 3;
         constexpr int kButtonWidth = 66;
         constexpr int kButtonHeight = 60;
-        constexpr int kIconSize = 30;
+        constexpr int kIconSize = 36;
 
         class PalettePushButton final : public QPushButton {
         public:
@@ -69,6 +69,9 @@ namespace fairwindsk::ui::settings {
             if (widgetId == QStringLiteral("cog")) {
                 return QStringLiteral(":/resources/svg/OpenBridge/lcd-cog.svg");
             }
+            if (widgetId == QStringLiteral("position")) {
+                return QStringLiteral(":/resources/svg/OpenBridge/lcd-position.svg");
+            }
             if (widgetId == QStringLiteral("sog")) {
                 return QStringLiteral(":/resources/svg/OpenBridge/lcd-sog.svg");
             }
@@ -102,6 +105,12 @@ namespace fairwindsk::ui::settings {
             if (widgetId == QStringLiteral("vmg")) {
                 return QStringLiteral(":/resources/svg/OpenBridge/lcd-vmg.svg");
             }
+            if (widgetId == QStringLiteral("current_context")) {
+                return QStringLiteral(":/resources/svg/OpenBridge/lcd-app.svg");
+            }
+            if (widgetId == QStringLiteral("clock_icons")) {
+                return QStringLiteral(":/resources/svg/OpenBridge/lcd-clock.svg");
+            }
             return {};
         }
 
@@ -111,12 +120,8 @@ namespace fairwindsk::ui::settings {
                 return QIcon(lcdMetricIcon);
             }
 
-            if (widgetId == QStringLiteral("position")) {
-                return QIcon(QStringLiteral(":/resources/svg/OpenBridge/waypoint-optional-iec.svg"));
-            }
             if (widgetId == QStringLiteral("open_apps") ||
-                widgetId == QStringLiteral("apps") ||
-                widgetId == QStringLiteral("current_context")) {
+                widgetId == QStringLiteral("apps")) {
                 return QIcon(QStringLiteral(":/resources/svg/OpenBridge/applications.svg"));
             }
             if (widgetId == QStringLiteral("mydata") || widgetId == QStringLiteral("signalk_status")) {
@@ -137,10 +142,6 @@ namespace fairwindsk::ui::settings {
             if (widgetId == QStringLiteral("settings")) {
                 return QIcon(QStringLiteral(":/resources/svg/OpenBridge/settings-iec.svg"));
             }
-            if (widgetId == QStringLiteral("clock_icons")) {
-                return QIcon(QStringLiteral(":/resources/svg/OpenBridge/navigation-route.svg"));
-            }
-
             return {};
         }
 
@@ -306,6 +307,8 @@ namespace fairwindsk::ui::settings {
                                                  .arg(layout::entryLabel(paletteButton.entry),
                                                       descriptionForEntry(paletteButton.entry, active)));
         }
+
+        applyChrome();
     }
 
     void WidgetPalette::applyChrome() {
@@ -322,7 +325,8 @@ namespace fairwindsk::ui::settings {
 
             paletteButton.button->setStyleSheet(styleSheet);
             if (!paletteButton.button->icon().isNull()) {
-                fairwindsk::ui::applyTintedButtonIcon(paletteButton.button, chrome.icon, QSize(kIconSize, kIconSize));
+                const QColor iconColor = paletteButton.button->isChecked() ? chrome.accentText : chrome.text;
+                fairwindsk::ui::applyTintedButtonIcon(paletteButton.button, iconColor, QSize(kIconSize, kIconSize));
             }
         }
     }

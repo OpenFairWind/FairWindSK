@@ -12,6 +12,7 @@
 #include <QMimeData>
 #include <QScroller>
 #include <QScrollerProperties>
+#include <QSizePolicy>
 #include <QSignalBlocker>
 #include <QUuid>
 #include <QVBoxLayout>
@@ -139,6 +140,8 @@ namespace fairwindsk::ui::settings {
         rootLayout->setSpacing(8);
 
         m_previewFrame = new QFrame(this);
+        m_previewFrame->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        m_previewFrame->setMaximumHeight(58);
         auto *previewFrameLayout = new QHBoxLayout(m_previewFrame);
         previewFrameLayout->setContentsMargins(0, 0, 0, 0);
         previewFrameLayout->setSpacing(6);
@@ -149,6 +152,7 @@ namespace fairwindsk::ui::settings {
             button->setAutoRaise(true);
             button->setIconSize(QSize(26, 26));
             button->setMinimumSize(QSize(52, 52));
+            button->setMaximumSize(QSize(52, 52));
             button->setToolButtonStyle(Qt::ToolButtonIconOnly);
             button->setEnabled(true);
             button->setFocusPolicy(Qt::NoFocus);
@@ -158,8 +162,10 @@ namespace fairwindsk::ui::settings {
 
         m_previewWidget = new PreviewListWidget(m_previewFrame);
         m_previewWidget->setSpacing(4);
-        m_previewWidget->setIconSize(QSize(28, 28));
-        m_previewWidget->setMinimumHeight(62);
+        m_previewWidget->setIconSize(QSize(26, 26));
+        m_previewWidget->setMinimumHeight(58);
+        m_previewWidget->setMaximumHeight(58);
+        m_previewWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         m_previewWidget->viewport()->setAttribute(Qt::WA_AcceptTouchEvents, true);
         QScroller::grabGesture(m_previewWidget->viewport(), QScroller::TouchGesture);
         QScroller::grabGesture(m_previewWidget->viewport(), QScroller::LeftMouseButtonGesture);
@@ -326,7 +332,7 @@ namespace fairwindsk::ui::settings {
 
         const auto entry = entryForPreviewItem(item);
         item->setIcon(WidgetPalette::entryIcon(entry));
-        item->setText(layout::entryLabel(entry));
+        item->setText(barsettings::previewEntryText(entry));
         item->setSizeHint(itemSizeHint(entry));
     }
 
@@ -346,18 +352,18 @@ namespace fairwindsk::ui::settings {
     }
 
     QSize TopBar::itemSizeHint(const LayoutEntry &entry) const {
-        int width = 60;
+        int width = 56;
         if (entry.kind == EntryKind::Separator) {
-            width = 24;
+            width = 22;
         } else if (entry.kind == EntryKind::Stretch) {
-            width = entry.expandHorizontally ? 80 : 60;
+            width = entry.expandHorizontally ? 74 : 56;
         } else if (entry.expandHorizontally) {
-            width = 80;
+            width = 74;
         }
 
-        int height = entry.expandVertically ? 58 : 52;
+        int height = entry.expandVertically ? 56 : 52;
         if (entry.kind == EntryKind::Separator && entry.expandVertically) {
-            height = 58;
+            height = 56;
         }
         return QSize(width, height);
     }
@@ -374,7 +380,7 @@ namespace fairwindsk::ui::settings {
                        Qt::ItemIsSelectable |
                        Qt::ItemIsDragEnabled |
                        Qt::ItemIsDropEnabled);
-        item->setText(layout::entryLabel(entry));
+        item->setText(barsettings::previewEntryText(entry));
         item->setSizeHint(itemSizeHint(entry));
         item->setTextAlignment(Qt::AlignCenter);
         return item;

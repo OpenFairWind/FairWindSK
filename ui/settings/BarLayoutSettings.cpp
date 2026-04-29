@@ -10,6 +10,7 @@
 #include <QMimeData>
 #include <QScroller>
 #include <QScrollerProperties>
+#include <QSizePolicy>
 #include <QSignalBlocker>
 #include <QUuid>
 #include <QVBoxLayout>
@@ -103,7 +104,7 @@ namespace fairwindsk::ui::settings {
                                   Qt::ItemIsSelectable |
                                   Qt::ItemIsDragEnabled);
                 newItem->setIcon(WidgetPalette::entryIcon(entry));
-                newItem->setSizeHint(QSize(92, 66));
+                newItem->setSizeHint(QSize(82, 58));
                 insertItem(std::clamp(insertRow, 0, count()), newItem);
                 setCurrentItem(newItem);
                 event->setDropAction(Qt::CopyAction);
@@ -134,6 +135,8 @@ namespace fairwindsk::ui::settings {
         rootLayout->setSpacing(8);
 
         m_previewFrame = new QFrame(this);
+        m_previewFrame->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        m_previewFrame->setMaximumHeight(68);
         auto *previewLayout = new QVBoxLayout(m_previewFrame);
         previewLayout->setContentsMargins(0, 0, 0, 0);
         previewLayout->setSpacing(0);
@@ -171,10 +174,12 @@ namespace fairwindsk::ui::settings {
         m_listWidget->setDragDropOverwriteMode(false);
         m_listWidget->setDefaultDropAction(Qt::MoveAction);
         m_listWidget->setDropIndicatorShown(true);
-        m_listWidget->setSpacing(8);
+        m_listWidget->setSpacing(6);
         m_listWidget->setUniformItemSizes(false);
-        m_listWidget->setIconSize(QSize(30, 30));
-        m_listWidget->setMinimumHeight(84);
+        m_listWidget->setIconSize(QSize(28, 28));
+        m_listWidget->setMinimumHeight(68);
+        m_listWidget->setMaximumHeight(68);
+        m_listWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         m_listWidget->viewport()->setAttribute(Qt::WA_AcceptTouchEvents, true);
         QScroller::grabGesture(m_listWidget->viewport(), QScroller::TouchGesture);
         QScroller::grabGesture(m_listWidget->viewport(), QScroller::LeftMouseButtonGesture);
@@ -185,7 +190,7 @@ namespace fairwindsk::ui::settings {
         scrollerProperties.setScrollMetric(QScrollerProperties::MaximumVelocity, 0.55);
         QScroller::scroller(m_listWidget->viewport())->setScrollerProperties(scrollerProperties);
         m_listWidget->setToolTip(tr("Tap a widget to edit it. Drag within the preview to reorder the bottom bar."));
-        previewLayout->addWidget(m_listWidget, 1);
+        previewLayout->addWidget(m_listWidget);
         rootLayout->addWidget(m_previewFrame);
 
         auto *controlsLayout = new QHBoxLayout();
@@ -292,21 +297,21 @@ namespace fairwindsk::ui::settings {
         }
 
         const auto entry = entryForItem(item);
-        item->setText(layout::entryLabel(entry));
+        item->setText(barsettings::previewEntryText(entry));
         item->setIcon(WidgetPalette::entryIcon(entry));
         item->setTextAlignment(Qt::AlignCenter);
         item->setSizeHint(itemSizeHint(entry));
     }
 
     QSize BarLayoutSettings::itemSizeHint(const LayoutEntry &entry) const {
-        int width = entry.expandHorizontally ? 128 : 92;
+        int width = entry.expandHorizontally ? 116 : 82;
         if (entry.kind == EntryKind::Separator) {
-            width = 32;
+            width = 24;
         } else if (entry.kind == EntryKind::Stretch) {
-            width = 128;
+            width = 116;
         }
 
-        return QSize(width, 66);
+        return QSize(width, 58);
     }
 
     LayoutEntry BarLayoutSettings::entryForItem(const QListWidgetItem *item) const {
