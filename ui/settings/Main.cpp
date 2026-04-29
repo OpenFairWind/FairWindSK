@@ -77,6 +77,9 @@ namespace fairwindsk::ui::settings {
         ui->comboBox_windowMode->addItem(tr("Maximized"));
         ui->comboBox_windowMode->addItem(tr("Full Screen"));
 
+        ui->comboBox_language->addItem(tr("System default"), "system");
+        ui->comboBox_language->addItem(tr("English"), "en");
+        ui->comboBox_language->addItem(tr("Italiano"), "it");
         ui->comboBox_uiScalePreset->addItem(tr("Small"), "small");
         ui->comboBox_uiScalePreset->addItem(tr("Normal"), "normal");
         ui->comboBox_uiScalePreset->addItem(tr("Large"), "large");
@@ -105,6 +108,9 @@ namespace fairwindsk::ui::settings {
         }
 
         ui->comboBox_windowMode->setCurrentIndex(windowModeIndex);
+
+        const int languageIndex = ui->comboBox_language->findData(m_settings->getConfiguration()->getLanguage());
+        ui->comboBox_language->setCurrentIndex(languageIndex >= 0 ? languageIndex : 0);
 
         const auto uiScalePreset = m_settings->getConfiguration()->getUiScalePreset();
         const auto uiScaleIndex = ui->comboBox_uiScalePreset->findData(uiScalePreset);
@@ -176,6 +182,10 @@ namespace fairwindsk::ui::settings {
                 qOverload<int>(&fairwindsk::ui::widgets::TouchComboBox::currentIndexChanged),
                 this,
                 &Main::onWindowModeChanged);
+        connect(ui->comboBox_language,
+                qOverload<int>(&fairwindsk::ui::widgets::TouchComboBox::currentIndexChanged),
+                this,
+                &Main::onLanguageChanged);
 
         connect(ui->lineEdit_left,&QLineEdit::textChanged,this, &Main::onWindowLeftTextChanged);
         connect(ui->lineEdit_top,&QLineEdit::textChanged,this, &Main::onWindowTopTextChanged);
@@ -196,6 +206,17 @@ namespace fairwindsk::ui::settings {
                 this,
                 &Main::onCoordinateFormatChanged);
 
+    }
+
+    void Main::onLanguageChanged(const int index) {
+        Q_UNUSED(index);
+
+        m_settings->getConfiguration()->setLanguage(ui->comboBox_language->currentData().toString());
+        m_settings->markDirty(FairWindSK::RuntimeUi, 0);
+        fairwindsk::ui::drawer::information(
+            this,
+            tr("Restart Required"),
+            tr("Restart FairWindSK to apply the language setting."));
     }
 
     void Main::onVirtualKeyboardStateChanged(const int state) {

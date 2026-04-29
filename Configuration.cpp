@@ -16,6 +16,8 @@
 #include <QSaveFile>
 #include <QStandardPaths>
 
+#include "Localization.hpp"
+
 namespace fairwindsk {
     namespace {
         QString defaultSettingsFilename() {
@@ -172,6 +174,14 @@ namespace fairwindsk {
 
     bool Configuration::getVirtualKeyboard() {
         return getBool("main", "virtualKeyboard");
+    }
+
+    void Configuration::setLanguage(const QString &value) {
+        ensureObject("main")["language"] = localization::normalizeLanguageSelection(value).toStdString();
+    }
+
+    QString Configuration::getLanguage() const {
+        return localization::normalizeLanguageSelection(getString("main", "language", "system"));
     }
 
     void Configuration::setUiScaleMode(const QString &value) {

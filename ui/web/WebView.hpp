@@ -85,6 +85,7 @@ namespace fairwindsk::ui::web {
         void initializeDesktop(fairwindsk::WebProfileHandle *profile);
         void initializeMobile();
         void applyZoom();
+        void applyWebLocalization();
         static QString zoomScript(double zoomPercent);
         void showSignalKRestartPlaceholder();
         void showFallbackPlaceholder(HealthState state, const QString &title, const QString &body, const QUrl &resumeUrl = QUrl());

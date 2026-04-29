@@ -4,9 +4,12 @@
 
 #include "WebView.hpp"
 
+#include <QJsonArray>
+#include <QJsonDocument>
 #include <QVBoxLayout>
 #include <QtGlobal>
 
+#include "Localization.hpp"
 #include "ui/IconUtils.hpp"
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
@@ -104,6 +107,36 @@ namespace fairwindsk::ui::web {
         }
 #endif
 
+        QLocale activeWebLocale() {
+            auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+            auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+            return configuration
+                   ? fairwindsk::localization::effectiveLocale(*configuration)
+                   : fairwindsk::localization::effectiveLocaleForSelection(QStringLiteral("system"));
+        }
+
+        QString javaScriptStringLiteral(const QString &value) {
+            QJsonArray values;
+            values.append(value);
+            const QString json = QString::fromUtf8(QJsonDocument(values).toJson(QJsonDocument::Compact));
+            return json.mid(1, json.size() - 2);
+        }
+
+        QString webLocalizationScript() {
+            const QLocale locale = activeWebLocale();
+            const QString language = javaScriptStringLiteral(fairwindsk::localization::languageTag(locale));
+            const QString culture = javaScriptStringLiteral(fairwindsk::localization::cultureName(locale));
+            return QStringLiteral(
+                       "(function(){"
+                       "const language=%1;"
+                       "const culture=%2;"
+                       "if(document.documentElement){document.documentElement.setAttribute('lang',language);}"
+                       "window.fairwindskLanguage=language;"
+                       "window.fairwindskCulture=culture;"
+                       "})();")
+                .arg(language, culture);
+        }
+
         QString signalKRestartPlaceholderHtml(const QPalette &palette,
                                               const QString &title,
                                               const QString &body) {
@@ -118,30 +151,38 @@ namespace fairwindsk::ui::web {
             const QColor borderColor = fairwindsk::ui::comfortAlpha(palette.color(QPalette::Mid), 188);
             const QColor shadowColor = fairwindsk::ui::comfortAlpha(windowColor.darker(180), 180);
 
+            const QLocale locale = activeWebLocale();
+            const QString languageTag = fairwindsk::localization::languageTag(locale).toHtmlEscaped();
+            const QString cultureName = fairwindsk::localization::cultureName(locale).toHtmlEscaped();
+            const QString style = QStringLiteral(
+                                      "html,body{height:100%%;margin:0;background:%1;color:%2;"
+                                      "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}"
+                                      "body{display:flex;align-items:center;justify-content:center;}"
+                                      ".panel{max-width:36rem;padding:2rem 2.5rem;border:1px solid %3;border-radius:18px;"
+                                      "background:linear-gradient(180deg,%4,%5);box-shadow:0 18px 48px %6;"
+                                      "text-align:center;}"
+                                      ".title{font-size:2rem;font-weight:700;margin-bottom:0.75rem;}"
+                                      ".body{font-size:1.05rem;line-height:1.5;color:%7;}")
+                                      .arg(windowColor.name(),
+                                           textColor.name(),
+                                           borderColor.name(QColor::HexArgb),
+                                           panelColor.lighter(104).name(),
+                                           panelColor.darker(106).name(),
+                                           shadowColor.name(QColor::HexArgb),
+                                           mutedTextColor.name(QColor::HexArgb));
+
             return QStringLiteral(
                 "<!doctype html>"
-                "<html><head><meta charset=\"utf-8\">"
-                "<style>"
-                "html,body{height:100%%;margin:0;background:%1;color:%2;"
-                "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}"
-                "body{display:flex;align-items:center;justify-content:center;}"
-                ".panel{max-width:36rem;padding:2rem 2.5rem;border:1px solid %3;border-radius:18px;"
-                "background:linear-gradient(180deg,%4,%5);box-shadow:0 18px 48px %6;"
-                "text-align:center;}"
-                ".title{font-size:2rem;font-weight:700;margin-bottom:0.75rem;}"
-                ".body{font-size:1.05rem;line-height:1.5;color:%7;}"
-                "</style></head>"
+                "<html lang=\"%1\"><head><meta charset=\"utf-8\">"
+                "<meta name=\"fairwindsk-culture\" content=\"%2\">"
+                "<style>%3</style></head>"
                 "<body><div class=\"panel\">"
-                "<div class=\"title\">%8</div>"
-                "<div class=\"body\">%9</div>"
+                "<div class=\"title\">%4</div>"
+                "<div class=\"body\">%5</div>"
                 "</div></body></html>")
-                .arg(windowColor.name(),
-                     textColor.name(),
-                     borderColor.name(QColor::HexArgb),
-                     panelColor.lighter(104).name(),
-                     panelColor.darker(106).name(),
-                     shadowColor.name(QColor::HexArgb),
-                     mutedTextColor.name(QColor::HexArgb),
+                .arg(languageTag,
+                     cultureName,
+                     style,
                      title.toHtmlEscaped(),
                      body.toHtmlEscaped());
         }
@@ -387,6 +428,22 @@ namespace fairwindsk::ui::web {
 #endif
     }
 
+    void WebView::applyWebLocalization() {
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+        if (m_desktopView && m_desktopView->page()) {
+            m_desktopView->page()->runJavaScript(webLocalizationScript());
+        }
+#else
+        if (m_quickRoot) {
+            const QLocale locale = activeWebLocale();
+            QMetaObject::invokeMethod(m_quickRoot,
+                                      "applyLocalization",
+                                      Q_ARG(QVariant, fairwindsk::localization::languageTag(locale)),
+                                      Q_ARG(QVariant, fairwindsk::localization::cultureName(locale)));
+        }
+#endif
+    }
+
     void WebView::showSignalKRestartPlaceholder() {
         showFallbackPlaceholder(HealthState::Restarting,
                                 tr("Signal K is restarting"),
@@ -559,6 +616,7 @@ namespace fairwindsk::ui::web {
                     m_requestedUrl = currentUrl;
                     setHealthState(HealthState::Normal, tr("Hosted app live"));
                 }
+                applyWebLocalization();
                 applyZoom();
             } else if (m_requestedUrl.isValid()) {
                 ++m_consecutiveFailureCount;
@@ -820,6 +878,8 @@ namespace fairwindsk::ui::web {
             return;
         }
 
+        applyWebLocalization();
+
         connect(m_quickRoot, SIGNAL(loadStarted()), this, SLOT(handleMobileLoadStarted()));
         connect(m_quickRoot, SIGNAL(loadProgressChanged(int)), this, SLOT(handleMobileLoadProgressChanged(int)));
         connect(m_quickRoot, SIGNAL(loadFinished(bool)), this, SLOT(handleMobileLoadFinished(bool)));
@@ -855,6 +915,7 @@ namespace fairwindsk::ui::web {
             } else {
                 setHealthState(HealthState::Normal, tr("Hosted app live"));
             }
+            applyWebLocalization();
             applyZoom();
         } else if (m_requestedUrl.isValid()) {
             ++m_consecutiveFailureCount;

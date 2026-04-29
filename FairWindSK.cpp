@@ -17,6 +17,7 @@
 #include <QFile>
 #include <QStyle>
 #include <QStackedWidget>
+#include <QLocale>
 
 
 #include <QLoggingCategory>
@@ -39,6 +40,7 @@
 #include <cmath>
 
 #include "Units.hpp"
+#include "Localization.hpp"
 #include "ui/MainWindow.hpp"
 #include "ui/widgets/TouchScrollArea.hpp"
 
@@ -1002,6 +1004,7 @@ namespace fairwindsk {
             QLoggingCategory::setFilterRules(u"qt.webenginecontext.debug=true"_s);
         }
 
+        applyWebProfileLocalization();
         updateWebProfileCookie();
         refreshAutomaticComfortViewAvailability();
         applyUiPreferences();
@@ -1206,6 +1209,10 @@ namespace fairwindsk {
             updateWebProfileCookie();
         }
 
+        if (runtimeChanges & RuntimeUi) {
+            applyWebProfileLocalization();
+        }
+
         if (runtimeChanges & (RuntimeUnits | RuntimeSignalKConnection | RuntimeSignalKPaths)) {
             Units::getInstance()->refreshSignalKPreferences();
         }
@@ -1252,6 +1259,21 @@ namespace fairwindsk {
         auto authenticationCookie = QNetworkCookie("JAUTHENTICATION", token.toUtf8());
         authenticationCookie.setPath("/");
         m_profile->cookieStore()->setCookie(authenticationCookie, QUrl(serverUrl));
+#endif
+    }
+
+    void FairWindSK::applyWebProfileLocalization() {
+#if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
+        return;
+#else
+        if (!m_profile) {
+            return;
+        }
+
+        const QLocale locale = localization::effectiveLocale(m_configuration);
+        const QString acceptLanguage = localization::webAcceptLanguageHeader(locale);
+        m_profile->setHttpAcceptLanguage(acceptLanguage);
+        qInfo() << "WebEngine Accept-Language set to" << acceptLanguage;
 #endif
     }
 

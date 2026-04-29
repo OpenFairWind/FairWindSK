@@ -6,6 +6,7 @@
 #include <QFileInfo>
 #include <QSettings>
 #include <QLibraryInfo>
+#include <QLocale>
 #include <QStandardPaths>
 #include <QTimer>
 #include <QTranslator>
@@ -19,6 +20,7 @@
 
 #include "FairWindSK.hpp"
 #include "Configuration.hpp"
+#include "Localization.hpp"
 #include "Units.hpp"
 #include "runtime/DiagnosticsSupport.hpp"
 #include "ui/MainWindow.hpp"
@@ -236,6 +238,29 @@ namespace {
         }
         return configuration.getVirtualKeyboard();
     }
+
+    void configureApplicationLocale(const fairwindsk::Configuration &configuration, QTranslator &translator) {
+        QLocale locale = fairwindsk::localization::effectiveLocale(configuration);
+        QString languageCode = fairwindsk::localization::effectiveLanguageCode(configuration);
+        const QString translationPath = fairwindsk::localization::translationResourcePath(languageCode);
+
+        if (!translationPath.isEmpty()) {
+            if (translator.load(translationPath)) {
+                QApplication::installTranslator(&translator);
+                qInfo() << "Translator loaded" << translationPath;
+            } else {
+                qWarning() << "Unable to load translator" << translationPath << "- falling back to English";
+                locale = fairwindsk::localization::effectiveLocaleForSelection(QStringLiteral("en"));
+                languageCode = QStringLiteral("en");
+            }
+        }
+
+        QLocale::setDefault(locale);
+        qInfo() << "Application language"
+                << languageCode
+                << "locale" << fairwindsk::localization::cultureName(locale)
+                << "web Accept-Language" << fairwindsk::localization::webAcceptLanguageHeader(locale);
+    }
 }
 
 int main(int argc, char *argv[]) {
@@ -300,10 +325,6 @@ int main(int argc, char *argv[]) {
     });
     fairwindsk::runtime::dispatchPendingDiagnosticsReport();
 
-    // Install the translator
-    QApplication::installTranslator(&translator);
-    qInfo() << "Translator installed";
-
     // Set the window icon
     QApplication::setWindowIcon(QIcon(QPixmap::fromImage(QImage(":/resources/images/mainwindow/fairwind_icon.png"))));
     qInfo() << "Application icon set";
@@ -315,6 +336,8 @@ int main(int argc, char *argv[]) {
     // Load the configuration inside the FairWind singleton itself
     fairWindSK->loadConfig();
     qInfo() << "Configuration loaded";
+
+    configureApplicationLocale(*fairWindSK->getConfiguration(), translator);
 
     // Set web profile options
     // Create a new MainWindow object

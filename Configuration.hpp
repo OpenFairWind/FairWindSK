@@ -51,6 +51,8 @@ namespace fairwindsk {
         void setVirtualKeyboard(bool value);
         bool getVirtualKeyboard();
 
+        void setLanguage(const QString &value);
+        QString getLanguage() const;
         void setUiScaleMode(const QString &value);
         QString getUiScaleMode() const;
         void setUiScalePreset(const QString &value);

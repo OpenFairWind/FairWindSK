@@ -149,6 +149,7 @@ namespace fairwindsk {
     private:
         bool eventFilter(QObject *watched, QEvent *event) override;
         void updateWebProfileCookie();
+        void applyWebProfileLocalization();
         void refreshAutomaticComfortView();
         void refreshAutomaticComfortViewAvailability(const Configuration *configuration = nullptr);
         void refreshRuntimeHealth();

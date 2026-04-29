@@ -24,6 +24,8 @@ Item {
     property int keyboardInset: 0
     property bool keyboardVisible: Qt.inputMethod.visible
     property bool compactMode: false
+    property string languageTag: "en-US"
+    property string cultureName: "en_US"
 
     function loadUrl(urlString) {
         if (!urlString || urlString.length === 0) {
@@ -63,6 +65,28 @@ Item {
         pendingScript = script
         if (webView.runJavaScript) {
             webView.runJavaScript(script)
+        }
+    }
+
+    function localizationScript() {
+        return "(function(){"
+                + "const language=" + JSON.stringify(languageTag) + ";"
+                + "const culture=" + JSON.stringify(cultureName) + ";"
+                + "if(document.documentElement){document.documentElement.setAttribute('lang',language);}"
+                + "window.fairwindskLanguage=language;"
+                + "window.fairwindskCulture=culture;"
+                + "})();"
+    }
+
+    function applyLocalization(language, culture) {
+        if (language && language.length > 0) {
+            languageTag = language
+        }
+        if (culture && culture.length > 0) {
+            cultureName = culture
+        }
+        if (webView.runJavaScript) {
+            webView.runJavaScript(localizationScript())
         }
     }
 
@@ -123,6 +147,7 @@ Item {
                 root.loadStarted()
             }
             if (loadRequest.status === WebView.LoadSucceededStatus) {
+                root.applyLocalization(root.languageTag, root.cultureName)
                 if (root.pendingScript && root.pendingScript.length > 0 && webView.runJavaScript) {
                     webView.runJavaScript(root.pendingScript)
                 }

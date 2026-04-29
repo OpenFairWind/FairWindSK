@@ -88,6 +88,7 @@ These mappings drive UI bars (autopilot, anchor, alarms, POB) and instrument rea
 ```jsonc
 {
   "main": {
+    "language": "system", // or "en", "it"
     "windowMode": "windowed", // or "fullscreen"
     "windowWidth": 1024,
     "windowHeight": 600,
@@ -99,6 +100,7 @@ These mappings drive UI bars (autopilot, anchor, alarms, POB) and instrument rea
 }
 ```
 
+- `language`: Selects the application language. `system` follows the operating-system language when FairWindSK supports it and falls back to English for every unsupported language; `en` forces English; `it` forces Italian. Any other value is treated as English. Restart FairWindSK after changing it so all native widgets and embedded web views start with the same language and culture.
 - `windowMode`: Choose `windowed` or `fullscreen` (useful for kiosk deployments).
 - `windowWidth/Height/Left/Top`: Window geometry when not fullscreen.
 - `virtualKeyboard`: Enables the Qt virtual keyboard module if available. The setting is read during startup, so restart FairWindSK after changing it.

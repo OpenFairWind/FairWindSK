@@ -70,6 +70,7 @@ find_package(Qt6 REQUIRED COMPONENTS
         Svg
         Positioning
         VirtualKeyboard
+        LinguistTools
 )
 
 if(FAIRWINDSK_MOBILE)
@@ -238,6 +239,7 @@ set(FAIRWINDSK_SOURCES
         main.cpp
         Units.cpp Units.hpp
         FairWindSK.cpp FairWindSK.hpp
+        Localization.cpp Localization.hpp
         AppItem.cpp AppItem.hpp
         signalk/Note.cpp signalk/Note.hpp
         signalk/Waypoint.cpp signalk/Waypoint.hpp
@@ -318,6 +320,13 @@ endif()
 qt_add_executable(${PROJECT_NAME}
         MANUAL_FINALIZATION
         ${FAIRWINDSK_SOURCES}
+)
+
+qt_add_translations(${PROJECT_NAME}
+        TS_FILES
+            resources/i18n/fairwindsk_it.ts
+        RESOURCE_PREFIX
+            /resources/i18n
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
