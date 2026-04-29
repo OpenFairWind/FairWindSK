@@ -339,6 +339,7 @@ namespace fairwindsk::ui::drawer {
         }
 
         class DrawerFileBrowserWidget final : public QWidget {
+            Q_DECLARE_TR_FUNCTIONS(DrawerFileBrowserWidget)
         public:
             DrawerFileBrowserWidget(const FileBrowserMode mode,
                                     const QString &directory,
@@ -885,6 +886,7 @@ namespace fairwindsk::ui::drawer {
         }
 
         class DrawerIconPickerWidget final : public QWidget {
+            Q_DECLARE_TR_FUNCTIONS(DrawerIconPickerWidget)
         public:
             explicit DrawerIconPickerWidget(const QString &currentPath, QWidget *parent = nullptr)
                 : QWidget(parent), m_currentPath(currentPath.trimmed()) {
@@ -969,6 +971,7 @@ namespace fairwindsk::ui::drawer {
         };
 
         class DrawerLogExplorerWidget final : public QWidget {
+            Q_DECLARE_TR_FUNCTIONS(DrawerLogExplorerWidget)
         public:
             explicit DrawerLogExplorerWidget(const QString &directory, QWidget *parent = nullptr)
                 : QWidget(parent),

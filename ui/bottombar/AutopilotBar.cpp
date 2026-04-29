@@ -529,7 +529,7 @@ namespace fairwindsk::ui::bottombar {
                     if (result["value"].isNull()) {
 
                         // Update the UI
-                        ui->label_State->setText("N/A");
+                        ui->label_State->setText(tr("N/A"));
 
                     } else {
 
@@ -551,7 +551,7 @@ namespace fairwindsk::ui::bottombar {
                 } else {
 
                     // Update the UI with the status code
-                    ui->label_State->setText("Error: "+ QString::number(result["statusCode"].toInt()));
+                    ui->label_State->setText(tr("Error: %1").arg(result["statusCode"].toInt()));
                 }
             }
         }
