@@ -111,6 +111,12 @@ namespace fairwindsk::ui::settings {
             if (widgetId == QStringLiteral("clock_icons")) {
                 return QStringLiteral(":/resources/svg/OpenBridge/lcd-clock.svg");
             }
+            if (widgetId == QStringLiteral("signalk_status")) {
+                return QStringLiteral(":/resources/svg/OpenBridge/layout-signalk.svg");
+            }
+            if (widgetId == QStringLiteral("open_apps")) {
+                return QStringLiteral(":/resources/svg/OpenBridge/layout-open-apps.svg");
+            }
             return {};
         }
 
@@ -120,11 +126,10 @@ namespace fairwindsk::ui::settings {
                 return QIcon(lcdMetricIcon);
             }
 
-            if (widgetId == QStringLiteral("open_apps") ||
-                widgetId == QStringLiteral("apps")) {
+            if (widgetId == QStringLiteral("apps")) {
                 return QIcon(QStringLiteral(":/resources/svg/OpenBridge/applications.svg"));
             }
-            if (widgetId == QStringLiteral("mydata") || widgetId == QStringLiteral("signalk_status")) {
+            if (widgetId == QStringLiteral("mydata")) {
                 return QIcon(QStringLiteral(":/resources/svg/OpenBridge/database.svg"));
             }
             if (widgetId == QStringLiteral("pob")) {
@@ -147,10 +152,10 @@ namespace fairwindsk::ui::settings {
 
         QIcon iconForEntry(const LayoutEntry &entry) {
             if (entry.kind == EntryKind::Stretch) {
-                return QIcon(QStringLiteral(":/resources/svg/OpenBridge/arrow-right-google.svg"));
+                return QIcon(QStringLiteral(":/resources/svg/OpenBridge/layout-elastic-extender.svg"));
             }
             if (entry.kind == EntryKind::Separator) {
-                return QIcon(QStringLiteral(":/resources/svg/OpenBridge/show-page-details.svg"));
+                return QIcon(QStringLiteral(":/resources/svg/OpenBridge/layout-separator.svg"));
             }
             return iconForWidgetId(entry.widgetId);
         }

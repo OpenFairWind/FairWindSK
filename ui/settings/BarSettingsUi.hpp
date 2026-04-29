@@ -157,6 +157,25 @@ namespace fairwindsk::ui::settings::barsettings {
         button->setToolButtonStyle(Qt::ToolButtonIconOnly);
     }
 
+    inline void configureHeightButton(QToolButton *button,
+                                      const QString &toolTip,
+                                      const int controlHeight) {
+        configureActionButton(button,
+                              QStringLiteral(":/resources/svg/OpenBridge/layout-extend-height.svg"),
+                              toolTip,
+                              controlHeight,
+                              true);
+        if (!button) {
+            return;
+        }
+
+        QIcon icon;
+        icon.addFile(QStringLiteral(":/resources/svg/OpenBridge/layout-extend-height.svg"), QSize(28, 28), QIcon::Normal, QIcon::Off);
+        icon.addFile(QStringLiteral(":/resources/svg/OpenBridge/layout-vertical-minimize.svg"), QSize(28, 28), QIcon::Normal, QIcon::On);
+        button->setIcon(icon);
+        button->setIconSize(QSize(28, 28));
+    }
+
     inline void applySizeButtonChrome(QToolButton *button,
                                       const fairwindsk::ui::ComfortChromeColors &colors,
                                       const int controlHeight) {

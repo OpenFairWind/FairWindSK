@@ -45,6 +45,15 @@
         <file>resources/svg/OpenBridge/touch-checkbox-unchecked.svg</file>
         <file>resources/svg/OpenBridge/touch-checkbox-checked.svg</file>
         <file>resources/svg/OpenBridge/touch-checkbox-partial.svg</file>
+        <file>resources/svg/OpenBridge/layout-elastic-extender.svg</file>
+        <file>resources/svg/OpenBridge/layout-extend-height.svg</file>
+        <file>resources/svg/OpenBridge/layout-horizontal-maximize.svg</file>
+        <file>resources/svg/OpenBridge/layout-horizontal-minimize.svg</file>
+        <file>resources/svg/OpenBridge/layout-open-apps.svg</file>
+        <file>resources/svg/OpenBridge/layout-separator.svg</file>
+        <file>resources/svg/OpenBridge/layout-signalk.svg</file>
+        <file>resources/svg/OpenBridge/layout-vertical-maximize.svg</file>
+        <file>resources/svg/OpenBridge/layout-vertical-minimize.svg</file>
         <file>resources/svg/OpenBridge/lcd-app.svg</file>
         <file>resources/svg/OpenBridge/lcd-btw.svg</file>
         <file>resources/svg/OpenBridge/lcd-clock.svg</file>

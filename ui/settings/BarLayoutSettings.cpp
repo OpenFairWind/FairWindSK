@@ -100,11 +100,12 @@ namespace fairwindsk::ui::settings {
                 newItem->setData(Qt::UserRole + 2, entry.widgetId);
                 newItem->setData(Qt::UserRole + 3, entry.instanceId);
                 newItem->setData(Qt::UserRole + 4, entry.expandHorizontally);
+                newItem->setData(Qt::UserRole + 5, entry.expandVertically);
                 newItem->setFlags(Qt::ItemIsEnabled |
                                   Qt::ItemIsSelectable |
                                   Qt::ItemIsDragEnabled);
                 newItem->setIcon(WidgetPalette::entryIcon(entry));
-                newItem->setSizeHint(QSize(82, 58));
+                newItem->setSizeHint(QSize(90, 74));
                 insertItem(std::clamp(insertRow, 0, count()), newItem);
                 setCurrentItem(newItem);
                 event->setDropAction(Qt::CopyAction);
@@ -136,25 +137,30 @@ namespace fairwindsk::ui::settings {
 
         m_previewFrame = new QFrame(this);
         m_previewFrame->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-        m_previewFrame->setMaximumHeight(68);
+        m_previewFrame->setMinimumHeight(86);
+        m_previewFrame->setMaximumHeight(86);
         auto *previewLayout = new QVBoxLayout(m_previewFrame);
         previewLayout->setContentsMargins(0, 0, 0, 0);
         previewLayout->setSpacing(0);
 
         m_minimumWidthButton = new QToolButton(this);
         m_maximumWidthButton = new QToolButton(this);
+        m_expandHeightButton = new QToolButton(this);
         m_removeSelectedButton = new QToolButton(this);
         m_resetDefaultsButton = new QToolButton(this);
         barsettings::configureSizeButton(m_minimumWidthButton,
-                                         QStringLiteral(":/resources/svg/OpenBridge/lcd-minimum.svg"),
+                                         QStringLiteral(":/resources/svg/OpenBridge/layout-horizontal-minimize.svg"),
                                          tr("Keep the selected widget at the minimum needed size"),
-                                         tr("Minimum needed size"),
+                                         tr("Minimize horizontally"),
                                          kControlHeight);
         barsettings::configureSizeButton(m_maximumWidthButton,
-                                         QStringLiteral(":/resources/svg/OpenBridge/lcd-maximum.svg"),
+                                         QStringLiteral(":/resources/svg/OpenBridge/layout-horizontal-maximize.svg"),
                                          tr("Let the selected widget grow to the maximum possible size"),
-                                         tr("Maximum possible size"),
+                                         tr("Maximize horizontally"),
                                          kControlHeight);
+        barsettings::configureHeightButton(m_expandHeightButton,
+                                           tr("Extend Height"),
+                                           kControlHeight);
         barsettings::configureActionButton(m_removeSelectedButton,
                                            QStringLiteral(":/resources/svg/OpenBridge/delete-google.svg"),
                                            tr("Remove Selected"),
@@ -176,9 +182,9 @@ namespace fairwindsk::ui::settings {
         m_listWidget->setDropIndicatorShown(true);
         m_listWidget->setSpacing(6);
         m_listWidget->setUniformItemSizes(false);
-        m_listWidget->setIconSize(QSize(28, 28));
-        m_listWidget->setMinimumHeight(68);
-        m_listWidget->setMaximumHeight(68);
+        m_listWidget->setIconSize(QSize(32, 32));
+        m_listWidget->setMinimumHeight(82);
+        m_listWidget->setMaximumHeight(82);
         m_listWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         m_listWidget->viewport()->setAttribute(Qt::WA_AcceptTouchEvents, true);
         QScroller::grabGesture(m_listWidget->viewport(), QScroller::TouchGesture);
@@ -198,6 +204,7 @@ namespace fairwindsk::ui::settings {
         controlsLayout->setSpacing(8);
         controlsLayout->addWidget(m_minimumWidthButton);
         controlsLayout->addWidget(m_maximumWidthButton);
+        controlsLayout->addWidget(m_expandHeightButton);
         controlsLayout->addWidget(m_removeSelectedButton);
         controlsLayout->addWidget(m_resetDefaultsButton);
         controlsLayout->addStretch(1);
@@ -242,6 +249,7 @@ namespace fairwindsk::ui::settings {
         connect(m_paletteWidget, &WidgetPalette::entryActivated, this, &BarLayoutSettings::onPaletteEntryActivated);
         connect(m_minimumWidthButton, &QToolButton::clicked, this, &BarLayoutSettings::onMinimumWidthSelected);
         connect(m_maximumWidthButton, &QToolButton::clicked, this, &BarLayoutSettings::onMaximumWidthSelected);
+        connect(m_expandHeightButton, &QToolButton::toggled, this, &BarLayoutSettings::onExpandHeightToggled);
         connect(m_removeSelectedButton, &QToolButton::clicked, this, &BarLayoutSettings::onRemoveSelected);
         connect(m_resetDefaultsButton, &QToolButton::clicked, this, &BarLayoutSettings::onResetDefaults);
 
@@ -271,6 +279,7 @@ namespace fairwindsk::ui::settings {
 
         barsettings::applySizeButtonChrome(m_minimumWidthButton, chrome, 52);
         barsettings::applySizeButtonChrome(m_maximumWidthButton, chrome, 52);
+        barsettings::applyActionButtonChrome(m_expandHeightButton, chrome, 52);
         barsettings::applyActionButtonChrome(m_removeSelectedButton, chrome, 52);
         barsettings::applyActionButtonChrome(m_resetDefaultsButton, chrome, 52);
     }
@@ -282,6 +291,7 @@ namespace fairwindsk::ui::settings {
         item->setData(RoleWidgetId, entry.widgetId);
         item->setData(RoleInstanceId, entry.instanceId);
         item->setData(RoleExpandHorizontally, entry.expandHorizontally);
+        item->setData(RoleExpandVertically, entry.expandVertically);
         item->setFlags(Qt::ItemIsEnabled |
                        Qt::ItemIsSelectable |
                        Qt::ItemIsDragEnabled);
@@ -304,14 +314,14 @@ namespace fairwindsk::ui::settings {
     }
 
     QSize BarLayoutSettings::itemSizeHint(const LayoutEntry &entry) const {
-        int width = entry.expandHorizontally ? 116 : 82;
+        int width = entry.expandHorizontally ? 124 : 90;
         if (entry.kind == EntryKind::Separator) {
-            width = 24;
+            width = 48;
         } else if (entry.kind == EntryKind::Stretch) {
-            width = 116;
+            width = 124;
         }
 
-        return QSize(width, 58);
+        return QSize(width, entry.expandVertically ? 78 : 74);
     }
 
     LayoutEntry BarLayoutSettings::entryForItem(const QListWidgetItem *item) const {
@@ -325,6 +335,7 @@ namespace fairwindsk::ui::settings {
         entry.instanceId = item->data(RoleInstanceId).toString();
         entry.enabled = true;
         entry.expandHorizontally = item->data(RoleExpandHorizontally).toBool();
+        entry.expandVertically = item->data(RoleExpandVertically).toBool();
         return entry;
     }
 
@@ -421,6 +432,11 @@ namespace fairwindsk::ui::settings {
             m_maximumWidthButton->setEnabled(hasWidgetSelection);
             m_maximumWidthButton->setChecked(hasWidgetSelection && entry.expandHorizontally);
         }
+        if (m_expandHeightButton) {
+            const QSignalBlocker blocker(m_expandHeightButton);
+            m_expandHeightButton->setEnabled(m_listWidget && m_listWidget->currentItem());
+            m_expandHeightButton->setChecked(m_listWidget && m_listWidget->currentItem() && entry.expandVertically);
+        }
     }
 
     void BarLayoutSettings::appendPlaceholder(const EntryKind kind) {
@@ -433,6 +449,7 @@ namespace fairwindsk::ui::settings {
         entry.instanceId = QUuid::createUuid().toString(QUuid::WithoutBraces);
         entry.enabled = true;
         entry.expandHorizontally = kind == EntryKind::Stretch;
+        entry.expandVertically = false;
 
         m_listWidget->addItem(createItem(entry));
         m_listWidget->setCurrentRow(m_listWidget->count() - 1);
@@ -469,6 +486,18 @@ namespace fairwindsk::ui::settings {
         }
 
         item->setData(RoleExpandHorizontally, true);
+        refreshPreviewItem(item);
+        persistToConfiguration();
+        updateActions();
+    }
+
+    void BarLayoutSettings::onExpandHeightToggled(const bool checked) {
+        auto *item = m_listWidget ? m_listWidget->currentItem() : nullptr;
+        if (!item) {
+            return;
+        }
+
+        item->setData(RoleExpandVertically, checked);
         refreshPreviewItem(item);
         persistToConfiguration();
         updateActions();

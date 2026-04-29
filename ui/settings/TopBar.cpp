@@ -141,7 +141,8 @@ namespace fairwindsk::ui::settings {
 
         m_previewFrame = new QFrame(this);
         m_previewFrame->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-        m_previewFrame->setMaximumHeight(58);
+        m_previewFrame->setMinimumHeight(78);
+        m_previewFrame->setMaximumHeight(78);
         auto *previewFrameLayout = new QHBoxLayout(m_previewFrame);
         previewFrameLayout->setContentsMargins(0, 0, 0, 0);
         previewFrameLayout->setSpacing(6);
@@ -150,9 +151,9 @@ namespace fairwindsk::ui::settings {
         m_rightShellButton = new QToolButton(m_previewFrame);
         for (auto *button : {m_leftShellButton, m_rightShellButton}) {
             button->setAutoRaise(true);
-            button->setIconSize(QSize(26, 26));
-            button->setMinimumSize(QSize(52, 52));
-            button->setMaximumSize(QSize(52, 52));
+            button->setIconSize(QSize(28, 28));
+            button->setMinimumSize(QSize(60, 60));
+            button->setMaximumSize(QSize(60, 60));
             button->setToolButtonStyle(Qt::ToolButtonIconOnly);
             button->setEnabled(true);
             button->setFocusPolicy(Qt::NoFocus);
@@ -162,9 +163,9 @@ namespace fairwindsk::ui::settings {
 
         m_previewWidget = new PreviewListWidget(m_previewFrame);
         m_previewWidget->setSpacing(4);
-        m_previewWidget->setIconSize(QSize(26, 26));
-        m_previewWidget->setMinimumHeight(58);
-        m_previewWidget->setMaximumHeight(58);
+        m_previewWidget->setIconSize(QSize(30, 30));
+        m_previewWidget->setMinimumHeight(74);
+        m_previewWidget->setMaximumHeight(74);
         m_previewWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         m_previewWidget->viewport()->setAttribute(Qt::WA_AcceptTouchEvents, true);
         QScroller::grabGesture(m_previewWidget->viewport(), QScroller::TouchGesture);
@@ -185,11 +186,9 @@ namespace fairwindsk::ui::settings {
         m_removeSelectedButton = new QToolButton(this);
         m_resetDefaultsButton = new QToolButton(this);
 
-        barsettings::configureActionButton(m_expandHeightButton,
-                                           QStringLiteral(":/resources/svg/OpenBridge/arrow-down-google.svg"),
+        barsettings::configureHeightButton(m_expandHeightButton,
                                            tr("Extend Height"),
-                                           kControlHeight,
-                                           true);
+                                           kControlHeight);
         barsettings::configureActionButton(m_removeSelectedButton,
                                            QStringLiteral(":/resources/svg/OpenBridge/delete-google.svg"),
                                            tr("Remove Selected"),
@@ -199,14 +198,14 @@ namespace fairwindsk::ui::settings {
                                            tr("Reset Defaults"),
                                            kControlHeight);
         barsettings::configureSizeButton(m_minimumWidthButton,
-                                         QStringLiteral(":/resources/svg/OpenBridge/lcd-minimum.svg"),
+                                         QStringLiteral(":/resources/svg/OpenBridge/layout-horizontal-minimize.svg"),
                                          tr("Keep the selected widget at the minimum needed size"),
-                                         tr("Minimum needed size"),
+                                         tr("Minimize horizontally"),
                                          kControlHeight);
         barsettings::configureSizeButton(m_maximumWidthButton,
-                                         QStringLiteral(":/resources/svg/OpenBridge/lcd-maximum.svg"),
+                                         QStringLiteral(":/resources/svg/OpenBridge/layout-horizontal-maximize.svg"),
                                          tr("Let the selected widget grow to the maximum possible size"),
-                                         tr("Maximum possible size"),
+                                         tr("Maximize horizontally"),
                                          kControlHeight);
         controlsLayout->addWidget(m_minimumWidthButton);
         controlsLayout->addWidget(m_maximumWidthButton);
@@ -278,11 +277,11 @@ namespace fairwindsk::ui::settings {
 
         if (m_leftShellButton) {
             m_leftShellButton->setIcon(QIcon(QStringLiteral(":/resources/images/mainwindow/fairwind_icon.png")));
-            fairwindsk::ui::applyBottomBarToolButtonChrome(m_leftShellButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(26, 26), 52);
+            fairwindsk::ui::applyBottomBarToolButtonChrome(m_leftShellButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(28, 28), 60);
         }
         if (m_rightShellButton) {
             m_rightShellButton->setIcon(QIcon(QStringLiteral(":/resources/images/icons/apps_icon.png")));
-            fairwindsk::ui::applyBottomBarToolButtonChrome(m_rightShellButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(26, 26), 52);
+            fairwindsk::ui::applyBottomBarToolButtonChrome(m_rightShellButton, chrome, fairwindsk::ui::BottomBarButtonChrome::Flat, QSize(28, 28), 60);
         }
 
         barsettings::applySizeButtonChrome(m_minimumWidthButton, chrome, 52);
@@ -352,18 +351,18 @@ namespace fairwindsk::ui::settings {
     }
 
     QSize TopBar::itemSizeHint(const LayoutEntry &entry) const {
-        int width = 56;
+        int width = 60;
         if (entry.kind == EntryKind::Separator) {
-            width = 22;
+            width = 48;
         } else if (entry.kind == EntryKind::Stretch) {
-            width = entry.expandHorizontally ? 74 : 56;
+            width = entry.expandHorizontally ? 86 : 60;
         } else if (entry.expandHorizontally) {
-            width = 74;
+            width = 86;
         }
 
-        int height = entry.expandVertically ? 56 : 52;
+        int height = entry.expandVertically ? 72 : 68;
         if (entry.kind == EntryKind::Separator && entry.expandVertically) {
-            height = 56;
+            height = 72;
         }
         return QSize(width, height);
     }
