@@ -108,37 +108,37 @@
         <location filename="../../ui/bottombar/AlarmsBar.ui" line="77"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AlarmsBar.h" line="253"/>
         <source>Piracy</source>
-        <translation type="unfinished"></translation>
+        <translation>Pirateria</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AlarmsBar.ui" line="105"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AlarmsBar.h" line="254"/>
         <source>Abandon</source>
-        <translation type="unfinished"></translation>
+        <translation>Abbandono</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AlarmsBar.ui" line="146"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AlarmsBar.h" line="255"/>
         <source>Adrift</source>
-        <translation type="unfinished"></translation>
+        <translation>Alla deriva</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AlarmsBar.ui" line="174"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AlarmsBar.h" line="256"/>
         <source>Sinking</source>
-        <translation type="unfinished"></translation>
+        <translation>Affondamento</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AlarmsBar.ui" line="202"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AlarmsBar.h" line="257"/>
         <source>Fire</source>
-        <translation type="unfinished"></translation>
+        <translation>Incendio</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AlarmsBar.ui" line="269"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AlarmsBar.h" line="258"/>
         <source>POB</source>
-        <translation type="unfinished"></translation>
+        <translation>POB</translation>
     </message>
 </context>
 <context>
@@ -147,7 +147,7 @@
         <location filename="../../ui/bottombar/AnchorBar.ui" line="77"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AnchorBar.h" line="565"/>
         <source>Drop</source>
-        <translation type="unfinished"></translation>
+        <translation>Cala</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AnchorBar.ui" line="101"/>
@@ -159,13 +159,13 @@
         <location filename="../../ui/bottombar/AnchorBar.ui" line="152"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AnchorBar.h" line="567"/>
         <source>Radius</source>
-        <translation type="unfinished"></translation>
+        <translation>Raggio</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AnchorBar.ui" line="162"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AnchorBar.h" line="568"/>
         <source>Set</source>
-        <translation type="unfinished"></translation>
+        <translation>Imposta</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AnchorBar.ui" line="180"/>
@@ -179,7 +179,7 @@
         <location filename="../../build/FairWindSK_autogen/include/ui_AnchorBar.h" line="584"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AnchorBar.h" line="591"/>
         <source>0</source>
-        <translation type="unfinished"></translation>
+        <translation>0</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AnchorBar.ui" line="193"/>
@@ -193,19 +193,19 @@
         <location filename="../../build/FairWindSK_autogen/include/ui_AnchorBar.h" line="585"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AnchorBar.h" line="592"/>
         <source>m</source>
-        <translation type="unfinished"></translation>
+        <translation>m</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AnchorBar.ui" line="206"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AnchorBar.h" line="571"/>
         <source>/</source>
-        <translation type="unfinished"></translation>
+        <translation>/</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AnchorBar.ui" line="255"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AnchorBar.h" line="574"/>
         <source>Raise</source>
-        <translation type="unfinished"></translation>
+        <translation>Salpa</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AnchorBar.ui" line="303"/>
@@ -217,13 +217,13 @@
         <location filename="../../ui/bottombar/AnchorBar.ui" line="324"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AnchorBar.h" line="576"/>
         <source>00°000&apos;,00 N</source>
-        <translation type="unfinished"></translation>
+        <translation>00°000',00 N</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AnchorBar.ui" line="347"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AnchorBar.h" line="577"/>
         <source>000°000&apos;,00 E</source>
-        <translation type="unfinished"></translation>
+        <translation>000°000',00 E</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AnchorBar.ui" line="363"/>
@@ -241,43 +241,43 @@
         <location filename="../../ui/bottombar/AnchorBar.ui" line="443"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AnchorBar.h" line="580"/>
         <source>Depth</source>
-        <translation type="unfinished"></translation>
+        <translation>Profondità</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AnchorBar.ui" line="504"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AnchorBar.h" line="583"/>
         <source>Rode</source>
-        <translation type="unfinished"></translation>
+        <translation>Calumo</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AnchorBar.ui" line="556"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AnchorBar.h" line="586"/>
         <source>Release</source>
-        <translation type="unfinished"></translation>
+        <translation>Fila</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AnchorBar.ui" line="607"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AnchorBar.h" line="587"/>
         <source>Bearing</source>
-        <translation type="unfinished"></translation>
+        <translation>Rilevamento</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AnchorBar.ui" line="628"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AnchorBar.h" line="588"/>
         <source>000</source>
-        <translation type="unfinished"></translation>
+        <translation>000</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AnchorBar.ui" line="641"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AnchorBar.h" line="589"/>
         <source>°</source>
-        <translation type="unfinished"></translation>
+        <translation>°</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AnchorBar.ui" line="680"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AnchorBar.h" line="590"/>
         <source>Distance</source>
-        <translation type="unfinished"></translation>
+        <translation>Distanza</translation>
     </message>
 </context>
 <context>
@@ -389,25 +389,25 @@
         <location filename="../../build/FairWindSK_autogen/include/ui_AutopilotBar.h" line="396"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AutopilotBar.h" line="404"/>
         <source>Stand by</source>
-        <translation type="unfinished"></translation>
+        <translation>Standby</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AutopilotBar.ui" line="83"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AutopilotBar.h" line="397"/>
         <source>Next WPT</source>
-        <translation type="unfinished"></translation>
+        <translation>WPT succ.</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AutopilotBar.ui" line="97"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AutopilotBar.h" line="398"/>
         <source>Wind</source>
-        <translation type="unfinished"></translation>
+        <translation>Vento</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AutopilotBar.ui" line="115"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AutopilotBar.h" line="399"/>
         <source>Port</source>
-        <translation type="unfinished"></translation>
+        <translation>Sinistra</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AutopilotBar.ui" line="138"/>
@@ -415,7 +415,7 @@
         <location filename="../../build/FairWindSK_autogen/include/ui_AutopilotBar.h" line="400"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AutopilotBar.h" line="409"/>
         <source>Tack</source>
-        <translation type="unfinished"></translation>
+        <translation>Virata</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AutopilotBar.ui" line="158"/>
@@ -423,43 +423,43 @@
         <location filename="../../build/FairWindSK_autogen/include/ui_AutopilotBar.h" line="401"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AutopilotBar.h" line="410"/>
         <source>Gybe</source>
-        <translation type="unfinished"></translation>
+        <translation>Strambata</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AutopilotBar.ui" line="182"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AutopilotBar.h" line="402"/>
         <source>-1</source>
-        <translation type="unfinished"></translation>
+        <translation>-1</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AutopilotBar.ui" line="202"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AutopilotBar.h" line="403"/>
         <source>-10</source>
-        <translation type="unfinished"></translation>
+        <translation>-10</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AutopilotBar.ui" line="256"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AutopilotBar.h" line="405"/>
         <source>___°</source>
-        <translation type="unfinished"></translation>
+        <translation>___°</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AutopilotBar.ui" line="296"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AutopilotBar.h" line="406"/>
         <source>+1</source>
-        <translation type="unfinished"></translation>
+        <translation>+1</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AutopilotBar.ui" line="316"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AutopilotBar.h" line="407"/>
         <source>+10</source>
-        <translation type="unfinished"></translation>
+        <translation>+10</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AutopilotBar.ui" line="330"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AutopilotBar.h" line="408"/>
         <source>Starboard</source>
-        <translation type="unfinished"></translation>
+        <translation>Dritta</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AutopilotBar.ui" line="392"/>
@@ -471,13 +471,13 @@
         <location filename="../../ui/bottombar/AutopilotBar.ui" line="406"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AutopilotBar.h" line="412"/>
         <source>Dodge</source>
-        <translation type="unfinished"></translation>
+        <translation>Scarto</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AutopilotBar.ui" line="420"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AutopilotBar.h" line="413"/>
         <source>Auto</source>
-        <translation type="unfinished"></translation>
+        <translation>Auto</translation>
     </message>
 </context>
 <context>
@@ -763,13 +763,13 @@ Do you wish to override the security check and continue ?   </source>
         <location filename="../../ui/GeoCoordinateEditorWidget.ui" line="100"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_GeoCoordinateEditorWidget.h" line="113"/>
         <source>Apply</source>
-        <translation type="unfinished"></translation>
+        <translation>Applica</translation>
     </message>
     <message>
         <location filename="../../ui/GeoCoordinateEditorWidget.ui" line="107"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_GeoCoordinateEditorWidget.h" line="114"/>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Annulla</translation>
     </message>
 </context>
 <context>
@@ -778,13 +778,13 @@ Do you wish to override the security check and continue ?   </source>
         <location filename="../../ui/mydata/GeoJsonPreviewWidget.ui" line="33"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_GeoJsonPreviewWidget.h" line="79"/>
         <source>Preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Anteprima</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/GeoJsonPreviewWidget.ui" line="55"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_GeoJsonPreviewWidget.h" line="80"/>
         <source>GeoJSON</source>
-        <translation type="unfinished"></translation>
+        <translation>GeoJSON</translation>
     </message>
 </context>
 <context>
@@ -962,13 +962,13 @@ Do you wish to override the security check and continue ?   </source>
         <location filename="../../ui/mydata/JsonObjectEditorWidget.ui" line="31"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_JsonObjectEditorWidget.h" line="145"/>
         <source>Add Child</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiungi figlio</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/JsonObjectEditorWidget.ui" line="38"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_JsonObjectEditorWidget.h" line="146"/>
         <source>Add Sibling</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiungi pari</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/JsonObjectEditorWidget.ui" line="45"/>
@@ -980,19 +980,19 @@ Do you wish to override the security check and continue ?   </source>
         <location filename="../../ui/mydata/JsonObjectEditorWidget.ui" line="71"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_JsonObjectEditorWidget.h" line="149"/>
         <source>Tree</source>
-        <translation type="unfinished"></translation>
+        <translation>Albero</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/JsonObjectEditorWidget.ui" line="115"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_JsonObjectEditorWidget.h" line="148"/>
         <source>No feature properties are available for this resource.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessuna proprietà elemento disponibile per questa risorsa.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/JsonObjectEditorWidget.ui" line="133"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_JsonObjectEditorWidget.h" line="150"/>
         <source>JSON</source>
-        <translation type="unfinished"></translation>
+        <translation>JSON</translation>
     </message>
 </context>
 <context>
@@ -1282,14 +1282,14 @@ Do you wish to override the security check and continue ?   </source>
         <location filename="../../ui/DrawerDialogHost.cpp" line="1263"/>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="174"/>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation>OK</translation>
     </message>
     <message>
         <location filename="../../ui/DrawerDialogHost.cpp" line="122"/>
         <location filename="../../ui/DrawerDialogHost.cpp" line="1264"/>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="175"/>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Annulla</translation>
     </message>
     <message>
         <location filename="../../ui/DrawerDialogHost.cpp" line="123"/>
@@ -1326,62 +1326,62 @@ Do you wish to override the security check and continue ?   </source>
     <message>
         <location filename="../../ui/GeoCoordinateUtils.cpp" line="49"/>
         <source>Latitude must be between -90 and 90 degrees.</source>
-        <translation type="unfinished"></translation>
+        <translation>La latitudine deve essere compresa tra -90 e 90 gradi.</translation>
     </message>
     <message>
         <location filename="../../ui/GeoCoordinateUtils.cpp" line="50"/>
         <source>Longitude must be between -180 and 180 degrees.</source>
-        <translation type="unfinished"></translation>
+        <translation>La longitudine deve essere compresa tra -180 e 180 gradi.</translation>
     </message>
     <message>
         <location filename="../../ui/GeoCoordinateUtils.cpp" line="197"/>
         <source>Latitude is required.</source>
-        <translation type="unfinished"></translation>
+        <translation>La latitudine è obbligatoria.</translation>
     </message>
     <message>
         <location filename="../../ui/GeoCoordinateUtils.cpp" line="197"/>
         <source>Longitude is required.</source>
-        <translation type="unfinished"></translation>
+        <translation>La longitudine è obbligatoria.</translation>
     </message>
     <message>
         <location filename="../../ui/GeoCoordinateUtils.cpp" line="213"/>
         <source>Latitude format is invalid.</source>
-        <translation type="unfinished"></translation>
+        <translation>Formato latitudine non valido.</translation>
     </message>
     <message>
         <location filename="../../ui/GeoCoordinateUtils.cpp" line="213"/>
         <source>Longitude format is invalid.</source>
-        <translation type="unfinished"></translation>
+        <translation>Formato longitudine non valido.</translation>
     </message>
     <message>
         <location filename="../../ui/GeoCoordinateUtils.cpp" line="227"/>
         <source>Latitude requires degrees and minutes.</source>
-        <translation type="unfinished"></translation>
+        <translation>La latitudine richiede gradi e minuti.</translation>
     </message>
     <message>
         <location filename="../../ui/GeoCoordinateUtils.cpp" line="228"/>
         <source>Longitude requires degrees and minutes.</source>
-        <translation type="unfinished"></translation>
+        <translation>La longitudine richiede gradi e minuti.</translation>
     </message>
     <message>
         <location filename="../../ui/GeoCoordinateUtils.cpp" line="250"/>
         <source>Minutes must be less than 60.</source>
-        <translation type="unfinished"></translation>
+        <translation>I minuti devono essere inferiori a 60.</translation>
     </message>
     <message>
         <location filename="../../ui/GeoCoordinateUtils.cpp" line="258"/>
         <source>Latitude requires degrees, minutes, and seconds.</source>
-        <translation type="unfinished"></translation>
+        <translation>La latitudine richiede gradi, minuti e secondi.</translation>
     </message>
     <message>
         <location filename="../../ui/GeoCoordinateUtils.cpp" line="259"/>
         <source>Longitude requires degrees, minutes, and seconds.</source>
-        <translation type="unfinished"></translation>
+        <translation>La longitudine richiede gradi, minuti e secondi.</translation>
     </message>
     <message>
         <location filename="../../ui/GeoCoordinateUtils.cpp" line="272"/>
         <source>Minutes and seconds must be less than 60.</source>
-        <translation type="unfinished"></translation>
+        <translation>Minuti e secondi devono essere inferiori a 60.</translation>
     </message>
     <message>
         <location filename="../../ui/launcher/Launcher.cpp" line="170"/>
@@ -1563,7 +1563,7 @@ Do you wish to override the security check and continue ?   </source>
     <message>
         <location filename="../../ui/mydata/Charts.cpp" line="42"/>
         <source>Imported chart source %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Sorgente carta %1 importata</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Files.cpp" line="1228"/>
@@ -1595,27 +1595,27 @@ Do you wish to override the security check and continue ?   </source>
         <location filename="../../ui/mydata/GeoJsonUtils.cpp" line="300"/>
         <location filename="../../ui/mydata/GeoJsonUtils.cpp" line="370"/>
         <source>The selected file does not contain GeoJSON features.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il file selezionato non contiene elementi GeoJSON.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/GeoJsonUtils.cpp" line="317"/>
         <source>No compatible GeoJSON features were found.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessun elemento GeoJSON compatibile trovato.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/GeoJsonUtils.cpp" line="323"/>
         <source>Imported %1 GeoJSON feature(s).</source>
-        <translation type="unfinished"></translation>
+        <translation>Importati %1 elementi GeoJSON.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/GeoJsonUtils.cpp" line="425"/>
         <source>No compatible GeoJSON track coordinates were found.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessuna coordinata traccia GeoJSON compatibile trovata.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/GeoJsonUtils.cpp" line="431"/>
         <source>Imported %1 track sample(s) from GeoJSON.</source>
-        <translation type="unfinished"></translation>
+        <translation>Importati %1 campioni traccia da GeoJSON.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="157"/>
@@ -1640,12 +1640,12 @@ Do you wish to override the security check and continue ?   </source>
     <message>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="197"/>
         <source>Invalid Coordinates</source>
-        <translation type="unfinished"></translation>
+        <translation>Coordinate non valide</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="198"/>
         <source>Please enter valid latitude and longitude values.</source>
-        <translation type="unfinished"></translation>
+        <translation>Inserisci valori validi di latitudine e longitudine.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceModel.cpp" line="252"/>
@@ -2185,34 +2185,35 @@ Do you wish to override the security check and continue ?   </source>
     <message>
         <location filename="../../ui/widgets/SignalKMetricState.hpp" line="38"/>
         <source>Not configured</source>
-        <translation type="unfinished"></translation>
+        <translation>Non configurato</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKMetricState.hpp" line="43"/>
         <source>Live</source>
-        <translation type="unfinished"></translation>
+        <translation>Live</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKMetricState.hpp" line="45"/>
         <source>Stale</source>
-        <translation type="unfinished"></translation>
+        <translation>Non aggiornato</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKMetricState.hpp" line="47"/>
         <location filename="../../ui/widgets/SignalKMetricState.hpp" line="50"/>
         <source>Missing</source>
-        <translation type="unfinished"></translation>
+        <translation>Mancante</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKMetricState.hpp" line="60"/>
         <source>%1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: %2</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKMetricState.hpp" line="66"/>
         <source>
 Last live update %1</source>
-        <translation type="unfinished"></translation>
+        <translation>
+Ultimo aggiornamento live %1</translation>
     </message>
 </context>
 <context>
@@ -2430,73 +2431,73 @@ Last live update %1</source>
         <location filename="../../ui/mydata/Waypoints.ui" line="340"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_Waypoints.h" line="580"/>
         <source>Lat</source>
-        <translation type="unfinished"></translation>
+        <translation>Lat</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.ui" line="350"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_Waypoints.h" line="581"/>
         <source>Lon</source>
-        <translation type="unfinished"></translation>
+        <translation>Lon</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.ui" line="360"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_Waypoints.h" line="582"/>
         <source>Alt</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.ui" line="373"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_Waypoints.h" line="583"/>
         <source>Contacts</source>
-        <translation type="unfinished"></translation>
+        <translation>Contatti</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.ui" line="383"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_Waypoints.h" line="584"/>
         <source>Sea floor</source>
-        <translation type="unfinished"></translation>
+        <translation>Fondale</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.ui" line="408"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_Waypoints.h" line="585"/>
         <source>Min</source>
-        <translation type="unfinished"></translation>
+        <translation>Min</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.ui" line="431"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_Waypoints.h" line="586"/>
         <source>Max</source>
-        <translation type="unfinished"></translation>
+        <translation>Max</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.ui" line="498"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_Waypoints.h" line="588"/>
         <source>Slips</source>
-        <translation type="unfinished"></translation>
+        <translation>Ormeggi</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.ui" line="569"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_Waypoints.h" line="589"/>
         <source>Preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Anteprima</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.ui" line="591"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_Waypoints.h" line="590"/>
         <source>Properties Tree</source>
-        <translation type="unfinished"></translation>
+        <translation>Albero proprietà</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.ui" line="613"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_Waypoints.h" line="591"/>
         <source>Properties JSON</source>
-        <translation type="unfinished"></translation>
+        <translation>Proprietà JSON</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.ui" line="635"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_Waypoints.h" line="592"/>
         <source>GeoJSON</source>
-        <translation type="unfinished"></translation>
+        <translation>GeoJSON</translation>
     </message>
 </context>
 <context>
@@ -2514,97 +2515,97 @@ Last live update %1</source>
         <location filename="../../FairWindSK.cpp" line="1372"/>
         <location filename="../../FairWindSK.cpp" line="1539"/>
         <source>Apps ready</source>
-        <translation type="unfinished"></translation>
+        <translation>App pronte</translation>
     </message>
     <message>
         <location filename="../../FairWindSK.cpp" line="1372"/>
         <location filename="../../FairWindSK.cpp" line="1382"/>
         <location filename="../../FairWindSK.cpp" line="1501"/>
         <source>Apps idle</source>
-        <translation type="unfinished"></translation>
+        <translation>App inattive</translation>
     </message>
     <message>
         <location filename="../../FairWindSK.cpp" line="1382"/>
         <location filename="../../FairWindSK.cpp" line="1551"/>
         <source>Apps cached</source>
-        <translation type="unfinished"></translation>
+        <translation>App in cache</translation>
     </message>
     <message>
         <location filename="../../FairWindSK.cpp" line="1395"/>
         <source>Loading apps</source>
-        <translation type="unfinished"></translation>
+        <translation>Caricamento app</translation>
     </message>
     <message>
         <location filename="../../FairWindSK.cpp" line="1395"/>
         <source>Refreshing apps</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiornamento app</translation>
     </message>
     <message>
         <location filename="../../FairWindSK.cpp" line="1514"/>
         <location filename="../../FairWindSK.cpp" line="1550"/>
         <source>Apps refresh failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiornamento app non riuscito</translation>
     </message>
     <message>
         <location filename="../../FairWindSK.cpp" line="1651"/>
         <source>Signal K disconnected</source>
-        <translation type="unfinished"></translation>
+        <translation>Signal K disconnesso</translation>
     </message>
     <message>
         <location filename="../../FairWindSK.cpp" line="1662"/>
         <source>Foreground app degraded</source>
-        <translation type="unfinished"></translation>
+        <translation>App in primo piano degradata</translation>
     </message>
     <message>
         <location filename="../../FairWindSK.cpp" line="1666"/>
         <source>Connecting to Signal K</source>
-        <translation type="unfinished"></translation>
+        <translation>Connessione a Signal K</translation>
     </message>
     <message>
         <location filename="../../FairWindSK.cpp" line="1670"/>
         <source>Reconnecting to Signal K</source>
-        <translation type="unfinished"></translation>
+        <translation>Riconnessione a Signal K</translation>
     </message>
     <message>
         <location filename="../../FairWindSK.cpp" line="1674"/>
         <source>REST degraded</source>
-        <translation type="unfinished"></translation>
+        <translation>REST degradato</translation>
     </message>
     <message>
         <location filename="../../FairWindSK.cpp" line="1678"/>
         <source>Stream degraded</source>
-        <translation type="unfinished"></translation>
+        <translation>Stream degradato</translation>
     </message>
     <message>
         <location filename="../../FairWindSK.cpp" line="1682"/>
         <source>Live data stale</source>
-        <translation type="unfinished"></translation>
+        <translation>Dati live non aggiornati</translation>
     </message>
     <message>
         <location filename="../../FairWindSK.cpp" line="1687"/>
         <source>Signal K live • Refreshing apps</source>
-        <translation type="unfinished"></translation>
+        <translation>Signal K live • Aggiornamento app</translation>
     </message>
     <message>
         <location filename="../../FairWindSK.cpp" line="1687"/>
         <location filename="../../FairWindSK.cpp" line="1691"/>
         <source>Signal K live • %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Signal K live • %1</translation>
     </message>
     <message>
         <location filename="../../FairWindSK.cpp" line="1691"/>
         <source>Signal K live • Apps stale</source>
-        <translation type="unfinished"></translation>
+        <translation>Signal K live • App non aggiornate</translation>
     </message>
     <message>
         <location filename="../../FairWindSK.cpp" line="1695"/>
         <source>Signal K live</source>
-        <translation type="unfinished"></translation>
+        <translation>Signal K live</translation>
     </message>
     <message>
         <location filename="../../FairWindSK.cpp" line="1700"/>
         <source>Signal K degraded</source>
-        <translation type="unfinished"></translation>
+        <translation>Signal K degradato</translation>
     </message>
 </context>
 <context>
@@ -2612,41 +2613,41 @@ Last live update %1</source>
     <message>
         <location filename="../../signalk/Client.cpp" line="73"/>
         <source>Timeout while contacting %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Timeout durante il contatto con %1</translation>
     </message>
     <message>
         <location filename="../../signalk/Client.cpp" line="137"/>
         <location filename="../../signalk/Client.cpp" line="1072"/>
         <source>REST online</source>
-        <translation type="unfinished"></translation>
+        <translation>REST online</translation>
     </message>
     <message>
         <location filename="../../signalk/Client.cpp" line="139"/>
         <source>REST error</source>
-        <translation type="unfinished"></translation>
+        <translation>Errore REST</translation>
     </message>
     <message>
         <location filename="../../signalk/Client.cpp" line="154"/>
         <source>Signal K request failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Richiesta Signal K non riuscita</translation>
     </message>
     <message>
         <location filename="../../signalk/Client.cpp" line="176"/>
         <location filename="../../signalk/Client.cpp" line="1483"/>
         <source>REST + Stream online</source>
-        <translation type="unfinished"></translation>
+        <translation>REST + stream online</translation>
     </message>
     <message>
         <location filename="../../signalk/Client.cpp" line="178"/>
         <location filename="../../signalk/Client.cpp" line="1486"/>
         <source>REST online, stream offline</source>
-        <translation type="unfinished"></translation>
+        <translation>REST online, stream offline</translation>
     </message>
     <message>
         <location filename="../../signalk/Client.cpp" line="180"/>
         <location filename="../../signalk/Client.cpp" line="1489"/>
         <source>Stream online, REST offline</source>
-        <translation type="unfinished"></translation>
+        <translation>Stream online, REST offline</translation>
     </message>
     <message>
         <location filename="../../signalk/Client.cpp" line="182"/>
@@ -2654,22 +2655,22 @@ Last live update %1</source>
         <location filename="../../signalk/Client.cpp" line="1163"/>
         <location filename="../../signalk/Client.cpp" line="1491"/>
         <source>Signal K offline</source>
-        <translation type="unfinished"></translation>
+        <translation>Signal K offline</translation>
     </message>
     <message>
         <location filename="../../signalk/Client.cpp" line="206"/>
         <source>%1 %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 %2</translation>
     </message>
     <message>
         <location filename="../../signalk/Client.cpp" line="212"/>
         <source>Version %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Versione %1</translation>
     </message>
     <message>
         <location filename="../../signalk/Client.cpp" line="216"/>
         <source>Signal K reachable</source>
-        <translation type="unfinished"></translation>
+        <translation>Signal K raggiungibile</translation>
     </message>
     <message>
         <location filename="../../signalk/Client.cpp" line="337"/>
@@ -2677,125 +2678,125 @@ Last live update %1</source>
         <location filename="../../signalk/Client.cpp" line="339"/>
         <location filename="../../signalk/Client.cpp" line="1125"/>
         <source>Connecting to Signal K</source>
-        <translation type="unfinished"></translation>
+        <translation>Connessione a Signal K</translation>
     </message>
     <message>
         <location filename="../../signalk/Client.cpp" line="344"/>
         <location filename="../../signalk/Client.cpp" line="345"/>
         <source>Signal K disabled</source>
-        <translation type="unfinished"></translation>
+        <translation>Signal K disabilitato</translation>
     </message>
     <message>
         <location filename="../../signalk/Client.cpp" line="346"/>
         <source>Signal K connection disabled</source>
-        <translation type="unfinished"></translation>
+        <translation>Connessione Signal K disabilitata</translation>
     </message>
     <message>
         <location filename="../../signalk/Client.cpp" line="940"/>
         <location filename="../../signalk/Client.cpp" line="978"/>
         <source>Stream online</source>
-        <translation type="unfinished"></translation>
+        <translation>Stream online</translation>
     </message>
     <message>
         <location filename="../../signalk/Client.cpp" line="962"/>
         <location filename="../../signalk/Client.cpp" line="1266"/>
         <location filename="../../signalk/Client.cpp" line="1267"/>
         <source>Signal K restarting</source>
-        <translation type="unfinished"></translation>
+        <translation>Riavvio Signal K</translation>
     </message>
     <message>
         <location filename="../../signalk/Client.cpp" line="963"/>
         <source>Waiting for Signal K restart</source>
-        <translation type="unfinished"></translation>
+        <translation>Attesa riavvio Signal K</translation>
     </message>
     <message>
         <location filename="../../signalk/Client.cpp" line="967"/>
         <source>Stream disconnected</source>
-        <translation type="unfinished"></translation>
+        <translation>Stream disconnesso</translation>
     </message>
     <message>
         <location filename="../../signalk/Client.cpp" line="968"/>
         <source>Waiting for Signal K</source>
-        <translation type="unfinished"></translation>
+        <translation>Attesa Signal K</translation>
     </message>
     <message>
         <location filename="../../signalk/Client.cpp" line="1014"/>
         <source>Data stale</source>
-        <translation type="unfinished"></translation>
+        <translation>Dati non aggiornati</translation>
     </message>
     <message>
         <location filename="../../signalk/Client.cpp" line="1015"/>
         <source>Using cached Signal K data</source>
-        <translation type="unfinished"></translation>
+        <translation>Uso dati Signal K in cache</translation>
     </message>
     <message>
         <location filename="../../signalk/Client.cpp" line="1073"/>
         <source>Connecting stream</source>
-        <translation type="unfinished"></translation>
+        <translation>Connessione stream</translation>
     </message>
     <message>
         <location filename="../../signalk/Client.cpp" line="1089"/>
         <source>Connected in public mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Connesso in modalità pubblica</translation>
     </message>
     <message>
         <location filename="../../signalk/Client.cpp" line="1114"/>
         <source>Reconnecting stream</source>
-        <translation type="unfinished"></translation>
+        <translation>Riconnessione stream</translation>
     </message>
     <message>
         <location filename="../../signalk/Client.cpp" line="1115"/>
         <location filename="../../signalk/Client.cpp" line="1125"/>
         <source>Reconnecting to Signal K</source>
-        <translation type="unfinished"></translation>
+        <translation>Riconnessione a Signal K</translation>
     </message>
     <message>
         <location filename="../../signalk/Client.cpp" line="1147"/>
         <location filename="../../signalk/Client.cpp" line="1152"/>
         <location filename="../../signalk/Client.cpp" line="1164"/>
         <source>Signal K server not available</source>
-        <translation type="unfinished"></translation>
+        <translation>Server Signal K non disponibile</translation>
     </message>
     <message>
         <location filename="../../signalk/Client.cpp" line="1161"/>
         <source>Invalid Signal K discovery payload</source>
-        <translation type="unfinished"></translation>
+        <translation>Payload rilevamento Signal K non valido</translation>
     </message>
     <message>
         <location filename="../../signalk/Client.cpp" line="1268"/>
         <source>Signal K restart requested</source>
-        <translation type="unfinished"></translation>
+        <translation>Riavvio Signal K richiesto</translation>
     </message>
     <message>
         <location filename="../../signalk/Client.cpp" line="1525"/>
         <location filename="../../signalk/Client.cpp" line="1538"/>
         <source>Disconnected</source>
-        <translation type="unfinished"></translation>
+        <translation>Disconnesso</translation>
     </message>
     <message>
         <location filename="../../signalk/Client.cpp" line="1527"/>
         <source>Connecting</source>
-        <translation type="unfinished"></translation>
+        <translation>Connessione</translation>
     </message>
     <message>
         <location filename="../../signalk/Client.cpp" line="1529"/>
         <source>Live</source>
-        <translation type="unfinished"></translation>
+        <translation>Live</translation>
     </message>
     <message>
         <location filename="../../signalk/Client.cpp" line="1531"/>
         <source>Stale</source>
-        <translation type="unfinished"></translation>
+        <translation>Non aggiornato</translation>
     </message>
     <message>
         <location filename="../../signalk/Client.cpp" line="1533"/>
         <source>Reconnecting</source>
-        <translation type="unfinished"></translation>
+        <translation>Riconnessione</translation>
     </message>
     <message>
         <location filename="../../signalk/Client.cpp" line="1535"/>
         <source>Degraded</source>
-        <translation type="unfinished"></translation>
+        <translation>Degradato</translation>
     </message>
 </context>
 <context>
@@ -2803,7 +2804,7 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/GeoCoordinateEditorWidget.cpp" line="77"/>
         <source>Altitude format is invalid.</source>
-        <translation type="unfinished"></translation>
+        <translation>Formato altitudine non valido.</translation>
     </message>
 </context>
 <context>
@@ -2904,76 +2905,79 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/bottombar/AlarmsBar.cpp" line="20"/>
         <source>Connecting</source>
-        <translation type="unfinished"></translation>
+        <translation>Connessione</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AlarmsBar.cpp" line="22"/>
         <source>Live</source>
-        <translation type="unfinished"></translation>
+        <translation>Live</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AlarmsBar.cpp" line="24"/>
         <source>Stale</source>
-        <translation type="unfinished"></translation>
+        <translation>Non aggiornato</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AlarmsBar.cpp" line="26"/>
         <source>Reconnecting</source>
-        <translation type="unfinished"></translation>
+        <translation>Riconnessione</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AlarmsBar.cpp" line="28"/>
         <source>Degraded</source>
-        <translation type="unfinished"></translation>
+        <translation>Degradato</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AlarmsBar.cpp" line="31"/>
         <source>Disconnected</source>
-        <translation type="unfinished"></translation>
+        <translation>Disconnesso</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AlarmsBar.cpp" line="134"/>
         <source>Signal K %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Signal K %1</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AlarmsBar.cpp" line="136"/>
         <location filename="../../ui/bottombar/AlarmsBar.cpp" line="157"/>
         <source>
 %1</source>
-        <translation type="unfinished"></translation>
+        <translation>
+%1</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AlarmsBar.cpp" line="139"/>
         <source>
 Last live update %1</source>
-        <translation type="unfinished"></translation>
+        <translation>
+Ultimo aggiornamento live %1</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AlarmsBar.cpp" line="144"/>
         <source>Alarm controls
 %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Controlli allarmi
+%1</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AlarmsBar.cpp" line="147"/>
         <source>Close alarm controls</source>
-        <translation type="unfinished"></translation>
+        <translation>Chiudi controlli allarmi</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AlarmsBar.cpp" line="155"/>
         <source>%1 alarm</source>
-        <translation type="unfinished"></translation>
+        <translation>Allarme %1</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AlarmsBar.cpp" line="156"/>
         <source>: active</source>
-        <translation type="unfinished"></translation>
+        <translation>: attivo</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AlarmsBar.cpp" line="156"/>
         <source>: inactive</source>
-        <translation type="unfinished"></translation>
+        <translation>: inattivo</translation>
     </message>
 </context>
 <context>
@@ -2981,37 +2985,37 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/bottombar/AnchorBar.cpp" line="514"/>
         <source>Anchor position</source>
-        <translation type="unfinished"></translation>
+        <translation>Posizione ancora</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AnchorBar.cpp" line="539"/>
         <source>Anchor depth</source>
-        <translation type="unfinished"></translation>
+        <translation>Profondità ancora</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AnchorBar.cpp" line="563"/>
         <source>Anchor bearing</source>
-        <translation type="unfinished"></translation>
+        <translation>Rilevamento ancora</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AnchorBar.cpp" line="587"/>
         <source>Anchor distance</source>
-        <translation type="unfinished"></translation>
+        <translation>Distanza ancora</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AnchorBar.cpp" line="611"/>
         <source>Anchor rode</source>
-        <translation type="unfinished"></translation>
+        <translation>Calumo ancora</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AnchorBar.cpp" line="642"/>
         <source>Anchor radius</source>
-        <translation type="unfinished"></translation>
+        <translation>Raggio ancora</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AnchorBar.cpp" line="673"/>
         <source>Anchor max radius</source>
-        <translation type="unfinished"></translation>
+        <translation>Raggio max ancora</translation>
     </message>
 </context>
 <context>
@@ -3019,42 +3023,42 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/bottombar/AutopilotBar.cpp" line="227"/>
         <source>Current rudder angle %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Angolo timone attuale %1</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AutopilotBar.cpp" line="230"/>
         <source>Autopilot rudder angle</source>
-        <translation type="unfinished"></translation>
+        <translation>Angolo timone autopilota</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AutopilotBar.cpp" line="253"/>
         <source>Autopilot state</source>
-        <translation type="unfinished"></translation>
+        <translation>Stato autopilota</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AutopilotBar.cpp" line="258"/>
         <source>NO PILOT</source>
-        <translation type="unfinished"></translation>
+        <translation>NO PILOTA</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AutopilotBar.cpp" line="280"/>
         <source>Autopilot target heading</source>
-        <translation type="unfinished"></translation>
+        <translation>Prua obiettivo autopilota</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AutopilotBar.cpp" line="399"/>
         <source>Autopilot unavailable</source>
-        <translation type="unfinished"></translation>
+        <translation>Autopilota non disponibile</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AutopilotBar.cpp" line="532"/>
         <source>N/A</source>
-        <translation type="unfinished"></translation>
+        <translation>N/D</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AutopilotBar.cpp" line="554"/>
         <source>Error: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Errore: %1</translation>
     </message>
 </context>
 <context>
@@ -3176,58 +3180,58 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/mydata/Charts.cpp" line="93"/>
         <source>Search charts by name, identifier, region, or format</source>
-        <translation type="unfinished"></translation>
+        <translation>Cerca carte per nome, identificatore, regione o formato</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Charts.cpp" line="97"/>
         <source>Chart packages (*.json *.geojson *.mbtiles *.kap *.bsb *.gemf *.xml *.zip);;All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Pacchetti carte (*.json *.geojson *.mbtiles *.kap *.bsb *.gemf *.xml *.zip);;Tutti i file (*)</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Charts.cpp" line="101"/>
         <source>Chart package manifest (*.json);;GeoJSON charts (*.geojson)</source>
-        <translation type="unfinished"></translation>
+        <translation>Manifesto pacchetto carte (*.json);;Carte GeoJSON (*.geojson)</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Charts.cpp" line="130"/>
         <source>Unable to open %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile aprire %1.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Charts.cpp" line="149"/>
         <source>The selected chart package does not contain chart definitions.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il pacchetto carte selezionato non contiene definizioni carta.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Charts.cpp" line="154"/>
         <source>Imported %1 chart definition(s) from the package manifest.</source>
-        <translation type="unfinished"></translation>
+        <translation>Importate %1 definizioni carta dal manifesto pacchetto.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Charts.cpp" line="166"/>
         <source>Imported chart source %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sorgente carta %1 importata.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Charts.cpp" line="179"/>
         <source>Unable to write %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile scrivere %1.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Charts.cpp" line="185"/>
         <source>Unable to export the chart package manifest.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile esportare il manifesto del pacchetto carte.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Charts.cpp" line="197"/>
         <location filename="../../ui/mydata/Charts.cpp" line="202"/>
         <source>This chart does not have a source path yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Questa carta non ha ancora un percorso sorgente.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Charts.cpp" line="203"/>
         <source>Unable to open the selected chart source.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile aprire la sorgente carta selezionata.</translation>
     </message>
 </context>
 <context>
@@ -3236,53 +3240,53 @@ Last live update %1</source>
         <location filename="../../ui/mydata/FileViewer.ui" line="14"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_FileViewer.h" line="127"/>
         <source>JsonViewer</source>
-        <translation type="unfinished"></translation>
+        <translation>Visore JSON</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/FileViewer.cpp" line="40"/>
         <source>Save changes</source>
-        <translation type="unfinished"></translation>
+        <translation>Salva modifiche</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/FileViewer.cpp" line="40"/>
         <location filename="../../ui/mydata/FileViewer.cpp" line="47"/>
         <source>No pending changes</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessuna modifica in sospeso</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/FileViewer.cpp" line="46"/>
         <source>Close file viewer</source>
-        <translation type="unfinished"></translation>
+        <translation>Chiudi visore file</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/FileViewer.cpp" line="93"/>
         <source>Unable to open %1 for reading.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile aprire %1 in lettura.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/FileViewer.cpp" line="149"/>
         <source>Unable to open %1 for writing.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile aprire %1 in scrittura.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/FileViewer.cpp" line="155"/>
         <source>Unable to save %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile salvare %1.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/FileViewer.cpp" line="162"/>
         <source>File Viewer</source>
-        <translation type="unfinished"></translation>
+        <translation>Visore file</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/FileViewer.cpp" line="171"/>
         <source>Unsaved changes</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifiche non salvate</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/FileViewer.cpp" line="172"/>
         <source>Discard the current file changes?</source>
-        <translation type="unfinished"></translation>
+        <translation>Scartare le modifiche correnti al file?</translation>
     </message>
 </context>
 <context>
@@ -3327,13 +3331,13 @@ Last live update %1</source>
         <location filename="../../build/FairWindSK_autogen/include/ui_Files.h" line="419"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_Files.h" line="420"/>
         <source>...</source>
-        <translation type="unfinished"></translation>
+        <translation>...</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Files.ui" line="367"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_Files.h" line="422"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The address bar.&lt;br/&gt;The current path is displayed here.&lt;br/&gt;Change the path and press &lt;kbd&gt;Enter&lt;/kbd&gt; to visit.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;La barra degli indirizzi.&lt;br/&gt;Il percorso corrente è mostrato qui.&lt;br/&gt;Modifica il percorso e premi &lt;kbd&gt;Invio&lt;/kbd&gt; per aprirlo.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Files.ui" line="518"/>
@@ -3345,7 +3349,7 @@ Last live update %1</source>
         <location filename="../../ui/mydata/Files.ui" line="525"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_Files.h" line="427"/>
         <source>0.0</source>
-        <translation type="unfinished"></translation>
+        <translation>0.0</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Files.ui" line="548"/>
@@ -3700,22 +3704,22 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/mydata/GeoJsonPreviewWidget.cpp" line="119"/>
         <source>Embedded GeoJSON preview is disabled on this platform to avoid Qt WebEngine instability.</source>
-        <translation type="unfinished"></translation>
+        <translation>L'anteprima GeoJSON incorporata è disabilitata su questa piattaforma per evitare instabilità di Qt WebEngine.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/GeoJsonPreviewWidget.cpp" line="126"/>
         <source>GeoJSON preview will appear here.</source>
-        <translation type="unfinished"></translation>
+        <translation>L'anteprima GeoJSON apparirà qui.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/GeoJsonPreviewWidget.cpp" line="155"/>
         <source>GeoJSON</source>
-        <translation type="unfinished"></translation>
+        <translation>GeoJSON</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/GeoJsonPreviewWidget.cpp" line="177"/>
         <source>Freeboard</source>
-        <translation type="unfinished"></translation>
+        <translation>Freeboard</translation>
     </message>
 </context>
 <context>
@@ -3743,12 +3747,12 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/mydata/HistoryTrackModel.cpp" line="242"/>
         <source>No track samples are available from the History API.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessun campione traccia disponibile dall'API History.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/HistoryTrackModel.cpp" line="243"/>
         <source>Loaded %1 track samples.</source>
-        <translation type="unfinished"></translation>
+        <translation>Caricati %1 campioni traccia.</translation>
     </message>
 </context>
 <context>
@@ -3756,22 +3760,22 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="230"/>
         <source>Last hour</source>
-        <translation type="unfinished"></translation>
+        <translation>Ultima ora</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="231"/>
         <source>Last 6 hours</source>
-        <translation type="unfinished"></translation>
+        <translation>Ultime 6 ore</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="232"/>
         <source>Last 24 hours</source>
-        <translation type="unfinished"></translation>
+        <translation>Ultime 24 ore</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="233"/>
         <source>Last 7 days</source>
-        <translation type="unfinished"></translation>
+        <translation>Ultimi 7 giorni</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="244"/>
@@ -3781,12 +3785,12 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="245"/>
         <source>Edit</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifica</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="246"/>
         <source>New</source>
-        <translation type="unfinished"></translation>
+        <translation>Nuovo</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="247"/>
@@ -3812,18 +3816,18 @@ Last live update %1</source>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="296"/>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="539"/>
         <source>No track samples are available from the History API.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessun campione traccia disponibile dall'API History.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="420"/>
         <source>Import Tracks</source>
-        <translation type="unfinished"></translation>
+        <translation>Importa tracce</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="422"/>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="456"/>
         <source>GeoJSON files (*.geojson *.json);;All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>File GeoJSON (*.geojson *.json);;Tutti i file (*)</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="429"/>
@@ -3839,63 +3843,63 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="429"/>
         <source>Unable to open %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile aprire %1.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="454"/>
         <source>Export Tracks</source>
-        <translation type="unfinished"></translation>
+        <translation>Esporta tracce</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="463"/>
         <source>Unable to write %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile scrivere %1.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="473"/>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="484"/>
         <source>Select a track sample first.</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleziona prima un campione traccia.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="478"/>
         <source>Track Sample</source>
-        <translation type="unfinished"></translation>
+        <translation>Campione traccia</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="502"/>
         <source>Delete Sample</source>
-        <translation type="unfinished"></translation>
+        <translation>Elimina campione</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="503"/>
         <source>Delete the selected track sample?</source>
-        <translation type="unfinished"></translation>
+        <translation>Eliminare il campione traccia selezionato?</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="510"/>
         <source>Unable to delete the selected sample.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile eliminare il campione selezionato.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="538"/>
         <source>Loaded %1 track samples.</source>
-        <translation type="unfinished"></translation>
+        <translation>Caricati %1 campioni traccia.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="568"/>
         <source>New Track Sample</source>
-        <translation type="unfinished"></translation>
+        <translation>Nuovo campione traccia</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="568"/>
         <source>Edit Track Sample</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifica campione traccia</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="576"/>
         <source>Unable to update the selected sample.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile aggiornare il campione selezionato.</translation>
     </message>
 </context>
 <context>
@@ -3903,12 +3907,12 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/mydata/JsonObjectEditorWidget.cpp" line="47"/>
         <source>Key</source>
-        <translation type="unfinished"></translation>
+        <translation>Chiave</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/JsonObjectEditorWidget.cpp" line="47"/>
         <source>Value</source>
-        <translation type="unfinished"></translation>
+        <translation>Valore</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/JsonObjectEditorWidget.cpp" line="47"/>
@@ -3918,13 +3922,13 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/mydata/JsonObjectEditorWidget.cpp" line="55"/>
         <source>No feature properties are available for this resource.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessuna proprietà elemento disponibile per questa risorsa.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/JsonObjectEditorWidget.cpp" line="114"/>
         <location filename="../../ui/mydata/JsonObjectEditorWidget.cpp" line="320"/>
         <source>The JSON properties editor must contain a valid JSON object.</source>
-        <translation type="unfinished"></translation>
+        <translation>L'editor proprietà JSON deve contenere un oggetto JSON valido.</translation>
     </message>
 </context>
 <context>
@@ -3981,58 +3985,58 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/mydata/Notes.cpp" line="42"/>
         <source>Search notes by title, description, href, or MIME type</source>
-        <translation type="unfinished"></translation>
+        <translation>Cerca note per titolo, descrizione, href o tipo MIME</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Notes.cpp" line="46"/>
         <source>Notes and attachments (*.geojson *.json *.txt *.md *.markdown *.html *.htm *.pdf *.jpg *.jpeg *.png);;All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Note e allegati (*.geojson *.json *.txt *.md *.markdown *.html *.htm *.pdf *.jpg *.jpeg *.png);;Tutti i file (*)</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Notes.cpp" line="50"/>
         <source>GeoJSON or JSON notes (*.geojson *.json);;Attachment copy (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Note GeoJSON o JSON (*.geojson *.json);;Copia allegato (*)</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Notes.cpp" line="54"/>
         <source>Imported %1 note attachment(s).</source>
-        <translation type="unfinished"></translation>
+        <translation>Importati %1 allegati nota.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Notes.cpp" line="81"/>
         <source>Imported attachment from %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Allegato importato da %1</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Notes.cpp" line="98"/>
         <source>Imported note attachment from %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Allegato nota importato da %1.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Notes.cpp" line="114"/>
         <source>Unable to read the linked attachment.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile leggere l'allegato collegato.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Notes.cpp" line="122"/>
         <source>Unable to write %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile scrivere %1.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Notes.cpp" line="129"/>
         <source>Unable to export the linked attachment.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile esportare l'allegato collegato.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Notes.cpp" line="142"/>
         <location filename="../../ui/mydata/Notes.cpp" line="147"/>
         <source>This note does not reference an attachment or external link yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Questa nota non fa ancora riferimento a un allegato o link esterno.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Notes.cpp" line="148"/>
         <source>Unable to open the selected attachment or link.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile aprire l'allegato o il link selezionato.</translation>
     </message>
 </context>
 <context>
@@ -4045,7 +4049,7 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/mydata/Regions.cpp" line="36"/>
         <source>Search regions by name, description, geometry, or timestamp</source>
-        <translation type="unfinished"></translation>
+        <translation>Cerca regioni per nome, descrizione, geometria o timestamp</translation>
     </message>
 </context>
 <context>
@@ -4058,12 +4062,12 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/mydata/ResourceCollectionPageBase.cpp" line="163"/>
         <source>Edit</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifica</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceCollectionPageBase.cpp" line="164"/>
         <source>New</source>
-        <translation type="unfinished"></translation>
+        <translation>Nuovo</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceCollectionPageBase.cpp" line="165"/>
@@ -4088,7 +4092,7 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/mydata/ResourceCollectionPageBase.cpp" line="280"/>
         <source>Single-window mode keeps folders inside FairWindSK. Use MyData Files to browse this folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>La modalità a finestra singola mantiene le cartelle dentro FairWindSK. Usa File di MyData per sfogliare questa cartella.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceCollectionPageBase.cpp" line="292"/>
@@ -4099,87 +4103,87 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/mydata/ResourceCollectionPageBase.cpp" line="310"/>
         <source>Single-window mode cannot open %1 links.</source>
-        <translation type="unfinished"></translation>
+        <translation>La modalità a finestra singola non può aprire link %1.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceCollectionPageBase.cpp" line="310"/>
         <source>unknown</source>
-        <translation type="unfinished"></translation>
+        <translation>sconosciuto</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceCollectionPageBase.cpp" line="340"/>
         <source>GeoJSON or JSON files (*.geojson *.json);;All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>File GeoJSON o JSON (*.geojson *.json);;Tutti i file (*)</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceCollectionPageBase.cpp" line="344"/>
         <source>GeoJSON files (*.geojson);;JSON files (*.json)</source>
-        <translation type="unfinished"></translation>
+        <translation>File GeoJSON (*.geojson);;File JSON (*.json)</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceCollectionPageBase.cpp" line="352"/>
         <source>Imported %1 %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Importati %1 %2.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceCollectionPageBase.cpp" line="363"/>
         <source>Unable to open %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile aprire %1.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceCollectionPageBase.cpp" line="376"/>
         <source>Unable to write %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile scrivere %1.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceCollectionPageBase.cpp" line="383"/>
         <source>Unable to export data to %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile esportare i dati in %1.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceCollectionPageBase.cpp" line="508"/>
         <source>Delete the selected %1?</source>
-        <translation type="unfinished"></translation>
+        <translation>Eliminare %1 selezionato?</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceCollectionPageBase.cpp" line="515"/>
         <source>Unable to delete the selected %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile eliminare %1 selezionato.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceCollectionPageBase.cpp" line="525"/>
         <source>Import %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Importa %1</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceCollectionPageBase.cpp" line="561"/>
         <source>No %1 could be imported from the selected file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessun %1 importabile dal file selezionato.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceCollectionPageBase.cpp" line="581"/>
         <source>There are no %1 to export.</source>
-        <translation type="unfinished"></translation>
+        <translation>Non ci sono %1 da esportare.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceCollectionPageBase.cpp" line="587"/>
         <source>Export %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Esporta %1</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceCollectionPageBase.cpp" line="596"/>
         <source>Unable to export the selected resources.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile esportare le risorse selezionate.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceCollectionPageBase.cpp" line="676"/>
         <source>%1 Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Editor %1</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceCollectionPageBase.cpp" line="690"/>
         <source>Unable to save the selected %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile salvare %1 selezionato.</translation>
     </message>
 </context>
 <context>
@@ -4187,13 +4191,13 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/mydata/ResourceDialog.cpp" line="61"/>
         <source>%1 Editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Editor %1</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceDialog.cpp" line="98"/>
         <location filename="../../ui/mydata/ResourceDialog.cpp" line="316"/>
         <source>Title</source>
-        <translation type="unfinished"></translation>
+        <translation>Titolo</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceDialog.cpp" line="98"/>
@@ -4205,37 +4209,38 @@ Last live update %1</source>
         <location filename="../../ui/mydata/ResourceDialog.cpp" line="116"/>
         <source>41.9028, 12.4964
 41.9031, 12.4970</source>
-        <translation type="unfinished"></translation>
+        <translation>41.9028, 12.4964
+41.9031, 12.4970</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceDialog.cpp" line="165"/>
         <source>route</source>
-        <translation type="unfinished"></translation>
+        <translation>rotta</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceDialog.cpp" line="316"/>
         <source>%1 is required.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 è obbligatorio.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceDialog.cpp" line="325"/>
         <source>Routes require at least two coordinate points.</source>
-        <translation type="unfinished"></translation>
+        <translation>Le rotte richiedono almeno due punti coordinata.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceDialog.cpp" line="332"/>
         <source>Region geometry must be a JSON object with type and coordinates.</source>
-        <translation type="unfinished"></translation>
+        <translation>La geometria della regione deve essere un oggetto JSON con tipo e coordinate.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceDialog.cpp" line="341"/>
         <source>Chart identifier is required.</source>
-        <translation type="unfinished"></translation>
+        <translation>L'identificatore carta è obbligatorio.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceDialog.cpp" line="345"/>
         <source>Chart format is required.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il formato carta è obbligatorio.</translation>
     </message>
 </context>
 <context>
@@ -4285,17 +4290,17 @@ Last live update %1</source>
         <location filename="../../ui/mydata/ResourceModel.cpp" line="426"/>
         <location filename="../../ui/mydata/ResourceModel.cpp" line="435"/>
         <source>Geometry</source>
-        <translation type="unfinished"></translation>
+        <translation>Geometria</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceModel.cpp" line="427"/>
         <source>Points</source>
-        <translation type="unfinished"></translation>
+        <translation>Punti</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceModel.cpp" line="441"/>
         <source>Title</source>
-        <translation type="unfinished"></translation>
+        <translation>Titolo</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceModel.cpp" line="443"/>
@@ -4325,12 +4330,12 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/mydata/ResourceModel.cpp" line="532"/>
         <source>The selected file does not contain any importable %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il file selezionato non contiene %1 importabili.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceModel.cpp" line="557"/>
         <source>Imported %1 %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Importati %1 %2.</translation>
     </message>
 </context>
 <context>
@@ -4360,18 +4365,18 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="228"/>
         <source>Back to list</source>
-        <translation type="unfinished"></translation>
+        <translation>Torna all'elenco</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="232"/>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="664"/>
         <source>New %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Nuovo %1</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="236"/>
         <source>Edit</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifica</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="240"/>
@@ -4381,7 +4386,7 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="245"/>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Annulla</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="250"/>
@@ -4391,22 +4396,22 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="269"/>
         <source>Properties Tree</source>
-        <translation type="unfinished"></translation>
+        <translation>Albero proprietà</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="269"/>
         <source>Properties JSON</source>
-        <translation type="unfinished"></translation>
+        <translation>Proprietà JSON</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="273"/>
         <source>No position</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessuna posizione</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="275"/>
         <source>Edit coordinates</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifica coordinate</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="279"/>
@@ -4441,18 +4446,18 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="459"/>
         <source>Edit resource</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifica risorsa</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="475"/>
         <source>Remove resource</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuovi risorsa</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="555"/>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="786"/>
         <source>Title</source>
-        <translation type="unfinished"></translation>
+        <translation>Titolo</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="555"/>
@@ -4463,32 +4468,32 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="786"/>
         <source>%1 is required.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 è obbligatorio.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="799"/>
         <source>Routes require at least two coordinate points.</source>
-        <translation type="unfinished"></translation>
+        <translation>Le rotte richiedono almeno due punti coordinata.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="806"/>
         <source>Region geometry must be a JSON object with type and coordinates.</source>
-        <translation type="unfinished"></translation>
+        <translation>La geometria della regione deve essere un oggetto JSON con tipo e coordinate.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="813"/>
         <source>Chart identifier is required.</source>
-        <translation type="unfinished"></translation>
+        <translation>L'identificatore carta è obbligatorio.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="817"/>
         <source>Chart format is required.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il formato carta è obbligatorio.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="990"/>
         <source>New</source>
-        <translation type="unfinished"></translation>
+        <translation>Nuovo</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="1055"/>
@@ -4500,90 +4505,91 @@ Last live update %1</source>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="1105"/>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="1348"/>
         <source>Select a %1 first.</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleziona prima un %1.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="1122"/>
         <source>Delete %1 &quot;%2&quot;?</source>
-        <translation type="unfinished"></translation>
+        <translation>Eliminare %1 "%2"?</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="1130"/>
         <source>Unable to delete the selected resource.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile eliminare la risorsa selezionata.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="1226"/>
         <source>Import %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Importa %1</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="1235"/>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="1469"/>
         <source>Unable to open %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile aprire %1.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="1266"/>
         <source>No %1 could be imported from the selected GeoJSON file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessun %1 importabile dal file GeoJSON selezionato.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="1283"/>
         <source>Imported %1 %2 GeoJSON feature(s).</source>
-        <translation type="unfinished"></translation>
+        <translation>Importati %1 elementi GeoJSON %2.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="1301"/>
         <source>Export %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Esporta %1</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="1310"/>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="1482"/>
         <source>Unable to write %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile scrivere %1.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="1332"/>
         <source>Unable to export the selected resources.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile esportare le risorse selezionate.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="1403"/>
         <source>Unable to start navigation to the selected resource.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile avviare la navigazione verso la risorsa selezionata.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="1408"/>
         <source>Search %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Cerca %1</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="1412"/>
         <source>Enter a note title</source>
-        <translation type="unfinished"></translation>
+        <translation>Inserisci un titolo nota</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="1412"/>
         <source>Enter a %1 name</source>
-        <translation type="unfinished"></translation>
+        <translation>Inserisci un nome %1</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="1416"/>
         <source>Describe this %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Descrivi questo %1</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="1420"/>
         <source>Optional type</source>
-        <translation type="unfinished"></translation>
+        <translation>Tipo opzionale</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="1424"/>
         <source>41.9028, 12.4964
 41.9031, 12.4970</source>
-        <translation type="unfinished"></translation>
+        <translation>41.9028, 12.4964
+41.9031, 12.4970</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="1428"/>
@@ -4591,33 +4597,36 @@ Last live update %1</source>
   &quot;type&quot;: &quot;Polygon&quot;,
   &quot;coordinates&quot;: [[[12.4, 41.9], [12.5, 41.9], [12.5, 42.0], [12.4, 41.9]]]
 }</source>
-        <translation type="unfinished"></translation>
+        <translation>{
+  "type": "Polygon",
+  "coordinates": [[[12.4, 41.9], [12.5, 41.9], [12.5, 42.0], [12.4, 41.9]]]
+}</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="1440"/>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="1444"/>
         <source>GeoJSON files (*.geojson *.json);;All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>File GeoJSON (*.geojson *.json);;Tutti i file (*)</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="1452"/>
         <source>Open %1 details</source>
-        <translation type="unfinished"></translation>
+        <translation>Apri dettagli %1</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="1489"/>
         <source>Unable to export data to %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile esportare i dati in %1.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="1617"/>
         <source>Unable to create the selected resource.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile creare la risorsa selezionata.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="1621"/>
         <source>Unable to update the selected resource.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile aggiornare la risorsa selezionata.</translation>
     </message>
 </context>
 <context>
@@ -4630,7 +4639,7 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/mydata/Routes.cpp" line="36"/>
         <source>Search routes by name, description, geometry, or timestamp</source>
-        <translation type="unfinished"></translation>
+        <translation>Cerca rotte per nome, descrizione, geometria o timestamp</translation>
     </message>
 </context>
 <context>
@@ -4638,7 +4647,7 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="325"/>
         <source>Search waypoints</source>
-        <translation type="unfinished"></translation>
+        <translation>Cerca waypoint</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="335"/>
@@ -4658,53 +4667,53 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="349"/>
         <source>Add waypoint</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiungi waypoint</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="353"/>
         <source>Select all shown waypoints</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleziona tutti i waypoint mostrati</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="357"/>
         <source>Remove all shown waypoints</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuovi tutti i waypoint mostrati</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="361"/>
         <source>Navigate to selected waypoint</source>
-        <translation type="unfinished"></translation>
+        <translation>Naviga verso il waypoint selezionato</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="365"/>
         <source>Edit selected waypoint</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifica waypoint selezionato</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="369"/>
         <source>Remove selected waypoint</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuovi waypoint selezionato</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="385"/>
         <source>Back to list</source>
-        <translation type="unfinished"></translation>
+        <translation>Torna all'elenco</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="389"/>
         <location filename="../../ui/mydata/Waypoints.cpp" line="971"/>
         <source>New waypoint</source>
-        <translation type="unfinished"></translation>
+        <translation>Nuovo waypoint</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="393"/>
         <source>Navigate to waypoint</source>
-        <translation type="unfinished"></translation>
+        <translation>Naviga verso waypoint</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="397"/>
         <source>Edit waypoint</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifica waypoint</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="401"/>
@@ -4714,52 +4723,52 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="406"/>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Annulla</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="411"/>
         <source>Delete waypoint</source>
-        <translation type="unfinished"></translation>
+        <translation>Elimina waypoint</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="437"/>
         <source>No position</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessuna posizione</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="439"/>
         <source>Edit coordinates</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifica coordinate</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="442"/>
         <source>Properties Tree</source>
-        <translation type="unfinished"></translation>
+        <translation>Albero proprietà</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="442"/>
         <source>Properties JSON</source>
-        <translation type="unfinished"></translation>
+        <translation>Proprietà JSON</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="630"/>
         <source>Loading waypoints...</source>
-        <translation type="unfinished"></translation>
+        <translation>Caricamento waypoint...</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="796"/>
         <source>Waypoint details</source>
-        <translation type="unfinished"></translation>
+        <translation>Dettagli waypoint</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="875"/>
         <source>Name is required.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il nome è obbligatorio.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="942"/>
         <source>Unable to start navigation to the selected waypoint.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile avviare la navigazione verso il waypoint selezionato.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="949"/>
@@ -4772,88 +4781,88 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="950"/>
         <source>Delete waypoint &quot;%1&quot;?</source>
-        <translation type="unfinished"></translation>
+        <translation>Eliminare il waypoint "%1"?</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="958"/>
         <source>Unable to delete the selected waypoint.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile eliminare il waypoint selezionato.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="1038"/>
         <source>Embedded waypoint preview is disabled on this platform to avoid Qt WebEngine instability.</source>
-        <translation type="unfinished"></translation>
+        <translation>L'anteprima waypoint incorporata è disabilitata su questa piattaforma per evitare instabilità di Qt WebEngine.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="1069"/>
         <source>@signalk/freeboard-sk is not installed or not active on the current Signal K server.</source>
-        <translation type="unfinished"></translation>
+        <translation>@signalk/freeboard-sk non è installato o non è attivo sul server Signal K corrente.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="1072"/>
         <source>Freeboard-SK is not installed or not active on the current Signal K server.</source>
-        <translation type="unfinished"></translation>
+        <translation>Freeboard-SK non è installato o non è attivo sul server Signal K corrente.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="1127"/>
         <source>Import Waypoints</source>
-        <translation type="unfinished"></translation>
+        <translation>Importa waypoint</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="1129"/>
         <location filename="../../ui/mydata/Waypoints.cpp" line="1191"/>
         <source>GeoJSON files (*.geojson *.json);;All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>File GeoJSON (*.geojson *.json);;Tutti i file (*)</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="1136"/>
         <source>Unable to open %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile aprire %1.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="1147"/>
         <source>Importing waypoints...</source>
-        <translation type="unfinished"></translation>
+        <translation>Importazione waypoint...</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="1172"/>
         <source>No waypoint could be imported from the selected GeoJSON file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessun waypoint importabile dal file GeoJSON selezionato.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="1177"/>
         <source>Imported %1 waypoint feature(s).</source>
-        <translation type="unfinished"></translation>
+        <translation>Importati %1 waypoint.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="1189"/>
         <source>Export Waypoints</source>
-        <translation type="unfinished"></translation>
+        <translation>Esporta waypoint</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="1198"/>
         <source>Unable to write %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile scrivere %1.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="1206"/>
         <source>Exporting waypoints...</source>
-        <translation type="unfinished"></translation>
+        <translation>Esportazione waypoint...</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="1320"/>
         <source>Delete %1 shown waypoint(s)?</source>
-        <translation type="unfinished"></translation>
+        <translation>Eliminare %1 waypoint mostrati?</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="1327"/>
         <source>Removing waypoints...</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimozione waypoint...</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="1339"/>
         <source>Unable to delete the shown waypoints.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile eliminare i waypoint mostrati.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="1391"/>
@@ -4863,12 +4872,12 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="1436"/>
         <source>Unable to create the waypoint.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile creare il waypoint.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="1440"/>
         <source>Unable to update the waypoint.</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile aggiornare il waypoint.</translation>
     </message>
 </context>
 <context>
@@ -4906,12 +4915,12 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/mydata/WaypointsModel.cpp" line="88"/>
         <source>Distance</source>
-        <translation type="unfinished"></translation>
+        <translation>Distanza</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/WaypointsModel.cpp" line="90"/>
         <source>Bearing</source>
-        <translation type="unfinished"></translation>
+        <translation>Rilevamento</translation>
     </message>
 </context>
 <context>
@@ -5416,209 +5425,209 @@ Last live update %1</source>
         <location filename="../../ui/settings/Connection.ui" line="61"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_Connection.h" line="168"/>
         <source>Signal K Server URL</source>
-        <translation type="unfinished"></translation>
+        <translation>URL server Signal K</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.ui" line="88"/>
         <location filename="../../ui/settings/Connection.cpp" line="358"/>
         <source>Pause Connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Pausa connessione</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.ui" line="98"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_Connection.h" line="169"/>
         <source>Request Token</source>
-        <translation type="unfinished"></translation>
+        <translation>Richiedi token</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.ui" line="105"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_Connection.h" line="170"/>
         <source>State</source>
-        <translation type="unfinished"></translation>
+        <translation>Stato</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.ui" line="122"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_Connection.h" line="172"/>
         <source>Cancel Request</source>
-        <translation type="unfinished"></translation>
+        <translation>Annulla richiesta</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.ui" line="129"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_Connection.h" line="173"/>
         <source>Permission</source>
-        <translation type="unfinished"></translation>
+        <translation>Permesso</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.ui" line="143"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_Connection.h" line="175"/>
         <source>Read Only</source>
-        <translation type="unfinished"></translation>
+        <translation>Sola lettura</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.ui" line="150"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_Connection.h" line="176"/>
         <source>Expiration Time</source>
-        <translation type="unfinished"></translation>
+        <translation>Scadenza</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.ui" line="167"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_Connection.h" line="178"/>
         <source>Remove Token</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuovi token</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.cpp" line="214"/>
         <location filename="../../ui/settings/Connection.cpp" line="236"/>
         <source>Approved</source>
-        <translation type="unfinished"></translation>
+        <translation>Approvato</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.cpp" line="230"/>
         <source>Denied</source>
-        <translation type="unfinished"></translation>
+        <translation>Negato</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.cpp" line="358"/>
         <source>Start Connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Avvia connessione</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.cpp" line="360"/>
         <source>Pause the Signal K connection without clearing the selected URL</source>
-        <translation type="unfinished"></translation>
+        <translation>Sospendi la connessione Signal K senza cancellare l'URL selezionato</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.cpp" line="361"/>
         <source>Start the Signal K connection using the selected URL</source>
-        <translation type="unfinished"></translation>
+        <translation>Avvia la connessione Signal K usando l'URL selezionato</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.cpp" line="375"/>
         <source>mDNS discovery failed for %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Rilevamento mDNS non riuscito per %1.</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.cpp" line="385"/>
         <source>mDNS discovery starting.</source>
-        <translation type="unfinished"></translation>
+        <translation>Avvio rilevamento mDNS.</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.cpp" line="386"/>
         <source>mDNS discovery active for %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Rilevamento mDNS attivo per %1.</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.cpp" line="511"/>
         <location filename="../../ui/settings/Connection.cpp" line="732"/>
         <location filename="../../ui/settings/Connection.cpp" line="747"/>
         <source>Pending...</source>
-        <translation type="unfinished"></translation>
+        <translation>In attesa...</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.cpp" line="542"/>
         <source>mDNS discovery is disabled on mobile builds.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il rilevamento mDNS è disabilitato nelle build mobili.</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.cpp" line="566"/>
         <source>Discovered Signal K %1 at %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Rilevato Signal K %1 su %2.</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.cpp" line="582"/>
         <location filename="../../ui/settings/Connection.cpp" line="698"/>
         <location filename="../../ui/settings/Connection.cpp" line="801"/>
         <source>Please provide a valid Signal K server URL.</source>
-        <translation type="unfinished"></translation>
+        <translation>Inserisci un URL server Signal K valido.</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.cpp" line="594"/>
         <source>Requesting...</source>
-        <translation type="unfinished"></translation>
+        <translation>Richiesta in corso...</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.cpp" line="645"/>
         <source>Requested/pending</source>
-        <translation type="unfinished"></translation>
+        <translation>Richiesto/in attesa</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.cpp" line="659"/>
         <location filename="../../ui/settings/Connection.cpp" line="676"/>
         <source>Request failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Richiesta non riuscita</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.cpp" line="664"/>
         <source>Login required</source>
-        <translation type="unfinished"></translation>
+        <translation>Accesso richiesto</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.cpp" line="698"/>
         <source>Invalid URL</source>
-        <translation type="unfinished"></translation>
+        <translation>URL non valido</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.cpp" line="758"/>
         <location filename="../../ui/settings/Connection.cpp" line="764"/>
         <location filename="../../ui/settings/Connection.cpp" line="769"/>
         <source>Completed</source>
-        <translation type="unfinished"></translation>
+        <translation>Completato</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.cpp" line="769"/>
         <source>The access request response is incomplete.</source>
-        <translation type="unfinished"></translation>
+        <translation>La risposta alla richiesta di accesso è incompleta.</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.cpp" line="788"/>
         <source>Canceled</source>
-        <translation type="unfinished"></translation>
+        <translation>Annullato</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.cpp" line="816"/>
         <source>Read only</source>
-        <translation type="unfinished"></translation>
+        <translation>Sola lettura</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.cpp" line="817"/>
         <source>No token</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessun token</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.cpp" line="820"/>
         <source>Configured %1 in read-only mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 configurato in modalità sola lettura.</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.cpp" line="827"/>
         <source>Please provide a valid Signal K server URL before starting the connection.</source>
-        <translation type="unfinished"></translation>
+        <translation>Inserisci un URL server Signal K valido prima di avviare la connessione.</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.cpp" line="834"/>
         <source>Starting</source>
-        <translation type="unfinished"></translation>
+        <translation>Avvio</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.cpp" line="834"/>
         <source>Paused</source>
-        <translation type="unfinished"></translation>
+        <translation>In pausa</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.cpp" line="836"/>
         <source>Starting Signal K connection.</source>
-        <translation type="unfinished"></translation>
+        <translation>Avvio connessione Signal K.</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.cpp" line="837"/>
         <source>Signal K connection paused.</source>
-        <translation type="unfinished"></translation>
+        <translation>Connessione Signal K in pausa.</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.cpp" line="852"/>
         <location filename="../../ui/settings/Connection.cpp" line="854"/>
         <source>Removed</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimosso</translation>
     </message>
 </context>
 <context>
@@ -6914,98 +6923,98 @@ Last live update %1</source>
         <location filename="../../ui/widgets/SignalKServerBox.cpp" line="68"/>
         <location filename="../../ui/widgets/SignalKServerBox.cpp" line="165"/>
         <source>Waiting for server</source>
-        <translation type="unfinished"></translation>
+        <translation>Attesa server</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKServerBox.cpp" line="21"/>
         <source>No live data yet</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessun dato live</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKServerBox.cpp" line="27"/>
         <source>Last update %1 s ago</source>
-        <translation type="unfinished"></translation>
+        <translation>Ultimo aggiornamento %1 s fa</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKServerBox.cpp" line="30"/>
         <source>Last update %1 min ago</source>
-        <translation type="unfinished"></translation>
+        <translation>Ultimo aggiornamento %1 min fa</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKServerBox.cpp" line="33"/>
         <source>Last update %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ultimo aggiornamento %1</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKServerBox.cpp" line="166"/>
         <source>%1 • %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 • %2</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKServerBox.cpp" line="167"/>
         <source>Disconnected</source>
-        <translation type="unfinished"></translation>
+        <translation>Disconnesso</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKServerBox.cpp" line="170"/>
         <source>Shell %1 • %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Shell %1 • %2</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKServerBox.cpp" line="173"/>
         <location filename="../../ui/widgets/SignalKServerBox.cpp" line="184"/>
         <source>disconnected</source>
-        <translation type="unfinished"></translation>
+        <translation>disconnesso</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKServerBox.cpp" line="174"/>
         <source>connecting</source>
-        <translation type="unfinished"></translation>
+        <translation>connessione</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKServerBox.cpp" line="175"/>
         <source>live</source>
-        <translation type="unfinished"></translation>
+        <translation>live</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKServerBox.cpp" line="176"/>
         <source>stale</source>
-        <translation type="unfinished"></translation>
+        <translation>non aggiornato</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKServerBox.cpp" line="177"/>
         <source>reconnecting</source>
-        <translation type="unfinished"></translation>
+        <translation>riconnessione</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKServerBox.cpp" line="178"/>
         <source>REST degraded</source>
-        <translation type="unfinished"></translation>
+        <translation>REST degradato</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKServerBox.cpp" line="179"/>
         <source>stream degraded</source>
-        <translation type="unfinished"></translation>
+        <translation>stream degradato</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKServerBox.cpp" line="180"/>
         <source>apps loading</source>
-        <translation type="unfinished"></translation>
+        <translation>app in caricamento</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKServerBox.cpp" line="181"/>
         <source>apps stale</source>
-        <translation type="unfinished"></translation>
+        <translation>app non aggiornate</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKServerBox.cpp" line="182"/>
         <source>app degraded</source>
-        <translation type="unfinished"></translation>
+        <translation>app degradata</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKServerBox.cpp" line="186"/>
         <source>Apps idle</source>
-        <translation type="unfinished"></translation>
+        <translation>App inattive</translation>
     </message>
 </context>
 <context>
@@ -7013,127 +7022,132 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/widgets/SignalKStatusIconsWidget.cpp" line="22"/>
         <source>No live data yet</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessun dato live</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKStatusIconsWidget.cpp" line="26"/>
         <source>Last update %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ultimo aggiornamento %1</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKStatusIconsWidget.cpp" line="32"/>
         <location filename="../../ui/widgets/SignalKStatusIconsWidget.cpp" line="53"/>
         <location filename="../../ui/widgets/SignalKStatusIconsWidget.cpp" line="315"/>
         <source>Disconnected</source>
-        <translation type="unfinished"></translation>
+        <translation>Disconnesso</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKStatusIconsWidget.cpp" line="34"/>
         <source>Connecting</source>
-        <translation type="unfinished"></translation>
+        <translation>Connessione</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKStatusIconsWidget.cpp" line="36"/>
         <source>Live</source>
-        <translation type="unfinished"></translation>
+        <translation>Live</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKStatusIconsWidget.cpp" line="38"/>
         <source>Stale</source>
-        <translation type="unfinished"></translation>
+        <translation>Non aggiornato</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKStatusIconsWidget.cpp" line="40"/>
         <source>Reconnecting</source>
-        <translation type="unfinished"></translation>
+        <translation>Riconnessione</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKStatusIconsWidget.cpp" line="42"/>
         <source>REST degraded</source>
-        <translation type="unfinished"></translation>
+        <translation>REST degradato</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKStatusIconsWidget.cpp" line="44"/>
         <source>Stream degraded</source>
-        <translation type="unfinished"></translation>
+        <translation>Stream degradato</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKStatusIconsWidget.cpp" line="46"/>
         <source>Apps loading</source>
-        <translation type="unfinished"></translation>
+        <translation>App in caricamento</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKStatusIconsWidget.cpp" line="48"/>
         <source>Apps stale</source>
-        <translation type="unfinished"></translation>
+        <translation>App non aggiornate</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKStatusIconsWidget.cpp" line="50"/>
         <source>Foreground app degraded</source>
-        <translation type="unfinished"></translation>
+        <translation>App in primo piano degradata</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKStatusIconsWidget.cpp" line="107"/>
         <location filename="../../ui/widgets/SignalKStatusIconsWidget.cpp" line="301"/>
         <source>DISC</source>
-        <translation type="unfinished"></translation>
+        <translation>DISC</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKStatusIconsWidget.cpp" line="304"/>
         <source>REST</source>
-        <translation type="unfinished"></translation>
+        <translation>REST</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKStatusIconsWidget.cpp" line="308"/>
         <source>STR</source>
-        <translation type="unfinished"></translation>
+        <translation>STR</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKStatusIconsWidget.cpp" line="317"/>
         <source>Apps idle</source>
-        <translation type="unfinished"></translation>
+        <translation>App inattive</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKStatusIconsWidget.cpp" line="318"/>
         <source>Shell health: %1
 %2
 %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Stato shell: %1
+%2
+%3</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKStatusIconsWidget.cpp" line="320"/>
         <source>Signal K activity in progress</source>
-        <translation type="unfinished"></translation>
+        <translation>Attività Signal K in corso</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKStatusIconsWidget.cpp" line="320"/>
         <source>Signal K idle</source>
-        <translation type="unfinished"></translation>
+        <translation>Signal K inattivo</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKStatusIconsWidget.cpp" line="321"/>
         <source>Signal K REST API
 %1</source>
-        <translation type="unfinished"></translation>
+        <translation>API REST Signal K
+%1</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKStatusIconsWidget.cpp" line="321"/>
         <location filename="../../ui/widgets/SignalKStatusIconsWidget.cpp" line="322"/>
         <source>Healthy</source>
-        <translation type="unfinished"></translation>
+        <translation>Operativo</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKStatusIconsWidget.cpp" line="321"/>
         <location filename="../../ui/widgets/SignalKStatusIconsWidget.cpp" line="322"/>
         <source>Unavailable</source>
-        <translation type="unfinished"></translation>
+        <translation>Non disponibile</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/SignalKStatusIconsWidget.cpp" line="322"/>
         <source>Signal K stream
 %1
 %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Stream Signal K
+%1
+%2</translation>
     </message>
 </context>
 <context>
@@ -7141,97 +7155,97 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/widgets/TouchColorPicker.cpp" line="328"/>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Annulla</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/TouchColorPicker.cpp" line="332"/>
         <source>Adjust the color with the shade area, sliders, hex value, or custom swatches. Double tap or double click a swatch, or double tap the preview, to select it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Regola il colore con l'area tonalità, i cursori, il valore esadecimale o i campioni personalizzati. Tocca due volte o fai doppio clic su un campione, oppure tocca due volte l'anteprima, per selezionarlo.</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/TouchColorPicker.cpp" line="351"/>
         <source>Hex</source>
-        <translation type="unfinished"></translation>
+        <translation>Hex</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/TouchColorPicker.cpp" line="381"/>
         <source>Shade</source>
-        <translation type="unfinished"></translation>
+        <translation>Tonalità</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/TouchColorPicker.cpp" line="387"/>
         <source>Quick Colors</source>
-        <translation type="unfinished"></translation>
+        <translation>Colori rapidi</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/TouchColorPicker.cpp" line="425"/>
         <source>Custom Colors</source>
-        <translation type="unfinished"></translation>
+        <translation>Colori personalizzati</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/TouchColorPicker.cpp" line="430"/>
         <source>Add current</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiungi attuale</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/TouchColorPicker.cpp" line="434"/>
         <source>Remove current</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuovi attuale</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/TouchColorPicker.cpp" line="445"/>
         <source>Color Balance</source>
-        <translation type="unfinished"></translation>
+        <translation>Bilanciamento colore</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/TouchColorPicker.cpp" line="454"/>
         <source>Hue</source>
-        <translation type="unfinished"></translation>
+        <translation>Tinta</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/TouchColorPicker.cpp" line="455"/>
         <source>Saturation</source>
-        <translation type="unfinished"></translation>
+        <translation>Saturazione</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/TouchColorPicker.cpp" line="456"/>
         <source>Brightness</source>
-        <translation type="unfinished"></translation>
+        <translation>Luminosità</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/TouchColorPicker.cpp" line="458"/>
         <source>RGB Fine Tuning</source>
-        <translation type="unfinished"></translation>
+        <translation>Regolazione fine RGB</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/TouchColorPicker.cpp" line="467"/>
         <source>Red</source>
-        <translation type="unfinished"></translation>
+        <translation>Rosso</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/TouchColorPicker.cpp" line="468"/>
         <source>Green</source>
-        <translation type="unfinished"></translation>
+        <translation>Verde</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/TouchColorPicker.cpp" line="469"/>
         <source>Blue</source>
-        <translation type="unfinished"></translation>
+        <translation>Blu</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/TouchColorPicker.cpp" line="470"/>
         <source>Opacity</source>
-        <translation type="unfinished"></translation>
+        <translation>Opacità</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/TouchColorPicker.cpp" line="805"/>
         <source>RGB: %1, %2, %3</source>
-        <translation type="unfinished"></translation>
+        <translation>RGB: %1, %2, %3</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/TouchColorPicker.cpp" line="816"/>
         <source>HSV: %1, %2, %3</source>
-        <translation type="unfinished"></translation>
+        <translation>HSV: %1, %2, %3</translation>
     </message>
 </context>
 <context>
@@ -7239,12 +7253,12 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/widgets/TouchFileBrowser.cpp" line="236"/>
         <source>Choose a destination, then double tap or double click a file to reuse its name or use Save.</source>
-        <translation type="unfinished"></translation>
+        <translation>Scegli una destinazione, poi tocca due volte o fai doppio clic su un file per riutilizzarne il nome oppure usa Salva.</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/TouchFileBrowser.cpp" line="237"/>
         <source>Choose a file. Tap once to highlight it, then double tap or double click to select it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Scegli un file. Tocca una volta per evidenziarlo, poi tocca due volte o fai doppio clic per selezionarlo.</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/TouchFileBrowser.cpp" line="252"/>
@@ -7312,23 +7326,24 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/widgets/TouchIconBrowser.cpp" line="135"/>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Annulla</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/TouchIconBrowser.cpp" line="138"/>
         <source>Choose an icon. Tap once to preview it, then double tap or double click an icon to select it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Scegli un'icona. Tocca una volta per vederne l'anteprima, poi tocca due volte o fai doppio clic su un'icona per selezionarla.</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/TouchIconBrowser.cpp" line="342"/>
         <source>No icon selected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessuna icona selezionata.</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/TouchIconBrowser.cpp" line="344"/>
         <source>Selected icon:
 %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Icona selezionata:
+%1</translation>
     </message>
 </context>
 <context>
