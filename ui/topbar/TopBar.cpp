@@ -215,6 +215,7 @@ namespace fairwindsk::ui::topbar {
             effectivePolicy.setVerticalPolicy(QSizePolicy::Expanding);
         }
         widget->setSizePolicy(effectivePolicy);
+        widget->setVisible(true);
 
         const Qt::Alignment alignment = entry.expandVertically ? Qt::Alignment() : Qt::AlignVCenter;
         layout->addWidget(widget, entry.expandHorizontally ? 1 : 0, alignment);
@@ -250,6 +251,9 @@ namespace fairwindsk::ui::topbar {
 
         while (ui->horizontalLayout->count() > 0) {
             auto *item = ui->horizontalLayout->takeAt(0);
+            if (auto *widget = item->widget()) {
+                widget->hide();
+            }
             delete item;
         }
 
@@ -317,6 +321,7 @@ namespace fairwindsk::ui::topbar {
         }
 
         clearConfiguredLayout();
+        ui->toolButton_UL->setVisible(true);
         ui->horizontalLayout->addWidget(ui->toolButton_UL, 0, Qt::AlignVCenter);
 
         const auto entries = fairwindsk::ui::layout::entriesForBar(
@@ -359,6 +364,7 @@ namespace fairwindsk::ui::topbar {
             applyEntrySizing(entry, itemId, widget, ui->horizontalLayout);
         }
 
+        ui->toolButton_UR->setVisible(true);
         ui->horizontalLayout->addWidget(ui->toolButton_UR, 0, Qt::AlignVCenter);
         applyLayoutEditHints(entries);
     }
@@ -572,11 +578,15 @@ namespace fairwindsk::ui::topbar {
 
         ui->toolButton_UL->setIcon(QPixmap::fromImage(QImage(":/resources/images/mainwindow/fairwind_icon.png")));
         ui->toolButton_UL->setIconSize(QSize(32, 32));
+        ui->toolButton_UL->setMinimumSize(QSize(48, 48));
+        ui->toolButton_UL->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         ui->toolButton_UL->setAutoRaise(true);
         ui->toolButton_UL->setStyleSheet(chromeToolButtonStyle(chromeColors));
 
         ui->toolButton_UR->setIcon(QPixmap::fromImage(QImage(":/resources/images/icons/apps_icon.png")));
         ui->toolButton_UR->setIconSize(QSize(32, 32));
+        ui->toolButton_UR->setMinimumSize(QSize(48, 48));
+        ui->toolButton_UR->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         ui->toolButton_UR->setAutoRaise(true);
         ui->toolButton_UR->setStyleSheet(chromeToolButtonStyle(chromeColors));
 

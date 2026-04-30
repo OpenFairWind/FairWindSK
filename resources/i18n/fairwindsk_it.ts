@@ -217,13 +217,13 @@
         <location filename="../../ui/bottombar/AnchorBar.ui" line="324"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AnchorBar.h" line="576"/>
         <source>00°000&apos;,00 N</source>
-        <translation>00°000',00 N</translation>
+        <translation>00°000&apos;,00 N</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AnchorBar.ui" line="347"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_AnchorBar.h" line="577"/>
         <source>000°000&apos;,00 E</source>
-        <translation>000°000',00 E</translation>
+        <translation>000°000&apos;,00 E</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/AnchorBar.ui" line="363"/>
@@ -492,7 +492,7 @@
         <location filename="../../ui/bottombar/BottomBar.ui" line="151"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_BottomBar.h" line="184"/>
         <source>POB</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">POB</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/BottomBar.ui" line="171"/>
@@ -529,25 +529,25 @@
     <name>CertificateErrorDialog</name>
     <message>
         <location filename="../../ui/web/CertificateErrorDialog.ui" line="14"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_CertificateErrorDialog.h" line="92"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_CertificateErrorDialog.h" line="90"/>
         <source>Dialog</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../ui/web/CertificateErrorDialog.ui" line="26"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_CertificateErrorDialog.h" line="93"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_CertificateErrorDialog.h" line="91"/>
         <source>Icon</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../ui/web/CertificateErrorDialog.ui" line="42"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_CertificateErrorDialog.h" line="94"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_CertificateErrorDialog.h" line="92"/>
         <source>Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../ui/web/CertificateErrorDialog.ui" line="61"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_CertificateErrorDialog.h" line="95"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_CertificateErrorDialog.h" line="93"/>
         <source>If you wish so, you may continue with an unverified certificate. Accepting an unverified certificate mean you may not be connected with the host you tried to connect to.
 
 Do you wish to override the security check and continue ?   </source>
@@ -1114,7 +1114,7 @@ Do you wish to override the security check and continue ?   </source>
         <location filename="../../ui/bottombar/POBBar.ui" line="141"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_POBBar.h" line="248"/>
         <source>°</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">°</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/POBBar.ui" line="151"/>
@@ -1126,7 +1126,7 @@ Do you wish to override the security check and continue ?   </source>
         <location filename="../../ui/bottombar/POBBar.ui" line="178"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_POBBar.h" line="251"/>
         <source>m</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">m</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/POBBar.ui" line="188"/>
@@ -1202,31 +1202,31 @@ Do you wish to override the security check and continue ?   </source>
     <name>PasswordDialog</name>
     <message>
         <location filename="../../ui/web/PasswordDialog.ui" line="14"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_PasswordDialog.h" line="104"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_PasswordDialog.h" line="102"/>
         <source>Authentication Required</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../ui/web/PasswordDialog.ui" line="20"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_PasswordDialog.h" line="105"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_PasswordDialog.h" line="103"/>
         <source>Icon</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../ui/web/PasswordDialog.ui" line="36"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_PasswordDialog.h" line="106"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_PasswordDialog.h" line="104"/>
         <source>Info</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../ui/web/PasswordDialog.ui" line="46"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_PasswordDialog.h" line="107"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_PasswordDialog.h" line="105"/>
         <source>Username:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../ui/web/PasswordDialog.ui" line="56"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_PasswordDialog.h" line="108"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_PasswordDialog.h" line="106"/>
         <source>Password:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1496,7 +1496,7 @@ Do you wish to override the security check and continue ?   </source>
     <message>
         <location filename="../../ui/layout/BarLayout.cpp" line="50"/>
         <source>POB</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">POB</translation>
     </message>
     <message>
         <location filename="../../ui/layout/BarLayout.cpp" line="51"/>
@@ -1839,45 +1839,45 @@ Do you wish to override the security check and continue ?   </source>
     <name>ResourceDialog</name>
     <message>
         <location filename="../../ui/mydata/ResourceDialog.ui" line="19"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="423"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="420"/>
         <source>Name</source>
         <translation>Nome</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceDialog.ui" line="29"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="424"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="421"/>
         <source>Description</source>
         <translation>Descrizione</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceDialog.ui" line="42"/>
         <location filename="../../ui/mydata/ResourceDialog.ui" line="56"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="425"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="430"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="422"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="427"/>
         <source>Type</source>
         <translation>Tipo</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceDialog.ui" line="44"/>
         <location filename="../../ui/mydata/ResourceDialog.ui" line="79"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="426"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="438"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="423"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="435"/>
         <source>Latitude</source>
         <translation>Latitudine</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceDialog.ui" line="46"/>
         <location filename="../../ui/mydata/ResourceDialog.ui" line="81"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="427"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="439"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="424"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="436"/>
         <source>Longitude</source>
         <translation>Longitudine</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceDialog.ui" line="48"/>
         <location filename="../../ui/mydata/ResourceDialog.ui" line="83"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="428"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="440"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="425"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="437"/>
         <source>Altitude</source>
         <translation>Altitudine</translation>
     </message>
@@ -1885,93 +1885,93 @@ Do you wish to override the security check and continue ?   </source>
         <location filename="../../ui/mydata/ResourceDialog.ui" line="50"/>
         <location filename="../../ui/mydata/ResourceDialog.ui" line="60"/>
         <location filename="../../ui/mydata/ResourceDialog.ui" line="68"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="426"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="429"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="432"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="434"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="431"/>
         <source>Feature properties (JSON)</source>
         <translation>Proprietà elemento (JSON)</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceDialog.ui" line="58"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="431"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="428"/>
         <source>Coordinates</source>
         <translation>Coordinate</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceDialog.ui" line="66"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="433"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="430"/>
         <source>Geometry (JSON)</source>
         <translation>Geometria (JSON)</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceDialog.ui" line="74"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="435"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="432"/>
         <source>Href</source>
         <translation>Href</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceDialog.ui" line="76"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="436"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="433"/>
         <source>MIME Type</source>
         <translation>Tipo MIME</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceDialog.ui" line="78"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="437"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="434"/>
         <source>Include position</source>
         <translation>Includi posizione</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceDialog.ui" line="85"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="441"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="438"/>
         <source>Properties (JSON)</source>
         <translation>Proprietà (JSON)</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceDialog.ui" line="91"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="442"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="439"/>
         <source>Identifier</source>
         <translation>Identificatore</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceDialog.ui" line="93"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="443"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="440"/>
         <source>Format</source>
         <translation>Formato</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceDialog.ui" line="95"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="444"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="441"/>
         <source>Chart URL</source>
         <translation>URL carta</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceDialog.ui" line="97"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="445"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="442"/>
         <source>Tilemap URL</source>
         <translation>URL mappa tile</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceDialog.ui" line="99"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="446"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="443"/>
         <source>Region</source>
         <translation>Regione</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceDialog.ui" line="101"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="447"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="444"/>
         <source>Scale</source>
         <translation>Scala</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceDialog.ui" line="103"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="448"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="445"/>
         <source>Layers</source>
         <translation>Livelli</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceDialog.ui" line="105"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="449"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_ResourceDialog.h" line="446"/>
         <source>Bounds (JSON)</source>
         <translation>Limiti (JSON)</translation>
     </message>
@@ -2266,7 +2266,7 @@ Ultimo aggiornamento live %1</translation>
         <location filename="../../build/FairWindSK_autogen/include/ui_TopBar.h" line="728"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_TopBar.h" line="740"/>
         <source>°</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">°</translation>
     </message>
     <message>
         <location filename="../../ui/topbar/TopBar.ui" line="207"/>
@@ -2312,13 +2312,13 @@ Ultimo aggiornamento live %1</translation>
         <location filename="../../ui/topbar/TopBar.ui" line="444"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_TopBar.h" line="734"/>
         <source>m</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">m</translation>
     </message>
     <message>
         <location filename="../../ui/topbar/TopBar.ui" line="469"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_TopBar.h" line="735"/>
         <source>...</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">...</translation>
     </message>
     <message>
         <location filename="../../ui/topbar/TopBar.ui" line="504"/>
@@ -3064,23 +3064,23 @@ Ultimo aggiornamento live %1</translation>
 <context>
     <name>fairwindsk::ui::bottombar::BottomBar</name>
     <message>
-        <location filename="../../ui/bottombar/BottomBar.cpp" line="506"/>
+        <location filename="../../ui/bottombar/BottomBar.cpp" line="510"/>
         <source>Application launcher</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/bottombar/BottomBar.cpp" line="507"/>
+        <location filename="../../ui/bottombar/BottomBar.cpp" line="511"/>
         <source>Application launcher
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/bottombar/BottomBar.cpp" line="511"/>
+        <location filename="../../ui/bottombar/BottomBar.cpp" line="515"/>
         <source>Settings</source>
         <translation>Impostazioni</translation>
     </message>
     <message>
-        <location filename="../../ui/bottombar/BottomBar.cpp" line="512"/>
+        <location filename="../../ui/bottombar/BottomBar.cpp" line="516"/>
         <source>Settings
 %1</source>
         <translation type="unfinished"></translation>
@@ -3106,7 +3106,7 @@ Ultimo aggiornamento live %1</translation>
         <location filename="../../ui/bottombar/POBBar.cpp" line="652"/>
         <location filename="../../ui/bottombar/POBBar.cpp" line="658"/>
         <source>POB</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">POB</translation>
     </message>
     <message>
         <location filename="../../ui/bottombar/POBBar.cpp" line="593"/>
@@ -3571,7 +3571,7 @@ Ultimo aggiornamento live %1</translation>
     <message>
         <location filename="../../ui/mydata/Files.cpp" line="1082"/>
         <source>Unable to rename the selected item.</source>
-        <translation>Impossibile rinominare l'elemento selezionato.</translation>
+        <translation>Impossibile rinominare l&apos;elemento selezionato.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Files.cpp" line="1124"/>
@@ -3704,12 +3704,12 @@ Ultimo aggiornamento live %1</translation>
     <message>
         <location filename="../../ui/mydata/GeoJsonPreviewWidget.cpp" line="119"/>
         <source>Embedded GeoJSON preview is disabled on this platform to avoid Qt WebEngine instability.</source>
-        <translation>L'anteprima GeoJSON incorporata è disabilitata su questa piattaforma per evitare instabilità di Qt WebEngine.</translation>
+        <translation>L&apos;anteprima GeoJSON incorporata è disabilitata su questa piattaforma per evitare instabilità di Qt WebEngine.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/GeoJsonPreviewWidget.cpp" line="126"/>
         <source>GeoJSON preview will appear here.</source>
-        <translation>L'anteprima GeoJSON apparirà qui.</translation>
+        <translation>L&apos;anteprima GeoJSON apparirà qui.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/GeoJsonPreviewWidget.cpp" line="155"/>
@@ -3747,7 +3747,7 @@ Ultimo aggiornamento live %1</translation>
     <message>
         <location filename="../../ui/mydata/HistoryTrackModel.cpp" line="242"/>
         <source>No track samples are available from the History API.</source>
-        <translation>Nessun campione traccia disponibile dall'API History.</translation>
+        <translation>Nessun campione traccia disponibile dall&apos;API History.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/HistoryTrackModel.cpp" line="243"/>
@@ -3816,7 +3816,7 @@ Ultimo aggiornamento live %1</translation>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="296"/>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="539"/>
         <source>No track samples are available from the History API.</source>
-        <translation>Nessun campione traccia disponibile dall'API History.</translation>
+        <translation>Nessun campione traccia disponibile dall&apos;API History.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/HistoryTrackTab.cpp" line="420"/>
@@ -3928,7 +3928,7 @@ Ultimo aggiornamento live %1</translation>
         <location filename="../../ui/mydata/JsonObjectEditorWidget.cpp" line="114"/>
         <location filename="../../ui/mydata/JsonObjectEditorWidget.cpp" line="320"/>
         <source>The JSON properties editor must contain a valid JSON object.</source>
-        <translation>L'editor proprietà JSON deve contenere un oggetto JSON valido.</translation>
+        <translation>L&apos;editor proprietà JSON deve contenere un oggetto JSON valido.</translation>
     </message>
 </context>
 <context>
@@ -4015,7 +4015,7 @@ Ultimo aggiornamento live %1</translation>
     <message>
         <location filename="../../ui/mydata/Notes.cpp" line="114"/>
         <source>Unable to read the linked attachment.</source>
-        <translation>Impossibile leggere l'allegato collegato.</translation>
+        <translation>Impossibile leggere l&apos;allegato collegato.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Notes.cpp" line="122"/>
@@ -4025,7 +4025,7 @@ Ultimo aggiornamento live %1</translation>
     <message>
         <location filename="../../ui/mydata/Notes.cpp" line="129"/>
         <source>Unable to export the linked attachment.</source>
-        <translation>Impossibile esportare l'allegato collegato.</translation>
+        <translation>Impossibile esportare l&apos;allegato collegato.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Notes.cpp" line="142"/>
@@ -4036,7 +4036,7 @@ Ultimo aggiornamento live %1</translation>
     <message>
         <location filename="../../ui/mydata/Notes.cpp" line="148"/>
         <source>Unable to open the selected attachment or link.</source>
-        <translation>Impossibile aprire l'allegato o il link selezionato.</translation>
+        <translation>Impossibile aprire l&apos;allegato o il link selezionato.</translation>
     </message>
 </context>
 <context>
@@ -4235,7 +4235,7 @@ Ultimo aggiornamento live %1</translation>
     <message>
         <location filename="../../ui/mydata/ResourceDialog.cpp" line="341"/>
         <source>Chart identifier is required.</source>
-        <translation>L'identificatore carta è obbligatorio.</translation>
+        <translation>L&apos;identificatore carta è obbligatorio.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceDialog.cpp" line="345"/>
@@ -4365,7 +4365,7 @@ Ultimo aggiornamento live %1</translation>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="228"/>
         <source>Back to list</source>
-        <translation>Torna all'elenco</translation>
+        <translation>Torna all&apos;elenco</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="232"/>
@@ -4483,7 +4483,7 @@ Ultimo aggiornamento live %1</translation>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="813"/>
         <source>Chart identifier is required.</source>
-        <translation>L'identificatore carta è obbligatorio.</translation>
+        <translation>L&apos;identificatore carta è obbligatorio.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="817"/>
@@ -4510,7 +4510,7 @@ Ultimo aggiornamento live %1</translation>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="1122"/>
         <source>Delete %1 &quot;%2&quot;?</source>
-        <translation>Eliminare %1 "%2"?</translation>
+        <translation>Eliminare %1 &quot;%2&quot;?</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/ResourceTab.cpp" line="1130"/>
@@ -4598,8 +4598,8 @@ Ultimo aggiornamento live %1</translation>
   &quot;coordinates&quot;: [[[12.4, 41.9], [12.5, 41.9], [12.5, 42.0], [12.4, 41.9]]]
 }</source>
         <translation>{
-  "type": "Polygon",
-  "coordinates": [[[12.4, 41.9], [12.5, 41.9], [12.5, 42.0], [12.4, 41.9]]]
+  &quot;type&quot;: &quot;Polygon&quot;,
+  &quot;coordinates&quot;: [[[12.4, 41.9], [12.5, 41.9], [12.5, 42.0], [12.4, 41.9]]]
 }</translation>
     </message>
     <message>
@@ -4697,7 +4697,7 @@ Ultimo aggiornamento live %1</translation>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="385"/>
         <source>Back to list</source>
-        <translation>Torna all'elenco</translation>
+        <translation>Torna all&apos;elenco</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="389"/>
@@ -4781,7 +4781,7 @@ Ultimo aggiornamento live %1</translation>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="950"/>
         <source>Delete waypoint &quot;%1&quot;?</source>
-        <translation>Eliminare il waypoint "%1"?</translation>
+        <translation>Eliminare il waypoint &quot;%1&quot;?</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="958"/>
@@ -4791,7 +4791,7 @@ Ultimo aggiornamento live %1</translation>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="1038"/>
         <source>Embedded waypoint preview is disabled on this platform to avoid Qt WebEngine instability.</source>
-        <translation>L'anteprima waypoint incorporata è disabilitata su questa piattaforma per evitare instabilità di Qt WebEngine.</translation>
+        <translation>L&apos;anteprima waypoint incorporata è disabilitata su questa piattaforma per evitare instabilità di Qt WebEngine.</translation>
     </message>
     <message>
         <location filename="../../ui/mydata/Waypoints.cpp" line="1069"/>
@@ -5033,7 +5033,7 @@ Ultimo aggiornamento live %1</translation>
         <location filename="../../ui/settings/Apps.ui" line="384"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_Apps.h" line="451"/>
         <source>Add selected application to current page</source>
-        <translation>Aggiungi l'app selezionata alla pagina corrente</translation>
+        <translation>Aggiungi l&apos;app selezionata alla pagina corrente</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Apps.ui" line="400"/>
@@ -5132,7 +5132,7 @@ Ultimo aggiornamento live %1</translation>
     <message>
         <location filename="../../ui/settings/Apps.cpp" line="828"/>
         <source>An application named &quot;%1&quot; already exists.</source>
-        <translation>Esiste già un'applicazione chiamata &quot;%1&quot;.</translation>
+        <translation>Esiste già un&apos;applicazione chiamata &quot;%1&quot;.</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Apps.cpp" line="1411"/>
@@ -5154,7 +5154,7 @@ Ultimo aggiornamento live %1</translation>
         <location filename="../../ui/settings/Apps.cpp" line="1469"/>
         <location filename="../../ui/settings/Apps.cpp" line="1612"/>
         <source>%1 %2</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">%1 %2</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Apps.cpp" line="1631"/>
@@ -5224,12 +5224,12 @@ Ultimo aggiornamento live %1</translation>
     <message>
         <location filename="../../ui/settings/Apps.cpp" line="2132"/>
         <source>Remove &quot;%1&quot; from the available applications list?</source>
-        <translation>Rimuovere &quot;%1&quot; dall'elenco delle applicazioni disponibili?</translation>
+        <translation>Rimuovere &quot;%1&quot; dall&apos;elenco delle applicazioni disponibili?</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Apps.cpp" line="2188"/>
         <source>Select an application first.</source>
-        <translation>Seleziona prima un'applicazione.</translation>
+        <translation>Seleziona prima un&apos;applicazione.</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Apps.cpp" line="2234"/>
@@ -5270,12 +5270,12 @@ Ultimo aggiornamento live %1</translation>
     <message>
         <location filename="../../ui/settings/Apps.cpp" line="2398"/>
         <source>A page can only be nested under another page.</source>
-        <translation>Una pagina può essere annidata solo sotto un'altra pagina.</translation>
+        <translation>Una pagina può essere annidata solo sotto un&apos;altra pagina.</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Apps.cpp" line="2406"/>
         <source>No available slot exists in the parent page for the folder icon.</source>
-        <translation>Nella pagina padre non esiste uno slot disponibile per l'icona della cartella.</translation>
+        <translation>Nella pagina padre non esiste uno slot disponibile per l&apos;icona della cartella.</translation>
     </message>
 </context>
 <context>
@@ -5318,7 +5318,7 @@ Ultimo aggiornamento live %1</translation>
     <message>
         <location filename="../../ui/settings/BarLayoutSettings.cpp" line="198"/>
         <source>Tap a widget to edit it. Drag within the preview to reorder the bottom bar.</source>
-        <translation>Tocca un widget per modificarlo. Trascinalo nell'anteprima per riordinare la barra inferiore.</translation>
+        <translation>Tocca un widget per modificarlo. Trascinalo nell&apos;anteprima per riordinare la barra inferiore.</translation>
     </message>
     <message>
         <location filename="../../ui/settings/BarLayoutSettings.cpp" line="214"/>
@@ -5423,55 +5423,56 @@ Ultimo aggiornamento live %1</translation>
     <name>fairwindsk::ui::settings::Connection</name>
     <message>
         <location filename="../../ui/settings/Connection.ui" line="61"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_Connection.h" line="168"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_Connection.h" line="174"/>
         <source>Signal K Server URL</source>
         <translation>URL server Signal K</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.ui" line="88"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_Connection.h" line="175"/>
         <location filename="../../ui/settings/Connection.cpp" line="358"/>
         <source>Pause Connection</source>
         <translation>Pausa connessione</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.ui" line="98"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_Connection.h" line="169"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_Connection.h" line="176"/>
         <source>Request Token</source>
         <translation>Richiedi token</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.ui" line="105"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_Connection.h" line="170"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_Connection.h" line="177"/>
         <source>State</source>
         <translation>Stato</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.ui" line="122"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_Connection.h" line="172"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_Connection.h" line="179"/>
         <source>Cancel Request</source>
         <translation>Annulla richiesta</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.ui" line="129"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_Connection.h" line="173"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_Connection.h" line="180"/>
         <source>Permission</source>
         <translation>Permesso</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.ui" line="143"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_Connection.h" line="175"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_Connection.h" line="182"/>
         <source>Read Only</source>
         <translation>Sola lettura</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.ui" line="150"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_Connection.h" line="176"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_Connection.h" line="183"/>
         <source>Expiration Time</source>
         <translation>Scadenza</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.ui" line="167"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_Connection.h" line="178"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_Connection.h" line="185"/>
         <source>Remove Token</source>
         <translation>Rimuovi token</translation>
     </message>
@@ -5494,12 +5495,12 @@ Ultimo aggiornamento live %1</translation>
     <message>
         <location filename="../../ui/settings/Connection.cpp" line="360"/>
         <source>Pause the Signal K connection without clearing the selected URL</source>
-        <translation>Sospendi la connessione Signal K senza cancellare l'URL selezionato</translation>
+        <translation>Sospendi la connessione Signal K senza cancellare l&apos;URL selezionato</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.cpp" line="361"/>
         <source>Start the Signal K connection using the selected URL</source>
-        <translation>Avvia la connessione Signal K usando l'URL selezionato</translation>
+        <translation>Avvia la connessione Signal K usando l&apos;URL selezionato</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Connection.cpp" line="375"/>
@@ -5634,122 +5635,123 @@ Ultimo aggiornamento live %1</translation>
     <name>fairwindsk::ui::settings::Main</name>
     <message>
         <location filename="../../ui/settings/Main.ui" line="59"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="266"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="278"/>
         <source>General</source>
         <translation>Generale</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Main.ui" line="284"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="285"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="298"/>
         <source>Devices</source>
         <translation>Dispositivi</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Main.ui" line="77"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="267"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="279"/>
         <source>Mode</source>
         <translation>Modalità</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Main.ui" line="87"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="280"/>
         <source>Language</source>
         <translation>Lingua</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Main.ui" line="97"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="268"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="281"/>
         <source>UI text and icon size</source>
         <translation>Dimensione testo e icone</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Main.ui" line="107"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="269"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="282"/>
         <source>Automatic UI sizing</source>
         <translation>Dimensionamento UI automatico</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Main.ui" line="121"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="271"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="284"/>
         <source>Comfortable view</source>
         <translation>Vista comfort</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Main.ui" line="131"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="272"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="285"/>
         <source>Automatic comfortable view</source>
         <translation>Vista comfort automatica</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Main.ui" line="145"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="274"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="287"/>
         <source>Launcher rows</source>
         <translation>Righe launcher</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Main.ui" line="168"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="275"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="288"/>
         <source>Launcher columns</source>
         <translation>Colonne launcher</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Main.ui" line="191"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="276"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="289"/>
         <source>Coordinate format</source>
         <translation>Formato coordinate</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Main.ui" line="201"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="277"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="290"/>
         <source>Window left</source>
         <translation>Finestra a sinistra</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Main.ui" line="211"/>
         <location filename="../../ui/settings/Main.ui" line="231"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="278"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="280"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="291"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="293"/>
         <source>0</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">0</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Main.ui" line="221"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="279"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="292"/>
         <source>Window top</source>
         <translation>Finestra in alto</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Main.ui" line="241"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="281"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="294"/>
         <source>Window width</source>
         <translation>Larghezza finestra</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Main.ui" line="251"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="282"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="295"/>
         <source>1024</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../ui/settings/Main.ui" line="261"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="283"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="296"/>
         <source>Window height</source>
         <translation>Altezza finestra</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Main.ui" line="271"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="284"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="297"/>
         <source>600</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../ui/settings/Main.ui" line="302"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="286"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="299"/>
         <source>Use Virtual Keyboard</source>
         <translation>Usa tastiera virtuale</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Main.ui" line="319"/>
-        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="288"/>
+        <location filename="../../build/FairWindSK_autogen/include/ui_Main.h" line="301"/>
         <source>Requires restart.</source>
         <translation>Richiede riavvio.</translation>
     </message>
@@ -6088,7 +6090,7 @@ Ultimo aggiornamento live %1</translation>
         <location filename="../../ui/settings/System.cpp" line="713"/>
         <location filename="../../ui/settings/System.cpp" line="725"/>
         <source>Unavailable</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Non disponibile</translation>
     </message>
     <message>
         <location filename="../../ui/settings/System.cpp" line="270"/>
@@ -6099,7 +6101,7 @@ Ultimo aggiornamento live %1</translation>
     <message>
         <location filename="../../ui/settings/System.cpp" line="339"/>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Annulla</translation>
     </message>
     <message>
         <location filename="../../ui/settings/System.cpp" line="350"/>
@@ -6301,67 +6303,96 @@ Ultimo aggiornamento live %1</translation>
 <context>
     <name>fairwindsk::ui::settings::TopBar</name>
     <message>
-        <location filename="../../ui/settings/TopBar.cpp" line="161"/>
+        <location filename="../../ui/settings/TopBar.cpp" line="196"/>
         <source>Fixed FairWindSK shell button</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/settings/TopBar.cpp" line="162"/>
+        <location filename="../../ui/settings/TopBar.cpp" line="197"/>
         <source>Fixed current-application shell button</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/settings/TopBar.cpp" line="173"/>
+        <location filename="../../ui/settings/TopBar.cpp" line="208"/>
         <source>Tap a widget to edit it. Drag within the preview to reorder the top bar.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/settings/TopBar.cpp" line="190"/>
         <source>Extend Height</source>
-        <translation>Estendi in altezza</translation>
+        <translation type="vanished">Estendi in altezza</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/TopBar.cpp" line="194"/>
+        <location filename="../../ui/settings/TopBar.cpp" line="229"/>
         <source>Remove Selected</source>
         <translation>Rimuovi selezionato</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/TopBar.cpp" line="198"/>
+        <location filename="../../ui/settings/TopBar.cpp" line="233"/>
         <source>Reset Defaults</source>
         <translation>Ripristina predefiniti</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/TopBar.cpp" line="202"/>
+        <location filename="../../ui/settings/TopBar.cpp" line="237"/>
         <source>Keep the selected widget at the minimum needed size</source>
         <translation>Mantieni il widget selezionato alla dimensione minima necessaria</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/TopBar.cpp" line="203"/>
+        <location filename="../../ui/settings/TopBar.cpp" line="238"/>
         <source>Minimize horizontally</source>
         <translation>Minimizza orizzontalmente</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/TopBar.cpp" line="207"/>
+        <location filename="../../ui/settings/TopBar.cpp" line="242"/>
         <source>Let the selected widget grow to the maximum possible size</source>
         <translation>Consenti al widget selezionato di espandersi alla dimensione massima possibile</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/TopBar.cpp" line="208"/>
+        <location filename="../../ui/settings/TopBar.cpp" line="243"/>
         <source>Maximize horizontally</source>
         <translation>Massimizza orizzontalmente</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/TopBar.cpp" line="219"/>
+        <location filename="../../ui/settings/TopBar.cpp" line="247"/>
+        <source>Keep the selected widget at the normal top-bar height</source>
+        <translation>Mantieni il widget selezionato all'altezza normale della barra superiore</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/TopBar.cpp" line="248"/>
+        <source>Minimize vertically</source>
+        <translation>Minimizza verticalmente</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/TopBar.cpp" line="252"/>
+        <source>Let the selected widget use the full top-bar height</source>
+        <translation>Consenti al widget selezionato di usare l'intera altezza della barra superiore</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/TopBar.cpp" line="253"/>
+        <source>Maximize vertically</source>
+        <translation>Massimizza verticalmente</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/TopBar.cpp" line="257"/>
+        <source>Move selected widget left</source>
+        <translation>Sposta il widget selezionato a sinistra</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/TopBar.cpp" line="261"/>
+        <source>Move selected widget right</source>
+        <translation>Sposta il widget selezionato a destra</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/TopBar.cpp" line="275"/>
         <source>Tap or drag a palette item to place it on the preview bar.</source>
         <translation>Tocca o trascina un elemento della palette per posizionarlo sulla barra di anteprima.</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/TopBar.cpp" line="342"/>
+        <location filename="../../ui/settings/TopBar.cpp" line="419"/>
         <source>Height</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/settings/TopBar.cpp" line="347"/>
+        <location filename="../../ui/settings/TopBar.cpp" line="424"/>
         <source>Elastic</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6379,7 +6410,7 @@ Ultimo aggiornamento live %1</translation>
         <location filename="../../build/FairWindSK_autogen/include/ui_Units.h" line="138"/>
         <location filename="../../ui/settings/Units.cpp" line="316"/>
         <source>Unavailable</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Non disponibile</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Units.ui" line="115"/>
@@ -6422,106 +6453,107 @@ Ultimo aggiornamento live %1</translation>
     <message>
         <location filename="../../ui/topbar/TopBar.cpp" line="106"/>
         <source>Not configured</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Non configurato</translation>
     </message>
     <message>
         <location filename="../../ui/topbar/TopBar.cpp" line="110"/>
         <source>Live</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Live</translation>
     </message>
     <message>
         <location filename="../../ui/topbar/TopBar.cpp" line="113"/>
         <source>Stale</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Non aggiornato</translation>
     </message>
     <message>
         <location filename="../../ui/topbar/TopBar.cpp" line="116"/>
         <source>Missing</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Mancante</translation>
     </message>
     <message>
         <location filename="../../ui/topbar/TopBar.cpp" line="121"/>
         <source>%1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">%1: %2</translation>
     </message>
     <message>
         <location filename="../../ui/topbar/TopBar.cpp" line="123"/>
         <source>
 Last live update %1</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">
+Ultimo aggiornamento live %1</translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="883"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="893"/>
         <source>Comfort view: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="960"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="970"/>
         <source>Position</source>
         <translation>Posizione</translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="971"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="981"/>
         <source>Course over ground</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="983"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="993"/>
         <source>Speed over ground</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="997"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="1007"/>
         <source>Heading</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="1009"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="1019"/>
         <source>Speed through water</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="1023"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="1033"/>
         <source>Depth</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Profondità</translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="1032"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="1042"/>
         <source>Waypoint</source>
         <translation>Waypoint</translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="1038"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="1048"/>
         <source>Bearing to waypoint</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="1046"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="1056"/>
         <source>Distance to go</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="1056"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="1066"/>
         <source>Time to go</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="1064"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="1074"/>
         <source>Estimated time of arrival</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="1072"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="1082"/>
         <source>Cross track error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="1082"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="1092"/>
         <source>Velocity made good</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="1110"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="1120"/>
         <source>%1
 %2</source>
         <translation type="unfinished"></translation>
@@ -6813,7 +6845,7 @@ Last live update %1</source>
         <location filename="../../ui/web/WebView.cpp" line="741"/>
         <location filename="../../ui/web/WebView.cpp" line="807"/>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Annulla</translation>
     </message>
     <message>
         <location filename="../../ui/web/WebView.cpp" line="733"/>
@@ -6829,7 +6861,7 @@ Last live update %1</source>
         <location filename="../../ui/web/WebView.cpp" line="740"/>
         <location filename="../../ui/web/WebView.cpp" line="806"/>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">OK</translation>
     </message>
     <message>
         <location filename="../../ui/web/WebView.cpp" line="759"/>
@@ -7160,7 +7192,7 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/widgets/TouchColorPicker.cpp" line="332"/>
         <source>Adjust the color with the shade area, sliders, hex value, or custom swatches. Double tap or double click a swatch, or double tap the preview, to select it.</source>
-        <translation>Regola il colore con l'area tonalità, i cursori, il valore esadecimale o i campioni personalizzati. Tocca due volte o fai doppio clic su un campione, oppure tocca due volte l'anteprima, per selezionarlo.</translation>
+        <translation>Regola il colore con l&apos;area tonalità, i cursori, il valore esadecimale o i campioni personalizzati. Tocca due volte o fai doppio clic su un campione, oppure tocca due volte l&apos;anteprima, per selezionarlo.</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/TouchColorPicker.cpp" line="351"/>
@@ -7331,7 +7363,7 @@ Last live update %1</source>
     <message>
         <location filename="../../ui/widgets/TouchIconBrowser.cpp" line="138"/>
         <source>Choose an icon. Tap once to preview it, then double tap or double click an icon to select it.</source>
-        <translation>Scegli un'icona. Tocca una volta per vederne l'anteprima, poi tocca due volte o fai doppio clic su un'icona per selezionarla.</translation>
+        <translation>Scegli un&apos;icona. Tocca una volta per vederne l&apos;anteprima, poi tocca due volte o fai doppio clic su un&apos;icona per selezionarla.</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/TouchIconBrowser.cpp" line="342"/>
@@ -7352,7 +7384,7 @@ Last live update %1</source>
         <location filename="../../ui/widgets/TouchSpinBox.ui" line="82"/>
         <location filename="../../build/FairWindSK_autogen/include/ui_TouchSpinBox.h" line="91"/>
         <source>0</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">0</translation>
     </message>
 </context>
 <context>

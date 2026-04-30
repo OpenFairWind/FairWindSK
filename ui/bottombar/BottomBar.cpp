@@ -53,6 +53,9 @@ namespace fairwindsk::ui::bottombar {
 
         while (ui->horizontalLayoutButtons->count() > 0) {
             auto *item = ui->horizontalLayoutButtons->takeAt(0);
+            if (auto *widget = item->widget()) {
+                widget->hide();
+            }
             delete item;
         }
 
@@ -117,6 +120,7 @@ namespace fairwindsk::ui::bottombar {
             effectivePolicy.setVerticalPolicy(QSizePolicy::Expanding);
         }
         widget->setSizePolicy(effectivePolicy);
+        widget->setVisible(true);
 
         const Qt::Alignment alignment = entry.expandVertically ? Qt::Alignment() : Qt::AlignVCenter;
         layout->addWidget(widget, entry.expandHorizontally ? 1 : 0, alignment);

@@ -4,6 +4,7 @@
 #include <QAbstractItemModel>
 #include <QDragEnterEvent>
 #include <QDropEvent>
+#include <QEvent>
 #include <QFrame>
 #include <QGridLayout>
 #include <QHBoxLayout>
@@ -36,9 +37,10 @@ namespace fairwindsk::ui::settings {
                 setFlow(QListView::LeftToRight);
                 setWrapping(false);
                 setResizeMode(QListView::Adjust);
-                setMovement(QListView::Snap);
+                setMovement(QListView::Static);
                 setSelectionMode(QAbstractItemView::SingleSelection);
                 setDragDropMode(QAbstractItemView::DragDrop);
+                setDragDropOverwriteMode(false);
                 setDefaultDropAction(Qt::MoveAction);
                 setDragEnabled(true);
                 setAcceptDrops(true);
@@ -50,6 +52,19 @@ namespace fairwindsk::ui::settings {
             }
 
         protected:
+            int insertRowForPosition(const QPoint &position) const {
+                int insertRow = count();
+                const QModelIndex targetIndex = indexAt(position);
+                if (targetIndex.isValid()) {
+                    insertRow = targetIndex.row();
+                    if (position.x() > visualRect(targetIndex).center().x()) {
+                        ++insertRow;
+                    }
+                }
+
+                return std::clamp(insertRow, 0, count());
+            }
+
             void dragEnterEvent(QDragEnterEvent *event) override {
                 if (event && (event->mimeData()->hasFormat(WidgetPalette::mimeType().toUtf8()) || event->source() == this)) {
                     event->acceptProposedAction();
@@ -69,6 +84,30 @@ namespace fairwindsk::ui::settings {
             }
 
             void dropEvent(QDropEvent *event) override {
+                if (event && event->source() == this) {
+                    const int oldRow = currentRow();
+                    if (oldRow < 0) {
+                        event->ignore();
+                        return;
+                    }
+
+                    int insertRow = insertRowForPosition(event->position().toPoint());
+                    if (oldRow < insertRow) {
+                        --insertRow;
+                    }
+                    insertRow = std::clamp(insertRow, 0, count() - 1);
+
+                    if (oldRow != insertRow) {
+                        QListWidgetItem *movedItem = takeItem(oldRow);
+                        insertItem(insertRow, movedItem);
+                        setCurrentItem(movedItem);
+                    }
+
+                    event->setDropAction(Qt::MoveAction);
+                    event->accept();
+                    return;
+                }
+
                 if (!event || !event->mimeData()->hasFormat(WidgetPalette::mimeType().toUtf8())) {
                     QListWidget::dropEvent(event);
                     return;
@@ -79,11 +118,7 @@ namespace fairwindsk::ui::settings {
                     entry.instanceId = QUuid::createUuid().toString(QUuid::WithoutBraces);
                 }
 
-                int insertRow = count();
-                const QModelIndex targetIndex = indexAt(event->position().toPoint());
-                if (targetIndex.isValid()) {
-                    insertRow = targetIndex.row();
-                }
+                int insertRow = insertRowForPosition(event->position().toPoint());
 
                 if (entry.kind == EntryKind::Widget) {
                     for (int row = 0; row < count(); ++row) {
@@ -182,13 +217,13 @@ namespace fairwindsk::ui::settings {
 
         m_minimumWidthButton = new QToolButton(this);
         m_maximumWidthButton = new QToolButton(this);
+        m_minimumHeightButton = new QToolButton(this);
         m_expandHeightButton = new QToolButton(this);
+        m_moveLeftButton = new QToolButton(this);
+        m_moveRightButton = new QToolButton(this);
         m_removeSelectedButton = new QToolButton(this);
         m_resetDefaultsButton = new QToolButton(this);
 
-        barsettings::configureHeightButton(m_expandHeightButton,
-                                           tr("Extend Height"),
-                                           kControlHeight);
         barsettings::configureActionButton(m_removeSelectedButton,
                                            QStringLiteral(":/resources/svg/OpenBridge/delete-google.svg"),
                                            tr("Remove Selected"),
@@ -207,9 +242,30 @@ namespace fairwindsk::ui::settings {
                                          tr("Let the selected widget grow to the maximum possible size"),
                                          tr("Maximize horizontally"),
                                          kControlHeight);
+        barsettings::configureSizeButton(m_minimumHeightButton,
+                                         QStringLiteral(":/resources/svg/OpenBridge/layout-vertical-minimize.svg"),
+                                         tr("Keep the selected widget at the normal top-bar height"),
+                                         tr("Minimize vertically"),
+                                         kControlHeight);
+        barsettings::configureSizeButton(m_expandHeightButton,
+                                         QStringLiteral(":/resources/svg/OpenBridge/layout-vertical-maximize.svg"),
+                                         tr("Let the selected widget use the full top-bar height"),
+                                         tr("Maximize vertically"),
+                                         kControlHeight);
+        barsettings::configureActionButton(m_moveLeftButton,
+                                           QStringLiteral(":/resources/svg/OpenBridge/arrow-left-google.svg"),
+                                           tr("Move selected widget left"),
+                                           kControlHeight);
+        barsettings::configureActionButton(m_moveRightButton,
+                                           QStringLiteral(":/resources/svg/OpenBridge/arrow-right-google.svg"),
+                                           tr("Move selected widget right"),
+                                           kControlHeight);
         controlsLayout->addWidget(m_minimumWidthButton);
         controlsLayout->addWidget(m_maximumWidthButton);
+        controlsLayout->addWidget(m_minimumHeightButton);
         controlsLayout->addWidget(m_expandHeightButton);
+        controlsLayout->addWidget(m_moveLeftButton);
+        controlsLayout->addWidget(m_moveRightButton);
         controlsLayout->addWidget(m_removeSelectedButton);
         controlsLayout->addWidget(m_resetDefaultsButton);
         controlsLayout->addStretch(1);
@@ -247,9 +303,15 @@ namespace fairwindsk::ui::settings {
         connect(m_previewWidget->model(), &QAbstractItemModel::rowsMoved, this, [this]() { onPreviewEdited(); });
         connect(m_minimumWidthButton, &QToolButton::clicked, this, &TopBar::onMinimumWidthSelected);
         connect(m_maximumWidthButton, &QToolButton::clicked, this, &TopBar::onMaximumWidthSelected);
-        connect(m_expandHeightButton, &QToolButton::toggled, this, &TopBar::onExpandHeightToggled);
+        connect(m_minimumHeightButton, &QToolButton::clicked, this, &TopBar::onMinimumHeightSelected);
+        connect(m_expandHeightButton, &QToolButton::clicked, this, &TopBar::onMaximumHeightSelected);
+        connect(m_moveLeftButton, &QToolButton::clicked, this, &TopBar::onMoveSelectedLeft);
+        connect(m_moveRightButton, &QToolButton::clicked, this, &TopBar::onMoveSelectedRight);
         connect(m_removeSelectedButton, &QToolButton::clicked, this, &TopBar::onRemoveSelected);
         connect(m_resetDefaultsButton, &QToolButton::clicked, this, &TopBar::onResetDefaults);
+
+        m_previewWidget->installEventFilter(this);
+        m_previewWidget->viewport()->installEventFilter(this);
 
         applyChrome();
         updateInspector();
@@ -286,9 +348,23 @@ namespace fairwindsk::ui::settings {
 
         barsettings::applySizeButtonChrome(m_minimumWidthButton, chrome, 52);
         barsettings::applySizeButtonChrome(m_maximumWidthButton, chrome, 52);
-        barsettings::applyActionButtonChrome(m_expandHeightButton, chrome, 52);
+        barsettings::applySizeButtonChrome(m_minimumHeightButton, chrome, 52);
+        barsettings::applySizeButtonChrome(m_expandHeightButton, chrome, 52);
+        barsettings::applyActionButtonChrome(m_moveLeftButton, chrome, 52);
+        barsettings::applyActionButtonChrome(m_moveRightButton, chrome, 52);
         barsettings::applyActionButtonChrome(m_removeSelectedButton, chrome, 52);
         barsettings::applyActionButtonChrome(m_resetDefaultsButton, chrome, 52);
+    }
+
+    bool TopBar::eventFilter(QObject *watched, QEvent *event) {
+        if ((watched == m_previewWidget || (m_previewWidget && watched == m_previewWidget->viewport())) &&
+            event &&
+            (event->type() == QEvent::Resize ||
+             event->type() == QEvent::Show)) {
+            refreshPreviewItems();
+        }
+
+        return QWidget::eventFilter(watched, event);
     }
 
     fairwindsk::ui::layout::LayoutEntry TopBar::entryForPreviewItem(const QListWidgetItem *item) const {
@@ -322,6 +398,7 @@ namespace fairwindsk::ui::settings {
         auto *item = createPreviewItem(entry);
         m_previewWidget->addItem(item);
         m_previewWidget->setCurrentItem(item);
+        refreshPreviewItems();
     }
 
     void TopBar::refreshPreviewItem(QListWidgetItem *item) const {
@@ -350,14 +427,39 @@ namespace fairwindsk::ui::settings {
         return summary.join(QStringLiteral(" + "));
     }
 
-    QSize TopBar::itemSizeHint(const LayoutEntry &entry) const {
-        int width = 60;
+    int TopBar::minimumItemWidth(const LayoutEntry &entry) const {
         if (entry.kind == EntryKind::Separator) {
-            width = 48;
-        } else if (entry.kind == EntryKind::Stretch) {
-            width = entry.expandHorizontally ? 86 : 60;
-        } else if (entry.expandHorizontally) {
-            width = 86;
+            return 48;
+        }
+        if (entry.kind == EntryKind::Stretch) {
+            return 60;
+        }
+
+        return 72;
+    }
+
+    QSize TopBar::itemSizeHint(const LayoutEntry &entry) const {
+        int width = minimumItemWidth(entry);
+        if (m_previewWidget && m_previewWidget->count() > 0) {
+            int totalMinimumWidth = 0;
+            int expandingEntries = 0;
+            for (int row = 0; row < m_previewWidget->count(); ++row) {
+                const auto itemEntry = entryForPreviewItem(m_previewWidget->item(row));
+                totalMinimumWidth += minimumItemWidth(itemEntry);
+                if (itemEntry.expandHorizontally || itemEntry.kind == EntryKind::Stretch) {
+                    ++expandingEntries;
+                }
+            }
+
+            const int spacingWidth = m_previewWidget->spacing() * std::max(0, m_previewWidget->count() - 1);
+            const int chromeWidth = 16;
+            const int viewportWidth = m_previewWidget->viewport()
+                                          ? m_previewWidget->viewport()->width()
+                                          : m_previewWidget->width();
+            const int spareWidth = viewportWidth - totalMinimumWidth - spacingWidth - chromeWidth;
+            if ((entry.expandHorizontally || entry.kind == EntryKind::Stretch) && expandingEntries > 0 && spareWidth > 0) {
+                width += spareWidth / expandingEntries;
+            }
         }
 
         int height = entry.expandVertically ? 72 : 68;
@@ -383,6 +485,18 @@ namespace fairwindsk::ui::settings {
         item->setSizeHint(itemSizeHint(entry));
         item->setTextAlignment(Qt::AlignCenter);
         return item;
+    }
+
+    void TopBar::refreshPreviewItems() const {
+        if (!m_previewWidget) {
+            return;
+        }
+
+        for (int row = 0; row < m_previewWidget->count(); ++row) {
+            refreshPreviewItem(m_previewWidget->item(row));
+        }
+        m_previewWidget->doItemsLayout();
+        m_previewWidget->viewport()->update();
     }
 
     QListWidgetItem *TopBar::findPreviewWidgetItem(const QString &widgetId) const {
@@ -417,6 +531,7 @@ namespace fairwindsk::ui::settings {
             }
             m_previewWidget->addItem(createPreviewItem(entry));
         }
+        refreshPreviewItems();
 
         m_populating = false;
         updatePaletteState();
@@ -474,6 +589,8 @@ namespace fairwindsk::ui::settings {
     void TopBar::updateInspector() {
         const auto entry = entryForPreviewItem(m_previewWidget ? m_previewWidget->currentItem() : nullptr);
         const bool hasSelection = m_previewWidget && m_previewWidget->currentItem();
+        const int currentRow = m_previewWidget ? m_previewWidget->currentRow() : -1;
+        const int itemCount = m_previewWidget ? m_previewWidget->count() : 0;
 
         if (m_minimumWidthButton) {
             const QSignalBlocker blocker(m_minimumWidthButton);
@@ -485,10 +602,21 @@ namespace fairwindsk::ui::settings {
             m_maximumWidthButton->setEnabled(hasSelection && entry.kind == EntryKind::Widget);
             m_maximumWidthButton->setChecked(hasSelection && entry.kind == EntryKind::Widget && entry.expandHorizontally);
         }
+        if (m_minimumHeightButton) {
+            const QSignalBlocker blocker(m_minimumHeightButton);
+            m_minimumHeightButton->setEnabled(hasSelection);
+            m_minimumHeightButton->setChecked(hasSelection && !entry.expandVertically);
+        }
         if (m_expandHeightButton) {
             const QSignalBlocker blocker(m_expandHeightButton);
             m_expandHeightButton->setEnabled(hasSelection);
             m_expandHeightButton->setChecked(hasSelection && entry.expandVertically);
+        }
+        if (m_moveLeftButton) {
+            m_moveLeftButton->setEnabled(hasSelection && currentRow > 0);
+        }
+        if (m_moveRightButton) {
+            m_moveRightButton->setEnabled(hasSelection && currentRow >= 0 && currentRow < itemCount - 1);
         }
         if (m_removeSelectedButton) {
             m_removeSelectedButton->setEnabled(hasSelection);
@@ -523,7 +651,7 @@ namespace fairwindsk::ui::settings {
         }
 
         item->setData(RoleExpandHorizontally, false);
-        refreshPreviewItem(item);
+        refreshPreviewItems();
         persistToConfiguration();
         updateInspector();
     }
@@ -535,20 +663,69 @@ namespace fairwindsk::ui::settings {
         }
 
         item->setData(RoleExpandHorizontally, true);
-        refreshPreviewItem(item);
+        refreshPreviewItems();
         persistToConfiguration();
         updateInspector();
     }
 
-    void TopBar::onExpandHeightToggled(const bool checked) {
+    void TopBar::onMinimumHeightSelected() {
         auto *item = m_previewWidget ? m_previewWidget->currentItem() : nullptr;
         if (!item) {
             return;
         }
 
-        item->setData(RoleExpandVertically, checked);
-        refreshPreviewItem(item);
+        item->setData(RoleExpandVertically, false);
+        refreshPreviewItems();
         persistToConfiguration();
+        updateInspector();
+    }
+
+    void TopBar::onMaximumHeightSelected() {
+        auto *item = m_previewWidget ? m_previewWidget->currentItem() : nullptr;
+        if (!item) {
+            return;
+        }
+
+        item->setData(RoleExpandVertically, true);
+        refreshPreviewItems();
+        persistToConfiguration();
+        updateInspector();
+    }
+
+    void TopBar::moveCurrentPreviewItem(const int offset) {
+        if (!m_previewWidget || offset == 0) {
+            return;
+        }
+
+        const int currentRow = m_previewWidget->currentRow();
+        if (currentRow < 0 || m_previewWidget->count() <= 1) {
+            return;
+        }
+
+        const int targetRow = std::clamp(currentRow + offset, 0, m_previewWidget->count() - 1);
+        if (currentRow == targetRow) {
+            return;
+        }
+
+        QListWidgetItem *item = nullptr;
+        {
+            const QSignalBlocker blocker(m_previewWidget->model());
+            item = m_previewWidget->takeItem(currentRow);
+            m_previewWidget->insertItem(targetRow, item);
+            m_previewWidget->setCurrentItem(item);
+        }
+
+        refreshPreviewItems();
+        persistToConfiguration();
+        updateInspector();
+    }
+
+    void TopBar::onMoveSelectedLeft() {
+        moveCurrentPreviewItem(-1);
+    }
+
+    void TopBar::onMoveSelectedRight() {
+        moveCurrentPreviewItem(1);
     }
 
     void TopBar::onRemoveSelected() {
@@ -563,6 +740,7 @@ namespace fairwindsk::ui::settings {
 
         delete m_previewWidget->takeItem(row);
         persistToConfiguration();
+        refreshPreviewItems();
         updateInspector();
     }
 
@@ -588,11 +766,7 @@ namespace fairwindsk::ui::settings {
             return;
         }
 
-        for (int row = 0; row < m_previewWidget->count(); ++row) {
-            auto *item = m_previewWidget->item(row);
-            refreshPreviewItem(item);
-        }
-
+        refreshPreviewItems();
         persistToConfiguration();
         updateInspector();
     }
