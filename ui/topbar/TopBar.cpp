@@ -43,7 +43,7 @@ namespace fairwindsk::ui::topbar {
                 "QToolButton {"
                 " background: transparent;"
                 " border: none;"
-                " padding: 6px;"
+                " padding: 0px;"
                 " color: %1;"
                 " }"
                 "QToolButton:hover { background: %2; border-radius: 8px; color: %1; }"
@@ -222,6 +222,11 @@ namespace fairwindsk::ui::topbar {
         }
         widget->setSizePolicy(effectivePolicy);
         widget->setVisible(true);
+        if (itemId == QStringLiteral("position")) {
+            widget->setMinimumWidth(widget->sizeHint().width());
+            ui->label_textPOS->setVisible(true);
+            ui->label_POS->setVisible(true);
+        }
 
         const Qt::Alignment alignment = entry.expandVertically ? Qt::Alignment() : Qt::AlignVCenter;
         layout->addWidget(widget, entry.expandHorizontally ? 1 : 0, alignment);
@@ -321,12 +326,17 @@ namespace fairwindsk::ui::topbar {
         return nullptr;
     }
 
+    bool TopBar::isLayoutWidgetActive(const QString &itemId) const {
+        return itemId.isEmpty() || m_activeLayoutWidgetIds.contains(itemId);
+    }
+
     void TopBar::rebuildLayout() {
         if (!ui || !ui->horizontalLayout) {
             return;
         }
 
         clearConfiguredLayout();
+        m_activeLayoutWidgetIds.clear();
         ui->toolButton_UL->setVisible(true);
         ui->horizontalLayout->addWidget(ui->toolButton_UL, 0, Qt::AlignVCenter);
 
@@ -367,11 +377,16 @@ namespace fairwindsk::ui::topbar {
                 continue;
             }
 
+            if (entry.kind == fairwindsk::ui::layout::EntryKind::Widget) {
+                m_activeLayoutWidgetIds.insert(entry.widgetId);
+            }
             applyEntrySizing(entry, itemId, widget, ui->horizontalLayout);
         }
 
         ui->toolButton_UR->setVisible(true);
         ui->horizontalLayout->addWidget(ui->toolButton_UR, 0, Qt::AlignVCenter);
+        ui->toolButton_UL->raise();
+        ui->toolButton_UR->raise();
         applyLayoutEditHints(entries);
     }
 
@@ -438,6 +453,13 @@ namespace fairwindsk::ui::topbar {
                                      const QJsonObject &update,
                                      const QString &sourceUnit,
                                      const QString &targetUnit) {
+        if (!isLayoutWidgetActive(target.itemId)) {
+            if (target.container) {
+                target.container->hide();
+            }
+            return;
+        }
+
         const bool pathConfigured = !path.trimmed().isEmpty();
         const auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
         const bool hasValue = pathConfigured && !update.isEmpty() && !std::isnan(value);
@@ -463,6 +485,13 @@ namespace fairwindsk::ui::topbar {
                                   const QString &title,
                                   const QJsonObject &update,
                                   const QString &format) {
+        if (!isLayoutWidgetActive(target.itemId)) {
+            if (target.container) {
+                target.container->hide();
+            }
+            return;
+        }
+
         const bool hasValue = !update.isEmpty();
         const auto value = fairwindsk::signalk::Client::getDateTimeFromUpdateByPath(update);
         applyMetricPresentation(target.container,
@@ -478,6 +507,13 @@ namespace fairwindsk::ui::topbar {
     void TopBar::renderWaypointMetric(const MetricRenderTarget &target,
                                       const QString &title,
                                       const QJsonObject &update) {
+        if (!isLayoutWidgetActive(target.itemId)) {
+            if (target.container) {
+                target.container->hide();
+            }
+            return;
+        }
+
         QString text;
         bool hasValue = false;
         const auto value = fairwindsk::signalk::Client::getObjectFromUpdateByPath(update);
@@ -501,6 +537,13 @@ namespace fairwindsk::ui::topbar {
     void TopBar::renderPositionMetric(const MetricRenderTarget &target,
                                       const QString &title,
                                       const QJsonObject &update) {
+        if (!isLayoutWidgetActive(target.itemId)) {
+            if (target.container) {
+                target.container->hide();
+            }
+            return;
+        }
+
         const auto value = fairwindsk::signalk::Client::getGeoCoordinateFromUpdateByPath(update);
         const bool hasValue = value.isValid();
         const QString text = hasValue
@@ -516,6 +559,17 @@ namespace fairwindsk::ui::topbar {
                                 signalKMetricFreshnessState(hasValue),
                                 true,
                                 true);
+        if (target.container) {
+            target.container->setVisible(true);
+        }
+        if (ui->label_textPOS) {
+            ui->label_textPOS->setVisible(true);
+            ui->label_textPOS->raise();
+        }
+        if (target.valueLabel) {
+            target.valueLabel->setVisible(true);
+            target.valueLabel->raise();
+        }
     }
 
     void TopBar::refreshMetricLabelWidths() const {
@@ -584,18 +638,19 @@ namespace fairwindsk::ui::topbar {
         ui->line_1->hide();
         ui->line_2->hide();
         ui->line_3->hide();
+        ui->horizontalLayout->setContentsMargins(4, 0, 4, 0);
         applyFramelessRuntimeChrome();
 
         ui->toolButton_UL->setIcon(QPixmap::fromImage(QImage(":/resources/images/mainwindow/fairwind_icon.png")));
-        ui->toolButton_UL->setIconSize(QSize(32, 32));
-        ui->toolButton_UL->setFixedSize(QSize(48, 48));
+        ui->toolButton_UL->setIconSize(QSize(36, 36));
+        ui->toolButton_UL->setFixedSize(QSize(56, 56));
         ui->toolButton_UL->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         ui->toolButton_UL->setAutoRaise(true);
         ui->toolButton_UL->setStyleSheet(chromeToolButtonStyle(chromeColors));
 
         ui->toolButton_UR->setIcon(QPixmap::fromImage(QImage(":/resources/images/icons/apps_icon.png")));
-        ui->toolButton_UR->setIconSize(QSize(32, 32));
-        ui->toolButton_UR->setFixedSize(QSize(48, 48));
+        ui->toolButton_UR->setIconSize(QSize(36, 36));
+        ui->toolButton_UR->setFixedSize(QSize(56, 56));
         ui->toolButton_UR->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         ui->toolButton_UR->setAutoRaise(true);
         ui->toolButton_UR->setStyleSheet(chromeToolButtonStyle(chromeColors));
@@ -607,6 +662,7 @@ namespace fairwindsk::ui::topbar {
             m_signalKStatusIcons = new fairwindsk::ui::widgets::SignalKStatusIconsWidget(ui->widget_SignalKStatusIcons);
             statusLayout->addWidget(m_signalKStatusIcons, 0, Qt::AlignVCenter);
         }
+        rebuildLayout();
         
         // emit a signal when the Apps tool button from the UI is clicked
         connect(ui->toolButton_UL, &QToolButton::released, this, &TopBar::toolbuttonUL_clicked);
@@ -930,6 +986,9 @@ namespace fairwindsk::ui::topbar {
         if (ui->label_textPOS) {
             ui->label_textPOS->setStyleSheet(labelStyle);
         }
+        if (ui->label_POS) {
+            ui->label_POS->setStyleSheet(labelStyle);
+        }
         if (ui->label_ApplicationName) {
             ui->label_ApplicationName->setStyleSheet(labelStyle);
         }
@@ -1012,7 +1071,7 @@ namespace fairwindsk::ui::topbar {
  */
     void TopBar::updatePOS(const QJsonObject &update) {
         m_lastPosUpdate = update;
-        renderPositionMetric({ui->widget_POS, ui->label_POS, nullptr}, tr("Position"), update);
+        renderPositionMetric({ui->widget_POS, ui->label_POS, nullptr, QStringLiteral("position")}, tr("Position"), update);
     }
 
 
@@ -1022,7 +1081,7 @@ namespace fairwindsk::ui::topbar {
  */
     void TopBar::updateCOG(const QJsonObject &update) {
         m_lastCogUpdate = update;
-        renderAngularMetric({ui->widget_COG, ui->label_COG, ui->label_unitCOG},
+        renderAngularMetric({ui->widget_COG, ui->label_COG, ui->label_unitCOG, QStringLiteral("cog")},
                             tr("Course over ground"),
                             m_pathCOG,
                             update);
@@ -1034,7 +1093,7 @@ namespace fairwindsk::ui::topbar {
  */
     void TopBar::updateSOG(const QJsonObject &update) {
         m_lastSogUpdate = update;
-        renderNumericMetric({ui->widget_SOG, ui->label_SOG, ui->label_unitSOG},
+        renderNumericMetric({ui->widget_SOG, ui->label_SOG, ui->label_unitSOG, QStringLiteral("sog")},
                             tr("Speed over ground"),
                             m_pathSOG,
                             update,
@@ -1048,7 +1107,7 @@ namespace fairwindsk::ui::topbar {
  */
     void TopBar::updateHDG(const QJsonObject &update) {
         m_lastHdgUpdate = update;
-        renderAngularMetric({ui->widget_HDG, ui->label_HDG, ui->label_unitHDG},
+        renderAngularMetric({ui->widget_HDG, ui->label_HDG, ui->label_unitHDG, QStringLiteral("hdg")},
                             tr("Heading"),
                             m_pathHDG,
                             update);
@@ -1060,7 +1119,7 @@ namespace fairwindsk::ui::topbar {
  */
     void TopBar::updateSTW(const QJsonObject &update) {
         m_lastStwUpdate = update;
-        renderNumericMetric({ui->widget_STW, ui->label_STW, ui->label_unitSTW},
+        renderNumericMetric({ui->widget_STW, ui->label_STW, ui->label_unitSTW, QStringLiteral("stw")},
                             tr("Speed through water"),
                             m_pathSTW,
                             update,
@@ -1074,7 +1133,7 @@ namespace fairwindsk::ui::topbar {
  */
     void TopBar::updateDPT(const QJsonObject &update) {
         m_lastDptUpdate = update;
-        renderNumericMetric({ui->widget_DPT, ui->label_DPT, ui->label_unitDPT},
+        renderNumericMetric({ui->widget_DPT, ui->label_DPT, ui->label_unitDPT, QStringLiteral("dpt")},
                             tr("Depth"),
                             m_pathDPT,
                             update,
@@ -1084,12 +1143,12 @@ namespace fairwindsk::ui::topbar {
 
     void TopBar::updateWPT(const QJsonObject &update) {
         m_lastWptUpdate = update;
-        renderWaypointMetric({ui->widget_WPT, ui->label_WPT, nullptr}, tr("Waypoint"), update);
+        renderWaypointMetric({ui->widget_WPT, ui->label_WPT, nullptr, QStringLiteral("wpt")}, tr("Waypoint"), update);
     }
 
     void TopBar::updateBTW(const QJsonObject &update) {
         m_lastBtwUpdate = update;
-        renderAngularMetric({ui->widget_BTW, ui->label_BTW, ui->label_unitBTW},
+        renderAngularMetric({ui->widget_BTW, ui->label_BTW, ui->label_unitBTW, QStringLiteral("btw")},
                             tr("Bearing to waypoint"),
                             m_pathBTW,
                             update);
@@ -1097,7 +1156,7 @@ namespace fairwindsk::ui::topbar {
 
     void TopBar::updateDTG(const QJsonObject &update) {
         m_lastDtgUpdate = update;
-        renderNumericMetric({ui->widget_DTG, ui->label_DTG, ui->label_unitDTG},
+        renderNumericMetric({ui->widget_DTG, ui->label_DTG, ui->label_unitDTG, QStringLiteral("dtg")},
                             tr("Distance to go"),
                             m_pathDTG,
                             update,
@@ -1107,7 +1166,7 @@ namespace fairwindsk::ui::topbar {
 
     void TopBar::updateTTG(const QJsonObject &update) {
         m_lastTtgUpdate = update;
-        renderDateMetric({ui->widget_TTG, ui->label_TTG, nullptr},
+        renderDateMetric({ui->widget_TTG, ui->label_TTG, nullptr, QStringLiteral("ttg")},
                          tr("Time to go"),
                          update,
                          QStringLiteral("hh:mm"));
@@ -1115,7 +1174,7 @@ namespace fairwindsk::ui::topbar {
 
     void TopBar::updateETA(const QJsonObject &update) {
         m_lastEtaUpdate = update;
-        renderDateMetric({ui->widget_ETA, ui->label_ETA, nullptr},
+        renderDateMetric({ui->widget_ETA, ui->label_ETA, nullptr, QStringLiteral("eta")},
                          tr("Estimated time of arrival"),
                          update,
                          QStringLiteral("dd-MM-yyyy hh:mm"));
@@ -1123,7 +1182,7 @@ namespace fairwindsk::ui::topbar {
 
     void TopBar::updateXTE(const QJsonObject &update) {
         m_lastXteUpdate = update;
-        renderNumericMetric({ui->widget_XTE, ui->label_XTE, ui->label_unitXTE},
+        renderNumericMetric({ui->widget_XTE, ui->label_XTE, ui->label_unitXTE, QStringLiteral("xte")},
                             tr("Cross track error"),
                             m_pathXTE,
                             update,
@@ -1133,7 +1192,7 @@ namespace fairwindsk::ui::topbar {
 
     void TopBar::updateVMG(const QJsonObject &update) {
         m_lastVmgUpdate = update;
-        renderNumericMetric({ui->widget_VMG, ui->label_VMG, ui->label_unitVMG},
+        renderNumericMetric({ui->widget_VMG, ui->label_VMG, ui->label_unitVMG, QStringLiteral("vmg")},
                             tr("Velocity made good"),
                             m_pathVMG,
                             update,
@@ -1146,7 +1205,7 @@ namespace fairwindsk::ui::topbar {
         if (m_currentApp) {
             auto *widget = m_currentApp->getWidget();
             ui->toolButton_UR->setIcon(m_currentApp->getIcon(true));
-            ui->toolButton_UR->setIconSize(QSize(32, 32));
+            ui->toolButton_UR->setIconSize(QSize(36, 36));
             ui->label_ApplicationName->setText(m_currentApp->getDisplayName(true));
             ui->label_ApplicationName->setToolTip(m_currentApp->getDescription());
             ui->toolButton_UR->setEnabled(qobject_cast<fairwindsk::ui::web::Web *>(widget) != nullptr);
@@ -1170,7 +1229,7 @@ namespace fairwindsk::ui::topbar {
         ui->toolButton_UR->setIcon(icon.isNull()
                                            ? QPixmap::fromImage(QImage(":/resources/images/icons/apps_icon.png"))
                                            : icon);
-        ui->toolButton_UR->setIconSize(QSize(32, 32));
+        ui->toolButton_UR->setIconSize(QSize(36, 36));
         ui->toolButton_UR->setEnabled(enableButton);
         ui->label_ApplicationName->setText(name);
         ui->label_ApplicationName->setToolTip(tooltip);
@@ -1191,7 +1250,7 @@ namespace fairwindsk::ui::topbar {
 
     void TopBar::resetCurrentAppPresentation() const {
         ui->toolButton_UR->setIcon(QPixmap::fromImage(QImage(":/resources/images/icons/apps_icon.png")));
-        ui->toolButton_UR->setIconSize(QSize(32, 32));
+        ui->toolButton_UR->setIconSize(QSize(36, 36));
         ui->toolButton_UR->setEnabled(false);
         ui->label_ApplicationName->setText("");
         ui->label_ApplicationName->setToolTip("");

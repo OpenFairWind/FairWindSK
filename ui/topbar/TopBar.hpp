@@ -11,6 +11,7 @@
 #include <QPointer>
 #include <QHash>
 #include <QPointer>
+#include <QSet>
 #include <QVector>
 #include <QWidget>
 
@@ -75,6 +76,7 @@ namespace fairwindsk::ui::topbar {
             QWidget *container = nullptr;
             QLabel *valueLabel = nullptr;
             QLabel *unitLabel = nullptr;
+            QString itemId;
         };
 
         void renderNumericMetric(const MetricRenderTarget &target,
@@ -104,6 +106,7 @@ namespace fairwindsk::ui::topbar {
         void updateSpeedLabels() const;
         void refreshMetricLabelWidths() const;
         void resetCurrentAppPresentation() const;
+        bool isLayoutWidgetActive(const QString &itemId) const;
         void rebuildLayout();
         QWidget *createContextWidget();
         QWidget *createSeparatorWidget();
@@ -134,6 +137,7 @@ namespace fairwindsk::ui::topbar {
         QString m_pathVMG;
         QHash<QString, QSizePolicy> m_baseSizePolicies;
         QHash<QWidget *, QPointer<QGraphicsEffect>> m_layoutHintEffects;
+        QSet<QString> m_activeLayoutWidgetIds;
         bool m_layoutEditHighlightEnabled = false;
         QJsonObject m_lastPosUpdate;
         QJsonObject m_lastCogUpdate;
