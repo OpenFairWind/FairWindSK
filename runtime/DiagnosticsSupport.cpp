@@ -25,6 +25,8 @@
 #include <QTextStream>
 #include <QThread>
 
+#include <atomic>
+
 #include "Configuration.hpp"
 
 using namespace Qt::StringLiterals;
@@ -63,6 +65,7 @@ namespace fairwindsk::runtime {
         QString g_currentRunLogPath;
         QString g_currentRunInteractionPath;
         QString g_currentRunStartUtc;
+        std::atomic_bool g_shutdownRequested = false;
 
         QString defaultConfigFilename() {
             QString configDir = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
@@ -614,6 +617,10 @@ namespace fairwindsk::runtime {
     }
 
     void markGracefulShutdown() {
+        if (g_shutdownRequested.exchange(true)) {
+            return;
+        }
+
         recordUserInteraction(QStringLiteral("lifecycle"), QStringLiteral("graceful_shutdown"), QStringLiteral("FairWindSK"));
         writeLifecycleLine(QStringLiteral("INFO"), QStringLiteral("Application is closing gracefully."));
         persistCurrentRunState(true);
@@ -629,6 +636,10 @@ namespace fairwindsk::runtime {
             delete g_runInteractionFile;
             g_runInteractionFile = nullptr;
         }
+    }
+
+    bool isShutdownRequested() {
+        return g_shutdownRequested.load();
     }
 
     void applyLiveSettings(const LogLevel level, const bool persistentLogging, const bool interactionHistoryEnabled) {

@@ -1021,6 +1021,10 @@ namespace fairwindsk::ui {
     }
 
     void MainWindow::prewarmPersistentPages() {
+        if (fairwindsk::runtime::isShutdownRequested()) {
+            return;
+        }
+
         QWidget *currentWidget = ui->stackedWidget_Center->currentWidget();
         ensureAboutPage(m_launcher);
 #if defined(Q_OS_LINUX) && defined(Q_PROCESSOR_ARM)
@@ -1034,7 +1038,15 @@ namespace fairwindsk::ui {
     }
 
     void MainWindow::prewarmPersistentPagesAfterStartup() {
-        QTimer::singleShot(0, this, &MainWindow::prewarmPersistentPages);
+        if (fairwindsk::runtime::isShutdownRequested()) {
+            return;
+        }
+
+        QTimer::singleShot(0, this, [this]() {
+            if (!fairwindsk::runtime::isShutdownRequested()) {
+                prewarmPersistentPages();
+            }
+        });
     }
 
     void MainWindow::setSize() {
@@ -1108,21 +1120,34 @@ namespace fairwindsk::ui {
 
     void MainWindow::applyRuntimeConfiguration() {
         const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
-        if (!fairWindSK) {
+        if (!fairWindSK || fairwindsk::runtime::isShutdownRequested()) {
             return;
         }
 
-        m_bottomBar->setAnchorIcon(fairWindSK->checkAnchorApp());
+        if (m_bottomBar) {
+            m_bottomBar->setAnchorIcon(fairWindSK->checkAnchorApp());
+        }
         if (m_topBar) {
             m_topBar->refreshFromConfiguration();
         }
+        if (fairwindsk::runtime::isShutdownRequested()) {
+            return;
+        }
+
         if (m_bottomBar) {
             m_bottomBar->refreshFromConfiguration();
         }
+        if (fairwindsk::runtime::isShutdownRequested()) {
+            return;
+        }
+
         setSize();
         updateAdaptiveShellMode();
         updateMobileShellMetrics();
         updateDrawerGeometry();
+        if (fairwindsk::runtime::isShutdownRequested()) {
+            return;
+        }
 
         if (m_launcher) {
             m_launcher->refreshFromConfiguration(true);
@@ -1320,6 +1345,13 @@ namespace fairwindsk::ui {
      * MainWindow's destructor
      */
     MainWindow::~MainWindow() {
+        if (qApp) {
+            disconnect(qApp, nullptr, this, nullptr);
+            if (qApp->inputMethod()) {
+                disconnect(qApp->inputMethod(), nullptr, this, nullptr);
+            }
+        }
+
         if (s_instance == this) {
             s_instance = nullptr;
         }

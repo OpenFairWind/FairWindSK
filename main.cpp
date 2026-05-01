@@ -359,13 +359,33 @@ int main(int argc, char *argv[]) {
 
     qInfo() << "Scheduling deferred startup tasks";
     QTimer::singleShot(0, &w, [fairWindSK]() {
+        if (fairwindsk::runtime::isShutdownRequested()) {
+            qInfo() << "Deferred startup tasks skipped because shutdown is already requested";
+            return;
+        }
+
         qInfo() << "Deferred startup tasks begin";
         fairWindSK->startSignalK();
+        if (fairwindsk::runtime::isShutdownRequested()) {
+            qInfo() << "Deferred startup tasks cancelled after Signal K startup";
+            return;
+        }
+
         qInfo() << "Signal K startup completed";
         fairWindSK->loadApps();
+        if (fairwindsk::runtime::isShutdownRequested()) {
+            qInfo() << "Deferred startup tasks cancelled after app loading";
+            return;
+        }
+
         qInfo() << "App loading completed";
         if (auto *mainWindow = fairwindsk::ui::MainWindow::instance()) {
             mainWindow->applyRuntimeConfiguration();
+            if (fairwindsk::runtime::isShutdownRequested()) {
+                qInfo() << "Post-startup page prewarm skipped because shutdown is requested";
+                return;
+            }
+
             qInfo() << "Runtime configuration applied";
             mainWindow->prewarmPersistentPagesAfterStartup();
             qInfo() << "Post-startup page prewarm scheduled";

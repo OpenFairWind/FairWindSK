@@ -29,6 +29,7 @@ namespace fairwindsk::runtime {
     void initializeDiagnostics();
     void dispatchPendingDiagnosticsReport();
     void markGracefulShutdown();
+    bool isShutdownRequested();
     void applyLiveSettings(LogLevel level, bool persistentLogging, bool interactionHistoryEnabled);
     void recordUserInteraction(const QString &category,
                                const QString &action,
