@@ -223,6 +223,13 @@ namespace fairwindsk::signalk {
         bool m_reconnectRecoveryPending = false;
         bool m_reconnectAttemptInFlight = false;
         bool m_plannedRestartInProgress = false;
+        bool m_connectivityStateEmitted = false;
+        bool m_lastRestHealthyEmitted = false;
+        bool m_lastStreamHealthyEmitted = false;
+        bool m_lastServerHealthyEmitted = false;
+        ConnectionHealthState m_lastConnectionHealthStateEmitted = ConnectionHealthState::Disconnected;
+        QDateTime m_lastStreamActivityEmitted;
+        QString m_lastConnectivitySummaryEmitted;
         QTimer m_plannedRestartTimer;
     };
 }

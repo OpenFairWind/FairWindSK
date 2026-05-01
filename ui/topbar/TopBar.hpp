@@ -99,6 +99,20 @@ namespace fairwindsk::ui::topbar {
         void renderPositionMetric(const MetricRenderTarget &target,
                                   const QString &title,
                                   const QJsonObject &update);
+        void refreshCachedMetricPresentations();
+        void refreshCachedNumericMetric(const MetricRenderTarget &target,
+                                        const QString &title,
+                                        const QString &path,
+                                        const QJsonObject &update);
+        void refreshCachedDateMetric(const MetricRenderTarget &target,
+                                     const QString &title,
+                                     const QJsonObject &update);
+        void refreshCachedWaypointMetric(const MetricRenderTarget &target,
+                                         const QString &title,
+                                         const QJsonObject &update);
+        void refreshCachedPositionMetric(const MetricRenderTarget &target,
+                                         const QString &title,
+                                         const QJsonObject &update);
         void changeEvent(QEvent *event) override;
         void updateComfortViewIcon() const;
         void applyFramelessRuntimeChrome() const;

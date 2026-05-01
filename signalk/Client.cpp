@@ -184,7 +184,26 @@ namespace fairwindsk::signalk {
         }
 
         const ConnectionHealthState state = currentConnectionHealthState();
-        emit serverHealthChanged(m_restHealthy && m_streamHealthy, summary);
+        const bool serverHealthy = m_restHealthy && m_streamHealthy;
+        if (m_connectivityStateEmitted &&
+            m_lastRestHealthyEmitted == m_restHealthy &&
+            m_lastStreamHealthyEmitted == m_streamHealthy &&
+            m_lastServerHealthyEmitted == serverHealthy &&
+            m_lastConnectionHealthStateEmitted == state &&
+            m_lastStreamActivityEmitted == m_lastStreamActivity &&
+            m_lastConnectivitySummaryEmitted == summary) {
+            return;
+        }
+
+        m_connectivityStateEmitted = true;
+        m_lastRestHealthyEmitted = m_restHealthy;
+        m_lastStreamHealthyEmitted = m_streamHealthy;
+        m_lastServerHealthyEmitted = serverHealthy;
+        m_lastConnectionHealthStateEmitted = state;
+        m_lastStreamActivityEmitted = m_lastStreamActivity;
+        m_lastConnectivitySummaryEmitted = summary;
+
+        emit serverHealthChanged(serverHealthy, summary);
         emit connectivityChanged(m_restHealthy, m_streamHealthy, summary);
         emit connectionHealthStateChanged(state, connectionHealthStateLabel(state), m_lastStreamActivity, summary);
     }

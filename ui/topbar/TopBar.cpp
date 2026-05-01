@@ -2,6 +2,8 @@
 // Created by Raffaele Montella on 12/04/21.
 //
 
+#include <cmath>
+
 #include <QTimer>
 #include <QAbstractButton>
 #include <QFrame>
@@ -197,6 +199,15 @@ namespace fairwindsk::ui::topbar {
                                     title,
                                     text,
                                     signalKMetricFreshnessState(hasValue));
+        }
+
+        QString cachedMetricText(const QLabel *valueLabel) {
+            if (!valueLabel) {
+                return {};
+            }
+
+            const QString text = valueLabel->text();
+            return text.trimmed() == QStringLiteral("--") ? QString() : text;
         }
     }
 
@@ -572,6 +583,165 @@ namespace fairwindsk::ui::topbar {
         }
     }
 
+    void TopBar::refreshCachedNumericMetric(const MetricRenderTarget &target,
+                                            const QString &title,
+                                            const QString &path,
+                                            const QJsonObject &update) {
+        if (!isLayoutWidgetActive(target.itemId)) {
+            if (target.container) {
+                target.container->hide();
+            }
+            return;
+        }
+
+        const bool pathConfigured = !path.trimmed().isEmpty();
+        const auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
+        const QString text = cachedMetricText(target.valueLabel);
+        const bool hasValue = pathConfigured && !update.isEmpty() && !std::isnan(value) && !text.trimmed().isEmpty();
+        applyMetricPresentation(target.container,
+                                target.valueLabel,
+                                target.unitLabel,
+                                configuredMetricTitle(title, pathConfigured),
+                                text,
+                                signalKMetricFreshnessState(hasValue, pathConfigured),
+                                true,
+                                pathConfigured);
+    }
+
+    void TopBar::refreshCachedDateMetric(const MetricRenderTarget &target,
+                                         const QString &title,
+                                         const QJsonObject &update) {
+        if (!isLayoutWidgetActive(target.itemId)) {
+            if (target.container) {
+                target.container->hide();
+            }
+            return;
+        }
+
+        const auto value = fairwindsk::signalk::Client::getDateTimeFromUpdateByPath(update);
+        const QString text = cachedMetricText(target.valueLabel);
+        const bool hasValue = !update.isEmpty() && value.isValid() && !value.isNull() && !text.trimmed().isEmpty();
+        applyMetricPresentation(target.container,
+                                target.valueLabel,
+                                target.unitLabel,
+                                title,
+                                text,
+                                signalKMetricFreshnessState(hasValue),
+                                true,
+                                true);
+    }
+
+    void TopBar::refreshCachedWaypointMetric(const MetricRenderTarget &target,
+                                             const QString &title,
+                                             const QJsonObject &update) {
+        if (!isLayoutWidgetActive(target.itemId)) {
+            if (target.container) {
+                target.container->hide();
+            }
+            return;
+        }
+
+        const auto value = fairwindsk::signalk::Client::getObjectFromUpdateByPath(update);
+        const QString text = cachedMetricText(target.valueLabel);
+        const bool hasValue = value.contains("href") &&
+                              value["href"].isString() &&
+                              !value["href"].toString().trimmed().isEmpty() &&
+                              !text.trimmed().isEmpty();
+        applyMetricPresentation(target.container,
+                                target.valueLabel,
+                                target.unitLabel,
+                                title,
+                                text,
+                                signalKMetricFreshnessState(hasValue),
+                                true,
+                                true);
+    }
+
+    void TopBar::refreshCachedPositionMetric(const MetricRenderTarget &target,
+                                             const QString &title,
+                                             const QJsonObject &update) {
+        if (!isLayoutWidgetActive(target.itemId)) {
+            if (target.container) {
+                target.container->hide();
+            }
+            return;
+        }
+
+        const auto value = fairwindsk::signalk::Client::getGeoCoordinateFromUpdateByPath(update);
+        const QString text = cachedMetricText(target.valueLabel);
+        const bool hasValue = value.isValid() && !text.trimmed().isEmpty();
+        applyMetricPresentation(target.container,
+                                target.valueLabel,
+                                target.unitLabel,
+                                title,
+                                text,
+                                signalKMetricFreshnessState(hasValue),
+                                true,
+                                true);
+        if (target.container) {
+            target.container->setVisible(true);
+        }
+        if (ui->label_textPOS) {
+            ui->label_textPOS->setVisible(true);
+            ui->label_textPOS->raise();
+        }
+        if (target.valueLabel) {
+            target.valueLabel->setVisible(true);
+            target.valueLabel->raise();
+        }
+    }
+
+    void TopBar::refreshCachedMetricPresentations() {
+        refreshCachedPositionMetric({ui->widget_POS, ui->label_POS, nullptr, QStringLiteral("position")},
+                                    tr("Position"),
+                                    m_lastPosUpdate);
+        refreshCachedNumericMetric({ui->widget_COG, ui->label_COG, ui->label_unitCOG, QStringLiteral("cog")},
+                                   tr("Course over ground"),
+                                   m_pathCOG,
+                                   m_lastCogUpdate);
+        refreshCachedNumericMetric({ui->widget_SOG, ui->label_SOG, ui->label_unitSOG, QStringLiteral("sog")},
+                                   tr("Speed over ground"),
+                                   m_pathSOG,
+                                   m_lastSogUpdate);
+        refreshCachedNumericMetric({ui->widget_HDG, ui->label_HDG, ui->label_unitHDG, QStringLiteral("hdg")},
+                                   tr("Heading"),
+                                   m_pathHDG,
+                                   m_lastHdgUpdate);
+        refreshCachedNumericMetric({ui->widget_STW, ui->label_STW, ui->label_unitSTW, QStringLiteral("stw")},
+                                   tr("Speed through water"),
+                                   m_pathSTW,
+                                   m_lastStwUpdate);
+        refreshCachedNumericMetric({ui->widget_DPT, ui->label_DPT, ui->label_unitDPT, QStringLiteral("dpt")},
+                                   tr("Depth"),
+                                   m_pathDPT,
+                                   m_lastDptUpdate);
+        refreshCachedWaypointMetric({ui->widget_WPT, ui->label_WPT, nullptr, QStringLiteral("wpt")},
+                                    tr("Waypoint"),
+                                    m_lastWptUpdate);
+        refreshCachedNumericMetric({ui->widget_BTW, ui->label_BTW, ui->label_unitBTW, QStringLiteral("btw")},
+                                   tr("Bearing to waypoint"),
+                                   m_pathBTW,
+                                   m_lastBtwUpdate);
+        refreshCachedNumericMetric({ui->widget_DTG, ui->label_DTG, ui->label_unitDTG, QStringLiteral("dtg")},
+                                   tr("Distance to go"),
+                                   m_pathDTG,
+                                   m_lastDtgUpdate);
+        refreshCachedDateMetric({ui->widget_TTG, ui->label_TTG, nullptr, QStringLiteral("ttg")},
+                                tr("Time to go"),
+                                m_lastTtgUpdate);
+        refreshCachedDateMetric({ui->widget_ETA, ui->label_ETA, nullptr, QStringLiteral("eta")},
+                                tr("Estimated time of arrival"),
+                                m_lastEtaUpdate);
+        refreshCachedNumericMetric({ui->widget_XTE, ui->label_XTE, ui->label_unitXTE, QStringLiteral("xte")},
+                                   tr("Cross track error"),
+                                   m_pathXTE,
+                                   m_lastXteUpdate);
+        refreshCachedNumericMetric({ui->widget_VMG, ui->label_VMG, ui->label_unitVMG, QStringLiteral("vmg")},
+                                   tr("Velocity made good"),
+                                   m_pathVMG,
+                                   m_lastVmgUpdate);
+    }
+
     void TopBar::refreshMetricLabelWidths() const {
         const QFontMetrics valueMetrics(ui->label_COG->font());
         const QFontMetrics unitMetrics(ui->label_unitCOG->font());
@@ -687,19 +857,7 @@ namespace fairwindsk::ui::topbar {
                            const QString &,
                            const QDateTime &,
                            const QString &) {
-                        updatePOS(m_lastPosUpdate);
-                        updateCOG(m_lastCogUpdate);
-                        updateSOG(m_lastSogUpdate);
-                        updateHDG(m_lastHdgUpdate);
-                        updateSTW(m_lastStwUpdate);
-                        updateDPT(m_lastDptUpdate);
-                        updateWPT(m_lastWptUpdate);
-                        updateBTW(m_lastBtwUpdate);
-                        updateDTG(m_lastDtgUpdate);
-                        updateTTG(m_lastTtgUpdate);
-                        updateETA(m_lastEtaUpdate);
-                        updateXTE(m_lastXteUpdate);
-                        updateVMG(m_lastVmgUpdate);
+                        refreshCachedMetricPresentations();
                     });
         }
 
