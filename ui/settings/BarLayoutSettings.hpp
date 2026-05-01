@@ -13,6 +13,7 @@
 class QLabel;
 class QListWidgetItem;
 class QFrame;
+class QEvent;
 
 namespace fairwindsk::ui::settings {
     class BarLayoutSettings : public QWidget {
@@ -25,6 +26,9 @@ namespace fairwindsk::ui::settings {
         ~BarLayoutSettings() override = default;
 
         void refreshFromConfiguration();
+
+    protected:
+        bool eventFilter(QObject *watched, QEvent *event) override;
 
     private slots:
         void onItemChanged(QListWidgetItem *item);
@@ -48,6 +52,8 @@ namespace fairwindsk::ui::settings {
         fairwindsk::ui::layout::LayoutEntry entryForItem(const QListWidgetItem *item) const;
         QListWidgetItem *createItem(const fairwindsk::ui::layout::LayoutEntry &entry);
         void refreshPreviewItem(QListWidgetItem *item) const;
+        void refreshPreviewItems() const;
+        int minimumItemWidth(const fairwindsk::ui::layout::LayoutEntry &entry) const;
         QSize itemSizeHint(const fairwindsk::ui::layout::LayoutEntry &entry) const;
         void updateActions();
         void appendPlaceholder(fairwindsk::ui::layout::EntryKind kind);

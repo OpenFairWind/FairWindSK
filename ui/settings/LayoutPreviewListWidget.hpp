@@ -10,6 +10,7 @@
 class QDragEnterEvent;
 class QDragMoveEvent;
 class QDropEvent;
+class QMimeData;
 class QMouseEvent;
 
 namespace fairwindsk::ui::settings {
@@ -39,12 +40,15 @@ namespace fairwindsk::ui::settings {
 
     protected:
         void mousePressEvent(QMouseEvent *event) override;
+        void startDrag(Qt::DropActions supportedActions) override;
         void dragEnterEvent(QDragEnterEvent *event) override;
         void dragMoveEvent(QDragMoveEvent *event) override;
         void dropEvent(QDropEvent *event) override;
 
     private:
         int insertRowForPosition(const QPoint &position) const;
+        int rowForPreviewDrag(const QMimeData *mimeData) const;
+        bool moveRowToPosition(int oldRow, const QPoint &position);
         bool isInternalDrop(const QDropEvent *event) const;
         bool isInternalDrop(const QDragMoveEvent *event) const;
         QListWidgetItem *createItem(const fairwindsk::ui::layout::LayoutEntry &entry) const;

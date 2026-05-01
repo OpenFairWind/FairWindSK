@@ -4,6 +4,8 @@
 
 
 
+#include <algorithm>
+
 #include <QGeoLocation>
 #include <QGeoCoordinate>
 #include <QToolButton>
@@ -756,17 +758,22 @@ namespace fairwindsk::ui::bottombar {
     }
 
     void BottomBar::setRegularBarVisible(const bool visible) const {
-        const QList<QWidget *> regularWidgets = {
-            ui->scrollArea_Port,
-            ui->widget_CenterButtons,
-            ui->widget_Starboard
-        };
+        if (!ui || !ui->horizontalLayoutButtons) {
+            return;
+        }
 
-        for (auto *widget : regularWidgets) {
-            if (widget) {
-                widget->setVisible(visible);
+        for (int index = 0; index < ui->horizontalLayoutButtons->count(); ++index) {
+            if (auto *item = ui->horizontalLayoutButtons->itemAt(index)) {
+                auto *widget = item->widget();
+                if (widget) {
+                    widget->setVisible(visible);
+                }
             }
         }
+    }
+
+    void BottomBar::restoreRegularBarVisibility() const {
+        const_cast<BottomBar *>(this)->rebuildLayout();
     }
 
     void BottomBar::setPanelVisibility(QWidget *panel, const bool visible) const {
@@ -777,6 +784,8 @@ namespace fairwindsk::ui::bottombar {
         if (visible) {
             hideTransientPanels(panel);
             setRegularBarVisible(false);
+            updateTransientPanelHeight(panel);
+            panel->setVisible(true);
             panel->raise();
         } else {
             const QList<QWidget *> panels = {m_POBBar, m_AutopilotBar, m_AnchorBar, m_AlarmsBar};
@@ -785,13 +794,15 @@ namespace fairwindsk::ui::bottombar {
                 panels.cend(),
                 [panel](const QWidget *candidate) {
                     return candidate && candidate != panel && candidate->isVisible();
-                });
+            });
             if (!anotherPanelVisible) {
-                setRegularBarVisible(true);
+                restoreRegularBarVisibility();
+                updateTransientPanelHeight(nullptr);
             }
+            panel->setVisible(false);
         }
 
-        panel->setVisible(visible);
+        const_cast<BottomBar *>(this)->updateGeometry();
     }
 
     void BottomBar::hideTransientPanels(QWidget *except) const {
@@ -803,7 +814,23 @@ namespace fairwindsk::ui::bottombar {
         }
 
         if (!except) {
-            setRegularBarVisible(true);
+            restoreRegularBarVisibility();
+            updateTransientPanelHeight(nullptr);
+        }
+    }
+
+    void BottomBar::updateTransientPanelHeight(QWidget *panel) const {
+        const int regularHeight = std::max(kBottomBarButtonHeight, kPortAreaHeight);
+        const int panelHeight = panel
+                                    ? std::max(regularHeight, panel->sizeHint().height())
+                                    : regularHeight;
+
+        const_cast<BottomBar *>(this)->setMinimumHeight(panelHeight);
+        const_cast<BottomBar *>(this)->setMaximumHeight(panelHeight);
+        if (parentWidget()) {
+            parentWidget()->setMinimumHeight(panelHeight);
+            parentWidget()->setMaximumHeight(panelHeight);
+            parentWidget()->updateGeometry();
         }
     }
 

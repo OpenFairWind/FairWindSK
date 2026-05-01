@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <utility>
 
+#include <QDrag>
 #include <QDragEnterEvent>
 #include <QDragMoveEvent>
 #include <QDropEvent>
@@ -16,6 +17,12 @@
 namespace fairwindsk::ui::settings {
     namespace {
         constexpr auto kItemModelMimeType = "application/x-qabstractitemmodeldatalist";
+        constexpr auto kPreviewItemMimeType = "application/x-fairwindsk-layout-preview-entry";
+        constexpr auto kPreviewItemRowMimeType = "application/x-fairwindsk-layout-preview-row";
+
+        QString mimeTypeName(const char *mimeType) {
+            return QString::fromLatin1(mimeType);
+        }
     }
 
     LayoutPreviewListWidget::LayoutPreviewListWidget(QWidget *parent)
@@ -167,7 +174,34 @@ namespace fairwindsk::ui::settings {
         QListWidget::mousePressEvent(event);
     }
 
+    void LayoutPreviewListWidget::startDrag(Qt::DropActions supportedActions) {
+        Q_UNUSED(supportedActions)
+
+        auto *item = currentItem();
+        if (!item) {
+            return;
+        }
+
+        auto *mimeData = new QMimeData();
+        mimeData->setData(mimeTypeName(kPreviewItemMimeType), WidgetPalette::encodeEntry(entryForItem(item)));
+        mimeData->setData(mimeTypeName(kPreviewItemRowMimeType), QByteArray::number(row(item)));
+
+        auto *drag = new QDrag(this);
+        drag->setMimeData(mimeData);
+        if (!item->icon().isNull()) {
+            drag->setPixmap(item->icon().pixmap(iconSize()));
+        }
+        drag->exec(Qt::MoveAction, Qt::MoveAction);
+        m_draggedRow = -1;
+    }
+
     void LayoutPreviewListWidget::dragEnterEvent(QDragEnterEvent *event) {
+        if (event && event->mimeData()->hasFormat(mimeTypeName(kPreviewItemMimeType))) {
+            event->setDropAction(Qt::MoveAction);
+            event->accept();
+            return;
+        }
+
         if (event && event->mimeData()->hasFormat(WidgetPalette::mimeType())) {
             event->setDropAction(Qt::CopyAction);
             event->accept();
@@ -184,6 +218,12 @@ namespace fairwindsk::ui::settings {
     }
 
     void LayoutPreviewListWidget::dragMoveEvent(QDragMoveEvent *event) {
+        if (event && event->mimeData()->hasFormat(mimeTypeName(kPreviewItemMimeType))) {
+            event->setDropAction(Qt::MoveAction);
+            event->accept();
+            return;
+        }
+
         if (event && event->mimeData()->hasFormat(WidgetPalette::mimeType())) {
             event->setDropAction(Qt::CopyAction);
             event->accept();
@@ -200,6 +240,21 @@ namespace fairwindsk::ui::settings {
     }
 
     void LayoutPreviewListWidget::dropEvent(QDropEvent *event) {
+        if (event && event->mimeData()->hasFormat(mimeTypeName(kPreviewItemMimeType))) {
+            const int oldRow = rowForPreviewDrag(event->mimeData());
+            if (oldRow < 0 || oldRow >= count()) {
+                m_draggedRow = -1;
+                event->ignore();
+                return;
+            }
+
+            moveRowToPosition(oldRow, event->position().toPoint());
+            m_draggedRow = -1;
+            event->setDropAction(Qt::MoveAction);
+            event->accept();
+            return;
+        }
+
         if (isInternalDrop(event)) {
             const int oldRow = m_draggedRow >= 0 ? m_draggedRow : currentRow();
             if (oldRow < 0 || oldRow >= count()) {
@@ -208,20 +263,7 @@ namespace fairwindsk::ui::settings {
                 return;
             }
 
-            int insertRow = insertRowForPosition(event->position().toPoint());
-            if (oldRow < insertRow) {
-                --insertRow;
-            }
-            insertRow = std::clamp(insertRow, 0, count() - 1);
-
-            if (oldRow != insertRow) {
-                const QSignalBlocker blocker(model());
-                auto *movedItem = takeItem(oldRow);
-                insertItem(insertRow, movedItem);
-                setCurrentItem(movedItem);
-                notifyEdited();
-            }
-
+            moveRowToPosition(oldRow, event->position().toPoint());
             m_draggedRow = -1;
             event->setDropAction(Qt::MoveAction);
             event->accept();
@@ -243,6 +285,17 @@ namespace fairwindsk::ui::settings {
     }
 
     int LayoutPreviewListWidget::insertRowForPosition(const QPoint &position) const {
+        if (count() <= 0) {
+            return 0;
+        }
+
+        for (int row = 0; row < count(); ++row) {
+            const QRect rect = visualItemRect(item(row));
+            if (rect.isValid() && position.x() < rect.center().x()) {
+                return row;
+            }
+        }
+
         int insertRow = count();
         const QModelIndex targetIndex = indexAt(position);
         if (targetIndex.isValid()) {
@@ -255,20 +308,77 @@ namespace fairwindsk::ui::settings {
         return std::clamp(insertRow, 0, count());
     }
 
+    int LayoutPreviewListWidget::rowForPreviewDrag(const QMimeData *mimeData) const {
+        if (!mimeData) {
+            return -1;
+        }
+
+        bool rowOk = false;
+        const int encodedRow = QString::fromUtf8(mimeData->data(mimeTypeName(kPreviewItemRowMimeType))).toInt(&rowOk);
+        if (rowOk && encodedRow >= 0 && encodedRow < count()) {
+            return encodedRow;
+        }
+
+        const auto draggedEntry = WidgetPalette::decodeEntry(mimeData->data(mimeTypeName(kPreviewItemMimeType)));
+        for (int row = 0; row < count(); ++row) {
+            const auto itemEntry = entryForItem(item(row));
+            if (!draggedEntry.instanceId.isEmpty() && itemEntry.instanceId == draggedEntry.instanceId) {
+                return row;
+            }
+            if (draggedEntry.kind == layout::EntryKind::Widget &&
+                itemEntry.kind == layout::EntryKind::Widget &&
+                itemEntry.widgetId == draggedEntry.widgetId) {
+                return row;
+            }
+        }
+
+        return m_draggedRow >= 0 ? m_draggedRow : currentRow();
+    }
+
+    bool LayoutPreviewListWidget::moveRowToPosition(const int oldRow, const QPoint &position) {
+        if (oldRow < 0 || oldRow >= count()) {
+            return false;
+        }
+
+        int insertRow = insertRowForPosition(position);
+        if (oldRow < insertRow) {
+            --insertRow;
+        }
+        insertRow = std::clamp(insertRow, 0, count() - 1);
+
+        if (oldRow == insertRow) {
+            setCurrentRow(oldRow);
+            return false;
+        }
+
+        const QSignalBlocker blocker(model());
+        auto *movedItem = takeItem(oldRow);
+        if (!movedItem) {
+            return false;
+        }
+
+        insertItem(insertRow, movedItem);
+        setCurrentItem(movedItem);
+        notifyEdited();
+        return true;
+    }
+
     bool LayoutPreviewListWidget::isInternalDrop(const QDropEvent *event) const {
         return event &&
                !event->mimeData()->hasFormat(WidgetPalette::mimeType()) &&
+               !event->mimeData()->hasFormat(mimeTypeName(kPreviewItemMimeType)) &&
                (event->source() == this ||
                 event->source() == viewport() ||
-                (m_draggedRow >= 0 && event->mimeData()->hasFormat(QString::fromLatin1(kItemModelMimeType))));
+                (m_draggedRow >= 0 && event->mimeData()->hasFormat(mimeTypeName(kItemModelMimeType))));
     }
 
     bool LayoutPreviewListWidget::isInternalDrop(const QDragMoveEvent *event) const {
         return event &&
                !event->mimeData()->hasFormat(WidgetPalette::mimeType()) &&
+               !event->mimeData()->hasFormat(mimeTypeName(kPreviewItemMimeType)) &&
                (event->source() == this ||
                 event->source() == viewport() ||
-                (m_draggedRow >= 0 && event->mimeData()->hasFormat(QString::fromLatin1(kItemModelMimeType))));
+                (m_draggedRow >= 0 && event->mimeData()->hasFormat(mimeTypeName(kItemModelMimeType))));
     }
 
     QListWidgetItem *LayoutPreviewListWidget::createItem(const layout::LayoutEntry &entry) const {

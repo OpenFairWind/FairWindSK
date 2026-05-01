@@ -1,6 +1,9 @@
 #include "BarLayoutSettings.hpp"
 
+#include <algorithm>
+
 #include <QAbstractItemModel>
+#include <QEvent>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -110,6 +113,8 @@ namespace fairwindsk::ui::settings {
         m_listWidget->viewport()->setAttribute(Qt::WA_AcceptTouchEvents, true);
         QScroller::grabGesture(m_listWidget->viewport(), QScroller::TouchGesture);
         m_listWidget->setToolTip(tr("Tap a widget to edit it. Drag within the preview to reorder the bottom bar."));
+        m_listWidget->installEventFilter(this);
+        m_listWidget->viewport()->installEventFilter(this);
         previewLayout->addWidget(m_listWidget);
         rootLayout->addWidget(m_previewFrame);
 
@@ -173,6 +178,17 @@ namespace fairwindsk::ui::settings {
         updateActions();
     }
 
+    bool BarLayoutSettings::eventFilter(QObject *watched, QEvent *event) {
+        if ((watched == m_listWidget || (m_listWidget && watched == m_listWidget->viewport())) &&
+            event &&
+            (event->type() == QEvent::Resize ||
+             event->type() == QEvent::Show)) {
+            refreshPreviewItems();
+        }
+
+        return QWidget::eventFilter(watched, event);
+    }
+
     void BarLayoutSettings::applyChrome() {
         auto *fairWindSK = FairWindSK::getInstance();
         const auto *configuration = m_settings ? m_settings->getConfiguration() : (fairWindSK ? fairWindSK->getConfiguration() : nullptr);
@@ -226,12 +242,53 @@ namespace fairwindsk::ui::settings {
         item->setSizeHint(itemSizeHint(entry));
     }
 
-    QSize BarLayoutSettings::itemSizeHint(const LayoutEntry &entry) const {
-        int width = entry.expandHorizontally ? 124 : 90;
+    void BarLayoutSettings::refreshPreviewItems() const {
+        if (!m_listWidget) {
+            return;
+        }
+
+        for (int row = 0; row < m_listWidget->count(); ++row) {
+            refreshPreviewItem(m_listWidget->item(row));
+        }
+        m_listWidget->doItemsLayout();
+        m_listWidget->viewport()->update();
+    }
+
+    int BarLayoutSettings::minimumItemWidth(const LayoutEntry &entry) const {
         if (entry.kind == EntryKind::Separator) {
-            width = 48;
-        } else if (entry.kind == EntryKind::Stretch) {
-            width = 124;
+            return 48;
+        }
+        if (entry.kind == EntryKind::Stretch) {
+            return 60;
+        }
+
+        return 90;
+    }
+
+    QSize BarLayoutSettings::itemSizeHint(const LayoutEntry &entry) const {
+        int width = minimumItemWidth(entry);
+        if (m_listWidget && m_listWidget->count() > 0) {
+            int totalMinimumWidth = 0;
+            int expandingEntries = 0;
+            for (int row = 0; row < m_listWidget->count(); ++row) {
+                const auto itemEntry = entryForItem(m_listWidget->item(row));
+                totalMinimumWidth += minimumItemWidth(itemEntry);
+                if (itemEntry.expandHorizontally || itemEntry.kind == EntryKind::Stretch) {
+                    ++expandingEntries;
+                }
+            }
+
+            const int spacingWidth = m_listWidget->spacing() * std::max(0, m_listWidget->count() - 1);
+            const int chromeWidth = 16;
+            const int viewportWidth = m_listWidget->viewport()
+                                          ? m_listWidget->viewport()->width()
+                                          : m_listWidget->width();
+            const int spareWidth = viewportWidth - totalMinimumWidth - spacingWidth - chromeWidth;
+            if ((entry.expandHorizontally || entry.kind == EntryKind::Stretch) &&
+                expandingEntries > 0 &&
+                spareWidth > 0) {
+                width += spareWidth / expandingEntries;
+            }
         }
 
         return QSize(width, entry.expandVertically ? 82 : 78);
@@ -258,6 +315,7 @@ namespace fairwindsk::ui::settings {
             m_listWidget->addItem(createItem(entry));
         }
 
+        refreshPreviewItems();
         m_populating = false;
         if (m_paletteWidget) {
             m_paletteWidget->setActiveEntries(entries);
@@ -311,6 +369,9 @@ namespace fairwindsk::ui::settings {
         }
 
         m_settings->markDirty(FairWindSK::RuntimeUi, 0);
+        if (auto *fairWindSK = FairWindSK::getInstance()) {
+            fairWindSK->reconfigureRuntime(FairWindSK::RuntimeUi);
+        }
         if (m_paletteWidget) {
             m_paletteWidget->setActiveEntries(entries);
         }
@@ -385,7 +446,7 @@ namespace fairwindsk::ui::settings {
         }
 
         item->setData(LayoutPreviewListWidget::RoleExpandHorizontally, false);
-        refreshPreviewItem(item);
+        refreshPreviewItems();
         persistToConfiguration();
         updateActions();
     }
@@ -397,7 +458,7 @@ namespace fairwindsk::ui::settings {
         }
 
         item->setData(LayoutPreviewListWidget::RoleExpandHorizontally, true);
-        refreshPreviewItem(item);
+        refreshPreviewItems();
         persistToConfiguration();
         updateActions();
     }
@@ -409,7 +470,7 @@ namespace fairwindsk::ui::settings {
         }
 
         item->setData(LayoutPreviewListWidget::RoleExpandVertically, false);
-        refreshPreviewItem(item);
+        refreshPreviewItems();
         persistToConfiguration();
         updateActions();
     }
@@ -421,7 +482,7 @@ namespace fairwindsk::ui::settings {
         }
 
         item->setData(LayoutPreviewListWidget::RoleExpandVertically, true);
-        refreshPreviewItem(item);
+        refreshPreviewItems();
         persistToConfiguration();
         updateActions();
     }
@@ -475,6 +536,7 @@ namespace fairwindsk::ui::settings {
         }
 
         delete m_listWidget->takeItem(row);
+        refreshPreviewItems();
         persistToConfiguration();
         updateActions();
     }
@@ -495,6 +557,9 @@ namespace fairwindsk::ui::settings {
         }
         populateFromConfiguration();
         m_settings->markDirty(FairWindSK::RuntimeUi, 0);
+        if (auto *fairWindSK = FairWindSK::getInstance()) {
+            fairWindSK->reconfigureRuntime(FairWindSK::RuntimeUi);
+        }
     }
 
     void BarLayoutSettings::onPreviewEdited() {
@@ -502,12 +567,7 @@ namespace fairwindsk::ui::settings {
             return;
         }
 
-        for (int row = 0; row < m_listWidget->count(); ++row) {
-            refreshPreviewItem(m_listWidget->item(row));
-        }
-        m_listWidget->doItemsLayout();
-        m_listWidget->viewport()->update();
-
+        refreshPreviewItems();
         persistToConfiguration();
         updateActions();
     }

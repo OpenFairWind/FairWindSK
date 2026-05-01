@@ -103,8 +103,10 @@ namespace fairwindsk::ui::bottombar {
         void applyNavigationButtonIcons() const;
         void rebalanceNavigationBlock() const;
         void setRegularBarVisible(bool visible) const;
+        void restoreRegularBarVisibility() const;
         void setPanelVisibility(QWidget *panel, bool visible) const;
         void hideTransientPanels(QWidget *except = nullptr) const;
+        void updateTransientPanelHeight(QWidget *panel) const;
         void updateHealthChrome();
         void rebuildLayout();
         QWidget *createSeparatorWidget();
