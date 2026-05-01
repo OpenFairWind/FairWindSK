@@ -43,6 +43,7 @@ namespace fairwindsk::ui::bottombar {
         void refreshFromConfiguration() const;
         void setLayoutEditHighlightEnabled(bool enabled);
         QWidget *widgetForItemId(const QString &itemId) const;
+        bool isTransientPanelVisible() const;
 
         // Add application icon to the shortcut
         void addApp(const QString& name);

@@ -231,6 +231,16 @@ namespace fairwindsk::ui::bottombar {
         m_layoutEditHighlightEnabled = enabled;
         rebuildLayout();
     }
+
+    bool BottomBar::isTransientPanelVisible() const {
+        const QList<QWidget *> panels = {m_POBBar, m_AutopilotBar, m_AnchorBar, m_AlarmsBar};
+        return std::any_of(
+            panels.cbegin(),
+            panels.cend(),
+            [](const QWidget *panel) {
+                return panel && panel->isVisible();
+            });
+    }
 /*
  * BottomBar
  * Public constructor - This presents some navigation buttons at the bottom of the screen
@@ -399,7 +409,11 @@ namespace fairwindsk::ui::bottombar {
     }
 
     void BottomBar::refreshFromConfiguration() const {
+        const bool transientPanelVisible = isTransientPanelVisible();
         const_cast<BottomBar *>(this)->rebuildLayout();
+        if (transientPanelVisible) {
+            setRegularBarVisible(false);
+        }
         if (m_POBBar) {
             m_POBBar->refreshFromConfiguration();
         }

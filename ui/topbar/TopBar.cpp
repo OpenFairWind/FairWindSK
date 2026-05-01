@@ -2,6 +2,7 @@
 // Created by Raffaele Montella on 12/04/21.
 //
 
+#include <algorithm>
 #include <cmath>
 
 #include <QTimer>
@@ -338,7 +339,32 @@ namespace fairwindsk::ui::topbar {
     }
 
     bool TopBar::isLayoutWidgetActive(const QString &itemId) const {
-        return itemId.isEmpty() || m_activeLayoutWidgetIds.contains(itemId);
+        if (itemId.isEmpty() || m_activeLayoutWidgetIds.contains(itemId)) {
+            return true;
+        }
+
+        auto *fairWindSK = FairWindSK::getInstance();
+        auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        if (!configuration) {
+            return false;
+        }
+
+        if (auto *bottomBar = fairwindsk::ui::bottombar::BottomBar::instance();
+            bottomBar && bottomBar->isTransientPanelVisible()) {
+            return false;
+        }
+
+        const auto bottomEntries = fairwindsk::ui::layout::entriesForBar(
+            configuration->getRoot(),
+            fairwindsk::ui::layout::BarId::Bottom);
+        return std::any_of(
+            bottomEntries.cbegin(),
+            bottomEntries.cend(),
+            [&itemId](const fairwindsk::ui::layout::LayoutEntry &entry) {
+                return entry.enabled &&
+                       entry.kind == fairwindsk::ui::layout::EntryKind::Widget &&
+                       entry.widgetId == itemId;
+            });
     }
 
     void TopBar::rebuildLayout() {
