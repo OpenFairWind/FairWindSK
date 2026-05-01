@@ -11,6 +11,7 @@
 #include <QIcon>
 #include <QLabel>
 #include <QMimeData>
+#include <QMouseEvent>
 #include <QScroller>
 #include <QScrollerProperties>
 #include <QSizePolicy>
@@ -52,6 +53,11 @@ namespace fairwindsk::ui::settings {
             }
 
         protected:
+            void mousePressEvent(QMouseEvent *event) override {
+                m_draggedRow = event ? row(itemAt(event->position().toPoint())) : -1;
+                QListWidget::mousePressEvent(event);
+            }
+
             int insertRowForPosition(const QPoint &position) const {
                 int insertRow = count();
                 const QModelIndex targetIndex = indexAt(position);
@@ -84,9 +90,14 @@ namespace fairwindsk::ui::settings {
             }
 
             void dropEvent(QDropEvent *event) override {
-                if (event && event->source() == this) {
-                    const int oldRow = currentRow();
-                    if (oldRow < 0) {
+                const bool internalDrop = event &&
+                                          !event->mimeData()->hasFormat(WidgetPalette::mimeType().toUtf8()) &&
+                                          (event->source() == this ||
+                                           event->mimeData()->hasFormat(QStringLiteral("application/x-qabstractitemmodeldatalist")));
+                if (internalDrop) {
+                    const int oldRow = m_draggedRow >= 0 ? m_draggedRow : currentRow();
+                    if (oldRow < 0 || oldRow >= count()) {
+                        m_draggedRow = -1;
                         event->ignore();
                         return;
                     }
@@ -103,6 +114,7 @@ namespace fairwindsk::ui::settings {
                         setCurrentItem(movedItem);
                     }
 
+                    m_draggedRow = -1;
                     event->setDropAction(Qt::MoveAction);
                     event->accept();
                     return;
@@ -136,6 +148,7 @@ namespace fairwindsk::ui::settings {
                         }
                         insertItem(std::clamp(insertRow, 0, count()), movedItem);
                         setCurrentItem(movedItem);
+                        m_draggedRow = -1;
                         event->setDropAction(Qt::MoveAction);
                         event->accept();
                         return;
@@ -153,6 +166,9 @@ namespace fairwindsk::ui::settings {
                 event->setDropAction(Qt::CopyAction);
                 event->accept();
             }
+
+        private:
+            int m_draggedRow = -1;
         };
     }
 
@@ -204,7 +220,6 @@ namespace fairwindsk::ui::settings {
         m_previewWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         m_previewWidget->viewport()->setAttribute(Qt::WA_AcceptTouchEvents, true);
         QScroller::grabGesture(m_previewWidget->viewport(), QScroller::TouchGesture);
-        QScroller::grabGesture(m_previewWidget->viewport(), QScroller::LeftMouseButtonGesture);
         m_previewWidget->setToolTip(tr("Tap a widget to edit it. Drag within the preview to reorder the top bar."));
         previewFrameLayout->addWidget(m_leftShellButton, 0, Qt::AlignVCenter);
         previewFrameLayout->addWidget(m_previewWidget, 1);

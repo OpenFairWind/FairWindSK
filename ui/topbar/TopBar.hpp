@@ -99,6 +99,7 @@ namespace fairwindsk::ui::topbar {
                                   const QJsonObject &update);
         void changeEvent(QEvent *event) override;
         void updateComfortViewIcon() const;
+        void applyFramelessRuntimeChrome() const;
         void updateDistanceLabels() const;
         void updateSpeedLabels() const;
         void refreshMetricLabelWidths() const;

@@ -79,6 +79,12 @@ namespace fairwindsk::ui::topbar {
             return QStringLiteral(":/resources/svg/OpenBridge/comfort-default.svg");
         }
 
+        bool isFramelessExpandedWidget(const fairwindsk::ui::layout::LayoutEntry &entry) {
+            return entry.widgetId == QStringLiteral("position") ||
+                   entry.widgetId == QStringLiteral("current_context") ||
+                   entry.widgetId == QStringLiteral("clock_icons");
+        }
+
         MetricFreshnessState signalKMetricFreshnessState(const bool hasValue, const bool pathConfigured = true) {
             if (!pathConfigured) {
                 return MetricFreshnessState::Missing;
@@ -399,6 +405,9 @@ namespace fairwindsk::ui::topbar {
             if (!entry.enabled || entry.kind != fairwindsk::ui::layout::EntryKind::Widget || !entry.expandHorizontally) {
                 continue;
             }
+            if (isFramelessExpandedWidget(entry)) {
+                continue;
+            }
 
             QWidget *widget = widgetForItemId(entry.widgetId);
             if (!widget) {
@@ -575,17 +584,18 @@ namespace fairwindsk::ui::topbar {
         ui->line_1->hide();
         ui->line_2->hide();
         ui->line_3->hide();
+        applyFramelessRuntimeChrome();
 
         ui->toolButton_UL->setIcon(QPixmap::fromImage(QImage(":/resources/images/mainwindow/fairwind_icon.png")));
         ui->toolButton_UL->setIconSize(QSize(32, 32));
-        ui->toolButton_UL->setMinimumSize(QSize(48, 48));
+        ui->toolButton_UL->setFixedSize(QSize(48, 48));
         ui->toolButton_UL->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         ui->toolButton_UL->setAutoRaise(true);
         ui->toolButton_UL->setStyleSheet(chromeToolButtonStyle(chromeColors));
 
         ui->toolButton_UR->setIcon(QPixmap::fromImage(QImage(":/resources/images/icons/apps_icon.png")));
         ui->toolButton_UR->setIconSize(QSize(32, 32));
-        ui->toolButton_UR->setMinimumSize(QSize(48, 48));
+        ui->toolButton_UR->setFixedSize(QSize(48, 48));
         ui->toolButton_UR->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         ui->toolButton_UR->setAutoRaise(true);
         ui->toolButton_UR->setStyleSheet(chromeToolButtonStyle(chromeColors));
@@ -865,6 +875,7 @@ namespace fairwindsk::ui::topbar {
         }
 
         if (event && (event->type() == QEvent::PaletteChange || event->type() == QEvent::StyleChange)) {
+            applyFramelessRuntimeChrome();
             updateComfortViewIcon();
             if (m_signalKStatusIcons) {
                 m_signalKStatusIcons->refreshFromConfiguration();
@@ -891,6 +902,40 @@ namespace fairwindsk::ui::topbar {
         const QIcon icon = fairwindsk::ui::tintedIcon(QIcon(comfortViewIconPath(preset)), iconColor, ui->label_ComfortViewIcon->size());
         ui->label_ComfortViewIcon->setPixmap(icon.pixmap(ui->label_ComfortViewIcon->size()));
         ui->label_ComfortViewIcon->setToolTip(tr("Comfort view: %1").arg(preset));
+    }
+
+    void TopBar::applyFramelessRuntimeChrome() const {
+        if (!ui) {
+            return;
+        }
+
+        auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+        const auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+        const auto chrome = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), false);
+
+        const QString widgetStyle = QStringLiteral("QWidget { background: transparent; border: none; }");
+        if (ui->widget_POS) {
+            ui->widget_POS->setStyleSheet(widgetStyle);
+        }
+        if (m_contextWidget) {
+            m_contextWidget->setStyleSheet(widgetStyle);
+        }
+        if (ui->widget_ClockBlock) {
+            ui->widget_ClockBlock->setStyleSheet(widgetStyle);
+        }
+
+        const QString labelStyle = QStringLiteral("QLabel { background: transparent; border: none; color: %1; }")
+                                       .arg(chrome.text.name());
+        if (ui->label_textPOS) {
+            ui->label_textPOS->setStyleSheet(labelStyle);
+        }
+        if (ui->label_ApplicationName) {
+            ui->label_ApplicationName->setStyleSheet(labelStyle);
+        }
+        if (ui->label_DateTime) {
+            ui->label_DateTime->setStyleSheet(labelStyle);
+        }
     }
 
 /*
