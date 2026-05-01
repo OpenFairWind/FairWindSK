@@ -5,6 +5,7 @@
 #include <QToolButton>
 #include <QWidget>
 
+#include "LayoutPreviewListWidget.hpp"
 #include "Settings.hpp"
 #include "WidgetPalette.hpp"
 #include "ui/layout/BarLayout.hpp"
@@ -23,16 +24,6 @@ namespace fairwindsk::ui::settings {
         ~TopBar() override = default;
 
         void refreshFromConfiguration();
-
-        enum ItemRoles {
-            RoleKind = Qt::UserRole + 1,
-            RoleWidgetId,
-            RoleInstanceId,
-            RoleExpandHorizontally,
-            RoleExpandVertically,
-            RolePaletteKind,
-            RolePaletteWidgetId
-        };
 
     private slots:
         void onPaletteEntryActivated(const fairwindsk::ui::layout::LayoutEntry &entry);
@@ -75,7 +66,7 @@ namespace fairwindsk::ui::settings {
         QFrame *m_previewFrame = nullptr;
         QToolButton *m_leftShellButton = nullptr;
         QToolButton *m_rightShellButton = nullptr;
-        QListWidget *m_previewWidget = nullptr;
+        LayoutPreviewListWidget *m_previewWidget = nullptr;
         QToolButton *m_minimumWidthButton = nullptr;
         QToolButton *m_maximumWidthButton = nullptr;
         QToolButton *m_minimumHeightButton = nullptr;

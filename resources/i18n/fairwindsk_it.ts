@@ -5281,47 +5281,76 @@ Ultimo aggiornamento live %1</translation>
 <context>
     <name>fairwindsk::ui::settings::BarLayoutSettings</name>
     <message>
-        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="153"/>
+        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="63"/>
         <source>Keep the selected widget at the minimum needed size</source>
         <translation>Mantieni il widget selezionato alla dimensione minima necessaria</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="154"/>
+        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="64"/>
         <source>Minimize horizontally</source>
         <translation>Minimizza orizzontalmente</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="158"/>
+        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="68"/>
         <source>Let the selected widget grow to the maximum possible size</source>
         <translation>Consenti al widget selezionato di espandersi alla dimensione massima possibile</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="159"/>
+        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="69"/>
         <source>Maximize horizontally</source>
         <translation>Massimizza orizzontalmente</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="162"/>
-        <source>Extend Height</source>
-        <translation>Estendi in altezza</translation>
+        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="73"/>
+        <source>Keep the selected widget at the normal bar height</source>
+        <translation>Mantieni il widget selezionato all&apos;altezza normale della barra</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="166"/>
+        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="74"/>
+        <source>Minimize vertically</source>
+        <translation>Minimizza verticalmente</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="78"/>
+        <source>Let the selected widget use the full bar height</source>
+        <translation>Consenti al widget selezionato di usare l&apos;intera altezza della barra</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="79"/>
+        <source>Maximize vertically</source>
+        <translation>Massimizza verticalmente</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="83"/>
+        <source>Move selected widget left</source>
+        <translation>Sposta il widget selezionato a sinistra</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="87"/>
+        <source>Move selected widget right</source>
+        <translation>Sposta il widget selezionato a destra</translation>
+    </message>
+    <message>
+        <source>Extend Height</source>
+        <translation type="vanished">Estendi in altezza</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="91"/>
         <source>Remove Selected</source>
         <translation>Rimuovi selezionato</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="170"/>
+        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="95"/>
         <source>Reset Defaults</source>
         <translation>Ripristina predefiniti</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="198"/>
+        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="113"/>
         <source>Tap a widget to edit it. Drag within the preview to reorder the bottom bar.</source>
         <translation>Tocca un widget per modificarlo. Trascinalo nell&apos;anteprima per riordinare la barra inferiore.</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="214"/>
+        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="132"/>
         <source>Tap or drag a palette item to place it on the preview bar.</source>
         <translation>Tocca o trascina un elemento della palette per posizionarlo sulla barra di anteprima.</translation>
     </message>
@@ -6303,17 +6332,17 @@ Ultimo aggiornamento live %1</translation>
 <context>
     <name>fairwindsk::ui::settings::TopBar</name>
     <message>
-        <location filename="../../ui/settings/TopBar.cpp" line="196"/>
+        <location filename="../../ui/settings/TopBar.cpp" line="63"/>
         <source>Fixed FairWindSK shell button</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/settings/TopBar.cpp" line="197"/>
+        <location filename="../../ui/settings/TopBar.cpp" line="64"/>
         <source>Fixed current-application shell button</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/settings/TopBar.cpp" line="208"/>
+        <location filename="../../ui/settings/TopBar.cpp" line="79"/>
         <source>Tap a widget to edit it. Drag within the preview to reorder the top bar.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6322,77 +6351,77 @@ Ultimo aggiornamento live %1</translation>
         <translation type="vanished">Estendi in altezza</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/TopBar.cpp" line="229"/>
+        <location filename="../../ui/settings/TopBar.cpp" line="100"/>
         <source>Remove Selected</source>
         <translation>Rimuovi selezionato</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/TopBar.cpp" line="233"/>
+        <location filename="../../ui/settings/TopBar.cpp" line="104"/>
         <source>Reset Defaults</source>
         <translation>Ripristina predefiniti</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/TopBar.cpp" line="237"/>
+        <location filename="../../ui/settings/TopBar.cpp" line="108"/>
         <source>Keep the selected widget at the minimum needed size</source>
         <translation>Mantieni il widget selezionato alla dimensione minima necessaria</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/TopBar.cpp" line="238"/>
+        <location filename="../../ui/settings/TopBar.cpp" line="109"/>
         <source>Minimize horizontally</source>
         <translation>Minimizza orizzontalmente</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/TopBar.cpp" line="242"/>
+        <location filename="../../ui/settings/TopBar.cpp" line="113"/>
         <source>Let the selected widget grow to the maximum possible size</source>
         <translation>Consenti al widget selezionato di espandersi alla dimensione massima possibile</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/TopBar.cpp" line="243"/>
+        <location filename="../../ui/settings/TopBar.cpp" line="114"/>
         <source>Maximize horizontally</source>
         <translation>Massimizza orizzontalmente</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/TopBar.cpp" line="247"/>
+        <location filename="../../ui/settings/TopBar.cpp" line="118"/>
         <source>Keep the selected widget at the normal top-bar height</source>
-        <translation>Mantieni il widget selezionato all'altezza normale della barra superiore</translation>
+        <translation>Mantieni il widget selezionato all&apos;altezza normale della barra superiore</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/TopBar.cpp" line="248"/>
+        <location filename="../../ui/settings/TopBar.cpp" line="119"/>
         <source>Minimize vertically</source>
         <translation>Minimizza verticalmente</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/TopBar.cpp" line="252"/>
+        <location filename="../../ui/settings/TopBar.cpp" line="123"/>
         <source>Let the selected widget use the full top-bar height</source>
-        <translation>Consenti al widget selezionato di usare l'intera altezza della barra superiore</translation>
+        <translation>Consenti al widget selezionato di usare l&apos;intera altezza della barra superiore</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/TopBar.cpp" line="253"/>
+        <location filename="../../ui/settings/TopBar.cpp" line="124"/>
         <source>Maximize vertically</source>
         <translation>Massimizza verticalmente</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/TopBar.cpp" line="257"/>
+        <location filename="../../ui/settings/TopBar.cpp" line="128"/>
         <source>Move selected widget left</source>
         <translation>Sposta il widget selezionato a sinistra</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/TopBar.cpp" line="261"/>
+        <location filename="../../ui/settings/TopBar.cpp" line="132"/>
         <source>Move selected widget right</source>
         <translation>Sposta il widget selezionato a destra</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/TopBar.cpp" line="275"/>
+        <location filename="../../ui/settings/TopBar.cpp" line="146"/>
         <source>Tap or drag a palette item to place it on the preview bar.</source>
         <translation>Tocca o trascina un elemento della palette per posizionarlo sulla barra di anteprima.</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/TopBar.cpp" line="419"/>
+        <location filename="../../ui/settings/TopBar.cpp" line="276"/>
         <source>Height</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/settings/TopBar.cpp" line="424"/>
+        <location filename="../../ui/settings/TopBar.cpp" line="281"/>
         <source>Elastic</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6451,109 +6480,109 @@ Ultimo aggiornamento live %1</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="106"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="112"/>
         <source>Not configured</source>
         <translation type="unfinished">Non configurato</translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="110"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="116"/>
         <source>Live</source>
         <translation type="unfinished">Live</translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="113"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="119"/>
         <source>Stale</source>
         <translation type="unfinished">Non aggiornato</translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="116"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="122"/>
         <source>Missing</source>
         <translation type="unfinished">Mancante</translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="121"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="127"/>
         <source>%1: %2</source>
         <translation type="unfinished">%1: %2</translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="123"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="129"/>
         <source>
 Last live update %1</source>
         <translation type="unfinished">
 Ultimo aggiornamento live %1</translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="893"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="960"/>
         <source>Comfort view: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="970"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="1074"/>
         <source>Position</source>
         <translation>Posizione</translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="981"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="1085"/>
         <source>Course over ground</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="993"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="1097"/>
         <source>Speed over ground</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="1007"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="1111"/>
         <source>Heading</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="1019"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="1123"/>
         <source>Speed through water</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="1033"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="1137"/>
         <source>Depth</source>
         <translation type="unfinished">Profondità</translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="1042"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="1146"/>
         <source>Waypoint</source>
         <translation>Waypoint</translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="1048"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="1152"/>
         <source>Bearing to waypoint</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="1056"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="1160"/>
         <source>Distance to go</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="1066"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="1170"/>
         <source>Time to go</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="1074"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="1178"/>
         <source>Estimated time of arrival</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="1082"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="1186"/>
         <source>Cross track error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="1092"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="1196"/>
         <source>Velocity made good</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="1120"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="1224"/>
         <source>%1
 %2</source>
         <translation type="unfinished"></translation>

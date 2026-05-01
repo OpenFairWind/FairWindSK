@@ -1,228 +1,27 @@
 #include "TopBar.hpp"
 
 #include <algorithm>
-#include <functional>
-#include <utility>
 #include <QAbstractItemModel>
-#include <QDragEnterEvent>
-#include <QDropEvent>
 #include <QEvent>
 #include <QFrame>
-#include <QGridLayout>
 #include <QHBoxLayout>
 #include <QIcon>
 #include <QLabel>
-#include <QMimeData>
-#include <QMouseEvent>
 #include <QScroller>
-#include <QScrollerProperties>
 #include <QSizePolicy>
 #include <QSignalBlocker>
-#include <QUuid>
 #include <QVBoxLayout>
 
 #include "FairWindSK.hpp"
 #include "BarSettingsUi.hpp"
+#include "LayoutPreviewListWidget.hpp"
 #include "ui/IconUtils.hpp"
 #include "ui/layout/BarLayout.hpp"
 
 namespace fairwindsk::ui::settings {
-    namespace {
-        using fairwindsk::ui::layout::BarId;
-        using fairwindsk::ui::layout::EntryKind;
-        using fairwindsk::ui::layout::LayoutEntry;
-
-        class PreviewListWidget final : public QListWidget {
-        public:
-            explicit PreviewListWidget(QWidget *parent = nullptr)
-                : QListWidget(parent) {
-                setViewMode(QListView::IconMode);
-                setFlow(QListView::LeftToRight);
-                setWrapping(false);
-                setResizeMode(QListView::Adjust);
-                setMovement(QListView::Snap);
-                setSelectionMode(QAbstractItemView::SingleSelection);
-                setDragDropMode(QAbstractItemView::DragDrop);
-                setDragDropOverwriteMode(false);
-                setDefaultDropAction(Qt::MoveAction);
-                setDragEnabled(true);
-                setAcceptDrops(true);
-                setDropIndicatorShown(true);
-                setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
-                setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-                setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-                setTextElideMode(Qt::ElideRight);
-            }
-
-            void setEditedCallback(std::function<void()> callback) {
-                m_editedCallback = std::move(callback);
-            }
-
-        protected:
-            void mousePressEvent(QMouseEvent *event) override {
-                m_draggedRow = event ? row(itemAt(event->position().toPoint())) : -1;
-                QListWidget::mousePressEvent(event);
-            }
-
-            int insertRowForPosition(const QPoint &position) const {
-                int insertRow = count();
-                const QModelIndex targetIndex = indexAt(position);
-                if (targetIndex.isValid()) {
-                    insertRow = targetIndex.row();
-                    if (position.x() > visualRect(targetIndex).center().x()) {
-                        ++insertRow;
-                    }
-                }
-
-                return std::clamp(insertRow, 0, count());
-            }
-
-            void dragEnterEvent(QDragEnterEvent *event) override {
-                if (event && event->mimeData()->hasFormat(WidgetPalette::mimeType())) {
-                    event->setDropAction(Qt::CopyAction);
-                    event->accept();
-                    return;
-                }
-
-                if (isInternalDrop(event)) {
-                    event->setDropAction(Qt::MoveAction);
-                    event->accept();
-                    return;
-                }
-
-                QListWidget::dragEnterEvent(event);
-            }
-
-            void dragMoveEvent(QDragMoveEvent *event) override {
-                if (event && event->mimeData()->hasFormat(WidgetPalette::mimeType())) {
-                    event->setDropAction(Qt::CopyAction);
-                    event->accept();
-                    return;
-                }
-
-                if (isInternalDrop(event)) {
-                    event->setDropAction(Qt::MoveAction);
-                    event->accept();
-                    return;
-                }
-
-                QListWidget::dragMoveEvent(event);
-            }
-
-            void dropEvent(QDropEvent *event) override {
-                if (isInternalDrop(event)) {
-                    const int oldRow = m_draggedRow >= 0 ? m_draggedRow : currentRow();
-                    if (oldRow < 0 || oldRow >= count()) {
-                        m_draggedRow = -1;
-                        event->ignore();
-                        return;
-                    }
-
-                    int insertRow = insertRowForPosition(event->position().toPoint());
-                    if (oldRow < insertRow) {
-                        --insertRow;
-                    }
-                    insertRow = std::clamp(insertRow, 0, count() - 1);
-
-                    if (oldRow != insertRow) {
-                        const QSignalBlocker blocker(model());
-                        QListWidgetItem *movedItem = takeItem(oldRow);
-                        insertItem(insertRow, movedItem);
-                        setCurrentItem(movedItem);
-                    }
-
-                    m_draggedRow = -1;
-                    event->setDropAction(Qt::MoveAction);
-                    event->accept();
-                    notifyEdited();
-                    return;
-                }
-
-                if (!event || !event->mimeData()->hasFormat(WidgetPalette::mimeType())) {
-                    QListWidget::dropEvent(event);
-                    return;
-                }
-
-                LayoutEntry entry = WidgetPalette::decodeEntry(event->mimeData()->data(WidgetPalette::mimeType()));
-                if (entry.kind != EntryKind::Widget && entry.instanceId.isEmpty()) {
-                    entry.instanceId = QUuid::createUuid().toString(QUuid::WithoutBraces);
-                }
-
-                int insertRow = insertRowForPosition(event->position().toPoint());
-
-                if (entry.kind == EntryKind::Widget) {
-                    for (int row = 0; row < count(); ++row) {
-                        auto *existingItem = item(row);
-                        if (!existingItem) {
-                            continue;
-                        }
-                        if (existingItem->data(TopBar::RoleWidgetId).toString() != entry.widgetId) {
-                            continue;
-                        }
-
-                        const QSignalBlocker blocker(model());
-                        QListWidgetItem *movedItem = takeItem(row);
-                        if (row < insertRow) {
-                            --insertRow;
-                        }
-                        insertItem(std::clamp(insertRow, 0, count()), movedItem);
-                        setCurrentItem(movedItem);
-                        m_draggedRow = -1;
-                        event->setDropAction(Qt::MoveAction);
-                        event->accept();
-                        notifyEdited();
-                        return;
-                    }
-                }
-
-                auto *newItem = new QListWidgetItem();
-                newItem->setFlags(Qt::ItemIsEnabled |
-                                  Qt::ItemIsSelectable |
-                                  Qt::ItemIsDragEnabled |
-                                  Qt::ItemIsDropEnabled);
-                newItem->setIcon(WidgetPalette::entryIcon(entry));
-                newItem->setText(layout::entryLabel(entry));
-                newItem->setTextAlignment(Qt::AlignCenter);
-                newItem->setData(TopBar::RoleKind, static_cast<int>(entry.kind));
-                newItem->setData(TopBar::RoleWidgetId, entry.widgetId);
-                newItem->setData(TopBar::RoleInstanceId, entry.instanceId);
-                newItem->setData(TopBar::RoleExpandHorizontally, entry.expandHorizontally);
-                newItem->setData(TopBar::RoleExpandVertically, entry.expandVertically);
-                const QSignalBlocker blocker(model());
-                insertItem(std::clamp(insertRow, 0, count()), newItem);
-                setCurrentItem(newItem);
-                event->setDropAction(Qt::CopyAction);
-                event->accept();
-                notifyEdited();
-            }
-
-        private:
-            bool isInternalDrop(const QDropEvent *event) const {
-                return event &&
-                       !event->mimeData()->hasFormat(WidgetPalette::mimeType()) &&
-                       (event->source() == this ||
-                        event->source() == viewport() ||
-                        (m_draggedRow >= 0 && event->mimeData()->hasFormat(QStringLiteral("application/x-qabstractitemmodeldatalist"))));
-            }
-
-            bool isInternalDrop(const QDragMoveEvent *event) const {
-                return event &&
-                       !event->mimeData()->hasFormat(WidgetPalette::mimeType()) &&
-                       (event->source() == this ||
-                        event->source() == viewport() ||
-                        (m_draggedRow >= 0 && event->mimeData()->hasFormat(QStringLiteral("application/x-qabstractitemmodeldatalist"))));
-            }
-
-            void notifyEdited() const {
-                if (m_editedCallback) {
-                    m_editedCallback();
-                }
-            }
-
-            int m_draggedRow = -1;
-            std::function<void()> m_editedCallback;
-        };
-    }
+    using fairwindsk::ui::layout::BarId;
+    using fairwindsk::ui::layout::EntryKind;
+    using fairwindsk::ui::layout::LayoutEntry;
 
     TopBar::TopBar(Settings *settings, QWidget *parent)
         : QWidget(parent),
@@ -244,8 +43,8 @@ namespace fairwindsk::ui::settings {
 
         m_previewFrame = new QFrame(this);
         m_previewFrame->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-        m_previewFrame->setMinimumHeight(78);
-        m_previewFrame->setMaximumHeight(78);
+        m_previewFrame->setMinimumHeight(100);
+        m_previewFrame->setMaximumHeight(100);
         auto *previewFrameLayout = new QHBoxLayout(m_previewFrame);
         previewFrameLayout->setContentsMargins(0, 0, 0, 0);
         previewFrameLayout->setSpacing(6);
@@ -264,13 +63,16 @@ namespace fairwindsk::ui::settings {
         m_leftShellButton->setToolTip(tr("Fixed FairWindSK shell button"));
         m_rightShellButton->setToolTip(tr("Fixed current-application shell button"));
 
-        auto *previewWidget = new PreviewListWidget(m_previewFrame);
+        auto *previewWidget = new LayoutPreviewListWidget(m_previewFrame);
+        previewWidget->setItemFactory([this](const LayoutEntry &entry) {
+            return createPreviewItem(entry);
+        });
         previewWidget->setEditedCallback([this]() { onPreviewEdited(); });
         m_previewWidget = previewWidget;
         m_previewWidget->setSpacing(4);
         m_previewWidget->setIconSize(QSize(30, 30));
-        m_previewWidget->setMinimumHeight(74);
-        m_previewWidget->setMaximumHeight(74);
+        m_previewWidget->setMinimumHeight(94);
+        m_previewWidget->setMaximumHeight(94);
         m_previewWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         m_previewWidget->viewport()->setAttribute(Qt::WA_AcceptTouchEvents, true);
         QScroller::grabGesture(m_previewWidget->viewport(), QScroller::TouchGesture);
@@ -437,18 +239,7 @@ namespace fairwindsk::ui::settings {
     }
 
     fairwindsk::ui::layout::LayoutEntry TopBar::entryForPreviewItem(const QListWidgetItem *item) const {
-        LayoutEntry entry;
-        if (!item) {
-            return entry;
-        }
-
-        entry.kind = static_cast<EntryKind>(item->data(RoleKind).toInt());
-        entry.widgetId = item->data(RoleWidgetId).toString();
-        entry.instanceId = item->data(RoleInstanceId).toString();
-        entry.enabled = true;
-        entry.expandHorizontally = item->data(RoleExpandHorizontally).toBool();
-        entry.expandVertically = item->data(RoleExpandVertically).toBool();
-        return entry;
+        return LayoutPreviewListWidget::entryForItem(item);
     }
 
     void TopBar::appendPaletteEntryToPreview(const LayoutEntry &entry) {
@@ -464,10 +255,7 @@ namespace fairwindsk::ui::settings {
             }
         }
 
-        auto *item = createPreviewItem(entry);
-        m_previewWidget->addItem(item);
-        m_previewWidget->setCurrentItem(item);
-        refreshPreviewItems();
+        m_previewWidget->addOrSelectEntry(entry);
     }
 
     void TopBar::refreshPreviewItem(QListWidgetItem *item) const {
@@ -531,9 +319,9 @@ namespace fairwindsk::ui::settings {
             }
         }
 
-        int height = entry.expandVertically ? 72 : 68;
+        int height = entry.expandVertically ? 82 : 78;
         if (entry.kind == EntryKind::Separator && entry.expandVertically) {
-            height = 72;
+            height = 82;
         }
         return QSize(width, height);
     }
@@ -541,15 +329,7 @@ namespace fairwindsk::ui::settings {
     QListWidgetItem *TopBar::createPreviewItem(const LayoutEntry &entry) const {
         auto *item = new QListWidgetItem();
         item->setIcon(WidgetPalette::entryIcon(entry));
-        item->setData(RoleKind, static_cast<int>(entry.kind));
-        item->setData(RoleWidgetId, entry.widgetId);
-        item->setData(RoleInstanceId, entry.instanceId);
-        item->setData(RoleExpandHorizontally, entry.expandHorizontally);
-        item->setData(RoleExpandVertically, entry.expandVertically);
-        item->setFlags(Qt::ItemIsEnabled |
-                       Qt::ItemIsSelectable |
-                       Qt::ItemIsDragEnabled |
-                       Qt::ItemIsDropEnabled);
+        LayoutPreviewListWidget::applyEntryData(item, entry);
         item->setText(barsettings::previewEntryText(entry));
         item->setSizeHint(itemSizeHint(entry));
         item->setTextAlignment(Qt::AlignCenter);
@@ -573,14 +353,7 @@ namespace fairwindsk::ui::settings {
             return nullptr;
         }
 
-        for (int row = 0; row < m_previewWidget->count(); ++row) {
-            auto *item = m_previewWidget->item(row);
-            if (item && item->data(RoleWidgetId).toString() == widgetId) {
-                return item;
-            }
-        }
-
-        return nullptr;
+        return m_previewWidget->findWidgetItem(widgetId);
     }
 
     void TopBar::populateFromConfiguration() {
@@ -719,7 +492,7 @@ namespace fairwindsk::ui::settings {
             return;
         }
 
-        item->setData(RoleExpandHorizontally, false);
+        item->setData(LayoutPreviewListWidget::RoleExpandHorizontally, false);
         refreshPreviewItems();
         persistToConfiguration();
         updateInspector();
@@ -731,7 +504,7 @@ namespace fairwindsk::ui::settings {
             return;
         }
 
-        item->setData(RoleExpandHorizontally, true);
+        item->setData(LayoutPreviewListWidget::RoleExpandHorizontally, true);
         refreshPreviewItems();
         persistToConfiguration();
         updateInspector();
@@ -743,7 +516,7 @@ namespace fairwindsk::ui::settings {
             return;
         }
 
-        item->setData(RoleExpandVertically, false);
+        item->setData(LayoutPreviewListWidget::RoleExpandVertically, false);
         refreshPreviewItems();
         persistToConfiguration();
         updateInspector();
@@ -755,7 +528,7 @@ namespace fairwindsk::ui::settings {
             return;
         }
 
-        item->setData(RoleExpandVertically, true);
+        item->setData(LayoutPreviewListWidget::RoleExpandVertically, true);
         refreshPreviewItems();
         persistToConfiguration();
         updateInspector();
@@ -766,27 +539,7 @@ namespace fairwindsk::ui::settings {
             return;
         }
 
-        const int currentRow = m_previewWidget->currentRow();
-        if (currentRow < 0 || m_previewWidget->count() <= 1) {
-            return;
-        }
-
-        const int targetRow = std::clamp(currentRow + offset, 0, m_previewWidget->count() - 1);
-        if (currentRow == targetRow) {
-            return;
-        }
-
-        QListWidgetItem *item = nullptr;
-        {
-            const QSignalBlocker blocker(m_previewWidget->model());
-            item = m_previewWidget->takeItem(currentRow);
-            m_previewWidget->insertItem(targetRow, item);
-            m_previewWidget->setCurrentItem(item);
-        }
-
-        refreshPreviewItems();
-        persistToConfiguration();
-        updateInspector();
+        m_previewWidget->moveCurrentItemBy(offset);
     }
 
     void TopBar::onMoveSelectedLeft() {

@@ -5,6 +5,7 @@
 #include <QToolButton>
 #include <QWidget>
 
+#include "LayoutPreviewListWidget.hpp"
 #include "Settings.hpp"
 #include "WidgetPalette.hpp"
 #include "ui/layout/BarLayout.hpp"
@@ -31,20 +32,15 @@ namespace fairwindsk::ui::settings {
         void onPaletteEntryActivated(const fairwindsk::ui::layout::LayoutEntry &entry);
         void onMinimumWidthSelected();
         void onMaximumWidthSelected();
-        void onExpandHeightToggled(bool checked);
+        void onMinimumHeightSelected();
+        void onMaximumHeightSelected();
+        void onMoveSelectedLeft();
+        void onMoveSelectedRight();
         void onRemoveSelected();
         void onResetDefaults();
         void onPreviewEdited();
 
     private:
-        enum ItemRoles {
-            RoleKind = Qt::UserRole + 1,
-            RoleWidgetId,
-            RoleInstanceId,
-            RoleExpandHorizontally,
-            RoleExpandVertically
-        };
-
         void buildUi();
         void applyChrome();
         void populateFromConfiguration();
@@ -56,6 +52,7 @@ namespace fairwindsk::ui::settings {
         void updateActions();
         void appendPlaceholder(fairwindsk::ui::layout::EntryKind kind);
         void activateWidgetEntry(const QString &widgetId);
+        void moveCurrentItem(int offset);
         bool defaultExpandHorizontally(const QString &widgetId) const;
         bool m_populating = false;
         Settings *m_settings = nullptr;
@@ -64,10 +61,13 @@ namespace fairwindsk::ui::settings {
         QLabel *m_hintLabel = nullptr;
         QLabel *m_previewLabel = nullptr;
         QFrame *m_previewFrame = nullptr;
-        QListWidget *m_listWidget = nullptr;
+        LayoutPreviewListWidget *m_listWidget = nullptr;
         QToolButton *m_minimumWidthButton = nullptr;
         QToolButton *m_maximumWidthButton = nullptr;
+        QToolButton *m_minimumHeightButton = nullptr;
         QToolButton *m_expandHeightButton = nullptr;
+        QToolButton *m_moveLeftButton = nullptr;
+        QToolButton *m_moveRightButton = nullptr;
         QToolButton *m_removeSelectedButton = nullptr;
         QToolButton *m_resetDefaultsButton = nullptr;
         QLabel *m_paletteLabel = nullptr;
