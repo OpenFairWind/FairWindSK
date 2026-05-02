@@ -19,6 +19,7 @@
 #include <QTextEdit>
 #include <QAbstractSpinBox>
 #include <QDateTimeEdit>
+#include <algorithm>
 #include <cmath>
 
 #include "MainWindow.hpp"
@@ -33,6 +34,29 @@
 #include "runtime/DiagnosticsSupport.hpp"
 
 namespace fairwindsk::ui {
+    namespace {
+#if defined(Q_OS_LINUX) && (defined(__arm__) || defined(__aarch64__) || defined(Q_PROCESSOR_ARM))
+        constexpr bool kUseLinuxArmWindowGeometryWorkaround = true;
+#else
+        constexpr bool kUseLinuxArmWindowGeometryWorkaround = false;
+#endif
+
+        QScreen *screenForWindow(const QWidget *widget) {
+            const auto *window = widget ? widget->windowHandle() : nullptr;
+            if (window && window->screen()) {
+                return window->screen();
+            }
+            if (widget && widget->screen()) {
+                return widget->screen();
+            }
+            return QGuiApplication::primaryScreen();
+        }
+
+        QRect validGeometryOrFallback(const QRect &geometry, const QRect &fallback) {
+            return geometry.isValid() && !geometry.isEmpty() ? geometry : fallback;
+        }
+    }
+
     MainWindow *MainWindow::s_instance = nullptr;
 
     /*
@@ -1053,6 +1077,7 @@ namespace fairwindsk::ui {
 
         // Get the FairWind singleton
         const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+        const QString windowMode = fairWindSK->getConfiguration()->getWindowMode();
 
         const auto unlockWindowSize = [this]() {
             setMinimumSize(QSize(0, 0));
@@ -1064,20 +1089,39 @@ namespace fairwindsk::ui {
             setMaximumSize(width, height);
         };
 
+        const auto applyWindowHints = [this](const bool frameless, const bool staysOnTop) {
+            setWindowFlag(Qt::FramelessWindowHint, frameless);
+            setWindowFlag(Qt::WindowStaysOnTopHint, staysOnTop);
+        };
+
+        const auto clearWindowState = [this]() {
+            setWindowState(windowState() & ~(Qt::WindowFullScreen | Qt::WindowMaximized | Qt::WindowMinimized));
+        };
+
+        const auto raiseAndActivate = [this]() {
+            raise();
+            activateWindow();
+        };
+
         const QRect fallbackGeometry(0,
                                      0,
                                      std::max(1, fairWindSK->getConfiguration()->getWindowWidth()),
                                      std::max(1, fairWindSK->getConfiguration()->getWindowHeight()));
-        const QScreen *screen = QGuiApplication::primaryScreen();
-        const QRect screenGeometry = screen ? screen->geometry() : fallbackGeometry;
+        const QScreen *screen = screenForWindow(this);
+        const QRect screenGeometry = validGeometryOrFallback(screen ? screen->geometry() : QRect(), fallbackGeometry);
+        const QRect availableGeometry = validGeometryOrFallback(screen ? screen->availableGeometry() : QRect(), screenGeometry);
 
-        if (fairWindSK->getConfiguration()->getWindowMode()=="centered") {
+        if (windowMode=="centered") {
+            applyWindowHints(false, false);
+            clearWindowState();
 
-            const auto width = fairWindSK->getConfiguration()->getWindowWidth();
-            const auto height = fairWindSK->getConfiguration()->getWindowHeight();
+            const auto width = std::min(std::max(1, fairWindSK->getConfiguration()->getWindowWidth()),
+                                        std::max(1, availableGeometry.width()));
+            const auto height = std::min(std::max(1, fairWindSK->getConfiguration()->getWindowHeight()),
+                                         std::max(1, availableGeometry.height()));
 
-            const auto left = (screenGeometry.width() - width) / 2;
-            const auto top = (screenGeometry.height() - height) / 2;
+            const auto left = availableGeometry.left() + (availableGeometry.width() - width) / 2;
+            const auto top = availableGeometry.top() + (availableGeometry.height() - height) / 2;
 
             move(left,top);
             resize(width, height);
@@ -1085,23 +1129,56 @@ namespace fairwindsk::ui {
 
             // Show windowed
             show();
-            setWindowState(windowState() & ~Qt::WindowMinimized);
-            raise();  // for MacOS
-            activateWindow(); // for Windows
+            raiseAndActivate();
 
-        } else if (fairWindSK->getConfiguration()->getWindowMode()=="maximized") {
+        } else if (windowMode=="maximized") {
             unlockWindowSize();
+            clearWindowState();
 
-            // Set the window maximized
-            showMaximized();
+            if (kUseLinuxArmWindowGeometryWorkaround) {
+                applyWindowHints(true, false);
+                setGeometry(availableGeometry);
+                show();
+                raiseAndActivate();
+                QTimer::singleShot(0, this, [this, availableGeometry]() {
+                    if (FairWindSK::getInstance()->getConfiguration()->getWindowMode() == QStringLiteral("maximized")) {
+                        setGeometry(availableGeometry);
+                    }
+                });
+            } else {
+                applyWindowHints(false, false);
 
-        } else if (fairWindSK->getConfiguration()->getWindowMode()=="fullscreen") {
+                // Set the window maximized
+                showMaximized();
+            }
+
+        } else if (windowMode=="fullscreen") {
             unlockWindowSize();
+            clearWindowState();
 
-            // Show the window full screen
-            showFullScreen();
+            if (kUseLinuxArmWindowGeometryWorkaround) {
+                applyWindowHints(true, true);
+                setGeometry(screenGeometry);
+
+                // Show the window full screen
+                showFullScreen();
+                raiseAndActivate();
+                QTimer::singleShot(0, this, [this, screenGeometry]() {
+                    if (FairWindSK::getInstance()->getConfiguration()->getWindowMode() == QStringLiteral("fullscreen")) {
+                        setGeometry(screenGeometry);
+                        raise();
+                    }
+                });
+            } else {
+                applyWindowHints(false, false);
+
+                // Show the window full screen
+                showFullScreen();
+            }
 
         } else {
+            applyWindowHints(false, false);
+            clearWindowState();
             const auto left = fairWindSK->getConfiguration()->getWindowLeft();
             const auto top = fairWindSK->getConfiguration()->getWindowTop();
             const auto width = fairWindSK->getConfiguration()->getWindowWidth();
@@ -1112,9 +1189,7 @@ namespace fairwindsk::ui {
 
             // Show windowed
             show();
-            setWindowState(windowState() & ~Qt::WindowMinimized);
-            raise();  // for MacOS
-            activateWindow(); // for Windows
+            raiseAndActivate();
         }
     }
 

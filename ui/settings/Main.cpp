@@ -8,6 +8,8 @@
 #include <QIntValidator>
 #include <QIcon>
 
+#include <algorithm>
+
 #include "Main.hpp"
 #include "ui_Main.h"
 #include "FairWindSK.hpp"
@@ -161,17 +163,18 @@ namespace fairwindsk::ui::settings {
         setWindowGeometryFieldsEnabled(windowMode);
 
         const QScreen *screen = QGuiApplication::primaryScreen();
-        const QRect screenGeometry = screen
-                                     ? screen->geometry()
-                                     : QRect(0,
-                                             0,
-                                             std::max(1, m_settings->getConfiguration()->getWindowWidth()),
-                                             std::max(1, m_settings->getConfiguration()->getWindowHeight()));
+        const QRect fallbackGeometry(0,
+                                     0,
+                                     std::max(1, m_settings->getConfiguration()->getWindowWidth()),
+                                     std::max(1, m_settings->getConfiguration()->getWindowHeight()));
+        const QRect usableGeometry = screen && screen->availableGeometry().isValid() && !screen->availableGeometry().isEmpty()
+                                     ? screen->availableGeometry()
+                                     : fallbackGeometry;
 
-        ui->lineEdit_left->setValidator( new QIntValidator(0, screenGeometry.width(), this) );
-        ui->lineEdit_top->setValidator( new QIntValidator(0, screenGeometry.height(), this) );
-        ui->lineEdit_width->setValidator( new QIntValidator(1, screenGeometry.width(), this) );
-        ui->lineEdit_height->setValidator( new QIntValidator(1, screenGeometry.height(), this) );
+        ui->lineEdit_left->setValidator( new QIntValidator(0, usableGeometry.right(), this) );
+        ui->lineEdit_top->setValidator( new QIntValidator(0, usableGeometry.bottom(), this) );
+        ui->lineEdit_width->setValidator( new QIntValidator(1, std::max(1, usableGeometry.width()), this) );
+        ui->lineEdit_height->setValidator( new QIntValidator(1, std::max(1, usableGeometry.height()), this) );
 
         ui->lineEdit_left->setText(QString::number(m_settings->getConfiguration()->getWindowLeft()));
         ui->lineEdit_top->setText(QString::number(m_settings->getConfiguration()->getWindowTop()));
