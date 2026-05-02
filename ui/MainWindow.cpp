@@ -14,13 +14,17 @@
 #include <QHBoxLayout>
 #include <QScreen>
 #include <QInputMethod>
+#include <QDir>
+#include <QFile>
 #include <QLineEdit>
 #include <QPlainTextEdit>
+#include <QRegularExpression>
 #include <QTextEdit>
 #include <QAbstractSpinBox>
 #include <QDateTimeEdit>
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
 #include "MainWindow.hpp"
 #include "ui/topbar/TopBar.hpp"
@@ -54,6 +58,88 @@ namespace fairwindsk::ui {
 
         QRect validGeometryOrFallback(const QRect &geometry, const QRect &fallback) {
             return geometry.isValid() && !geometry.isEmpty() ? geometry : fallback;
+        }
+
+        QString normalizedDisplayName(QString name) {
+            return name.toLower()
+                .remove(QStringLiteral("card"))
+                .remove(QStringLiteral("-a"))
+                .remove(QRegularExpression(QStringLiteral("[^a-z0-9]")));
+        }
+
+        QSize linuxArmConnectedDisplayMode(const QScreen *screen, const QSize &referenceSize) {
+            if (!kUseLinuxArmWindowGeometryWorkaround) {
+                return {};
+            }
+
+            const QDir drmDirectory(QStringLiteral("/sys/class/drm"));
+            if (!drmDirectory.exists()) {
+                return {};
+            }
+
+            const QString preferredScreenName = normalizedDisplayName(screen ? screen->name() : QString());
+            QSize bestSize;
+            int bestScore = std::numeric_limits<int>::max();
+            const auto connectorNames = drmDirectory.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+            for (const auto &connectorName : connectorNames) {
+                QFile statusFile(drmDirectory.filePath(connectorName + QStringLiteral("/status")));
+                if (!statusFile.open(QIODevice::ReadOnly)) {
+                    continue;
+                }
+                if (QString::fromUtf8(statusFile.readAll()).trimmed() != QStringLiteral("connected")) {
+                    continue;
+                }
+
+                QFile modesFile(drmDirectory.filePath(connectorName + QStringLiteral("/modes")));
+                if (!modesFile.open(QIODevice::ReadOnly)) {
+                    continue;
+                }
+
+                const QStringList modes = QString::fromUtf8(modesFile.readAll()).split(QLatin1Char('\n'), Qt::SkipEmptyParts);
+                if (modes.isEmpty()) {
+                    continue;
+                }
+
+                const auto match = QRegularExpression(QStringLiteral("^(\\d+)x(\\d+)")).match(modes.first().trimmed());
+                if (!match.hasMatch()) {
+                    continue;
+                }
+
+                const QSize modeSize(match.captured(1).toInt(), match.captured(2).toInt());
+                if (!modeSize.isValid() || modeSize.isEmpty()) {
+                    continue;
+                }
+
+                int score = std::abs(modeSize.width() - referenceSize.width())
+                            + (std::abs(modeSize.height() - referenceSize.height()) * 4);
+                if (!preferredScreenName.isEmpty()
+                    && normalizedDisplayName(connectorName).contains(preferredScreenName)) {
+                    score -= 100000;
+                }
+
+                if (score < bestScore) {
+                    bestScore = score;
+                    bestSize = modeSize;
+                }
+            }
+
+            return bestSize;
+        }
+
+        QRect clampedLinuxArmGeometry(const QRect &geometry, const QScreen *screen, const QSize &referenceSize) {
+            if (!kUseLinuxArmWindowGeometryWorkaround) {
+                return geometry;
+            }
+
+            const QSize displayModeSize = linuxArmConnectedDisplayMode(screen, referenceSize);
+            if (!displayModeSize.isValid() || displayModeSize.isEmpty()) {
+                return geometry;
+            }
+
+            QRect clamped = geometry;
+            clamped.setWidth(std::min(clamped.width(), displayModeSize.width()));
+            clamped.setHeight(std::min(clamped.height(), displayModeSize.height()));
+            return clamped;
         }
     }
 
@@ -1109,7 +1195,9 @@ namespace fairwindsk::ui {
                                      std::max(1, fairWindSK->getConfiguration()->getWindowHeight()));
         const QScreen *screen = screenForWindow(this);
         const QRect screenGeometry = validGeometryOrFallback(screen ? screen->geometry() : QRect(), fallbackGeometry);
-        const QRect availableGeometry = validGeometryOrFallback(screen ? screen->availableGeometry() : QRect(), screenGeometry);
+        const QRect rawAvailableGeometry = validGeometryOrFallback(screen ? screen->availableGeometry() : QRect(), screenGeometry);
+        const QRect availableGeometry = clampedLinuxArmGeometry(rawAvailableGeometry, screen, screenGeometry.size());
+        const QRect fullScreenGeometry = clampedLinuxArmGeometry(screenGeometry, screen, screenGeometry.size());
 
         if (windowMode=="centered") {
             applyWindowHints(false, false);
@@ -1158,14 +1246,14 @@ namespace fairwindsk::ui {
 
             if (kUseLinuxArmWindowGeometryWorkaround) {
                 applyWindowHints(true, true);
-                setGeometry(screenGeometry);
+                setGeometry(fullScreenGeometry);
 
                 // Show the window full screen
                 showFullScreen();
                 raiseAndActivate();
-                QTimer::singleShot(0, this, [this, screenGeometry]() {
+                QTimer::singleShot(0, this, [this, fullScreenGeometry]() {
                     if (FairWindSK::getInstance()->getConfiguration()->getWindowMode() == QStringLiteral("fullscreen")) {
-                        setGeometry(screenGeometry);
+                        setGeometry(fullScreenGeometry);
                         raise();
                     }
                 });
