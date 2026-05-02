@@ -11,6 +11,8 @@
 #include <QTimer>
 #include <QUrl>
 #include <QCoreApplication>
+#include <QDateTime>
+#include <QDir>
 #include <QtCore/qjsonarray.h>
 #include <QPixmap>
 #include <QHash>
@@ -33,11 +35,13 @@
 namespace fairwindsk {
     namespace {
         constexpr int kCatalogRequestTimeoutMs = 5000;
+        constexpr qint64 kCatalogRetryIntervalMs = 3000;
 
         struct LegacyCatalog {
             QHash<QString, QString> iconsByName;
             QHash<QString, QString> displayNamesByName;
             bool loaded = false;
+            qint64 lastAttemptMs = 0;
         };
 
         QString sharedIconCacheKey(const QString &signalKServerUrl,
@@ -121,6 +125,58 @@ namespace fairwindsk {
             }
 
             return loadPixmapFromPayload(file.readAll());
+        }
+
+        QString normalizedLocalIconPath(const QString &iconReference) {
+            QString path = iconReference.trimmed();
+            if (path.startsWith(QStringLiteral("qrc:/"))) {
+                path = QStringLiteral(":") + path.mid(QStringLiteral("qrc:").size());
+            } else if (path.startsWith(QStringLiteral("file://"))) {
+                const QUrl fileUrl(path);
+                if (fileUrl.isValid() && fileUrl.scheme() == QStringLiteral("file") && fileUrl.host().isEmpty()) {
+                    path = fileUrl.toLocalFile();
+                } else {
+                    path = path.mid(QStringLiteral("file://").size());
+                }
+            }
+
+            return path;
+        }
+
+        void appendUniquePath(QStringList &paths, QSet<QString> &seen, const QString &path) {
+            const QString trimmed = path.trimmed();
+            if (trimmed.isEmpty() || seen.contains(trimmed)) {
+                return;
+            }
+
+            seen.insert(trimmed);
+            paths.append(trimmed);
+        }
+
+        QStringList localIconCandidatePaths(const QString &iconReference) {
+            const QString trimmed = iconReference.trimmed();
+            if (trimmed.isEmpty() ||
+                trimmed.startsWith(QStringLiteral("http://")) ||
+                trimmed.startsWith(QStringLiteral("https://"))) {
+                return {};
+            }
+
+            const QString localPath = normalizedLocalIconPath(trimmed);
+            QStringList paths;
+            QSet<QString> seen;
+            appendUniquePath(paths, seen, localPath);
+
+            const QFileInfo localInfo(localPath);
+            if (!localPath.startsWith(QStringLiteral(":/")) && !localInfo.isAbsolute()) {
+                appendUniquePath(paths, seen, QDir(QCoreApplication::applicationDirPath()).filePath(localPath));
+                appendUniquePath(paths, seen, QDir::current().filePath(localPath));
+            }
+
+            return paths;
+        }
+
+        QString remoteIconReference(const QString &iconReference) {
+            return normalizedLocalIconPath(iconReference);
         }
 
         QUrl normalizedDirectoryUrl(QUrl url) {
@@ -270,9 +326,17 @@ namespace fairwindsk {
             auto &catalog = cachedCatalogsByServer[serverUrl];
 
             if (!serverUrl.isEmpty() && !catalog.loaded) {
-                catalog.loaded = true;
+                const qint64 nowMs = QDateTime::currentMSecsSinceEpoch();
+                if (catalog.lastAttemptMs > 0 && nowMs - catalog.lastAttemptMs < kCatalogRetryIntervalMs) {
+                    return catalog;
+                }
+                catalog.lastAttemptMs = nowMs;
+
                 const auto legacyCatalog = fetchJsonArray(QUrl(serverUrl + "/skServer/webapps"));
                 if (legacyCatalog.is_array()) {
+                    catalog.loaded = true;
+                    catalog.iconsByName.clear();
+                    catalog.displayNamesByName.clear();
                     for (const auto &appJson : legacyCatalog) {
                         if (!appJson.is_object() || !appJson.contains("name") || !appJson["name"].is_string()) {
                             continue;
@@ -383,6 +447,26 @@ namespace fairwindsk {
             }
 
             return resourcePath.isEmpty() ? QPixmap() : QPixmap::fromImage(QImage(resourcePath));
+        }
+
+        QPixmap loadLocalIconPixmap(const QString &iconReference) {
+            for (const QString &path : localIconCandidatePaths(iconReference)) {
+                const QPixmap pixmap = loadPixmapFromPath(path);
+                if (!pixmap.isNull()) {
+                    return pixmap;
+                }
+            }
+
+            return bundledIconByFileName(normalizedLocalIconPath(iconReference));
+        }
+
+        QPixmap defaultIconPixmap() {
+            return QPixmap::fromImage(QImage(QStringLiteral(":/resources/images/icons/webapp-256x256.png")));
+        }
+
+        QPixmap appFallbackIcon(const QString &appName, const QString &displayName, const QString &appUrl) {
+            QPixmap pixmap = bundledFallbackIcon(appName, displayName, appUrl);
+            return pixmap.isNull() ? defaultIconPixmap() : pixmap;
         }
     }
 
@@ -495,22 +579,21 @@ namespace fairwindsk {
         const QString appName = getName();
         const QString displayName = getDisplayName(false);
         const QString appUrl = getUrl();
-        // Use a default pixmap so the UI never shows an empty placeholder.
-        QPixmap pixmap = bundledFallbackIcon(appName, displayName, appUrl);
-        // Read the optional app icon path from the application metadata.
+        QPixmap pixmap = appFallbackIcon(appName, displayName, appUrl);
         QString appIcon = getAppIcon();
-
-        // Obtain the base server URL to construct the remote icon endpoint.
         const auto signalKServerUrl = FairWindSK::getInstance()->getConfiguration()->getSignalKServerUrl();
-        // Avoid issuing a network request if the server URL is not available.
-        if (signalKServerUrl.isEmpty()) {
-            m_cachedIcon = pixmap;
-            m_hasCachedIcon = true;
-            return pixmap;
-        }
 
         if (appIcon.isEmpty() && allowRemoteFetch) {
             appIcon = iconFromLegacyCatalog(signalKServerUrl, getName());
+        }
+
+        if (!appIcon.isEmpty()) {
+            const QPixmap localPixmap = loadLocalIconPixmap(appIcon);
+            if (!localPixmap.isNull()) {
+                m_cachedIcon = localPixmap;
+                m_hasCachedIcon = true;
+                return m_cachedIcon;
+            }
         }
 
         const QString iconCacheKey = sharedIconCacheKey(signalKServerUrl, appName, appUrl, appIcon);
@@ -523,59 +606,10 @@ namespace fairwindsk {
             }
         }
 
-        // If there is still no icon path, return the default without doing any extra work.
         if (appIcon.isEmpty()) {
             m_cachedIcon = pixmap;
-            m_hasCachedIcon = true;
+            m_hasCachedIcon = !allowRemoteFetch || signalKServerUrl.isEmpty();
             return pixmap;
-        }
-
-        // Handle icons bundled with the plugin and referenced using a file:// URL.
-        if (appIcon.startsWith("file://")) {
-            const QString iconFilename = QString(appIcon).replace("file://", "");
-            const QFileInfo iconInfo(iconFilename);
-            const QString executableRelativePath = QCoreApplication::applicationDirPath() + QLatin1Char('/') + iconFilename;
-
-            if (iconInfo.isAbsolute() && QFileInfo::exists(iconFilename)) {
-                const QPixmap loadedPixmap = loadPixmapFromPath(iconFilename);
-                if (!loadedPixmap.isNull()) {
-                    m_cachedIcon = loadedPixmap;
-                    m_hasCachedIcon = true;
-                    return m_cachedIcon;
-                }
-            }
-
-            if (!iconInfo.isAbsolute() && QFileInfo::exists(executableRelativePath)) {
-                const QPixmap loadedPixmap = loadPixmapFromPath(executableRelativePath);
-                if (!loadedPixmap.isNull()) {
-                    m_cachedIcon = loadedPixmap;
-                    m_hasCachedIcon = true;
-                    return m_cachedIcon;
-                }
-            }
-
-            const QPixmap bundledPixmap = bundledIconByFileName(iconFilename);
-            if (!bundledPixmap.isNull()) {
-                m_cachedIcon = bundledPixmap;
-                m_hasCachedIcon = true;
-                return m_cachedIcon;
-            }
-
-            if (!allowRemoteFetch) {
-                m_cachedIcon = pixmap;
-                m_hasCachedIcon = true;
-                return m_cachedIcon;
-            }
-
-            bool loadedRemotely = false;
-            m_cachedIcon = loadRemotePixmap(iconCandidateUrls(signalKServerUrl, appName, appUrl, iconFilename),
-                                            pixmap,
-                                            &loadedRemotely);
-            if (loadedRemotely && !m_cachedIcon.isNull() && !iconCacheKey.isEmpty()) {
-                sharedIconCache().insert(iconCacheKey, m_cachedIcon);
-            }
-            m_hasCachedIcon = loadedRemotely;
-            return m_cachedIcon;
         }
 
         if (!allowRemoteFetch) {
@@ -585,14 +619,17 @@ namespace fairwindsk {
         }
 
         bool loadedRemotely = false;
-        m_cachedIcon = loadRemotePixmap(iconCandidateUrls(signalKServerUrl, appName, appUrl, appIcon),
+        m_cachedIcon = loadRemotePixmap(iconCandidateUrls(signalKServerUrl,
+                                                          appName,
+                                                          appUrl,
+                                                          remoteIconReference(appIcon)),
                                         pixmap,
                                         &loadedRemotely);
         if (loadedRemotely && !m_cachedIcon.isNull() && !iconCacheKey.isEmpty()) {
             sharedIconCache().insert(iconCacheKey, m_cachedIcon);
         }
         if (m_cachedIcon.isNull()) {
-            m_cachedIcon = QPixmap::fromImage(QImage(":/resources/images/icons/apps_icon.png"));
+            m_cachedIcon = pixmap;
         }
         m_hasCachedIcon = loadedRemotely;
         return m_cachedIcon;

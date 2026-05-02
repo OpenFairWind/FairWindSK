@@ -46,7 +46,7 @@ Applications live under the `apps` array. Each entry represents a web or local a
 - `fairwind.active`: Whether the app tile is shown.
 - `fairwind.order`: Ordering on the desktop (lower numbers appear first).
 - `fairwind.zoomPercent`: Per-app web zoom level, expressed as a percentage. The default is `100`.
-- `signalk.*`: Presentation metadata used by the UI. Icon paths support Qt resource prefixes (`:/resources/...`) or filesystem URLs.
+- `signalk.*`: Presentation metadata used by the UI. Icon paths support Qt resource prefixes (`:/resources/...`), filesystem URLs, and the bundled `file://icons/...` icon set. Bundled icons are also compiled into the application resources so Raspberry Pi OS launches keep their artwork even when the copied icon directory is not available yet.
 
 Apps discovered from the Signal K server (`signalk-webapp` entries) are merged with this list during startup. Local overrides for ordering and activation are preserved. `file://` entries can still carry local metadata such as icons, but they are not launched as external native applications.
 

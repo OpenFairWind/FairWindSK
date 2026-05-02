@@ -27,6 +27,8 @@
 #include "ui/mydata/Files.hpp"
 #include "ui/settings/System.hpp"
 
+#include <algorithm>
+
 #if defined(Q_OS_LINUX)
 namespace {
     bool hasOwnerOnlyPermissions(const QFileInfo &fileInfo) {
