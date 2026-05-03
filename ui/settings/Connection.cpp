@@ -12,6 +12,9 @@
 #include <QNetworkCookie>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+#include <QWebEngineCookieStore>
+#endif
 #include <QPushButton>
 #include <QSettings>
 #include <QSignalBlocker>
