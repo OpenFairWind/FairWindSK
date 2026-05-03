@@ -706,7 +706,7 @@ namespace fairwindsk::ui::widgets {
         rowLayout->addWidget(slider, 1);
 
         auto *valueLabel = new QLabel(this);
-        valueLabel->setMinimumWidth(44);
+        valueLabel->setMinimumWidth(56);
         valueLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
         rowLayout->addWidget(valueLabel);
 

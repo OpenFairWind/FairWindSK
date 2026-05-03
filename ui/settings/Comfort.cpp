@@ -81,14 +81,16 @@ namespace fairwindsk::ui::settings {
         // Color rows exposed to the user: (configuration key, display label).
         QList<QPair<QString, QString>> colorRows() {
             return {
-                {QStringLiteral("window"),           QObject::tr("Window background")},
-                {QStringLiteral("text"),             QObject::tr("Text")},
-                {QStringLiteral("buttonBackground"), QObject::tr("Button background")},
-                {QStringLiteral("buttonText"),       QObject::tr("Button text")},
-                {QStringLiteral("border"),           QObject::tr("Border")},
-                {QStringLiteral("accentTop"),        QObject::tr("Accent")},
-                {QStringLiteral("accentText"),       QObject::tr("Accent text")},
-                {QStringLiteral("iconDefault"),      QObject::tr("Icon")},
+                {QStringLiteral("window"),              QObject::tr("Window background")},
+                {QStringLiteral("text"),                QObject::tr("Text")},
+                {QStringLiteral("buttonBackground"),    QObject::tr("Button background")},
+                {QStringLiteral("buttonText"),          QObject::tr("Button text")},
+                {QStringLiteral("border"),              QObject::tr("Border")},
+                {QStringLiteral("accentTop"),           QObject::tr("Accent")},
+                {QStringLiteral("accentText"),          QObject::tr("Accent text")},
+                {QStringLiteral("iconDefault"),         QObject::tr("Icon")},
+                {QStringLiteral("scrollBarBackground"), QObject::tr("Scroll track")},
+                {QStringLiteral("scrollBarKnob"),       QObject::tr("Scroll knob")},
             };
         }
     }
@@ -550,14 +552,21 @@ namespace fairwindsk::ui::settings {
         const auto chrome = fairwindsk::ui::resolveComfortChromeColors(
             configuration, selectedPreset(), palette(), false);
 
-        if (key == QLatin1String("window"))           return chrome.window;
-        if (key == QLatin1String("text"))             return chrome.text;
-        if (key == QLatin1String("buttonBackground")) return chrome.buttonBackground;
-        if (key == QLatin1String("buttonText"))       return chrome.buttonText;
-        if (key == QLatin1String("border"))           return chrome.border;
-        if (key == QLatin1String("accentTop"))        return chrome.accentTop;
-        if (key == QLatin1String("accentText"))       return chrome.accentText;
-        if (key == QLatin1String("iconDefault"))      return chrome.icon;
+        if (key == QLatin1String("window"))              return chrome.window;
+        if (key == QLatin1String("text"))               return chrome.text;
+        if (key == QLatin1String("buttonBackground"))   return chrome.buttonBackground;
+        if (key == QLatin1String("buttonText"))         return chrome.buttonText;
+        if (key == QLatin1String("border"))             return chrome.border;
+        if (key == QLatin1String("accentTop"))          return chrome.accentTop;
+        if (key == QLatin1String("accentText"))         return chrome.accentText;
+        if (key == QLatin1String("iconDefault"))        return chrome.icon;
+        if (key == QLatin1String("scrollBarBackground") || key == QLatin1String("scrollBarKnob")) {
+            auto *fairWindSK = FairWindSK::getInstance();
+            const auto scrollPalette = fairWindSK
+                ? fairWindSK->getActiveComfortScrollPalette(configuration)
+                : fairwindsk::UiScrollPalette{};
+            return key == QLatin1String("scrollBarBackground") ? scrollPalette.track : scrollPalette.handleMid;
+        }
         return palette().color(QPalette::Window);
     }
 
@@ -570,15 +579,22 @@ namespace fairwindsk::ui::settings {
         const auto chrome = fairwindsk::ui::resolveComfortChromeColors(
             configuration, selectedPreset(), palette(), false);
 
+        auto *fairWindSK = FairWindSK::getInstance();
+        const auto scrollPalette = fairWindSK
+            ? fairWindSK->getActiveComfortScrollPalette(configuration)
+            : fairwindsk::UiScrollPalette{};
+
         const QMap<QString, QColor> resolved = {
-            {QStringLiteral("window"),           chrome.window},
-            {QStringLiteral("text"),             chrome.text},
-            {QStringLiteral("buttonBackground"), chrome.buttonBackground},
-            {QStringLiteral("buttonText"),       chrome.buttonText},
-            {QStringLiteral("border"),           chrome.border},
-            {QStringLiteral("accentTop"),        chrome.accentTop},
-            {QStringLiteral("accentText"),       chrome.accentText},
-            {QStringLiteral("iconDefault"),      chrome.icon},
+            {QStringLiteral("window"),              chrome.window},
+            {QStringLiteral("text"),                chrome.text},
+            {QStringLiteral("buttonBackground"),    chrome.buttonBackground},
+            {QStringLiteral("buttonText"),          chrome.buttonText},
+            {QStringLiteral("border"),              chrome.border},
+            {QStringLiteral("accentTop"),           chrome.accentTop},
+            {QStringLiteral("accentText"),          chrome.accentText},
+            {QStringLiteral("iconDefault"),         chrome.icon},
+            {QStringLiteral("scrollBarBackground"), scrollPalette.track},
+            {QStringLiteral("scrollBarKnob"),       scrollPalette.handleMid},
         };
 
         for (auto it = m_colorSwatchButtons.cbegin(); it != m_colorSwatchButtons.cend(); ++it) {
