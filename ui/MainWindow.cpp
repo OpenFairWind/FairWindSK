@@ -2,6 +2,7 @@
 // Created by Raffaele Montella on 21/03/21.
 //
 
+#include <QCoreApplication>
 #include <QTimer>
 #include <QToolButton>
 #include <QNetworkCookie>
@@ -469,6 +470,14 @@ namespace fairwindsk::ui {
 
         m_dialogDrawer->setMinimumHeight(targetDrawerHeight);
         m_dialogDrawer->setMaximumHeight(targetDrawerHeight);
+
+        if (fillCenterArea && ui->stackedWidget_Center) {
+            ui->stackedWidget_Center->setVisible(false);
+            // Flush deferred layout events so the center area collapses before the
+            // drawer is rendered; without this the center stays visible for one frame
+            // while the drawer appears below it.
+            QCoreApplication::sendPostedEvents(nullptr, QEvent::LayoutRequest);
+        }
     }
 
     void MainWindow::updateAdaptiveShellMode() {

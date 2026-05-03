@@ -383,7 +383,18 @@ namespace fairwindsk::signalk {
         if (m_Debug)
             qDebug() << "SignalKClient::getSelf :" << result;
 
-        return result.replace("\"","");
+        // Strip JSON string quotes from a valid response like "vessels.urn:mrn:..."
+        const QString self = QString::fromUtf8(result).replace(QStringLiteral("\""), QString());
+
+        // A valid Signal K self URN always starts with "vessels."
+        // Reject error bodies such as "bad auth token" returned on 401 responses
+        if (!self.startsWith(QStringLiteral("vessels."))) {
+            if (m_Debug)
+                qDebug() << "SignalKClient::getSelf : rejected invalid self URN:" << self;
+            return {};
+        }
+
+        return self;
     }
 
     QJsonObject Client::getAll() {
@@ -1041,7 +1052,10 @@ namespace fairwindsk::signalk {
 
     QString Client::normalizedSubscriptionContext(const QString &context) const {
         if (context == "vessels.self") {
-            return const_cast<Client *>(this)->getSelf();
+            // getSelf() returns empty when the server rejects auth or returns a non-URN body;
+            // fall back to the literal "vessels.self" so WebSocket subscriptions remain valid
+            const QString resolved = const_cast<Client *>(this)->getSelf();
+            return resolved.isEmpty() ? context : resolved;
         }
 
         return context;
