@@ -268,6 +268,9 @@ namespace fairwindsk::ui::bottombar {
         const auto signalKClient = FairWindSK::getInstance()->getSignalKClient();
         const auto currentPOB = ui->comboBox_currentPOB->currentData();
         if (!currentPOB.isValid() || currentPOB.toString().isEmpty()) {
+            setMetricSubscriptionsActive(false);
+            clearDisplayedPob();
+            setVisible(true);
             return;
         }
 
@@ -291,9 +294,7 @@ namespace fairwindsk::ui::bottombar {
         }
 
         if (m_pobUUIDs.isEmpty()) {
-            setMetricSubscriptionsActive(false);
-            clearDisplayedPob();
-            setVisible(false);
+            closePanelAfterNoActivePobs();
         } else {
             navigateToSelectedPob();
             refreshCurrentPobUi();
@@ -405,9 +406,7 @@ namespace fairwindsk::ui::bottombar {
                 if (state == "normal") {
                     removePobEntry(pobUUID);
                     if (m_pobUUIDs.isEmpty()) {
-                        setMetricSubscriptionsActive(false);
-                        clearDisplayedPob();
-                        setVisible(false);
+                        closePanelAfterNoActivePobs();
                     } else {
                         refreshCurrentPobUi();
                     }
@@ -807,9 +806,7 @@ namespace fairwindsk::ui::bottombar {
         if (state == QStringLiteral("normal")) {
             removePobEntry(standardPobUuid());
             if (m_pobUUIDs.isEmpty()) {
-                setMetricSubscriptionsActive(false);
-                clearDisplayedPob();
-                setVisible(false);
+                closePanelAfterNoActivePobs();
             } else {
                 refreshCurrentPobUi();
             }
@@ -970,6 +967,13 @@ namespace fairwindsk::ui::bottombar {
         }
 
         m_metricSubscriptionsActive = active;
+    }
+
+    void POBBar::closePanelAfterNoActivePobs() {
+        setMetricSubscriptionsActive(false);
+        clearDisplayedPob();
+        setVisible(false);
+        emit hidden();
     }
 
     void POBBar::refreshCurrentPobUi() {
