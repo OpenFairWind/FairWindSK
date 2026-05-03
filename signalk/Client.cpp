@@ -23,6 +23,23 @@ namespace fairwindsk::signalk {
     namespace {
         constexpr int kStreamTimeoutMs = 30000;
         constexpr int kStreamHealthCheckIntervalMs = 5000;
+
+        bool canHydrateSubscriptionPath(const QString &path) {
+            return !path.trimmed().isEmpty() && !path.contains('*');
+        }
+
+        QJsonValue deltaValueFromSnapshot(const QJsonValue &snapshot) {
+            if (!snapshot.isObject()) {
+                return snapshot;
+            }
+
+            const auto snapshotObject = snapshot.toObject();
+            if (snapshotObject.contains(QStringLiteral("value"))) {
+                return snapshotObject.value(QStringLiteral("value"));
+            }
+
+            return snapshot;
+        }
     }
 
     QNetworkRequest Client::createJsonRequest(const QUrl& url) const {
@@ -1334,7 +1351,7 @@ namespace fairwindsk::signalk {
                                                            QStringLiteral("ideal"),
                                                            200));
 
-            if (!hydrateSnapshots || subscription.getPath().contains('*')) {
+            if (!hydrateSnapshots || !canHydrateSubscriptionPath(subscription.getPath())) {
                 continue;
             }
 
@@ -1348,11 +1365,7 @@ namespace fairwindsk::signalk {
             }
 
             if (!snapshot.isEmpty()) {
-                // REST returns {"value": ..., "source": {...}, "timestamp": "..."}; extract the
-                // inner value so the delta update matches what live stream updates deliver
-                const QJsonValue snapshotValue = snapshot.contains(QStringLiteral("value"))
-                    ? snapshot.value(QStringLiteral("value"))
-                    : QJsonValue(snapshot);
+                const QJsonValue snapshotValue = deltaValueFromSnapshot(snapshot);
 
                 if (m_Debug) {
                     qDebug() << "SignalK::Client::resubscribeAll snapshotValue type="
@@ -1385,7 +1398,7 @@ namespace fairwindsk::signalk {
     QJsonObject Client::buildDeltaUpdate(const QString &context, const QString &path, const QJsonValue &value) const {
         QJsonObject valueObject;
         valueObject.insert(QStringLiteral("path"), path);
-        valueObject.insert(QStringLiteral("value"), value);
+        valueObject.insert(QStringLiteral("value"), deltaValueFromSnapshot(value));
 
         QJsonObject updateEntry;
         updateEntry.insert(QStringLiteral("values"), QJsonArray{valueObject});
@@ -1722,13 +1735,17 @@ namespace fairwindsk::signalk {
             connect(receiver, &QObject::destroyed, this, &Client::unsubscribe, Qt::UniqueConnection);
         }
 
-        // REST returns {"value": ..., "source": {...}, "timestamp": "..."}; wrap it in delta
-        // format so callers that pass the result directly to update slots get data they can read
+        if (!canHydrateSubscriptionPath(path)) {
+            if (m_Debug) {
+                qDebug() << "subscribe:" << message << "stream-only path";
+            }
+            return {};
+        }
+
+        // REST snapshots are wrapped in delta format so direct update-slot callers can read them.
         const QJsonObject snapshot = signalkGet(contextEx + "." + path);
         if (!snapshot.isEmpty()) {
-            const QJsonValue snapshotValue = snapshot.contains(QStringLiteral("value"))
-                ? snapshot.value(QStringLiteral("value"))
-                : QJsonValue(snapshot);
+            const QJsonValue snapshotValue = deltaValueFromSnapshot(snapshot);
             const QJsonObject result = buildDeltaUpdate(contextEx, path, snapshotValue);
             if (m_Debug) {
                 qDebug() << "subscribe:" << message << "snapshot value:" << snapshotValue;
