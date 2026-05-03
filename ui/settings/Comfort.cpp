@@ -167,39 +167,41 @@ namespace fairwindsk::ui::settings {
         m_presetComboBox->setMinimumHeight(52);
         presetRow->addWidget(m_presetComboBox, 1);
 
-        // Row 1: reset actions
-        auto *resetRow = new QHBoxLayout();
-        resetRow->setContentsMargins(0, 0, 0, 0);
-        resetRow->setSpacing(8);
-        controlLayout->addLayout(resetRow);
+        // Single action row: reset + QSS export/import, all icons from the OpenBridge set.
+        auto *actionRow = new QHBoxLayout();
+        actionRow->setContentsMargins(0, 0, 0, 0);
+        actionRow->setSpacing(8);
+        controlLayout->addLayout(actionRow);
 
-        m_resetCurrentButton = new QPushButton(tr("Reset Current"), m_controlFrame);
-        m_resetAllButton = new QPushButton(tr("Reset All"), m_controlFrame);
+        m_resetCurrentButton = new QPushButton(tr("Reset"), m_controlFrame);
+        m_resetCurrentButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/anchor-reset.svg")));
+        m_resetCurrentButton->setIconSize(QSize(20, 20));
         m_resetCurrentButton->setToolTip(tr("Clear custom colors, images, and QSS for the selected comfort preset"));
-        m_resetAllButton->setToolTip(tr("Clear custom colors, images, and QSS for every comfort preset"));
         m_resetCurrentButton->setAccessibleName(tr("Reset current comfort preset"));
-        m_resetAllButton->setAccessibleName(tr("Reset all comfort presets"));
-        resetRow->addWidget(m_resetCurrentButton);
-        resetRow->addWidget(m_resetAllButton);
-        resetRow->addStretch(1);
 
-        // Row 2: stylesheet import/export
-        auto *qssRow = new QHBoxLayout();
-        qssRow->setContentsMargins(0, 0, 0, 0);
-        qssRow->setSpacing(8);
-        controlLayout->addLayout(qssRow);
+        m_resetAllButton = new QPushButton(tr("Reset All"), m_controlFrame);
+        m_resetAllButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/delete-google.svg")));
+        m_resetAllButton->setIconSize(QSize(20, 20));
+        m_resetAllButton->setToolTip(tr("Clear custom colors, images, and QSS for every comfort preset"));
+        m_resetAllButton->setAccessibleName(tr("Reset all comfort presets"));
 
         m_exportQssButton = new QPushButton(tr("Export QSS"), m_controlFrame);
+        m_exportQssButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/route-export-iec.svg")));
+        m_exportQssButton->setIconSize(QSize(20, 20));
         m_exportQssButton->setToolTip(tr("Save the current preset stylesheet to a .qss file"));
         m_exportQssButton->setAccessibleName(tr("Export comfort stylesheet"));
 
         m_importQssButton = new QPushButton(tr("Import QSS"), m_controlFrame);
+        m_importQssButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/route-import-iec.svg")));
+        m_importQssButton->setIconSize(QSize(20, 20));
         m_importQssButton->setToolTip(tr("Load a .qss file as the current preset stylesheet"));
         m_importQssButton->setAccessibleName(tr("Import comfort stylesheet"));
 
-        qssRow->addWidget(m_exportQssButton);
-        qssRow->addWidget(m_importQssButton);
-        qssRow->addStretch(1);
+        actionRow->addWidget(m_resetCurrentButton);
+        actionRow->addWidget(m_resetAllButton);
+        actionRow->addWidget(m_exportQssButton);
+        actionRow->addWidget(m_importQssButton);
+        actionRow->addStretch(1);
 
         // --- Colors section ---
         m_colorsGroupBox = new QGroupBox(tr("Colors"), content);
@@ -241,11 +243,15 @@ namespace fairwindsk::ui::settings {
         bgButtonRow->addStretch(1);
 
         m_selectBackgroundButton = new QPushButton(tr("Select…"), m_backgroundGroupBox);
+        m_selectBackgroundButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/edit-google.svg")));
+        m_selectBackgroundButton->setIconSize(QSize(20, 20));
         m_selectBackgroundButton->setMinimumHeight(44);
         m_selectBackgroundButton->setAccessibleName(tr("Select main window background image"));
         bgButtonRow->addWidget(m_selectBackgroundButton);
 
         m_clearBackgroundButton = new QPushButton(tr("Clear"), m_backgroundGroupBox);
+        m_clearBackgroundButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/close-google.svg")));
+        m_clearBackgroundButton->setIconSize(QSize(20, 20));
         m_clearBackgroundButton->setMinimumHeight(44);
         m_clearBackgroundButton->setAccessibleName(tr("Clear main window background image"));
         bgButtonRow->addWidget(m_clearBackgroundButton);
@@ -450,6 +456,14 @@ namespace fairwindsk::ui::settings {
         fairwindsk::ui::applyBottomBarPushButtonChrome(m_importQssButton, chrome, false, 52);
         fairwindsk::ui::applyBottomBarPushButtonChrome(m_selectBackgroundButton, chrome, false, 44);
         fairwindsk::ui::applyBottomBarPushButtonChrome(m_clearBackgroundButton, chrome, false, 44);
+
+        // Tint all action-button icons to match the button text color from the active preset.
+        fairwindsk::ui::applyTintedButtonIcon(m_resetCurrentButton, chrome.buttonText, QSize(20, 20));
+        fairwindsk::ui::applyTintedButtonIcon(m_resetAllButton, chrome.buttonText, QSize(20, 20));
+        fairwindsk::ui::applyTintedButtonIcon(m_exportQssButton, chrome.buttonText, QSize(20, 20));
+        fairwindsk::ui::applyTintedButtonIcon(m_importQssButton, chrome.buttonText, QSize(20, 20));
+        fairwindsk::ui::applyTintedButtonIcon(m_selectBackgroundButton, chrome.buttonText, QSize(20, 20));
+        fairwindsk::ui::applyTintedButtonIcon(m_clearBackgroundButton, chrome.buttonText, QSize(20, 20));
 
         // Style both new group boxes uniformly: titled frame matching the control frame chrome.
         const QString groupStyle = QStringLiteral(
