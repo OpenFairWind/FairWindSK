@@ -88,6 +88,7 @@ namespace fairwindsk::signalk {
         QJsonObject signalkDelete(const QUrl& url,  QJsonObject& payload);
 
         QString getToken();
+        void clearTokenAndCookie();
 
         qint64 sendMessage(QJsonObject message);
 

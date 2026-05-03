@@ -1050,6 +1050,14 @@ namespace fairwindsk::signalk {
         return m_Token;
     }
 
+    // Synchronously wipes the in-memory token and cookie so that any signal
+    // handlers firing after this call (e.g. connectivityChanged) see an empty
+    // token and do not write the old value back to persistent storage.
+    void Client::clearTokenAndCookie() {
+        m_Token.clear();
+        m_Cookie.clear();
+    }
+
     QString Client::normalizedSubscriptionContext(const QString &context) const {
         if (context == "vessels.self") {
             // getSelf() returns empty when the server rejects auth or returns a non-URN body;

@@ -1132,6 +1132,17 @@ namespace fairwindsk::ui::settings {
     void Connection::onRemoveToken() {
         abortActiveTokenReply();
         stopTokenTimer();
+
+        // Wipe the in-memory token synchronously before clearing QSettings.
+        // connectivityChanged may fire while the async markDirty → Client::init()
+        // chain is still pending; if m_Token is non-empty at that point the handler
+        // writes the old token back to QSettings, causing it to reappear on restart.
+        if (auto *fairWindSK = FairWindSK::getInstance()) {
+            if (auto *client = fairWindSK->getSignalKClient()) {
+                client->clearTokenAndCookie();
+            }
+        }
+
         clearPendingRequest(true);
 
         // Delete the JAUTHENTICATION cookie from the embedded browser's cookie store
