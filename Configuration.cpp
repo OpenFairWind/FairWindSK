@@ -16,6 +16,8 @@
 #include <QSaveFile>
 #include <QStandardPaths>
 
+#include "Localization.hpp"
+
 namespace fairwindsk {
     namespace {
         QString defaultSettingsFilename() {
@@ -148,6 +150,14 @@ namespace fairwindsk {
         ensureObject("connection")["server"] = signalKServerUrl.toStdString();
     }
 
+    bool Configuration::getSignalKConnectionEnabled() const {
+        return getBool("connection", "active", true);
+    }
+
+    void Configuration::setSignalKConnectionEnabled(const bool enabled) {
+        ensureObject("connection")["active"] = enabled;
+    }
+
     QString Configuration::getAutopilotApp() {
         return getString("applications", "autopilot");
     }
@@ -164,6 +174,14 @@ namespace fairwindsk {
 
     bool Configuration::getVirtualKeyboard() {
         return getBool("main", "virtualKeyboard");
+    }
+
+    void Configuration::setLanguage(const QString &value) {
+        ensureObject("main")["language"] = localization::normalizeLanguageSelection(value).toStdString();
+    }
+
+    QString Configuration::getLanguage() const {
+        return localization::normalizeLanguageSelection(getString("main", "language", "system"));
     }
 
     void Configuration::setUiScaleMode(const QString &value) {

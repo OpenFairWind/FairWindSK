@@ -5,7 +5,6 @@
 #ifndef FAIRWINDSK_APPDETAILSWIDGET_HPP
 #define FAIRWINDSK_APPDETAILSWIDGET_HPP
 
-#include <QEvent>
 #include <QWidget>
 
 QT_BEGIN_NAMESPACE
@@ -33,7 +32,6 @@ namespace fairwindsk::ui::settings {
         void iconPathSelected(const QString &path);
 
     private:
-        bool eventFilter(QObject *watched, QEvent *event) override;
         void updateIconPreview(const QString &path);
 
     private:

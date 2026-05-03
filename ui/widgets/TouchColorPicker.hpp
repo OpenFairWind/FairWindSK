@@ -6,7 +6,6 @@
 #define FAIRWINDSK_UI_WIDGETS_TOUCHCOLORPICKER_HPP
 
 #include <QColor>
-#include <QDialog>
 #include <QList>
 #include <QWidget>
 
@@ -76,10 +75,10 @@ namespace fairwindsk::ui::widgets {
         QGridLayout *m_customSwatchesLayout = nullptr;
         QVBoxLayout *m_balanceLayout = nullptr;
         QVBoxLayout *m_fineTuneLayout = nullptr;
+        QLabel *m_hintLabel = nullptr;
         QPushButton *m_addCustomColorButton = nullptr;
         QPushButton *m_removeCustomColorButton = nullptr;
         QPushButton *m_cancelButton = nullptr;
-        QPushButton *m_applyButton = nullptr;
 
         QSlider *m_hueSlider = nullptr;
         QSlider *m_saturationSlider = nullptr;
@@ -99,32 +98,13 @@ namespace fairwindsk::ui::widgets {
         QLabel *m_alphaValueLabel = nullptr;
     };
 
-    class TouchColorPickerDialog : public QDialog {
-        Q_OBJECT
-
+    class TouchColorPickerDialog {
     public:
-        explicit TouchColorPickerDialog(QWidget *parent = nullptr);
-
-        void setTitleText(const QString &title);
-        void setCurrentColor(const QColor &color);
-        QColor currentColor() const;
-        void setAlphaEnabled(bool enabled);
-        void openNear(QWidget *anchor);
-
         static QColor getColor(QWidget *parent,
                                const QString &title,
                                const QColor &initialColor,
                                bool *accepted = nullptr,
                                bool alphaEnabled = false);
-
-    protected:
-        void changeEvent(QEvent *event) override;
-
-    private:
-        void applyComfortStyle();
-        QLabel *m_titleLabel = nullptr;
-        QPushButton *m_closeButton = nullptr;
-        TouchColorPicker *m_picker = nullptr;
     };
 }
 

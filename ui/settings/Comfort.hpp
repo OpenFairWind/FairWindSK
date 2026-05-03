@@ -5,16 +5,13 @@
 #ifndef FAIRWINDSK_UI_SETTINGS_COMFORT_HPP
 #define FAIRWINDSK_UI_SETTINGS_COMFORT_HPP
 
-#include <QColor>
-#include <QList>
-#include <QMap>
+#include <QString>
 #include <QWidget>
 
+class QEvent;
 class QLabel;
-class QPlainTextEdit;
 class QPushButton;
-class QGridLayout;
-class QGroupBox;
+class QFrame;
 
 namespace fairwindsk::ui::widgets {
     class TouchComboBox;
@@ -35,63 +32,26 @@ namespace fairwindsk::ui::settings {
 
     private slots:
         void onPresetChanged(int index);
-        void onStyleSheetChanged();
-        void importStyleSheet();
-        void exportStyleSheet();
         void resetCurrentPreset();
         void resetAllPresets();
 
     private:
         QString selectedPreset() const;
-        QString defaultStyleSheetForPreset(const QString &preset) const;
-        QString effectiveStyleSheetForPreset(const QString &preset) const;
-        QString effectiveBackgroundStyleSheetForPreset(const QString &preset) const;
         void buildUi();
-        void updateEditorModeUi();
-        void createColorControl(const QString &key, const QString &labelText, QWidget *parent, QGridLayout *layout, int row);
-        void createBackgroundImageControl(const QString &area, const QString &labelText, QWidget *parent, QGridLayout *layout, int row);
-        QGroupBox *createImageGroup(const QString &title, QWidget *parent, const QList<QPair<QString, QString>> &entries);
-        void loadPresetEditor();
-        void updateStatusLabel();
-        void updateColorButtons();
-        void updateBackgroundImageLabels();
-        void refreshEditorChrome();
-        QString colorLabel(const QString &key) const;
-        void pickColor(const QString &key);
-        void browseBackgroundImage(const QString &area);
-        void clearBackgroundImage(const QString &area);
-        void applyVisualThemeOverride();
-        bool loadVisualColorsFromConfiguration();
-        void persistVisualColorsToConfiguration() const;
-        void syncVisualControlsFromStyleSheet();
-        QString buildVisualOverrideBlock() const;
-        QString styleSheetWithVisualOverride() const;
-        QColor colorValue(const QString &key) const;
-        QColor extractColor(const QString &styleSheet, const QString &pattern, const QColor &fallback) const;
-        QString extractCapturedValue(const QString &styleSheet, const QString &pattern, const QString &fallback = QString()) const;
-        static QString generatedOverrideStartMarker();
-        static QString generatedOverrideEndMarker();
-        static QString removeGeneratedOverrideBlock(QString styleSheet);
+        void refreshChrome();
+        void clearPresetCustomization(const QString &preset) const;
+        void updateStatusLabel(const QString &message = QString());
 
         Settings *m_settings = nullptr;
         fairwindsk::ui::widgets::TouchComboBox *m_presetComboBox = nullptr;
-        QPlainTextEdit *m_styleEditor = nullptr;
+        QLabel *m_titleLabel = nullptr;
+        QLabel *m_hintLabel = nullptr;
+        QLabel *m_presetLabel = nullptr;
         QLabel *m_statusLabel = nullptr;
-        QPushButton *m_importButton = nullptr;
-        QPushButton *m_exportButton = nullptr;
-        QPushButton *m_editorButton = nullptr;
+        QFrame *m_controlFrame = nullptr;
         QPushButton *m_resetCurrentButton = nullptr;
         QPushButton *m_resetAllButton = nullptr;
-        QMap<QString, QColor> m_visualColors;
-        QMap<QString, QPushButton *> m_colorButtons;
-        QMap<QString, QLabel *> m_backgroundPathLabels;
-        QList<QLabel *> m_editorLabels;
-        QGroupBox *m_paletteGroup = nullptr;
-        QGroupBox *m_imagesGroup = nullptr;
-        QWidget *m_visualEditorWidget = nullptr;
-        QGroupBox *m_advancedGroup = nullptr;
         bool m_isUpdating = false;
-        bool m_isSyncingVisualControls = false;
     };
 }
 

@@ -6,8 +6,8 @@
 
 
 #include "DownloadWidget.hpp"
+#include "ui/DrawerDialogHost.hpp"
 
-#include <QFileDialog>
 #include <QDir>
 #include <QWebEngineDownloadRequest>
 
@@ -21,8 +21,9 @@ namespace fairwindsk::ui::web {
     void DownloadManagerWidget::downloadRequested(QWebEngineDownloadRequest *download) {
         Q_ASSERT(download && download->state() == QWebEngineDownloadRequest::DownloadRequested);
 
-        QString path = QFileDialog::getSaveFileName(this, tr("Save as"), QDir(download->downloadDirectory()).filePath(
-                download->downloadFileName()));
+        const QString path = drawer::getSaveFilePath(this,
+                                                      tr("Save as"),
+                                                      QDir(download->downloadDirectory()).filePath(download->downloadFileName()));
         if (path.isEmpty())
             return;
 
@@ -31,7 +32,7 @@ namespace fairwindsk::ui::web {
         download->accept();
         add(new DownloadWidget(download));
 
-        show();
+        setVisible(true);
     }
 
     void DownloadManagerWidget::add(DownloadWidget *downloadWidget) {

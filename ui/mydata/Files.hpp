@@ -10,10 +10,16 @@
 #include <QItemSelectionModel>
 #include <QModelIndexList>
 #include <QFutureWatcher>
+#include <QStringList>
 #include <QtConcurrent>
 #include "FileInfoListModel.hpp"
 #include "FileViewer.hpp"
 
+class QFrame;
+class QGridLayout;
+class QLabel;
+class QPushButton;
+class QResizeEvent;
 
 // The base source code is https://github.com/kitswas/File-Manager/
 
@@ -56,13 +62,17 @@ public:
          * Copies a folder and all its contents.
          * Reference: https://forum.qt.io/topic/105993/copy-folder-qt-c/5?_=1675790958476&lang=en-GB
          */
-    static void copyOrMoveDirectorySubtree(const QString &from,
+    static bool copyOrMoveDirectorySubtree(const QString &from,
                                     const QString &to,
                                     bool copyAndRemove,
-                                    bool overwriteExistingFiles);
+                                    bool overwriteExistingFiles,
+                                    QString *errorMessage = nullptr);
+    static bool wouldPasteDirectoryIntoOwnTree(const QString &sourcePath, const QString &destinationPath);
+    static bool runDirectorySafetySelfTest(QString *failureReason = nullptr);
 
 protected:
     void changeEvent(QEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
 
     public slots:
 
@@ -111,9 +121,14 @@ private:
     [[nodiscard]] QString currentDestinationDir() const;
     void refreshCurrentView();
     void updateActionStates();
+    void updateClipboardStatus();
+    void updateSearchOptionsButton();
+    void updateActionRowLayout();
     void updateTitleLabel() const;
     void updateItemInfo(const QString &path);
     void clearItemInfo();
+    void clearClipboardState();
+    void showOperationSummary(const QString &title, const QString &summary, const QStringList &issues) const;
     [[nodiscard]] QString selectedOrCurrentPath() const;
     Ui::Files *ui;
 
@@ -125,6 +140,11 @@ private:
     QStringList m_itemsToMove;
     QDir *m_currentDir;
     QString m_currentFilePath = "";
+    QLabel *m_clipboardStatusLabel = nullptr;
+    QPushButton *m_clearClipboardButton = nullptr;
+    QPushButton *m_searchOptionsButton = nullptr;
+    QFrame *m_actionsRow = nullptr;
+    QGridLayout *m_actionsLayout = nullptr;
 
     FileViewer *m_fileViewer = nullptr;
 

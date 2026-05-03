@@ -15,6 +15,8 @@ These instructions apply to the entire repository.
 - Run available tests or sanity checks when feasible; note any environment limitations in your report if you cannot run them.
 - Be sure that each new modification is checked for behavior and build impact across macOS, Windows, Linux, Raspberry Pi OS, Android, and iOS; when a platform is not currently supported by the codebase, call out the limitation explicitly instead of implying coverage.
 - For every GUI change, explicitly verify touch-friendly behavior and marine electronics multi-functional display (MFD) consistency before considering the task done.
+- Enforce the single window model, don't create external windows.
+- Enforce the marine electronics Multi-Functional-Display UI and UX.
 - Touch targets must be finger-friendly by default (comfortable hit area, clear focus/pressed states, and readable high-contrast text at normal helm distance).
 - Layout, spacing, and visual hierarchy must remain stable in rough-use conditions: avoid dense controls, ambiguous labels, or low-contrast decorative styling that reduces operational clarity.
 - Ensure all comfort presets: 1) fit the marine electronics UI style; 2) ensure the best visibility for down, day, default, dusk, night, and sunset.
@@ -22,6 +24,17 @@ These instructions apply to the entire repository.
 ## Documentation & resources
 - Update user-facing strings or documentation when behavior changes; keep resource paths (e.g., `resources.qrc`) consistent if assets move.
 - Update existing Markdown documentation under `docs/` and add new Markdown files when a change introduces a substantial workflow, feature, or maintenance improvement that should be captured for future contributors or users.
+
+## Multilingual support
+- Treat multilingual support as a core user-facing feature, not as optional polish. Any change to visible UI text, operator guidance, dialogs, tooltips, fallback messages, or embedded-web localization hooks must be reviewed for translation impact.
+- Wrap every user-visible Qt string in `tr(...)` or the equivalent translation-aware Qt API already used by the surrounding code. Do not hardcode new visible English strings in widgets, dialogs, settings pages, drawer messages, or runtime status text without making them translatable.
+- Keep the supported-language contract centralized and consistent across `Localization.*`, `main.cpp`, settings UI language selectors, configuration documentation, and translation resources. When adding or removing a supported language, update every one of those layers in the same change.
+- Keep translation source files in sync with the codebase. When adding or changing translatable strings, update the relevant `resources/i18n/*.ts` files and ensure the corresponding `qt_add_translations(...)` configuration in `CMakeLists.txt` includes every shipped language.
+- Preserve the runtime fallback policy: unsupported language selections or unsupported system locales must fall back to English unless the codebase explicitly documents and implements a different behavior.
+- Verify that native Qt widgets and embedded web content use the same effective locale, language tag, and culture conventions. Language changes must not leave the shell in one language and the embedded web layer in another.
+- Verify that translated text remains touch-friendly and marine-MFD-compliant in every shipped language. Labels, buttons, tabs, drawers, alarms, and settings pages must still fit, remain readable at helm distance, and preserve clear hierarchy in `default`, `dawn`, `day`, `sunset`, `dusk`, and `night` comfort presets.
+- When a language change affects configuration, startup behavior, restart requirements, or user-visible workflows, update the relevant documentation under `docs/`, especially the configuration and multilingual guidance.
+- Use [docs/multilingual.md](./docs/multilingual.md) as the contributor playbook for adding a new language or improving an existing one, and keep that document updated when the localization workflow changes.
 
 ## Built feature definitions
 - **MyData**: lets the user interact with `Waypoints`, `Routes`, `Regions`, `Notes`, `Charts`, `Tracks`, and `Files`, including both local and remote files.

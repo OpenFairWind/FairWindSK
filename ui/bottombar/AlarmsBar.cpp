@@ -13,6 +13,25 @@
 #include "ui_AlarmsBar.h"
 
 namespace fairwindsk::ui::bottombar {
+    namespace {
+        QString alarmConnectionLabel(const fairwindsk::signalk::Client::ConnectionHealthState state) {
+            switch (state) {
+                case fairwindsk::signalk::Client::ConnectionHealthState::Connecting:
+                    return AlarmsBar::tr("Connecting");
+                case fairwindsk::signalk::Client::ConnectionHealthState::Live:
+                    return AlarmsBar::tr("Live");
+                case fairwindsk::signalk::Client::ConnectionHealthState::Stale:
+                    return AlarmsBar::tr("Stale");
+                case fairwindsk::signalk::Client::ConnectionHealthState::Reconnecting:
+                    return AlarmsBar::tr("Reconnecting");
+                case fairwindsk::signalk::Client::ConnectionHealthState::Degraded:
+                    return AlarmsBar::tr("Degraded");
+                case fairwindsk::signalk::Client::ConnectionHealthState::Disconnected:
+                default:
+                    return AlarmsBar::tr("Disconnected");
+            }
+        }
+    }
 
     AlarmsBar::AlarmsBar(QWidget *parent) : QWidget(parent), ui(new Ui::AlarmsBar) {
 
@@ -28,6 +47,16 @@ namespace fairwindsk::ui::bottombar {
         const auto client = FairWindSK::getInstance()->getSignalKClient();
         updateNotifications(client->subscribe("notifications.*", this,
                                               SLOT(fairwindsk::ui::bottombar::AlarmsBar::updateNotifications)));
+        connect(client, &fairwindsk::signalk::Client::connectionHealthStateChanged, this,
+                [this](const fairwindsk::signalk::Client::ConnectionHealthState state,
+                       const QString &,
+                       const QDateTime &lastStreamUpdate,
+                       const QString &statusText) {
+                    m_connectionState = state;
+                    m_connectionStatusText = statusText;
+                    m_lastStreamUpdate = lastStreamUpdate;
+                    updateControlTooltips();
+                });
 
         connect(ui->toolButton_POB, &QPushButton::clicked, this, &AlarmsBar::onPobClicked);
         connect(ui->toolButton_Sinking, &QPushButton::clicked, this, &AlarmsBar::onSinkingClicked);
@@ -38,6 +67,7 @@ namespace fairwindsk::ui::bottombar {
         connect(ui->toolButton_Hide, &QPushButton::clicked, this, &AlarmsBar::onHideClicked);
 
         applyComfortStyle();
+        updateControlTooltips();
         QWidget::setVisible(false);
     }
 
@@ -72,6 +102,8 @@ namespace fairwindsk::ui::bottombar {
         }
 
         m_alarmToolButtons[apiKey]->setChecked(active);
+        applyComfortStyle();
+        updateControlTooltips();
         emit alarmed(alarmUiKey(apiKey), active);
     }
 
@@ -83,14 +115,47 @@ namespace fairwindsk::ui::bottombar {
         for (auto *button : findChildren<QToolButton *>()) {
             const bool isTransparentIconButton =
                 button == ui->toolButton_Alarms || button == ui->toolButton_Hide;
+            const bool criticalAlarmActive = button->isCheckable() && button->isChecked() && !isTransparentIconButton;
             fairwindsk::ui::applyBottomBarToolButtonChrome(
                 button,
                 colors,
                 isTransparentIconButton
                     ? fairwindsk::ui::BottomBarButtonChrome::Transparent
-                    : fairwindsk::ui::BottomBarButtonChrome::Flat,
+                    : (criticalAlarmActive
+                           ? fairwindsk::ui::BottomBarButtonChrome::Accent
+                           : fairwindsk::ui::BottomBarButtonChrome::Flat),
                 QSize(40, 40),
                 88);
+        }
+    }
+
+    void AlarmsBar::updateControlTooltips() {
+        const QString connectionLabel = alarmConnectionLabel(m_connectionState);
+        QString connectionLine = tr("Signal K %1").arg(connectionLabel);
+        if (!m_connectionStatusText.trimmed().isEmpty()) {
+            connectionLine += tr("\n%1").arg(m_connectionStatusText.trimmed());
+        }
+        if (m_lastStreamUpdate.isValid()) {
+            connectionLine += tr("\nLast live update %1")
+                                  .arg(m_lastStreamUpdate.toLocalTime().toString(QStringLiteral("dd-MM hh:mm:ss")));
+        }
+
+        if (ui->toolButton_Alarms) {
+            ui->toolButton_Alarms->setToolTip(tr("Alarm controls\n%1").arg(connectionLine));
+        }
+        if (ui->toolButton_Hide) {
+            ui->toolButton_Hide->setToolTip(tr("Close alarm controls"));
+        }
+
+        for (auto it = m_alarmToolButtons.cbegin(); it != m_alarmToolButtons.cend(); ++it) {
+            if (!it.value()) {
+                continue;
+            }
+
+            QString tooltip = tr("%1 alarm").arg(alarmUiKey(it.key()).toUpper());
+            tooltip += it.value()->isChecked() ? tr(": active") : tr(": inactive");
+            tooltip += tr("\n%1").arg(connectionLine);
+            it.value()->setToolTip(tooltip);
         }
     }
 

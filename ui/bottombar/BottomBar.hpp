@@ -5,6 +5,10 @@
 #ifndef BOTTOMBAR_HPP
 #define BOTTOMBAR_HPP
 
+#include <QHash>
+#include <QHBoxLayout>
+#include <QPointer>
+#include <QVector>
 #include <QWidget>
 
 #include <FairWindSK.hpp>
@@ -13,9 +17,11 @@
 #include "AlarmsBar.hpp"
 #include "AutopilotBar.hpp"
 #include "AnchorBar.hpp"
+#include "ui/layout/BarLayout.hpp"
 #include "ui/widgets/SignalKServerBox.hpp"
 
 namespace Ui { class BottomBar; }
+class QGraphicsEffect;
 
 namespace fairwindsk::ui::bottombar {
 
@@ -24,6 +30,7 @@ namespace fairwindsk::ui::bottombar {
     public:
         // Constructor
         explicit BottomBar(QWidget *parent = 0);
+        static BottomBar *instance();
 
         // Set Autopilot Icon visibility
         void setAutopilotIcon(bool value) const;
@@ -34,6 +41,9 @@ namespace fairwindsk::ui::bottombar {
         // Set POB Icon visibility
         void setPOBIcon(bool value) const;
         void refreshFromConfiguration() const;
+        void setLayoutEditHighlightEnabled(bool enabled);
+        QWidget *widgetForItemId(const QString &itemId) const;
+        bool isTransientPanelVisible() const;
 
         // Add application icon to the shortcut
         void addApp(const QString& name);
@@ -94,9 +104,27 @@ namespace fairwindsk::ui::bottombar {
         void applyNavigationButtonIcons() const;
         void rebalanceNavigationBlock() const;
         void setRegularBarVisible(bool visible) const;
+        void restoreRegularBarVisibility() const;
         void setPanelVisibility(QWidget *panel, bool visible) const;
         void hideTransientPanels(QWidget *except = nullptr) const;
+        void updateTransientPanelHeight(QWidget *panel) const;
+        void updateHealthChrome();
+        void rebuildLayout();
+        QWidget *createSeparatorWidget();
+        void clearConfiguredLayout();
+        void applyEntrySizing(const fairwindsk::ui::layout::LayoutEntry &entry,
+                              const QString &itemId,
+                              QWidget *widget,
+                              QHBoxLayout *layout);
+        void clearLayoutEditHints();
+        void applyLayoutEditHints(const QList<fairwindsk::ui::layout::LayoutEntry> &entries);
 
+    private slots:
+        void onRuntimeHealthChanged(fairwindsk::FairWindSK::RuntimeHealthState state,
+                                    const QString &summary,
+                                    const QString &badgeText);
+
+    private:
         // Pointer to UI
         Ui::BottomBar *ui = nullptr;
 
@@ -116,6 +144,13 @@ namespace fairwindsk::ui::bottombar {
 
         int m_iconSize;
         QMap<QString, QToolButton *> m_buttons;
+        fairwindsk::FairWindSK::RuntimeHealthState m_runtimeHealthState = fairwindsk::FairWindSK::RuntimeHealthState::Disconnected;
+        QString m_runtimeHealthSummary;
+        QHash<QString, QSizePolicy> m_baseSizePolicies;
+        QHash<QWidget *, QPointer<QGraphicsEffect>> m_layoutHintEffects;
+        bool m_layoutEditHighlightEnabled = false;
+        QVector<QPointer<QWidget>> m_dynamicLayoutWidgets;
+        inline static BottomBar *s_instance = nullptr;
     };
 }
 

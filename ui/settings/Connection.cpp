@@ -9,6 +9,7 @@
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QSettings>
+#include <QSignalBlocker>
 #include <QUuid>
 #include <QVBoxLayout>
 
@@ -24,6 +25,9 @@ namespace fairwindsk::ui::settings {
 
         QString normalizedSignalKServerUrlText(const QString &rawText) {
             QString normalized = rawText.trimmed();
+            if (!normalized.isEmpty() && !normalized.contains(QStringLiteral("://"))) {
+                normalized.prepend(QStringLiteral("http://"));
+            }
             while (normalized.endsWith('/')) {
                 normalized.chop(1);
             }
@@ -75,6 +79,52 @@ namespace fairwindsk::ui::settings {
 
             return QObject::tr("Error connecting the server.");
         }
+
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+        QStringList signalKDiscoveryTypes() {
+            return {
+                QStringLiteral("_signalk-http._tcp"),
+                QStringLiteral("_signalk-https._tcp"),
+                QStringLiteral("_http._tcp"),
+                QStringLiteral("_https._tcp")
+            };
+        }
+
+        QString normalizedServiceType(QString type) {
+            type = type.trimmed().toLower();
+            while (type.endsWith(QLatin1Char('.'))) {
+                type.chop(1);
+            }
+            if (type.endsWith(QStringLiteral(".local"))) {
+                type.chop(QStringLiteral(".local").size());
+            }
+            return type;
+        }
+
+        QString cleanServiceHost(QString host) {
+            host = host.trimmed();
+            while (host.endsWith(QLatin1Char('.'))) {
+                host.chop(1);
+            }
+            return host;
+        }
+
+        bool txtContainsSignalKMarker(const QMap<QByteArray, QByteArray> &txt) {
+            for (auto it = txt.cbegin(); it != txt.cend(); ++it) {
+                const QString key = QString::fromUtf8(it.key()).toLower();
+                const QString value = QString::fromUtf8(it.value()).toLower();
+                if (key.contains(QStringLiteral("signalk")) ||
+                    key.contains(QStringLiteral("signal-k")) ||
+                    value.contains(QStringLiteral("signalk")) ||
+                    value.contains(QStringLiteral("signal k")) ||
+                    value.contains(QStringLiteral("signal-k"))) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+#endif
     }
 
     QUrl Connection::currentSignalKServerUrl() const {
@@ -150,12 +200,15 @@ namespace fairwindsk::ui::settings {
         const bool hasPendingRequest = !href.isEmpty();
         const bool hasToken = !token.isEmpty();
         const bool isBusy = !m_activeTokenReply.isNull();
+        const bool isConnectionEnabled = connectionEnabled();
 
         ui->comboBox_signalkserverurl->setEnabled(!hasPendingRequest && !isBusy);
-        ui->pushButton_requestToken->setEnabled(!hasPendingRequest && !hasToken && !isBusy);
+        ui->pushButton_connectionToggle->setEnabled(!hasPendingRequest && !isBusy);
+        ui->pushButton_requestToken->setEnabled(isConnectionEnabled && !hasPendingRequest && !hasToken && !isBusy);
         ui->pushButton_cancelRequest->setEnabled(hasPendingRequest || isBusy);
         ui->pushButton_readOnly->setEnabled(!hasPendingRequest && !isBusy);
         ui->pushButton_removeToken->setEnabled(!hasPendingRequest && hasToken && !isBusy);
+        updateConnectionToggle();
 
         if (hasToken) {
             ui->label_lblPermission->setText(tr("Approved"));
@@ -223,6 +276,174 @@ namespace fairwindsk::ui::settings {
         syncTokenUiState();
     }
 
+    void Connection::commitSignalKServerUrl(const bool restartWhenActive) {
+        if (!ui || !ui->comboBox_signalkserverurl || !m_settings || m_committingServerUrl) {
+            return;
+        }
+
+        const QString normalized = normalizedSignalKServerUrlText(ui->comboBox_signalkserverurl->currentText());
+        if (normalized.isEmpty()) {
+            const bool changed = !m_settings->getConfiguration()->getSignalKServerUrl().isEmpty();
+            m_settings->getConfiguration()->setSignalKServerUrl(QString());
+            if (changed && restartWhenActive) {
+                m_settings->markDirty(FairWindSK::RuntimeSignalKConnection, 0);
+            }
+            updateConnectionToggle();
+            return;
+        }
+
+        const QUrl signalKServerUrl = validatedSignalKServerUrl(normalized);
+        if (!signalKServerUrl.isValid()) {
+            updateConnectionToggle();
+            return;
+        }
+
+        m_committingServerUrl = true;
+        addServerUrlOption(signalKServerUrl.toString());
+        {
+            const QSignalBlocker blocker(ui->comboBox_signalkserverurl);
+            ui->comboBox_signalkserverurl->setCurrentText(signalKServerUrl.toString());
+        }
+        m_committingServerUrl = false;
+
+        const bool changed = m_settings->getConfiguration()->getSignalKServerUrl() != signalKServerUrl.toString();
+        m_settings->getConfiguration()->setSignalKServerUrl(signalKServerUrl.toString());
+        if (changed && restartWhenActive && connectionEnabled()) {
+            m_settings->markDirty(FairWindSK::RuntimeSignalKConnection, 400);
+        }
+        updateConnectionToggle();
+    }
+
+    void Connection::addServerUrlOption(const QString &serverUrl) const {
+        if (!ui || !ui->comboBox_signalkserverurl) {
+            return;
+        }
+
+        const QString normalized = normalizedSignalKServerUrlText(serverUrl);
+        if (!validatedSignalKServerUrl(normalized).isValid()) {
+            return;
+        }
+
+        if (ui->comboBox_signalkserverurl->findText(normalized, Qt::MatchExactly) == -1) {
+            const QSignalBlocker blocker(ui->comboBox_signalkserverurl);
+            ui->comboBox_signalkserverurl->addItem(normalized);
+        }
+    }
+
+    bool Connection::connectionEnabled() const {
+        return m_settings && m_settings->getConfiguration()->getSignalKConnectionEnabled();
+    }
+
+    void Connection::setConnectionEnabled(const bool enabled) {
+        if (!m_settings || !m_settings->getConfiguration()) {
+            return;
+        }
+
+        if (m_settings->getConfiguration()->getSignalKConnectionEnabled() == enabled) {
+            updateConnectionToggle();
+            return;
+        }
+
+        m_settings->getConfiguration()->setSignalKConnectionEnabled(enabled);
+        updateConnectionToggle();
+        m_settings->markDirty(FairWindSK::RuntimeSignalKConnection, 0);
+    }
+
+    void Connection::updateConnectionToggle() {
+        if (!ui || !ui->pushButton_connectionToggle) {
+            return;
+        }
+
+        const bool enabled = connectionEnabled();
+        ui->pushButton_connectionToggle->setText(enabled ? tr("Pause Connection") : tr("Start Connection"));
+        ui->pushButton_connectionToggle->setToolTip(enabled
+                                                        ? tr("Pause the Signal K connection without clearing the selected URL")
+                                                        : tr("Start the Signal K connection using the selected URL"));
+        ui->pushButton_connectionToggle->setAccessibleName(ui->pushButton_connectionToggle->text());
+    }
+
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+    void Connection::startZeroConfDiscovery() {
+        stopZeroConfDiscovery();
+
+        QStringList activeTypes;
+        for (const QString &serviceType : signalKDiscoveryTypes()) {
+            auto *browser = new QZeroConf(this);
+            connect(browser, &QZeroConf::serviceAdded, this, &Connection::addService);
+            connect(browser, &QZeroConf::serviceUpdated, this, &Connection::addService);
+            connect(browser, &QZeroConf::error, this, [this, serviceType](const QZeroConf::error_t) {
+                appendMessage(tr("mDNS discovery failed for %1.").arg(serviceType));
+            });
+            browser->startBrowser(serviceType);
+            m_zeroConfBrowsers.append(browser);
+            if (browser->browserExists()) {
+                activeTypes.append(serviceType);
+            }
+        }
+
+        appendMessage(activeTypes.isEmpty()
+                          ? tr("mDNS discovery starting.")
+                          : tr("mDNS discovery active for %1.").arg(activeTypes.join(QStringLiteral(", "))));
+    }
+
+    void Connection::stopZeroConfDiscovery() {
+        for (auto *browser : m_zeroConfBrowsers) {
+            if (!browser) {
+                continue;
+            }
+            browser->stopBrowser();
+            browser->deleteLater();
+        }
+        m_zeroConfBrowsers.clear();
+    }
+
+    bool Connection::isSignalKDiscoveryService(const QZeroConfService &item) const {
+        if (!item) {
+            return false;
+        }
+
+        const QString type = normalizedServiceType(item->type());
+        if (type == QStringLiteral("_signalk-http._tcp") || type == QStringLiteral("_signalk-https._tcp")) {
+            return true;
+        }
+
+        if (type != QStringLiteral("_http._tcp") && type != QStringLiteral("_https._tcp")) {
+            return false;
+        }
+
+        const QMap<QByteArray, QByteArray> txt = item->txt();
+        const QString name = item->name().toLower();
+        if (name.contains(QStringLiteral("signalk")) || name.contains(QStringLiteral("signal k"))) {
+            return true;
+        }
+
+        const bool hasSignalKTxtShape = txt.contains("roles") && (txt.contains("self") || txt.contains("swname"));
+        return hasSignalKTxtShape || txtContainsSignalKMarker(txt);
+    }
+
+    QString Connection::signalKUrlForService(const QZeroConfService &item) const {
+        if (!isSignalKDiscoveryService(item)) {
+            return {};
+        }
+
+        const QString type = normalizedServiceType(item->type());
+        const QString scheme = type.contains(QStringLiteral("https")) ? QStringLiteral("https") : QStringLiteral("http");
+        QString host = item->ip().isNull() ? QString() : item->ip().toString();
+        if (host.isEmpty()) {
+            host = cleanServiceHost(item->host());
+        }
+        if (host.isEmpty() || item->port() == 0) {
+            return {};
+        }
+
+        QUrl url;
+        url.setScheme(scheme);
+        url.setHost(host);
+        url.setPort(item->port());
+        return normalizedSignalKServerUrlText(url.toString());
+    }
+#endif
+
 
     /*
      * Connection
@@ -245,10 +466,21 @@ namespace fairwindsk::ui::settings {
         m_networkAccessManager = new QNetworkAccessManager(this);
 
         // Set the current signal k server url
-        ui->comboBox_signalkserverurl->setCurrentText(m_settings->getConfiguration()->getSignalKServerUrl());
+        const QString configuredServerUrl = m_settings->getConfiguration()->getSignalKServerUrl();
+        addServerUrlOption(configuredServerUrl);
+        ui->comboBox_signalkserverurl->setCurrentText(configuredServerUrl);
 
-        if (ui->comboBox_signalkserverurl->findText("https://demo.signalk.org") == -1) {
-            ui->comboBox_signalkserverurl->addItem("https://demo.signalk.org");
+        addServerUrlOption(QStringLiteral("http://localhost:3000"));
+        addServerUrlOption(QStringLiteral("https://demo.signalk.org"));
+
+        for (auto *button : {
+                 ui->pushButton_connectionToggle,
+                 ui->pushButton_requestToken,
+                 ui->pushButton_cancelRequest,
+                 ui->pushButton_readOnly,
+                 ui->pushButton_removeToken
+             }) {
+            button->setMinimumHeight(52);
         }
 
         auto *browserLayout = new QVBoxLayout(ui->widgetBrowserHost);
@@ -293,6 +525,7 @@ namespace fairwindsk::ui::settings {
         connect(ui->pushButton_cancelRequest, &QPushButton::clicked, this, &Connection::onCancelRequest);
         connect(ui->pushButton_readOnly, &QPushButton::clicked, this, &Connection::onReadOnly);
         connect(ui->pushButton_removeToken, &QPushButton::clicked, this, &Connection::onRemoveToken);
+        connect(ui->pushButton_connectionToggle, &QPushButton::clicked, this, &Connection::onToggleConnection);
 
         connect(ui->comboBox_signalkserverurl,
                 qOverload<int>(&fairwindsk::ui::widgets::TouchComboBox::currentIndexChanged),
@@ -304,16 +537,9 @@ namespace fairwindsk::ui::settings {
                 &Connection::onUpdateSignalKServerUrl);
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
-        connect(&m_zeroConf, &QZeroConf::serviceAdded, this, &Connection::addService);
-        m_zeroConf.startBrowser("_http._tcp");
-
-        if (m_zeroConf.browserExists()) {
-            appendMessage(tr("Zero configuration active."));
-        } else {
-            appendMessage(tr("Zero configuration not active."));
-        }
+        startZeroConfDiscovery();
 #else
-        appendMessage(tr("Zero configuration discovery is disabled on mobile builds."));
+        appendMessage(tr("mDNS discovery is disabled on mobile builds."));
 #endif
     }
 
@@ -321,9 +547,8 @@ namespace fairwindsk::ui::settings {
      * onUpdateSignalKServerUrl
      * Invoked when the signal k server url has changed
      */
-    void Connection::onUpdateSignalKServerUrl() const {
-        m_settings->getConfiguration()->setSignalKServerUrl(normalizedSignalKServerUrlText(ui->comboBox_signalkserverurl->currentText()));
-        m_settings->markDirty(FairWindSK::RuntimeSignalKConnection, 400);
+    void Connection::onUpdateSignalKServerUrl() {
+        commitSignalKServerUrl(true);
     }
 
     /*
@@ -331,30 +556,14 @@ namespace fairwindsk::ui::settings {
     * Invoked when zero conf find a new service
     */
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
-    void Connection::addService(const QZeroConfService &item) const {
-
-        // Show a message on the console
-        appendMessage(tr("Added service"));
-        appendMessage(tr("Name: %1").arg(item->name()));
-        appendMessage(tr("Domain: %1").arg(item->domain()));
-        appendMessage(tr("Host: %1").arg(item->host()));
-        appendMessage(tr("Type: %1").arg(item->type()));
-        appendMessage(tr("Ip: %1").arg(item->ip().toString()));
-        appendMessage(tr("Port: %1").arg(item->port()));
-
-        // Get the type of protocol
-        const auto type = item->type().split(".")[0].replace("_", "");
-
-        // Get the host
-        const auto host = item->ip().toString();
-
-        // Get the signal k server url
-        const auto signalKServerUrl = QString("%1://%2:%3").arg(type, host).arg(item->port());
-
-        // Add the signal k server url to the combo box
-        if (ui->comboBox_signalkserverurl->findText(signalKServerUrl) == -1) {
-            ui->comboBox_signalkserverurl->addItem(signalKServerUrl);
+    void Connection::addService(const QZeroConfService &item) {
+        const QString signalKServerUrl = signalKUrlForService(item);
+        if (signalKServerUrl.isEmpty()) {
+            return;
         }
+
+        addServerUrlOption(signalKServerUrl);
+        appendMessage(tr("Discovered Signal K %1 at %2.").arg(item->name(), signalKServerUrl));
     }
 #endif
 
@@ -367,6 +576,7 @@ namespace fairwindsk::ui::settings {
             return;
         }
 
+        commitSignalKServerUrl(false);
         const QUrl signalKServerUrl = currentSignalKServerUrl();
         if (!signalKServerUrl.isValid()) {
             appendMessage(tr("Please provide a valid Signal K server URL."));
@@ -374,7 +584,9 @@ namespace fairwindsk::ui::settings {
         }
 
         m_settings->getConfiguration()->setSignalKServerUrl(signalKServerUrl.toString());
+        m_settings->getConfiguration()->setSignalKConnectionEnabled(true);
         m_settings->markDirty(FairWindSK::RuntimeSignalKConnection, 0);
+        updateConnectionToggle();
 
         clearPendingRequest(true);
         stopTokenTimer();
@@ -583,6 +795,7 @@ namespace fairwindsk::ui::settings {
     * Invoked when the read only button has hit
     */
     void Connection::onReadOnly() {
+        commitSignalKServerUrl(false);
         const QUrl signalKServerUrl = currentSignalKServerUrl();
         if (!signalKServerUrl.isValid()) {
             appendMessage(tr("Please provide a valid Signal K server URL."));
@@ -590,7 +803,9 @@ namespace fairwindsk::ui::settings {
         }
 
         m_settings->getConfiguration()->setSignalKServerUrl(signalKServerUrl.toString());
+        m_settings->getConfiguration()->setSignalKConnectionEnabled(true);
         m_settings->markDirty(FairWindSK::RuntimeSignalKConnection, 0);
+        updateConnectionToggle();
 
         abortActiveTokenReply();
         stopTokenTimer();
@@ -603,6 +818,24 @@ namespace fairwindsk::ui::settings {
         ui->label_lblExpirationTime->clear();
 
         appendMessage(tr("Configured %1 in read-only mode.").arg(signalKServerUrl.toString()));
+    }
+
+    void Connection::onToggleConnection() {
+        commitSignalKServerUrl(false);
+        const bool nextEnabled = !connectionEnabled();
+        if (nextEnabled && !currentSignalKServerUrl().isValid()) {
+            appendMessage(tr("Please provide a valid Signal K server URL before starting the connection."));
+            updateConnectionToggle();
+            return;
+        }
+
+        setConnectionEnabled(nextEnabled);
+        showConsole();
+        ui->label_lblState->setText(nextEnabled ? tr("Starting") : tr("Paused"));
+        appendMessage(nextEnabled
+                          ? tr("Starting Signal K connection.")
+                          : tr("Signal K connection paused."));
+        syncTokenUiState();
     }
 
     /*
@@ -629,7 +862,7 @@ namespace fairwindsk::ui::settings {
 
         // Stop the zeroconf browser
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
-        m_zeroConf.stopBrowser();
+        stopZeroConfDiscovery();
 #endif
 
         abortActiveTokenReply();

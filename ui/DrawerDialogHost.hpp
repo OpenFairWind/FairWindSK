@@ -9,8 +9,6 @@
 #include <QMessageBox>
 #include <QWidget>
 
-class QDialog;
-
 namespace fairwindsk::ui::drawer {
 
     struct ButtonSpec {

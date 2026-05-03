@@ -8,10 +8,23 @@
 #include <QMessageBox>
 #include <QPushButton>
 #include <QFrame>
-#include <QProcess>
+#include <QLabel>
 #include <QWindow>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QScreen>
+#include <QInputMethod>
+#include <QDir>
+#include <QFile>
+#include <QLineEdit>
+#include <QPlainTextEdit>
+#include <QRegularExpression>
+#include <QTextEdit>
+#include <QAbstractSpinBox>
+#include <QDateTimeEdit>
+#include <algorithm>
+#include <cmath>
+#include <limits>
 
 #include "MainWindow.hpp"
 #include "ui/topbar/TopBar.hpp"
@@ -25,6 +38,111 @@
 #include "runtime/DiagnosticsSupport.hpp"
 
 namespace fairwindsk::ui {
+    namespace {
+#if defined(Q_OS_LINUX) && (defined(__arm__) || defined(__aarch64__) || defined(Q_PROCESSOR_ARM))
+        constexpr bool kUseLinuxArmWindowGeometryWorkaround = true;
+#else
+        constexpr bool kUseLinuxArmWindowGeometryWorkaround = false;
+#endif
+
+        QScreen *screenForWindow(const QWidget *widget) {
+            const auto *window = widget ? widget->windowHandle() : nullptr;
+            if (window && window->screen()) {
+                return window->screen();
+            }
+            if (widget && widget->screen()) {
+                return widget->screen();
+            }
+            return QGuiApplication::primaryScreen();
+        }
+
+        QRect validGeometryOrFallback(const QRect &geometry, const QRect &fallback) {
+            return geometry.isValid() && !geometry.isEmpty() ? geometry : fallback;
+        }
+
+        QString normalizedDisplayName(QString name) {
+            return name.toLower()
+                .remove(QStringLiteral("card"))
+                .remove(QStringLiteral("-a"))
+                .remove(QRegularExpression(QStringLiteral("[^a-z0-9]")));
+        }
+
+        QSize linuxArmConnectedDisplayMode(const QScreen *screen, const QSize &referenceSize) {
+            if (!kUseLinuxArmWindowGeometryWorkaround) {
+                return {};
+            }
+
+            const QDir drmDirectory(QStringLiteral("/sys/class/drm"));
+            if (!drmDirectory.exists()) {
+                return {};
+            }
+
+            const QString preferredScreenName = normalizedDisplayName(screen ? screen->name() : QString());
+            QSize bestSize;
+            int bestScore = std::numeric_limits<int>::max();
+            const auto connectorNames = drmDirectory.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
+            for (const auto &connectorName : connectorNames) {
+                QFile statusFile(drmDirectory.filePath(connectorName + QStringLiteral("/status")));
+                if (!statusFile.open(QIODevice::ReadOnly)) {
+                    continue;
+                }
+                if (QString::fromUtf8(statusFile.readAll()).trimmed() != QStringLiteral("connected")) {
+                    continue;
+                }
+
+                QFile modesFile(drmDirectory.filePath(connectorName + QStringLiteral("/modes")));
+                if (!modesFile.open(QIODevice::ReadOnly)) {
+                    continue;
+                }
+
+                const QStringList modes = QString::fromUtf8(modesFile.readAll()).split(QLatin1Char('\n'), Qt::SkipEmptyParts);
+                if (modes.isEmpty()) {
+                    continue;
+                }
+
+                const auto match = QRegularExpression(QStringLiteral("^(\\d+)x(\\d+)")).match(modes.first().trimmed());
+                if (!match.hasMatch()) {
+                    continue;
+                }
+
+                const QSize modeSize(match.captured(1).toInt(), match.captured(2).toInt());
+                if (!modeSize.isValid() || modeSize.isEmpty()) {
+                    continue;
+                }
+
+                int score = std::abs(modeSize.width() - referenceSize.width())
+                            + (std::abs(modeSize.height() - referenceSize.height()) * 4);
+                if (!preferredScreenName.isEmpty()
+                    && normalizedDisplayName(connectorName).contains(preferredScreenName)) {
+                    score -= 100000;
+                }
+
+                if (score < bestScore) {
+                    bestScore = score;
+                    bestSize = modeSize;
+                }
+            }
+
+            return bestSize;
+        }
+
+        QRect clampedLinuxArmGeometry(const QRect &geometry, const QScreen *screen, const QSize &referenceSize) {
+            if (!kUseLinuxArmWindowGeometryWorkaround) {
+                return geometry;
+            }
+
+            const QSize displayModeSize = linuxArmConnectedDisplayMode(screen, referenceSize);
+            if (!displayModeSize.isValid() || displayModeSize.isEmpty()) {
+                return geometry;
+            }
+
+            QRect clamped = geometry;
+            clamped.setWidth(std::min(clamped.width(), displayModeSize.width()));
+            clamped.setHeight(std::min(clamped.height(), displayModeSize.height()));
+            return clamped;
+        }
+    }
+
     MainWindow *MainWindow::s_instance = nullptr;
 
     /*
@@ -127,9 +245,22 @@ namespace fairwindsk::ui {
 
         // Set the window size
         setSize();
+        updateAdaptiveShellMode();
+        updateMobileShellMetrics();
         fairwindsk::runtime::recordUserInteraction(QStringLiteral("navigation"),
                                                    QStringLiteral("main_window_ready"),
                                                    QStringLiteral("launcher"));
+
+        if (qApp && qApp->inputMethod()) {
+            connect(qApp->inputMethod(), &QInputMethod::keyboardRectangleChanged, this, [this]() {
+                updateMobileShellMetrics();
+            });
+            connect(qApp->inputMethod(), &QInputMethod::visibleChanged, this, [this]() {
+                updateMobileShellMetrics();
+            });
+        }
+        connect(qApp, &QApplication::focusChanged, this, &MainWindow::handleApplicationFocusChanged);
+        QTimer::singleShot(0, this, [this]() { attachWindowScreenSignals(); });
 
         QTimer::singleShot(750, this, [this]() {
             ensureSettingsPage(m_launcher);
@@ -175,6 +306,9 @@ namespace fairwindsk::ui {
     }
 
     void MainWindow::clearDrawer() {
+        if (m_dialogDrawerContentHost) {
+            m_dialogDrawerContentHost->setProperty("drawerFillCenterArea", false);
+        }
         while (m_dialogDrawerButtonsLayout && m_dialogDrawerButtonsLayout->count() > 1) {
             auto *item = m_dialogDrawerButtonsLayout->takeAt(0);
             if (auto *widget = item->widget()) {
@@ -196,37 +330,81 @@ namespace fairwindsk::ui {
     }
 
     bool MainWindow::isDrawerOpen() const {
-        return m_dialogDrawer && m_dialogDrawer->isVisible() && m_activeDrawerLoop != nullptr;
+        return m_dialogDrawer && m_dialogDrawer->isVisible() && static_cast<bool>(m_activeDrawerFinishedHandler);
     }
 
     void MainWindow::finishActiveDrawer(const int result) {
-        if (m_activeDrawerResult) {
-            *m_activeDrawerResult = result;
+        if (!m_dialogDrawer || !m_activeDrawerFinishedHandler) {
+            return;
         }
-        if (m_activeDrawerLoop) {
-            m_activeDrawerLoop->quit();
+
+        const int resolvedResult = result == 0 ? m_activeDrawerDefaultResult : result;
+        auto finishedHandler = std::move(m_activeDrawerFinishedHandler);
+        m_activeDrawerFinishedHandler = nullptr;
+        m_dialogDrawer->hide();
+        m_drawerOccupiesApplicationArea = false;
+        if (m_dialogDrawerTitle) {
+            m_dialogDrawerTitle->setVisible(true);
+        }
+        if (ui->widgetDialogDrawerButtonRow) {
+            ui->widgetDialogDrawerButtonRow->setVisible(false);
+        }
+        if (auto *drawerLayout = qobject_cast<QVBoxLayout *>(m_dialogDrawer->layout())) {
+            drawerLayout->setContentsMargins(16, 12, 16, 12);
+            drawerLayout->setSpacing(10);
+        }
+        clearDrawer();
+        setDrawerEnabled(true);
+        updateMobileShellMetrics();
+
+        if (finishedHandler) {
+            finishedHandler(resolvedResult);
         }
     }
 
-    int MainWindow::execDrawer(const QString &title, QWidget *content, const QList<DrawerButtonSpec> &buttons, const int defaultResult) {
-        if (!m_dialogDrawer || !content) {
-            return defaultResult;
+    void MainWindow::showDrawerAsync(const QString &title,
+                                     QWidget *content,
+                                     const QList<DrawerButtonSpec> &buttons,
+                                     std::function<void(int)> onFinished,
+                                     const int defaultResult) {
+        if (!m_dialogDrawer || !content || !onFinished) {
+            if (onFinished) {
+                onFinished(defaultResult);
+            }
+            return;
         }
 
-        const QSizePolicy previousDrawerSizePolicy = m_dialogDrawer->sizePolicy();
-        const int previousDrawerMinimumHeight = m_dialogDrawer->minimumHeight();
-        const int previousDrawerMaximumHeight = m_dialogDrawer->maximumHeight();
-        const bool centerWasVisible = ui->stackedWidget_Center && ui->stackedWidget_Center->isVisible();
+        if (isDrawerOpen()) {
+            finishActiveDrawer(defaultResult);
+        }
 
+        releaseCurrentWebInputFocus();
         clearDrawer();
+        m_activeDrawerFinishedHandler = std::move(onFinished);
+        m_activeDrawerDefaultResult = defaultResult;
+        m_drawerOccupiesApplicationArea = content->property("drawerFillCenterArea").toBool();
         m_dialogDrawerTitle->setText(title);
         content->setParent(m_dialogDrawerContentHost);
+        m_dialogDrawerContentHost->setProperty("drawerFillCenterArea", content->property("drawerFillCenterArea"));
         m_dialogDrawerContentLayout->addWidget(content);
-        ui->widgetDialogDrawerButtonRow->setVisible(!buttons.isEmpty());
+        if (m_dialogDrawerTitle) {
+            m_dialogDrawerTitle->setVisible(!m_drawerOccupiesApplicationArea && !title.trimmed().isEmpty());
+        }
+        if (ui->widgetDialogDrawerButtonRow) {
+            ui->widgetDialogDrawerButtonRow->setVisible(!m_drawerOccupiesApplicationArea && !buttons.isEmpty());
+        }
+        if (auto *drawerLayout = qobject_cast<QVBoxLayout *>(m_dialogDrawer->layout())) {
+            drawerLayout->setContentsMargins(m_drawerOccupiesApplicationArea ? QMargins(0, 0, 0, 0)
+                                                                             : QMargins(16, 12, 16, 12));
+            drawerLayout->setSpacing(m_drawerOccupiesApplicationArea ? 0 : 10);
+        }
 
         for (const auto &buttonSpec : buttons) {
             auto *button = new QPushButton(buttonSpec.text, m_dialogDrawer);
             button->setDefault(buttonSpec.isDefault);
+            button->setMinimumHeight(58);
+            button->setMinimumWidth(112);
+            button->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
             connect(button, &QPushButton::clicked, this, [this, buttonSpec]() {
                 finishActiveDrawer(buttonSpec.result);
             });
@@ -241,8 +419,18 @@ namespace fairwindsk::ui {
             m_dialogDrawerContentHost->layout()->activate();
         }
 
+        setDrawerEnabled(false);
+        updateDrawerGeometry();
+        m_dialogDrawer->show();
+        m_dialogDrawer->raise();
+    }
+
+    void MainWindow::updateDrawerGeometry() {
+        if (!m_dialogDrawer || !m_dialogDrawerContentHost) {
+            return;
+        }
+
         const int availableCenterHeight = ui->stackedWidget_Center ? ui->stackedWidget_Center->height() : 0;
-        const int availableDrawerHeight = availableCenterHeight + (m_bottomBar ? m_bottomBar->height() : 0);
         int requestedDrawerHeight = m_dialogDrawer->layout()
                                         ? m_dialogDrawer->layout()->sizeHint().height()
                                         : m_dialogDrawer->sizeHint().height();
@@ -255,41 +443,246 @@ namespace fairwindsk::ui {
                 requestedDrawerHeight = qMax(requestedDrawerHeight, drawerLayout->totalHeightForWidth(drawerWidth));
             }
         }
-        const bool fillCenterArea = content->property("drawerFillCenterArea").toBool();
+
+        const bool fillCenterArea = m_dialogDrawerContentHost->property("drawerFillCenterArea").toBool();
+        const bool compactMode = property("compactShellMode").toBool();
+        const int bottomBarHeight = m_bottomBar ? m_bottomBar->height() : 0;
+        int availableDrawerHeight = std::max(0, availableCenterHeight + (fillCenterArea ? 0 : bottomBarHeight));
         int targetDrawerHeight = qMax(minimumDrawerHeight, requestedDrawerHeight);
         if (availableDrawerHeight > 0) {
             targetDrawerHeight = fillCenterArea
                                      ? availableDrawerHeight
                                      : std::min(targetDrawerHeight, availableDrawerHeight);
         }
+        if (compactMode && m_softwareKeyboardVisible && !fillCenterArea && availableDrawerHeight > 0) {
+            const int compactKeyboardCap = std::max(minimumDrawerHeight,
+                                                    int(std::floor(double(availableDrawerHeight) * 0.72)));
+            targetDrawerHeight = std::min(targetDrawerHeight, compactKeyboardCap);
+        }
+
         m_dialogDrawer->setMinimumHeight(targetDrawerHeight);
         m_dialogDrawer->setMaximumHeight(targetDrawerHeight);
+    }
 
-        if (fillCenterArea && ui->stackedWidget_Center) {
-            ui->stackedWidget_Center->setVisible(false);
+    void MainWindow::updateAdaptiveShellMode() {
+        const QSize availableSize = size().isValid() ? size() : QSize(width(), height());
+        const int shortestSide = std::min(availableSize.width(), availableSize.height());
+        const bool compactMode = shortestSide > 0 && shortestSide <= 720;
+        const bool landscape = availableSize.width() > availableSize.height();
+
+        setProperty("compactShellMode", compactMode);
+        setProperty("phoneCompanionMode", compactMode);
+        setProperty("mobileLandscape", landscape);
+        if (centralWidget()) {
+            centralWidget()->setProperty("compactShellMode", compactMode);
+            centralWidget()->setProperty("phoneCompanionMode", compactMode);
+            centralWidget()->setProperty("mobileLandscape", landscape);
+        }
+        if (m_topBar) {
+            m_topBar->setProperty("compactShellMode", compactMode);
+            m_topBar->setProperty("mobileLandscape", landscape);
+        }
+        if (m_bottomBar) {
+            m_bottomBar->setProperty("compactShellMode", compactMode);
+            m_bottomBar->setProperty("phoneCompanionMode", compactMode);
+            m_bottomBar->setProperty("mobileLandscape", landscape);
+        }
+        m_mobileLandscape = landscape;
+        applyCurrentWebMobileMetrics();
+    }
+
+    void MainWindow::updateMobileShellMetrics() {
+        m_mobileSafeAreaMargins = resolvedMobileSafeAreaMargins();
+        m_mobileKeyboardInset = resolvedKeyboardInset();
+        m_softwareKeyboardVisible = m_mobileKeyboardInset > 0;
+        m_mobileBottomInset = std::max(m_mobileSafeAreaMargins.bottom(), m_mobileKeyboardInset);
+
+        if (ui && ui->gridLayout) {
+            ui->gridLayout->setContentsMargins(m_mobileSafeAreaMargins.left(),
+                                               m_mobileSafeAreaMargins.top(),
+                                               m_mobileSafeAreaMargins.right(),
+                                               m_mobileBottomInset);
         }
 
-        QEventLoop loop;
-        int result = defaultResult;
-        m_activeDrawerLoop = &loop;
-        m_activeDrawerResult = &result;
+        updateMobileShellProperties();
+        updateDrawerGeometry();
+        applyCurrentWebMobileMetrics();
+    }
 
-        setDrawerEnabled(false);
-        m_dialogDrawer->show();
-        m_dialogDrawer->raise();
-        loop.exec();
-        m_activeDrawerLoop = nullptr;
-        m_activeDrawerResult = nullptr;
-        m_dialogDrawer->hide();
-        if (ui->stackedWidget_Center) {
-            ui->stackedWidget_Center->setVisible(centerWasVisible);
+    void MainWindow::updateMobileShellProperties() {
+        const bool compactMode = property("compactShellMode").toBool();
+
+        setProperty("softwareKeyboardVisible", m_softwareKeyboardVisible);
+        setProperty("mobileKeyboardInset", m_mobileKeyboardInset);
+        setProperty("mobileBottomInset", m_mobileBottomInset);
+        setProperty("mobileSafeAreaLeft", m_mobileSafeAreaMargins.left());
+        setProperty("mobileSafeAreaTop", m_mobileSafeAreaMargins.top());
+        setProperty("mobileSafeAreaRight", m_mobileSafeAreaMargins.right());
+        setProperty("mobileSafeAreaBottom", m_mobileSafeAreaMargins.bottom());
+        setProperty("mobileWebContentFocused", m_mobileWebContentFocused);
+        setProperty("mobileNativeTextInputFocused", m_mobileNativeTextInputFocused);
+        setProperty("phoneCompanionMode", compactMode);
+
+        if (centralWidget()) {
+            centralWidget()->setProperty("softwareKeyboardVisible", m_softwareKeyboardVisible);
+            centralWidget()->setProperty("mobileKeyboardInset", m_mobileKeyboardInset);
+            centralWidget()->setProperty("mobileBottomInset", m_mobileBottomInset);
+            centralWidget()->setProperty("mobileSafeAreaLeft", m_mobileSafeAreaMargins.left());
+            centralWidget()->setProperty("mobileSafeAreaTop", m_mobileSafeAreaMargins.top());
+            centralWidget()->setProperty("mobileSafeAreaRight", m_mobileSafeAreaMargins.right());
+            centralWidget()->setProperty("mobileSafeAreaBottom", m_mobileSafeAreaMargins.bottom());
+            centralWidget()->setProperty("mobileWebContentFocused", m_mobileWebContentFocused);
+            centralWidget()->setProperty("mobileNativeTextInputFocused", m_mobileNativeTextInputFocused);
+            centralWidget()->setProperty("phoneCompanionMode", compactMode);
         }
-        m_dialogDrawer->setSizePolicy(previousDrawerSizePolicy);
-        m_dialogDrawer->setMinimumHeight(previousDrawerMinimumHeight);
-        m_dialogDrawer->setMaximumHeight(previousDrawerMaximumHeight);
-        clearDrawer();
-        setDrawerEnabled(true);
-        return result;
+        if (m_dialogDrawer) {
+            m_dialogDrawer->setProperty("softwareKeyboardVisible", m_softwareKeyboardVisible);
+            m_dialogDrawer->setProperty("mobileKeyboardInset", m_mobileKeyboardInset);
+            m_dialogDrawer->setProperty("mobileSafeAreaBottom", m_mobileSafeAreaMargins.bottom());
+            m_dialogDrawer->setProperty("mobileWebContentFocused", m_mobileWebContentFocused);
+            m_dialogDrawer->setProperty("compactShellMode", compactMode);
+            m_dialogDrawer->setProperty("phoneCompanionMode", compactMode);
+            m_dialogDrawer->setProperty("mobileLandscape", m_mobileLandscape);
+        }
+        if (ui && ui->widgetDialogDrawerButtonRow) {
+            ui->widgetDialogDrawerButtonRow->setProperty("softwareKeyboardVisible", m_softwareKeyboardVisible);
+            ui->widgetDialogDrawerButtonRow->setProperty("compactShellMode", compactMode);
+            ui->widgetDialogDrawerButtonRow->setProperty("phoneCompanionMode", compactMode);
+            ui->widgetDialogDrawerButtonRow->setProperty("mobileLandscape", m_mobileLandscape);
+        }
+    }
+
+    void MainWindow::attachWindowScreenSignals() {
+        auto *window = windowHandle();
+        if (!window) {
+            return;
+        }
+
+        connect(window, &QWindow::screenChanged, this, [this]() {
+            handleWindowScreenChanged();
+        });
+        handleWindowScreenChanged();
+    }
+
+    void MainWindow::handleWindowScreenChanged() {
+        auto *window = windowHandle();
+        auto *screen = window ? window->screen() : nullptr;
+        if (m_attachedScreen == screen) {
+            updateMobileShellMetrics();
+            return;
+        }
+
+        if (m_attachedScreen) {
+            disconnect(m_attachedScreen, nullptr, this, nullptr);
+        }
+
+        m_attachedScreen = screen;
+        if (screen) {
+            connect(screen, &QScreen::geometryChanged, this, [this]() {
+                updateMobileShellMetrics();
+            });
+            connect(screen, &QScreen::availableGeometryChanged, this, [this]() {
+                updateMobileShellMetrics();
+            });
+            connect(screen, &QScreen::orientationChanged, this, [this](Qt::ScreenOrientation) {
+                updateAdaptiveShellMode();
+                updateMobileShellMetrics();
+            });
+        }
+
+        updateAdaptiveShellMode();
+        updateMobileShellMetrics();
+    }
+
+    void MainWindow::handleApplicationFocusChanged(QWidget *old, QWidget *now) {
+        Q_UNUSED(old);
+
+        const bool nativeTextInputFocused = isNativeTextInputWidget(now);
+        if (m_mobileNativeTextInputFocused == nativeTextInputFocused && !nativeTextInputFocused) {
+            updateMobileShellProperties();
+            return;
+        }
+
+        m_mobileNativeTextInputFocused = nativeTextInputFocused;
+
+        if (nativeTextInputFocused) {
+            releaseCurrentWebInputFocus();
+        }
+
+        updateMobileShellProperties();
+        updateMobileShellMetrics();
+    }
+
+    bool MainWindow::isNativeTextInputWidget(QWidget *widget) const {
+        while (widget) {
+            if (qobject_cast<QLineEdit *>(widget)
+                || qobject_cast<QTextEdit *>(widget)
+                || qobject_cast<QPlainTextEdit *>(widget)
+                || qobject_cast<QAbstractSpinBox *>(widget)
+                || qobject_cast<QDateTimeEdit *>(widget)) {
+                return true;
+            }
+            widget = widget->parentWidget();
+        }
+        return false;
+    }
+
+    void MainWindow::releaseCurrentWebInputFocus() {
+        if (m_currentWebApp) {
+            m_currentWebApp->releaseMobileFocus();
+        }
+    }
+
+    void MainWindow::applyCurrentWebMobileMetrics() {
+        if (!m_currentWebApp) {
+            return;
+        }
+
+        m_currentWebApp->applyMobileShellMetrics(m_mobileSafeAreaMargins,
+                                                 m_mobileKeyboardInset,
+                                                 m_softwareKeyboardVisible,
+                                                 property("compactShellMode").toBool());
+    }
+
+    QMargins MainWindow::resolvedMobileSafeAreaMargins() const {
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+        return {};
+#else
+        QScreen *screen = nullptr;
+        if (windowHandle()) {
+            screen = windowHandle()->screen();
+        }
+        if (!screen) {
+            screen = this->screen();
+        }
+        if (!screen) {
+            return {};
+        }
+
+        const QRect screenGeometry = screen->geometry();
+        const QRect availableGeometry = screen->availableGeometry();
+
+        return QMargins(std::max(0, availableGeometry.left() - screenGeometry.left()),
+                        std::max(0, availableGeometry.top() - screenGeometry.top()),
+                        std::max(0, screenGeometry.right() - availableGeometry.right()),
+                        std::max(0, screenGeometry.bottom() - availableGeometry.bottom()));
+#endif
+    }
+
+    int MainWindow::resolvedKeyboardInset() const {
+        if (!qApp || !qApp->inputMethod()) {
+            return 0;
+        }
+
+        const QRectF keyboardRect = qApp->inputMethod()->keyboardRectangle();
+        if (!qApp->inputMethod()->isVisible() || keyboardRect.isEmpty()) {
+            return 0;
+        }
+
+        const int keyboardTop = int(std::floor(keyboardRect.top()));
+        const int overlapFromTop = height() - keyboardTop;
+        const int directHeight = int(std::ceil(keyboardRect.height()));
+        return std::max(0, std::max(overlapFromTop, directHeight));
     }
 
     void MainWindow::showOverlay(QWidget *page) {
@@ -300,6 +693,7 @@ namespace fairwindsk::ui {
             return;
         }
 
+        releaseCurrentWebInputFocus();
         m_activeOverlay = page;
         setChromeEnabled(false);
         ui->stackedWidget_Center->addWidget(page);
@@ -330,12 +724,17 @@ namespace fairwindsk::ui {
 
     void MainWindow::showLauncher() {
         m_currentApp = nullptr;
+        m_currentWebApp = nullptr;
+        m_mobileWebContentFocused = false;
+        m_currentAppStatusSummary.clear();
+        FairWindSK::getInstance()->clearForegroundAppHealth();
         if (m_launcher && ui->stackedWidget_Center->indexOf(m_launcher) >= 0) {
             ui->stackedWidget_Center->setCurrentWidget(m_launcher);
         }
         fairwindsk::runtime::recordUserInteraction(QStringLiteral("navigation"),
                                                    QStringLiteral("show_launcher"),
                                                    m_launcher ? m_launcher->currentPageTitle() : tr("Home"));
+        updateMobileShellProperties();
         syncTopBarToCurrentPage();
     }
 
@@ -344,6 +743,11 @@ namespace fairwindsk::ui {
             auto *currentWidget = ui->stackedWidget_Center->currentWidget();
             if (m_currentApp && m_currentApp->getWidget() != currentWidget) {
                 m_currentApp = nullptr;
+                m_currentWebApp = nullptr;
+            }
+
+            if (!m_currentApp) {
+                FairWindSK::getInstance()->clearForegroundAppHealth();
             }
 
             if (currentWidget == m_launcher) {
@@ -372,6 +776,9 @@ namespace fairwindsk::ui {
                     false);
             } else if (m_currentApp) {
                 m_topBar->setCurrentApp(m_currentApp);
+                if (!m_currentAppStatusSummary.trimmed().isEmpty()) {
+                    m_topBar->setCurrentAppStatusSummary(m_currentAppStatusSummary);
+                }
             } else {
                 m_topBar->setCurrentContext(
                     tr("Apps"),
@@ -446,6 +853,7 @@ namespace fairwindsk::ui {
             fairwindsk::runtime::recordUserInteraction(QStringLiteral("apps"),
                                                        QStringLiteral("launch_failed"),
                                                        hash);
+            m_currentAppStatusSummary.clear();
             showLauncher();
             return;
         }
@@ -459,62 +867,67 @@ namespace fairwindsk::ui {
             // If yes, get its widget from mapWidgets
             widgetApp = m_mapHash2Widget[resolvedHash];
         } else {
-            // Check if the app is an executable
+            // Check if the app is a native executable.
             if (appItem->getName().startsWith("file://")) {
-
-#if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
-                qWarning() << "Native file:// applications are not supported on mobile builds:" << appItem->getName();
-                showLauncher();
-                return;
-#else
-
-                //https://forum.qt.io/topic/44091/embed-an-application-inside-a-qt-window-solved/16
-                //https://forum.qt.io/topic/101510/calling-a-process-in-the-main-app-and-return-the-process-s-window-id
-
-                // Get the path to the executable
-                const auto executable = appItem->getName().replace("file://", "");
-
-                // Get the executable arguments
-                const auto arguments = appItem->getArguments();
-
-                // Check if the debug is active
-                //if (fairWindSK->isDebug()) {
-                    // Write a message
-                    qDebug() << appItem->getName() << " Native APP:  " << executable << " " << arguments;
-                //}
-
-                // Create a process
-                const auto process = new QProcess(this);
-
-                // Set th executable
-                process->setProgram(executable);
-
-                // Set the parameters
-                process->setArguments(arguments);
-
-                // Start the process
-                process->start();
-
-                appItem->setProcess(process);
                 if (ownsFallbackAppItem) {
                     appItem->deleteLater();
                 }
                 fairwindsk::runtime::recordUserInteraction(QStringLiteral("apps"),
-                                                           QStringLiteral("launch_native"),
+                                                           QStringLiteral("launch_native_blocked"),
                                                            resolvedHash,
                                                            QJsonObject{
-                                                               {QStringLiteral("executable"), executable}
+                                                               {QStringLiteral("reason"), QStringLiteral("single_window_model")}
                                                            });
+                drawer::warning(this,
+                                tr("Single Window Mode"),
+                                tr("Native file applications cannot be launched because FairWindSK keeps all interaction inside the marine display window."));
                 showLauncher();
                 return;
-#endif
-
             } else {
                 // Create a new web instance
                 const auto web = new web::Web(nullptr, appItem, fairWindSK->getWebEngineProfile());
                 if (ownsFallbackAppItem) {
                     appItem->setParent(web);
                 }
+
+                connect(web, &web::Web::statusSummaryChanged, this, [this, web](const QString &summary, const bool degraded) {
+                    if (ui->stackedWidget_Center->currentWidget() != web) {
+                        return;
+                    }
+                    m_currentAppStatusSummary = summary;
+                    FairWindSK::getInstance()->setForegroundAppHealth(summary, degraded);
+                    syncTopBarToCurrentPage();
+                });
+                connect(web, &web::Web::mobileFocusChanged, this, [this, web](const bool webContentFocused, const bool textInputLikely) {
+                    if (ui->stackedWidget_Center->currentWidget() != web) {
+                        return;
+                    }
+
+                    m_mobileWebContentFocused = webContentFocused;
+                    if (webContentFocused && m_mobileNativeTextInputFocused) {
+                        if (auto *focusWidget = QApplication::focusWidget()) {
+                            focusWidget->clearFocus();
+                        }
+                        m_mobileNativeTextInputFocused = false;
+                    }
+
+                    if (!textInputLikely && !webContentFocused && qApp && qApp->inputMethod()) {
+                        qApp->inputMethod()->hide();
+                    }
+
+                    updateMobileShellProperties();
+                    updateMobileShellMetrics();
+                });
+                connect(web, &web::Web::mobileViewportChanged, this, [this, web](const QRect &, const bool keyboardVisible) {
+                    if (ui->stackedWidget_Center->currentWidget() != web) {
+                        return;
+                    }
+
+                    if (!keyboardVisible && !m_mobileNativeTextInputFocused) {
+                        m_mobileWebContentFocused = false;
+                    }
+                    updateMobileShellMetrics();
+                });
 
                 // Connect the remove app signal to the onRemoveApp member
                 connect(web, &web::Web::removeApp, this, &MainWindow::onRemoveApp);
@@ -547,6 +960,9 @@ namespace fairwindsk::ui {
 
             // Set the current app
             m_currentApp = appItem;
+            m_currentWebApp = qobject_cast<web::Web *>(widgetApp);
+            m_currentAppStatusSummary.clear();
+            FairWindSK::getInstance()->clearForegroundAppHealth();
 
             // Update the UI with the new widget
             ui->stackedWidget_Center->setCurrentWidget(widgetApp);
@@ -557,11 +973,12 @@ namespace fairwindsk::ui {
                                                        QStringLiteral("launch"),
                                                        resolvedHash,
                                                        QJsonObject{
-                                                           {QStringLiteral("displayName"), appItem->getDisplayName()},
+                                                           {QStringLiteral("displayName"), appItem->getDisplayName(true)},
                                                            {QStringLiteral("kind"), appItem->getName().startsWith("file://")
                                                                                         ? QStringLiteral("native")
-                                                                                        : QStringLiteral("web")}
+                                                                                       : QStringLiteral("web")}
                                                        });
+            applyCurrentWebMobileMetrics();
 
             // Set the window size
             //setSize();
@@ -604,6 +1021,10 @@ namespace fairwindsk::ui {
              m_currentApp->getName() == hash ||
              m_currentApp->getName() == name)) {
             m_currentApp = nullptr;
+            m_currentWebApp = nullptr;
+            m_mobileWebContentFocused = false;
+            m_currentAppStatusSummary.clear();
+            FairWindSK::getInstance()->clearForegroundAppHealth();
             m_topBar->setCurrentApp(nullptr);
         }
 
@@ -626,6 +1047,7 @@ namespace fairwindsk::ui {
 
         // Set the launcher as current application
         showLauncher();
+        updateMobileShellMetrics();
     }
 /*
  * onApps
@@ -693,12 +1115,26 @@ namespace fairwindsk::ui {
         if (!m_settingsPage) {
             m_settingsPage = new settings::Settings(this, fallbackWidget ? fallbackWidget : m_launcher);
             ui->stackedWidget_Center->addWidget(m_settingsPage);
+            connect(m_settingsPage, &settings::Settings::layoutEditHighlightModeChanged, this, [this](const bool topBarActive, const bool bottomBarActive) {
+                if (m_topBar) {
+                    m_topBar->setLayoutEditHighlightEnabled(topBarActive);
+                }
+                if (m_bottomBar) {
+                    m_bottomBar->setLayoutEditHighlightEnabled(bottomBarActive);
+                }
+            });
         } else {
             m_settingsPage->setCurrentWidget(fallbackWidget ? fallbackWidget : m_launcher);
         }
+
+        m_settingsPage->refreshLayoutEditHighlightMode();
     }
 
     void MainWindow::prewarmPersistentPages() {
+        if (fairwindsk::runtime::isShutdownRequested()) {
+            return;
+        }
+
         QWidget *currentWidget = ui->stackedWidget_Center->currentWidget();
         ensureAboutPage(m_launcher);
 #if defined(Q_OS_LINUX) && defined(Q_PROCESSOR_ARM)
@@ -712,13 +1148,22 @@ namespace fairwindsk::ui {
     }
 
     void MainWindow::prewarmPersistentPagesAfterStartup() {
-        QTimer::singleShot(0, this, &MainWindow::prewarmPersistentPages);
+        if (fairwindsk::runtime::isShutdownRequested()) {
+            return;
+        }
+
+        QTimer::singleShot(0, this, [this]() {
+            if (!fairwindsk::runtime::isShutdownRequested()) {
+                prewarmPersistentPages();
+            }
+        });
     }
 
     void MainWindow::setSize() {
 
         // Get the FairWind singleton
         const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
+        const QString windowMode = fairWindSK->getConfiguration()->getWindowMode();
 
         const auto unlockWindowSize = [this]() {
             setMinimumSize(QSize(0, 0));
@@ -730,20 +1175,41 @@ namespace fairwindsk::ui {
             setMaximumSize(width, height);
         };
 
+        const auto applyWindowHints = [this](const bool frameless, const bool staysOnTop) {
+            setWindowFlag(Qt::FramelessWindowHint, frameless);
+            setWindowFlag(Qt::WindowStaysOnTopHint, staysOnTop);
+        };
+
+        const auto clearWindowState = [this]() {
+            setWindowState(windowState() & ~(Qt::WindowFullScreen | Qt::WindowMaximized | Qt::WindowMinimized));
+        };
+
+        const auto raiseAndActivate = [this]() {
+            raise();
+            activateWindow();
+        };
+
         const QRect fallbackGeometry(0,
                                      0,
                                      std::max(1, fairWindSK->getConfiguration()->getWindowWidth()),
                                      std::max(1, fairWindSK->getConfiguration()->getWindowHeight()));
-        const QScreen *screen = QGuiApplication::primaryScreen();
-        const QRect screenGeometry = screen ? screen->geometry() : fallbackGeometry;
+        const QScreen *screen = screenForWindow(this);
+        const QRect screenGeometry = validGeometryOrFallback(screen ? screen->geometry() : QRect(), fallbackGeometry);
+        const QRect rawAvailableGeometry = validGeometryOrFallback(screen ? screen->availableGeometry() : QRect(), screenGeometry);
+        const QRect availableGeometry = clampedLinuxArmGeometry(rawAvailableGeometry, screen, screenGeometry.size());
+        const QRect fullScreenGeometry = clampedLinuxArmGeometry(screenGeometry, screen, screenGeometry.size());
 
-        if (fairWindSK->getConfiguration()->getWindowMode()=="centered") {
+        if (windowMode=="centered") {
+            applyWindowHints(false, false);
+            clearWindowState();
 
-            const auto width = fairWindSK->getConfiguration()->getWindowWidth();
-            const auto height = fairWindSK->getConfiguration()->getWindowHeight();
+            const auto width = std::min(std::max(1, fairWindSK->getConfiguration()->getWindowWidth()),
+                                        std::max(1, availableGeometry.width()));
+            const auto height = std::min(std::max(1, fairWindSK->getConfiguration()->getWindowHeight()),
+                                         std::max(1, availableGeometry.height()));
 
-            const auto left = (screenGeometry.width() - width) / 2;
-            const auto top = (screenGeometry.height() - height) / 2;
+            const auto left = availableGeometry.left() + (availableGeometry.width() - width) / 2;
+            const auto top = availableGeometry.top() + (availableGeometry.height() - height) / 2;
 
             move(left,top);
             resize(width, height);
@@ -751,23 +1217,56 @@ namespace fairwindsk::ui {
 
             // Show windowed
             show();
-            setWindowState(windowState() & ~Qt::WindowMinimized);
-            raise();  // for MacOS
-            activateWindow(); // for Windows
+            raiseAndActivate();
 
-        } else if (fairWindSK->getConfiguration()->getWindowMode()=="maximized") {
+        } else if (windowMode=="maximized") {
             unlockWindowSize();
+            clearWindowState();
 
-            // Set the window maximized
-            showMaximized();
+            if (kUseLinuxArmWindowGeometryWorkaround) {
+                applyWindowHints(true, false);
+                setGeometry(availableGeometry);
+                show();
+                raiseAndActivate();
+                QTimer::singleShot(0, this, [this, availableGeometry]() {
+                    if (FairWindSK::getInstance()->getConfiguration()->getWindowMode() == QStringLiteral("maximized")) {
+                        setGeometry(availableGeometry);
+                    }
+                });
+            } else {
+                applyWindowHints(false, false);
 
-        } else if (fairWindSK->getConfiguration()->getWindowMode()=="fullscreen") {
+                // Set the window maximized
+                showMaximized();
+            }
+
+        } else if (windowMode=="fullscreen") {
             unlockWindowSize();
+            clearWindowState();
 
-            // Show the window full screen
-            showFullScreen();
+            if (kUseLinuxArmWindowGeometryWorkaround) {
+                applyWindowHints(true, true);
+                setGeometry(fullScreenGeometry);
+
+                // Show the window full screen
+                showFullScreen();
+                raiseAndActivate();
+                QTimer::singleShot(0, this, [this, fullScreenGeometry]() {
+                    if (FairWindSK::getInstance()->getConfiguration()->getWindowMode() == QStringLiteral("fullscreen")) {
+                        setGeometry(fullScreenGeometry);
+                        raise();
+                    }
+                });
+            } else {
+                applyWindowHints(false, false);
+
+                // Show the window full screen
+                showFullScreen();
+            }
 
         } else {
+            applyWindowHints(false, false);
+            clearWindowState();
             const auto left = fairWindSK->getConfiguration()->getWindowLeft();
             const auto top = fairWindSK->getConfiguration()->getWindowTop();
             const auto width = fairWindSK->getConfiguration()->getWindowWidth();
@@ -778,26 +1277,40 @@ namespace fairwindsk::ui {
 
             // Show windowed
             show();
-            setWindowState(windowState() & ~Qt::WindowMinimized);
-            raise();  // for MacOS
-            activateWindow(); // for Windows
+            raiseAndActivate();
         }
     }
 
     void MainWindow::applyRuntimeConfiguration() {
         const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
-        if (!fairWindSK) {
+        if (!fairWindSK || fairwindsk::runtime::isShutdownRequested()) {
             return;
         }
 
-        m_bottomBar->setAnchorIcon(fairWindSK->checkAnchorApp());
+        if (m_bottomBar) {
+            m_bottomBar->setAnchorIcon(fairWindSK->checkAnchorApp());
+        }
         if (m_topBar) {
             m_topBar->refreshFromConfiguration();
         }
+        if (fairwindsk::runtime::isShutdownRequested()) {
+            return;
+        }
+
         if (m_bottomBar) {
             m_bottomBar->refreshFromConfiguration();
         }
+        if (fairwindsk::runtime::isShutdownRequested()) {
+            return;
+        }
+
         setSize();
+        updateAdaptiveShellMode();
+        updateMobileShellMetrics();
+        updateDrawerGeometry();
+        if (fairwindsk::runtime::isShutdownRequested()) {
+            return;
+        }
 
         if (m_launcher) {
             m_launcher->refreshFromConfiguration(true);
@@ -904,6 +1417,12 @@ namespace fairwindsk::ui {
         if (m_settingsPage->hasPendingChanges()) {
             m_settingsPage->saveChanges();
         }
+        if (m_topBar) {
+            m_topBar->setLayoutEditHighlightEnabled(false);
+        }
+        if (m_bottomBar) {
+            m_bottomBar->setLayoutEditHighlightEnabled(false);
+        }
         m_settingsPage->setCurrentWidget(targetFallback);
 
         if (showFallback && targetFallback && ui->stackedWidget_Center->indexOf(targetFallback) >= 0) {
@@ -941,11 +1460,6 @@ namespace fairwindsk::ui {
         if (isDrawerOpen()) {
             finishActiveDrawer(int(QMessageBox::Cancel));
             event->ignore();
-            QTimer::singleShot(0, this, [this]() {
-                if (isVisible()) {
-                    close();
-                }
-            });
             return;
         }
 
@@ -955,41 +1469,38 @@ namespace fairwindsk::ui {
             m_settingsPage->saveChanges();
         }
 
-        QTimer::singleShot(0, this, [this]() {
-            fairwindsk::runtime::recordUserInteraction(QStringLiteral("lifecycle"),
-                                                       QStringLiteral("quit_confirmation_requested"),
-                                                       QStringLiteral("FairWindSK"));
-            const QMessageBox::StandardButton reply = drawer::question(this,
-                                                                       tr("Quit FairWindSK"),
-                                                                       tr("Are you sure you want to exit FairWindSK?"),
-                                                                       QMessageBox::Yes | QMessageBox::No,
-                                                                       QMessageBox::No);
-            if (reply == QMessageBox::Yes) {
-                m_quitConfirmed = true;
-                fairwindsk::runtime::recordUserInteraction(QStringLiteral("lifecycle"),
-                                                           QStringLiteral("quit_confirmed"),
-                                                           QStringLiteral("FairWindSK"));
-                close();
-            } else {
-                fairwindsk::runtime::recordUserInteraction(QStringLiteral("lifecycle"),
-                                                           QStringLiteral("quit_cancelled"),
-                                                           QStringLiteral("FairWindSK"));
-            }
-        });
+        fairwindsk::runtime::recordUserInteraction(QStringLiteral("lifecycle"),
+                                                   QStringLiteral("quit_confirmation_requested"),
+                                                   QStringLiteral("FairWindSK"));
+        auto *content = new QLabel(tr("Are you sure you want to exit FairWindSK?"), this);
+        content->setWordWrap(true);
+        showDrawerAsync(tr("Quit FairWindSK"),
+                        content,
+                        {
+                            {tr("Yes"), int(QMessageBox::Yes), false},
+                            {tr("No"), int(QMessageBox::No), true}
+                        },
+                        [this](const int result) {
+                            if (result == QMessageBox::Yes) {
+                                m_quitConfirmed = true;
+                                fairwindsk::runtime::recordUserInteraction(QStringLiteral("lifecycle"),
+                                                                           QStringLiteral("quit_confirmed"),
+                                                                           QStringLiteral("FairWindSK"));
+                                close();
+                            } else {
+                                fairwindsk::runtime::recordUserInteraction(QStringLiteral("lifecycle"),
+                                                                           QStringLiteral("quit_cancelled"),
+                                                                           QStringLiteral("FairWindSK"));
+                            }
+                        },
+                        int(QMessageBox::No));
     }
 
-    /*
-     * getWIdByPId
-     * Return the window id given a process id.
-     * This method is API dependant.
-     * Actually now it is just a placeholder
-     */
-    WId MainWindow::getWIdByPId(qint64 pid) {
-        WId result = 0;
-
-        // ToDo: Implement the actual code
-
-        return result;
+    void MainWindow::resizeEvent(QResizeEvent *event) {
+        QMainWindow::resizeEvent(event);
+        updateAdaptiveShellMode();
+        updateMobileShellMetrics();
+        updateDrawerGeometry();
     }
 
     /*
@@ -997,6 +1508,13 @@ namespace fairwindsk::ui {
      * MainWindow's destructor
      */
     MainWindow::~MainWindow() {
+        if (qApp) {
+            disconnect(qApp, nullptr, this, nullptr);
+            if (qApp->inputMethod()) {
+                disconnect(qApp->inputMethod(), nullptr, this, nullptr);
+            }
+        }
+
         if (s_instance == this) {
             s_instance = nullptr;
         }

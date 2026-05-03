@@ -7,6 +7,7 @@
 
 #include <QPushButton>
 #include <QSlider>
+#include <QLabel>
 #include <QToolButton>
 
 #include "AnchorBar.hpp"
@@ -14,6 +15,7 @@
 #include "FairWindSK.hpp"
 #include "ui/GeoCoordinateUtils.hpp"
 #include "ui/IconUtils.hpp"
+#include "ui/widgets/SignalKMetricState.hpp"
 #include "ui_AnchorBar.h"
 
 
@@ -137,6 +139,21 @@ namespace fairwindsk::ui::bottombar {
         connect(ui->toolButton_Release, &QToolButton::clicked, this, &AnchorBar::onReleaseClicked);
 
         applyComfortStyle();
+        if (auto *client = FairWindSK::getInstance()->getSignalKClient()) {
+            connect(client, &fairwindsk::signalk::Client::connectionHealthStateChanged, this,
+                    [this](const fairwindsk::signalk::Client::ConnectionHealthState,
+                           const QString &,
+                           const QDateTime &,
+                           const QString &) {
+                        updatePosition(m_lastPositionUpdate);
+                        updateDepth(m_lastDepthUpdate);
+                        updateBearing(m_lastBearingUpdate);
+                        updateDistance(m_lastDistanceUpdate);
+                        updateRode(m_lastRodeUpdate);
+                        updateCurrentRadius(m_lastCurrentRadiusUpdate);
+                        updateMaxRadius(m_lastMaxRadiusUpdate);
+                    });
+        }
     }
 
     void AnchorBar::changeEvent(QEvent *event) {
@@ -473,37 +490,31 @@ namespace fairwindsk::ui::bottombar {
  */
     void AnchorBar::updatePosition(const QJsonObject &update) {
         m_lastPositionUpdate = update;
+        const auto value = fairwindsk::signalk::Client::getGeoCoordinateFromUpdateByPath(update);
+        const bool hasValue = !update.isEmpty() && value.isValid();
 
-        // Check if for any reason the update is empty
-        if (update.isEmpty()) {
-
-            // Exit the method
-            return;
-        }
-
-        // Get the value
-        auto value = fairwindsk::signalk::Client::getGeoCoordinateFromUpdateByPath(update);
-
-        if (!value.isValid())
-        {
-            ui->widget_Position->setVisible(false);
-        } else {
+        QString latitudeText;
+        QString longitudeText;
+        if (hasValue) {
             const auto configuration = FairWindSK::getInstance()->getConfiguration();
-            ui->label_Latitude->setText(
-                fairwindsk::ui::geo::formatSingleCoordinate(
-                    value.latitude(),
-                    true,
-                    configuration->getCoordinateFormat()));
-            ui->label_Longitude->setText(
-                fairwindsk::ui::geo::formatSingleCoordinate(
-                    value.longitude(),
-                    false,
-                    configuration->getCoordinateFormat()));
-
-            if (!ui->widget_Position->isVisible()) {
-                ui->widget_Position->setVisible(true);
-            }
+            latitudeText = fairwindsk::ui::geo::formatSingleCoordinate(
+                value.latitude(),
+                true,
+                configuration->getCoordinateFormat());
+            longitudeText = fairwindsk::ui::geo::formatSingleCoordinate(
+                value.longitude(),
+                false,
+                configuration->getCoordinateFormat());
         }
+
+        fairwindsk::ui::widgets::applySignalKDualMetricPresentation(
+            ui->label_Latitude,
+            ui->label_Longitude,
+            ui->widget_Position,
+            tr("Anchor position"),
+            latitudeText,
+            longitudeText,
+            fairwindsk::ui::widgets::signalKMetricState(hasValue));
     }
 
     /*
@@ -512,35 +523,22 @@ namespace fairwindsk::ui::bottombar {
  */
     void AnchorBar::updateDepth(const QJsonObject &update) {
         m_lastDepthUpdate = update;
-
-        // Check if for any reason the update is empty
-        if (update.isEmpty()) {
-
-            // Exit the method
-            return;
-        }
-
-        // Get the value
-        auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
-
-        // Check if value is valid
-        if (std::isnan(value)) {
-            ui->widget_Depth->setVisible(false);
-        } else {
-
-            const auto text = m_units->formatSignalKValue(
-                QString::fromStdString(m_signalkPaths["anchor.depth"].get<std::string>()),
-                value,
-                "m",
-                FairWindSK::getInstance()->getConfiguration()->getDepthUnits());
-
-            // Set the speed over ground label from the UI to the formatted value
-            ui->label_Depth->setText(text);
-
-            if (!ui->widget_Depth->isVisible()) {
-                ui->widget_Depth->setVisible(true);
-            }
-        }
+        const auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
+        const bool hasValue = !update.isEmpty() && !std::isnan(value);
+        const QString text = hasValue
+                                 ? m_units->formatSignalKValue(
+                                       QString::fromStdString(m_signalkPaths["anchor.depth"].get<std::string>()),
+                                       value,
+                                       "m",
+                                       FairWindSK::getInstance()->getConfiguration()->getDepthUnits())
+                                 : QString();
+        fairwindsk::ui::widgets::applySignalKMetricPresentation(
+            ui->label_Depth,
+            ui->label_unitDepth,
+            ui->widget_Depth,
+            tr("Anchor depth"),
+            text,
+            fairwindsk::ui::widgets::signalKMetricState(hasValue));
     }
 
     /*
@@ -549,36 +547,22 @@ namespace fairwindsk::ui::bottombar {
      */
     void AnchorBar::updateBearing(const QJsonObject &update) {
         m_lastBearingUpdate = update;
-
-        // Check if for any reason the update is empty
-        if (update.isEmpty()) {
-
-            // Exit the method
-            return;
-        }
-
-        // Get the value
-        auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
-
-        // Check if value is valid
-        if (std::isnan(value)) {
-            ui->widget_Bearing->setVisible(false);
-        } else {
-
-            const auto text = m_units->formatSignalKValue(
-                QString::fromStdString(m_signalkPaths["anchor.bearing"].get<std::string>()),
-                value,
-                "rad",
-                "deg");
-
-            // Set the course over ground label from the UI to the formatted value
-            ui->label_Bearing->setText(text);
-
-            if (!ui->widget_Bearing->isVisible()) {
-                ui->widget_Bearing->setVisible(true);
-            }
-        }
-
+        const auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
+        const bool hasValue = !update.isEmpty() && !std::isnan(value);
+        const QString text = hasValue
+                                 ? m_units->formatSignalKValue(
+                                       QString::fromStdString(m_signalkPaths["anchor.bearing"].get<std::string>()),
+                                       value,
+                                       "rad",
+                                       "deg")
+                                 : QString();
+        fairwindsk::ui::widgets::applySignalKMetricPresentation(
+            ui->label_Bearing,
+            ui->label_unitBearing,
+            ui->widget_Bearing,
+            tr("Anchor bearing"),
+            text,
+            fairwindsk::ui::widgets::signalKMetricState(hasValue));
     }
 
     /*
@@ -587,35 +571,22 @@ namespace fairwindsk::ui::bottombar {
  */
     void AnchorBar::updateDistance(const QJsonObject &update) {
         m_lastDistanceUpdate = update;
-
-        // Check if for any reason the update is empty
-        if (update.isEmpty()) {
-
-            // Exit the method
-            return;
-        }
-
-        // Get the value
-        auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
-
-        // Check if value is valid
-        if (std::isnan(value)) {
-            ui->widget_Distance->setVisible(false);
-        } else {
-
-            const auto text = m_units->formatSignalKValue(
-                QString::fromStdString(m_signalkPaths["anchor.distance"].get<std::string>()),
-                value,
-                "m",
-                FairWindSK::getInstance()->getConfiguration()->getDistanceUnits());
-
-            // Set the speed over ground label from the UI to the formatted value
-            ui->label_Distance->setText(text);
-
-            if (!ui->widget_Distance->isVisible()) {
-                ui->widget_Distance->setVisible(true);
-            }
-        }
+        const auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
+        const bool hasValue = !update.isEmpty() && !std::isnan(value);
+        const QString text = hasValue
+                                 ? m_units->formatSignalKValue(
+                                       QString::fromStdString(m_signalkPaths["anchor.distance"].get<std::string>()),
+                                       value,
+                                       "m",
+                                       FairWindSK::getInstance()->getConfiguration()->getDistanceUnits())
+                                 : QString();
+        fairwindsk::ui::widgets::applySignalKMetricPresentation(
+            ui->label_Distance,
+            ui->label_unitDistance,
+            ui->widget_Distance,
+            tr("Anchor distance"),
+            text,
+            fairwindsk::ui::widgets::signalKMetricState(hasValue));
     }
 
     /*
@@ -624,35 +595,22 @@ namespace fairwindsk::ui::bottombar {
  */
     void AnchorBar::updateRode(const QJsonObject &update) {
         m_lastRodeUpdate = update;
-
-        // Check if for any reason the update is empty
-        if (update.isEmpty()) {
-
-            // Exit the method
-            return;
-        }
-
-        // Get the value
-        auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
-
-        // Check if value is valid
-        if (std::isnan(value)) {
-            ui->widget_Rode->setVisible(false);
-        } else {
-
-            const auto text = m_units->formatSignalKValue(
-                QString::fromStdString(m_signalkPaths["anchor.rode"].get<std::string>()),
-                value,
-                "m",
-                FairWindSK::getInstance()->getConfiguration()->getRangeUnits());
-
-            // Set the speed over ground label from the UI to the formatted value
-            ui->label_Rode->setText(text);
-
-            if (!ui->widget_Rode->isVisible()) {
-                ui->widget_Rode->setVisible(true);
-            }
-        }
+        const auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
+        const bool hasValue = !update.isEmpty() && !std::isnan(value);
+        const QString text = hasValue
+                                 ? m_units->formatSignalKValue(
+                                       QString::fromStdString(m_signalkPaths["anchor.rode"].get<std::string>()),
+                                       value,
+                                       "m",
+                                       FairWindSK::getInstance()->getConfiguration()->getRangeUnits())
+                                 : QString();
+        fairwindsk::ui::widgets::applySignalKMetricPresentation(
+            ui->label_Rode,
+            ui->label_unitRode,
+            ui->widget_Rode,
+            tr("Anchor rode"),
+            text,
+            fairwindsk::ui::widgets::signalKMetricState(hasValue));
     }
 
     /*
@@ -661,44 +619,29 @@ namespace fairwindsk::ui::bottombar {
  */
     void AnchorBar::updateCurrentRadius(const QJsonObject &update) {
         m_lastCurrentRadiusUpdate = update;
-
-        // Check if for any reason the update is empty
-        if (update.isEmpty()) {
-
-            // Exit the method
-            return;
-        }
-
-        // Get the value
         auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
-
-        // Check if value is valid
-        if (std::isnan(value)) {
-            ui->widget_Radius->setVisible(false);
-        } else {
-
+        const bool hasValue = !update.isEmpty() && !std::isnan(value);
+        QString text;
+        if (hasValue) {
             value = m_units->convertSignalKValue(
                 QString::fromStdString(m_signalkPaths["anchor.radius"].get<std::string>()),
                 value,
                 "m",
                 FairWindSK::getInstance()->getConfiguration()->getRangeUnits());
-
-            // Set the slider value
             ui->horizontalSlider_CurrentRadius->setValue(static_cast<int>(value));
-
-            const auto text = m_units->formatSignalKValue(
+            text = m_units->formatSignalKValue(
                 QString::fromStdString(m_signalkPaths["anchor.radius"].get<std::string>()),
                 fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update),
                 "m",
                 FairWindSK::getInstance()->getConfiguration()->getRangeUnits());
-
-            // Set the speed over ground label from the UI to the formatted value
-            ui->label_CurrentRadius->setText(text);
-
-            if (!ui->widget_Radius->isVisible()) {
-                ui->widget_Radius->setVisible(true);
-            }
         }
+        fairwindsk::ui::widgets::applySignalKMetricPresentation(
+            ui->label_CurrentRadius,
+            ui->label_unitCurrentRadius,
+            ui->widget_Radius,
+            tr("Anchor radius"),
+            text,
+            fairwindsk::ui::widgets::signalKMetricState(hasValue));
     }
 
     /*
@@ -707,45 +650,29 @@ namespace fairwindsk::ui::bottombar {
  */
     void AnchorBar::updateMaxRadius(const QJsonObject &update) {
         m_lastMaxRadiusUpdate = update;
-
-        // Check if for any reason the update is empty
-        if (update.isEmpty()) {
-
-            // Exit the method
-            return;
-        }
-
-        // Get the value
         auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
-
-        // Check if value is valid
-        if (std::isnan(value)) {
-            ui->widget_Radius->setVisible(false);
-        } else {
-
+        const bool hasValue = !update.isEmpty() && !std::isnan(value);
+        QString text;
+        if (hasValue) {
             value = m_units->convertSignalKValue(
                 QString::fromStdString(m_signalkPaths["anchor.max"].get<std::string>()),
                 value,
                 "m",
                 FairWindSK::getInstance()->getConfiguration()->getRangeUnits());
-
-
-            // Set the maximum value on the slider
             ui->horizontalSlider_CurrentRadius->setMaximum(static_cast<int>(value));
-
-            const auto text = m_units->formatSignalKValue(
+            text = m_units->formatSignalKValue(
                 QString::fromStdString(m_signalkPaths["anchor.max"].get<std::string>()),
                 fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update),
                 "m",
                 FairWindSK::getInstance()->getConfiguration()->getRangeUnits());
-
-            // Set the speed over ground label from the UI to the formatted value
-            ui->label_MaxRadius->setText(text);
-
-            if (!ui->widget_Radius->isVisible()) {
-                ui->widget_Radius->setVisible(true);
-            }
         }
+        fairwindsk::ui::widgets::applySignalKMetricPresentation(
+            ui->label_MaxRadius,
+            ui->label_unitMaxRadius,
+            ui->widget_Radius,
+            tr("Anchor max radius"),
+            text,
+            fairwindsk::ui::widgets::signalKMetricState(hasValue));
     }
 
 

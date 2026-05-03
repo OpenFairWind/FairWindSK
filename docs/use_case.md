@@ -5,13 +5,13 @@ FairWindSK provides a kiosk-like desktop for running Signal K web applications a
 ## Navigation dashboard with Signal K apps
 
 - Connect FairWindSK to a vessel’s Signal K server and let it discover installed web apps such as Freeboard-SK or KIP through `/skServer/webapps`.
-- Use the desktop tiles to launch each app in its own web view. On desktop targets, `SHIFT+TAB` returns focus to the FairWindSK desktop when a web app occupies the screen.
+- Use the desktop tiles to launch each app in its own embedded web view. On desktop targets, `SHIFT+TAB` returns focus to the FairWindSK window.
 - Keep the bottom bars visible for quick access to alarms, person overboard recovery, anchor status, and autopilot state.
 
 ## Mixed local and remote applications
 
-- Add local navigation tools (e.g., OpenCPN) using `file://` URLs in `fairwindsk.json`. Provide custom icons and display names through the `signalk` metadata block. This local-native-app flow is intended for desktop targets.
-- Combine these with remote web apps from the Signal K catalog; ordering is controlled via the `fairwind.order` field so both local and server-hosted tools appear in one grid.
+- Add remote or locally hosted web applications with `http://` or `https://` URLs in `fairwindsk.json`. Provide custom icons and display names through the `signalk` metadata block.
+- Combine these with web apps from the Signal K catalog; ordering is controlled via the `fairwind.order` field so configured and server-hosted tools appear in one grid. Native `file://` apps are blocked to preserve the single-window marine display model.
 
 ## Autopilot and anchor workflows
 

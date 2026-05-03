@@ -2,30 +2,51 @@
 // Created by Raffaele Montella on 12/04/21.
 //
 
+#include <algorithm>
+#include <cmath>
+
 #include <QTimer>
 #include <QAbstractButton>
+#include <QFrame>
 #include <QGeoCoordinate>
 #include <QHBoxLayout>
+#include <QLayoutItem>
 #include <QToolButton>
 #include <QString>
 #include <QFontMetrics>
+#include <QGraphicsDropShadowEffect>
+#include <QLabel>
 #include <QPixmap>
 #include <nlohmann/json.hpp>
 
 #include "TopBar.hpp"
+#include "../bottombar/BottomBar.hpp"
 #include "../web/Web.hpp"
 #include "ui/IconUtils.hpp"
 #include "ui/GeoCoordinateUtils.hpp"
+#include "ui/layout/BarLayout.hpp"
 #include <signalk/Waypoint.hpp>
 
 namespace fairwindsk::ui::topbar {
     namespace {
+        enum class MetricFreshnessState {
+            Live,
+            Stale,
+            Missing
+        };
+
+        QString configuredMetricTitle(const QString &title, const bool pathConfigured) {
+            return pathConfigured
+                       ? title
+                       : TopBar::tr("%1 (not configured)").arg(title);
+        }
+
         QString chromeToolButtonStyle(const fairwindsk::ui::ComfortChromeColors &colors) {
             return QStringLiteral(
                 "QToolButton {"
                 " background: transparent;"
                 " border: none;"
-                " padding: 6px;"
+                " padding: 0px;"
                 " color: %1;"
                 " }"
                 "QToolButton:hover { background: %2; border-radius: 8px; color: %1; }"
@@ -60,6 +81,691 @@ namespace fairwindsk::ui::topbar {
             }
             return QStringLiteral(":/resources/svg/OpenBridge/comfort-default.svg");
         }
+
+        bool isFramelessExpandedWidget(const fairwindsk::ui::layout::LayoutEntry &entry) {
+            return entry.widgetId == QStringLiteral("position") ||
+                   entry.widgetId == QStringLiteral("current_context") ||
+                   entry.widgetId == QStringLiteral("clock_icons");
+        }
+
+        MetricFreshnessState signalKMetricFreshnessState(const bool hasValue, const bool pathConfigured = true) {
+            if (!pathConfigured) {
+                return MetricFreshnessState::Missing;
+            }
+            if (!hasValue) {
+                return MetricFreshnessState::Missing;
+            }
+
+            auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+            const auto *client = fairWindSK ? fairWindSK->getSignalKClient() : nullptr;
+            if (!client) {
+                return MetricFreshnessState::Stale;
+            }
+
+            return client->connectionHealthState() == fairwindsk::signalk::Client::ConnectionHealthState::Live
+                       ? MetricFreshnessState::Live
+                       : MetricFreshnessState::Stale;
+        }
+
+        QString signalKMetricTooltip(const QString &title, const MetricFreshnessState state, const bool pathConfigured = true) {
+            auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+            const auto *client = fairWindSK ? fairWindSK->getSignalKClient() : nullptr;
+            QString statusLine;
+            if (!pathConfigured) {
+                statusLine = TopBar::tr("Not configured");
+            } else {
+                switch (state) {
+                    case MetricFreshnessState::Live:
+                        statusLine = TopBar::tr("Live");
+                        break;
+                    case MetricFreshnessState::Stale:
+                        statusLine = TopBar::tr("Stale");
+                        break;
+                    case MetricFreshnessState::Missing:
+                        statusLine = TopBar::tr("Missing");
+                        break;
+                }
+            }
+
+            QString tooltip = TopBar::tr("%1: %2").arg(title, statusLine);
+            if (client && client->lastStreamUpdate().isValid()) {
+                tooltip += TopBar::tr("\nLast live update %1")
+                               .arg(client->lastStreamUpdate().toLocalTime().toString(QStringLiteral("dd-MM hh:mm:ss")));
+            }
+            return tooltip;
+        }
+
+        void applyMetricPresentation(QWidget *widget,
+                                     QLabel *valueLabel,
+                                     QLabel *unitLabel,
+                                     const QString &title,
+                                     const QString &text,
+                                     const MetricFreshnessState state,
+                                     const bool showWhenMissing = true,
+                                     const bool pathConfigured = true) {
+            if (!widget || !valueLabel) {
+                return;
+            }
+
+            auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+            const auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+            const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+            const auto chrome = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, valueLabel->palette(), false);
+            const auto status = fairwindsk::ui::resolveComfortStatusColors(configuration, preset, valueLabel->palette());
+
+            QColor textColor = chrome.text;
+            QFont font = valueLabel->font();
+            font.setItalic(false);
+            font.setBold(false);
+
+            switch (state) {
+                case MetricFreshnessState::Live:
+                    textColor = chrome.text;
+                    break;
+                case MetricFreshnessState::Stale:
+                    textColor = status.warningFill;
+                    font.setBold(true);
+                    break;
+                case MetricFreshnessState::Missing:
+                    textColor = chrome.disabledText;
+                    font.setItalic(true);
+                    break;
+            }
+
+            valueLabel->setFont(font);
+            valueLabel->setText(state == MetricFreshnessState::Missing ? QStringLiteral("--") : text);
+            valueLabel->setStyleSheet(QStringLiteral("QLabel { color: %1; }").arg(textColor.name()));
+            valueLabel->setToolTip(signalKMetricTooltip(title, state, pathConfigured));
+
+            if (unitLabel) {
+                unitLabel->setStyleSheet(QStringLiteral("QLabel { color: %1; }")
+                                             .arg((state == MetricFreshnessState::Missing ? chrome.disabledText : textColor).name()));
+                unitLabel->setToolTip(valueLabel->toolTip());
+            }
+
+            widget->setToolTip(valueLabel->toolTip());
+            widget->setVisible(showWhenMissing || state != MetricFreshnessState::Missing || !pathConfigured);
+        }
+
+        void applyDateMetricPresentation(QWidget *widget,
+                                         QLabel *valueLabel,
+                                         const QString &title,
+                                         const QDateTime &value,
+                                         const QString &format) {
+            const bool hasValue = value.isValid() && !value.isNull();
+            const QString text = hasValue ? value.toLocalTime().toString(format) : QString();
+            applyMetricPresentation(widget,
+                                    valueLabel,
+                                    nullptr,
+                                    title,
+                                    text,
+                                    signalKMetricFreshnessState(hasValue));
+        }
+
+        QString cachedMetricText(const QLabel *valueLabel) {
+            if (!valueLabel) {
+                return {};
+            }
+
+            const QString text = valueLabel->text();
+            return text.trimmed() == QStringLiteral("--") ? QString() : text;
+        }
+    }
+
+    void TopBar::applyEntrySizing(const fairwindsk::ui::layout::LayoutEntry &entry,
+                                  const QString &itemId,
+                                  QWidget *widget,
+                                  QHBoxLayout *layout) {
+        if (!widget || !layout) {
+            return;
+        }
+
+        if (!m_baseSizePolicies.contains(itemId)) {
+            m_baseSizePolicies.insert(itemId, widget->sizePolicy());
+        }
+
+        const QSizePolicy basePolicy = m_baseSizePolicies.value(itemId, widget->sizePolicy());
+        QSizePolicy effectivePolicy = basePolicy;
+        if (entry.expandHorizontally) {
+            effectivePolicy.setHorizontalPolicy(QSizePolicy::Expanding);
+        }
+        if (entry.expandVertically) {
+            effectivePolicy.setVerticalPolicy(QSizePolicy::Expanding);
+        }
+        widget->setSizePolicy(effectivePolicy);
+        widget->setVisible(true);
+        if (itemId == QStringLiteral("position")) {
+            widget->setMinimumWidth(widget->sizeHint().width());
+            ui->label_textPOS->setVisible(true);
+            ui->label_POS->setVisible(true);
+        }
+
+        const Qt::Alignment alignment = entry.expandVertically ? Qt::Alignment() : Qt::AlignVCenter;
+        layout->addWidget(widget, entry.expandHorizontally ? 1 : 0, alignment);
+    }
+
+    TopBar *TopBar::instance() {
+        return s_instance;
+    }
+
+    QWidget *TopBar::createContextWidget() {
+        auto *container = new QWidget(this);
+        auto *layout = new QHBoxLayout(container);
+        layout->setContentsMargins(0, 0, 0, 0);
+        layout->setSpacing(6);
+        layout->addWidget(ui->label_ApplicationName, 0, Qt::AlignVCenter);
+        m_contextLayout = layout;
+        return container;
+    }
+
+    QWidget *TopBar::createSeparatorWidget() {
+        auto *line = new QFrame(this);
+        line->setFrameShape(QFrame::VLine);
+        line->setFrameShadow(QFrame::Plain);
+        line->setLineWidth(1);
+        m_dynamicLayoutWidgets.append(line);
+        return line;
+    }
+
+    void TopBar::clearConfiguredLayout() {
+        if (!ui || !ui->horizontalLayout) {
+            return;
+        }
+
+        while (ui->horizontalLayout->count() > 0) {
+            auto *item = ui->horizontalLayout->takeAt(0);
+            if (auto *widget = item->widget()) {
+                widget->hide();
+            }
+            delete item;
+        }
+
+        for (auto &widget : m_dynamicLayoutWidgets) {
+            if (widget) {
+                widget->deleteLater();
+            }
+        }
+        m_dynamicLayoutWidgets.clear();
+    }
+
+    QWidget *TopBar::widgetForItemId(const QString &itemId) const {
+        if (itemId == QStringLiteral("position")) {
+            return ui->widget_POS;
+        }
+        if (itemId == QStringLiteral("cog")) {
+            return ui->widget_COG;
+        }
+        if (itemId == QStringLiteral("sog")) {
+            return ui->widget_SOG;
+        }
+        if (itemId == QStringLiteral("hdg")) {
+            return ui->widget_HDG;
+        }
+        if (itemId == QStringLiteral("stw")) {
+            return ui->widget_STW;
+        }
+        if (itemId == QStringLiteral("dpt")) {
+            return ui->widget_DPT;
+        }
+        if (itemId == QStringLiteral("current_context")) {
+            return m_contextWidget;
+        }
+        if (itemId == QStringLiteral("wpt")) {
+            return ui->widget_WPT;
+        }
+        if (itemId == QStringLiteral("btw")) {
+            return ui->widget_BTW;
+        }
+        if (itemId == QStringLiteral("dtg")) {
+            return ui->widget_DTG;
+        }
+        if (itemId == QStringLiteral("ttg")) {
+            return ui->widget_TTG;
+        }
+        if (itemId == QStringLiteral("eta")) {
+            return ui->widget_ETA;
+        }
+        if (itemId == QStringLiteral("xte")) {
+            return ui->widget_XTE;
+        }
+        if (itemId == QStringLiteral("vmg")) {
+            return ui->widget_VMG;
+        }
+        if (itemId == QStringLiteral("clock_icons")) {
+            return ui->widget_ClockBlock;
+        }
+
+        return nullptr;
+    }
+
+    bool TopBar::isLayoutWidgetActive(const QString &itemId) const {
+        if (itemId.isEmpty() || m_activeLayoutWidgetIds.contains(itemId)) {
+            return true;
+        }
+
+        auto *fairWindSK = FairWindSK::getInstance();
+        auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        if (!configuration) {
+            return false;
+        }
+
+        if (auto *bottomBar = fairwindsk::ui::bottombar::BottomBar::instance();
+            bottomBar && bottomBar->isTransientPanelVisible()) {
+            return false;
+        }
+
+        const auto bottomEntries = fairwindsk::ui::layout::entriesForBar(
+            configuration->getRoot(),
+            fairwindsk::ui::layout::BarId::Bottom);
+        return std::any_of(
+            bottomEntries.cbegin(),
+            bottomEntries.cend(),
+            [&itemId](const fairwindsk::ui::layout::LayoutEntry &entry) {
+                return entry.enabled &&
+                       entry.kind == fairwindsk::ui::layout::EntryKind::Widget &&
+                       entry.widgetId == itemId;
+            });
+    }
+
+    void TopBar::rebuildLayout() {
+        if (!ui || !ui->horizontalLayout) {
+            return;
+        }
+
+        clearConfiguredLayout();
+        m_activeLayoutWidgetIds.clear();
+        ui->toolButton_UL->setVisible(true);
+        ui->horizontalLayout->addWidget(ui->toolButton_UL, 0, Qt::AlignVCenter);
+
+        const auto entries = fairwindsk::ui::layout::entriesForBar(
+            FairWindSK::getInstance()->getConfiguration()->getRoot(),
+            fairwindsk::ui::layout::BarId::Top);
+        for (const auto &entry : entries) {
+            if (!entry.enabled) {
+                continue;
+            }
+
+            if (entry.kind == fairwindsk::ui::layout::EntryKind::Separator) {
+                auto *separator = createSeparatorWidget();
+                QSizePolicy policy(QSizePolicy::Fixed,
+                                   entry.expandVertically ? QSizePolicy::Expanding : QSizePolicy::Fixed);
+                separator->setSizePolicy(policy);
+                ui->horizontalLayout->addWidget(separator,
+                                                entry.expandHorizontally ? 1 : 0,
+                                                entry.expandVertically ? Qt::Alignment() : Qt::AlignVCenter);
+                continue;
+            }
+
+            if (entry.kind == fairwindsk::ui::layout::EntryKind::Stretch) {
+                ui->horizontalLayout->addSpacerItem(
+                    new QSpacerItem(0,
+                                    0,
+                                    entry.expandHorizontally ? QSizePolicy::Expanding : QSizePolicy::Preferred,
+                                    entry.expandVertically ? QSizePolicy::Expanding : QSizePolicy::Minimum));
+                continue;
+            }
+
+            QString itemId = entry.widgetId;
+            QWidget *widget = widgetForItemId(entry.widgetId);
+            if (!widget && fairwindsk::ui::bottombar::BottomBar::instance()) {
+                widget = fairwindsk::ui::bottombar::BottomBar::instance()->widgetForItemId(entry.widgetId);
+            }
+            if (!widget) {
+                continue;
+            }
+
+            if (entry.kind == fairwindsk::ui::layout::EntryKind::Widget) {
+                m_activeLayoutWidgetIds.insert(entry.widgetId);
+            }
+            applyEntrySizing(entry, itemId, widget, ui->horizontalLayout);
+        }
+
+        ui->toolButton_UR->setVisible(true);
+        ui->horizontalLayout->addWidget(ui->toolButton_UR, 0, Qt::AlignVCenter);
+        ui->toolButton_UL->raise();
+        ui->toolButton_UR->raise();
+        applyLayoutEditHints(entries);
+    }
+
+    void TopBar::clearLayoutEditHints() {
+        for (auto it = m_layoutHintEffects.begin(); it != m_layoutHintEffects.end(); ++it) {
+            if (!it.key()) {
+                continue;
+            }
+            if (it.key()->graphicsEffect() == it.value()) {
+                it.key()->setGraphicsEffect(nullptr);
+            }
+            if (it.value()) {
+                it.value()->deleteLater();
+            }
+        }
+        m_layoutHintEffects.clear();
+    }
+
+    void TopBar::applyLayoutEditHints(const QList<fairwindsk::ui::layout::LayoutEntry> &entries) {
+        clearLayoutEditHints();
+        if (!m_layoutEditHighlightEnabled) {
+            return;
+        }
+
+        auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+        const auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+        const auto chromeColors = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), false);
+
+        for (const auto &entry : entries) {
+            if (!entry.enabled || entry.kind != fairwindsk::ui::layout::EntryKind::Widget || !entry.expandHorizontally) {
+                continue;
+            }
+            if (isFramelessExpandedWidget(entry)) {
+                continue;
+            }
+
+            QWidget *widget = widgetForItemId(entry.widgetId);
+            if (!widget) {
+                continue;
+            }
+
+            auto *effect = new QGraphicsDropShadowEffect(widget);
+            effect->setOffset(0, 0);
+            effect->setBlurRadius(18);
+            effect->setColor(fairwindsk::ui::comfortAlpha(chromeColors.accentTop.lighter(112), 180));
+            widget->setGraphicsEffect(effect);
+            m_layoutHintEffects.insert(widget, effect);
+        }
+    }
+
+    void TopBar::setLayoutEditHighlightEnabled(const bool enabled) {
+        if (m_layoutEditHighlightEnabled == enabled) {
+            return;
+        }
+
+        m_layoutEditHighlightEnabled = enabled;
+        rebuildLayout();
+    }
+
+    void TopBar::renderNumericMetric(const MetricRenderTarget &target,
+                                     const QString &title,
+                                     const QString &path,
+                                     const QJsonObject &update,
+                                     const QString &sourceUnit,
+                                     const QString &targetUnit) {
+        if (!isLayoutWidgetActive(target.itemId)) {
+            if (target.container) {
+                target.container->hide();
+            }
+            return;
+        }
+
+        const bool pathConfigured = !path.trimmed().isEmpty();
+        const auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
+        const bool hasValue = pathConfigured && !update.isEmpty() && !std::isnan(value);
+        const QString text = hasValue ? m_units->formatSignalKValue(path, value, sourceUnit, targetUnit) : QString();
+        applyMetricPresentation(target.container,
+                                target.valueLabel,
+                                target.unitLabel,
+                                configuredMetricTitle(title, pathConfigured),
+                                text,
+                                signalKMetricFreshnessState(hasValue, pathConfigured),
+                                true,
+                                pathConfigured);
+    }
+
+    void TopBar::renderAngularMetric(const MetricRenderTarget &target,
+                                     const QString &title,
+                                     const QString &path,
+                                     const QJsonObject &update) {
+        renderNumericMetric(target, title, path, update, QStringLiteral("rad"), QStringLiteral("deg"));
+    }
+
+    void TopBar::renderDateMetric(const MetricRenderTarget &target,
+                                  const QString &title,
+                                  const QJsonObject &update,
+                                  const QString &format) {
+        if (!isLayoutWidgetActive(target.itemId)) {
+            if (target.container) {
+                target.container->hide();
+            }
+            return;
+        }
+
+        const bool hasValue = !update.isEmpty();
+        const auto value = fairwindsk::signalk::Client::getDateTimeFromUpdateByPath(update);
+        applyMetricPresentation(target.container,
+                                target.valueLabel,
+                                target.unitLabel,
+                                title,
+                                (hasValue && value.isValid() && !value.isNull()) ? value.toLocalTime().toString(format) : QString(),
+                                signalKMetricFreshnessState(hasValue && value.isValid() && !value.isNull()),
+                                true,
+                                true);
+    }
+
+    void TopBar::renderWaypointMetric(const MetricRenderTarget &target,
+                                      const QString &title,
+                                      const QJsonObject &update) {
+        if (!isLayoutWidgetActive(target.itemId)) {
+            if (target.container) {
+                target.container->hide();
+            }
+            return;
+        }
+
+        QString text;
+        bool hasValue = false;
+        const auto value = fairwindsk::signalk::Client::getObjectFromUpdateByPath(update);
+        if (value.contains("href") && value["href"].isString()) {
+            const auto href = value["href"].toString();
+            auto waypoint = FairWindSK::getInstance()->getSignalKClient()->getWaypointByHref(href);
+            text = waypoint.getName().trimmed();
+            hasValue = !text.isEmpty();
+        }
+
+        applyMetricPresentation(target.container,
+                                target.valueLabel,
+                                target.unitLabel,
+                                title,
+                                text,
+                                signalKMetricFreshnessState(hasValue),
+                                true,
+                                true);
+    }
+
+    void TopBar::renderPositionMetric(const MetricRenderTarget &target,
+                                      const QString &title,
+                                      const QJsonObject &update) {
+        if (!isLayoutWidgetActive(target.itemId)) {
+            if (target.container) {
+                target.container->hide();
+            }
+            return;
+        }
+
+        const auto value = fairwindsk::signalk::Client::getGeoCoordinateFromUpdateByPath(update);
+        const bool hasValue = value.isValid();
+        const QString text = hasValue
+                                 ? fairwindsk::ui::geo::formatCoordinate(
+                                       value,
+                                       FairWindSK::getInstance()->getConfiguration()->getCoordinateFormat())
+                                 : QString();
+        applyMetricPresentation(target.container,
+                                target.valueLabel,
+                                target.unitLabel,
+                                title,
+                                text,
+                                signalKMetricFreshnessState(hasValue),
+                                true,
+                                true);
+        if (target.container) {
+            target.container->setVisible(true);
+        }
+        if (ui->label_textPOS) {
+            ui->label_textPOS->setVisible(true);
+            ui->label_textPOS->raise();
+        }
+        if (target.valueLabel) {
+            target.valueLabel->setVisible(true);
+            target.valueLabel->raise();
+        }
+    }
+
+    void TopBar::refreshCachedNumericMetric(const MetricRenderTarget &target,
+                                            const QString &title,
+                                            const QString &path,
+                                            const QJsonObject &update) {
+        if (!isLayoutWidgetActive(target.itemId)) {
+            if (target.container) {
+                target.container->hide();
+            }
+            return;
+        }
+
+        const bool pathConfigured = !path.trimmed().isEmpty();
+        const auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
+        const QString text = cachedMetricText(target.valueLabel);
+        const bool hasValue = pathConfigured && !update.isEmpty() && !std::isnan(value) && !text.trimmed().isEmpty();
+        applyMetricPresentation(target.container,
+                                target.valueLabel,
+                                target.unitLabel,
+                                configuredMetricTitle(title, pathConfigured),
+                                text,
+                                signalKMetricFreshnessState(hasValue, pathConfigured),
+                                true,
+                                pathConfigured);
+    }
+
+    void TopBar::refreshCachedDateMetric(const MetricRenderTarget &target,
+                                         const QString &title,
+                                         const QJsonObject &update) {
+        if (!isLayoutWidgetActive(target.itemId)) {
+            if (target.container) {
+                target.container->hide();
+            }
+            return;
+        }
+
+        const auto value = fairwindsk::signalk::Client::getDateTimeFromUpdateByPath(update);
+        const QString text = cachedMetricText(target.valueLabel);
+        const bool hasValue = !update.isEmpty() && value.isValid() && !value.isNull() && !text.trimmed().isEmpty();
+        applyMetricPresentation(target.container,
+                                target.valueLabel,
+                                target.unitLabel,
+                                title,
+                                text,
+                                signalKMetricFreshnessState(hasValue),
+                                true,
+                                true);
+    }
+
+    void TopBar::refreshCachedWaypointMetric(const MetricRenderTarget &target,
+                                             const QString &title,
+                                             const QJsonObject &update) {
+        if (!isLayoutWidgetActive(target.itemId)) {
+            if (target.container) {
+                target.container->hide();
+            }
+            return;
+        }
+
+        const auto value = fairwindsk::signalk::Client::getObjectFromUpdateByPath(update);
+        const QString text = cachedMetricText(target.valueLabel);
+        const bool hasValue = value.contains("href") &&
+                              value["href"].isString() &&
+                              !value["href"].toString().trimmed().isEmpty() &&
+                              !text.trimmed().isEmpty();
+        applyMetricPresentation(target.container,
+                                target.valueLabel,
+                                target.unitLabel,
+                                title,
+                                text,
+                                signalKMetricFreshnessState(hasValue),
+                                true,
+                                true);
+    }
+
+    void TopBar::refreshCachedPositionMetric(const MetricRenderTarget &target,
+                                             const QString &title,
+                                             const QJsonObject &update) {
+        if (!isLayoutWidgetActive(target.itemId)) {
+            if (target.container) {
+                target.container->hide();
+            }
+            return;
+        }
+
+        const auto value = fairwindsk::signalk::Client::getGeoCoordinateFromUpdateByPath(update);
+        const QString text = cachedMetricText(target.valueLabel);
+        const bool hasValue = value.isValid() && !text.trimmed().isEmpty();
+        applyMetricPresentation(target.container,
+                                target.valueLabel,
+                                target.unitLabel,
+                                title,
+                                text,
+                                signalKMetricFreshnessState(hasValue),
+                                true,
+                                true);
+        if (target.container) {
+            target.container->setVisible(true);
+        }
+        if (ui->label_textPOS) {
+            ui->label_textPOS->setVisible(true);
+            ui->label_textPOS->raise();
+        }
+        if (target.valueLabel) {
+            target.valueLabel->setVisible(true);
+            target.valueLabel->raise();
+        }
+    }
+
+    void TopBar::refreshCachedMetricPresentations() {
+        refreshCachedPositionMetric({ui->widget_POS, ui->label_POS, nullptr, QStringLiteral("position")},
+                                    tr("Position"),
+                                    m_lastPosUpdate);
+        refreshCachedNumericMetric({ui->widget_COG, ui->label_COG, ui->label_unitCOG, QStringLiteral("cog")},
+                                   tr("Course over ground"),
+                                   m_pathCOG,
+                                   m_lastCogUpdate);
+        refreshCachedNumericMetric({ui->widget_SOG, ui->label_SOG, ui->label_unitSOG, QStringLiteral("sog")},
+                                   tr("Speed over ground"),
+                                   m_pathSOG,
+                                   m_lastSogUpdate);
+        refreshCachedNumericMetric({ui->widget_HDG, ui->label_HDG, ui->label_unitHDG, QStringLiteral("hdg")},
+                                   tr("Heading"),
+                                   m_pathHDG,
+                                   m_lastHdgUpdate);
+        refreshCachedNumericMetric({ui->widget_STW, ui->label_STW, ui->label_unitSTW, QStringLiteral("stw")},
+                                   tr("Speed through water"),
+                                   m_pathSTW,
+                                   m_lastStwUpdate);
+        refreshCachedNumericMetric({ui->widget_DPT, ui->label_DPT, ui->label_unitDPT, QStringLiteral("dpt")},
+                                   tr("Depth"),
+                                   m_pathDPT,
+                                   m_lastDptUpdate);
+        refreshCachedWaypointMetric({ui->widget_WPT, ui->label_WPT, nullptr, QStringLiteral("wpt")},
+                                    tr("Waypoint"),
+                                    m_lastWptUpdate);
+        refreshCachedNumericMetric({ui->widget_BTW, ui->label_BTW, ui->label_unitBTW, QStringLiteral("btw")},
+                                   tr("Bearing to waypoint"),
+                                   m_pathBTW,
+                                   m_lastBtwUpdate);
+        refreshCachedNumericMetric({ui->widget_DTG, ui->label_DTG, ui->label_unitDTG, QStringLiteral("dtg")},
+                                   tr("Distance to go"),
+                                   m_pathDTG,
+                                   m_lastDtgUpdate);
+        refreshCachedDateMetric({ui->widget_TTG, ui->label_TTG, nullptr, QStringLiteral("ttg")},
+                                tr("Time to go"),
+                                m_lastTtgUpdate);
+        refreshCachedDateMetric({ui->widget_ETA, ui->label_ETA, nullptr, QStringLiteral("eta")},
+                                tr("Estimated time of arrival"),
+                                m_lastEtaUpdate);
+        refreshCachedNumericMetric({ui->widget_XTE, ui->label_XTE, ui->label_unitXTE, QStringLiteral("xte")},
+                                   tr("Cross track error"),
+                                   m_pathXTE,
+                                   m_lastXteUpdate);
+        refreshCachedNumericMetric({ui->widget_VMG, ui->label_VMG, ui->label_unitVMG, QStringLiteral("vmg")},
+                                   tr("Velocity made good"),
+                                   m_pathVMG,
+                                   m_lastVmgUpdate);
     }
 
     void TopBar::refreshMetricLabelWidths() const {
@@ -111,6 +817,7 @@ namespace fairwindsk::ui::topbar {
             ui(new Ui::TopBar) {
         // Setup the UI
         ui->setupUi(this);
+        s_instance = this;
 
         // Get the FairWind singleton
         auto fairWindSK = fairwindsk::FairWindSK::getInstance();
@@ -123,13 +830,24 @@ namespace fairwindsk::ui::topbar {
         // Get units converter instance
         m_units = Units::getInstance();
 
+        m_contextWidget = createContextWidget();
+        ui->line_1->hide();
+        ui->line_2->hide();
+        ui->line_3->hide();
+        ui->horizontalLayout->setContentsMargins(4, 0, 4, 0);
+        applyFramelessRuntimeChrome();
+
         ui->toolButton_UL->setIcon(QPixmap::fromImage(QImage(":/resources/images/mainwindow/fairwind_icon.png")));
-        ui->toolButton_UL->setIconSize(QSize(32, 32));
+        ui->toolButton_UL->setIconSize(QSize(36, 36));
+        ui->toolButton_UL->setFixedSize(QSize(56, 56));
+        ui->toolButton_UL->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         ui->toolButton_UL->setAutoRaise(true);
         ui->toolButton_UL->setStyleSheet(chromeToolButtonStyle(chromeColors));
 
         ui->toolButton_UR->setIcon(QPixmap::fromImage(QImage(":/resources/images/icons/apps_icon.png")));
-        ui->toolButton_UR->setIconSize(QSize(32, 32));
+        ui->toolButton_UR->setIconSize(QSize(36, 36));
+        ui->toolButton_UR->setFixedSize(QSize(56, 56));
+        ui->toolButton_UR->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         ui->toolButton_UR->setAutoRaise(true);
         ui->toolButton_UR->setStyleSheet(chromeToolButtonStyle(chromeColors));
 
@@ -140,26 +858,8 @@ namespace fairwindsk::ui::topbar {
             m_signalKStatusIcons = new fairwindsk::ui::widgets::SignalKStatusIconsWidget(ui->widget_SignalKStatusIcons);
             statusLayout->addWidget(m_signalKStatusIcons, 0, Qt::AlignVCenter);
         }
+        rebuildLayout();
         
-        ui->widget_POS->setVisible(false);
-        ui->widget_COG->setVisible(false);
-        ui->widget_SOG->setVisible(false);
-        ui->widget_HDG->setVisible(false);
-        ui->widget_STW->setVisible(false);
-        ui->widget_DPT->setVisible(false);
-
-        ui->widget_WPT->setVisible(false);
-        ui->widget_BTW->setVisible(false);
-        ui->widget_DTG->setVisible(false);
-        ui->widget_TTG->setVisible(false);
-        ui->widget_ETA->setVisible(false);
-        ui->widget_XTE->setVisible(false);
-        ui->widget_VMG->setVisible(false);
-
-
-
-
-
         // emit a signal when the Apps tool button from the UI is clicked
         connect(ui->toolButton_UL, &QToolButton::released, this, &TopBar::toolbuttonUL_clicked);
 
@@ -177,6 +877,15 @@ namespace fairwindsk::ui::topbar {
         updateTime();
         updateComfortViewIcon();
         resetCurrentAppPresentation();
+        if (auto *client = FairWindSK::getInstance()->getSignalKClient()) {
+            connect(client, &fairwindsk::signalk::Client::connectionHealthStateChanged, this,
+                    [this](const fairwindsk::signalk::Client::ConnectionHealthState,
+                           const QString &,
+                           const QDateTime &,
+                           const QString &) {
+                        refreshCachedMetricPresentations();
+                    });
+        }
 
         // Get the configuration json object
         auto confiurationJsonObject = configuration->getRoot();
@@ -382,6 +1091,20 @@ namespace fairwindsk::ui::topbar {
         updateSpeedLabels();
         updateDistanceLabels();
         refreshMetricLabelWidths();
+        updatePOS(m_lastPosUpdate);
+        updateCOG(m_lastCogUpdate);
+        updateSOG(m_lastSogUpdate);
+        updateHDG(m_lastHdgUpdate);
+        updateSTW(m_lastStwUpdate);
+        updateDPT(m_lastDptUpdate);
+        updateWPT(m_lastWptUpdate);
+        updateBTW(m_lastBtwUpdate);
+        updateDTG(m_lastDtgUpdate);
+        updateTTG(m_lastTtgUpdate);
+        updateETA(m_lastEtaUpdate);
+        updateXTE(m_lastXteUpdate);
+        updateVMG(m_lastVmgUpdate);
+        rebuildLayout();
     }
 
     void TopBar::changeEvent(QEvent *event) {
@@ -392,6 +1115,7 @@ namespace fairwindsk::ui::topbar {
         }
 
         if (event && (event->type() == QEvent::PaletteChange || event->type() == QEvent::StyleChange)) {
+            applyFramelessRuntimeChrome();
             updateComfortViewIcon();
             if (m_signalKStatusIcons) {
                 m_signalKStatusIcons->refreshFromConfiguration();
@@ -418,6 +1142,43 @@ namespace fairwindsk::ui::topbar {
         const QIcon icon = fairwindsk::ui::tintedIcon(QIcon(comfortViewIconPath(preset)), iconColor, ui->label_ComfortViewIcon->size());
         ui->label_ComfortViewIcon->setPixmap(icon.pixmap(ui->label_ComfortViewIcon->size()));
         ui->label_ComfortViewIcon->setToolTip(tr("Comfort view: %1").arg(preset));
+    }
+
+    void TopBar::applyFramelessRuntimeChrome() const {
+        if (!ui) {
+            return;
+        }
+
+        auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+        const auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+        const auto chrome = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), false);
+
+        const QString widgetStyle = QStringLiteral("QWidget { background: transparent; border: none; }");
+        if (ui->widget_POS) {
+            ui->widget_POS->setStyleSheet(widgetStyle);
+        }
+        if (m_contextWidget) {
+            m_contextWidget->setStyleSheet(widgetStyle);
+        }
+        if (ui->widget_ClockBlock) {
+            ui->widget_ClockBlock->setStyleSheet(widgetStyle);
+        }
+
+        const QString labelStyle = QStringLiteral("QLabel { background: transparent; border: none; color: %1; }")
+                                       .arg(chrome.text.name());
+        if (ui->label_textPOS) {
+            ui->label_textPOS->setStyleSheet(labelStyle);
+        }
+        if (ui->label_POS) {
+            ui->label_POS->setStyleSheet(labelStyle);
+        }
+        if (ui->label_ApplicationName) {
+            ui->label_ApplicationName->setStyleSheet(labelStyle);
+        }
+        if (ui->label_DateTime) {
+            ui->label_DateTime->setStyleSheet(labelStyle);
+        }
     }
 
 /*
@@ -461,6 +1222,7 @@ namespace fairwindsk::ui::topbar {
 
     void TopBar::refreshFromConfiguration() {
         const auto configuration = FairWindSK::getInstance()->getConfiguration();
+        rebuildLayout();
         ui->label_unitCOG->setText(m_units->getSignalKUnitLabel(m_pathCOG, "deg"));
         ui->label_unitBTW->setText(m_units->getSignalKUnitLabel(m_pathBTW, "deg"));
         ui->label_unitHDG->setText(m_units->getSignalKUnitLabel(m_pathHDG, "deg"));
@@ -493,32 +1255,7 @@ namespace fairwindsk::ui::topbar {
  */
     void TopBar::updatePOS(const QJsonObject &update) {
         m_lastPosUpdate = update;
-
-        // Check if for any reason the update is empty
-        if (update.isEmpty()) {
-            return;
-        }
-
-
-        // Get the value
-        const auto value = fairwindsk::signalk::Client::getGeoCoordinateFromUpdateByPath(update);
-
-        if (!value.isValid()) {
-            ui->widget_POS->setVisible(false);
-        } else {
-
-
-            const auto text = fairwindsk::ui::geo::formatCoordinate(
-                value,
-                FairWindSK::getInstance()->getConfiguration()->getCoordinateFormat());
-
-            // Set the course over ground label from the UI to the formatted value
-            ui->label_POS->setText(text);
-
-            if (!ui->widget_POS->isVisible()) {
-                ui->widget_POS->setVisible(true);
-            }
-        }
+        renderPositionMetric({ui->widget_POS, ui->label_POS, nullptr, QStringLiteral("position")}, tr("Position"), update);
     }
 
 
@@ -528,30 +1265,10 @@ namespace fairwindsk::ui::topbar {
  */
     void TopBar::updateCOG(const QJsonObject &update) {
         m_lastCogUpdate = update;
-
-        // Check if for any reason the update is empty
-        if (update.isEmpty()) {
-            return;
-        }
-
-        // Get the value
-        auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
-
-        if (std::isnan(value)) {
-            ui->widget_COG->setVisible(false);
-        } else {
-
-            // Convert rad to deg
-            const auto text = m_units->formatSignalKValue(m_pathCOG, value, "rad", "deg");
-
-            // Set the course over ground label from the UI to the formatted value
-            ui->label_COG->setText(text);
-
-            if (!ui->widget_COG->isVisible()) {
-                ui->widget_COG->setVisible(true);
-            }
-        }
-
+        renderAngularMetric({ui->widget_COG, ui->label_COG, ui->label_unitCOG, QStringLiteral("cog")},
+                            tr("Course over ground"),
+                            m_pathCOG,
+                            update);
     }
 
 /*
@@ -560,31 +1277,12 @@ namespace fairwindsk::ui::topbar {
  */
     void TopBar::updateSOG(const QJsonObject &update) {
         m_lastSogUpdate = update;
-
-        // Check if for any reason the update is empty
-        if (update.isEmpty()) {
-            return;
-        }
-
-        // Get the value
-        auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
-
-        if (std::isnan(value)) {
-            ui->widget_SOG->setVisible(false);
-        } else {
-
-            const auto vesselSpeedUnits = FairWindSK::getInstance()->getConfiguration()->getVesselSpeedUnits();
-            const auto text = m_units->formatSignalKValue(m_pathSOG, value, "ms-1", vesselSpeedUnits);
-
-            // Set the speed over ground label from the UI to the formatted value
-            ui->label_SOG->setText(text);
-
-            if (!ui->widget_SOG->isVisible()) {
-                ui->widget_SOG->setVisible(true);
-            }
-        }
-
-
+        renderNumericMetric({ui->widget_SOG, ui->label_SOG, ui->label_unitSOG, QStringLiteral("sog")},
+                            tr("Speed over ground"),
+                            m_pathSOG,
+                            update,
+                            QStringLiteral("ms-1"),
+                            FairWindSK::getInstance()->getConfiguration()->getVesselSpeedUnits());
     }
 
     /*
@@ -593,30 +1291,10 @@ namespace fairwindsk::ui::topbar {
  */
     void TopBar::updateHDG(const QJsonObject &update) {
         m_lastHdgUpdate = update;
-
-        // Check if for any reason the update is empty
-        if (update.isEmpty()) {
-            return;
-        }
-
-        // Get the value
-        auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
-
-        if (std::isnan(value)) {
-            ui->widget_HDG->setVisible(false);
-        } else {
-
-            // Convert rad to deg
-            const auto text = m_units->formatSignalKValue(m_pathHDG, value, "rad", "deg");
-
-            // Set the course over ground label from the UI to the formatted value
-            ui->label_HDG->setText(text);
-
-            if (!ui->widget_HDG->isVisible()) {
-                ui->widget_HDG->setVisible(true);
-            }
-        }
-
+        renderAngularMetric({ui->widget_HDG, ui->label_HDG, ui->label_unitHDG, QStringLiteral("hdg")},
+                            tr("Heading"),
+                            m_pathHDG,
+                            update);
     }
 
 /*
@@ -625,31 +1303,12 @@ namespace fairwindsk::ui::topbar {
  */
     void TopBar::updateSTW(const QJsonObject &update) {
         m_lastStwUpdate = update;
-
-        // Check if for any reason the update is empty
-        if (update.isEmpty()) {
-            return;
-        }
-
-        // Get the value
-        auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
-
-        if (std::isnan(value)) {
-            ui->widget_STW->setVisible(false);
-        } else {
-
-            const auto vesselSpeedUnits = FairWindSK::getInstance()->getConfiguration()->getVesselSpeedUnits();
-            const auto text = m_units->formatSignalKValue(m_pathSTW, value, "ms-1", vesselSpeedUnits);
-
-            // Set the speed over ground label from the UI to the formatted value
-            ui->label_STW->setText(text);
-
-            if (!ui->widget_STW->isVisible()) {
-                ui->widget_STW->setVisible(true);
-            }
-        }
-
-
+        renderNumericMetric({ui->widget_STW, ui->label_STW, ui->label_unitSTW, QStringLiteral("stw")},
+                            tr("Speed through water"),
+                            m_pathSTW,
+                            update,
+                            QStringLiteral("ms-1"),
+                            FairWindSK::getInstance()->getConfiguration()->getVesselSpeedUnits());
     }
 
     /*
@@ -658,254 +1317,80 @@ namespace fairwindsk::ui::topbar {
  */
     void TopBar::updateDPT(const QJsonObject &update) {
         m_lastDptUpdate = update;
-
-        // Check if for any reason the update is empty
-        if (update.isEmpty()) {
-            return;
-        }
-
-        // Get the value
-        auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
-
-        if (std::isnan(value)) {
-            ui->widget_DPT->setVisible(false);
-        } else {
-
-            const auto text = m_units->formatSignalKValue(
-                m_pathDPT,
-                value,
-                "mt",
-                FairWindSK::getInstance()->getConfiguration()->getDepthUnits());
-
-            // Set the the formatted value
-            ui->label_DPT->setText(text);
-
-	    // Check if the widget is visible
-            if (!ui->widget_DPT->isVisible()) {
-
-		// Set the widget visible
-                ui->widget_DPT->setVisible(true);
-            }
-        }
-
-
+        renderNumericMetric({ui->widget_DPT, ui->label_DPT, ui->label_unitDPT, QStringLiteral("dpt")},
+                            tr("Depth"),
+                            m_pathDPT,
+                            update,
+                            QStringLiteral("mt"),
+                            FairWindSK::getInstance()->getConfiguration()->getDepthUnits());
     }
 
     void TopBar::updateWPT(const QJsonObject &update) {
         m_lastWptUpdate = update;
-
-        // Check if for any reason the update is empty
-        if (update.isEmpty()) {
-            return;
-        }
-
-        // Get the value
-        auto value =fairwindsk::signalk::Client::getObjectFromUpdateByPath(update);
-
-
-
-        if (value.isEmpty()) {
-            ui->widget_WPT->setVisible(false);
-        } else {
-            if (value.contains("href") && value["href"].isString()) {
-                auto href = value["href"].toString();
-
-                auto waypoint = FairWindSK::getInstance()->getSignalKClient()->getWaypointByHref(href);
-
-                ui->label_WPT->setText(waypoint.getName());
-
-                if (!ui->widget_WPT->isVisible()) {
-                    ui->widget_WPT->setVisible(true);
-                }
-            }
-        }
-
+        renderWaypointMetric({ui->widget_WPT, ui->label_WPT, nullptr, QStringLiteral("wpt")}, tr("Waypoint"), update);
     }
 
     void TopBar::updateBTW(const QJsonObject &update) {
         m_lastBtwUpdate = update;
-
-        // Check if for any reason the update is empty
-        if (update.isEmpty()) {
-            return;
-        }
-
-        // Get the value
-        auto value =fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
-
-        if (std::isnan(value)) {
-            ui->widget_BTW->setVisible(false);
-        } else {
-
-            // Convert rad to deg
-            const auto text = m_units->formatSignalKValue(m_pathBTW, value, "rad", "deg");
-
-            // Set the course over ground label from the UI to the formatted value
-            ui->label_BTW->setText(text);
-
-            if (!ui->widget_BTW->isVisible()) {
-                ui->widget_BTW->setVisible(true);
-            }
-        }
-
+        renderAngularMetric({ui->widget_BTW, ui->label_BTW, ui->label_unitBTW, QStringLiteral("btw")},
+                            tr("Bearing to waypoint"),
+                            m_pathBTW,
+                            update);
     }
 
     void TopBar::updateDTG(const QJsonObject &update) {
         m_lastDtgUpdate = update;
-
-        // Check if for any reason the update is empty
-        if (update.isEmpty()) {
-            return;
-        }
-
-        // Get the value
-        auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
-
-        if (std::isnan(value)) {
-            ui->widget_DTG->setVisible(false);
-        } else {
-
-            const auto distanceUnits = FairWindSK::getInstance()->getConfiguration()->getDistanceUnits();
-            const auto text = m_units->formatSignalKValue(m_pathDTG, value, "m", distanceUnits);
-
-            // Set the course over ground label from the UI to the formatted value
-            ui->label_DTG->setText(text);
-
-            if (!ui->widget_DTG->isVisible()) {
-                ui->widget_DTG->setVisible(true);
-            }
-        }
-
+        renderNumericMetric({ui->widget_DTG, ui->label_DTG, ui->label_unitDTG, QStringLiteral("dtg")},
+                            tr("Distance to go"),
+                            m_pathDTG,
+                            update,
+                            QStringLiteral("m"),
+                            FairWindSK::getInstance()->getConfiguration()->getDistanceUnits());
     }
 
     void TopBar::updateTTG(const QJsonObject &update) {
         m_lastTtgUpdate = update;
-
-        // Check if for any reason the update is empty
-        if (update.isEmpty()) {
-            return;
-        }
-
-        // Get the value
-        auto value = fairwindsk::signalk::Client::getDateTimeFromUpdateByPath(update);
-
-        if (value.isNull()) {
-            ui->widget_TTG->setVisible(false);
-        } else {
-
-            // Convert meters to nautical miles
-            //value = m_units->convert("m","nm", value);
-
-            // Build the formatted value
-            //text = m_units->format("nm", value);
-            const auto text = value.toLocalTime().toString("hh:mm");
-
-            // Set the course over ground label from the UI to the formatted value
-            ui->label_TTG->setText(text);
-
-            if (!ui->widget_TTG->isVisible()) {
-                ui->widget_TTG->setVisible(true);
-            }
-        }
-
+        renderDateMetric({ui->widget_TTG, ui->label_TTG, nullptr, QStringLiteral("ttg")},
+                         tr("Time to go"),
+                         update,
+                         QStringLiteral("hh:mm"));
     }
 
     void TopBar::updateETA(const QJsonObject &update) {
         m_lastEtaUpdate = update;
-
-        // Check if for any reason the update is empty
-        if (update.isEmpty()) {
-            return;
-        }
-
-        // Get the value
-        auto value = fairwindsk::signalk::Client::getDateTimeFromUpdateByPath(update);
-
-        if (value.isNull()) {
-            ui->widget_ETA->setVisible(false);
-        } else {
-
-            // Convert meters to nautical miles
-            //value = m_units->convert("m","nm", value);
-
-            // Build the formatted value
-            //text = m_units->format("nm", value);
-            const auto text = value.toLocalTime().toString("dd-MM-yyyy hh:mm");
-
-            // Set the course over ground label from the UI to the formatted value
-            ui->label_ETA->setText(text);
-
-            if (!ui->widget_ETA->isVisible()) {
-                ui->widget_ETA->setVisible(true);
-            }
-        }
-
+        renderDateMetric({ui->widget_ETA, ui->label_ETA, nullptr, QStringLiteral("eta")},
+                         tr("Estimated time of arrival"),
+                         update,
+                         QStringLiteral("dd-MM-yyyy hh:mm"));
     }
 
     void TopBar::updateXTE(const QJsonObject &update) {
         m_lastXteUpdate = update;
-
-        // Check if for any reason the update is empty
-        if (update.isEmpty()) {
-            return;
-        }
-
-        // Get the value
-        auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
-
-        if (std::isnan(value)) {
-            ui->widget_XTE->setVisible(false);
-        } else {
-
-            const auto distanceUnits = FairWindSK::getInstance()->getConfiguration()->getDistanceUnits();
-            const auto text = m_units->formatSignalKValue(m_pathXTE, value, "m", distanceUnits);
-
-            // Set the course over ground label from the UI to the formatted value
-            ui->label_XTE->setText(text);
-
-            if (!ui->widget_XTE->isVisible()) {
-                ui->widget_XTE->setVisible(true);
-            }
-        }
-
+        renderNumericMetric({ui->widget_XTE, ui->label_XTE, ui->label_unitXTE, QStringLiteral("xte")},
+                            tr("Cross track error"),
+                            m_pathXTE,
+                            update,
+                            QStringLiteral("m"),
+                            FairWindSK::getInstance()->getConfiguration()->getDistanceUnits());
     }
 
     void TopBar::updateVMG(const QJsonObject &update) {
         m_lastVmgUpdate = update;
-
-        // Check if for any reason the update is empty
-        if (update.isEmpty()) {
-            return;
-        }
-
-        // Get the value
-        auto value = fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update);
-
-        if (std::isnan(value)) {
-            ui->widget_VMG->setVisible(false);
-        } else {
-
-            const auto vesselSpeedUnits = FairWindSK::getInstance()->getConfiguration()->getVesselSpeedUnits();
-            const auto text = m_units->formatSignalKValue(m_pathVMG, value, "ms-1", vesselSpeedUnits);
-
-            // Set the course over ground label from the UI to the formatted value
-            ui->label_VMG->setText(text);
-
-            if (!ui->widget_VMG->isVisible()) {
-                ui->widget_VMG->setVisible(true);
-            }
-        }
-
-
+        renderNumericMetric({ui->widget_VMG, ui->label_VMG, ui->label_unitVMG, QStringLiteral("vmg")},
+                            tr("Velocity made good"),
+                            m_pathVMG,
+                            update,
+                            QStringLiteral("ms-1"),
+                            FairWindSK::getInstance()->getConfiguration()->getVesselSpeedUnits());
     }
 
     void TopBar::setCurrentApp(AppItem *appItem) {
         m_currentApp = appItem;
         if (m_currentApp) {
             auto *widget = m_currentApp->getWidget();
-            ui->toolButton_UR->setIcon(m_currentApp->getIcon());
-            ui->toolButton_UR->setIconSize(QSize(32, 32));
-            ui->label_ApplicationName->setText(m_currentApp->getDisplayName());
+            ui->toolButton_UR->setIcon(m_currentApp->getIcon(true));
+            ui->toolButton_UR->setIconSize(QSize(36, 36));
+            ui->label_ApplicationName->setText(m_currentApp->getDisplayName(true));
             ui->label_ApplicationName->setToolTip(m_currentApp->getDescription());
             ui->toolButton_UR->setEnabled(qobject_cast<fairwindsk::ui::web::Web *>(widget) != nullptr);
         } else {
@@ -913,12 +1398,22 @@ namespace fairwindsk::ui::topbar {
         }
     }
 
+    void TopBar::setCurrentAppStatusSummary(const QString &summary) {
+        if (!m_currentApp) {
+            return;
+        }
+
+        const QString baseTooltip = m_currentApp->getDescription();
+        ui->label_ApplicationName->setToolTip(
+            summary.trimmed().isEmpty() ? baseTooltip : tr("%1\n%2").arg(baseTooltip, summary.trimmed()));
+    }
+
     void TopBar::setCurrentContext(const QString &name, const QString &tooltip, const QIcon &icon, const bool enableButton) {
         m_currentApp = nullptr;
         ui->toolButton_UR->setIcon(icon.isNull()
                                            ? QPixmap::fromImage(QImage(":/resources/images/icons/apps_icon.png"))
                                            : icon);
-        ui->toolButton_UR->setIconSize(QSize(32, 32));
+        ui->toolButton_UR->setIconSize(QSize(36, 36));
         ui->toolButton_UR->setEnabled(enableButton);
         ui->label_ApplicationName->setText(name);
         ui->label_ApplicationName->setToolTip(tooltip);
@@ -939,7 +1434,7 @@ namespace fairwindsk::ui::topbar {
 
     void TopBar::resetCurrentAppPresentation() const {
         ui->toolButton_UR->setIcon(QPixmap::fromImage(QImage(":/resources/images/icons/apps_icon.png")));
-        ui->toolButton_UR->setIconSize(QSize(32, 32));
+        ui->toolButton_UR->setIconSize(QSize(36, 36));
         ui->toolButton_UR->setEnabled(false);
         ui->label_ApplicationName->setText("");
         ui->label_ApplicationName->setToolTip("");
@@ -950,6 +1445,11 @@ namespace fairwindsk::ui::topbar {
  * TopBar's destructor
  */
     TopBar::~TopBar() {
+        if (s_instance == this) {
+            s_instance = nullptr;
+        }
+
+        clearLayoutEditHints();
 
         if (m_timer) {
             m_timer->stop();

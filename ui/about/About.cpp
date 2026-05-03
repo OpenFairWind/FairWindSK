@@ -17,7 +17,10 @@ namespace fairwindsk::ui::about {
         ui->setupUi(this);
         m_currentWidget = currenWidget;
         m_logoPixmap = QPixmap(QStringLiteral(":/resources/images/other/splash_logo.png"));
-        ui->labelVersion->setText(tr("FairWindSK Version %1").arg(QStringLiteral(FAIRWINDSK_VERSION)));
+        ui->labelVersion->setText(
+            tr("FairWindSK Version %1 (%2)")
+                .arg(QStringLiteral(FAIRWINDSK_VERSION),
+                     QStringLiteral(FAIRWINDSK_GIT_BRANCH)));
         ui->label->setText(tr("Copyright %1").arg(QStringLiteral(FAIRWINDSK_BUILD_YEAR)));
         ui->buttonBox->hide();
         ui->scrollArea->setBorderless(true);

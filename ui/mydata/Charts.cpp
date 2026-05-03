@@ -4,13 +4,11 @@
 
 #include "Charts.hpp"
 
-#include <QDesktopServices>
 #include <QFile>
 #include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QUrl>
 
 #include "signalk/Client.hpp"
 #include "ui_Charts.h"
@@ -200,10 +198,8 @@ namespace fairwindsk::ui::mydata {
             return;
         }
 
-        const QFileInfo localInfo(path);
-        const QUrl url = localInfo.exists() ? QUrl::fromLocalFile(localInfo.absoluteFilePath()) : QUrl::fromUserInput(path);
-        if (!url.isValid() || !QDesktopServices::openUrl(url)) {
-            showPageError(tr("Unable to open the selected chart source."));
-        }
+        openPathInSingleWindow(path,
+                               tr("This chart does not have a source path yet."),
+                               tr("Unable to open the selected chart source."));
     }
 }

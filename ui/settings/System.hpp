@@ -35,6 +35,8 @@ namespace fairwindsk::ui::settings {
     public:
         explicit System(Settings *settings, QWidget *parent = nullptr);
         ~System() override;
+        static bool replaceConfigurationFile(const QString &sourcePath, const QString &targetPath, QString *errorMessage = nullptr);
+        static bool runConfigurationImportSelfTest(QString *failureReason = nullptr);
 
     private slots:
         void refreshDiagnostics();
@@ -52,6 +54,7 @@ namespace fairwindsk::ui::settings {
         void ensureCoreWidgets(int coreCount);
         void ensureLoggingSettingsWidgets();
         void ensureRpiDiagnosticsWidgets();
+        bool confirmAction(const QString &title, const QString &message, const QString &confirmText);
         void refreshRpiDiagnostics();
         double fetchSignalKRpiMetric(const QJsonObject &root, const QString &path, bool *available = nullptr) const;
         void setRpiMetricValue(const QString &path, const QString &text);

@@ -4,11 +4,11 @@ FairWindSK is a Qt6 shell that launches Signal K web applications and exposes na
 
 ## High-level components
 
-- **Application bootstrap (`main.cpp`)**: Initializes Qt, installs translations, shows the splash screen on desktop targets, and hands control to the `FairWindSK` singleton before opening the main window. Desktop builds also configure WebEngine features such as accelerated canvas and plugin support, while mobile builds initialize Qt WebView.
+- **Application bootstrap (`main.cpp`)**: Initializes Qt, installs translations, and hands control to the `FairWindSK` singleton before opening the single main window. Desktop builds also configure WebEngine features such as accelerated canvas and plugin support, while mobile builds initialize Qt WebView.
 - **Singleton core (`FairWindSK`)**: Central orchestrator that loads configuration, negotiates the Signal K connection, synchronizes installed web apps, and exposes global services (the shared desktop `QWebEngineProfile` when available, the `signalk::Client`, and the app registry).
 - **Configuration management (`Configuration`)**: Loads and saves `fairwindsk.json`, seeds defaults from `resources/json/configuration.json`, and persists user choices (window geometry, unit preferences, application list, and plugin-specific settings). Token storage lives in `fairwindsk.ini` via `QSettings`.
-- **Application registry (`AppItem`)**: Represents a web or local application, including metadata (name, description, icon), activation state, ordering, and optional settings/help/about URLs. Items are refreshed from the Signal K server’s Apps API (`/signalk/v1/apps/list`) and merged with local overrides. Desktop builds can launch local `file://` applications.
-- **Signal K client (`signalk::Client`)**: Manages REST and websocket communication with the server using URLs derived from `connection.server` plus `/signalk`, including authentication tokens shared through the WebEngine cookie store. The client now re-discovers the server after disconnects, reopens the stream, re-sends subscriptions, and hydrates current values so widgets recover cleanly after a Signal K restart.
+- **Application registry (`AppItem`)**: Represents an embedded web application and its metadata (name, description, icon), activation state, ordering, and optional settings/help/about URLs. Items are refreshed from the Signal K server’s Apps API (`/signalk/v1/apps/list`) and merged with local overrides. Native `file://` applications are not launched because the shell enforces a single-window MFD model.
+- **Signal K client (`signalk::Client`)**: Manages REST and websocket communication with the server using URLs derived from `connection.server` plus `/signalk`, including authentication tokens shared through the WebEngine cookie store. Startup and reconnect discovery are now timer-driven instead of retry-loop driven, and the client publishes explicit `connecting`, `live`, `stale`, `reconnecting`, `degraded`, and `disconnected` shell states together with the last live-update timestamp.
 - **UI layers (`ui/` directory)**: Implements the Qt widgets for the desktop, top/bottom bars, settings panels, and embedded web views. A shared `ui/web/WebView` facade keeps the desktop `QWebEngineView` path and the mobile Qt WebView path behind the same widget-oriented API so the higher-level UI classes do not fork.
 
 The formal names and behavioral rules for the shell surfaces are defined in [docs/ui_shell.md](./ui_shell.md). In particular, contributor discussions should distinguish between the **Top Bar**, **Bottom Bar**, **Application Area**, **Bottom Bar horizontal drawer**, and **Application Area vertical drawer** instead of using generic terms such as popup, right menu, or main view.
@@ -16,7 +16,7 @@ The formal names and behavioral rules for the shell surfaces are defined in [doc
 ## Data and configuration flow
 
 1. **Startup**: `FairWindSK::loadConfig()` reads `fairwindsk.ini` for the JSON configuration path and debug flag, then loads or seeds `fairwindsk.json`.
-2. **Server connection**: `FairWindSK::startSignalK()` builds parameters from the configuration and attempts websocket connectivity, persisting any returned token back to `fairwindsk.ini`.
+2. **Server connection**: `FairWindSK::startSignalK()` builds parameters from the configuration and starts a non-blocking Signal K discovery/connection cycle, persisting any returned token back to `fairwindsk.ini` once authentication succeeds.
 3. **Application discovery**: `FairWindSK::loadApps()` requests `/signalk/v1/apps/list` from the configured server and falls back to the legacy `/skServer/webapps` path if needed. Each returned web app becomes an `AppItem`. Local apps in `fairwindsk.json` are merged, preserving order and activation. Inactive or missing server apps are demoted but retained.
 4. **UI initialization**: The main window consumes the `AppItem` registry to populate the desktop. Bars subscribe to Signal K paths defined in `resources/json/configuration.json`, matching autopilot, anchor, POB, and alarm data fields.
 
@@ -28,12 +28,42 @@ The formal names and behavioral rules for the shell surfaces are defined in [doc
 - REST-backed models such as MyData resource collections listen for the reconnect resynchronization event and reload their data after the stream recovers.
 - `FairWindSK` itself refreshes unit preferences, app discovery, and automatic comfort-view availability after a recovered connection so the overall runtime state matches the restarted server.
 
+## Shell health and operator trust
+
+- `FairWindSK` now aggregates Signal K connectivity, app-catalog refresh status, and foreground hosted-app degradation into a compact runtime-health model that feeds the shell chrome.
+- `ui/widgets/SignalKStatusIconsWidget` presents that model as a helm-readable badge plus REST/stream indicators, while `ui/widgets/SignalKServerBox` echoes the same state with last-live-update freshness text.
+- The Bottom Bar launcher/settings affordances also mirror the runtime-health state so recovery remains obvious even when the operator is focused on the lower shell chrome.
+- Top Bar navigation metrics now share one trust grammar across position, waypoint, bearings, distances, ETA/TTG, and speed/depth values so stale and missing states stay visible instead of reverting to mixed legacy hide/show behavior.
+- The same Top Bar path now keeps critical navigation widgets visible even when the configured Signal K path is missing or unconfigured, using explicit placeholder text and tooltips instead of silently dropping the field.
+- Critical operational readouts in the anchor/autopilot bars now render explicit `live`, `stale`, and `missing` states instead of silently disappearing or leaving stale values looking current.
+- Alarm buttons in the bottom bar use accent styling when active so emergency conditions remain visually dominant across comfort presets, including low-glare/night modes.
+- Shell chrome health summaries now prefer the aggregated runtime-health model over raw REST/stream booleans, so the helmsman sees one compact status story for connection state, app refresh state, and foreground app degradation.
+
+## Hosted web resilience
+
+- `ui/web/WebView` keeps the existing Signal K restart placeholder, but now also treats long-running page loads and blank-page outcomes as explicit degraded hosted-app states instead of leaving the operator with an apparently stuck page.
+- Hosted web fallbacks now escalate repeated failures into clearer retry-oriented operator language and include settings/launcher escape paths in the fallback guidance instead of only offering a generic retry.
+- Hosted web degradation still routes through the shared shell status model, so the chrome can reflect that the foreground app is degraded while keeping reload, home, and launcher recovery paths available.
+
+## Mobile shell policy
+
+- `ui/MainWindow` now owns the shell-level mobile geometry policy. It combines `QInputMethod` keyboard data with screen available-geometry changes, publishes safe-area and keyboard properties through the widget tree, and reapplies those metrics when orientation or screen attachment changes.
+- The shell layout now reserves explicit notch/gesture safe-area margins instead of assuming the full mobile window is available. Drawer sizing uses the adjusted shell geometry, so the drawer can stay usable through rotation and soft-keyboard transitions.
+- Mobile hosted apps also participate in that policy through `ui/web/WebView` and `ui/web/MobileWebView.qml`. The Qt WebView wrapper now accepts shell metrics from `MainWindow`, reports focus/viewport changes back to the shell, and releases web focus explicitly when native drawers or native text inputs take over.
+- The shell publishes compact-mode, keyboard-visible, native-input-focused, and web-content-focused properties to the main widget tree so widget/QML layers can react to one coordinated mobile state instead of inferring keyboard and focus behavior ad hoc.
+
+## Comfort auto mode
+
+- Automatic comfort view selection no longer probes `environment.sun` through a synchronous REST lookup during runtime reconfiguration.
+- When the `environment.sun` Signal K path is configured, `FairWindSK` now listens for streamed environment updates and resolves the active comfort preset from the received sun state or elevation when available.
+- If no usable environment context has arrived yet, comfort auto mode falls back to the deterministic clock-based preset mapping already used by the shell.
+
 ## Authentication model
 
 Tokens are stored outside the main JSON configuration to avoid accidental check-in. `Configuration::getToken()` and `setToken()` read/write `fairwindsk.ini`. On desktop builds, `FairWindSK` injects the token into the shared `QWebEngineProfile` cookie store as `JAUTHENTICATION`, so embedded web apps reuse that authentication context. Mobile builds use the alternate Qt WebView backend and therefore have a narrower shared-cookie integration surface than desktop.
 
 ## Extending the application
 
-- **Adding custom web apps**: Insert entries under `apps` in `fairwindsk.json` with `name` pointing to an HTTPS, HTTP, or `file://` URL. Provide `signalk.appIcon` and `signalk.displayName` to control the tile presentation.
+- **Adding custom web apps**: Insert entries under `apps` in `fairwindsk.json` with `name` pointing to an HTTPS or HTTP URL. Provide `signalk.appIcon` and `signalk.displayName` to control the tile presentation.
 - **Integrating native features**: Bars and custom widgets should consume data paths already listed under the `signalk` block in `resources/json/configuration.json` or add new keys that map to Signal K paths.
-- **Platform adaptations**: The singleton exposes window sizing and mode fields (fullscreen vs. windowed). Desktop-only integrations such as `QHotkey`, ZeroConf discovery, and native `file://` application launching remain part of the desktop builds, while Android and iOS now rely on the alternate Qt WebView based rendering path and keep those desktop-specific integrations disabled.
+- **Platform adaptations**: The singleton exposes window sizing and mode fields (fullscreen vs. windowed). Desktop-only integrations such as `QHotkey` and ZeroConf discovery remain part of desktop builds, while Android and iOS rely on the alternate Qt WebView based rendering path. Native `file://` application launching is blocked across targets.

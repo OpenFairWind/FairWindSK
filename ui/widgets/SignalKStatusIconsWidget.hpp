@@ -5,9 +5,13 @@
 #ifndef FAIRWINDSK_SIGNALKSTATUSICONSWIDGET_HPP
 #define FAIRWINDSK_SIGNALKSTATUSICONSWIDGET_HPP
 
+#include <QDateTime>
 #include <QLabel>
 #include <QPixmap>
 #include <QWidget>
+
+#include "FairWindSK.hpp"
+#include "signalk/Client.hpp"
 
 class QMovie;
 
@@ -27,7 +31,15 @@ namespace fairwindsk::ui::widgets {
     private slots:
         void onServerHealthChanged(bool healthy, const QString &statusText);
         void onConnectivityChanged(bool restHealthy, bool streamHealthy, const QString &statusText);
+        void onConnectionHealthStateChanged(fairwindsk::signalk::Client::ConnectionHealthState state,
+                                            const QString &stateText,
+                                            const QDateTime &lastStreamUpdate,
+                                            const QString &statusText);
+        void onAppsStateChanged(fairwindsk::FairWindSK::AppsState state, const QString &stateText);
         void onRequestActivityChanged(bool active);
+        void onRuntimeHealthChanged(fairwindsk::FairWindSK::RuntimeHealthState state,
+                                    const QString &summary,
+                                    const QString &badgeText);
 
     private:
         void applyIndicatorColor(QLabel *label, const QColor &color) const;
@@ -49,6 +61,12 @@ namespace fairwindsk::ui::widgets {
         bool m_restHealthy = false;
         bool m_streamHealthy = false;
         bool m_requestActive = false;
+        QString m_stateText;
+        QString m_runtimeSummary;
+        QString m_runtimeBadgeText;
+        QString m_appsStateText;
+        QDateTime m_lastStreamUpdate;
+        fairwindsk::FairWindSK::RuntimeHealthState m_runtimeState = fairwindsk::FairWindSK::RuntimeHealthState::Disconnected;
     };
 }
 

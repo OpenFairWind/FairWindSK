@@ -24,7 +24,11 @@
 
 namespace fairwindsk::ui::mydata {
 
-    FileViewer::FileViewer(const QString& path, QWidget *parent): QWidget(parent), ui(new Ui::FileViewer), m_path(path) {
+    FileViewer::FileViewer(const QString& path, QWidget *parent, const bool allowEditing)
+        : QWidget(parent),
+          ui(new Ui::FileViewer),
+          m_path(path),
+          m_allowEditing(allowEditing) {
         ui->setupUi(this);
 
         retintToolButtons();
@@ -75,7 +79,7 @@ namespace fairwindsk::ui::mydata {
         const QMimeDatabase mimeDatabase;
         const QMimeType mimeType = mimeDatabase.mimeTypeForFile(fileInfo, QMimeDatabase::MatchContent);
 
-        if (isEditableTextFile(mimeType)) {
+        if (m_allowEditing && isEditableTextFile(mimeType)) {
             loadEditableTextFile();
             return;
         }

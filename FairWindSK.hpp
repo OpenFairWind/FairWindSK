@@ -11,6 +11,7 @@
 #include <QString>
 #include <QColor>
 #include <QEvent>
+#include <QPointer>
 #include <QTimer>
 #include <nlohmann/json.hpp>
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
@@ -48,6 +49,29 @@ namespace fairwindsk {
         Q_OBJECT
 
     public:
+        enum class RuntimeHealthState {
+            Disconnected,
+            Connecting,
+            ConnectedLive,
+            ConnectedStale,
+            Reconnecting,
+            RestDegraded,
+            StreamDegraded,
+            AppsLoading,
+            AppsStale,
+            ForegroundAppDegraded
+        };
+        Q_ENUM(RuntimeHealthState)
+
+        enum class AppsState {
+            Idle,
+            Loading,
+            Loaded,
+            Failed,
+            Stale
+        };
+        Q_ENUM(AppsState)
+
         static constexpr quint32 RuntimeUi = 1u << 0;
         static constexpr quint32 RuntimeUnits = 1u << 1;
         static constexpr quint32 RuntimeSignalKConnection = 1u << 2;
@@ -66,9 +90,11 @@ namespace fairwindsk {
 
         // Starts the Signal K websocket client
         bool startSignalK();
+        bool stopSignalK();
 
         // Load the application
         bool loadApps();
+        void reloadAppsAsync();
 
         // Get the application item using the application hash
         AppItem *getAppItemByHash(const QString& hash);
@@ -91,6 +117,13 @@ namespace fairwindsk {
 
         // Get the Signal K client
         signalk::Client *getSignalKClient();
+        AppsState appsState() const;
+        QString appsStateText() const;
+        RuntimeHealthState runtimeHealthState() const;
+        QString runtimeHealthSummary() const;
+        QString runtimeHealthBadgeText() const;
+        void setForegroundAppHealth(const QString &summary, bool degraded);
+        void clearForegroundAppHealth();
 
         // Load the configuration from the json file
         void loadConfig();
@@ -107,12 +140,29 @@ namespace fairwindsk {
         // Destructor
         ~FairWindSK() override;
 
+    signals:
+        void appsReloadStarted();
+        void appsReloadFinished(bool success);
+        void appsStateChanged(AppsState state, const QString &stateText);
+        void runtimeHealthChanged(RuntimeHealthState state, const QString &summary, const QString &badgeText);
+
     private:
         bool eventFilter(QObject *watched, QEvent *event) override;
         void updateWebProfileCookie();
+        void applyWebProfileLocalization();
         void refreshAutomaticComfortView();
         void refreshAutomaticComfortViewAvailability(const Configuration *configuration = nullptr);
+        void refreshRuntimeHealth();
+        bool rebuildAppRegistry(const nlohmann::json *appsPayload = nullptr);
+        void setAppsState(AppsState state, const QString &stateText = QString());
+        void startAppsRequest(const QUrl &url, quint64 generation, bool fallbackRequest);
+        void finalizeAppsReload(bool success, const QString &statusText, const nlohmann::json *appsPayload = nullptr);
+        void handleAutomaticComfortEnvironmentUpdate(const QJsonObject &update);
 
+    private slots:
+        void onAutomaticComfortEnvironmentUpdate(const QJsonObject &update);
+
+    private:
         // The private constructor
         FairWindSK();
 
@@ -149,6 +199,20 @@ namespace fairwindsk {
         QTimer *m_autoComfortTimer = nullptr;
         QString m_activeComfortViewPreset;
         bool m_automaticComfortViewAvailable = false;
+        QString m_lastUiMetricsSignature;
+        QString m_lastUiThemeSignature;
+        class QNetworkAccessManager *m_runtimeNetworkAccessManager = nullptr;
+        QPointer<class QNetworkReply> m_appsReply;
+        quint64 m_appsReloadGeneration = 0;
+        AppsState m_appsState = AppsState::Idle;
+        QString m_appsStateText = QStringLiteral("Apps idle");
+        RuntimeHealthState m_runtimeHealthState = RuntimeHealthState::Disconnected;
+        QString m_runtimeHealthSummary = QStringLiteral("Signal K disconnected");
+        QString m_runtimeHealthBadgeText = QStringLiteral("DISC");
+        QString m_foregroundAppHealthSummary;
+        bool m_foregroundAppDegraded = false;
+        QString m_automaticComfortViewPath;
+        QJsonObject m_automaticComfortEnvironmentUpdate;
 
     };
 }

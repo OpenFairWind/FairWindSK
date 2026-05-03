@@ -45,6 +45,32 @@
         <file>resources/svg/OpenBridge/touch-checkbox-unchecked.svg</file>
         <file>resources/svg/OpenBridge/touch-checkbox-checked.svg</file>
         <file>resources/svg/OpenBridge/touch-checkbox-partial.svg</file>
+        <file>resources/svg/OpenBridge/layout-elastic-extender.svg</file>
+        <file>resources/svg/OpenBridge/layout-extend-height.svg</file>
+        <file>resources/svg/OpenBridge/layout-horizontal-maximize.svg</file>
+        <file>resources/svg/OpenBridge/layout-horizontal-minimize.svg</file>
+        <file>resources/svg/OpenBridge/layout-open-apps.svg</file>
+        <file>resources/svg/OpenBridge/layout-separator.svg</file>
+        <file>resources/svg/OpenBridge/layout-signalk.svg</file>
+        <file>resources/svg/OpenBridge/layout-vertical-maximize.svg</file>
+        <file>resources/svg/OpenBridge/layout-vertical-minimize.svg</file>
+        <file>resources/svg/OpenBridge/lcd-app.svg</file>
+        <file>resources/svg/OpenBridge/lcd-btw.svg</file>
+        <file>resources/svg/OpenBridge/lcd-clock.svg</file>
+        <file>resources/svg/OpenBridge/lcd-cog.svg</file>
+        <file>resources/svg/OpenBridge/lcd-dpt.svg</file>
+        <file>resources/svg/OpenBridge/lcd-dtg.svg</file>
+        <file>resources/svg/OpenBridge/lcd-eta.svg</file>
+        <file>resources/svg/OpenBridge/lcd-hdg.svg</file>
+        <file>resources/svg/OpenBridge/lcd-maximum.svg</file>
+        <file>resources/svg/OpenBridge/lcd-minimum.svg</file>
+        <file>resources/svg/OpenBridge/lcd-position.svg</file>
+        <file>resources/svg/OpenBridge/lcd-sog.svg</file>
+        <file>resources/svg/OpenBridge/lcd-stw.svg</file>
+        <file>resources/svg/OpenBridge/lcd-ttg.svg</file>
+        <file>resources/svg/OpenBridge/lcd-vmg.svg</file>
+        <file>resources/svg/OpenBridge/lcd-wpt.svg</file>
+        <file>resources/svg/OpenBridge/lcd-xte.svg</file>
 
         <!-- Bottom Apps icons from OpenBridge -->
         <file>resources/svg/OpenBridge/database.svg</file>
@@ -117,6 +143,28 @@
         <!-- Launcher icon -->
         <file>resources/images/icons/apps_icon.png</file>
         <file>resources/images/icons/webapp-256x256.png</file>
+        <file>resources/images/icons/chart_icon.png</file>
+        <file>resources/images/icons/sailgauge_icon.png</file>
+        <file>resources/images/icons/entertainment_icon.png</file>
+        <file>resources/images/icons/signalkbrowser_icon.png</file>
+        <file>resources/images/icons/imsf_icon.png</file>
+        <file>resources/images/icons/sonar_icon.png</file>
+        <file>resources/images/icons/signalkserver_icon.png</file>
+        <file>resources/images/icons/dashboard_icon.png</file>
+        <file>resources/images/icons/gc1530_icon.png</file>
+        <file>resources/images/icons/settings_icon.png</file>
+        <file>resources/images/icons/youtube_icon.png</file>
+        <file>resources/images/icons/weather_icon.png</file>
+        <file>resources/images/icons/web_icon.png</file>
+        <file>resources/images/icons/opencpn_icon.png</file>
+        <file>resources/images/icons/signalkmultiplexviewer_icon.png</file>
+        <file>resources/images/icons/uav_icon.png</file>
+        <file>resources/images/icons/chandlery_icon.png</file>
+        <file>resources/images/icons/video_icon.png</file>
+        <file>resources/images/icons/launcherax10m_icon.png</file>
+        <file>resources/images/icons/spotify_icon.png</file>
+        <file>resources/images/icons/radar_icon.png</file>
+        <file>resources/images/icons/netflix_icon.png</file>
 
         <!-- Mydata icons -->
         <file>resources/svg/OpenBridge/edit-google.svg</file>

@@ -57,16 +57,14 @@
        <widget class="QWidget" name="widget_Top" native="true"/>
       </item>
       <item>
-       
-         <widget class="QStackedWidget" name="stackedWidget_Center">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-         </widget>
-        
+       <widget class="QStackedWidget" name="stackedWidget_Center">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+       </widget>
       </item>
       <item>
        <widget class="QFrame" name="frameDialogDrawer">

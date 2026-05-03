@@ -1,5 +1,6 @@
 {
     "main": {
+        "language": "system",
         "virtualKeyboard": false,
         "uiScaleMode": "auto",
         "uiScalePreset": "normal",
@@ -45,6 +46,7 @@
         }
     ],
     "connection": {
+        "active": true,
         "server": ""
     },
     "signalk": {

@@ -6,7 +6,9 @@
 #define FAIRWINDSK_WEBVIEW_HPP
 
 #include <QIcon>
+#include <QMargins>
 #include <QRect>
+#include <QTimer>
 #include <QUrl>
 #include <QWidget>
 
@@ -21,6 +23,15 @@ namespace fairwindsk::ui::web {
         Q_OBJECT
 
     public:
+        enum class HealthState {
+            Normal,
+            Degraded,
+            Restarting,
+            Failed,
+            Unsupported
+        };
+        Q_ENUM(HealthState)
+
         explicit WebView(fairwindsk::WebProfileHandle *profile, QWidget *parent = nullptr);
         ~WebView() override;
 
@@ -37,6 +48,11 @@ namespace fairwindsk::ui::web {
         void runJavaScript(const QString &script);
         double zoomPercent() const;
         void setZoomPercent(double zoomPercent);
+        void releaseMobileFocus();
+        void applyMobileShellMetrics(const QMargins &safeAreaMargins,
+                                     int keyboardInset,
+                                     bool keyboardVisible,
+                                     bool compactMode);
 
     signals:
         void loadStarted();
@@ -46,23 +62,38 @@ namespace fairwindsk::ui::web {
         void titleChanged(const QString &title);
         void geometryChangeRequested(const QRect &newGeometry);
         void windowCloseRequested();
+        void healthStateChanged(fairwindsk::ui::web::WebView::HealthState state, const QString &summary);
+        void mobileFocusChanged(bool webContentFocused, bool textInputLikely);
+        void mobileViewportChanged(const QRect &viewport, bool keyboardVisible);
 
     private slots:
 #if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
+        void handleMobileLoadStarted();
         void handleMobileLoadProgressChanged(int progress);
         void handleMobileLoadFinished(bool ok);
         void handleMobileCurrentUrlNotified(const QString &url);
         void handleMobileTitleChanged(const QString &title);
+        void handleMobileFocusChanged(bool focused);
+        void handleMobileTextInputChanged(bool active);
+        void handleMobileViewportChanged(qreal width, qreal height, bool keyboardVisible);
 #endif
         void handleConnectivityChanged(bool restHealthy, bool streamHealthy, const QString &statusText);
         void handleServerStateResynchronized(bool recoveredFromDisconnect);
+        void handleLoadTimeout();
 
     private:
         void initializeDesktop(fairwindsk::WebProfileHandle *profile);
         void initializeMobile();
         void applyZoom();
+        void applyWebLocalization();
         static QString zoomScript(double zoomPercent);
         void showSignalKRestartPlaceholder();
+        void showFallbackPlaceholder(HealthState state, const QString &title, const QString &body, const QUrl &resumeUrl = QUrl());
+        void setHealthState(HealthState state, const QString &summary);
+        void startLoadTimeoutWatch();
+        void stopLoadTimeoutWatch();
+        bool noteAuthenticationChallenge(const QString &originLabel);
+        bool isSignalKHostedUrl(const QUrl &url) const;
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         void setDesktopPage(class WebPage *page);
@@ -71,8 +102,17 @@ namespace fairwindsk::ui::web {
         int m_loadProgress = 100;
         QWidget *m_viewWidget = nullptr;
         double m_zoomPercent = 100.0;
+        QUrl m_requestedUrl;
         QUrl m_restartResumeUrl;
         bool m_restartPlaceholderVisible = false;
+        HealthState m_healthState = HealthState::Normal;
+        QString m_healthSummary = QStringLiteral("Web view ready");
+        QTimer m_loadTimeoutTimer;
+        bool m_mobileWebContentFocused = false;
+        bool m_mobileTextInputActive = false;
+        int m_consecutiveFailureCount = 0;
+        int m_authChallengeCount = 0;
+        QDateTime m_lastAuthChallengeAt;
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         QWebEngineView *m_desktopView = nullptr;
@@ -83,6 +123,7 @@ namespace fairwindsk::ui::web {
         QUrl m_currentUrl;
         bool m_canGoBack = false;
         bool m_canGoForward = false;
+        QRect m_mobileViewport;
 #endif
     };
 }

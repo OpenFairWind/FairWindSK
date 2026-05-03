@@ -83,6 +83,13 @@
           </widget>
          </item>
          <item row="0" column="2">
+          <widget class="QPushButton" name="pushButton_connectionToggle">
+           <property name="text">
+            <string>Pause Connection</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="3">
           <widget class="QPushButton" name="pushButton_requestToken">
            <property name="enabled">
             <bool>false</bool>
@@ -106,7 +113,7 @@
            </property>
           </widget>
          </item>
-         <item row="1" column="2">
+         <item row="1" column="3">
           <widget class="QPushButton" name="pushButton_cancelRequest">
            <property name="enabled">
             <bool>false</bool>
@@ -130,7 +137,7 @@
            </property>
           </widget>
          </item>
-         <item row="2" column="2">
+         <item row="2" column="3">
           <widget class="QPushButton" name="pushButton_readOnly">
            <property name="text">
             <string>Read Only</string>
@@ -151,7 +158,7 @@
            </property>
           </widget>
          </item>
-         <item row="3" column="2">
+         <item row="3" column="3">
           <widget class="QPushButton" name="pushButton_removeToken">
            <property name="enabled">
             <bool>false</bool>

@@ -5,6 +5,7 @@
 #ifndef FAIRWINDSK_CONNECTION_HPP
 #define FAIRWINDSK_CONNECTION_HPP
 
+#include <QList>
 #include <QNetworkAccessManager>
 #include <QPointer>
 #include <QWidget>
@@ -36,13 +37,14 @@ namespace fairwindsk::ui::settings {
         void onCancelRequest();
         void onReadOnly();
         void onRemoveToken();
+        void onToggleConnection();
         void handleTokenRequestReply();
         void handleTokenStatusReply();
 
-        void onUpdateSignalKServerUrl() const;
+        void onUpdateSignalKServerUrl();
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
-        void addService(const QZeroConfService& item) const;
+        void addService(const QZeroConfService& item);
 #endif
 
 
@@ -60,17 +62,29 @@ namespace fairwindsk::ui::settings {
         void clearPendingRequest(bool clearToken) const;
         void applyCompletedAccessRequest(const QJsonObject &accessRequest);
         void finishTokenFlowWithError(const QString &state, const QString &message);
+        void commitSignalKServerUrl(bool restartWhenActive);
+        void addServerUrlOption(const QString &serverUrl) const;
+        bool connectionEnabled() const;
+        void setConnectionEnabled(bool enabled);
+        void updateConnectionToggle();
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+        void startZeroConfDiscovery();
+        void stopZeroConfDiscovery();
+        QString signalKUrlForService(const QZeroConfService &item) const;
+        bool isSignalKDiscoveryService(const QZeroConfService &item) const;
+#endif
 
         Ui::Connection *ui = nullptr;
         Settings *m_settings = nullptr;
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
-        QZeroConf m_zeroConf;
+        QList<QZeroConf *> m_zeroConfBrowsers;
 #endif
         QTimer *m_timer = nullptr;
         fairwindsk::ui::web::WebView *m_browserView = nullptr;
         QNetworkAccessManager *m_networkAccessManager = nullptr;
         QPointer<QNetworkReply> m_activeTokenReply;
+        bool m_committingServerUrl = false;
 
     };
 } // fairwindsk::ui::settings

@@ -4,12 +4,10 @@
 
 #include "Notes.hpp"
 
-#include <QDesktopServices>
 #include <QFile>
 #include <QFileInfo>
 #include <QJsonDocument>
 #include <QMimeDatabase>
-#include <QUrl>
 
 #include "signalk/Client.hpp"
 #include "ui_Notes.h"
@@ -145,10 +143,8 @@ namespace fairwindsk::ui::mydata {
             return;
         }
 
-        const QFileInfo localInfo(path);
-        const QUrl url = localInfo.exists() ? QUrl::fromLocalFile(localInfo.absoluteFilePath()) : QUrl::fromUserInput(path);
-        if (!url.isValid() || !QDesktopServices::openUrl(url)) {
-            showPageError(tr("Unable to open the selected attachment or link."));
-        }
+        openPathInSingleWindow(path,
+                               tr("This note does not reference an attachment or external link yet."),
+                               tr("Unable to open the selected attachment or link."));
     }
 }

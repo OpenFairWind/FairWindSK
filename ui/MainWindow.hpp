@@ -7,10 +7,12 @@
 
 #include <QMainWindow>
 #include <QMap>
+#include <QMargins>
 #include <QPointer>
 #include <QDebug>
 #include <QCloseEvent>
-#include <QEventLoop>
+#include <QRectF>
+#include <functional>
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
 #include <QHotkey>
@@ -29,8 +31,8 @@
 namespace Ui { class MainWindow; }
 class QLabel;
 class QHBoxLayout;
-class QEventLoop;
 class QFrame;
+class QScreen;
 class QVBoxLayout;
 
 namespace fairwindsk::ui {
@@ -45,6 +47,7 @@ namespace fairwindsk::ui {
     namespace launcher {class Launcher;}
     namespace bottombar {class BottomBar;}
     namespace settings {class Settings;}
+    namespace web { class Web; }
 
     class MainWindow : public QMainWindow {
         Q_OBJECT
@@ -70,7 +73,11 @@ namespace fairwindsk::ui {
         bottombar::BottomBar *getBottomBar();
 
         static MainWindow *instance(QWidget *context = nullptr);
-        int execDrawer(const QString &title, QWidget *content, const QList<DrawerButtonSpec> &buttons, int defaultResult = 0);
+        void showDrawerAsync(const QString &title,
+                             QWidget *content,
+                             const QList<DrawerButtonSpec> &buttons,
+                             std::function<void(int)> onFinished,
+                             int defaultResult = 0);
         void finishActiveDrawer(int result = 0);
 
     private:
@@ -89,12 +96,22 @@ namespace fairwindsk::ui {
         void ensureMyDataPage(QWidget *fallbackWidget = nullptr);
         void ensureSettingsPage(QWidget *fallbackWidget = nullptr);
         void prewarmPersistentPages();
+        void updateDrawerGeometry();
+        void updateAdaptiveShellMode();
+        void updateMobileShellMetrics();
+        void updateMobileShellProperties();
+        void attachWindowScreenSignals();
+        void handleWindowScreenChanged();
+        void handleApplicationFocusChanged(QWidget *old, QWidget *now);
+        bool isNativeTextInputWidget(QWidget *widget) const;
+        void releaseCurrentWebInputFocus();
+        void applyCurrentWebMobileMetrics();
+        QMargins resolvedMobileSafeAreaMargins() const;
+        int resolvedKeyboardInset() const;
 
         // Close Event handler
         void closeEvent(QCloseEvent *bar) override;
-
-        // Get Window Id using the Process Id
-        static WId getWIdByPId(qint64 pId);
+        void resizeEvent(QResizeEvent *event) override;
 
     public slots:
         void prewarmPersistentPagesAfterStartup();
@@ -145,8 +162,9 @@ namespace fairwindsk::ui {
         QWidget *m_dialogDrawerContentHost = nullptr;
         QVBoxLayout *m_dialogDrawerContentLayout = nullptr;
         QHBoxLayout *m_dialogDrawerButtonsLayout = nullptr;
-        QEventLoop *m_activeDrawerLoop = nullptr;
-        int *m_activeDrawerResult = nullptr;
+        std::function<void(int)> m_activeDrawerFinishedHandler;
+        int m_activeDrawerDefaultResult = 0;
+        bool m_drawerOccupiesApplicationArea = false;
         bool m_quitConfirmed = false;
 
         // QWidget containing useful infos
@@ -160,6 +178,16 @@ namespace fairwindsk::ui {
 
         // The pointer to the foreground app
         QPointer<fairwindsk::AppItem> m_currentApp;
+        QPointer<fairwindsk::ui::web::Web> m_currentWebApp;
+        QString m_currentAppStatusSummary;
+        QMargins m_mobileSafeAreaMargins;
+        int m_mobileKeyboardInset = 0;
+        int m_mobileBottomInset = 0;
+        bool m_softwareKeyboardVisible = false;
+        bool m_mobileWebContentFocused = false;
+        bool m_mobileNativeTextInputFocused = false;
+        bool m_mobileLandscape = false;
+        QPointer<QScreen> m_attachedScreen;
 
         // The hotkey
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)

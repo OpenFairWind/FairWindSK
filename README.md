@@ -49,9 +49,9 @@ Those bars relay on SK web apps invoking their APIs or access the Signal K APIs 
 Applications are SK Web Apps hosted by the SK server, but they can also be other web applications manually configured
 by providing the URL.
 
-Applications can also be local desktop applications (as OpenCPN) characterized by a local path URL with the schema file://.
+The launcher enforces the single-window marine display model: configured apps must run as embedded web views, and native `file://` applications are blocked instead of being launched as external windows.
 
-A mechanism to be back on the FairWindSK desktop after being launched is implemented as a SHIFT+TAB hot key on desktop builds.
+The `SHIFT+TAB` hot key on desktop builds brings the FairWindSK window back to the foreground without relying on external application windows.
 
 ### Components under active development ###
 * Final Android and iOS validation of the alternate Qt WebView runtime path, including real-device parity checks against the more established desktop WebEngine behavior

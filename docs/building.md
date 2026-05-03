@@ -179,6 +179,8 @@ sudo touch /usr/lib/aarch64-linux-gnu/cmake/Qt6VirtualKeyboard/Qt6VirtualKeyboar
 
 - For kiosk deployments, see `extras/fairwindsk-startup.desktop` and `extras/fairwindsk-startup`.
 - The `fairwindsk-startup` helper now waits briefly for the configured Signal K web-app catalog to come online before launching FairWindSK, which improves plugin icon/artwork availability during Raspberry Pi autostart boots.
+- Bundled application icons are compiled into the Qt resources as well as copied beside the desktop executable, so Raspberry Pi OS launchers can fall back to embedded artwork if the runtime icon directory is missing or the Signal K catalog is still settling.
+- Raspberry Pi OS builds use explicit work-area geometry for `maximized` and a frameless topmost kiosk request for `fullscreen`. On Linux ARM, FairWindSK also clamps the window to the connected DRM display mode when the desktop reports a virtual width that is wider than the actual panel. On Bookworm/labwc desktops, the panel can still be policy-controlled by the desktop session; for dedicated MFD/kiosk installations, set `autohide=true` in `~/.config/wf-panel-pi.ini` or disable the panel autostart if it still overlays the application.
 - `cmake --install build` uses the same Linux desktop install layout, so the binary lands in `${CMAKE_INSTALL_BINDIR}` and the icon/runtime helper assets are installed beside it.
 - When the install runs on Raspberry Pi OS, the generated `fairwindsk-startup.desktop` entry is also installed to `/etc/xdg/autostart` (respecting `DESTDIR` when packaging) so FairWindSK autostarts automatically after installation.
 - When an OpenPlotter installation is detected during install, FairWindSK keeps the normal XDG launcher entry and also performs a best-effort copy into any detected OpenPlotter menu directories.
@@ -212,7 +214,7 @@ Notes:
 
 - The CMake build handles `QtZeroConf` and `QHotkey` as desktop-only dependencies and copies their DLLs next to the executable after the build.
 - `cmake --install build` installs `FairWindSK.exe`, the bundled icon directory under `bin\\icons`, and the desktop helper DLLs into the same `bin` directory.
-- Local `file://` applications remain a desktop-only integration and are supported on Windows.
+- Local `file://` launcher entries remain readable for compatibility, but single-window mode blocks them from launching external native applications on Windows.
 
 ## Android
 
@@ -267,7 +269,7 @@ Qt Creator is still the recommended path for packaging and deployment because it
 
 Notes:
 
-- Desktop-only integrations such as `QHotkey`, Zeroconf browser discovery, desktop-native `file://` launcher apps, and the shared `QWebEngineProfile` cookie path remain disabled on Android.
+- Desktop-only integrations such as `QHotkey`, Zeroconf browser discovery, and the shared `QWebEngineProfile` cookie path remain disabled on Android. Native `file://` launcher apps are blocked on every target by the single-window model.
 - Embedded previews and web apps still load inside the application, but advanced desktop WebEngine-specific hooks are intentionally not compiled into the Android target.
 
 ## iOS / iPadOS
@@ -322,7 +324,7 @@ For simulator-only builds, use the simulator SDK and matching architecture value
 
 Notes:
 
-- Desktop-only integrations such as `QHotkey`, Zeroconf browser discovery, desktop-native `file://` launcher apps, and the shared `QWebEngineProfile` cookie path remain disabled on iOS and iPadOS.
+- Desktop-only integrations such as `QHotkey`, Zeroconf browser discovery, and the shared `QWebEngineProfile` cookie path remain disabled on iOS and iPadOS. Native `file://` launcher apps are blocked on every target by the single-window model.
 - Embedded previews and web apps still load inside the application, but advanced desktop WebEngine-specific hooks are intentionally not compiled into the Apple mobile targets.
 
 ## Runtime and deployment notes

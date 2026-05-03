@@ -8,6 +8,9 @@
 #include <QWidget>
 #include <QToolButton>
 #include <QEvent>
+#include <QDateTime>
+
+#include "signalk/Client.hpp"
 
 namespace Ui { class AlarmsBar; }
 
@@ -46,11 +49,16 @@ namespace fairwindsk::ui::bottombar {
         QString alarmUiKey(const QString &apiKey) const;
         void setAlarmState(const QString &apiKey, bool active);
         void applyComfortStyle() const;
+        void updateControlTooltips();
 
 
     private:
         Ui::AlarmsBar *ui = nullptr;
         QMap<QString, QToolButton*> m_alarmToolButtons;
+        fairwindsk::signalk::Client::ConnectionHealthState m_connectionState =
+            fairwindsk::signalk::Client::ConnectionHealthState::Disconnected;
+        QString m_connectionStatusText;
+        QDateTime m_lastStreamUpdate;
     };
 } // fairwindsk::ui::bottombar
 

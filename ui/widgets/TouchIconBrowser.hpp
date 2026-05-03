@@ -5,8 +5,8 @@
 #ifndef FAIRWINDSK_UI_WIDGETS_TOUCHICONBROWSER_HPP
 #define FAIRWINDSK_UI_WIDGETS_TOUCHICONBROWSER_HPP
 
-#include <QPixmap>
 #include <QFrame>
+#include <QPixmap>
 #include <QWidget>
 
 class QLabel;
@@ -50,7 +50,6 @@ namespace fairwindsk::ui::widgets {
         QLabel *m_selectionLabel = nullptr;
         QListWidget *m_listWidget = nullptr;
         QPushButton *m_cancelButton = nullptr;
-        QPushButton *m_applyButton = nullptr;
         QFrame *m_previewFrame = nullptr;
         bool m_isApplyingComfortChrome = false;
     };

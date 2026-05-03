@@ -34,7 +34,13 @@ namespace fairwindsk::ui::web {
      * Web
      * Constructor
      */
-    Web::Web(QWidget *parent, fairwindsk::AppItem *appItem, fairwindsk::WebProfileHandle *profile): QWidget(parent), ui(new Ui::Web) {
+    Web::Web(QWidget *parent, fairwindsk::AppItem *appItem, fairwindsk::WebProfileHandle *profile)
+        : QWidget(parent),
+          ui(new Ui::Web)
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+          , m_downloadManagerWidget(this)
+#endif
+    {
 
         // Set the application pointer
         m_appItem = appItem;
@@ -91,6 +97,13 @@ namespace fairwindsk::ui::web {
         // Add the web view widget to the user interface
         ui->verticalLayout_WebView->addWidget(m_webView);
 
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+        m_downloadManagerWidget.setVisible(false);
+        m_downloadManagerWidget.setMaximumHeight(220);
+        m_downloadManagerWidget.setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
+        ui->verticalLayout_WebView->addWidget(&m_downloadManagerWidget);
+#endif
+
         m_progressBar = new QProgressBar(this);
         m_progressBar->setTextVisible(false);
         m_progressBar->setMaximumHeight(4);
@@ -102,6 +115,24 @@ namespace fairwindsk::ui::web {
         connect(m_webView, &WebView::loadProgress, this, &Web::handleWebViewLoadProgress);
         connect(m_webView, &WebView::loadFinished, this, &Web::handleLoadFinished);
         connect(m_webView, &WebView::urlChanged, this, [this]() { syncNavigationState(); });
+        connect(m_webView, &WebView::mobileFocusChanged, this, &Web::mobileFocusChanged);
+        connect(m_webView, &WebView::mobileViewportChanged, this, &Web::mobileViewportChanged);
+        connect(m_webView, &WebView::healthStateChanged, this, [this](const WebView::HealthState state, const QString &summary) {
+            QString statusSummary = summary.trimmed();
+            if (statusSummary.isEmpty()) {
+                statusSummary = tr("Hosted app ready");
+            }
+
+            if (state == WebView::HealthState::Degraded) {
+                statusSummary += tr(" • Confirm with Home, Reload, or Settings");
+            } else if (state == WebView::HealthState::Restarting) {
+                statusSummary += tr(" • Recovery is automatic");
+            } else if (state == WebView::HealthState::Failed || state == WebView::HealthState::Unsupported) {
+                statusSummary += tr(" • Use Reload, Home, or Close for recovery");
+            }
+
+            emit statusSummaryChanged(statusSummary, state != WebView::HealthState::Normal);
+        });
 
         syncNavigationState();
 
@@ -136,6 +167,35 @@ namespace fairwindsk::ui::web {
 
         // Set the new navigation bar status
         m_NavigationBar->setVisible(status);
+    }
+
+    void Web::releaseMobileFocus() {
+        if (m_webView) {
+            m_webView->releaseMobileFocus();
+        }
+    }
+
+    void Web::applyMobileShellMetrics(const QMargins &safeAreaMargins,
+                                      const int keyboardInset,
+                                      const bool keyboardVisible,
+                                      const bool compactMode) {
+        setProperty("mobileSafeAreaLeft", safeAreaMargins.left());
+        setProperty("mobileSafeAreaTop", safeAreaMargins.top());
+        setProperty("mobileSafeAreaRight", safeAreaMargins.right());
+        setProperty("mobileSafeAreaBottom", safeAreaMargins.bottom());
+        setProperty("mobileKeyboardInset", keyboardInset);
+        setProperty("softwareKeyboardVisible", keyboardVisible);
+        setProperty("compactShellMode", compactMode);
+        setProperty("phoneCompanionMode", compactMode);
+        if (m_NavigationBar) {
+            m_NavigationBar->setProperty("compactShellMode", compactMode);
+            m_NavigationBar->setProperty("softwareKeyboardVisible", keyboardVisible);
+            m_NavigationBar->setProperty("phoneCompanionMode", compactMode);
+        }
+
+        if (m_webView) {
+            m_webView->applyMobileShellMetrics(safeAreaMargins, keyboardInset, keyboardVisible, compactMode);
+        }
     }
 
     /*
@@ -302,6 +362,7 @@ namespace fairwindsk::ui::web {
         if (m_NavigationBar) {
             m_NavigationBar->setReloadActive(true);
         }
+        emit statusSummaryChanged(tr("Hosted app loading"), false);
         syncNavigationState();
     }
 

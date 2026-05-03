@@ -1,13 +1,12 @@
+#include <QCoreApplication>
 #include <QApplication>
-#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
-#include <QSplashScreen>
-#endif
 #include <QByteArray>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QSettings>
 #include <QLibraryInfo>
+#include <QLocale>
 #include <QStandardPaths>
 #include <QTimer>
 #include <QTranslator>
@@ -21,8 +20,14 @@
 
 #include "FairWindSK.hpp"
 #include "Configuration.hpp"
+#include "Localization.hpp"
+#include "Units.hpp"
 #include "runtime/DiagnosticsSupport.hpp"
 #include "ui/MainWindow.hpp"
+#include "ui/mydata/Files.hpp"
+#include "ui/settings/System.hpp"
+
+#include <algorithm>
 
 #if defined(Q_OS_LINUX)
 namespace {
@@ -145,6 +150,69 @@ namespace {
 #endif
 
 namespace {
+    bool hasArgument(const int argc, char *argv[], const char *argument) {
+        if (!argument) {
+            return false;
+        }
+
+        const QString expected = QString::fromUtf8(argument);
+        for (int index = 1; index < argc; ++index) {
+            if (argv[index] && QString::fromUtf8(argv[index]) == expected) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    int runUnitsReentrancySelfTest(int argc, char *argv[]) {
+        QCoreApplication app(argc, argv);
+        QCoreApplication::setOrganizationName("uniparthenope.it");
+        QCoreApplication::setApplicationName("FairWindSK");
+
+        QString failureReason;
+        const bool passed = fairwindsk::Units::runSignalKLookupRegressionSelfTest(&failureReason);
+        if (passed) {
+            qInfo() << "Units re-entrancy self-test passed";
+            return 0;
+        }
+
+        qCritical() << "Units re-entrancy self-test failed:" << failureReason;
+        return 1;
+    }
+
+    int runDirectorySafetySelfTest(int argc, char *argv[]) {
+        QCoreApplication app(argc, argv);
+        QCoreApplication::setOrganizationName("uniparthenope.it");
+        QCoreApplication::setApplicationName("FairWindSK");
+
+        QString failureReason;
+        const bool passed = fairwindsk::ui::mydata::Files::runDirectorySafetySelfTest(&failureReason);
+        if (passed) {
+            qInfo() << "Directory safety self-test passed";
+            return 0;
+        }
+
+        qCritical() << "Directory safety self-test failed:" << failureReason;
+        return 1;
+    }
+
+    int runConfigurationImportSelfTest(int argc, char *argv[]) {
+        QCoreApplication app(argc, argv);
+        QCoreApplication::setOrganizationName("uniparthenope.it");
+        QCoreApplication::setApplicationName("FairWindSK");
+
+        QString failureReason;
+        const bool passed = fairwindsk::ui::settings::System::runConfigurationImportSelfTest(&failureReason);
+        if (passed) {
+            qInfo() << "Configuration import self-test passed";
+            return 0;
+        }
+
+        qCritical() << "Configuration import self-test failed:" << failureReason;
+        return 1;
+    }
+
     QString resolveConfigurationPathFromSettings() {
         const QString settingsPath = fairwindsk::Configuration::settingsFilename();
         QSettings settings(settingsPath, QSettings::IniFormat);
@@ -172,9 +240,41 @@ namespace {
         }
         return configuration.getVirtualKeyboard();
     }
+
+    void configureApplicationLocale(const fairwindsk::Configuration &configuration, QTranslator &translator) {
+        QLocale locale = fairwindsk::localization::effectiveLocale(configuration);
+        QString languageCode = fairwindsk::localization::effectiveLanguageCode(configuration);
+        const QString translationPath = fairwindsk::localization::translationResourcePath(languageCode);
+
+        if (!translationPath.isEmpty()) {
+            if (translator.load(translationPath)) {
+                QApplication::installTranslator(&translator);
+                qInfo() << "Translator loaded" << translationPath;
+            } else {
+                qWarning() << "Unable to load translator" << translationPath << "- falling back to English";
+                locale = fairwindsk::localization::effectiveLocaleForSelection(QStringLiteral("en"));
+                languageCode = QStringLiteral("en");
+            }
+        }
+
+        QLocale::setDefault(locale);
+        qInfo() << "Application language"
+                << languageCode
+                << "locale" << fairwindsk::localization::cultureName(locale)
+                << "web Accept-Language" << fairwindsk::localization::webAcceptLanguageHeader(locale);
+    }
 }
 
 int main(int argc, char *argv[]) {
+    if (hasArgument(argc, argv, "--self-test-units-reentrancy")) {
+        return runUnitsReentrancySelfTest(argc, argv);
+    }
+    if (hasArgument(argc, argv, "--self-test-directory-safety")) {
+        return runDirectorySafetySelfTest(argc, argv);
+    }
+    if (hasArgument(argc, argv, "--self-test-configuration-import")) {
+        return runConfigurationImportSelfTest(argc, argv);
+    }
 
     // The translator
     QTranslator translator;
@@ -227,27 +327,9 @@ int main(int argc, char *argv[]) {
     });
     fairwindsk::runtime::dispatchPendingDiagnosticsReport();
 
-    // Install the translator
-    QApplication::installTranslator(&translator);
-    qInfo() << "Translator installed";
-
     // Set the window icon
     QApplication::setWindowIcon(QIcon(QPixmap::fromImage(QImage(":/resources/images/mainwindow/fairwind_icon.png"))));
     qInfo() << "Application icon set";
-
-#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
-    // Get the splash screen logo
-    const QPixmap pixmap(":/resources/images/other/splash_logo.png");
-
-    // Create a splash screen containing the logo
-    QSplashScreen splash(pixmap, Qt::WindowStaysOnTopHint);
-
-    // Show the logo
-    splash.show();
-
-    // Show message
-    splash.showMessage(QObject::tr("Welcome to FairWindSK a GUI for the Signal K server!"), 500, Qt::white);
-#endif
 
     // Get the FairWind singleton
     const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
@@ -257,8 +339,7 @@ int main(int argc, char *argv[]) {
     fairWindSK->loadConfig();
     qInfo() << "Configuration loaded";
 
-#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
-#endif
+    configureApplicationLocale(*fairWindSK->getConfiguration(), translator);
 
     // Set web profile options
     // Create a new MainWindow object
@@ -278,28 +359,35 @@ int main(int argc, char *argv[]) {
     qInfo() << "Mobile web profile uses Qt WebView backend";
 #endif
 
-#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
-    // Close the splash screen presenting the MainWindow UI
-    qInfo() << "About to close splash screen";
-#if defined(Q_OS_LINUX)
-    splash.hide();
-    splash.close();
-    qInfo() << "Splash screen closed with Linux-safe path";
-#else
-    splash.finish((QWidget *) &w);
-    qInfo() << "Splash screen finished";
-#endif
-#endif
-
     qInfo() << "Scheduling deferred startup tasks";
     QTimer::singleShot(0, &w, [fairWindSK]() {
+        if (fairwindsk::runtime::isShutdownRequested()) {
+            qInfo() << "Deferred startup tasks skipped because shutdown is already requested";
+            return;
+        }
+
         qInfo() << "Deferred startup tasks begin";
         fairWindSK->startSignalK();
+        if (fairwindsk::runtime::isShutdownRequested()) {
+            qInfo() << "Deferred startup tasks cancelled after Signal K startup";
+            return;
+        }
+
         qInfo() << "Signal K startup completed";
         fairWindSK->loadApps();
+        if (fairwindsk::runtime::isShutdownRequested()) {
+            qInfo() << "Deferred startup tasks cancelled after app loading";
+            return;
+        }
+
         qInfo() << "App loading completed";
         if (auto *mainWindow = fairwindsk::ui::MainWindow::instance()) {
             mainWindow->applyRuntimeConfiguration();
+            if (fairwindsk::runtime::isShutdownRequested()) {
+                qInfo() << "Post-startup page prewarm skipped because shutdown is requested";
+                return;
+            }
+
             qInfo() << "Runtime configuration applied";
             mainWindow->prewarmPersistentPagesAfterStartup();
             qInfo() << "Post-startup page prewarm scheduled";

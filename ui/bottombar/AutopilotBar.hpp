@@ -9,6 +9,7 @@
 #include <nlohmann/json.hpp>
 #include <QWidget>
 #include <QEvent>
+#include <QJsonObject>
 #include <QSlider>
 #include "Units.hpp"
 
@@ -73,6 +74,9 @@ namespace fairwindsk::ui::bottombar {
         Units *m_units = nullptr;
         nlohmann::json m_signalkPaths;
         bool m_autopilotAvailable = false;
+        QJsonObject m_lastRsaUpdate;
+        QJsonObject m_lastStateUpdate;
+        QJsonObject m_lastTargetHeadingUpdate;
 
         //QGamepad *m_gamepad;
     };

@@ -6,16 +6,23 @@
 #define TOPBAR_HPP
 
 #include <QIcon>
+#include <QHBoxLayout>
 #include <QJsonObject>
 #include <QPointer>
+#include <QHash>
+#include <QPointer>
+#include <QSet>
+#include <QVector>
 #include <QWidget>
 
 #include <FairWindSK.hpp>
 #include "ui_TopBar.h"
 #include "Units.hpp"
+#include "ui/layout/BarLayout.hpp"
 #include "ui/widgets/SignalKStatusIconsWidget.hpp"
 
 namespace Ui { class TopBar; }
+class QGraphicsEffect;
 
 namespace fairwindsk::ui::topbar {
 
@@ -26,13 +33,17 @@ namespace fairwindsk::ui::topbar {
         explicit TopBar(QWidget *parent = nullptr);
 
         ~TopBar() override;
+        static TopBar *instance();
 
         void setCurrentApp(AppItem *appItem);
+        void setCurrentAppStatusSummary(const QString &summary);
         void setCurrentContext(const QString &name,
                                const QString &tooltip = QString(),
                                const QIcon &icon = QIcon(),
                                bool enableButton = false);
         void refreshFromConfiguration();
+        void setLayoutEditHighlightEnabled(bool enabled);
+        QWidget *widgetForItemId(const QString &itemId) const;
 
     public slots:
         void toolbuttonUL_clicked();
@@ -61,18 +72,74 @@ namespace fairwindsk::ui::topbar {
         void clickedToolbuttonUR();
 
     private:
+        struct MetricRenderTarget {
+            QWidget *container = nullptr;
+            QLabel *valueLabel = nullptr;
+            QLabel *unitLabel = nullptr;
+            QString itemId;
+        };
+
+        void renderNumericMetric(const MetricRenderTarget &target,
+                                 const QString &title,
+                                 const QString &path,
+                                 const QJsonObject &update,
+                                 const QString &sourceUnit,
+                                 const QString &targetUnit);
+        void renderAngularMetric(const MetricRenderTarget &target,
+                                 const QString &title,
+                                 const QString &path,
+                                 const QJsonObject &update);
+        void renderDateMetric(const MetricRenderTarget &target,
+                              const QString &title,
+                              const QJsonObject &update,
+                              const QString &format);
+        void renderWaypointMetric(const MetricRenderTarget &target,
+                                  const QString &title,
+                                  const QJsonObject &update);
+        void renderPositionMetric(const MetricRenderTarget &target,
+                                  const QString &title,
+                                  const QJsonObject &update);
+        void refreshCachedMetricPresentations();
+        void refreshCachedNumericMetric(const MetricRenderTarget &target,
+                                        const QString &title,
+                                        const QString &path,
+                                        const QJsonObject &update);
+        void refreshCachedDateMetric(const MetricRenderTarget &target,
+                                     const QString &title,
+                                     const QJsonObject &update);
+        void refreshCachedWaypointMetric(const MetricRenderTarget &target,
+                                         const QString &title,
+                                         const QJsonObject &update);
+        void refreshCachedPositionMetric(const MetricRenderTarget &target,
+                                         const QString &title,
+                                         const QJsonObject &update);
         void changeEvent(QEvent *event) override;
         void updateComfortViewIcon() const;
+        void applyFramelessRuntimeChrome() const;
         void updateDistanceLabels() const;
         void updateSpeedLabels() const;
         void refreshMetricLabelWidths() const;
         void resetCurrentAppPresentation() const;
+        bool isLayoutWidgetActive(const QString &itemId) const;
+        void rebuildLayout();
+        QWidget *createContextWidget();
+        QWidget *createSeparatorWidget();
+        void clearConfiguredLayout();
+        void applyEntrySizing(const fairwindsk::ui::layout::LayoutEntry &entry,
+                              const QString &itemId,
+                              QWidget *widget,
+                              QHBoxLayout *layout);
+        void clearLayoutEditHints();
+        void applyLayoutEditHints(const QList<fairwindsk::ui::layout::LayoutEntry> &entries);
 
         Ui::TopBar *ui;
         QPointer<AppItem> m_currentApp;
         widgets::SignalKStatusIconsWidget *m_signalKStatusIcons = nullptr;
         Units *m_units = nullptr;
         QTimer *m_timer = nullptr;
+        QWidget *m_contextWidget = nullptr;
+        QHBoxLayout *m_contextLayout = nullptr;
+        QVector<QPointer<QWidget>> m_dynamicLayoutWidgets;
         QString m_pathCOG;
         QString m_pathSOG;
         QString m_pathHDG;
@@ -82,6 +149,10 @@ namespace fairwindsk::ui::topbar {
         QString m_pathDTG;
         QString m_pathXTE;
         QString m_pathVMG;
+        QHash<QString, QSizePolicy> m_baseSizePolicies;
+        QHash<QWidget *, QPointer<QGraphicsEffect>> m_layoutHintEffects;
+        QSet<QString> m_activeLayoutWidgetIds;
+        bool m_layoutEditHighlightEnabled = false;
         QJsonObject m_lastPosUpdate;
         QJsonObject m_lastCogUpdate;
         QJsonObject m_lastSogUpdate;
@@ -95,6 +166,7 @@ namespace fairwindsk::ui::topbar {
         QJsonObject m_lastEtaUpdate;
         QJsonObject m_lastXteUpdate;
         QJsonObject m_lastVmgUpdate;
+        inline static TopBar *s_instance = nullptr;
     };
 }
 

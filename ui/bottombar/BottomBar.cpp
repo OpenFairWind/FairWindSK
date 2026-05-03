@@ -4,6 +4,8 @@
 
 
 
+#include <algorithm>
+
 #include <QGeoLocation>
 #include <QGeoCoordinate>
 #include <QToolButton>
@@ -12,6 +14,8 @@
 #include <QFrame>
 #include <QScroller>
 #include <QScrollerProperties>
+#include <QLayoutItem>
+#include <QGraphicsDropShadowEffect>
 #include <QVBoxLayout>
 #include <QResizeEvent>
 #include "BottomBar.hpp"
@@ -21,12 +25,221 @@
 #include "FairWindSK.hpp"
 #include "runtime/DiagnosticsSupport.hpp"
 #include "ui/IconUtils.hpp"
+#include "ui/layout/BarLayout.hpp"
+#include "ui/topbar/TopBar.hpp"
 
 namespace fairwindsk::ui::bottombar {
     namespace {
         constexpr int kBottomBarIconSize = 44;
         constexpr int kBottomBarButtonHeight = 90;
         constexpr int kPortAreaHeight = 84;
+    }
+
+    BottomBar *BottomBar::instance() {
+        return s_instance;
+    }
+
+    QWidget *BottomBar::createSeparatorWidget() {
+        auto *line = new QFrame(this);
+        line->setFrameShape(QFrame::VLine);
+        line->setFrameShadow(QFrame::Plain);
+        line->setLineWidth(1);
+        m_dynamicLayoutWidgets.append(line);
+        return line;
+    }
+
+    void BottomBar::clearConfiguredLayout() {
+        if (!ui || !ui->horizontalLayoutButtons) {
+            return;
+        }
+
+        while (ui->horizontalLayoutButtons->count() > 0) {
+            auto *item = ui->horizontalLayoutButtons->takeAt(0);
+            if (auto *widget = item->widget()) {
+                widget->hide();
+            }
+            delete item;
+        }
+
+        for (auto &widget : m_dynamicLayoutWidgets) {
+            if (widget) {
+                widget->deleteLater();
+            }
+        }
+        m_dynamicLayoutWidgets.clear();
+    }
+
+    QWidget *BottomBar::widgetForItemId(const QString &itemId) const {
+        if (itemId == QStringLiteral("open_apps")) {
+            return ui->scrollArea_Port;
+        }
+        if (itemId == QStringLiteral("mydata")) {
+            return ui->toolButton_MyData;
+        }
+        if (itemId == QStringLiteral("pob")) {
+            return ui->toolButton_POB;
+        }
+        if (itemId == QStringLiteral("autopilot")) {
+            return ui->toolButton_Autopilot;
+        }
+        if (itemId == QStringLiteral("apps")) {
+            return ui->toolButton_Apps;
+        }
+        if (itemId == QStringLiteral("anchor")) {
+            return ui->toolButton_Anchor;
+        }
+        if (itemId == QStringLiteral("alarms")) {
+            return ui->toolButton_Alarms;
+        }
+        if (itemId == QStringLiteral("settings")) {
+            return ui->toolButton_Settings;
+        }
+        if (itemId == QStringLiteral("signalk_status")) {
+            return m_signalKServerBox;
+        }
+
+        return nullptr;
+    }
+
+    void BottomBar::applyEntrySizing(const fairwindsk::ui::layout::LayoutEntry &entry,
+                                     const QString &itemId,
+                                     QWidget *widget,
+                                     QHBoxLayout *layout) {
+        if (!widget || !layout) {
+            return;
+        }
+
+        if (!m_baseSizePolicies.contains(itemId)) {
+            m_baseSizePolicies.insert(itemId, widget->sizePolicy());
+        }
+
+        const QSizePolicy basePolicy = m_baseSizePolicies.value(itemId, widget->sizePolicy());
+        QSizePolicy effectivePolicy = basePolicy;
+        if (entry.expandHorizontally) {
+            effectivePolicy.setHorizontalPolicy(QSizePolicy::Expanding);
+        }
+        if (entry.expandVertically) {
+            effectivePolicy.setVerticalPolicy(QSizePolicy::Expanding);
+        }
+        widget->setSizePolicy(effectivePolicy);
+        widget->setVisible(true);
+
+        const Qt::Alignment alignment = entry.expandVertically ? Qt::Alignment() : Qt::AlignVCenter;
+        layout->addWidget(widget, entry.expandHorizontally ? 1 : 0, alignment);
+    }
+
+    void BottomBar::rebuildLayout() {
+        if (!ui || !ui->horizontalLayoutButtons) {
+            return;
+        }
+
+        clearConfiguredLayout();
+
+        const auto entries = fairwindsk::ui::layout::entriesForBar(
+            FairWindSK::getInstance()->getConfiguration()->getRoot(),
+            fairwindsk::ui::layout::BarId::Bottom);
+        for (const auto &entry : entries) {
+            if (!entry.enabled) {
+                continue;
+            }
+
+            if (entry.kind == fairwindsk::ui::layout::EntryKind::Separator) {
+                auto *separator = createSeparatorWidget();
+                QSizePolicy policy(QSizePolicy::Fixed,
+                                   entry.expandVertically ? QSizePolicy::Expanding : QSizePolicy::Fixed);
+                separator->setSizePolicy(policy);
+                ui->horizontalLayoutButtons->addWidget(separator,
+                                                       entry.expandHorizontally ? 1 : 0,
+                                                       entry.expandVertically ? Qt::Alignment() : Qt::AlignVCenter);
+                continue;
+            }
+
+            if (entry.kind == fairwindsk::ui::layout::EntryKind::Stretch) {
+                ui->horizontalLayoutButtons->addSpacerItem(
+                    new QSpacerItem(0,
+                                    0,
+                                    entry.expandHorizontally ? QSizePolicy::Expanding : QSizePolicy::Preferred,
+                                    entry.expandVertically ? QSizePolicy::Expanding : QSizePolicy::Minimum));
+                continue;
+            }
+
+            QString itemId = entry.widgetId;
+            QWidget *widget = widgetForItemId(entry.widgetId);
+            if (!widget && fairwindsk::ui::topbar::TopBar::instance()) {
+                widget = fairwindsk::ui::topbar::TopBar::instance()->widgetForItemId(entry.widgetId);
+            }
+            if (!widget) {
+                continue;
+            }
+
+            applyEntrySizing(entry, itemId, widget, ui->horizontalLayoutButtons);
+        }
+
+        applyLayoutEditHints(entries);
+    }
+
+    void BottomBar::clearLayoutEditHints() {
+        for (auto it = m_layoutHintEffects.begin(); it != m_layoutHintEffects.end(); ++it) {
+            if (!it.key()) {
+                continue;
+            }
+            if (it.key()->graphicsEffect() == it.value()) {
+                it.key()->setGraphicsEffect(nullptr);
+            }
+            if (it.value()) {
+                it.value()->deleteLater();
+            }
+        }
+        m_layoutHintEffects.clear();
+    }
+
+    void BottomBar::applyLayoutEditHints(const QList<fairwindsk::ui::layout::LayoutEntry> &entries) {
+        clearLayoutEditHints();
+        if (!m_layoutEditHighlightEnabled) {
+            return;
+        }
+
+        auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+        const auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+        const auto chromeColors = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), false);
+
+        for (const auto &entry : entries) {
+            if (!entry.enabled || entry.kind != fairwindsk::ui::layout::EntryKind::Widget || !entry.expandHorizontally) {
+                continue;
+            }
+
+            QWidget *widget = widgetForItemId(entry.widgetId);
+            if (!widget) {
+                continue;
+            }
+
+            auto *effect = new QGraphicsDropShadowEffect(widget);
+            effect->setOffset(0, -1);
+            effect->setBlurRadius(30);
+            effect->setColor(fairwindsk::ui::comfortAlpha(chromeColors.accentBottom, 230));
+            widget->setGraphicsEffect(effect);
+            m_layoutHintEffects.insert(widget, effect);
+        }
+    }
+
+    void BottomBar::setLayoutEditHighlightEnabled(const bool enabled) {
+        if (m_layoutEditHighlightEnabled == enabled) {
+            return;
+        }
+
+        m_layoutEditHighlightEnabled = enabled;
+        rebuildLayout();
+    }
+
+    bool BottomBar::isTransientPanelVisible() const {
+        const QList<QWidget *> panels = {m_POBBar, m_AutopilotBar, m_AnchorBar, m_AlarmsBar};
+        return std::any_of(
+            panels.cbegin(),
+            panels.cend(),
+            [](const QWidget *panel) {
+                return panel && panel->isVisible();
+            });
     }
 /*
  * BottomBar
@@ -35,8 +248,10 @@ namespace fairwindsk::ui::bottombar {
     fairwindsk::ui::bottombar::BottomBar::BottomBar(QWidget *parent) :
             QWidget(parent),
             ui(new Ui::BottomBar) {
+        s_instance = this;
 
         m_iconSize = kBottomBarIconSize;
+        const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
 
         // Set the UI
         ui->setupUi(this);
@@ -144,9 +359,17 @@ namespace fairwindsk::ui::bottombar {
         connect(m_POBBar, &POBBar::hidden, this, [this]() { setPanelVisibility(m_POBBar, false); });
         connect(m_AutopilotBar, &AutopilotBar::hidden, this, [this]() { setPanelVisibility(m_AutopilotBar, false); });
         connect(m_AnchorBar, &AnchorBar::hidden, this, [this]() { setPanelVisibility(m_AnchorBar, false); });
-        connect(m_AlarmsBar, &AlarmsBar::hidden, this, [this]() { setPanelVisibility(m_AlarmsBar, false); });
+            connect(m_AlarmsBar, &AlarmsBar::hidden, this, [this]() { setPanelVisibility(m_AlarmsBar, false); });
 
-        QTimer::singleShot(0, this, [this]() { rebalanceNavigationBlock(); });
+        if (fairWindSK) {
+            m_runtimeHealthState = fairWindSK->runtimeHealthState();
+            m_runtimeHealthSummary = fairWindSK->runtimeHealthSummary();
+            connect(fairWindSK, &fairwindsk::FairWindSK::runtimeHealthChanged,
+                    this, &BottomBar::onRuntimeHealthChanged);
+        }
+
+        updateHealthChrome();
+        rebuildLayout();
     }
 
     /*
@@ -186,6 +409,11 @@ namespace fairwindsk::ui::bottombar {
     }
 
     void BottomBar::refreshFromConfiguration() const {
+        const bool transientPanelVisible = isTransientPanelVisible();
+        const_cast<BottomBar *>(this)->rebuildLayout();
+        if (transientPanelVisible) {
+            setRegularBarVisible(false);
+        }
         if (m_POBBar) {
             m_POBBar->refreshFromConfiguration();
         }
@@ -198,6 +426,7 @@ namespace fairwindsk::ui::bottombar {
         if (m_AnchorBar) {
             m_AnchorBar->refreshFromConfiguration();
         }
+        const_cast<BottomBar *>(this)->updateHealthChrome();
     }
 
     void BottomBar::changeEvent(QEvent *event) {
@@ -253,33 +482,69 @@ namespace fairwindsk::ui::bottombar {
                 QSize(m_iconSize, m_iconSize),
                 kBottomBarButtonHeight);
         }
+        const_cast<BottomBar *>(this)->updateHealthChrome();
+    }
+
+    void BottomBar::updateHealthChrome() {
+        if (!ui) {
+            return;
+        }
+
+        auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+        auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("day");
+        const auto colors = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), false);
+
+        fairwindsk::ui::BottomBarButtonChrome appsChrome = fairwindsk::ui::BottomBarButtonChrome::Transparent;
+        switch (m_runtimeHealthState) {
+            case fairwindsk::FairWindSK::RuntimeHealthState::ConnectedLive:
+                appsChrome = fairwindsk::ui::BottomBarButtonChrome::Transparent;
+                break;
+            case fairwindsk::FairWindSK::RuntimeHealthState::AppsLoading:
+            case fairwindsk::FairWindSK::RuntimeHealthState::Connecting:
+            case fairwindsk::FairWindSK::RuntimeHealthState::Reconnecting:
+            case fairwindsk::FairWindSK::RuntimeHealthState::ConnectedStale:
+            case fairwindsk::FairWindSK::RuntimeHealthState::AppsStale:
+            case fairwindsk::FairWindSK::RuntimeHealthState::RestDegraded:
+            case fairwindsk::FairWindSK::RuntimeHealthState::StreamDegraded:
+                appsChrome = fairwindsk::ui::BottomBarButtonChrome::Flat;
+                break;
+            case fairwindsk::FairWindSK::RuntimeHealthState::ForegroundAppDegraded:
+            case fairwindsk::FairWindSK::RuntimeHealthState::Disconnected:
+                appsChrome = fairwindsk::ui::BottomBarButtonChrome::Accent;
+                break;
+        }
+
+        fairwindsk::ui::applyBottomBarToolButtonChrome(
+            ui->toolButton_Apps,
+            colors,
+            appsChrome,
+            QSize(m_iconSize, m_iconSize),
+            kBottomBarButtonHeight);
+        ui->toolButton_Apps->setToolTip(
+            m_runtimeHealthSummary.trimmed().isEmpty()
+                ? tr("Application launcher")
+                : tr("Application launcher\n%1").arg(m_runtimeHealthSummary.trimmed()));
+        if (ui->toolButton_Settings) {
+            ui->toolButton_Settings->setToolTip(
+                m_runtimeHealthSummary.trimmed().isEmpty()
+                    ? tr("Settings")
+                    : tr("Settings\n%1").arg(m_runtimeHealthSummary.trimmed()));
+        }
+    }
+
+    void BottomBar::onRuntimeHealthChanged(const fairwindsk::FairWindSK::RuntimeHealthState state,
+                                           const QString &summary,
+                                           const QString &badgeText) {
+        Q_UNUSED(badgeText)
+        m_runtimeHealthState = state;
+        m_runtimeHealthSummary = summary.trimmed();
+        updateHealthChrome();
     }
 
     void BottomBar::rebalanceNavigationBlock() const {
-        if (!ui || !ui->scrollArea_Port || !ui->widget_Starboard || !ui->widget_CenterButtons) {
-            return;
-        }
-
-        if (!ui->scrollArea_Port->isVisible() || !ui->widget_Starboard->isVisible() || !ui->widget_CenterButtons->isVisible()) {
-            return;
-        }
-
-        const int totalWidth = width();
-        const int centerWidth = ui->widget_CenterButtons->sizeHint().width();
-        const int spacing = ui->horizontalLayoutButtons ? ui->horizontalLayoutButtons->spacing() : 0;
-        const int availableSideWidth = std::max(0, (totalWidth - centerWidth - (2 * spacing)) / 2);
-        const int portHintWidth = std::max(ui->scrollArea_Port->sizeHint().width(), ui->scrollArea_Port->minimumSizeHint().width());
-        const int starboardHintWidth = std::max(ui->widget_Starboard->sizeHint().width(), ui->widget_Starboard->minimumSizeHint().width());
-        const int balancedSideWidth = std::min(availableSideWidth, std::max(portHintWidth, starboardHintWidth));
-
-        if (balancedSideWidth <= 0) {
-            return;
-        }
-
-        ui->scrollArea_Port->setMinimumWidth(balancedSideWidth);
-        ui->scrollArea_Port->setMaximumWidth(balancedSideWidth);
-        ui->widget_Starboard->setMinimumWidth(balancedSideWidth);
-        ui->widget_Starboard->setMaximumWidth(balancedSideWidth);
+        // The bottom bar now supports arbitrary item placement, so the old
+        // three-block balancing logic no longer applies.
     }
 
 /*
@@ -383,14 +648,14 @@ namespace fairwindsk::ui::bottombar {
             QString displayName;
             QPixmap pixmap;
             if (appItem) {
-                displayName = appItem->getDisplayName();
-                pixmap = appItem->getIcon();
+                displayName = appItem->getDisplayName(true);
+                pixmap = appItem->getIcon(true);
             } else {
                 const int idx = fairWindSK->getConfiguration()->findApp(name);
                 if (idx != -1) {
                     fairwindsk::AppItem configApp(fairWindSK->getConfiguration()->getRoot()["apps"].at(idx));
-                    displayName = configApp.getDisplayName();
-                    pixmap = configApp.getIcon();
+                    displayName = configApp.getDisplayName(true);
+                    pixmap = configApp.getIcon(true);
                     resolvedHash = configApp.getName();
                 }
             }
@@ -507,17 +772,22 @@ namespace fairwindsk::ui::bottombar {
     }
 
     void BottomBar::setRegularBarVisible(const bool visible) const {
-        const QList<QWidget *> regularWidgets = {
-            ui->scrollArea_Port,
-            ui->widget_CenterButtons,
-            ui->widget_Starboard
-        };
+        if (!ui || !ui->horizontalLayoutButtons) {
+            return;
+        }
 
-        for (auto *widget : regularWidgets) {
-            if (widget) {
-                widget->setVisible(visible);
+        for (int index = 0; index < ui->horizontalLayoutButtons->count(); ++index) {
+            if (auto *item = ui->horizontalLayoutButtons->itemAt(index)) {
+                auto *widget = item->widget();
+                if (widget) {
+                    widget->setVisible(visible);
+                }
             }
         }
+    }
+
+    void BottomBar::restoreRegularBarVisibility() const {
+        const_cast<BottomBar *>(this)->rebuildLayout();
     }
 
     void BottomBar::setPanelVisibility(QWidget *panel, const bool visible) const {
@@ -528,6 +798,8 @@ namespace fairwindsk::ui::bottombar {
         if (visible) {
             hideTransientPanels(panel);
             setRegularBarVisible(false);
+            updateTransientPanelHeight(panel);
+            panel->setVisible(true);
             panel->raise();
         } else {
             const QList<QWidget *> panels = {m_POBBar, m_AutopilotBar, m_AnchorBar, m_AlarmsBar};
@@ -536,13 +808,15 @@ namespace fairwindsk::ui::bottombar {
                 panels.cend(),
                 [panel](const QWidget *candidate) {
                     return candidate && candidate != panel && candidate->isVisible();
-                });
+            });
             if (!anotherPanelVisible) {
-                setRegularBarVisible(true);
+                restoreRegularBarVisibility();
+                updateTransientPanelHeight(nullptr);
             }
+            panel->setVisible(false);
         }
 
-        panel->setVisible(visible);
+        const_cast<BottomBar *>(this)->updateGeometry();
     }
 
     void BottomBar::hideTransientPanels(QWidget *except) const {
@@ -554,7 +828,23 @@ namespace fairwindsk::ui::bottombar {
         }
 
         if (!except) {
-            setRegularBarVisible(true);
+            restoreRegularBarVisibility();
+            updateTransientPanelHeight(nullptr);
+        }
+    }
+
+    void BottomBar::updateTransientPanelHeight(QWidget *panel) const {
+        const int regularHeight = std::max(kBottomBarButtonHeight, kPortAreaHeight);
+        const int panelHeight = panel
+                                    ? std::max(regularHeight, panel->sizeHint().height())
+                                    : regularHeight;
+
+        const_cast<BottomBar *>(this)->setMinimumHeight(panelHeight);
+        const_cast<BottomBar *>(this)->setMaximumHeight(panelHeight);
+        if (parentWidget()) {
+            parentWidget()->setMinimumHeight(panelHeight);
+            parentWidget()->setMaximumHeight(panelHeight);
+            parentWidget()->updateGeometry();
         }
     }
 
@@ -563,6 +853,11 @@ namespace fairwindsk::ui::bottombar {
  * BottomBar's destructor
  */
     BottomBar::~BottomBar() {
+        if (s_instance == this) {
+            s_instance = nullptr;
+        }
+
+        clearLayoutEditHints();
 
         // Delete the application icons
         for (const auto button: m_buttons) {

@@ -6,14 +6,21 @@
 
 #include <QEvent>
 #include <QFrame>
+#include <QFontMetrics>
+#include <QGuiApplication>
+#include <QHBoxLayout>
+#include <QInputMethod>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
 #include <QMouseEvent>
 #include <QPalette>
+#include <QPainter>
 #include <QPixmap>
 #include <QPushButton>
 #include <QScreen>
+#include <QSignalBlocker>
+#include <QSizePolicy>
 #include <QStyledItemDelegate>
 #include <QStyleOptionViewItem>
 #include <QVBoxLayout>
@@ -24,6 +31,7 @@
 namespace fairwindsk::ui::widgets {
     namespace {
         constexpr int kRawIconRole = Qt::UserRole + 1;
+        constexpr int kHasIconRole = Qt::UserRole + 2;
         constexpr int kComboIconSize = 30;
         constexpr int kSelectedIconSize = 34;
         constexpr int kSelectedIconPadding = 10;
@@ -143,6 +151,85 @@ namespace fairwindsk::ui::widgets {
         private:
             QFont m_popupFont;
         };
+
+        class ComboDisplayFace final : public QWidget {
+        public:
+            explicit ComboDisplayFace(QWidget *parent = nullptr)
+                : QWidget(parent) {
+                setAttribute(Qt::WA_OpaquePaintEvent, true);
+                setAttribute(Qt::WA_StyledBackground, false);
+            }
+
+            void setDisplayText(const QString &text) {
+                if (m_text == text) {
+                    return;
+                }
+                m_text = text;
+                update();
+            }
+
+            void setDisplayIcon(const QIcon &icon) {
+                m_icon = icon;
+                update();
+            }
+
+            void setChrome(const QPalette &palette) {
+                const QColor base = palette.color(QPalette::Base);
+                m_baseColor = base;
+                m_textColor = fairwindsk::ui::bestContrastingColor(
+                    base,
+                    {palette.color(QPalette::Text),
+                     palette.color(QPalette::ButtonText),
+                     palette.color(QPalette::WindowText),
+                     QColor(Qt::white),
+                     QColor(Qt::black)});
+                m_borderColor = palette.color(QPalette::Mid);
+                m_disabledBaseColor = palette.color(QPalette::AlternateBase);
+                m_disabledTextColor = palette.color(QPalette::Disabled, QPalette::Text);
+                m_disabledBorderColor = palette.color(QPalette::Disabled, QPalette::Mid);
+                update();
+            }
+
+        protected:
+            void paintEvent(QPaintEvent *) override {
+                QPainter painter(this);
+                painter.setRenderHint(QPainter::Antialiasing, true);
+
+                const bool active = isEnabled();
+                const QColor base = active ? m_baseColor : m_disabledBaseColor;
+                const QColor text = active ? m_textColor : m_disabledTextColor;
+                const QColor border = active ? m_borderColor : m_disabledBorderColor;
+                const QRectF fieldRect = QRectF(rect()).adjusted(0.5, 0.5, -0.5, -0.5);
+
+                painter.setPen(QPen(border, 1));
+                painter.setBrush(base);
+                painter.drawRoundedRect(fieldRect, 6.0, 6.0);
+
+                int textLeft = 8;
+                if (!m_icon.isNull()) {
+                    const QSize iconSize(kSelectedIconSize, kSelectedIconSize);
+                    const int iconY = qMax(0, (height() - iconSize.height()) / 2);
+                    m_icon.paint(&painter, QRect(QPoint(8, iconY), iconSize), Qt::AlignCenter);
+                    textLeft += iconSize.width() + 8;
+                }
+
+                const QRect textRect = rect().adjusted(textLeft, 0, -8, 0);
+                painter.setPen(text);
+                painter.drawText(textRect,
+                                 Qt::AlignLeft | Qt::AlignVCenter,
+                                 painter.fontMetrics().elidedText(m_text, Qt::ElideRight, textRect.width()));
+            }
+
+        private:
+            QString m_text;
+            QIcon m_icon;
+            QColor m_baseColor;
+            QColor m_textColor;
+            QColor m_borderColor;
+            QColor m_disabledBaseColor;
+            QColor m_disabledTextColor;
+            QColor m_disabledBorderColor;
+        };
     }
 
     TouchComboBox::TouchComboBox(QWidget *parent)
@@ -153,6 +240,19 @@ namespace fairwindsk::ui::widgets {
         m_editor = ui->lineEditValue;
         m_editor->setObjectName(QStringLiteral("lineEdit_touchComboBox"));
         m_editor->installEventFilter(this);
+        m_editor->setAttribute(Qt::WA_InputMethodEnabled, false);
+        ui->horizontalLayout->removeWidget(m_editor);
+        m_editor->hide();
+        m_editor->setParent(nullptr);
+
+        m_displayFace = new ComboDisplayFace(this);
+        m_displayFace->setObjectName(QStringLiteral("frame_touchComboBoxFace"));
+        m_displayFace->setMinimumHeight(m_editor->minimumHeight());
+        m_displayFace->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+        m_displayFace->setFocusPolicy(Qt::NoFocus);
+        m_displayFace->installEventFilter(this);
+        ui->horizontalLayout->insertWidget(0, m_displayFace, 1);
+
         m_iconLabel = new QLabel(m_editor);
         m_iconLabel->setFixedSize(kSelectedIconSize, kSelectedIconSize);
         m_iconLabel->setAlignment(Qt::AlignCenter);
@@ -160,7 +260,7 @@ namespace fairwindsk::ui::widgets {
 
         ui->pushButtonPopup->setObjectName(QStringLiteral("pushButton_touchComboBox"));
 
-        m_popup = new QFrame(nullptr, Qt::Popup | Qt::FramelessWindowHint);
+        m_popup = new QFrame(this);
         m_popup->setObjectName(QStringLiteral("frame_touchComboPopup"));
         m_popup->setFrameShape(QFrame::StyledPanel);
         m_popup->setLineWidth(1);
@@ -181,6 +281,7 @@ namespace fairwindsk::ui::widgets {
         m_popupDelegate = new PopupItemDelegate(m_listWidget);
         m_listWidget->setItemDelegate(m_popupDelegate);
         popupLayout->addWidget(m_listWidget);
+        m_popup->hide();
 
         connect(ui->pushButtonPopup, &QPushButton::clicked, this, &TouchComboBox::togglePopup);
         connect(m_listWidget, &QListWidget::itemClicked, this, &TouchComboBox::handleItemClicked);
@@ -188,12 +289,16 @@ namespace fairwindsk::ui::widgets {
 
         setFocusProxy(m_editor);
         applyTouchStyle();
+        setEditable(false);
         updateDisplay();
     }
 
     TouchComboBox::~TouchComboBox() {
         delete m_popup;
         m_popup = nullptr;
+        delete m_editor;
+        m_editor = nullptr;
+        m_iconLabel = nullptr;
         delete ui;
         ui = nullptr;
     }
@@ -209,13 +314,23 @@ namespace fairwindsk::ui::widgets {
     }
 
     void TouchComboBox::addItem(const QString &text, const QVariant &userData) {
-        addItem(QIcon(), text, userData);
+        appendItem(QIcon(), text, userData, false);
     }
 
     void TouchComboBox::addItem(const QIcon &icon, const QString &text, const QVariant &userData) {
-        auto *item = new QListWidgetItem(icon, text, m_listWidget);
+        appendItem(icon, text, userData, !icon.isNull());
+    }
+
+    void TouchComboBox::appendItem(const QIcon &icon,
+                                   const QString &text,
+                                   const QVariant &userData,
+                                   const bool hasIcon) {
+        auto *item = hasIcon
+            ? new QListWidgetItem(icon, text, m_listWidget)
+            : new QListWidgetItem(text, m_listWidget);
         item->setData(Qt::UserRole, userData);
-        item->setData(kRawIconRole, icon);
+        item->setData(kRawIconRole, hasIcon ? QVariant::fromValue(icon) : QVariant());
+        item->setData(kHasIconRole, hasIcon);
         const QFont popupFont = m_editor ? m_editor->font() : font();
         item->setFont(popupFont);
         item->setSizeHint(QSize(item->sizeHint().width(), comboItemHeightForFont(popupFont)));
@@ -243,7 +358,11 @@ namespace fairwindsk::ui::widgets {
 
     QString TouchComboBox::currentText() const {
         const auto *item = m_listWidget->item(m_currentIndex);
-        return item ? item->text() : QString();
+        if (item) {
+            return item->text();
+        }
+
+        return m_editable && m_editor ? m_editor->text() : QString();
     }
 
     QVariant TouchComboBox::currentData(const int role) const {
@@ -333,9 +452,37 @@ namespace fairwindsk::ui::widgets {
     void TouchComboBox::setEditable(const bool editable) {
         m_editable = editable;
         if (m_editor) {
+            if (editable && !m_editorInLayout) {
+                m_editor->setParent(this);
+                ui->horizontalLayout->insertWidget(0, m_editor, 1);
+                m_editorInLayout = true;
+            }
             m_editor->setReadOnly(!editable);
-            m_editor->setFocusPolicy(editable ? Qt::StrongFocus : Qt::ClickFocus);
+            m_editor->setFocusPolicy(editable ? Qt::StrongFocus : Qt::NoFocus);
+            m_editor->setAttribute(Qt::WA_InputMethodEnabled, editable);
+            m_editor->setEnabled(isEnabled() && editable);
+            m_editor->setVisible(editable);
+            if (!editable) {
+                m_editor->clearFocus();
+                m_editor->deselect();
+                const QSignalBlocker blocker(m_editor);
+                m_editor->clear();
+                if (auto *inputMethod = QGuiApplication::inputMethod()) {
+                    inputMethod->reset();
+                    inputMethod->hide();
+                }
+                if (m_editorInLayout) {
+                    ui->horizontalLayout->removeWidget(m_editor);
+                    m_editorInLayout = false;
+                }
+                m_editor->setParent(nullptr);
+            }
         }
+        if (m_displayFace) {
+            m_displayFace->setVisible(!editable);
+        }
+        setFocusProxy(editable ? static_cast<QWidget *>(m_editor) : static_cast<QWidget *>(m_displayFace));
+        updateDisplay();
     }
 
     void TouchComboBox::setAccentButton(const bool accent) {
@@ -349,7 +496,10 @@ namespace fairwindsk::ui::widgets {
     void TouchComboBox::setEnabled(const bool enabled) {
         QWidget::setEnabled(enabled);
         if (m_editor) {
-            m_editor->setEnabled(enabled);
+            m_editor->setEnabled(enabled && m_editable);
+        }
+        if (m_displayFace) {
+            m_displayFace->setEnabled(enabled);
         }
         if (ui && ui->pushButtonPopup) {
             ui->pushButtonPopup->setEnabled(enabled);
@@ -401,8 +551,14 @@ namespace fairwindsk::ui::widgets {
                 m_popup->setStyleSheet(m_popupStyleSheet);
             }
         }
+        if (m_displayFace) {
+            static_cast<ComboDisplayFace *>(m_displayFace)->setChrome(activePalette);
+        }
 
         const QFont popupFont = m_editor ? m_editor->font() : font();
+        if (m_displayFace) {
+            m_displayFace->setFont(popupFont);
+        }
         m_listWidget->setFont(popupFont);
         m_listWidget->setIconSize(QSize(kComboIconSize, kComboIconSize));
         if (auto *delegate = static_cast<PopupItemDelegate *>(m_popupDelegate)) {
@@ -416,11 +572,13 @@ namespace fairwindsk::ui::widgets {
                 continue;
             }
 
-            const QIcon rawIcon = qvariant_cast<QIcon>(item->data(kRawIconRole));
             item->setFont(popupFont);
             item->setSizeHint(QSize(item->sizeHint().width(), comboItemHeightForFont(popupFont)));
-            if (!rawIcon.isNull()) {
+            if (item->data(kHasIconRole).toBool()) {
+                const QIcon rawIcon = qvariant_cast<QIcon>(item->data(kRawIconRole));
                 item->setIcon(fairwindsk::ui::tintedIcon(rawIcon, iconColor, QSize(kComboIconSize, kComboIconSize)));
+            } else {
+                item->setIcon(QIcon());
             }
         }
 
@@ -428,9 +586,11 @@ namespace fairwindsk::ui::widgets {
     }
 
     bool TouchComboBox::eventFilter(QObject *watched, QEvent *event) {
-        if (watched == m_editor && event && event->type() == QEvent::MouseButtonRelease) {
+        const bool displayWatched = watched == m_displayFace;
+
+        if ((watched == m_editor || displayWatched) && event && event->type() == QEvent::MouseButtonRelease) {
             const auto *mouseEvent = static_cast<QMouseEvent *>(event);
-            if (mouseEvent->button() == Qt::LeftButton && isEnabled() && !m_editable) {
+            if (mouseEvent->button() == Qt::LeftButton && isEnabled() && (!m_editable || displayWatched)) {
                 togglePopup();
                 return true;
             }
@@ -487,19 +647,28 @@ namespace fairwindsk::ui::widgets {
         }
 
         const auto *item = m_listWidget->item(m_currentIndex);
-        if (!m_editable || item) {
-            m_editor->setText(item ? item->text() : QString());
+        m_displayText = item ? item->text() : QString();
+        if (m_editable && item) {
+            m_editor->setText(m_displayText);
+        } else if (!m_editable && !m_editor->text().isEmpty()) {
+            const QSignalBlocker blocker(m_editor);
+            m_editor->clear();
         }
+
+        QIcon icon;
+        if (item && item->data(kHasIconRole).toBool()) {
+            const QIcon rawIcon = qvariant_cast<QIcon>(item->data(kRawIconRole));
+            if (!rawIcon.isNull()) {
+                const QPalette activePalette = palette();
+                const QColor iconColor = comboForegroundColor(activePalette);
+                icon = fairwindsk::ui::tintedIcon(rawIcon,
+                                                  iconColor,
+                                                  QSize(kSelectedIconSize, kSelectedIconSize));
+            }
+        }
+
         if (m_iconLabel) {
-            const QPalette activePalette = palette();
-            const QColor iconColor = comboForegroundColor(activePalette);
-            const QIcon icon = item
-                ? fairwindsk::ui::tintedIcon(
-                    qvariant_cast<QIcon>(item->data(kRawIconRole)),
-                    iconColor,
-                    QSize(kSelectedIconSize, kSelectedIconSize))
-                : QIcon();
-            if (!icon.isNull()) {
+            if (!icon.isNull() && m_editable) {
                 m_iconLabel->setPixmap(icon.pixmap(QSize(kSelectedIconSize, kSelectedIconSize)));
                 m_iconLabel->show();
                 m_editor->setTextMargins(kSelectedIconSize + (2 * kSelectedIconPadding), 0, 8, 0);
@@ -508,6 +677,11 @@ namespace fairwindsk::ui::widgets {
                 m_iconLabel->hide();
                 m_editor->setTextMargins(8, 0, 8, 0);
             }
+        }
+        if (m_displayFace) {
+            auto *face = static_cast<ComboDisplayFace *>(m_displayFace);
+            face->setDisplayText(m_displayText);
+            face->setDisplayIcon(icon);
         }
         if (item) {
             m_listWidget->setCurrentRow(m_currentIndex);
@@ -521,23 +695,37 @@ namespace fairwindsk::ui::widgets {
             return;
         }
 
-        const QPoint globalBottomLeft = mapToGlobal(rect().bottomLeft());
-        const QRect screenGeometry = screen() ? screen()->availableGeometry() : QRect(globalBottomLeft, QSize(width(), 240));
+        QWidget *host = window();
+        if (!host) {
+            host = parentWidget();
+        }
+        if (!host) {
+            host = this;
+        }
+        if (m_popup->parentWidget() != host) {
+            m_popup->setParent(host);
+        }
+
+        const QPoint hostBottomLeft = host->mapFromGlobal(mapToGlobal(rect().bottomLeft()));
+        const QRect hostGeometry = host->rect().isValid() ? host->rect() : QRect(hostBottomLeft, QSize(width(), 240));
         const int popupWidth = width();
-        const int popupHeight = qMin(popupHeightForItems(), screenGeometry.height());
+        const int popupHeight = qMin(popupHeightForItems(), hostGeometry.height());
 
-        int x = globalBottomLeft.x();
-        int y = globalBottomLeft.y();
+        int x = hostBottomLeft.x();
+        int y = hostBottomLeft.y();
 
-        if ((x + popupWidth) > screenGeometry.right()) {
-            x = screenGeometry.right() - popupWidth;
+        if ((x + popupWidth) > hostGeometry.right()) {
+            x = hostGeometry.right() - popupWidth;
         }
 
-        if ((y + popupHeight) > screenGeometry.bottom()) {
-            y = mapToGlobal(rect().topLeft()).y() - popupHeight;
+        if ((y + popupHeight) > hostGeometry.bottom()) {
+            y = host->mapFromGlobal(mapToGlobal(rect().topLeft())).y() - popupHeight;
         }
 
-        m_popup->setGeometry(x, y, popupWidth, popupHeight);
+        m_popup->setGeometry(qMax(hostGeometry.left(), x),
+                             qMax(hostGeometry.top(), y),
+                             popupWidth,
+                             popupHeight);
     }
 
     void TouchComboBox::ensureCurrentItemVisible() const {

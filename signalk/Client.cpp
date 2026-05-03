@@ -183,8 +183,29 @@ namespace fairwindsk::signalk {
             }
         }
 
-        emit serverHealthChanged(m_restHealthy && m_streamHealthy, summary);
+        const ConnectionHealthState state = currentConnectionHealthState();
+        const bool serverHealthy = m_restHealthy && m_streamHealthy;
+        if (m_connectivityStateEmitted &&
+            m_lastRestHealthyEmitted == m_restHealthy &&
+            m_lastStreamHealthyEmitted == m_streamHealthy &&
+            m_lastServerHealthyEmitted == serverHealthy &&
+            m_lastConnectionHealthStateEmitted == state &&
+            m_lastStreamActivityEmitted == m_lastStreamActivity &&
+            m_lastConnectivitySummaryEmitted == summary) {
+            return;
+        }
+
+        m_connectivityStateEmitted = true;
+        m_lastRestHealthyEmitted = m_restHealthy;
+        m_lastStreamHealthyEmitted = m_streamHealthy;
+        m_lastServerHealthyEmitted = serverHealthy;
+        m_lastConnectionHealthStateEmitted = state;
+        m_lastStreamActivityEmitted = m_lastStreamActivity;
+        m_lastConnectivitySummaryEmitted = summary;
+
+        emit serverHealthChanged(serverHealthy, summary);
         emit connectivityChanged(m_restHealthy, m_streamHealthy, summary);
+        emit connectionHealthStateChanged(state, connectionHealthStateLabel(state), m_lastStreamActivity, summary);
     }
 
     void Client::markStreamActivity(const QString &statusText) {
@@ -332,18 +353,11 @@ namespace fairwindsk::signalk {
             qDebug() << "SignalKAPIClient::onInit(" << params << ")";
 
         if (m_Active) {
-            if (refreshServerDiscovery()) {
-                refreshAuthenticationState();
-                openWebSocket();
-                result = true;
-            } else {
-                qWarning() << "SignalK::Client::init discovery returned empty payload";
-                setRestHealth(false, tr("Signal K offline"));
-                setStreamHealth(false, tr("Signal K offline"));
-                emit serverMessageChanged(tr("Signal K server not available"));
-                if (m_Debug)
-                    qDebug() << "Server: " << m_Url << " not available!";
-            }
+            setRestHealth(false, tr("Connecting to Signal K"));
+            setStreamHealth(false, tr("Connecting to Signal K"));
+            emit serverMessageChanged(tr("Connecting to Signal K"));
+            startAsyncReconnectDiscovery();
+            result = true;
         }  else {
             qInfo() << "SignalK::Client::init skipped because client is inactive";
             setRestHealth(false, tr("Signal K disabled"));
@@ -1016,7 +1030,8 @@ namespace fairwindsk::signalk {
         }
 
         if (m_lastStreamActivity.msecsTo(QDateTime::currentDateTimeUtc()) > kStreamTimeoutMs) {
-            setStreamHealth(false, tr("Stream heartbeat missing"));
+            setStreamHealth(false, tr("Data stale"));
+            emit serverMessageChanged(tr("Using cached Signal K data"));
         }
     }
 
@@ -1126,6 +1141,7 @@ namespace fairwindsk::signalk {
         }
 
         m_reconnectAttemptInFlight = true;
+        emitConnectivityState(m_hadStreamConnection ? tr("Reconnecting to Signal K") : tr("Connecting to Signal K"));
         beginRequest(QStringLiteral("GET"), m_Url);
         auto *reply = m_NetworkAccessManager.get(createJsonRequest(m_Url));
 
@@ -1492,6 +1508,61 @@ namespace fairwindsk::signalk {
             return tr("Stream online, REST offline");
         }
         return tr("Signal K offline");
+    }
+
+    Client::ConnectionHealthState Client::currentConnectionHealthState() const {
+        if (!m_Active || m_Url.isEmpty()) {
+            return ConnectionHealthState::Disconnected;
+        }
+
+        if (m_plannedRestartInProgress || m_reconnectTimer.isActive() || m_reconnectAttemptInFlight) {
+            return m_hadStreamConnection ? ConnectionHealthState::Reconnecting : ConnectionHealthState::Connecting;
+        }
+
+        if (m_restHealthy && m_streamHealthy) {
+            return ConnectionHealthState::Live;
+        }
+
+        if (m_restHealthy && !m_streamHealthy) {
+            return m_hadStreamConnection ? ConnectionHealthState::Stale : ConnectionHealthState::Connecting;
+        }
+
+        if (!m_restHealthy && m_streamHealthy) {
+            return ConnectionHealthState::Degraded;
+        }
+
+        return m_hadStreamConnection ? ConnectionHealthState::Reconnecting : ConnectionHealthState::Disconnected;
+    }
+
+    Client::ConnectionHealthState Client::connectionHealthState() const {
+        return currentConnectionHealthState();
+    }
+
+    QString Client::connectionHealthStateLabel(const ConnectionHealthState state) const {
+        switch (state) {
+        case ConnectionHealthState::Disconnected:
+            return tr("Disconnected");
+        case ConnectionHealthState::Connecting:
+            return tr("Connecting");
+        case ConnectionHealthState::Live:
+            return tr("Live");
+        case ConnectionHealthState::Stale:
+            return tr("Stale");
+        case ConnectionHealthState::Reconnecting:
+            return tr("Reconnecting");
+        case ConnectionHealthState::Degraded:
+            return tr("Degraded");
+        }
+
+        return tr("Disconnected");
+    }
+
+    QString Client::connectionHealthStateText() const {
+        return connectionHealthStateLabel(currentConnectionHealthState());
+    }
+
+    QDateTime Client::lastStreamUpdate() const {
+        return m_lastStreamActivity;
     }
 
     QJsonObject Client::subscribe(const QString& path, QObject *receiver, const char *member, int period, const QString& policy, int minPeriod) {

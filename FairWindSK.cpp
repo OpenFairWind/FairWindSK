@@ -6,6 +6,7 @@
 #include <QThread>
 #include <QPluginLoader>
 #include <QDir>
+#include <QDirIterator>
 #include <QCoreApplication>
 #include <QEventLoop>
 #include <QSettings>
@@ -15,6 +16,8 @@
 #include <QStandardPaths>
 #include <QFile>
 #include <QStyle>
+#include <QStackedWidget>
+#include <QLocale>
 
 
 #include <QLoggingCategory>
@@ -34,8 +37,10 @@
 #include <QElapsedTimer>
 #include <QUrl>
 #include <algorithm>
+#include <cmath>
 
 #include "Units.hpp"
+#include "Localization.hpp"
 #include "ui/MainWindow.hpp"
 #include "ui/widgets/TouchScrollArea.hpp"
 
@@ -53,19 +58,6 @@ namespace fairwindsk {
         }
 
         constexpr int kAppsRequestTimeoutMs = 5000;
-
-        void waitWithUiEvents(const int delayMs) {
-            if (delayMs <= 0) {
-                return;
-            }
-
-            QElapsedTimer timer;
-            timer.start();
-            while (timer.elapsed() < delayMs) {
-                QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
-                QThread::msleep(10);
-            }
-        }
 
         QString defaultConfigFilename() {
             QString configDir = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
@@ -90,6 +82,91 @@ namespace fairwindsk {
 
             return QDir(QFileInfo(defaultConfigFilename()).absolutePath()).filePath(trimmed);
         }
+
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+        QString fallbackWritableDirectory(const QStandardPaths::StandardLocation location, const QString &fallbackName) {
+            QString basePath = QStandardPaths::writableLocation(location);
+            if (basePath.trimmed().isEmpty()) {
+                basePath = QDir(QFileInfo(defaultConfigFilename()).absolutePath()).filePath(fallbackName);
+            }
+            QDir().mkpath(basePath);
+            return basePath;
+        }
+
+        QString webProfileStoragePath() {
+            return QDir(fallbackWritableDirectory(QStandardPaths::AppDataLocation, QStringLiteral("data")))
+                .filePath(QStringLiteral("webengine/profile"));
+        }
+
+        QString webProfileCachePath() {
+            return QDir(fallbackWritableDirectory(QStandardPaths::CacheLocation, QStringLiteral("cache")))
+                .filePath(QStringLiteral("webengine/cache"));
+        }
+
+        bool directoryHasEntries(const QString &path) {
+            const QDir directory(path);
+            return directory.exists() &&
+                   !directory.entryList(QDir::NoDotAndDotDot | QDir::AllEntries | QDir::Hidden | QDir::System).isEmpty();
+        }
+
+        bool copyDirectoryContents(const QString &sourcePath, const QString &destinationPath) {
+            const QDir sourceDirectory(sourcePath);
+            if (!sourceDirectory.exists()) {
+                return false;
+            }
+
+            QDir().mkpath(destinationPath);
+            bool copiedAny = false;
+            QDirIterator iterator(sourcePath,
+                                  QDir::NoDotAndDotDot | QDir::AllEntries | QDir::Hidden | QDir::System,
+                                  QDirIterator::Subdirectories);
+            while (iterator.hasNext()) {
+                const QString sourceEntryPath = iterator.next();
+                const QFileInfo sourceInfo(sourceEntryPath);
+                const QString relativePath = sourceDirectory.relativeFilePath(sourceEntryPath);
+                const QString destinationEntryPath = QDir(destinationPath).filePath(relativePath);
+
+                if (sourceInfo.isDir()) {
+                    QDir().mkpath(destinationEntryPath);
+                    continue;
+                }
+
+                QDir().mkpath(QFileInfo(destinationEntryPath).absolutePath());
+                if (!QFileInfo::exists(destinationEntryPath) && QFile::copy(sourceEntryPath, destinationEntryPath)) {
+                    copiedAny = true;
+                }
+            }
+
+            return copiedAny;
+        }
+
+        void migrateWebProfileDirectory(const QString &legacyPath, const QString &stablePath, const QString &label) {
+            if (legacyPath.trimmed().isEmpty() ||
+                stablePath.trimmed().isEmpty() ||
+                QDir::cleanPath(legacyPath) == QDir::cleanPath(stablePath) ||
+                !QFileInfo::exists(legacyPath) ||
+                directoryHasEntries(stablePath)) {
+                return;
+            }
+
+            if (copyDirectoryContents(legacyPath, stablePath)) {
+                qInfo() << "Migrated WebEngine" << label << "from" << legacyPath << "to" << stablePath;
+            }
+        }
+
+        QString persistentCookiesPolicyName(const QWebEngineProfile::PersistentCookiesPolicy policy) {
+            switch (policy) {
+                case QWebEngineProfile::NoPersistentCookies:
+                    return QStringLiteral("NoPersistentCookies");
+                case QWebEngineProfile::AllowPersistentCookies:
+                    return QStringLiteral("AllowPersistentCookies");
+                case QWebEngineProfile::ForcePersistentCookies:
+                    return QStringLiteral("ForcePersistentCookies");
+            }
+
+            return QStringLiteral("Unknown");
+        }
+#endif
 
         struct UiMetrics {
             int fontPointSize = 12;
@@ -213,11 +290,7 @@ namespace fairwindsk {
             return preset;
         }
 
-        QString resolvedComfortViewPreset(const Configuration &configuration) {
-            if (configuration.getComfortViewMode() != "auto") {
-                return normalizedComfortViewPreset(configuration.getComfortViewPreset());
-            }
-
+        QString resolveComfortViewPresetFromClock() {
             const QTime now = QTime::currentTime();
             if (now >= QTime(5, 30) && now < QTime(7, 0)) {
                 return QStringLiteral("dawn");
@@ -232,6 +305,161 @@ namespace fairwindsk {
                 return QStringLiteral("dusk");
             }
             return QStringLiteral("night");
+        }
+
+        double normalizedSunAngleDegrees(const double rawValue) {
+            if (std::isnan(rawValue)) {
+                return rawValue;
+            }
+
+            const double absoluteValue = std::abs(rawValue);
+            constexpr double pi = 3.14159265358979323846;
+            if (absoluteValue <= (2.0 * pi + 0.001)) {
+                return rawValue * (180.0 / pi);
+            }
+            return rawValue;
+        }
+
+        QString comfortPresetFromSunAngle(double angleDegrees) {
+            angleDegrees = normalizedSunAngleDegrees(angleDegrees);
+            if (std::isnan(angleDegrees)) {
+                return {};
+            }
+
+            if (angleDegrees >= 6.0) {
+                return QStringLiteral("day");
+            }
+            if (angleDegrees >= -2.0) {
+                return QTime::currentTime() < QTime(12, 0) ? QStringLiteral("dawn") : QStringLiteral("sunset");
+            }
+            if (angleDegrees >= -8.0) {
+                return QStringLiteral("dusk");
+            }
+            return QStringLiteral("night");
+        }
+
+        QDateTime comfortDateTimeFromValue(const QJsonValue &value) {
+            if (value.isString()) {
+                const QDateTime parsed = QDateTime::fromString(value.toString(), Qt::ISODate);
+                if (parsed.isValid()) {
+                    return parsed;
+                }
+            }
+            if (value.isObject()) {
+                const auto object = value.toObject();
+                const QString isoValue = object.value(QStringLiteral("value")).toString();
+                const QDateTime parsed = QDateTime::fromString(isoValue, Qt::ISODate);
+                if (parsed.isValid()) {
+                    return parsed;
+                }
+            }
+            return {};
+        }
+
+        QString comfortPresetFromSunSchedule(const QJsonObject &objectValue) {
+            const QDateTime now = QDateTime::currentDateTimeUtc();
+
+            const QDateTime dawn = comfortDateTimeFromValue(objectValue.value(QStringLiteral("dawn")));
+            const QDateTime sunrise = comfortDateTimeFromValue(objectValue.value(QStringLiteral("sunrise")));
+            const QDateTime sunriseEnd = comfortDateTimeFromValue(objectValue.value(QStringLiteral("sunriseEnd")));
+            const QDateTime sunset = comfortDateTimeFromValue(objectValue.value(QStringLiteral("sunset")));
+            const QDateTime dusk = comfortDateTimeFromValue(objectValue.value(QStringLiteral("dusk")));
+
+            if (dawn.isValid() && sunrise.isValid() && now >= dawn && now < sunrise) {
+                return QStringLiteral("dawn");
+            }
+            if (sunrise.isValid() && sunriseEnd.isValid() && now >= sunrise && now < sunriseEnd) {
+                return QStringLiteral("day");
+            }
+            if (sunriseEnd.isValid() && sunset.isValid() && now >= sunriseEnd && now < sunset) {
+                return QStringLiteral("day");
+            }
+            if (sunset.isValid() && dusk.isValid() && now >= sunset && now < dusk) {
+                return QStringLiteral("sunset");
+            }
+            if (dusk.isValid() && now >= dusk) {
+                return QStringLiteral("night");
+            }
+            if (dawn.isValid() && now < dawn) {
+                return QStringLiteral("night");
+            }
+
+            const QDateTime civilDawn = comfortDateTimeFromValue(objectValue.value(QStringLiteral("civilDawn")));
+            const QDateTime civilDusk = comfortDateTimeFromValue(objectValue.value(QStringLiteral("civilDusk")));
+            if (civilDawn.isValid() && sunrise.isValid() && now >= civilDawn && now < sunrise) {
+                return QStringLiteral("dawn");
+            }
+            if (sunset.isValid() && civilDusk.isValid() && now >= sunset && now < civilDusk) {
+                return QStringLiteral("dusk");
+            }
+
+            return {};
+        }
+
+        QString comfortPresetFromSunUpdate(const QJsonObject &update) {
+            if (update.isEmpty()) {
+                return {};
+            }
+
+            const QJsonObject objectValue = fairwindsk::signalk::Client::getObjectFromUpdateByPath(update);
+            const auto fromString = [](QString value) {
+                value = normalizedComfortViewPreset(value);
+                return value == QStringLiteral("default") ? QString() : value;
+            };
+
+            if (!objectValue.isEmpty()) {
+                const QString state = fromString(objectValue.value(QStringLiteral("state")).toString());
+                if (!state.isEmpty()) {
+                    return state;
+                }
+
+                const QString mode = fromString(objectValue.value(QStringLiteral("mode")).toString());
+                if (!mode.isEmpty()) {
+                    return mode;
+                }
+
+                const QString phase = fromString(objectValue.value(QStringLiteral("phase")).toString());
+                if (!phase.isEmpty()) {
+                    return phase;
+                }
+
+                const QString scheduledPreset = comfortPresetFromSunSchedule(objectValue);
+                if (!scheduledPreset.isEmpty()) {
+                    return scheduledPreset;
+                }
+
+                const double altitude = objectValue.value(QStringLiteral("altitude")).toDouble(std::numeric_limits<double>::quiet_NaN());
+                const QString altitudePreset = comfortPresetFromSunAngle(altitude);
+                if (!altitudePreset.isEmpty()) {
+                    return altitudePreset;
+                }
+
+                const double elevation = objectValue.value(QStringLiteral("elevation")).toDouble(std::numeric_limits<double>::quiet_NaN());
+                const QString elevationPreset = comfortPresetFromSunAngle(elevation);
+                if (!elevationPreset.isEmpty()) {
+                    return elevationPreset;
+                }
+            }
+
+            const QString directValue = fromString(fairwindsk::signalk::Client::getStringFromUpdateByPath(update));
+            if (!directValue.isEmpty()) {
+                return directValue;
+            }
+
+            return comfortPresetFromSunAngle(fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update));
+        }
+
+        QString resolvedComfortViewPreset(const Configuration &configuration, const QJsonObject &sunUpdate) {
+            if (configuration.getComfortViewMode() != "auto") {
+                return normalizedComfortViewPreset(configuration.getComfortViewPreset());
+            }
+
+            const QString environmentPreset = comfortPresetFromSunUpdate(sunUpdate);
+            if (!environmentPreset.isEmpty()) {
+                return environmentPreset;
+            }
+
+            return resolveComfortViewPresetFromClock();
         }
 
         QString comfortThemeResourcePath(const QString &preset) {
@@ -324,15 +552,6 @@ namespace fairwindsk {
                 + buildCheckboxRule(
                     QStringLiteral("checkbox-selected"),
                     QStringLiteral("QCheckBox::indicator:checked"));
-        }
-
-        bool isAutomaticComfortViewSupported(const Configuration &configuration, signalk::Client *client) {
-            const QString configuredSunPath = configuration.getSignalKPath(QStringLiteral("environment.sun")).trimmed();
-            if (configuredSunPath.isEmpty() || client == nullptr || client->url().isEmpty() || !client->isRestHealthy()) {
-                return false;
-            }
-
-            return !client->signalkGet(configuredSunPath).isEmpty();
         }
 
         UiComfortPalette uiComfortPaletteForPreset(const QString &preset) {
@@ -553,45 +772,8 @@ namespace fairwindsk {
             }
         }
 
-        nlohmann::json fetchJsonPayload(const QUrl &url, const bool debug) {
-            if (!url.isValid()) {
-                return {};
-            }
-
-            QNetworkAccessManager networkAccessManager;
-            QNetworkRequest request(url);
-            request.setTransferTimeout(kAppsRequestTimeoutMs);
-            QPointer<QNetworkReply> reply = networkAccessManager.get(request);
-            if (!reply) {
-                return {};
-            }
-
-            QEventLoop loop;
-            QTimer timeoutTimer;
-            timeoutTimer.setSingleShot(true);
-            QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
-            QObject::connect(&timeoutTimer, &QTimer::timeout, &loop, &QEventLoop::quit);
-            timeoutTimer.start(kAppsRequestTimeoutMs);
-            loop.exec();
-
-            if (!reply) {
-                return {};
-            }
-
-            const bool timedOut = !reply->isFinished();
-            if (timedOut) {
-                reply->abort();
-            }
-
-            const auto statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-            if (timedOut || !reply->isOpen() || reply->error() != QNetworkReply::NoError) {
-                reply->deleteLater();
-                return {};
-            }
-            const QByteArray payload = reply->readAll();
-            reply->deleteLater();
-
-            if (statusCode < 200 || statusCode >= 300 || payload.isEmpty()) {
+        nlohmann::json parseJsonPayload(const QByteArray &payload, const QUrl &url, const bool debug) {
+            if (payload.isEmpty()) {
                 return {};
             }
 
@@ -622,6 +804,28 @@ namespace fairwindsk {
                 fairwindJsonObject["order"] = order;
             }
         }
+
+        bool isOnHiddenStackPage(QWidget *widget) {
+            if (!widget) {
+                return false;
+            }
+
+            QWidget *current = widget;
+            while (current) {
+                auto *parentWidget = current->parentWidget();
+                if (!parentWidget) {
+                    return false;
+                }
+
+                if (auto *stackedWidget = qobject_cast<QStackedWidget *>(parentWidget)) {
+                    return stackedWidget->currentWidget() != current;
+                }
+
+                current = parentWidget;
+            }
+
+            return false;
+        }
     }
 /*
  * FairWind
@@ -633,11 +837,28 @@ namespace fairwindsk {
         m_configFilename = defaultConfigFilename();
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
-        // Create the WebEngine profile file name
-        auto profileName = QString::fromLatin1("FairWindSK.%1").arg(qWebEngineChromiumVersion());
+        const QString legacyProfileName = QString::fromLatin1("FairWindSK.%1").arg(qWebEngineChromiumVersion());
+        QString legacyStoragePath;
+        QString legacyCachePath;
+        {
+            QWebEngineProfile legacyProfile(legacyProfileName);
+            legacyStoragePath = legacyProfile.persistentStoragePath();
+            legacyCachePath = legacyProfile.cachePath();
+        }
 
-        // Create the WebEngine profile
-        m_profile = new QWebEngineProfile(profileName, this);
+        const QString stableStoragePath = webProfileStoragePath();
+        const QString stableCachePath = webProfileCachePath();
+        migrateWebProfileDirectory(legacyStoragePath, stableStoragePath, QStringLiteral("storage"));
+        migrateWebProfileDirectory(legacyCachePath, stableCachePath, QStringLiteral("cache"));
+
+        m_profile = new QWebEngineProfile(QStringLiteral("FairWindSK"), this);
+        m_profile->setPersistentStoragePath(stableStoragePath);
+        m_profile->setCachePath(stableCachePath);
+        m_profile->setHttpCacheType(QWebEngineProfile::DiskHttpCache);
+        m_profile->setPersistentCookiesPolicy(QWebEngineProfile::ForcePersistentCookies);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+        m_profile->setPersistentPermissionsPolicy(QWebEngineProfile::PersistentPermissionsPolicy::StoreOnDisk);
+#endif
 #endif
 
         if (qApp) {
@@ -647,6 +868,7 @@ namespace fairwindsk {
         m_autoComfortTimer = new QTimer(this);
         m_autoComfortTimer->setInterval(60000);
         connect(m_autoComfortTimer, &QTimer::timeout, this, &FairWindSK::refreshAutomaticComfortView);
+        m_runtimeNetworkAccessManager = new QNetworkAccessManager(this);
         connect(&m_signalkClient, &signalk::Client::serverStateResynchronized, this, [this](const bool recoveredFromDisconnect) {
             if (!recoveredFromDisconnect) {
                 return;
@@ -654,7 +876,7 @@ namespace fairwindsk {
 
             qInfo() << "FairWindSK detected Signal K recovery; resynchronizing runtime state";
             Units::getInstance()->refreshSignalKPreferences();
-            loadApps();
+            reloadAppsAsync();
             refreshAutomaticComfortViewAvailability();
             if (m_configuration.getComfortViewMode() == "auto") {
                 applyUiPreferences();
@@ -663,8 +885,36 @@ namespace fairwindsk {
                 mainWindow->applyRuntimeConfiguration();
             }
         });
+        connect(&m_signalkClient, &signalk::Client::connectionHealthStateChanged, this, [this](const signalk::Client::ConnectionHealthState,
+                                                                                                 const QString &,
+                                                                                                 const QDateTime &,
+                                                                                                 const QString &) {
+            refreshRuntimeHealth();
+        });
+        connect(&m_signalkClient, &signalk::Client::connectivityChanged, this, [this](const bool restHealthy,
+                                                                                       const bool streamHealthy,
+                                                                                       const QString &statusText) {
+            Q_UNUSED(statusText)
+            if (!restHealthy && !streamHealthy) {
+                refreshRuntimeHealth();
+                return;
+            }
+
+            const QString token = m_signalkClient.getToken();
+            if (token.isEmpty()) {
+                refreshRuntimeHealth();
+                return;
+            }
+
+            if (fairwindsk::Configuration::getToken() != token) {
+                fairwindsk::Configuration::setToken(token);
+            }
+            updateWebProfileCookie();
+            refreshRuntimeHealth();
+        });
 
         updateWebProfileCookie();
+        refreshRuntimeHealth();
     }
 
 
@@ -707,7 +957,11 @@ namespace fairwindsk {
             // Write a message
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
             if (m_profile) {
-                qDebug() << "QWebEngineProfile " << m_profile->isOffTheRecord() << " data store: " << m_profile->persistentStoragePath();
+                qDebug() << "QWebEngineProfile"
+                         << "offTheRecord=" << m_profile->isOffTheRecord()
+                         << "storage=" << m_profile->persistentStoragePath()
+                         << "cache=" << m_profile->cachePath()
+                         << "cookies=" << persistentCookiesPolicyName(m_profile->persistentCookiesPolicy());
             }
 #endif
 
@@ -750,6 +1004,7 @@ namespace fairwindsk {
             QLoggingCategory::setFilterRules(u"qt.webenginecontext.debug=true"_s);
         }
 
+        applyWebProfileLocalization();
         updateWebProfileCookie();
         refreshAutomaticComfortViewAvailability();
         applyUiPreferences();
@@ -794,20 +1049,7 @@ namespace fairwindsk {
             return preset;
         }
 
-        const QTime now = QTime::currentTime();
-        if (now >= QTime(5, 30) && now < QTime(7, 0)) {
-            return QStringLiteral("dawn");
-        }
-        if (now >= QTime(7, 0) && now < QTime(17, 30)) {
-            return QStringLiteral("default");
-        }
-        if (now >= QTime(17, 30) && now < QTime(19, 0)) {
-            return QStringLiteral("sunset");
-        }
-        if (now >= QTime(19, 0) && now < QTime(20, 30)) {
-            return QStringLiteral("dusk");
-        }
-        return QStringLiteral("night");
+        return resolvedComfortViewPreset(effectiveConfiguration, m_automaticComfortEnvironmentUpdate);
     }
 
     UiScrollPalette FairWindSK::getActiveComfortScrollPalette(const Configuration *configuration) const {
@@ -833,7 +1075,7 @@ namespace fairwindsk {
         const QString comfortPreset =
             effectiveConfiguration.getComfortViewMode() == "auto" && !isAutomaticComfortViewAvailable(&effectiveConfiguration)
                 ? normalizedComfortViewPreset(effectiveConfiguration.getComfortViewPreset())
-                : resolvedComfortViewPreset(effectiveConfiguration);
+                : resolvedComfortViewPreset(effectiveConfiguration, m_automaticComfortEnvironmentUpdate);
         const auto comfortPalette = uiComfortPaletteForPreset(comfortPreset);
 
         const QColor applicationBackgroundColor = comfortOverrideColor(effectiveConfiguration, comfortPreset, QStringLiteral("applicationBackground"), QColor(comfortPalette.panel));
@@ -845,6 +1087,15 @@ namespace fairwindsk {
         const QColor accentTopColor = comfortOverrideColor(effectiveConfiguration, comfortPreset, QStringLiteral("accentTop"), QColor(comfortPalette.accentTop));
         const QColor accentTextColor = comfortOverrideColor(effectiveConfiguration, comfortPreset, QStringLiteral("accentText"), QColor(QStringLiteral("#eff6ff")));
         const QColor borderColor = comfortOverrideColor(effectiveConfiguration, comfortPreset, QStringLiteral("border"), QColor(comfortPalette.border));
+        const QString metricsSignature = QStringLiteral("%1|%2|%3|%4|%5|%6|%7|%8")
+            .arg(preset)
+            .arg(metrics.fontPointSize)
+            .arg(metrics.controlHeight)
+            .arg(metrics.tabHeight)
+            .arg(metrics.actionIconSize)
+            .arg(metrics.prominentIconSize)
+            .arg(metrics.toggleWidth)
+            .arg(metrics.toggleHeight);
 
         QFont appFont = qApp->font();
         appFont.setPointSize(metrics.fontPointSize);
@@ -865,11 +1116,15 @@ namespace fairwindsk {
             buildUiMetricsStyleSheet(metrics)
             + loadComfortThemeStyleSheet(effectiveConfiguration, comfortPreset)
             + loadComfortBackgroundStyleSheet(effectiveConfiguration, comfortPreset);
-        if (qApp->styleSheet() != combinedStyleSheet) {
+        const bool metricsChanged = m_lastUiMetricsSignature != metricsSignature;
+        const bool themeChanged = m_lastUiThemeSignature != combinedStyleSheet;
+        if (themeChanged) {
             qApp->setStyleSheet(combinedStyleSheet);
         }
 
         m_activeComfortViewPreset = comfortPreset;
+        m_lastUiMetricsSignature = metricsSignature;
+        m_lastUiThemeSignature = combinedStyleSheet;
 
         if (m_autoComfortTimer) {
             if (effectiveConfiguration.getComfortViewMode() == "auto" && isAutomaticComfortViewAvailable(&effectiveConfiguration)) {
@@ -881,19 +1136,31 @@ namespace fairwindsk {
             }
         }
 
+        if (!metricsChanged && !themeChanged) {
+            return;
+        }
+
         const auto widgets = QApplication::allWidgets();
         for (auto *widget : widgets) {
-            if (!widget) {
+            if (!widget || isOnHiddenStackPage(widget)) {
                 continue;
             }
 
-            applyIconMetrics(widget, metrics);
-            if (auto *style = qApp->style()) {
+            const bool widgetVisible = widget->isVisible();
+            if (metricsChanged && widgetVisible) {
+                applyIconMetrics(widget, metrics);
+            }
+            if (themeChanged && widgetVisible && qApp->style()) {
+                auto *style = qApp->style();
                 style->unpolish(widget);
                 style->polish(widget);
             }
-            widget->updateGeometry();
-            widget->update();
+            if (metricsChanged && widgetVisible) {
+                widget->updateGeometry();
+            }
+            if (widgetVisible) {
+                widget->update();
+            }
         }
     }
 
@@ -907,7 +1174,7 @@ namespace fairwindsk {
             return;
         }
 
-        const QString resolvedPreset = resolvedComfortViewPreset(m_configuration);
+        const QString resolvedPreset = resolvedComfortViewPreset(m_configuration, m_automaticComfortEnvironmentUpdate);
         if (resolvedPreset != m_activeComfortViewPreset) {
             applyUiPreferences();
         }
@@ -915,7 +1182,24 @@ namespace fairwindsk {
 
     void FairWindSK::refreshAutomaticComfortViewAvailability(const Configuration *configuration) {
         const Configuration &effectiveConfiguration = configuration ? *configuration : m_configuration;
-        m_automaticComfortViewAvailable = isAutomaticComfortViewSupported(effectiveConfiguration, &m_signalkClient);
+        const QString configuredSunPath = effectiveConfiguration.getSignalKPath(QStringLiteral("environment.sun")).trimmed();
+        if (configuredSunPath != m_automaticComfortViewPath) {
+            if (!m_automaticComfortViewPath.isEmpty()) {
+                m_signalkClient.removeSubscription(m_automaticComfortViewPath, this);
+            }
+            m_automaticComfortViewPath = configuredSunPath;
+            m_automaticComfortEnvironmentUpdate = {};
+            if (!m_automaticComfortViewPath.isEmpty()) {
+                m_signalkClient.subscribeStream(QStringLiteral("vessels.self"),
+                                                m_automaticComfortViewPath,
+                                                this,
+                                                SLOT(onAutomaticComfortEnvironmentUpdate(QJsonObject)));
+            }
+        }
+
+        m_automaticComfortViewAvailable =
+            isAutomaticComfortViewConfigured(&effectiveConfiguration)
+            && !comfortPresetFromSunUpdate(m_automaticComfortEnvironmentUpdate).isEmpty();
     }
 
     void FairWindSK::reconfigureRuntime(const quint32 runtimeChanges) {
@@ -925,12 +1209,20 @@ namespace fairwindsk {
             updateWebProfileCookie();
         }
 
+        if (runtimeChanges & RuntimeUi) {
+            applyWebProfileLocalization();
+        }
+
         if (runtimeChanges & (RuntimeUnits | RuntimeSignalKConnection | RuntimeSignalKPaths)) {
             Units::getInstance()->refreshSignalKPreferences();
         }
 
-        if (signalKSettingsChanged && !m_configuration.getSignalKServerUrl().isEmpty()) {
-            startSignalK();
+        if (signalKSettingsChanged) {
+            if (m_configuration.getSignalKConnectionEnabled() && !m_configuration.getSignalKServerUrl().isEmpty()) {
+                startSignalK();
+            } else {
+                stopSignalK();
+            }
         }
 
         if (signalKSettingsChanged) {
@@ -970,6 +1262,21 @@ namespace fairwindsk {
 #endif
     }
 
+    void FairWindSK::applyWebProfileLocalization() {
+#if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
+        return;
+#else
+        if (!m_profile) {
+            return;
+        }
+
+        const QLocale locale = localization::effectiveLocale(m_configuration);
+        const QString acceptLanguage = localization::webAcceptLanguageHeader(locale);
+        m_profile->setHttpAcceptLanguage(acceptLanguage);
+        qInfo() << "WebEngine Accept-Language set to" << acceptLanguage;
+#endif
+    }
+
     /*
      * startSignalK()
      * Starts the Signal K client
@@ -985,7 +1292,10 @@ namespace fairwindsk {
         qInfo() << "FairWindSK::startSignalK server URL =" << signalKServerUrl;
 
         // Check if the Signal K URL is not empty
-        if (!signalKServerUrl.isEmpty()) {
+        if (!m_configuration.getSignalKConnectionEnabled()) {
+            qInfo() << "FairWindSK::startSignalK skipped because connection is paused";
+            stopSignalK();
+        } else if (!signalKServerUrl.isEmpty()) {
 
             // Define the parameters map
             QMap<QString, QVariant> params;
@@ -1009,65 +1319,16 @@ namespace fairwindsk {
                 params["token"] = token;
             }
 
-            // Number of connection tentatives
-            int count = 1;
-
-            // Start the connection
-            do {
-                qInfo() << "FairWindSK::startSignalK attempt" << count << "of" << m_nRetry;
-
-                // Check if the debug is active
-                if (isDebug()) {
-
-                    // Write a message
-                    qDebug() << "Trying to connect to the " << signalKServerUrl << " Signal K server ("
-                             << count
-                             << "/" << m_nRetry << ")...";
-                }
-
-                // Try to connect
-                qInfo() << "FairWindSK::startSignalK calling Client::init";
-                result = m_signalkClient.init(params);
-                qInfo() << "FairWindSK::startSignalK Client::init returned" << result;
-
-                // Check if the connection is successful
-                if (result) {
-
-                    // Set the token
-                    fairwindsk::Configuration::setToken(m_signalkClient.getToken());
-                    updateWebProfileCookie();
-                    Units::getInstance()->refreshSignalKPreferences();
-                    refreshAutomaticComfortViewAvailability();
-                    if (m_configuration.getComfortViewMode() == "auto") {
-                        applyUiPreferences();
-                    }
-                    qInfo() << "FairWindSK::startSignalK connected successfully";
-
-                    // Exit the loop
-                    break;
-                }
-
-                // Increase the number of retry
-                count++;
-
-                // Back off between retries without freezing touch and pointer input.
-                waitWithUiEvents(m_mSleep);
-
-                // Loop until the number of retry
-            } while (count < m_nRetry);
+            qInfo() << "FairWindSK::startSignalK starting non-blocking client initialization";
+            result = m_signalkClient.init(params);
+            qInfo() << "FairWindSK::startSignalK Client::init returned" << result;
 
             // Check if the debug is active
             if (isDebug()) {
-
-                // Check if the client is connected
                 if (result) {
-
-                    // Write a message
-                    qDebug() << "Connected to " << signalKServerUrl;
+                    qDebug() << "Signal K startup initiated for" << signalKServerUrl;
                 } else {
-
-                    // Write a message
-                    qDebug() << "No response from the " << signalKServerUrl << " Signal K server!";
+                    qDebug() << "Signal K startup disabled or unavailable for" << signalKServerUrl;
                 }
             }
         } else {
@@ -1079,272 +1340,235 @@ namespace fairwindsk {
         return result;
     }
 
+    bool FairWindSK::stopSignalK() {
+        qInfo() << "FairWindSK::stopSignalK entered";
+
+        QMap<QString, QVariant> params;
+        params["active"] = false;
+        params["debug"] = m_debug;
+        const QString signalKServerUrl = m_configuration.getSignalKServerUrl();
+        if (!signalKServerUrl.isEmpty()) {
+            params["url"] = signalKServerUrl + "/signalk";
+        }
+
+        m_signalkClient.init(params);
+        refreshRuntimeHealth();
+
+        qInfo() << "FairWindSK::stopSignalK exiting";
+        return true;
+    }
+
     /*
      * loadApps()
      * Load the applications
      */
     bool FairWindSK::loadApps() {
+        const bool hasRegistry = rebuildAppRegistry();
 
-        // Set the result value
-        bool result = false;
+        if (!m_configuration.getSignalKServerUrl().trimmed().isEmpty()) {
+            reloadAppsAsync();
+        } else {
+            setAppsState(hasRegistry ? AppsState::Loaded : AppsState::Idle,
+                         hasRegistry ? tr("Apps ready") : tr("Apps idle"));
+        }
 
-        // Get the configuration root JSON object
+        return hasRegistry;
+    }
+
+    void FairWindSK::reloadAppsAsync() {
+        const QString signalKServerUrl = m_configuration.getSignalKServerUrl().trimmed();
+        if (!m_runtimeNetworkAccessManager || signalKServerUrl.isEmpty()) {
+            setAppsState(m_mapHash2AppItem.isEmpty() ? AppsState::Idle : AppsState::Stale,
+                         m_mapHash2AppItem.isEmpty() ? tr("Apps idle") : tr("Apps cached"));
+            return;
+        }
+
+        ++m_appsReloadGeneration;
+        const quint64 generation = m_appsReloadGeneration;
+        if (m_appsReply) {
+            m_appsReply->abort();
+            m_appsReply->deleteLater();
+            m_appsReply = nullptr;
+        }
+
+        setAppsState(AppsState::Loading,
+                     m_mapHash2AppItem.isEmpty() ? tr("Loading apps") : tr("Refreshing apps"));
+        emit appsReloadStarted();
+        startAppsRequest(QUrl(signalKServerUrl + "/signalk/v1/apps/list"), generation, false);
+    }
+
+    bool FairWindSK::rebuildAppRegistry(const nlohmann::json *appsPayload) {
         auto &configurationJsonObject = m_configuration.getRoot();
-
-        // Check if apps is not defined in configuration
         if (!configurationJsonObject.contains("apps")) {
-
-            // Add the apps array
             configurationJsonObject["apps"] = nlohmann::json::array();
         }
 
-        // Get the app keys
-        auto keys = m_mapHash2AppItem.keys();
-
-        // Remove all app items
-        for (const auto& key: keys) {
-
-            // Remove the item
+        const auto keys = m_mapHash2AppItem.keys();
+        for (const auto &key : keys) {
             delete m_mapHash2AppItem[key];
         }
-
-        // Remove the map content
         m_mapHash2AppItem.clear();
         m_mapAppId2Hash.clear();
 
-        // Reset the counter
         int count = 100;
+        bool hadServerPayload = appsPayload && appsPayload->is_array();
 
-        // Get the signalk server url from the configuration
-        auto signalKServerUrl = m_configuration.getSignalKServerUrl();
+        if (hadServerPayload) {
+            for (auto appJsonObject : *appsPayload) {
+                if (!appJsonObject.is_object()) {
+                    continue;
+                }
 
-        // Check if it not empty
-        if (!signalKServerUrl.isEmpty()) {
-            auto appsPayload = fetchJsonPayload(QUrl(signalKServerUrl + "/signalk/v1/apps/list"), isDebug());
-            if (!appsPayload.is_array()) {
-                appsPayload = fetchJsonPayload(QUrl(signalKServerUrl + "/skServer/webapps"), isDebug());
-            }
-
-            if (appsPayload.is_array()) {
-                for (auto appJsonObject : appsPayload) {
-                    if (!appJsonObject.is_object()) {
+                if (appJsonObject.contains("keywords") && appJsonObject["keywords"].is_array()) {
+                    std::vector<std::string> keywords = appJsonObject["keywords"];
+                    QStringList stringListKeywords;
+                    std::transform(keywords.begin(), keywords.end(), std::back_inserter(stringListKeywords), [](const std::string &value) {
+                        return QString::fromStdString(value);
+                    });
+                    if (!stringListKeywords.contains("signalk-webapp")) {
                         continue;
                     }
+                }
 
-                    if (appJsonObject.contains("keywords") && appJsonObject["keywords"].is_array()) {
-                        std::vector<std::string> keywords = appJsonObject["keywords"];
-                        QStringList stringListKeywords;
-                        std::transform(
-                            keywords.begin(), keywords.end(),
-                            std::back_inserter(stringListKeywords), [](const std::string &value) {
-                                return QString::fromStdString(value);
-                            }
-                        );
-                        if (!stringListKeywords.contains("signalk-webapp")) {
-                            continue;
-                        }
-                    }
+                ensureFairwindMetadata(appJsonObject, count);
 
-                    ensureFairwindMetadata(appJsonObject, count);
+                auto *appItem = new AppItem(appJsonObject);
+                const QString appName = appItem->getName();
+                const int idx = m_configuration.findApp(appName);
 
-                    auto *appItem = new AppItem(appJsonObject);
-                    const QString appName = appItem->getName();
+                if (idx == -1) {
+                    m_configuration.getRoot()["apps"].push_back(appItem->asJson());
+                }
+
+                m_mapHash2AppItem[appName] = appItem;
+                m_mapAppId2Hash[appName] = appName;
+                count++;
+
+                if (isDebug()) {
+                    qDebug() << "Added (app from the Signal K Apps API): "
+                             << QString::fromStdString(appItem->asJson().dump(2));
+                }
+            }
+        }
+
+        const auto appsJsonArray = configurationJsonObject["apps"];
+        for (auto app : appsJsonArray) {
+            if (!app.is_object() || !app.contains("name") || !app["name"].is_string()) {
+                continue;
+            }
+
+            const auto appName = QString::fromStdString(app["name"].get<std::string>());
+            if (m_mapHash2AppItem.contains(appName)) {
+                auto *appItem = m_mapHash2AppItem[appName];
+                const int idx = m_configuration.findApp(appName);
+                if (idx != -1) {
+                    auto mergedJson = appItem->asJson();
+                    mergedJson.update(app, true);
+                    m_configuration.getRoot()["apps"].at(idx) = mergedJson;
+                    appItem->update(mergedJson);
+                }
+                continue;
+            }
+
+            if (appName.startsWith("http://") || appName.startsWith("https://") || appName.startsWith("file://")) {
+                auto *appItem = new AppItem(app);
+                if (appItem->getOrder() == 0) {
+                    appItem->setOrder(count);
                     const int idx = m_configuration.findApp(appName);
-
-                    if (idx == -1) {
-                        m_configuration.getRoot()["apps"].push_back(appItem->asJson());
+                    if (idx != -1) {
+                        m_configuration.getRoot()["apps"].at(idx)["fairwind"]["order"] = count;
                     }
-
-                    m_mapHash2AppItem[appName] = appItem;
-                    m_mapAppId2Hash[appName] = appName;
                     count++;
-
-                    if (isDebug()) {
-                        qDebug() << "Added (app from the Signal K Apps API): "
-                                 << QString::fromStdString(appItem->asJson().dump(2));
-                    }
                 }
-
-                result = true;
+                m_mapHash2AppItem[appName] = appItem;
+                m_mapAppId2Hash[appName] = appName;
+                continue;
             }
+
+            const int idx = m_configuration.findApp(appName);
+            if (idx != -1) {
+                auto &configuredApp = m_configuration.getRoot()["apps"].at(idx);
+                configuredApp["fairwind"]["order"] = 10000 + count;
+                configuredApp["fairwind"]["active"] = false;
+                count++;
+            }
+        }
+
+        return !m_mapHash2AppItem.isEmpty() || hadServerPayload;
+    }
+
+    void FairWindSK::setAppsState(const AppsState state, const QString &stateText) {
+        const QString normalizedStateText = stateText.trimmed().isEmpty() ? tr("Apps idle") : stateText.trimmed();
+        if (m_appsState == state && m_appsStateText == normalizedStateText) {
+            return;
+        }
+
+        m_appsState = state;
+        m_appsStateText = normalizedStateText;
+        emit appsStateChanged(m_appsState, m_appsStateText);
+        refreshRuntimeHealth();
+    }
+
+    void FairWindSK::startAppsRequest(const QUrl &url, const quint64 generation, const bool fallbackRequest) {
+        if (!m_runtimeNetworkAccessManager || !url.isValid()) {
+            finalizeAppsReload(false, tr("Apps refresh failed"));
+            return;
+        }
+
+        QNetworkRequest request(url);
+        request.setTransferTimeout(kAppsRequestTimeoutMs);
+        auto *reply = m_runtimeNetworkAccessManager->get(request);
+        if (generation == m_appsReloadGeneration) {
+            m_appsReply = reply;
+        }
+
+        connect(reply, &QNetworkReply::finished, this, [this, reply, url, generation, fallbackRequest]() {
+            const QScopedPointer<QNetworkReply, QScopedPointerDeleteLater> guard(reply);
+            if (generation != m_appsReloadGeneration) {
+                return;
+            }
+
+            if (m_appsReply == reply) {
+                m_appsReply = nullptr;
+            }
+
+            const int statusCode = guard->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+            const bool success = guard->error() == QNetworkReply::NoError && statusCode >= 200 && statusCode < 300;
+            const nlohmann::json appsPayload = success ? parseJsonPayload(guard->readAll(), url, isDebug()) : nlohmann::json{};
+            if (appsPayload.is_array()) {
+                finalizeAppsReload(true, tr("Apps ready"), &appsPayload);
+                return;
+            }
+
+            if (!fallbackRequest) {
+                startAppsRequest(QUrl(m_configuration.getSignalKServerUrl().trimmed() + "/skServer/webapps"), generation, true);
+                return;
+            }
+
+            finalizeAppsReload(false,
+                               m_mapHash2AppItem.isEmpty()
+                                   ? tr("Apps refresh failed")
+                                   : tr("Apps cached"));
+        });
+    }
+
+    void FairWindSK::finalizeAppsReload(const bool success,
+                                        const QString &statusText,
+                                        const nlohmann::json *appsPayload) {
+        const bool hasRegistry = success ? rebuildAppRegistry(appsPayload) : !m_mapHash2AppItem.isEmpty();
+        if (success) {
+            setAppsState(AppsState::Loaded, statusText);
+        } else if (hasRegistry) {
+            setAppsState(AppsState::Stale, statusText);
         } else {
-
-            // Check if the debug is active
-            if (m_debug) {
-                // Show a message
-                qDebug() << "Troubles on getting apps from " << signalKServerUrl;
-            }
+            setAppsState(AppsState::Failed, statusText);
         }
 
-        // Get the apps array
-        auto appsJsonArray = configurationJsonObject["apps"];
+        emit appsReloadFinished(success);
 
-        // For each app in the apps array
-        for (auto app: appsJsonArray) {
-
-            // Check if the app is an object
-            if (app.is_object()) {
-
-                // Check if the app has the key name and if the value is a string
-                if (app.contains("name") && app["name"].is_string()) {
-
-                    // Get the app name
-                    auto appName = QString::fromStdString(app["name"].get<std::string>());
-
-                    // Check if the app is one of the ones already added
-                    if (m_mapHash2AppItem.contains(appName)) {
-
-                        // Get the app item object
-                        auto appItem = m_mapHash2AppItem[appName];
-
-                        // Get the index of the application within the apps array
-                        int idx = m_configuration.findApp(appName);
-
-                        // Check if the app is present
-                        if (idx != -1) {
-
-                            // Get the item as a json
-                            auto j = appItem->asJson();
-
-                            // Update the item with app data
-                            j.update(app, true);
-
-                            // Assign the item to the configuration
-                            m_configuration.getRoot()["apps"].at(idx) = j;
-
-                            // Update the app with the configuration
-                            m_mapHash2AppItem[appName]->update(j);
-
-                            // Check if the debug is active
-                            if (isDebug())
-                            {
-                                // Write a message
-                                qDebug() << "Updated (app from the Signal k server updated by the configuration file): " << QString::fromStdString(m_configuration.getRoot()["apps"].at(idx).dump(2));
-                            }
-                        }
-                    } else {
-
-                        // Check if it is not a Signal K app
-                        if (appName.startsWith("http://") || appName.startsWith("https://") || appName.startsWith("file://")) {
-
-                            // Create a new app item with the configuration
-                            auto appItem = new AppItem(app);
-
-                            // Check if the order is 0
-                            if (appItem->getOrder() == 0) {
-
-                                // Update the order
-                                appItem->setOrder(count);
-
-                                // Get the index of the application within the apps array
-                                int idx = m_configuration.findApp(appName);
-
-                                // Check if the app is present
-                                if (idx != -1) {
-
-                                    // Update the configuration
-                                    m_configuration.getRoot()["apps"].at(idx)["fairwind"]["order"] = count;
-
-                                    // Check if the debug is active
-                                    if (isDebug()) {
-
-                                        // Write a message
-                                        qDebug() << "Added (app from the configuration file): " << QString::fromStdString(m_configuration.getRoot()["apps"].at(idx).dump(2));
-                                    }
-
-                                    // Increase the counter
-                                    count++;
-                                }
-                            }
-
-                            // Add the application to the hash map
-                            m_mapHash2AppItem[appName] = appItem;
-                            m_mapAppId2Hash[appName] = appName;
-
-                            // Check if the debug is active
-                            if (isDebug()) {
-
-                                // Write a message
-                                qDebug() << "Added: " << QString::fromStdString(appItem->asJson().dump(2));
-                            }
-                        } else {
-
-                            // Get the index of the application within the apps array
-                            int idx = m_configuration.findApp(appName);
-
-                            // Check if the app is present
-                            if (idx != -1) {
-
-                                auto &configuredApp = m_configuration.getRoot()["apps"].at(idx);
-                                bool wasActive = false;
-                                if (configuredApp.contains("fairwind") &&
-                                    configuredApp["fairwind"].is_object() &&
-                                    configuredApp["fairwind"].contains("active") &&
-                                    configuredApp["fairwind"]["active"].is_boolean()) {
-                                    wasActive = configuredApp["fairwind"]["active"].get<bool>();
-                                }
-
-                                // Update the configuration
-                                configuredApp["fairwind"]["order"] = 10000+count;
-
-                                // Set the application as inactive by default
-                                configuredApp["fairwind"]["active"] = false;
-
-                                // Increase the caunter
-                                count++;
-
-                                if (wasActive || m_debug) {
-                                    qDebug() << "Deactivated (Signal K application present in the configuration file, but not on the Signal K server): "
-                                             << QString::fromStdString(configuredApp.dump(2));
-                                }
-
-                            } else {
-                                // Check if the debug is active
-                                if (isDebug()) {
-
-                                    // Write a message
-                                    qDebug() << "Error!";
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+        if (auto *mainWindow = fairwindsk::ui::MainWindow::instance()) {
+            mainWindow->applyRuntimeConfiguration();
         }
-
-        // Get the configuration json data root
-        auto jsonData =m_configuration.getRoot();
-
-        // Check if the debug is active
-        if (isDebug()) {
-
-            // Write a message
-            qDebug() << "Resume";
-        }
-
-        // Check if the configuration has an apps element and if it is an array
-        if (jsonData.contains("apps") && jsonData["apps"].is_array()) {
-
-            // For each item of the apps array...
-            for (const auto &app: jsonData["apps"].items()) {
-
-                // Get the application data
-                const auto& jsonApp = app.value();
-
-                // Create an application object
-                AppItem appItem(jsonApp);
-
-                // Check if the debug is active
-                if (isDebug())
-                {
-                    // Write a message
-                    qDebug() << "App: " << appItem.getName() << " active: " << appItem.getActive() << " order: " << appItem.getOrder();
-                }
-            }
-        }
-
-        // Return the result
-        return result;
     }
 
     QList<QString> FairWindSK::getAppsHashes() {
@@ -1385,6 +1609,124 @@ namespace fairwindsk {
 
     signalk::Client *FairWindSK::getSignalKClient() {
         return &m_signalkClient;
+    }
+
+    FairWindSK::AppsState FairWindSK::appsState() const {
+        return m_appsState;
+    }
+
+    QString FairWindSK::appsStateText() const {
+        return m_appsStateText;
+    }
+
+    FairWindSK::RuntimeHealthState FairWindSK::runtimeHealthState() const {
+        return m_runtimeHealthState;
+    }
+
+    QString FairWindSK::runtimeHealthSummary() const {
+        return m_runtimeHealthSummary;
+    }
+
+    QString FairWindSK::runtimeHealthBadgeText() const {
+        return m_runtimeHealthBadgeText;
+    }
+
+    void FairWindSK::setForegroundAppHealth(const QString &summary, const bool degraded) {
+        const QString normalizedSummary = summary.trimmed();
+        if (m_foregroundAppHealthSummary == normalizedSummary && m_foregroundAppDegraded == degraded) {
+            return;
+        }
+
+        m_foregroundAppHealthSummary = normalizedSummary;
+        m_foregroundAppDegraded = degraded;
+        refreshRuntimeHealth();
+    }
+
+    void FairWindSK::clearForegroundAppHealth() {
+        setForegroundAppHealth(QString(), false);
+    }
+
+    void FairWindSK::refreshRuntimeHealth() {
+        RuntimeHealthState nextState = RuntimeHealthState::Disconnected;
+        QString nextSummary = tr("Signal K disconnected");
+        QString nextBadge = QStringLiteral("DISC");
+
+        const auto connectionState = m_signalkClient.connectionHealthState();
+        const bool restHealthy = m_signalkClient.isRestHealthy();
+        const bool streamHealthy = m_signalkClient.isStreamHealthy();
+        const QString connectionSummary = m_signalkClient.connectionStatusText().trimmed();
+        const QString appsSummary = m_appsStateText.trimmed();
+
+        if (m_foregroundAppDegraded) {
+            nextState = RuntimeHealthState::ForegroundAppDegraded;
+            nextSummary = m_foregroundAppHealthSummary.isEmpty() ? tr("Foreground app degraded") : m_foregroundAppHealthSummary;
+            nextBadge = QStringLiteral("APP");
+        } else if (connectionState == signalk::Client::ConnectionHealthState::Connecting) {
+            nextState = RuntimeHealthState::Connecting;
+            nextSummary = connectionSummary.isEmpty() ? tr("Connecting to Signal K") : connectionSummary;
+            nextBadge = QStringLiteral("CONN");
+        } else if (connectionState == signalk::Client::ConnectionHealthState::Reconnecting) {
+            nextState = RuntimeHealthState::Reconnecting;
+            nextSummary = connectionSummary.isEmpty() ? tr("Reconnecting to Signal K") : connectionSummary;
+            nextBadge = QStringLiteral("RECN");
+        } else if (!restHealthy && streamHealthy) {
+            nextState = RuntimeHealthState::RestDegraded;
+            nextSummary = connectionSummary.isEmpty() ? tr("REST degraded") : connectionSummary;
+            nextBadge = QStringLiteral("REST");
+        } else if (restHealthy && !streamHealthy) {
+            nextState = RuntimeHealthState::StreamDegraded;
+            nextSummary = connectionSummary.isEmpty() ? tr("Stream degraded") : connectionSummary;
+            nextBadge = QStringLiteral("STRM");
+        } else if (connectionState == signalk::Client::ConnectionHealthState::Stale) {
+            nextState = RuntimeHealthState::ConnectedStale;
+            nextSummary = connectionSummary.isEmpty() ? tr("Live data stale") : connectionSummary;
+            nextBadge = QStringLiteral("STAL");
+        } else if (connectionState == signalk::Client::ConnectionHealthState::Live) {
+            if (m_appsState == AppsState::Loading) {
+                nextState = RuntimeHealthState::AppsLoading;
+                nextSummary = appsSummary.isEmpty() ? tr("Signal K live • Refreshing apps") : tr("Signal K live • %1").arg(appsSummary);
+                nextBadge = QStringLiteral("APPS");
+            } else if (m_appsState == AppsState::Failed || m_appsState == AppsState::Stale) {
+                nextState = RuntimeHealthState::AppsStale;
+                nextSummary = appsSummary.isEmpty() ? tr("Signal K live • Apps stale") : tr("Signal K live • %1").arg(appsSummary);
+                nextBadge = QStringLiteral("APPS");
+            } else {
+                nextState = RuntimeHealthState::ConnectedLive;
+                nextSummary = connectionSummary.isEmpty() ? tr("Signal K live") : connectionSummary;
+                nextBadge = QStringLiteral("LIVE");
+            }
+        } else if (connectionState == signalk::Client::ConnectionHealthState::Degraded) {
+            nextState = RuntimeHealthState::ConnectedStale;
+            nextSummary = connectionSummary.isEmpty() ? tr("Signal K degraded") : connectionSummary;
+            nextBadge = QStringLiteral("DEGD");
+        }
+
+        if (m_runtimeHealthState == nextState
+            && m_runtimeHealthSummary == nextSummary
+            && m_runtimeHealthBadgeText == nextBadge) {
+            return;
+        }
+
+        m_runtimeHealthState = nextState;
+        m_runtimeHealthSummary = nextSummary;
+        m_runtimeHealthBadgeText = nextBadge;
+        emit runtimeHealthChanged(m_runtimeHealthState, m_runtimeHealthSummary, m_runtimeHealthBadgeText);
+    }
+
+    void FairWindSK::handleAutomaticComfortEnvironmentUpdate(const QJsonObject &update) {
+        m_automaticComfortEnvironmentUpdate = update;
+        const bool wasAvailable = m_automaticComfortViewAvailable;
+        const QString previousPreset = getActiveComfortViewPreset();
+        refreshAutomaticComfortViewAvailability();
+        if (m_configuration.getComfortViewMode() == "auto"
+            && (m_automaticComfortViewAvailable != wasAvailable
+                || getActiveComfortViewPreset() != previousPreset)) {
+            applyUiPreferences();
+        }
+    }
+
+    void FairWindSK::onAutomaticComfortEnvironmentUpdate(const QJsonObject &update) {
+        handleAutomaticComfortEnvironmentUpdate(update);
     }
 
     WebProfileHandle *FairWindSK::getWebEngineProfile() {

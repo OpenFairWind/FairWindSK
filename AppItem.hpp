@@ -9,7 +9,6 @@
 #include <QMap>
 #include <QImage>
 #include <QPixmap>
-#include <QProcess>
 #include <QPointer>
 #include <QString>
 #include <nlohmann/json.hpp>
@@ -36,7 +35,7 @@ namespace fairwindsk {
 
             void update(const nlohmann::json&  jsonApp);
 
-            QString getDisplayName();
+            QString getDisplayName(bool allowRemoteFetch = false);
             void setDisplayName(const QString& displayName);
 
             bool getActive();
@@ -57,7 +56,7 @@ namespace fairwindsk {
             QString getAuthor();
             QVector<QString> getContributors();
             QString getUrl();
-            QPixmap getIcon(bool allowRemoteFetch = true);
+            QPixmap getIcon(bool allowRemoteFetch = false);
             QString getAppIcon();
             void setAppIcon(const QString& appIcon);
             double getZoomPercent() const;
@@ -77,9 +76,6 @@ namespace fairwindsk {
             void setWidget(QWidget *pWidget);
             QWidget *getWidget();
 
-            void setProcess(QProcess *pProcess);
-            QProcess *getProcess();
-
             nlohmann::json asJson();
 
             bool operator<(const AppItem& o) const;
@@ -88,7 +84,6 @@ namespace fairwindsk {
             nlohmann::json m_jsonApp;
 
             QPointer<QWidget> m_pWidget;
-            QProcess *m_pProcess = nullptr;
             QPixmap m_cachedIcon;
             bool m_hasCachedIcon = false;
     };

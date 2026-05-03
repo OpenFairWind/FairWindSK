@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 project(FairWindSK VERSION 0.1.0 LANGUAGES CXX)
 
+include(CTest)
+
 execute_process(
         COMMAND git -C ${CMAKE_SOURCE_DIR} describe --tags --always --dirty
         OUTPUT_VARIABLE FAIRWINDSK_GIT_VERSION
@@ -9,6 +11,11 @@ execute_process(
 execute_process(
         COMMAND git -C ${CMAKE_SOURCE_DIR} rev-list --count HEAD
         OUTPUT_VARIABLE FAIRWINDSK_GIT_COMMIT_COUNT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET)
+execute_process(
+        COMMAND git -C ${CMAKE_SOURCE_DIR} rev-parse --abbrev-ref HEAD
+        OUTPUT_VARIABLE FAIRWINDSK_GIT_BRANCH
         OUTPUT_STRIP_TRAILING_WHITESPACE
         ERROR_QUIET)
 if(FAIRWINDSK_GIT_COMMIT_COUNT MATCHES "^[0-9]+$")
@@ -21,6 +28,9 @@ else()
 endif()
 if(NOT FAIRWINDSK_GIT_VERSION)
     set(FAIRWINDSK_GIT_VERSION ${FAIRWINDSK_SEMVER})
+endif()
+if(NOT FAIRWINDSK_GIT_BRANCH)
+    set(FAIRWINDSK_GIT_BRANCH "unknown")
 endif()
 string(TIMESTAMP FAIRWINDSK_BUILD_YEAR "%Y")
 
@@ -60,6 +70,7 @@ find_package(Qt6 REQUIRED COMPONENTS
         Svg
         Positioning
         VirtualKeyboard
+        LinguistTools
 )
 
 if(FAIRWINDSK_MOBILE)
@@ -228,13 +239,19 @@ set(FAIRWINDSK_SOURCES
         main.cpp
         Units.cpp Units.hpp
         FairWindSK.cpp FairWindSK.hpp
+        Localization.cpp Localization.hpp
         AppItem.cpp AppItem.hpp
         signalk/Note.cpp signalk/Note.hpp
         signalk/Waypoint.cpp signalk/Waypoint.hpp
         signalk/Subscription.cpp signalk/Subscription.hpp
         signalk/Client.cpp signalk/Client.hpp
         runtime/DiagnosticsSupport.cpp runtime/DiagnosticsSupport.hpp
+        ui/layout/BarLayout.cpp ui/layout/BarLayout.hpp
         ui/settings/Settings.cpp ui/settings/Settings.hpp ui/settings/Settings.ui
+        ui/settings/BarLayoutSettings.cpp ui/settings/BarLayoutSettings.hpp
+        ui/settings/TopBar.cpp ui/settings/TopBar.hpp
+        ui/settings/LayoutPreviewListWidget.cpp ui/settings/LayoutPreviewListWidget.hpp
+        ui/settings/WidgetPalette.cpp ui/settings/WidgetPalette.hpp
         ui/launcher/Launcher.cpp ui/launcher/Launcher.hpp ui/launcher/Launcher.ui
         ui/about/About.cpp ui/about/About.hpp ui/about/About.ui
         ui/topbar/TopBar.cpp ui/topbar/TopBar.hpp ui/topbar/TopBar.ui
@@ -250,6 +267,7 @@ set(FAIRWINDSK_SOURCES
         ui/widgets/TouchIconBrowser.cpp ui/widgets/TouchIconBrowser.hpp
         ui/widgets/TouchScrollArea.cpp ui/widgets/TouchScrollArea.hpp
         ui/widgets/TouchSpinBox.cpp ui/widgets/TouchSpinBox.hpp ui/widgets/TouchSpinBox.ui
+        ui/widgets/SignalKMetricState.hpp
         ui/widgets/SignalKStatusIconsWidget.cpp ui/widgets/SignalKStatusIconsWidget.hpp
         ui/widgets/SignalKServerBox.cpp ui/widgets/SignalKServerBox.hpp ui/widgets/SignalKServerBox.ui
         ui/web/Web.cpp ui/web/Web.hpp ui/web/Web.ui
@@ -295,7 +313,6 @@ set(FAIRWINDSK_SOURCES
 if(NOT FAIRWINDSK_MOBILE)
     list(APPEND FAIRWINDSK_SOURCES
             ui/web/WebPage.cpp ui/web/WebPage.hpp
-            ui/web/WebPopupWindow.cpp ui/web/WebPopupWindow.hpp
             ui/web/DownloadManagerWidget.cpp ui/web/DownloadManagerWidget.hpp ui/web/DownloadManagerWidget.ui
             ui/web/DownloadWidget.cpp ui/web/DownloadWidget.hpp ui/web/DownloadWidget.ui
     )
@@ -304,6 +321,13 @@ endif()
 qt_add_executable(${PROJECT_NAME}
         MANUAL_FINALIZATION
         ${FAIRWINDSK_SOURCES}
+)
+
+qt_add_translations(${PROJECT_NAME}
+        TS_FILES
+            resources/i18n/fairwindsk_it.ts
+        RESOURCE_PREFIX
+            /resources/i18n
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
@@ -317,7 +341,8 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
         FAIRWINDSK_VERSION="${FAIRWINDSK_SEMVER}"
-        FAIRWINDSK_BUILD_YEAR="${FAIRWINDSK_BUILD_YEAR}")
+        FAIRWINDSK_BUILD_YEAR="${FAIRWINDSK_BUILD_YEAR}"
+        FAIRWINDSK_GIT_BRANCH="${FAIRWINDSK_GIT_BRANCH}")
 
 if(ANDROID)
     set_property(TARGET ${PROJECT_NAME} PROPERTY QT_ANDROID_PACKAGE_NAME "org.openfairwind.fairwindsk")
@@ -383,3 +408,12 @@ if(UNIX AND NOT APPLE AND NOT FAIRWINDSK_MOBILE)
 endif()
 
 qt_finalize_executable(${PROJECT_NAME})
+
+if(BUILD_TESTING)
+    add_test(NAME units_reentrancy_self_test
+            COMMAND $<TARGET_FILE:${PROJECT_NAME}> --self-test-units-reentrancy)
+    add_test(NAME directory_safety_self_test
+            COMMAND $<TARGET_FILE:${PROJECT_NAME}> --self-test-directory-safety)
+    add_test(NAME configuration_import_self_test
+            COMMAND $<TARGET_FILE:${PROJECT_NAME}> --self-test-configuration-import)
+endif()

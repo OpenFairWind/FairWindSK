@@ -6,7 +6,6 @@
 
 #include <QCoreApplication>
 #include <QDateTime>
-#include <QDesktopServices>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -25,7 +24,8 @@
 #include <QSysInfo>
 #include <QTextStream>
 #include <QThread>
-#include <QUrlQuery>
+
+#include <atomic>
 
 #include "Configuration.hpp"
 
@@ -65,6 +65,7 @@ namespace fairwindsk::runtime {
         QString g_currentRunLogPath;
         QString g_currentRunInteractionPath;
         QString g_currentRunStartUtc;
+        std::atomic_bool g_shutdownRequested = false;
 
         QString defaultConfigFilename() {
             QString configDir = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
@@ -463,27 +464,6 @@ namespace fairwindsk::runtime {
             return bundlePath;
         }
 
-        QString condensedEmailBody(const QString &reportText, const QString &reportPath) {
-            QStringList lines;
-            lines << QStringLiteral("FairWindSK detected a previous unclean shutdown.")
-                  << QStringLiteral("The full diagnostics bundle has already been stored locally.");
-
-            const QStringList reportLines = reportText.split(u'\n', Qt::SkipEmptyParts);
-            for (const QString &line : reportLines) {
-                if (line.startsWith(QStringLiteral("Current start (UTC):"))
-                    || line.startsWith(QStringLiteral("Previous start (UTC):"))
-                    || line.startsWith(QStringLiteral("Previous run graceful:"))) {
-                    lines << line;
-                }
-            }
-
-            if (!reportPath.trimmed().isEmpty()) {
-                lines << QStringLiteral("Bundle path: %1").arg(reportPath);
-            }
-
-            lines << QStringLiteral("Please attach the stored report files instead of replying with the full log in the email body.");
-            return lines.join(u'\n');
-        }
     }
 
     QString defaultDiagnosticsEmail() {
@@ -612,12 +592,10 @@ namespace fairwindsk::runtime {
         }
 
         const QString currentRunStartUtc = QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs);
-        QString reportText;
         const QString reportPath = writeDiagnosticsReportBundle(g_pendingReport.previousRun,
                                                                 g_pendingReport.options,
                                                                 g_pendingReport.currentRunId,
-                                                                currentRunStartUtc,
-                                                                &reportText);
+                                                                currentRunStartUtc);
 
         writeLifecycleLine(QStringLiteral("WARN"),
                            QStringLiteral("Stored crash report bundle at \"%1\"").arg(reportPath));
@@ -630,32 +608,19 @@ namespace fairwindsk::runtime {
                               });
 
         if (!g_pendingReport.options.email.trimmed().isEmpty()) {
-            QUrl mailUrl;
-            mailUrl.setScheme(QStringLiteral("mailto"));
-            mailUrl.setPath(g_pendingReport.options.email);
-            QUrlQuery query;
-            query.addQueryItem(QStringLiteral("subject"), g_pendingReport.options.subject);
-            query.addQueryItem(QStringLiteral("body"), condensedEmailBody(reportText, reportPath));
-            mailUrl.setQuery(query);
-            const QString mailUrlText = mailUrl.toString(QUrl::FullyEncoded);
-            constexpr int kMaxMailtoUrlLength = 1800;
-            if (mailUrlText.size() > kMaxMailtoUrlLength) {
-                writeLifecycleLine(QStringLiteral("WARN"),
-                                   QStringLiteral("Skipping fallback diagnostics email because the mailto URL is too long (%1 characters).")
-                                       .arg(mailUrlText.size()));
-            } else {
-                const bool opened = QDesktopServices::openUrl(mailUrl);
-                writeLifecycleLine(opened ? QStringLiteral("INFO") : QStringLiteral("WARN"),
-                                   opened
-                                       ? QStringLiteral("Fallback diagnostics email composer opened for %1").arg(g_pendingReport.options.email)
-                                       : QStringLiteral("Unable to open fallback diagnostics email composer for %1").arg(g_pendingReport.options.email));
-            }
+            writeLifecycleLine(QStringLiteral("INFO"),
+                               QStringLiteral("Fallback diagnostics email target is %1; single-window mode stored the report locally at \"%2\".")
+                                   .arg(g_pendingReport.options.email, reportPath));
         }
 
         g_pendingReport.pending = false;
     }
 
     void markGracefulShutdown() {
+        if (g_shutdownRequested.exchange(true)) {
+            return;
+        }
+
         recordUserInteraction(QStringLiteral("lifecycle"), QStringLiteral("graceful_shutdown"), QStringLiteral("FairWindSK"));
         writeLifecycleLine(QStringLiteral("INFO"), QStringLiteral("Application is closing gracefully."));
         persistCurrentRunState(true);
@@ -671,6 +636,10 @@ namespace fairwindsk::runtime {
             delete g_runInteractionFile;
             g_runInteractionFile = nullptr;
         }
+    }
+
+    bool isShutdownRequested() {
+        return g_shutdownRequested.load();
     }
 
     void applyLiveSettings(const LogLevel level, const bool persistentLogging, const bool interactionHistoryEnabled) {

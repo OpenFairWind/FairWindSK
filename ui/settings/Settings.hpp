@@ -13,6 +13,7 @@
 #include <QtCore/qjsonobject.h>
 #include "AppItem.hpp"
 #include "Configuration.hpp"
+#include "ui/layout/BarLayout.hpp"
 
 namespace fairwindsk::ui::settings {
     QT_BEGIN_NAMESPACE
@@ -48,6 +49,10 @@ namespace fairwindsk::ui::settings {
     public slots:
         void onClicked(QAbstractButton *button);
         void onTabChanged(int index);
+        void refreshLayoutEditHighlightMode();
+
+    signals:
+        void layoutEditHighlightModeChanged(bool topBarActive, bool bottomBarActive);
 
     private:
         void initTabs(int currentIndex);
@@ -56,6 +61,7 @@ namespace fairwindsk::ui::settings {
         void scheduleApplyConfiguration(int delayMs = 150);
         QWidget *createTabWidget(int index);
         void ensureTabCreated(int index);
+        void emitLayoutEditHighlightModeChanged();
 
     private:
         Ui::Settings *ui;

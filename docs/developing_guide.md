@@ -13,6 +13,25 @@ Use this guide when you need to:
 - change the shell behavior without breaking marine electronics usability expectations
 - prepare changes that must compile across desktop and mobile targets
 
+## Start from the development branch
+
+FairWindSK active work happens on the `development` branch.
+Before you begin coding, switch to it and update your local checkout:
+
+```bash
+git checkout development
+git pull
+```
+
+If you are creating a feature branch, create it from the updated `development` branch rather than from `main` or an older local branch.
+
+## Recommended reading order
+
+1. [getting_started.md](./getting_started.md)
+2. [building.md](./building.md)
+3. [developing_guide.md](./developing_guide.md)
+4. [architecture.md](./architecture.md)
+
 ## Project context
 
 FairWindSK is a C++17 and Qt6 application designed to host Signal K web applications inside a native shell that is optimized for leisure-boat and helm-adjacent usage.
@@ -62,6 +81,7 @@ FairWindSK is best understood as five cooperating layers:
    `main.cpp` configures Qt attributes, Linux runtime fallbacks, splash handling, desktop WebEngine or mobile WebView initialization, and deferred startup sequencing.
 2. **Runtime orchestration layer**
    `FairWindSK` owns the configuration, Signal K client, app registry, runtime reconfiguration, comfort preset application, and shared web profile handle.
+   The desktop WebEngine profile must use a stable storage/cache path and `ForcePersistentCookies` so Signal K, Freeboard-SK, and hosted apps keep session login state across FairWindSK restarts.
 3. **Data access layer**
    `Configuration` and `signalk::Client` provide persistent preferences and live vessel/server data.
 4. **Shell and navigation layer**
@@ -150,7 +170,7 @@ Examples:
 - diagnostics support
 - shared OpenGL contexts
 - Linux environment fallbacks for runtime directory and Qt platform plugins
-- desktop splash screen
+- single main-window startup
 - desktop WebEngine or mobile WebView backend initialization
 
 ### 2. Configuration load
@@ -376,9 +396,8 @@ Desktop builds keep features such as:
 
 - `QWebEngineProfile`
 - richer shared cookie handling
-- desktop-local `file://` application launching
 - `QHotkey`
-- desktop-specific popup/download handling
+- drawer-hosted download handling and single-window web popups
 
 ### Mobile constraints
 

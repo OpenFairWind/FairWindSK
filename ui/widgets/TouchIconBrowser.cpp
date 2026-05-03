@@ -113,35 +113,31 @@ namespace fairwindsk::ui::widgets {
 
     TouchIconBrowser::TouchIconBrowser(QWidget *parent)
         : QWidget(parent) {
+        setObjectName(QStringLiteral("touchIconBrowser"));
         setProperty("drawerFillCenterArea", true);
         setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        setMinimumHeight(0);
 
         auto *rootLayout = new QVBoxLayout(this);
         rootLayout->setContentsMargins(0, 0, 0, 0);
-        rootLayout->setSpacing(10);
+        rootLayout->setSpacing(12);
 
         auto *headerLayout = new QHBoxLayout();
         headerLayout->setContentsMargins(0, 0, 0, 0);
-        headerLayout->setSpacing(8);
+        headerLayout->setSpacing(12);
         rootLayout->addLayout(headerLayout);
 
         m_cancelButton = new QPushButton(this);
-        m_cancelButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/close-google.svg")));
-        m_cancelButton->setIconSize(QSize(28, 28));
-        m_cancelButton->setMinimumSize(52, 52);
+        m_cancelButton->setObjectName(QStringLiteral("touchIconBrowserBackButton"));
+        m_cancelButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/arrow-left-google.svg")));
+        m_cancelButton->setIconSize(QSize(32, 32));
+        m_cancelButton->setMinimumSize(64, 64);
         m_cancelButton->setToolTip(tr("Cancel"));
         headerLayout->addWidget(m_cancelButton, 0, Qt::AlignTop);
 
-        auto *headerLabel = new QLabel(tr("Choose an icon to override the default application icon."), this);
+        auto *headerLabel = new QLabel(tr("Choose an icon. Tap once to preview it, then double tap or double click an icon to select it."), this);
         headerLabel->setWordWrap(true);
         headerLayout->addWidget(headerLabel, 1);
-
-        m_applyButton = new QPushButton(this);
-        m_applyButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/arrow-right-google.svg")));
-        m_applyButton->setIconSize(QSize(28, 28));
-        m_applyButton->setMinimumSize(52, 52);
-        m_applyButton->setToolTip(tr("Apply"));
-        headerLayout->addWidget(m_applyButton, 0, Qt::AlignTop);
 
         auto *previewFrame = new QFrame(this);
         m_previewFrame = previewFrame;
@@ -151,8 +147,8 @@ namespace fairwindsk::ui::widgets {
         previewLayout->setSpacing(12);
 
         m_previewLabel = new QLabel(previewFrame);
-        m_previewLabel->setMinimumSize(96, 96);
-        m_previewLabel->setMaximumSize(96, 96);
+        m_previewLabel->setMinimumSize(112, 112);
+        m_previewLabel->setMaximumSize(112, 112);
         m_previewLabel->setAlignment(Qt::AlignCenter);
         previewLayout->addWidget(m_previewLabel, 0, Qt::AlignTop);
 
@@ -170,7 +166,9 @@ namespace fairwindsk::ui::widgets {
         m_listWidget->setResizeMode(QListView::Adjust);
         m_listWidget->setSelectionMode(QAbstractItemView::SingleSelection);
         m_listWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
-        m_listWidget->setMinimumHeight(220);
+        m_listWidget->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
+        m_listWidget->setSpacing(10);
+        m_listWidget->setMinimumHeight(0);
         rootLayout->addWidget(m_listWidget, 1);
 
         populate();
@@ -189,9 +187,6 @@ namespace fairwindsk::ui::widgets {
         });
         connect(m_cancelButton, &QPushButton::clicked, this, [this]() {
             emit canceled();
-        });
-        connect(m_applyButton, &QPushButton::clicked, this, [this]() {
-            emit pathActivated(selectedPath());
         });
 
         applyComfortChrome();
@@ -307,7 +302,7 @@ namespace fairwindsk::ui::widgets {
 
         const int iconSize = iconBrowserIconSize();
         m_listWidget->setIconSize(QSize(iconSize, iconSize));
-        m_listWidget->setGridSize(QSize(iconSize + 20, iconSize + 26));
+        m_listWidget->setGridSize(QSize(iconSize + 52, iconSize + 76));
 
         const QList<IconEntry> entries = availableIconEntries();
         for (const IconEntry &entry : entries) {
@@ -340,7 +335,7 @@ namespace fairwindsk::ui::widgets {
     void TouchIconBrowser::updatePreview(const QString &path) {
         m_currentPath = normalizedIconStoragePath(path);
         if (m_previewLabel) {
-            m_previewLabel->setPixmap(iconPixmapForPath(m_currentPath, 96));
+            m_previewLabel->setPixmap(iconPixmapForPath(m_currentPath, 112));
         }
         if (m_selectionLabel) {
             if (m_currentPath.isEmpty()) {
@@ -364,22 +359,22 @@ namespace fairwindsk::ui::widgets {
         const auto accentChrome = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), true);
 
         setStyleSheet(QStringLiteral(
-            "QWidget { background: %1; color: %2; }"
-            "QLabel { color: %2; font-size: 18px; }"
+            "QWidget#touchIconBrowser { background: %1; color: %2; }"
+            "QLabel { color: %2; font-size: 20px; }"
             "QFrame { background: %3; border: 1px solid %4; border-radius: 18px; }"
             "QListWidget {"
             " background: %3;"
             " color: %2;"
             " border: 1px solid %4;"
             " border-radius: 18px;"
-            " padding: 8px;"
+            " padding: 12px;"
             " outline: none;"
             " }"
             "QListWidget::item {"
-            " min-width: 96px;"
-            " min-height: 112px;"
-            " padding: 8px;"
-            " border-radius: 14px;"
+            " min-width: 124px;"
+            " min-height: 144px;"
+            " padding: 12px 10px;"
+            " border-radius: 16px;"
             " }"
             "QListWidget::item:selected {"
             " background: %5;"
@@ -392,6 +387,8 @@ namespace fairwindsk::ui::widgets {
             " border: 1px solid %4;"
             " background: %7;"
             " color: %8;"
+            " font-size: 20px;"
+            " font-weight: 700;"
             " }"
             "QPushButton:hover { background: %9; }"
             "QPushButton:pressed { background: %10; }")
@@ -406,8 +403,7 @@ namespace fairwindsk::ui::widgets {
                  chrome.hoverBackground.name(),
                  chrome.pressedBackground.name()));
 
-        fairwindsk::ui::applyTintedButtonIcon(m_cancelButton, chrome.icon, QSize(28, 28));
-        fairwindsk::ui::applyTintedButtonIcon(m_applyButton, accentChrome.icon, QSize(28, 28));
+        fairwindsk::ui::applyTintedButtonIcon(m_cancelButton, accentChrome.icon, QSize(30, 30));
         m_isApplyingComfortChrome = false;
     }
 }
