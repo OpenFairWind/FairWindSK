@@ -9,6 +9,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLabel>
+#include <QNetworkCookie>
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QPushButton>
@@ -1121,14 +1122,40 @@ namespace fairwindsk::ui::settings {
 
     /*
      * onRemoveToken
-     * Deletes the stored access token from settings.
+     * Deletes the stored access token from settings, clears the JAUTHENTICATION
+     * cookie from the WebEngine profile, and triggers a reconnect so the Signal K
+     * client re-initialises in public (unauthenticated) mode.
      */
     void Connection::onRemoveToken() {
         abortActiveTokenReply();
         stopTokenTimer();
         clearPendingRequest(true);
-        syncTokenUiState();
 
+        // Delete the JAUTHENTICATION cookie from the embedded browser's cookie store
+        // so the WebView no longer sends it with requests to the Signal K server.
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+        if (auto *fairWindSK = FairWindSK::getInstance()) {
+            if (auto *profile = fairWindSK->getWebEngineProfile()) {
+                QNetworkCookie authCookie(QByteArrayLiteral("JAUTHENTICATION"), QByteArray());
+                authCookie.setPath(QStringLiteral("/"));
+                const QString serverUrl = fairWindSK->getConfiguration()->getSignalKServerUrl();
+                if (!serverUrl.isEmpty()) {
+                    profile->cookieStore()->deleteCookie(authCookie, QUrl(serverUrl));
+                } else {
+                    // No server URL configured; delete from all origins.
+                    profile->cookieStore()->deleteCookie(authCookie);
+                }
+            }
+        }
+#endif
+
+        // Reconnect so Client::init() is called with an empty token, which clears
+        // the in-memory m_Token and m_Cookie and switches to public mode.
+        if (m_settings) {
+            m_settings->markDirty(FairWindSK::RuntimeSignalKConnection, 0);
+        }
+
+        syncTokenUiState();
         showConsole();
         m_stateText = tr("Removed");
         m_permissionText.clear();
