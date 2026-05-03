@@ -60,6 +60,8 @@ namespace fairwindsk::ui::settings {
         void setRpiMetricValue(const QString &path, const QString &text);
         void syncLoggingSettings();
         QString currentConfigurationPath() const;
+        void ensureNetworkWidgets();
+        void refreshNetworkInfo();
         QString formatBytes(quint64 bytes) const;
         quint64 processResidentMemoryBytes() const;
         quint64 totalMemoryBytes() const;
@@ -70,6 +72,9 @@ namespace fairwindsk::ui::settings {
         Settings *m_settings = nullptr;
         QVector<QWidget *> m_coreRows;
         QVector<CpuSnapshot> m_previousCpuStats;
+        QGroupBox *m_networkGroupBox = nullptr;
+        QLabel *m_networkAddressesValue = nullptr;
+        QDateTime m_lastNetworkRefresh;
         QGroupBox *m_rpiGroupBox = nullptr;
         QFormLayout *m_rpiFormLayout = nullptr;
         QMap<QString, QLabel *> m_rpiMetricValues;
