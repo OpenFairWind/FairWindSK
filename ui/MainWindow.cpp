@@ -341,8 +341,12 @@ namespace fairwindsk::ui {
         const int resolvedResult = result == 0 ? m_activeDrawerDefaultResult : result;
         auto finishedHandler = std::move(m_activeDrawerFinishedHandler);
         m_activeDrawerFinishedHandler = nullptr;
+        const bool wasOccupying = m_drawerOccupiesApplicationArea;
         m_dialogDrawer->hide();
         m_drawerOccupiesApplicationArea = false;
+        if (wasOccupying && ui->stackedWidget_Center) {
+            ui->stackedWidget_Center->setVisible(true);
+        }
         if (m_dialogDrawerTitle) {
             m_dialogDrawerTitle->setVisible(true);
         }
@@ -421,6 +425,9 @@ namespace fairwindsk::ui {
 
         setDrawerEnabled(false);
         updateDrawerGeometry();
+        if (m_drawerOccupiesApplicationArea && ui->stackedWidget_Center) {
+            ui->stackedWidget_Center->setVisible(false);
+        }
         m_dialogDrawer->show();
         m_dialogDrawer->raise();
     }
