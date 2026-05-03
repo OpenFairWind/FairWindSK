@@ -7,6 +7,7 @@
 
 #include <QList>
 #include <QNetworkAccessManager>
+#include <QNetworkReply>
 #include <QPointer>
 #include <QWidget>
 #include <QTimer>
@@ -16,47 +17,53 @@
 #include "Settings.hpp"
 #include "ui/web/WebView.hpp"
 
+class QEvent;
+class QFrame;
+class QLabel;
+class QPushButton;
+class QTextEdit;
+
+namespace fairwindsk::ui::widgets {
+    class TouchComboBox;
+}
+
 namespace fairwindsk::ui::settings {
-    QT_BEGIN_NAMESPACE
-    namespace Ui { class Connection; }
-    QT_END_NAMESPACE
 
     class Connection : public QWidget {
     Q_OBJECT
 
     public:
         explicit Connection(Settings *settingsWidget, QWidget *parent = nullptr);
-
         ~Connection() override;
 
+    protected:
+        bool event(QEvent *event) override;
 
     private slots:
-
         void onCheckRequestToken();
         void onRequestToken();
         void onCancelRequest();
-        void onReadOnly();
         void onRemoveToken();
         void onToggleConnection();
         void handleTokenRequestReply();
         void handleTokenStatusReply();
-
         void onUpdateSignalKServerUrl();
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
-        void addService(const QZeroConfService& item);
+        void addService(const QZeroConfService &item);
 #endif
 
-
-
     private:
+        void buildUi();
+        void refreshChrome();
+
         QUrl currentSignalKServerUrl() const;
         void appendMessage(const QString &message) const;
         void stopTokenTimer();
         void startTokenTimer();
         void syncTokenUiState();
-        void showConsole() const;
-        void showBrowserPage(const QUrl &url) const;
+        void showConsole();
+        void showBrowserPage(const QUrl &url);
         void abortActiveTokenReply();
         void setPendingRequestHref(const QString &href) const;
         void clearPendingRequest(bool clearToken) const;
@@ -67,6 +74,11 @@ namespace fairwindsk::ui::settings {
         bool connectionEnabled() const;
         void setConnectionEnabled(bool enabled);
         void updateConnectionToggle();
+        void setStatusTexts(const QString &state,
+                            const QString &permission = {},
+                            const QString &expiration = {});
+        void updateStatusLabel() const;
+
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         void startZeroConfDiscovery();
         void stopZeroConfDiscovery();
@@ -74,19 +86,40 @@ namespace fairwindsk::ui::settings {
         bool isSignalKDiscoveryService(const QZeroConfService &item) const;
 #endif
 
-        Ui::Connection *ui = nullptr;
         Settings *m_settings = nullptr;
 
+        // UI widgets (built in code)
+        QLabel *m_titleLabel = nullptr;
+        QLabel *m_hintLabel = nullptr;
+        QFrame *m_controlFrame = nullptr;
+        QLabel *m_urlLabel = nullptr;
+        fairwindsk::ui::widgets::TouchComboBox *m_comboBox = nullptr;
+        QLabel *m_statusLabel = nullptr;
+        QPushButton *m_connectButton = nullptr;
+        QPushButton *m_requestTokenButton = nullptr;
+        QPushButton *m_cancelButton = nullptr;
+        QPushButton *m_removeTokenButton = nullptr;
+        QTextEdit *m_consoleEdit = nullptr;
+
+        // Persistent state for the combined status label
+        QString m_stateText;
+        QString m_permissionText;
+        QString m_expirationText;
+
+        // Token / connection internals
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         QList<QZeroConf *> m_zeroConfBrowsers;
 #endif
         QTimer *m_timer = nullptr;
-        fairwindsk::ui::web::WebView *m_browserView = nullptr;
         QNetworkAccessManager *m_networkAccessManager = nullptr;
         QPointer<QNetworkReply> m_activeTokenReply;
         bool m_committingServerUrl = false;
 
+        // Browser drawer state
+        QPointer<fairwindsk::ui::web::WebView> m_browserView;
+        bool m_browserDrawerOpen = false;
     };
+
 } // fairwindsk::ui::settings
 
-#endif //FAIRWINDSK_CONNECTION_HPP
+#endif // FAIRWINDSK_CONNECTION_HPP
