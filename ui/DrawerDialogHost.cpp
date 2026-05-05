@@ -533,54 +533,39 @@ namespace fairwindsk::ui::drawer {
     QString getIconPath(QWidget *parent,
                         const QString &title,
                         const QString &currentPath) {
-        // Derive a sensible starting directory from the current icon path.
-        QString directory;
-        if (!currentPath.isEmpty()) {
-            const QString resolved = fairwindsk::ui::widgets::TouchIconBrowser::resolvedLocalIconPath(currentPath);
-            if (!resolved.isEmpty()) {
-                directory = QFileInfo(resolved).absolutePath();
-            }
-        }
-        if (directory.isEmpty() || !QFileInfo(directory).isDir()) {
-            directory = defaultBrowserDirectory();
+        auto *mainWindow = resolveMainWindow(parent);
+        if (!mainWindow) {
+            return {};
         }
 
-        const QStringList imageFilters = {
-            QStringLiteral("*.png"),
-            QStringLiteral("*.jpg"),
-            QStringLiteral("*.jpeg"),
-            QStringLiteral("*.svg")
-        };
+        auto *picker = new fairwindsk::ui::widgets::TouchIconBrowser();
+        picker->setCurrentPath(currentPath);
 
-        while (true) {
-            auto *browser = new fairwindsk::ui::widgets::TouchFileBrowser(
-                fairwindsk::ui::widgets::TouchFileBrowser::Mode::OpenFile,
-                directory,
-                {},
-                imageFilters);
-            QPointer<fairwindsk::ui::widgets::TouchFileBrowser> browserGuard(browser);
-            const int result = execDrawer(parent, title, browser, {}, int(QMessageBox::Cancel));
-
-            if (!browserGuard) {
-                return {};
+        // The picker's built-in cancel button closes the drawer; a double-click
+        // (pathActivated) confirms the selection.  No footer buttons are added
+        // so the picker's own chrome fills the full drawer center area.
+        QObject::connect(picker, &fairwindsk::ui::widgets::TouchIconBrowser::canceled,
+                         picker, [mainWindow]() {
+            if (mainWindow) {
+                mainWindow->finishActiveDrawer(int(QMessageBox::Cancel));
             }
-
-            directory = browserGuard->currentDirectory();
-            if (result != QMessageBox::Open) {
-                return {};
+        });
+        QObject::connect(picker, &fairwindsk::ui::widgets::TouchIconBrowser::pathActivated,
+                         picker, [mainWindow](const QString &) {
+            if (mainWindow) {
+                mainWindow->finishActiveDrawer(int(QMessageBox::Ok));
             }
+        });
 
-            QString message;
-            if (!browserGuard->canAccept(&message)) {
-                warning(parent, title, message);
-                continue;
-            }
+        QPointer<fairwindsk::ui::widgets::TouchIconBrowser> pickerGuard(picker);
+        const int result = execDrawer(parent, title, picker, {}, int(QMessageBox::Cancel));
 
-            // Normalize to a relative file:// path when the file lives under
-            // the application directory; store absolute file:// otherwise.
-            return fairwindsk::ui::widgets::TouchIconBrowser::normalizedIconStoragePath(
-                QStringLiteral("file://") + browserGuard->selectedPath());
+        if (!pickerGuard || result != int(QMessageBox::Ok)) {
+            return {};
         }
+
+        return fairwindsk::ui::widgets::TouchIconBrowser::normalizedIconStoragePath(
+            pickerGuard->selectedPath());
     }
 
     QColor getColor(QWidget *parent,
