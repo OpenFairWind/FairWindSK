@@ -35,16 +35,12 @@
 #include "GeoCoordinateEditorWidget.hpp"
 #include "IconUtils.hpp"
 #include "MainWindow.hpp"
+#include "ui/widgets/TouchColorPicker.hpp"
 #include "ui/widgets/TouchFileBrowser.hpp"
 #include "ui/widgets/TouchIconBrowser.hpp"
 
 namespace fairwindsk::ui::drawer {
     namespace {
-        enum class FileBrowserMode {
-            OpenFile,
-            SaveFile
-        };
-
         struct DrawerBrowserColors {
             QColor panelBackground;
             QColor cardBackground;
@@ -169,21 +165,6 @@ namespace fairwindsk::ui::drawer {
             return result;
         }
 
-        QString preferredSuffix(const QStringList &filters) {
-            for (const auto &filter : filters) {
-                if (!filter.startsWith(QStringLiteral("*."))) {
-                    continue;
-                }
-
-                const QString suffix = filter.mid(2);
-                if (!suffix.isEmpty() && suffix != QStringLiteral("*")) {
-                    return suffix;
-                }
-            }
-
-            return {};
-        }
-
         DrawerBrowserColors effectiveDrawerBrowserColors(const QPalette &palette) {
             DrawerBrowserColors colors;
             auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
@@ -213,762 +194,6 @@ namespace fairwindsk::ui::drawer {
                      palette.color(QPalette::WindowText)}));
             return colors;
         }
-
-        QString drawerButtonStyle(const DrawerBrowserColors &colors, const bool accent = false) {
-            const QColor top = accent ? colors.accentTop : colors.accentTrack.lighter(120);
-            const QColor mid = accent ? colors.accentMid : colors.accentTrack;
-            const QColor bottom = accent ? colors.accentBottom : colors.accentTrack.darker(118);
-            const QColor border = accent ? colors.accentBottom : colors.border;
-
-            return QStringLiteral(
-                "QPushButton {"
-                " min-width: 64px;"
-                " min-height: 64px;"
-                " padding: 0px;"
-                " border: 1px solid %1;"
-                " border-radius: 14px;"
-                " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
-                " stop:0 %2, stop:0.42 %3, stop:1 %4);"
-                " }"
-                "QPushButton:hover {"
-                " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
-                " stop:0 %5, stop:0.42 %6, stop:1 %7);"
-                " }"
-                "QPushButton:pressed {"
-                " background: qlineargradient(x1:0, y1:0, x2:0, y2:1,"
-                " stop:0 %8, stop:0.42 %9, stop:1 %10);"
-                " }"
-                "QPushButton:disabled {"
-                " background: %11;"
-                " border-color: %12;"
-                " }")
-                .arg(border.name(),
-                     top.name(), mid.name(), bottom.name(),
-                     top.lighter(108).name(), mid.lighter(104).name(), bottom.lighter(106).name(),
-                     mid.darker(112).name(), bottom.darker(108).name(), bottom.darker(118).name(),
-                     colors.fieldBackground.name(), colors.border.name());
-        }
-
-        QString drawerLineEditStyle(const DrawerBrowserColors &colors) {
-            return QStringLiteral(
-                "QLineEdit {"
-                " min-height: 62px;"
-                " padding: 0 18px;"
-                " border: 1px solid %1;"
-                " border-radius: 14px;"
-                " background: %2;"
-                " color: %3;"
-                " font-size: 20px;"
-                " }"
-                "QLineEdit:focus {"
-                " border-color: %4;"
-                " }")
-                .arg(colors.border.name(),
-                     colors.fieldBackground.name(),
-                     colors.text.name(),
-                     colors.accentMid.name());
-        }
-
-        QString drawerLabelStyle(const DrawerBrowserColors &colors,
-                                 const int pointSize,
-                                 const int weight,
-                                 const QColor &color = QColor()) {
-            const QColor effectiveColor = color.isValid() ? color : colors.text;
-            return QStringLiteral("color: %1; font-size: %2px; font-weight: %3;")
-                .arg(effectiveColor.name())
-                .arg(pointSize)
-                .arg(weight);
-        }
-
-        QString drawerCardStyle(const DrawerBrowserColors &colors) {
-            return QStringLiteral(
-                "QFrame {"
-                " border: 1px solid %1;"
-                " border-radius: 18px;"
-                " background: %2;"
-                " }")
-                .arg(colors.border.name(), colors.cardBackground.name());
-        }
-
-        QString drawerTreeStyle(const DrawerBrowserColors &colors) {
-            return QStringLiteral(
-                "QTreeView {"
-                " background: transparent;"
-                " color: %1;"
-                " font-size: 20px;"
-                " alternate-background-color: rgba(255, 255, 255, 0.03);"
-                " border: none;"
-                " outline: none;"
-                " show-decoration-selected: 1;"
-                " }"
-                "QTreeView::item {"
-                " min-height: 60px;"
-                " padding: 8px 14px;"
-                " border-radius: 10px;"
-                " }"
-                "QTreeView::item:selected {"
-                " background: %2;"
-                " color: %3;"
-                " }"
-                "QHeaderView::section {"
-                " min-height: 48px;"
-                " padding: 0 14px;"
-                " background: %4;"
-                " color: %5;"
-                " border: none;"
-                " border-bottom: 1px solid %6;"
-                " font-size: 16px;"
-                " font-weight: 700;"
-                " }"
-                "QHeaderView::section:first {"
-                " border-top-left-radius: 10px;"
-                " }"
-                "QHeaderView::section:last {"
-                " border-top-right-radius: 10px;"
-                " }"
-                "QHeaderView::up-arrow, QHeaderView::down-arrow {"
-                " width: 0px;"
-                " height: 0px;"
-                " }")
-                .arg(colors.text.name(),
-                     colors.accentTrack.name(),
-                     colors.icon.name(),
-                     colors.fieldBackground.name(),
-                     colors.mutedText.name(),
-                     colors.border.name());
-        }
-
-        class DrawerFileBrowserWidget final : public QWidget {
-            Q_DECLARE_TR_FUNCTIONS(DrawerFileBrowserWidget)
-        public:
-            DrawerFileBrowserWidget(const FileBrowserMode mode,
-                                    const QString &directory,
-                                    const QString &fileName,
-                                    const QStringList &nameFilters,
-                                    QWidget *parent = nullptr)
-                : QWidget(parent), m_mode(mode), m_nameFilters(nameFilters) {
-                setObjectName(QStringLiteral("drawerFileBrowserWidget"));
-                setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-
-                auto *layout = new QVBoxLayout(this);
-                layout->setContentsMargins(0, 0, 0, 0);
-                layout->setSpacing(14);
-
-                auto *titleRow = new QHBoxLayout();
-                titleRow->setContentsMargins(0, 0, 0, 0);
-                titleRow->setSpacing(12);
-
-                m_titleLabel = new QLabel(m_mode == FileBrowserMode::SaveFile ? tr("Save file") : tr("Select file"), this);
-                if (m_mode == FileBrowserMode::OpenFile) {
-                    m_titleLabel->hide();
-                }
-                titleRow->addWidget(m_titleLabel);
-
-                m_statusLabel = new QLabel(this);
-                m_statusLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                m_statusLabel->hide();
-                titleRow->addWidget(m_statusLabel, 1);
-
-                layout->addLayout(titleRow);
-
-                auto *toolbarLayout = new QHBoxLayout();
-                toolbarLayout->setContentsMargins(0, 0, 0, 0);
-                toolbarLayout->setSpacing(12);
-
-                m_backButton = new QPushButton(this);
-                m_backButton->setObjectName(QStringLiteral("drawerNavButton"));
-                m_backButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/arrow-left-google.svg")));
-                m_backButton->setIconSize(QSize(32, 32));
-                m_backButton->setToolTip(tr("Close"));
-                toolbarLayout->addWidget(m_backButton);
-
-                m_homeButton = new QPushButton(this);
-                m_homeButton->setObjectName(QStringLiteral("drawerNavButton"));
-                m_homeButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/home.svg")));
-                m_homeButton->setIconSize(QSize(32, 32));
-                m_homeButton->setToolTip(tr("Home"));
-                toolbarLayout->addWidget(m_homeButton);
-
-                m_upButton = new QPushButton(this);
-                m_upButton->setObjectName(QStringLiteral("drawerNavButton"));
-                m_upButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/arrow-up-google.svg")));
-                m_upButton->setIconSize(QSize(32, 32));
-                m_upButton->setToolTip(tr("Up"));
-                toolbarLayout->addWidget(m_upButton);
-
-                m_pathEdit = new QLineEdit(this);
-                m_pathEdit->setObjectName(QStringLiteral("drawerPathEdit"));
-                m_pathEdit->setPlaceholderText(tr("Enter a folder path"));
-                toolbarLayout->addWidget(m_pathEdit, 1);
-
-                m_acceptButton = new QPushButton(this);
-                m_acceptButton->setObjectName(QStringLiteral("drawerActionButton"));
-                m_acceptButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/arrow-right-google.svg")));
-                m_acceptButton->setIconSize(QSize(32, 32));
-                m_acceptButton->setToolTip(m_mode == FileBrowserMode::SaveFile ? tr("Save") : tr("Open"));
-                toolbarLayout->addWidget(m_acceptButton);
-
-                layout->addLayout(toolbarLayout);
-
-                if (m_mode == FileBrowserMode::SaveFile) {
-                    m_selectionLabel = new QLabel(this);
-                    layout->addWidget(m_selectionLabel);
-                }
-
-                auto *browserFrame = new QFrame(this);
-                auto *browserLayout = new QVBoxLayout(browserFrame);
-                browserLayout->setContentsMargins(12, 12, 12, 12);
-                browserLayout->setSpacing(10);
-
-                m_view = new QTreeView(this);
-                m_view->setAlternatingRowColors(true);
-                m_view->setRootIsDecorated(false);
-                m_view->setItemsExpandable(false);
-                m_view->setSortingEnabled(true);
-                m_view->setUniformRowHeights(true);
-                m_view->setIndentation(0);
-                m_view->setSelectionBehavior(QAbstractItemView::SelectRows);
-                m_view->setSelectionMode(QAbstractItemView::SingleSelection);
-                m_view->setAllColumnsShowFocus(true);
-                m_view->setIconSize(QSize(36, 36));
-                m_view->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
-                m_view->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
-                m_view->setTextElideMode(Qt::ElideMiddle);
-                m_view->header()->setMinimumHeight(48);
-                m_view->header()->setDefaultAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-                m_view->header()->setStretchLastSection(true);
-                m_view->header()->setSortIndicatorShown(false);
-                m_view->header()->setSectionResizeMode(0, QHeaderView::Stretch);
-                m_view->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
-                m_view->header()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
-                m_view->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-                m_view->setMinimumHeight(0);
-                m_view->sortByColumn(0, Qt::AscendingOrder);
-                browserLayout->addWidget(m_view, 1);
-                layout->addWidget(browserFrame, 1);
-
-                m_browserFrame = browserFrame;
-
-                if (m_mode == FileBrowserMode::SaveFile) {
-                    auto *nameLabel = new QLabel(tr("File name"), this);
-                    nameLabel->setObjectName(QStringLiteral("drawerFileNameLabel"));
-                    layout->addWidget(nameLabel);
-
-                    m_nameEdit = new QLineEdit(this);
-                    m_nameEdit->setObjectName(QStringLiteral("drawerFileNameEdit"));
-                    m_nameEdit->setText(fileName);
-                    layout->addWidget(m_nameEdit);
-                }
-
-                setMinimumHeight(0);
-                setMaximumHeight(QWIDGETSIZE_MAX);
-
-                m_model = new QFileSystemModel(this);
-                m_model->setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot);
-                if (!m_nameFilters.isEmpty()) {
-                    m_model->setNameFilters(m_nameFilters);
-                    m_model->setNameFilterDisables(false);
-                }
-
-                m_view->setModel(m_model);
-                m_view->hideColumn(2);
-                browserFrame->setMinimumHeight(0);
-
-                const QString initialDirectory = QFileInfo(directory).isDir() ? directory : defaultBrowserDirectory();
-                navigateTo(initialDirectory);
-                updateSelectionSummary();
-                applyComfortChrome();
-
-                connect(m_backButton, &QPushButton::clicked, this, [this]() { finishDrawer(int(QMessageBox::Cancel)); });
-                connect(m_homeButton, &QPushButton::clicked, this, [this]() { navigateTo(defaultBrowserDirectory()); });
-                connect(m_upButton, &QPushButton::clicked, this, [this]() {
-                    QDir dir(currentDirectory());
-                    if (dir.cdUp()) {
-                        navigateTo(dir.absolutePath());
-                    }
-                });
-                connect(m_acceptButton, &QPushButton::clicked, this, [this]() {
-                    finishDrawer(m_mode == FileBrowserMode::SaveFile ? int(QMessageBox::Save) : int(QMessageBox::Open));
-                });
-                connect(m_pathEdit, &QLineEdit::returnPressed, this, [this]() {
-                    const QFileInfo info(m_pathEdit->text().trimmed());
-                    if (info.exists() && info.isDir()) {
-                        navigateTo(info.absoluteFilePath());
-                    }
-                });
-                if (m_nameEdit) {
-                    connect(m_nameEdit, &QLineEdit::textChanged, this, [this]() { updateSelectionSummary(); });
-                }
-                connect(m_view, &QTreeView::clicked, this, [this](const QModelIndex &index) { handleSelection(index, false); });
-                connect(m_view, &QTreeView::doubleClicked, this, [this](const QModelIndex &index) { handleSelection(index, true); });
-            }
-
-            QString currentDirectory() const {
-                return m_currentDirectory;
-            }
-
-            QString fileName() const {
-                if (m_nameEdit) {
-                    return m_nameEdit->text().trimmed();
-                }
-
-                const QFileInfo info(m_selectedPath);
-                return info.isFile() ? info.fileName() : QString();
-            }
-
-            QString selectedPath() const {
-                if (m_mode == FileBrowserMode::SaveFile) {
-                    QString name = fileName();
-                    if (name.isEmpty()) {
-                        return {};
-                    }
-
-                    const QString suffix = preferredSuffix(m_nameFilters);
-                    if (!suffix.isEmpty() && QFileInfo(name).suffix().isEmpty()) {
-                        name += QStringLiteral(".") + suffix;
-                    }
-
-                    return QDir(m_currentDirectory).filePath(name);
-                }
-
-                return m_selectedPath;
-            }
-
-            bool canAccept(QString *message) const {
-                const QString path = selectedPath();
-                if (m_mode == FileBrowserMode::OpenFile) {
-                    const QFileInfo info(path);
-                    if (path.isEmpty() || !info.exists() || !info.isFile()) {
-                        if (message) {
-                            *message = tr("Select an existing file.");
-                        }
-                        return false;
-                    }
-                    return true;
-                }
-
-                if (path.isEmpty()) {
-                    if (message) {
-                        *message = tr("Enter a file name.");
-                    }
-                    return false;
-                }
-
-                const QFileInfo parentInfo(QFileInfo(path).absolutePath());
-                if (!parentInfo.exists() || !parentInfo.isDir()) {
-                    if (message) {
-                        *message = tr("Select a valid destination folder.");
-                    }
-                    return false;
-                }
-                return true;
-            }
-
-        protected:
-            void showEvent(QShowEvent *event) override {
-                QWidget::showEvent(event);
-                updateDrawerGeometry();
-            }
-
-            void changeEvent(QEvent *event) override {
-                QWidget::changeEvent(event);
-                if (event && (event->type() == QEvent::PaletteChange
-                              || event->type() == QEvent::ApplicationPaletteChange)) {
-                    applyComfortChrome();
-                }
-            }
-
-            bool eventFilter(QObject *watched, QEvent *event) override {
-                if (watched == m_geometryHost && event && event->type() == QEvent::Resize) {
-                    updateDrawerGeometry();
-                }
-                return QWidget::eventFilter(watched, event);
-            }
-
-        private:
-            void updateDrawerGeometry() {
-                auto *mainWindow = resolveMainWindow(this);
-                if (!mainWindow || !mainWindow->getUi() || !mainWindow->getUi()->stackedWidget_Center) {
-                    return;
-                }
-
-                QWidget *geometryHost = parentWidget();
-                if (!geometryHost) {
-                    geometryHost = mainWindow->getUi()->widgetDialogDrawerContentHost;
-                }
-                if (!geometryHost) {
-                    geometryHost = mainWindow->getUi()->stackedWidget_Center;
-                }
-
-                const int availableHeight = geometryHost ? geometryHost->height() : 0;
-                if (availableHeight <= 0) {
-                    return;
-                }
-
-                if (m_geometryHost != geometryHost) {
-                    if (m_geometryHost) {
-                        m_geometryHost->removeEventFilter(this);
-                    }
-                    m_geometryHost = geometryHost;
-                    m_geometryHost->installEventFilter(this);
-                }
-
-                const int targetHeight = availableHeight;
-                setMinimumHeight(targetHeight);
-                setMaximumHeight(targetHeight);
-            }
-
-            void finishDrawer(const int result) const {
-                if (auto *mainWindow = resolveMainWindow(const_cast<DrawerFileBrowserWidget *>(this))) {
-                    mainWindow->finishActiveDrawer(result);
-                }
-            }
-
-            void applyComfortChrome() {
-                if (m_isApplyingComfortChrome) {
-                    return;
-                }
-                QScopedValueRollback<bool> applyingGuard(m_isApplyingComfortChrome, true);
-
-                const DrawerBrowserColors colors = effectiveDrawerBrowserColors(palette());
-                const auto applyStyleIfChanged = [](QWidget *widget, const QString &style) {
-                    if (widget && widget->styleSheet() != style) {
-                        widget->setStyleSheet(style);
-                    }
-                };
-
-                applyStyleIfChanged(this, QStringLiteral("QWidget#drawerFileBrowserWidget { background: %1; }").arg(colors.panelBackground.name()));
-                applyStyleIfChanged(m_titleLabel, drawerLabelStyle(colors, 26, 700));
-                applyStyleIfChanged(m_statusLabel, drawerLabelStyle(colors, 16, 600, colors.mutedText));
-                applyStyleIfChanged(m_selectionLabel, drawerLabelStyle(colors, 18, 600));
-                applyStyleIfChanged(m_browserFrame, drawerCardStyle(colors));
-                applyStyleIfChanged(m_nameEdit, drawerLineEditStyle(colors));
-                applyStyleIfChanged(m_pathEdit, drawerLineEditStyle(colors));
-                applyStyleIfChanged(m_backButton, drawerButtonStyle(colors));
-                applyStyleIfChanged(m_homeButton, drawerButtonStyle(colors));
-                applyStyleIfChanged(m_upButton, drawerButtonStyle(colors));
-                applyStyleIfChanged(m_acceptButton, drawerButtonStyle(colors, true));
-                applyStyleIfChanged(m_view, drawerTreeStyle(colors) + fairwindsk::ui::widgets::TouchScrollArea::scrollBarStyleSheet());
-
-                auto *fairWindSK = FairWindSK::getInstance();
-                const auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
-                const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("day");
-                const QColor fallbackIconColor = fairwindsk::ui::bestContrastingColor(
-                    palette().color(QPalette::Button),
-                    {palette().color(QPalette::Text),
-                     palette().color(QPalette::ButtonText),
-                     palette().color(QPalette::WindowText)});
-                const QColor iconColor = fairwindsk::ui::comfortIconColor(configuration, preset, fallbackIconColor);
-
-                fairwindsk::ui::applyTintedButtonIcon(m_backButton, iconColor, QSize(28, 28));
-                fairwindsk::ui::applyTintedButtonIcon(m_homeButton, iconColor, QSize(28, 28));
-                fairwindsk::ui::applyTintedButtonIcon(m_upButton, iconColor, QSize(28, 28));
-                fairwindsk::ui::applyTintedButtonIcon(m_acceptButton, iconColor, QSize(28, 28));
-            }
-
-            void navigateTo(const QString &path) {
-                const QFileInfo info(path);
-                if (!info.exists() || !info.isDir()) {
-                    return;
-                }
-
-                m_currentDirectory = info.absoluteFilePath();
-                const QModelIndex rootIndex = m_model->setRootPath(m_currentDirectory);
-                m_view->setRootIndex(rootIndex);
-                m_pathEdit->setText(m_currentDirectory);
-                m_selectedPath.clear();
-                m_upButton->setEnabled(QDir(m_currentDirectory).cdUp());
-                if (m_view->selectionModel()) {
-                    m_view->selectionModel()->clearSelection();
-                }
-                updateSelectionSummary();
-            }
-
-            void handleSelection(const QModelIndex &index, const bool activate) {
-                const QFileInfo info = m_model->fileInfo(index);
-                if (!info.exists()) {
-                    return;
-                }
-
-                if (info.isDir()) {
-                    if (activate) {
-                        navigateTo(info.absoluteFilePath());
-                    }
-                    return;
-                }
-
-                m_selectedPath = info.absoluteFilePath();
-                if (m_nameEdit) {
-                    m_nameEdit->setText(info.fileName());
-                }
-                updateSelectionSummary();
-                if (activate) {
-                    finishDrawer(m_mode == FileBrowserMode::SaveFile ? int(QMessageBox::Save) : int(QMessageBox::Open));
-                }
-            }
-
-            void updateSelectionSummary() {
-                const QString currentName = fileName();
-
-                if (!m_selectionLabel || m_mode != FileBrowserMode::SaveFile) {
-                    return;
-                }
-
-                if (currentName.isEmpty()) {
-                    m_selectionLabel->setText(tr("Choose a destination folder and enter a file name."));
-                } else {
-                    m_selectionLabel->setText(tr("Destination: %1").arg(QDir(m_currentDirectory).filePath(currentName)));
-                }
-            }
-
-            FileBrowserMode m_mode;
-            QStringList m_nameFilters;
-            QString m_currentDirectory;
-            QString m_selectedPath;
-            QFileSystemModel *m_model = nullptr;
-            QTreeView *m_view = nullptr;
-            QLineEdit *m_pathEdit = nullptr;
-            QLineEdit *m_nameEdit = nullptr;
-            QLabel *m_titleLabel = nullptr;
-            QLabel *m_statusLabel = nullptr;
-            QLabel *m_selectionLabel = nullptr;
-            QFrame *m_browserFrame = nullptr;
-            QPushButton *m_backButton = nullptr;
-            QPushButton *m_homeButton = nullptr;
-            QPushButton *m_upButton = nullptr;
-            QPushButton *m_acceptButton = nullptr;
-            QWidget *m_geometryHost = nullptr;
-            bool m_isApplyingComfortChrome = false;
-        };
-
-        struct IconEntry {
-            QString path;
-            QString label;
-        };
-
-        int iconPickerIconSize() {
-            const auto *configuration = fairwindsk::FairWindSK::getInstance()->getConfiguration();
-            const QString preset = configuration->getUiScaleMode() == QStringLiteral("auto")
-                                       ? QStringLiteral("normal")
-                                       : configuration->getUiScalePreset();
-            if (preset == QStringLiteral("xlarge")) {
-                return 96;
-            }
-            if (preset == QStringLiteral("large")) {
-                return 80;
-            }
-            if (preset == QStringLiteral("small")) {
-                return 56;
-            }
-            return 64;
-        }
-
-        void appendIconEntry(QList<IconEntry> &entries, QSet<QString> &seen, const QString &path, const QString &label = QString()) {
-            if (path.trimmed().isEmpty() || seen.contains(path)) {
-                return;
-            }
-            seen.insert(path);
-            entries.append({path, label.isEmpty() ? QFileInfo(path).completeBaseName() : label});
-        }
-
-        QString normalizedIconStoragePath(const QString &path) {
-            const QString trimmed = path.trimmed();
-            if (!trimmed.startsWith(QStringLiteral("file://"))) {
-                return trimmed;
-            }
-
-            const QString localPath = trimmed.mid(QStringLiteral("file://").size());
-            const QFileInfo info(localPath);
-            if (!info.isAbsolute()) {
-                return QStringLiteral("file://") + QDir::cleanPath(localPath);
-            }
-
-            const QString absolutePath = info.absoluteFilePath();
-            const QStringList baseDirectories = {
-                QCoreApplication::applicationDirPath(),
-                QDir::currentPath()
-            };
-
-            for (const QString &baseDirectory : baseDirectories) {
-                const QDir baseDir(baseDirectory);
-                const QString relativePath = QDir::cleanPath(baseDir.relativeFilePath(absolutePath));
-                if (!relativePath.startsWith(QStringLiteral("../")) && relativePath != QStringLiteral("..")) {
-                    return QStringLiteral("file://") + relativePath;
-                }
-            }
-
-            return trimmed;
-        }
-
-        QString resolvedLocalIconPath(const QString &path) {
-            const QString trimmed = path.trimmed();
-            if (trimmed.isEmpty()) {
-                return {};
-            }
-
-            const QString localPath = trimmed.startsWith(QStringLiteral("file://"))
-                                          ? trimmed.mid(QStringLiteral("file://").size())
-                                          : trimmed;
-            const QFileInfo info(localPath);
-            if (info.isAbsolute()) {
-                return info.absoluteFilePath();
-            }
-
-            const QString executableRelativePath = QDir(QCoreApplication::applicationDirPath()).absoluteFilePath(localPath);
-            if (QFileInfo::exists(executableRelativePath)) {
-                return executableRelativePath;
-            }
-
-            return QDir::current().absoluteFilePath(localPath);
-        }
-
-        QList<IconEntry> availableIconEntries() {
-            QList<IconEntry> entries;
-            QSet<QString> seen;
-
-            const QStringList resourceIcons = {
-                QStringLiteral(":/resources/svg/OpenBridge/home.svg"),
-                QStringLiteral(":/resources/svg/OpenBridge/applications.svg"),
-                QStringLiteral(":/resources/svg/OpenBridge/settings-iec.svg"),
-                QStringLiteral(":/resources/svg/OpenBridge/navigation-route.svg"),
-                QStringLiteral(":/resources/svg/OpenBridge/database.svg"),
-                QStringLiteral(":/resources/svg/OpenBridge/anchor-iec.svg"),
-                QStringLiteral(":/resources/svg/OpenBridge/alerts.svg"),
-                QStringLiteral(":/resources/svg/OpenBridge/command-autopilot.svg"),
-                QStringLiteral(":/resources/images/icons/apps_icon.png"),
-                QStringLiteral(":/resources/images/icons/settings_icon.png"),
-                QStringLiteral(":/resources/images/icons/signalkserver_icon.png"),
-                QStringLiteral(":/resources/images/icons/youtube_icon.png"),
-                QStringLiteral(":/resources/images/icons/web_icon.png"),
-                QStringLiteral(":/resources/images/icons/webapp-256x256.png")
-            };
-            for (const QString &path : resourceIcons) {
-                appendIconEntry(entries, seen, path);
-            }
-
-            const QStringList directories = {
-                QDir::currentPath() + QStringLiteral("/icons"),
-                QCoreApplication::applicationDirPath() + QStringLiteral("/icons"),
-                QDir(QCoreApplication::applicationDirPath()).absoluteFilePath(QStringLiteral("../Resources/icons"))
-            };
-
-            for (const QString &directoryPath : directories) {
-                QDir dir(directoryPath);
-                if (!dir.exists()) {
-                    continue;
-                }
-                const QFileInfoList iconFiles = dir.entryInfoList(
-                    QStringList() << QStringLiteral("*.png") << QStringLiteral("*.svg") << QStringLiteral("*.jpg") << QStringLiteral("*.jpeg"),
-                    QDir::Files | QDir::NoDotAndDotDot,
-                    QDir::Name);
-                for (const QFileInfo &fileInfo : iconFiles) {
-                    appendIconEntry(entries,
-                                    seen,
-                                    normalizedIconStoragePath(QStringLiteral("file://") + fileInfo.absoluteFilePath()),
-                                    fileInfo.completeBaseName());
-                }
-            }
-
-            return entries;
-        }
-
-        QPixmap iconPixmapForPath(const QString &path, const int iconSize) {
-            QPixmap pixmap;
-            if (path.startsWith(QStringLiteral("file://"))) {
-                pixmap.load(resolvedLocalIconPath(path));
-            } else {
-                pixmap.load(path);
-            }
-            if (pixmap.isNull()) {
-                pixmap = QPixmap(QStringLiteral(":/resources/images/icons/webapp-256x256.png"));
-            }
-            return pixmap.scaled(iconSize, iconSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-        }
-
-        class DrawerIconPickerWidget final : public QWidget {
-            Q_DECLARE_TR_FUNCTIONS(DrawerIconPickerWidget)
-        public:
-            explicit DrawerIconPickerWidget(const QString &currentPath, QWidget *parent = nullptr)
-                : QWidget(parent), m_currentPath(currentPath.trimmed()) {
-                auto *layout = new QVBoxLayout(this);
-                layout->setContentsMargins(0, 0, 0, 0);
-                layout->setSpacing(8);
-
-                m_previewLabel = new QLabel(this);
-                m_previewLabel->setAlignment(Qt::AlignCenter);
-                m_previewLabel->setMinimumHeight(110);
-                layout->addWidget(m_previewLabel);
-
-                m_listWidget = new QListWidget(this);
-                m_listWidget->setViewMode(QListView::IconMode);
-                m_listWidget->setFlow(QListView::LeftToRight);
-                m_listWidget->setWrapping(true);
-                m_listWidget->setResizeMode(QListView::Adjust);
-                m_listWidget->setMovement(QListView::Static);
-                m_listWidget->setSelectionMode(QAbstractItemView::SingleSelection);
-                m_listWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
-                const int iconSize = iconPickerIconSize();
-                m_listWidget->setIconSize(QSize(iconSize, iconSize));
-                m_listWidget->setGridSize(QSize(iconSize + 36, iconSize + 44));
-                const int visibleRows = 4;
-                m_listWidget->setMinimumHeight((iconSize + 44) * visibleRows + 18);
-                layout->addWidget(m_listWidget, 1);
-
-                const QList<IconEntry> entries = availableIconEntries();
-                for (const IconEntry &entry : entries) {
-                    auto *item = new QListWidgetItem(QIcon(iconPixmapForPath(entry.path, iconSize)), entry.label);
-                    item->setData(Qt::UserRole, entry.path);
-                    item->setToolTip(entry.path);
-                    m_listWidget->addItem(item);
-                    if (entry.path == m_currentPath) {
-                        m_listWidget->setCurrentItem(item);
-                    }
-                }
-
-                if (!m_currentPath.isEmpty() && !m_listWidget->currentItem()) {
-                    const QPixmap pixmap = iconPixmapForPath(m_currentPath, iconSize);
-                    auto *item = new QListWidgetItem(QIcon(pixmap), QFileInfo(m_currentPath).completeBaseName());
-                    item->setData(Qt::UserRole, m_currentPath);
-                    item->setToolTip(m_currentPath);
-                    m_listWidget->insertItem(0, item);
-                    m_listWidget->setCurrentItem(item);
-                }
-
-                if (!m_listWidget->currentItem() && m_listWidget->count() > 0) {
-                    m_listWidget->setCurrentRow(0);
-                }
-
-                updatePreview();
-                QObject::connect(m_listWidget, &QListWidget::itemSelectionChanged, this, [this]() { updatePreview(); });
-                QObject::connect(m_listWidget, &QListWidget::itemDoubleClicked, this, [this]() {
-                    if (auto *mainWindow = resolveMainWindow(this)) {
-                        mainWindow->finishActiveDrawer(int(QMessageBox::Ok));
-                    }
-                });
-            }
-
-            QString selectedPath() const {
-                auto *item = m_listWidget ? m_listWidget->currentItem() : nullptr;
-                return item ? item->data(Qt::UserRole).toString() : QString();
-            }
-
-        private:
-            void updatePreview() {
-                auto *item = m_listWidget ? m_listWidget->currentItem() : nullptr;
-                if (!item) {
-                    m_previewLabel->clear();
-                    return;
-                }
-
-                const int previewSize = std::max(96, iconPickerIconSize() + 24);
-                const QPixmap pixmap = iconPixmapForPath(item->data(Qt::UserRole).toString(), previewSize);
-                m_previewLabel->setPixmap(pixmap);
-            }
-
-            QString m_currentPath;
-            QLabel *m_previewLabel = nullptr;
-            QListWidget *m_listWidget = nullptr;
-        };
 
         class DrawerLogExplorerWidget final : public QWidget {
             Q_DECLARE_TR_FUNCTIONS(DrawerLogExplorerWidget)
@@ -1308,31 +533,63 @@ namespace fairwindsk::ui::drawer {
     QString getIconPath(QWidget *parent,
                         const QString &title,
                         const QString &currentPath) {
-        auto *mainWindow = resolveMainWindow(parent);
-        if (!mainWindow) {
-            return {};
+        // Derive a sensible starting directory from the current icon path.
+        QString directory;
+        if (!currentPath.isEmpty()) {
+            const QString resolved = fairwindsk::ui::widgets::TouchIconBrowser::resolvedLocalIconPath(currentPath);
+            if (!resolved.isEmpty()) {
+                directory = QFileInfo(resolved).absolutePath();
+            }
+        }
+        if (directory.isEmpty() || !QFileInfo(directory).isDir()) {
+            directory = defaultBrowserDirectory();
         }
 
-        auto *picker = new fairwindsk::ui::widgets::TouchIconBrowser();
-        picker->setCurrentPath(currentPath);
-        QObject::connect(picker, &fairwindsk::ui::widgets::TouchIconBrowser::canceled, picker, [mainWindow]() {
-            if (mainWindow) {
-                mainWindow->finishActiveDrawer(QMessageBox::Cancel);
-            }
-        });
-        QObject::connect(picker, &fairwindsk::ui::widgets::TouchIconBrowser::pathActivated, picker, [mainWindow](const QString &) {
-            if (mainWindow) {
-                mainWindow->finishActiveDrawer(QMessageBox::Ok);
-            }
-        });
-        QPointer<fairwindsk::ui::widgets::TouchIconBrowser> pickerGuard(picker);
-        const int result = execDrawer(parent, title, picker, {}, int(QMessageBox::Cancel));
+        const QStringList imageFilters = {
+            QStringLiteral("*.png"),
+            QStringLiteral("*.jpg"),
+            QStringLiteral("*.jpeg"),
+            QStringLiteral("*.svg")
+        };
 
-        if (!pickerGuard || result != QMessageBox::Ok) {
-            return {};
+        while (true) {
+            auto *browser = new fairwindsk::ui::widgets::TouchFileBrowser(
+                fairwindsk::ui::widgets::TouchFileBrowser::Mode::OpenFile,
+                directory,
+                {},
+                imageFilters);
+            QPointer<fairwindsk::ui::widgets::TouchFileBrowser> browserGuard(browser);
+            const int result = execDrawer(parent, title, browser, {}, int(QMessageBox::Cancel));
+
+            if (!browserGuard) {
+                return {};
+            }
+
+            directory = browserGuard->currentDirectory();
+            if (result != QMessageBox::Open) {
+                return {};
+            }
+
+            QString message;
+            if (!browserGuard->canAccept(&message)) {
+                warning(parent, title, message);
+                continue;
+            }
+
+            // Normalize to a relative file:// path when the file lives under
+            // the application directory; store absolute file:// otherwise.
+            return fairwindsk::ui::widgets::TouchIconBrowser::normalizedIconStoragePath(
+                QStringLiteral("file://") + browserGuard->selectedPath());
         }
+    }
 
-        return fairwindsk::ui::widgets::TouchIconBrowser::normalizedIconStoragePath(pickerGuard->selectedPath());
+    QColor getColor(QWidget *parent,
+                    const QString &title,
+                    const QColor &initialColor,
+                    bool *accepted,
+                    const bool alphaEnabled) {
+        return fairwindsk::ui::widgets::TouchColorPickerDialog::getColor(
+            parent, title, initialColor, accepted, alphaEnabled);
     }
 
     QString getSaveFilePath(QWidget *parent,

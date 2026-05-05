@@ -243,27 +243,6 @@ QPushButton {
     </widget>
    </item>
    <item>
-    <widget class="QFrame" name="frame_PageIconPicker">
-     <property name="frameShape">
-      <enum>QFrame::StyledPanel</enum>
-     </property>
-     <property name="frameShadow">
-      <enum>QFrame::Raised</enum>
-     </property>
-     <property name="visible">
-      <bool>false</bool>
-     </property>
-     <layout class="QVBoxLayout" name="verticalLayout_PageIconPicker">
-      <property name="spacing">
-       <number>8</number>
-      </property>
-      <item>
-       <widget class="QWidget" name="widget_PageIconBrowserHost" native="true"/>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
     <spacer name="verticalSpacer_PageDetails">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
