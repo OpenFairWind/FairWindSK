@@ -1018,35 +1018,50 @@ namespace fairwindsk::signalk {
 
         QJsonDocument jsonDocument = QJsonDocument::fromJson(message.toUtf8());
 
-        // check validity of the document
-        if (!jsonDocument.isNull()) {
-            if (jsonDocument.isObject()) {
-                auto updateObject = jsonDocument.object();
+        if (jsonDocument.isNull()) {
+            qWarning() << "SignalK::Client::onTextMessageReceived malformed JSON (first 200 chars):"
+                       << message.left(200);
+            return;
+        }
+
+        if (!jsonDocument.isObject()) {
+            qWarning() << "SignalK::Client::onTextMessageReceived unexpected non-object message";
+            if (m_Debug)
+                qDebug() << "SignalK::Client::onTextMessageReceived raw message:" << message.left(200);
+            return;
+        }
+
+        auto updateObject = jsonDocument.object();
+        const auto context = updateObject["context"].toString();
+        const auto updates = updateObject["updates"].toArray();
+
+        if (m_Debug)
+            qDebug() << "SignalK::Client::onTextMessageReceived context=" << context
+                     << "updates=" << updates.size();
+
+        for (auto updateItem: updates) {
+            auto values = updateItem.toObject()["values"].toArray();
+            for (auto valueItem: values) {
+                const QString path = valueItem.toObject()["path"].toString();
+                const QString fullPath = context + "." + path;
+
+                // If the server sends updates with the actual vessel URN but some subscriptions
+                // still hold the "vessels.self" context (getSelf failed at startup), build an
+                // alias path so those subscriptions can still match
+                const bool isSelfContext = !m_selfUrn.isEmpty() && context == m_selfUrn;
+                const QString selfAliasPath = isSelfContext
+                    ? QStringLiteral("vessels.self.") + path
+                    : QString();
 
                 if (m_Debug)
-                    qDebug() << "Update received:" << message;
+                    qDebug() << "SignalK::Client::onTextMessageReceived dispatching"
+                             << fullPath
+                             << (isSelfContext ? "(+ vessels.self alias)" : "");
 
-                const auto context = updateObject["context"].toString();
-                auto updates = updateObject["updates"].toArray();
-                for (auto updateItem: updates) {
-                    auto values = updateItem.toObject()["values"].toArray();
-                    for (auto valueItem: values) {
-                        const QString fullPath = context + "." + valueItem.toObject()["path"].toString();
-
-                        // If the server sends updates with the actual vessel URN but some subscriptions
-                        // still hold the "vessels.self" context (getSelf failed at startup), build an
-                        // alias path so those subscriptions can still match
-                        const bool isSelfContext = !m_selfUrn.isEmpty() && context == m_selfUrn;
-                        const QString selfAliasPath = isSelfContext
-                            ? QStringLiteral("vessels.self.") + valueItem.toObject()["path"].toString()
-                            : QString();
-
-                        for (auto subscription: m_subscriptions) {
-                            subscription.match(fullPath, updateObject);
-                            if (!selfAliasPath.isEmpty()) {
-                                subscription.match(selfAliasPath, updateObject);
-                            }
-                        }
+                for (auto subscription: m_subscriptions) {
+                    subscription.match(fullPath, updateObject);
+                    if (!selfAliasPath.isEmpty()) {
+                        subscription.match(selfAliasPath, updateObject);
                     }
                 }
             }
