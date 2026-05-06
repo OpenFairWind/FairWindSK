@@ -1042,8 +1042,18 @@ namespace fairwindsk::signalk {
         for (auto updateItem: updates) {
             auto values = updateItem.toObject()["values"].toArray();
             for (auto valueItem: values) {
-                const QString path = valueItem.toObject()["path"].toString();
+                const auto valueObj = valueItem.toObject();
+                const QString path = valueObj[QStringLiteral("path")].toString();
+                if (path.isEmpty()) {
+                    continue;
+                }
                 const QString fullPath = context + "." + path;
+
+                // Build a single-path delta so slots receive exactly the one value they
+                // subscribed for; passing the full batched update would cause
+                // getDoubleFromUpdateByPath("") to average all numeric values in the message
+                const QJsonValue value = valueObj[QStringLiteral("value")];
+                const QJsonObject perPathUpdate = buildDeltaUpdate(context, path, value);
 
                 // If the server sends updates with the actual vessel URN but some subscriptions
                 // still hold the "vessels.self" context (getSelf failed at startup), build an
@@ -1059,9 +1069,9 @@ namespace fairwindsk::signalk {
                              << (isSelfContext ? "(+ vessels.self alias)" : "");
 
                 for (auto subscription: m_subscriptions) {
-                    subscription.match(fullPath, updateObject);
+                    subscription.match(fullPath, perPathUpdate);
                     if (!selfAliasPath.isEmpty()) {
-                        subscription.match(selfAliasPath, updateObject);
+                        subscription.match(selfAliasPath, perPathUpdate);
                     }
                 }
             }
@@ -1266,6 +1276,9 @@ namespace fairwindsk::signalk {
     }
 
     void Client::resubscribeAll(const bool hydrateSnapshots) {
+        qInfo() << "SignalK::Client::resubscribeAll hydrateSnapshots=" << hydrateSnapshots
+                << "subscriptions=" << m_subscriptions.size();
+
         QMutableListIterator<Subscription> iterator(m_subscriptions);
         while (iterator.hasNext()) {
             auto &subscription = iterator.next();
@@ -1286,17 +1299,40 @@ namespace fairwindsk::signalk {
                 continue;
             }
 
-            const QJsonObject snapshot = signalkGet(effectiveContext + "." + subscription.getPath());
+            const QString fullPath = effectiveContext + "." + subscription.getPath();
+            const QJsonObject snapshot = signalkGet(fullPath);
+
+            if (m_Debug) {
+                qDebug() << "SignalK::Client::resubscribeAll snapshot for" << fullPath
+                         << "isEmpty=" << snapshot.isEmpty()
+                         << "hasValue=" << snapshot.contains(QStringLiteral("value"));
+            }
+
             if (!snapshot.isEmpty()) {
                 // REST returns {"value": ..., "source": {...}, "timestamp": "..."}; extract the
                 // inner value so the delta update matches what live stream updates deliver
                 const QJsonValue snapshotValue = snapshot.contains(QStringLiteral("value"))
                     ? snapshot.value(QStringLiteral("value"))
                     : QJsonValue(snapshot);
+
+                if (m_Debug) {
+                    qDebug() << "SignalK::Client::resubscribeAll snapshotValue type="
+                             << snapshotValue.type() << "for" << subscription.getPath();
+                }
+
                 const QJsonObject update = buildDeltaUpdate(effectiveContext, subscription.getPath(), snapshotValue);
-                subscription.match(effectiveContext + "." + subscription.getPath(), update);
+                const bool matched = subscription.match(fullPath, update);
+
+                if (m_Debug) {
+                    qDebug() << "SignalK::Client::resubscribeAll match result=" << matched
+                             << "for" << fullPath;
+                }
+            } else {
+                qInfo() << "SignalK::Client::resubscribeAll empty snapshot for" << fullPath;
             }
         }
+
+        qInfo() << "SignalK::Client::resubscribeAll done";
     }
 
     QString Client::serverFingerprint(const QJsonObject &server) const {

@@ -61,20 +61,20 @@ namespace fairwindsk::signalk {
     }
 
     bool Subscription::match(const QString &fullPath, const QJsonObject& updateObject) {
-        //qDebug() << "Subscription::match : " << regularExpression << " ? " << fullPath;
-
-        if (m_regularExpression.match(fullPath).hasMatch()) {
-
-            //qDebug() << "Subscription::match : " << regularExpression << " = " << fullPath << " !!!";
-
-            //qDebug() << "Subscription::match invokeMethod: " << memberName.toStdString().c_str();
-            bool invokeResult = QMetaObject::invokeMethod(
-                    m_receiver, m_memberName.toStdString().c_str(),
-                    Qt::AutoConnection,Q_ARG(QJsonObject, updateObject));
-
-            return invokeResult;
+        if (!m_regularExpression.match(fullPath).hasMatch()) {
+            return false;
         }
 
-        return false;
+        const bool invoked = QMetaObject::invokeMethod(
+                m_receiver, m_memberName.toStdString().c_str(),
+                Qt::AutoConnection, Q_ARG(QJsonObject, updateObject));
+
+        if (!invoked) {
+            qWarning() << "Subscription::match invokeMethod failed for receiver"
+                       << m_receiver << "method" << m_memberName
+                       << "on path" << fullPath;
+        }
+
+        return invoked;
     }
 }
