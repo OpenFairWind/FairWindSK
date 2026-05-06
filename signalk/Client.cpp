@@ -378,7 +378,22 @@ namespace fairwindsk::signalk {
  * Returns the self key
  */
     QString Client::getSelf() {
-        auto result = httpGet(QUrl(http().toString()+"self"));
+        // Prefer the URN from the discovery document — avoids an extra HTTP round-trip
+        // and works regardless of how the server implements GET /api/self
+        if (m_Server.contains(QStringLiteral("self")) && m_Server[QStringLiteral("self")].isString()) {
+            const QString discoveryUrn = m_Server[QStringLiteral("self")].toString();
+            if (discoveryUrn.startsWith(QStringLiteral("vessels."))) {
+                if (m_Debug)
+                    qDebug() << "SignalKClient::getSelf: from discovery doc:" << discoveryUrn;
+                return discoveryUrn;
+            }
+        }
+
+        // Fallback: ask the REST API; ensure the path separator is present
+        const QString baseUrl = http().toString();
+        const QString selfUrl = baseUrl.endsWith('/') ? baseUrl + QStringLiteral("self")
+                                                      : baseUrl + QStringLiteral("/self");
+        auto result = httpGet(QUrl(selfUrl));
 
         if (m_Debug)
             qDebug() << "SignalKClient::getSelf :" << result;
@@ -460,8 +475,10 @@ namespace fairwindsk::signalk {
         // Process the path
         processedPath = processedPath.replace(".","/");
 
-        // Create the url
-        const auto url = QUrl(http().toString()+processedPath);
+        // Build the URL; ensure a slash separates the base endpoint and the path
+        const QString baseUrl = http().toString();
+        const auto url = QUrl(baseUrl.endsWith('/') ? baseUrl + processedPath
+                                                    : baseUrl + '/' + processedPath);
 
         // Check if the debug is active
         if (m_Debug) {
@@ -569,8 +586,10 @@ namespace fairwindsk::signalk {
         // Process the path
         processedPath = processedPath.replace(".","/");
 
-        // Create the url
-        auto url = QUrl(http().toString()+processedPath);
+        // Build the URL; ensure a slash separates the base endpoint and the path
+        const QString baseUrlPost = http().toString();
+        auto url = QUrl(baseUrlPost.endsWith('/') ? baseUrlPost + processedPath
+                                                  : baseUrlPost + '/' + processedPath);
 
         // Check if the debug is active
         if (m_Debug) {
@@ -660,7 +679,9 @@ namespace fairwindsk::signalk {
     QJsonObject Client::signalkPut(const QString& path,  QJsonObject& payload) {
         QString processedPath = path;
         processedPath = processedPath.replace(".","/");
-        auto url = QUrl(http().toString()+processedPath);
+        const QString baseUrlPut = http().toString();
+        auto url = QUrl(baseUrlPut.endsWith('/') ? baseUrlPut + processedPath
+                                                 : baseUrlPut + '/' + processedPath);
         if (m_Debug)
         {
             qDebug() << "signalkPut " << path << " --> " << url;
@@ -748,8 +769,10 @@ namespace fairwindsk::signalk {
         // Create the path (it works only with v1 APIs)
         processedPath = processedPath.replace(".","/");
 
-        // Create the URL object
-        const auto url = QUrl(http().toString()+processedPath);
+        // Create the URL object; ensure a slash separates the base endpoint and the path
+        const QString baseUrlDel = http().toString();
+        const auto url = QUrl(baseUrlDel.endsWith('/') ? baseUrlDel + processedPath
+                                                       : baseUrlDel + '/' + processedPath);
 
         // Check if debug is active
         if (m_Debug) {
@@ -979,6 +1002,10 @@ namespace fairwindsk::signalk {
             const QString resolvedSelf = getSelf();
             if (!resolvedSelf.isEmpty()) {
                 m_selfUrn = resolvedSelf;
+                qInfo() << "SignalK::Client::onConnected cached selfUrn =" << m_selfUrn;
+            } else {
+                qWarning() << "SignalK::Client::onConnected getSelf() returned empty; "
+                              "live-stream matching will rely on vessels.self alias";
             }
         }
 
@@ -1039,6 +1066,17 @@ namespace fairwindsk::signalk {
             qDebug() << "SignalK::Client::onTextMessageReceived context=" << context
                      << "updates=" << updates.size();
 
+        // Determine once per message whether context is the self vessel.
+        // If m_selfUrn is not yet cached, fall back to the discovery-document self field
+        // so that subscriptions using "vessels.self" alias can still dispatch correctly.
+        const QString discoveryUrn = m_Server.value(QStringLiteral("self")).toString();
+        const bool isSelfContext = (!m_selfUrn.isEmpty() && context == m_selfUrn)
+                                || (!discoveryUrn.isEmpty() && context == discoveryUrn);
+        if (isSelfContext && m_selfUrn.isEmpty() && !discoveryUrn.isEmpty()) {
+            m_selfUrn = discoveryUrn;
+            qInfo() << "SignalK::Client::onTextMessageReceived cached selfUrn from live message =" << m_selfUrn;
+        }
+
         for (auto updateItem: updates) {
             auto values = updateItem.toObject()["values"].toArray();
             for (auto valueItem: values) {
@@ -1057,8 +1095,7 @@ namespace fairwindsk::signalk {
 
                 // If the server sends updates with the actual vessel URN but some subscriptions
                 // still hold the "vessels.self" context (getSelf failed at startup), build an
-                // alias path so those subscriptions can still match
-                const bool isSelfContext = !m_selfUrn.isEmpty() && context == m_selfUrn;
+                // alias path so those subscriptions can still match.
                 const QString selfAliasPath = isSelfContext
                     ? QStringLiteral("vessels.self.") + path
                     : QString();
