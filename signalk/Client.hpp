@@ -161,6 +161,7 @@ namespace fairwindsk::signalk {
         QString m_Password;
         QString m_Token;
         QString m_Cookie;
+        QString m_selfUrn;
 
 
 

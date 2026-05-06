@@ -973,6 +973,15 @@ namespace fairwindsk::signalk {
         connect(&m_WebSocket, &QWebSocket::textMessageReceived,
                 this, &Client::onTextMessageReceived, Qt::UniqueConnection);
 
+        // Pre-fetch and cache the self URN once so resubscribeAll() resolves all
+        // "vessels.self" contexts consistently without N blocking HTTP calls
+        if (m_selfUrn.isEmpty()) {
+            const QString resolvedSelf = getSelf();
+            if (!resolvedSelf.isEmpty()) {
+                m_selfUrn = resolvedSelf;
+            }
+        }
+
         const bool recoveredFromDisconnect = m_reconnectRecoveryPending;
         resubscribeAll(recoveredFromDisconnect);
         m_hadStreamConnection = true;
@@ -1022,11 +1031,21 @@ namespace fairwindsk::signalk {
                 for (auto updateItem: updates) {
                     auto values = updateItem.toObject()["values"].toArray();
                     for (auto valueItem: values) {
-                        QString fullPath = context + "." + valueItem.toObject()["path"].toString();
+                        const QString fullPath = context + "." + valueItem.toObject()["path"].toString();
 
+                        // If the server sends updates with the actual vessel URN but some subscriptions
+                        // still hold the "vessels.self" context (getSelf failed at startup), build an
+                        // alias path so those subscriptions can still match
+                        const bool isSelfContext = !m_selfUrn.isEmpty() && context == m_selfUrn;
+                        const QString selfAliasPath = isSelfContext
+                            ? QStringLiteral("vessels.self.") + valueItem.toObject()["path"].toString()
+                            : QString();
 
                         for (auto subscription: m_subscriptions) {
                             subscription.match(fullPath, updateObject);
+                            if (!selfAliasPath.isEmpty()) {
+                                subscription.match(selfAliasPath, updateObject);
+                            }
                         }
                     }
                 }
@@ -1060,10 +1079,16 @@ namespace fairwindsk::signalk {
 
     QString Client::normalizedSubscriptionContext(const QString &context) const {
         if (context == "vessels.self") {
-            // getSelf() returns empty when the server rejects auth or returns a non-URN body;
-            // fall back to the literal "vessels.self" so WebSocket subscriptions remain valid
+            // Use cached URN to avoid repeated blocking HTTP calls for every subscription
+            if (!m_selfUrn.isEmpty()) {
+                return m_selfUrn;
+            }
             const QString resolved = const_cast<Client *>(this)->getSelf();
-            return resolved.isEmpty() ? context : resolved;
+            if (!resolved.isEmpty()) {
+                const_cast<Client *>(this)->m_selfUrn = resolved;
+                return resolved;
+            }
+            return context;
         }
 
         return context;
@@ -1248,7 +1273,12 @@ namespace fairwindsk::signalk {
 
             const QJsonObject snapshot = signalkGet(effectiveContext + "." + subscription.getPath());
             if (!snapshot.isEmpty()) {
-                const QJsonObject update = buildDeltaUpdate(effectiveContext, subscription.getPath(), snapshot);
+                // REST returns {"value": ..., "source": {...}, "timestamp": "..."}; extract the
+                // inner value so the delta update matches what live stream updates deliver
+                const QJsonValue snapshotValue = snapshot.contains(QStringLiteral("value"))
+                    ? snapshot.value(QStringLiteral("value"))
+                    : QJsonValue(snapshot);
+                const QJsonObject update = buildDeltaUpdate(effectiveContext, subscription.getPath(), snapshotValue);
                 subscription.match(effectiveContext + "." + subscription.getPath(), update);
             }
         }
