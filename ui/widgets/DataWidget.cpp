@@ -151,8 +151,7 @@ namespace fairwindsk::ui::widgets {
                        const QDateTime &,
                        const QString &) {
                     renderCurrentUpdate();
-                },
-                Qt::UniqueConnection);
+                });
 
         const QJsonObject snapshot = client->subscribe(
             m_definition.signalKPath,
