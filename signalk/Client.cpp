@@ -1347,9 +1347,9 @@ namespace fairwindsk::signalk {
             subscription.retargetContext(effectiveContext);
             m_WebSocket.sendTextMessage(subscriptionMessage(effectiveContext,
                                                            subscription.getPath(),
-                                                           1000,
-                                                           QStringLiteral("ideal"),
-                                                           200));
+                                                           subscription.getPeriod(),
+                                                           subscription.getPolicy(),
+                                                           subscription.getMinPeriod()));
 
             if (!hydrateSnapshots || !canHydrateSubscriptionPath(subscription.getPath())) {
                 continue;
@@ -1730,7 +1730,7 @@ namespace fairwindsk::signalk {
         m_WebSocket.sendTextMessage(message);
 
         if (!hasSubscription(context, path, receiver)) {
-            Subscription subscription(context, contextEx, path, receiver, member);
+            Subscription subscription(context, contextEx, path, receiver, member, period, policy, minPeriod);
             m_subscriptions.append(subscription);
             connect(receiver, &QObject::destroyed, this, &Client::unsubscribe, Qt::UniqueConnection);
         }
@@ -1766,7 +1766,7 @@ namespace fairwindsk::signalk {
         m_WebSocket.sendTextMessage(message);
 
         if (!hasSubscription(context, path, receiver)) {
-            Subscription subscription(context, contextEx, path, receiver, member);
+            Subscription subscription(context, contextEx, path, receiver, member, period, policy, minPeriod);
             m_subscriptions.append(subscription);
             connect(receiver, &QObject::destroyed, this, &Client::unsubscribe, Qt::UniqueConnection);
         }

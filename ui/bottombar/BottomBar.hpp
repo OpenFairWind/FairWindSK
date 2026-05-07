@@ -18,10 +18,15 @@
 #include "AutopilotBar.hpp"
 #include "AnchorBar.hpp"
 #include "ui/layout/BarLayout.hpp"
+#include "ui/widgets/DataWidgetConfig.hpp"
 #include "ui/widgets/SignalKServerBox.hpp"
 
 namespace Ui { class BottomBar; }
 class QGraphicsEffect;
+
+namespace fairwindsk::ui::widgets {
+    class DataWidget;
+}
 
 namespace fairwindsk::ui::bottombar {
 
@@ -110,6 +115,7 @@ namespace fairwindsk::ui::bottombar {
         void updateTransientPanelHeight(QWidget *panel) const;
         void updateHealthChrome();
         void rebuildLayout();
+        QWidget *createDataWidget(const fairwindsk::ui::widgets::DataWidgetDefinition &definition);
         QWidget *createSeparatorWidget();
         void clearConfiguredLayout();
         void applyEntrySizing(const fairwindsk::ui::layout::LayoutEntry &entry,
@@ -150,6 +156,7 @@ namespace fairwindsk::ui::bottombar {
         QHash<QWidget *, QPointer<QGraphicsEffect>> m_layoutHintEffects;
         bool m_layoutEditHighlightEnabled = false;
         QVector<QPointer<QWidget>> m_dynamicLayoutWidgets;
+        QHash<QString, QPointer<fairwindsk::ui::widgets::DataWidget>> m_dataWidgets;
         inline static BottomBar *s_instance = nullptr;
     };
 }

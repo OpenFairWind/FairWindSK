@@ -83,6 +83,33 @@ The legacy `units` object is still kept for compatibility with parts of the UI t
 
 These mappings drive UI bars (autopilot, anchor, alarms, POB) and instrument readouts. For the POB workflow on a regular Signal K server, keep `notifications.pob` mapped to the standard `notifications.mob` path unless you intentionally need a custom server extension.
 
+## Data widgets and bar layouts
+
+Top Bar and Bottom Bar instrument readouts are defined by the `dataWidgets` array. Each entry has an `id`, operator-facing `name`, `icon`, display `type`, Signal K path, optional source/default units, and Signal K subscription timing fields:
+
+```jsonc
+{
+  "dataWidgets": [
+    {
+      "id": "sog",
+      "name": "SOG",
+      "icon": ":/resources/svg/OpenBridge/lcd-sog.svg",
+      "type": "numerical",
+      "signalKPath": "navigation.speedOverGround",
+      "sourceUnit": "ms-1",
+      "defaultUnit": "kn",
+      "updatePolicy": "ideal",
+      "period": 1000,
+      "minPeriod": 200
+    }
+  ]
+}
+```
+
+Supported display types are `numerical`, `gauge`, `position`, `datetime`, and `waypoint`. `period`, `minPeriod`, and `updatePolicy` are passed through to the Signal K websocket subscription. The **Settings > Widgets** tab edits these definitions, while **Settings > Top Bar** and **Settings > Bottom Bar** place enabled widgets into `barLayouts.top` and `barLayouts.bottom`.
+
+If an older configuration does not contain `dataWidgets`, FairWindSK derives the standard Position, COG, SOG, HDG, STW, DPT, waypoint, route, and VMG widgets from the legacy `signalk` paths so existing installs keep showing data.
+
 ## Window and input settings
 
 ```jsonc

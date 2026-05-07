@@ -11,6 +11,7 @@
 
 #include "FairWindSK.hpp"
 #include "ui/IconUtils.hpp"
+#include "ui/widgets/DataWidgetConfig.hpp"
 
 namespace fairwindsk::ui::settings {
     namespace {
@@ -121,6 +122,15 @@ namespace fairwindsk::ui::settings {
         }
 
         QIcon iconForWidgetId(const QString &widgetId) {
+            if (auto *fairWindSK = FairWindSK::getInstance()) {
+                if (auto *configuration = fairWindSK->getConfiguration()) {
+                    const auto definition = fairwindsk::ui::widgets::dataWidgetDefinition(configuration->getRoot(), widgetId);
+                    if (!definition.icon.trimmed().isEmpty()) {
+                        return QIcon(definition.icon);
+                    }
+                }
+            }
+
             const QString lcdMetricIcon = lcdMetricIconPath(widgetId);
             if (!lcdMetricIcon.isEmpty()) {
                 return QIcon(lcdMetricIcon);

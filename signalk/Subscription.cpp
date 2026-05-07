@@ -11,12 +11,18 @@ namespace fairwindsk::signalk {
                                const QString &context,
                                const QString &path,
                                QObject *receiver,
-                               const char *member) {
+                               const char *member,
+                               const int period,
+                               const QString &policy,
+                               const int minPeriod) {
         m_requestedContext = requestedContext;
         m_context = context;
         m_path = path;
         this->m_receiver = receiver;
         m_memberName = QString(member);
+        m_period = period;
+        m_policy = policy.trimmed().isEmpty() ? QStringLiteral("ideal") : policy.trimmed();
+        m_minPeriod = minPeriod;
 
         // Strip the leading Qt SLOT/SIGNAL type prefix digit (e.g. "1") and any
         // class-path prefix (e.g. "fairwindsk::ui::topbar::TopBar::") so only the
@@ -43,6 +49,9 @@ namespace fairwindsk::signalk {
         this->m_path = other.m_path;
         this->m_context = other.m_context;
         this->m_requestedContext = other.m_requestedContext;
+        this->m_period = other.m_period;
+        this->m_policy = other.m_policy;
+        this->m_minPeriod = other.m_minPeriod;
     }
 
     bool Subscription::checkReceiver(QObject *receiver) {
@@ -55,6 +64,9 @@ namespace fairwindsk::signalk {
     QString Subscription::getRequestedContext() const { return m_requestedContext; }
     QRegularExpression Subscription::getRegex() const { return m_regularExpression; }
     QObject *Subscription::getReceiver() const { return m_receiver; }
+    int Subscription::getPeriod() const { return m_period; }
+    QString Subscription::getPolicy() const { return m_policy; }
+    int Subscription::getMinPeriod() const { return m_minPeriod; }
 
     void Subscription::retargetContext(const QString &context) {
         if (m_context == context) {

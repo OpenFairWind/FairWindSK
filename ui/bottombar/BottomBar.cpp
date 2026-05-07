@@ -27,6 +27,8 @@
 #include "ui/IconUtils.hpp"
 #include "ui/layout/BarLayout.hpp"
 #include "ui/topbar/TopBar.hpp"
+#include "ui/widgets/DataWidget.hpp"
+#include "ui/widgets/DataWidgetConfig.hpp"
 
 namespace fairwindsk::ui::bottombar {
     namespace {
@@ -48,6 +50,16 @@ namespace fairwindsk::ui::bottombar {
         return line;
     }
 
+    QWidget *BottomBar::createDataWidget(const fairwindsk::ui::widgets::DataWidgetDefinition &definition) {
+        if (definition.id.trimmed().isEmpty()) {
+            return nullptr;
+        }
+
+        auto *widget = new fairwindsk::ui::widgets::DataWidget(definition, this);
+        m_dataWidgets.insert(definition.id, widget);
+        return widget;
+    }
+
     void BottomBar::clearConfiguredLayout() {
         if (!ui || !ui->horizontalLayoutButtons) {
             return;
@@ -67,6 +79,13 @@ namespace fairwindsk::ui::bottombar {
             }
         }
         m_dynamicLayoutWidgets.clear();
+
+        for (auto &widget : m_dataWidgets) {
+            if (widget) {
+                widget->deleteLater();
+            }
+        }
+        m_dataWidgets.clear();
     }
 
     QWidget *BottomBar::widgetForItemId(const QString &itemId) const {
@@ -135,8 +154,9 @@ namespace fairwindsk::ui::bottombar {
 
         clearConfiguredLayout();
 
+        const auto configRoot = FairWindSK::getInstance()->getConfiguration()->getRoot();
         const auto entries = fairwindsk::ui::layout::entriesForBar(
-            FairWindSK::getInstance()->getConfiguration()->getRoot(),
+            configRoot,
             fairwindsk::ui::layout::BarId::Bottom);
         for (const auto &entry : entries) {
             if (!entry.enabled) {
@@ -165,6 +185,10 @@ namespace fairwindsk::ui::bottombar {
 
             QString itemId = entry.widgetId;
             QWidget *widget = widgetForItemId(entry.widgetId);
+            if (!widget) {
+                const auto definition = fairwindsk::ui::widgets::dataWidgetDefinition(configRoot, entry.widgetId);
+                widget = createDataWidget(definition);
+            }
             if (!widget && fairwindsk::ui::topbar::TopBar::instance()) {
                 widget = fairwindsk::ui::topbar::TopBar::instance()->widgetForItemId(entry.widgetId);
             }
@@ -210,6 +234,9 @@ namespace fairwindsk::ui::bottombar {
             }
 
             QWidget *widget = widgetForItemId(entry.widgetId);
+            if (!widget) {
+                widget = m_dataWidgets.value(entry.widgetId);
+            }
             if (!widget) {
                 continue;
             }

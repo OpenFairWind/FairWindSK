@@ -1,7 +1,12 @@
 #include "BarLayout.hpp"
 
+#include <algorithm>
+
 #include <QObject>
 #include <QHash>
+
+#include "FairWindSK.hpp"
+#include "ui/widgets/DataWidgetConfig.hpp"
 
 namespace fairwindsk::ui::layout {
     namespace {
@@ -28,24 +33,11 @@ namespace fairwindsk::ui::layout {
             return EntryKind::Widget;
         }
 
-        const QList<WidgetDefinition> &widgetDefinitionsStorage() {
+        const QList<WidgetDefinition> &fixedWidgetDefinitionsStorage() {
             static const QList<WidgetDefinition> definitions = {
-                {QStringLiteral("position"), QObject::tr("Position"), true, false},
-                {QStringLiteral("cog"), QObject::tr("COG"), true, false},
-                {QStringLiteral("sog"), QObject::tr("SOG"), true, false},
-                {QStringLiteral("hdg"), QObject::tr("HDG"), true, false},
-                {QStringLiteral("stw"), QObject::tr("STW"), true, false},
-                {QStringLiteral("dpt"), QObject::tr("DPT"), true, false},
-                {QStringLiteral("current_context"), QObject::tr("Current Application / Launcher Page Label"), true, false},
-                {QStringLiteral("wpt"), QObject::tr("WPT"), true, false},
-                {QStringLiteral("btw"), QObject::tr("BTW"), true, false},
-                {QStringLiteral("dtg"), QObject::tr("DTG"), true, false},
-                {QStringLiteral("ttg"), QObject::tr("TTG"), true, false},
-                {QStringLiteral("eta"), QObject::tr("ETA"), true, false},
-                {QStringLiteral("xte"), QObject::tr("XTE"), true, false},
-                {QStringLiteral("vmg"), QObject::tr("VMG"), true, false},
-                {QStringLiteral("clock_icons"), QObject::tr("Clock and Icons"), true, false},
-                {QStringLiteral("open_apps"), QObject::tr("Currently Open Applications"), false, true},
+                {QStringLiteral("current_context"), QObject::tr("Current Application / Launcher Page Label"), true, false, false, true},
+                {QStringLiteral("clock_icons"), QObject::tr("Clock and Icons"), true, false, false, true},
+                {QStringLiteral("open_apps"), QObject::tr("Currently Open Applications"), false, true, false, true},
                 {QStringLiteral("mydata"), QObject::tr("MyData"), false, true},
                 {QStringLiteral("pob"), QObject::tr("POB"), false, true},
                 {QStringLiteral("autopilot"), QObject::tr("Autopilot"), false, true},
@@ -53,14 +45,42 @@ namespace fairwindsk::ui::layout {
                 {QStringLiteral("anchor"), QObject::tr("Anchor"), false, true},
                 {QStringLiteral("alarms"), QObject::tr("Alarms"), false, true},
                 {QStringLiteral("settings"), QObject::tr("Settings"), false, true},
-                {QStringLiteral("signalk_status"), QObject::tr("SignalK Status"), false, true}
+                {QStringLiteral("signalk_status"), QObject::tr("SignalK Status"), false, true, false, true}
             };
             return definitions;
         }
 
-        QHash<QString, WidgetDefinition> widgetDefinitionIndex() {
+        QList<WidgetDefinition> widgetDefinitionsStorage(const nlohmann::json &root) {
+            QList<WidgetDefinition> definitions;
+            const auto dataWidgets = fairwindsk::ui::widgets::dataWidgetDefinitions(root);
+            definitions.reserve(dataWidgets.size() + fixedWidgetDefinitionsStorage().size());
+
+            for (const auto &dataWidget : dataWidgets) {
+                definitions.append({
+                    dataWidget.id,
+                    dataWidget.name,
+                    dataWidget.defaultTopEnabled,
+                    dataWidget.defaultBottomEnabled,
+                    true,
+                    dataWidget.expandHorizontally,
+                    dataWidget.expandVertically
+                });
+            }
+
+            definitions.append(fixedWidgetDefinitionsStorage());
+            return definitions;
+        }
+
+        const nlohmann::json &runtimeConfigurationRoot() {
+            static const nlohmann::json emptyRoot = nlohmann::json::object();
+            auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+            auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+            return configuration ? configuration->getRoot() : emptyRoot;
+        }
+
+        QHash<QString, WidgetDefinition> widgetDefinitionIndex(const nlohmann::json &root) {
             QHash<QString, WidgetDefinition> index;
-            const auto &definitions = widgetDefinitionsStorage();
+            const auto definitions = widgetDefinitionsStorage(root);
             for (const auto &definition : definitions) {
                 index.insert(definition.id, definition);
             }
@@ -71,10 +91,17 @@ namespace fairwindsk::ui::layout {
             return barId == BarId::Top ? QStringLiteral("top") : QStringLiteral("bottom");
         }
 
-        bool shouldDefaultToMaximumWidth(const BarId barId, const QString &widgetId) {
+        bool shouldDefaultToMaximumWidth(const nlohmann::json &root, const BarId barId, const QString &widgetId) {
+            const auto definitions = widgetDefinitionsStorage(root);
+            const auto definitionIt = std::find_if(definitions.cbegin(), definitions.cend(), [&widgetId](const WidgetDefinition &definition) {
+                return definition.id == widgetId;
+            });
+            if (definitionIt != definitions.cend() && definitionIt->expandHorizontally) {
+                return true;
+            }
+
             if (barId == BarId::Top) {
-                return widgetId == QStringLiteral("position") ||
-                       widgetId == QStringLiteral("current_context") ||
+                return widgetId == QStringLiteral("current_context") ||
                        widgetId == QStringLiteral("clock_icons");
             }
 
@@ -135,8 +162,8 @@ namespace fairwindsk::ui::layout {
             return jsonEntry;
         }
 
-        void ensureAllWidgetEntriesPresent(QList<LayoutEntry> &entries) {
-            const auto definitions = widgetDefinitionsStorage();
+        void ensureAllWidgetEntriesPresent(QList<LayoutEntry> &entries, const nlohmann::json &root) {
+            const auto definitions = widgetDefinitionsStorage(root);
             for (const auto &definition : definitions) {
                 const bool present = std::any_of(entries.cbegin(), entries.cend(), [&definition](const LayoutEntry &entry) {
                     return entry.kind == EntryKind::Widget && entry.widgetId == definition.id;
@@ -154,7 +181,11 @@ namespace fairwindsk::ui::layout {
     }
 
     QList<WidgetDefinition> widgetDefinitions() {
-        return widgetDefinitionsStorage();
+        return widgetDefinitions(runtimeConfigurationRoot());
+    }
+
+    QList<WidgetDefinition> widgetDefinitions(const nlohmann::json &root) {
+        return widgetDefinitionsStorage(root);
     }
 
     QString barLabel(const BarId barId) {
@@ -166,6 +197,10 @@ namespace fairwindsk::ui::layout {
     }
 
     QString entryLabel(const LayoutEntry &entry) {
+        return entryLabel(entry, runtimeConfigurationRoot());
+    }
+
+    QString entryLabel(const LayoutEntry &entry, const nlohmann::json &root) {
         if (entry.kind == EntryKind::Separator) {
             return QObject::tr("Separator");
         }
@@ -173,7 +208,7 @@ namespace fairwindsk::ui::layout {
             return QObject::tr("Elastic Extender");
         }
 
-        static const QHash<QString, WidgetDefinition> index = widgetDefinitionIndex();
+        const QHash<QString, WidgetDefinition> index = widgetDefinitionIndex(root);
         if (index.contains(entry.widgetId)) {
             return index.value(entry.widgetId).label;
         }
@@ -200,19 +235,28 @@ namespace fairwindsk::ui::layout {
     }
 
     bool defaultExpandHorizontally(const BarId barId, const QString &widgetId) {
-        return shouldDefaultToMaximumWidth(barId, widgetId);
+        return defaultExpandHorizontally(runtimeConfigurationRoot(), barId, widgetId);
     }
 
     QList<LayoutEntry> defaultEntries(const BarId barId) {
+        return defaultEntries(runtimeConfigurationRoot(), barId);
+    }
+
+    bool defaultExpandHorizontally(const nlohmann::json &root, const BarId barId, const QString &widgetId) {
+        return shouldDefaultToMaximumWidth(root, barId, widgetId);
+    }
+
+    QList<LayoutEntry> defaultEntries(const nlohmann::json &root, const BarId barId) {
         QList<LayoutEntry> entries;
-        const auto definitions = widgetDefinitionsStorage();
+        const auto definitions = widgetDefinitionsStorage(root);
         for (const auto &definition : definitions) {
             LayoutEntry entry;
             entry.kind = EntryKind::Widget;
             entry.widgetId = definition.id;
             entry.instanceId = definition.id;
             entry.enabled = barId == BarId::Top ? definition.defaultTopEnabled : definition.defaultBottomEnabled;
-            entry.expandHorizontally = entry.enabled && shouldDefaultToMaximumWidth(barId, definition.id);
+            entry.expandHorizontally = entry.enabled && shouldDefaultToMaximumWidth(root, barId, definition.id);
+            entry.expandVertically = entry.enabled && definition.expandVertically;
             entries.append(entry);
         }
         return entries;
@@ -234,9 +278,9 @@ namespace fairwindsk::ui::layout {
         }
 
         if (entries.isEmpty()) {
-            entries = defaultEntries(barId);
+            entries = defaultEntries(root, barId);
         } else {
-            ensureAllWidgetEntriesPresent(entries);
+            ensureAllWidgetEntriesPresent(entries, root);
         }
 
         return entries;

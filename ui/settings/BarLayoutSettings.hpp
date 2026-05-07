@@ -53,6 +53,7 @@ namespace fairwindsk::ui::settings {
         QListWidgetItem *createItem(const fairwindsk::ui::layout::LayoutEntry &entry);
         void refreshPreviewItem(QListWidgetItem *item) const;
         void refreshPreviewItems() const;
+        void refreshPaletteEntries(const QList<fairwindsk::ui::layout::LayoutEntry> &activeEntries = {});
         int minimumItemWidth(const fairwindsk::ui::layout::LayoutEntry &entry) const;
         QSize itemSizeHint(const fairwindsk::ui::layout::LayoutEntry &entry) const;
         void updateActions();

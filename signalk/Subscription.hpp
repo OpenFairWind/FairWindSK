@@ -20,7 +20,10 @@ namespace fairwindsk::signalk {
                      const QString &context,
                      const QString &path,
                      QObject *receiver,
-                     const char *member);
+                     const char *member,
+                     int period = 1000,
+                     const QString &policy = QStringLiteral("ideal"),
+                     int minPeriod = 200);
 
         Subscription(Subscription const &other);
 
@@ -35,6 +38,9 @@ namespace fairwindsk::signalk {
         QString getRequestedContext() const;
         QRegularExpression getRegex() const;
         QObject *getReceiver() const;
+        int getPeriod() const;
+        QString getPolicy() const;
+        int getMinPeriod() const;
         void retargetContext(const QString &context);
 
     private:
@@ -46,6 +52,9 @@ namespace fairwindsk::signalk {
         QString m_path;
         QString m_requestedContext;
         QString m_context;
+        int m_period = 1000;
+        QString m_policy = QStringLiteral("ideal");
+        int m_minPeriod = 200;
 
     };
 }

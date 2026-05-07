@@ -7,22 +7,24 @@
 
 #include <QIcon>
 #include <QHBoxLayout>
-#include <QJsonObject>
 #include <QPointer>
 #include <QHash>
-#include <QPointer>
 #include <QSet>
 #include <QVector>
 #include <QWidget>
 
 #include <FairWindSK.hpp>
 #include "ui_TopBar.h"
-#include "Units.hpp"
 #include "ui/layout/BarLayout.hpp"
+#include "ui/widgets/DataWidgetConfig.hpp"
 #include "ui/widgets/SignalKStatusIconsWidget.hpp"
 
 namespace Ui { class TopBar; }
 class QGraphicsEffect;
+
+namespace fairwindsk::ui::widgets {
+    class DataWidget;
+}
 
 namespace fairwindsk::ui::topbar {
 
@@ -49,22 +51,6 @@ namespace fairwindsk::ui::topbar {
         void toolbuttonUL_clicked();
         void toolbuttonUR_clicked();
 
-    public slots:
-
-        void updatePOS(const QJsonObject& update);
-        void updateCOG(const QJsonObject& update);
-        void updateSOG(const QJsonObject& update);
-        void updateHDG(const QJsonObject& update);
-        void updateSTW(const QJsonObject& update);
-        void updateDPT(const QJsonObject& update);
-        void updateWPT(const QJsonObject& update);
-        void updateBTW(const QJsonObject& update);
-        void updateDTG(const QJsonObject& update);
-        void updateTTG(const QJsonObject& update);
-        void updateETA(const QJsonObject& update);
-        void updateXTE(const QJsonObject& update);
-        void updateVMG(const QJsonObject& update);
-
         void updateTime();
 
         signals:
@@ -72,57 +58,14 @@ namespace fairwindsk::ui::topbar {
         void clickedToolbuttonUR();
 
     private:
-        struct MetricRenderTarget {
-            QWidget *container = nullptr;
-            QLabel *valueLabel = nullptr;
-            QLabel *unitLabel = nullptr;
-            QString itemId;
-        };
-
-        void renderNumericMetric(const MetricRenderTarget &target,
-                                 const QString &title,
-                                 const QString &path,
-                                 const QJsonObject &update,
-                                 const QString &sourceUnit,
-                                 const QString &targetUnit);
-        void renderAngularMetric(const MetricRenderTarget &target,
-                                 const QString &title,
-                                 const QString &path,
-                                 const QJsonObject &update);
-        void renderDateMetric(const MetricRenderTarget &target,
-                              const QString &title,
-                              const QJsonObject &update,
-                              const QString &format);
-        void renderWaypointMetric(const MetricRenderTarget &target,
-                                  const QString &title,
-                                  const QJsonObject &update);
-        void renderPositionMetric(const MetricRenderTarget &target,
-                                  const QString &title,
-                                  const QJsonObject &update);
-        void refreshCachedMetricPresentations();
-        void refreshCachedNumericMetric(const MetricRenderTarget &target,
-                                        const QString &title,
-                                        const QString &path,
-                                        const QJsonObject &update);
-        void refreshCachedDateMetric(const MetricRenderTarget &target,
-                                     const QString &title,
-                                     const QJsonObject &update);
-        void refreshCachedWaypointMetric(const MetricRenderTarget &target,
-                                         const QString &title,
-                                         const QJsonObject &update);
-        void refreshCachedPositionMetric(const MetricRenderTarget &target,
-                                         const QString &title,
-                                         const QJsonObject &update);
         void changeEvent(QEvent *event) override;
         void updateComfortViewIcon() const;
         void applyFramelessRuntimeChrome() const;
-        void updateDistanceLabels() const;
-        void updateSpeedLabels() const;
-        void refreshMetricLabelWidths() const;
         void resetCurrentAppPresentation() const;
         bool isLayoutWidgetActive(const QString &itemId) const;
         void rebuildLayout();
         QWidget *createContextWidget();
+        QWidget *createDataWidget(const fairwindsk::ui::widgets::DataWidgetDefinition &definition);
         QWidget *createSeparatorWidget();
         void clearConfiguredLayout();
         void applyEntrySizing(const fairwindsk::ui::layout::LayoutEntry &entry,
@@ -135,37 +78,15 @@ namespace fairwindsk::ui::topbar {
         Ui::TopBar *ui;
         QPointer<AppItem> m_currentApp;
         widgets::SignalKStatusIconsWidget *m_signalKStatusIcons = nullptr;
-        Units *m_units = nullptr;
         QTimer *m_timer = nullptr;
         QWidget *m_contextWidget = nullptr;
         QHBoxLayout *m_contextLayout = nullptr;
+        QHash<QString, QPointer<fairwindsk::ui::widgets::DataWidget>> m_dataWidgets;
         QVector<QPointer<QWidget>> m_dynamicLayoutWidgets;
-        QString m_pathCOG;
-        QString m_pathSOG;
-        QString m_pathHDG;
-        QString m_pathSTW;
-        QString m_pathDPT;
-        QString m_pathBTW;
-        QString m_pathDTG;
-        QString m_pathXTE;
-        QString m_pathVMG;
         QHash<QString, QSizePolicy> m_baseSizePolicies;
         QHash<QWidget *, QPointer<QGraphicsEffect>> m_layoutHintEffects;
         QSet<QString> m_activeLayoutWidgetIds;
         bool m_layoutEditHighlightEnabled = false;
-        QJsonObject m_lastPosUpdate;
-        QJsonObject m_lastCogUpdate;
-        QJsonObject m_lastSogUpdate;
-        QJsonObject m_lastHdgUpdate;
-        QJsonObject m_lastStwUpdate;
-        QJsonObject m_lastDptUpdate;
-        QJsonObject m_lastWptUpdate;
-        QJsonObject m_lastBtwUpdate;
-        QJsonObject m_lastDtgUpdate;
-        QJsonObject m_lastTtgUpdate;
-        QJsonObject m_lastEtaUpdate;
-        QJsonObject m_lastXteUpdate;
-        QJsonObject m_lastVmgUpdate;
         inline static TopBar *s_instance = nullptr;
     };
 }
