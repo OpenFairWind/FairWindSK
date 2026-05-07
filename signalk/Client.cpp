@@ -1720,12 +1720,24 @@ namespace fairwindsk::signalk {
             connect(receiver, &QObject::destroyed, this, &Client::unsubscribe, Qt::UniqueConnection);
         }
 
-        auto result = signalkGet(contextEx + "." + path);
+        // REST returns {"value": ..., "source": {...}, "timestamp": "..."}; wrap it in delta
+        // format so callers that pass the result directly to update slots get data they can read
+        const QJsonObject snapshot = signalkGet(contextEx + "." + path);
+        if (!snapshot.isEmpty()) {
+            const QJsonValue snapshotValue = snapshot.contains(QStringLiteral("value"))
+                ? snapshot.value(QStringLiteral("value"))
+                : QJsonValue(snapshot);
+            const QJsonObject result = buildDeltaUpdate(contextEx, path, snapshotValue);
+            if (m_Debug) {
+                qDebug() << "subscribe:" << message << "snapshot value:" << snapshotValue;
+            }
+            return result;
+        }
 
         if (m_Debug) {
-            qDebug() << "subscribe: " << message << " result: " << result;
+            qDebug() << "subscribe:" << message << "no snapshot";
         }
-        return result;
+        return {};
     }
 
     void Client::subscribeStream(const QString& context, const QString& path, QObject *receiver, const char *member, int period, const QString& policy, int minPeriod) {
