@@ -311,6 +311,13 @@ namespace fairwindsk::ui::widgets {
     }
 
     void DataWidget::applyComfortChrome() {
+        // setStyleSheet() fires StyleChange/FontChange/PaletteChange events which
+        // would recurse back here via changeEvent(); skip the re-entrant call.
+        if (m_applyingChrome) {
+            return;
+        }
+        m_applyingChrome = true;
+
         auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
         const auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
         const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
@@ -341,6 +348,7 @@ namespace fairwindsk::ui::widgets {
         }
         updateIcon();
         renderCurrentUpdate();
+        m_applyingChrome = false;
     }
 
     void DataWidget::changeEvent(QEvent *event) {

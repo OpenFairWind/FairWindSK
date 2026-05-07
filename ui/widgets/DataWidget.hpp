@@ -56,6 +56,9 @@ namespace fairwindsk::ui::widgets {
         QLabel *m_valueLabel = nullptr;
         QLabel *m_unitLabel = nullptr;
         QProgressBar *m_gauge = nullptr;
+        // Guards against re-entrant calls: setStyleSheet() triggers changeEvent()
+        // which would call applyComfortChrome() again causing a stack overflow.
+        bool m_applyingChrome = false;
     };
 }
 
