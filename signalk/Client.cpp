@@ -1010,7 +1010,9 @@ namespace fairwindsk::signalk {
         }
 
         const bool recoveredFromDisconnect = m_reconnectRecoveryPending;
-        resubscribeAll(recoveredFromDisconnect);
+        // Always hydrate REST snapshots on (re)connect so data widgets populate immediately;
+        // the recoveredFromDisconnect flag is kept separate to control app-reload behaviour.
+        resubscribeAll(true);
         m_hadStreamConnection = true;
         m_reconnectRecoveryPending = false;
         emit serverStateResynchronized(recoveredFromDisconnect);

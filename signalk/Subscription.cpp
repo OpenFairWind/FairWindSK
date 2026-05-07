@@ -18,8 +18,21 @@ namespace fairwindsk::signalk {
         this->m_receiver = receiver;
         m_memberName = QString(member);
 
+        // Strip the leading Qt SLOT/SIGNAL type prefix digit (e.g. "1") and any
+        // class-path prefix (e.g. "fairwindsk::ui::topbar::TopBar::") so only the
+        // bare method name (optionally with its parameter list) remains.
         int pos = m_memberName.lastIndexOf("::");
         m_memberName = m_memberName.right(m_memberName.length() - pos - 2);
+
+        // When the SLOT() macro is used with a fully-qualified class name but without
+        // parameter types (e.g. SLOT(Foo::Bar::updateSOG)), the result after stripping
+        // is just "updateSOG" with no parentheses.  Qt's invokeMethod requires the full
+        // normalised signature, so supply the known parameter type.  All subscription
+        // slots in this codebase accept a single QJsonObject argument.
+        if (!m_memberName.contains(QLatin1Char('('))) {
+            m_memberName += QStringLiteral("(QJsonObject)");
+        }
+
         rebuildRegularExpression();
     }
 
