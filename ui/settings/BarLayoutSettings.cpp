@@ -250,7 +250,7 @@ namespace fairwindsk::ui::settings {
         const QSignalBlocker blocker(m_listWidget);
         const auto entry = entryForItem(item);
         item->setText(entry.showText ? barsettings::previewEntryText(entry) : QString());
-        item->setIcon(WidgetPalette::entryIcon(entry));
+        item->setIcon(entry.showIcon ? WidgetPalette::entryIcon(entry) : QIcon());
         item->setTextAlignment(Qt::AlignCenter);
         item->setSizeHint(itemSizeHint(entry));
     }
@@ -284,7 +284,7 @@ namespace fairwindsk::ui::settings {
         stretchEntry.expandHorizontally = true;
         paletteEntries.append(stretchEntry);
 
-        const auto definitions = layout::widgetDefinitions(m_settings->getConfiguration()->getRoot());
+        const auto definitions = layout::widgetDefinitions(m_settings->getConfiguration()->getRoot(), m_barId);
         for (const auto &definition : definitions) {
             LayoutEntry entry;
             entry.kind = EntryKind::Widget;
@@ -373,7 +373,7 @@ namespace fairwindsk::ui::settings {
         }
 
         QList<LayoutEntry> entries;
-        entries.reserve(m_listWidget->count() + layout::widgetDefinitions(m_settings->getConfiguration()->getRoot()).size());
+        entries.reserve(m_listWidget->count() + layout::widgetDefinitions(m_settings->getConfiguration()->getRoot(), m_barId).size());
         QStringList enabledWidgetIds;
         for (int index = 0; index < m_listWidget->count(); ++index) {
             auto *item = m_listWidget->item(index);
@@ -387,7 +387,7 @@ namespace fairwindsk::ui::settings {
             }
         }
 
-        const auto definitions = layout::widgetDefinitions(m_settings->getConfiguration()->getRoot());
+        const auto definitions = layout::widgetDefinitions(m_settings->getConfiguration()->getRoot(), m_barId);
         for (const auto &definition : definitions) {
             if (enabledWidgetIds.contains(definition.id)) {
                 continue;
@@ -408,7 +408,7 @@ namespace fairwindsk::ui::settings {
 
         const auto otherBarId = m_barId == BarId::Top ? BarId::Bottom : BarId::Top;
         for (const auto &entry : entries) {
-            if (entry.kind == EntryKind::Widget && entry.enabled) {
+            if (entry.kind == EntryKind::Widget && entry.enabled && !isDataWidgetEntry(entry)) {
                 layout::removeWidgetFromBar(root, otherBarId, entry.widgetId);
             }
         }
@@ -653,7 +653,7 @@ namespace fairwindsk::ui::settings {
         layout::setEntriesForBar(root, m_barId, defaults);
         const auto otherBarId = m_barId == BarId::Top ? BarId::Bottom : BarId::Top;
         for (const auto &entry : defaults) {
-            if (entry.kind == EntryKind::Widget && entry.enabled) {
+            if (entry.kind == EntryKind::Widget && entry.enabled && !isDataWidgetEntry(entry)) {
                 layout::removeWidgetFromBar(root, otherBarId, entry.widgetId);
             }
         }

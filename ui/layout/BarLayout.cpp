@@ -88,6 +88,36 @@ namespace fairwindsk::ui::layout {
             return index;
         }
 
+        bool fixedWidgetAvailableOnBar(const BarId barId, const QString &widgetId) {
+            if (barId == BarId::Top) {
+                return widgetId == QStringLiteral("current_context") ||
+                       widgetId == QStringLiteral("clock_icons");
+            }
+
+            return widgetId == QStringLiteral("open_apps") ||
+                   widgetId == QStringLiteral("mydata") ||
+                   widgetId == QStringLiteral("pob") ||
+                   widgetId == QStringLiteral("autopilot") ||
+                   widgetId == QStringLiteral("apps") ||
+                   widgetId == QStringLiteral("anchor") ||
+                   widgetId == QStringLiteral("alarms") ||
+                   widgetId == QStringLiteral("settings") ||
+                   widgetId == QStringLiteral("signalk_status");
+        }
+
+        bool widgetAvailableOnBarInternal(const nlohmann::json &root,
+                                          const BarId barId,
+                                          const QString &widgetId) {
+            if (widgetId.trimmed().isEmpty()) {
+                return false;
+            }
+            if (fairwindsk::ui::widgets::isDataWidgetId(root, widgetId)) {
+                return true;
+            }
+
+            return fixedWidgetAvailableOnBar(barId, widgetId);
+        }
+
         QString configKeyForBar(const BarId barId) {
             return barId == BarId::Top ? QStringLiteral("top") : QStringLiteral("bottom");
         }
@@ -197,9 +227,32 @@ namespace fairwindsk::ui::layout {
             entries = normalized;
         }
 
-        void ensureAllWidgetEntriesPresent(QList<LayoutEntry> &entries, const nlohmann::json &root) {
+        void removeUnsupportedWidgetEntries(QList<LayoutEntry> &entries,
+                                            const nlohmann::json &root,
+                                            const BarId barId) {
+            QList<LayoutEntry> normalized;
+            normalized.reserve(entries.size());
+
+            for (const auto &entry : entries) {
+                if (entry.kind == EntryKind::Widget &&
+                    !widgetAvailableOnBarInternal(root, barId, entry.widgetId)) {
+                    continue;
+                }
+                normalized.append(entry);
+            }
+
+            entries = normalized;
+        }
+
+        void ensureAllWidgetEntriesPresent(QList<LayoutEntry> &entries,
+                                           const nlohmann::json &root,
+                                           const BarId barId) {
             const auto definitions = widgetDefinitionsStorage(root);
             for (const auto &definition : definitions) {
+                if (!widgetAvailableOnBarInternal(root, barId, definition.id)) {
+                    continue;
+                }
+
                 const bool present = std::any_of(entries.cbegin(), entries.cend(), [&definition](const LayoutEntry &entry) {
                     return entry.kind == EntryKind::Widget && entry.widgetId == definition.id;
                 });
@@ -209,6 +262,8 @@ namespace fairwindsk::ui::layout {
                     entry.widgetId = definition.id;
                     entry.instanceId = definition.id;
                     entry.enabled = false;
+                    entry.expandHorizontally = shouldDefaultToMaximumWidth(root, barId, definition.id);
+                    entry.expandVertically = definition.expandVertically;
                     entry.showIcon = !definition.dataWidget;
                     entries.append(entry);
                 }
@@ -222,6 +277,26 @@ namespace fairwindsk::ui::layout {
 
     QList<WidgetDefinition> widgetDefinitions(const nlohmann::json &root) {
         return widgetDefinitionsStorage(root);
+    }
+
+    QList<WidgetDefinition> widgetDefinitions(const nlohmann::json &root, const BarId barId) {
+        QList<WidgetDefinition> definitions;
+        const auto allDefinitions = widgetDefinitionsStorage(root);
+        definitions.reserve(allDefinitions.size());
+
+        for (const auto &definition : allDefinitions) {
+            if (widgetAvailableOnBarInternal(root, barId, definition.id)) {
+                definitions.append(definition);
+            }
+        }
+
+        return definitions;
+    }
+
+    bool widgetAvailableOnBar(const nlohmann::json &root,
+                              const BarId barId,
+                              const QString &widgetId) {
+        return widgetAvailableOnBarInternal(root, barId, widgetId);
     }
 
     QString barLabel(const BarId barId) {
@@ -284,7 +359,7 @@ namespace fairwindsk::ui::layout {
 
     QList<LayoutEntry> defaultEntries(const nlohmann::json &root, const BarId barId) {
         QList<LayoutEntry> entries;
-        const auto definitions = widgetDefinitionsStorage(root);
+        const auto definitions = widgetDefinitions(root, barId);
         for (const auto &definition : definitions) {
             LayoutEntry entry;
             entry.kind = EntryKind::Widget;
@@ -318,7 +393,8 @@ namespace fairwindsk::ui::layout {
             entries = defaultEntries(root, barId);
         } else {
             removeDuplicateWidgetEntries(entries);
-            ensureAllWidgetEntriesPresent(entries, root);
+            removeUnsupportedWidgetEntries(entries, root, barId);
+            ensureAllWidgetEntriesPresent(entries, root, barId);
         }
 
         return entries;
@@ -329,6 +405,9 @@ namespace fairwindsk::ui::layout {
         layoutRoot[configKeyForBar(barId).toStdString()] = nlohmann::json::array();
         for (const auto &entry : entries) {
             if (entry.kind == EntryKind::Widget && entry.widgetId.isEmpty()) {
+                continue;
+            }
+            if (entry.kind == EntryKind::Widget && !widgetAvailableOnBarInternal(root, barId, entry.widgetId)) {
                 continue;
             }
             layoutRoot[configKeyForBar(barId).toStdString()].push_back(toJson(entry));

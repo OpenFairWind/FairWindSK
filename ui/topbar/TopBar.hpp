@@ -9,7 +9,6 @@
 #include <QHBoxLayout>
 #include <QPointer>
 #include <QHash>
-#include <QSet>
 #include <QVector>
 #include <QWidget>
 
@@ -62,17 +61,10 @@ namespace fairwindsk::ui::topbar {
         void updateComfortViewIcon() const;
         void applyFramelessRuntimeChrome() const;
         void resetCurrentAppPresentation() const;
-        bool isLayoutWidgetActive(const QString &itemId) const;
         void rebuildLayout();
         QWidget *createContextWidget();
-        QWidget *createDataWidget(const fairwindsk::ui::widgets::DataWidgetDefinition &definition,
-                                  const fairwindsk::ui::layout::LayoutEntry &entry);
-        QWidget *createSeparatorWidget();
-        void clearConfiguredLayout();
-        void applyEntrySizing(const fairwindsk::ui::layout::LayoutEntry &entry,
-                              const QString &itemId,
-                              QWidget *widget,
-                              QHBoxLayout *layout);
+        void applyEntryPresentation(const fairwindsk::ui::layout::LayoutEntry &entry,
+                                    QWidget *widget) const;
         void clearLayoutEditHints();
         void applyLayoutEditHints(const QList<fairwindsk::ui::layout::LayoutEntry> &entries);
 
@@ -86,7 +78,6 @@ namespace fairwindsk::ui::topbar {
         QVector<QPointer<QWidget>> m_dynamicLayoutWidgets;
         QHash<QString, QSizePolicy> m_baseSizePolicies;
         QHash<QWidget *, QPointer<QGraphicsEffect>> m_layoutHintEffects;
-        QSet<QString> m_activeLayoutWidgetIds;
         bool m_layoutEditHighlightEnabled = false;
         inline static TopBar *s_instance = nullptr;
     };

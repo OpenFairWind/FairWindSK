@@ -42,6 +42,8 @@ namespace fairwindsk::ui::layout {
 
     QList<WidgetDefinition> widgetDefinitions();
     QList<WidgetDefinition> widgetDefinitions(const nlohmann::json &root);
+    QList<WidgetDefinition> widgetDefinitions(const nlohmann::json &root, BarId barId);
+    bool widgetAvailableOnBar(const nlohmann::json &root, BarId barId, const QString &widgetId);
     QString barLabel(BarId barId);
     QString barConfigKey(BarId barId);
     QString entryLabel(const LayoutEntry &entry);

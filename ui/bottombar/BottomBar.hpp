@@ -115,14 +115,9 @@ namespace fairwindsk::ui::bottombar {
         void updateTransientPanelHeight(QWidget *panel) const;
         void updateHealthChrome();
         void rebuildLayout();
-        QWidget *createDataWidget(const fairwindsk::ui::widgets::DataWidgetDefinition &definition,
-                                  const fairwindsk::ui::layout::LayoutEntry &entry);
-        QWidget *createSeparatorWidget();
-        void clearConfiguredLayout();
-        void applyEntrySizing(const fairwindsk::ui::layout::LayoutEntry &entry,
-                              const QString &itemId,
-                              QWidget *widget,
-                              QHBoxLayout *layout);
+        void applyEntryPresentation(const fairwindsk::ui::layout::LayoutEntry &entry,
+                                    QWidget *widget) const;
+        void applyConfiguredNavigationButtonPresentation() const;
         void clearLayoutEditHints();
         void applyLayoutEditHints(const QList<fairwindsk::ui::layout::LayoutEntry> &entries);
 

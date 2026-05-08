@@ -247,6 +247,7 @@ set(FAIRWINDSK_SOURCES
         signalk/Client.cpp signalk/Client.hpp
         runtime/DiagnosticsSupport.cpp runtime/DiagnosticsSupport.hpp
         ui/layout/BarLayout.cpp ui/layout/BarLayout.hpp
+        ui/layout/BarRuntime.cpp ui/layout/BarRuntime.hpp
         ui/settings/Settings.cpp ui/settings/Settings.hpp ui/settings/Settings.ui
         ui/settings/BarLayoutSettings.cpp ui/settings/BarLayoutSettings.hpp
         ui/settings/DataWidgets.cpp ui/settings/DataWidgets.hpp

@@ -97,6 +97,20 @@ namespace fairwindsk::ui::widgets {
         ui = nullptr;
     }
 
+    void SignalKServerBox::setDisplayOptions(const bool showText) {
+        if (!ui) {
+            return;
+        }
+
+        if (ui->labelStatus) {
+            ui->labelStatus->setVisible(showText);
+        }
+        if (ui->plainTextEditMessage) {
+            ui->plainTextEditMessage->setVisible(showText);
+        }
+        updateGeometry();
+    }
+
     void SignalKServerBox::onServerHealthChanged(const bool healthy, const QString &statusText) {
         Q_UNUSED(healthy)
         m_statusText = statusText.trimmed();

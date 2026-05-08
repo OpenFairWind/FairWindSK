@@ -11,10 +11,8 @@
 #include <QToolButton>
 #include <QAbstractButton>
 #include <QEasingCurve>
-#include <QFrame>
 #include <QScroller>
 #include <QScrollerProperties>
-#include <QLayoutItem>
 #include <QGraphicsDropShadowEffect>
 #include <QVBoxLayout>
 #include <QResizeEvent>
@@ -26,7 +24,7 @@
 #include "runtime/DiagnosticsSupport.hpp"
 #include "ui/IconUtils.hpp"
 #include "ui/layout/BarLayout.hpp"
-#include "ui/topbar/TopBar.hpp"
+#include "ui/layout/BarRuntime.hpp"
 #include "ui/widgets/DataWidget.hpp"
 #include "ui/widgets/DataWidgetConfig.hpp"
 
@@ -39,55 +37,6 @@ namespace fairwindsk::ui::bottombar {
 
     BottomBar *BottomBar::instance() {
         return s_instance;
-    }
-
-    QWidget *BottomBar::createSeparatorWidget() {
-        auto *line = new QFrame(this);
-        line->setFrameShape(QFrame::VLine);
-        line->setFrameShadow(QFrame::Plain);
-        line->setLineWidth(1);
-        m_dynamicLayoutWidgets.append(line);
-        return line;
-    }
-
-    QWidget *BottomBar::createDataWidget(const fairwindsk::ui::widgets::DataWidgetDefinition &definition,
-                                         const fairwindsk::ui::layout::LayoutEntry &entry) {
-        if (definition.id.trimmed().isEmpty()) {
-            return nullptr;
-        }
-
-        auto *widget = new fairwindsk::ui::widgets::DataWidget(definition, this);
-        widget->setDisplayOptions(entry.showIcon, entry.showText, entry.showUnits, entry.showTrend);
-        m_dataWidgets.insert(definition.id, widget);
-        return widget;
-    }
-
-    void BottomBar::clearConfiguredLayout() {
-        if (!ui || !ui->horizontalLayoutButtons) {
-            return;
-        }
-
-        while (ui->horizontalLayoutButtons->count() > 0) {
-            auto *item = ui->horizontalLayoutButtons->takeAt(0);
-            if (auto *widget = item->widget()) {
-                widget->hide();
-            }
-            delete item;
-        }
-
-        for (auto &widget : m_dynamicLayoutWidgets) {
-            if (widget) {
-                widget->deleteLater();
-            }
-        }
-        m_dynamicLayoutWidgets.clear();
-
-        for (auto &widget : m_dataWidgets) {
-            if (widget) {
-                widget->deleteLater();
-            }
-        }
-        m_dataWidgets.clear();
     }
 
     QWidget *BottomBar::widgetForItemId(const QString &itemId) const {
@@ -122,31 +71,38 @@ namespace fairwindsk::ui::bottombar {
         return nullptr;
     }
 
-    void BottomBar::applyEntrySizing(const fairwindsk::ui::layout::LayoutEntry &entry,
-                                     const QString &itemId,
-                                     QWidget *widget,
-                                     QHBoxLayout *layout) {
-        if (!widget || !layout) {
+    void BottomBar::applyEntryPresentation(const fairwindsk::ui::layout::LayoutEntry &entry,
+                                           QWidget *widget) const {
+        if (!widget) {
             return;
         }
 
-        if (!m_baseSizePolicies.contains(itemId)) {
-            m_baseSizePolicies.insert(itemId, widget->sizePolicy());
+        if (auto *button = qobject_cast<QToolButton *>(widget)) {
+            fairwindsk::ui::layout::runtime::applyToolButtonDisplayOptions(button, entry);
         }
 
-        const QSizePolicy basePolicy = m_baseSizePolicies.value(itemId, widget->sizePolicy());
-        QSizePolicy effectivePolicy = basePolicy;
-        if (entry.expandHorizontally) {
-            effectivePolicy.setHorizontalPolicy(QSizePolicy::Expanding);
+        if (entry.widgetId == QStringLiteral("signalk_status") && m_signalKServerBox) {
+            m_signalKServerBox->setDisplayOptions(entry.showText);
         }
-        if (entry.expandVertically) {
-            effectivePolicy.setVerticalPolicy(QSizePolicy::Expanding);
-        }
-        widget->setSizePolicy(effectivePolicy);
-        widget->setVisible(true);
+    }
 
-        const Qt::Alignment alignment = entry.expandVertically ? Qt::Alignment() : Qt::AlignVCenter;
-        layout->addWidget(widget, entry.expandHorizontally ? 1 : 0, alignment);
+    void BottomBar::applyConfiguredNavigationButtonPresentation() const {
+        auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+        auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        if (!configuration) {
+            return;
+        }
+
+        const auto entries = fairwindsk::ui::layout::entriesForBar(
+            configuration->getRoot(),
+            fairwindsk::ui::layout::BarId::Bottom);
+        for (const auto &entry : entries) {
+            if (!entry.enabled || entry.kind != fairwindsk::ui::layout::EntryKind::Widget) {
+                continue;
+            }
+
+            applyEntryPresentation(entry, widgetForItemId(entry.widgetId));
+        }
     }
 
     void BottomBar::rebuildLayout() {
@@ -154,7 +110,10 @@ namespace fairwindsk::ui::bottombar {
             return;
         }
 
-        clearConfiguredLayout();
+        fairwindsk::ui::layout::runtime::clearConfiguredLayout(
+            ui->horizontalLayoutButtons,
+            m_dynamicLayoutWidgets,
+            m_dataWidgets);
 
         const auto configRoot = FairWindSK::getInstance()->getConfiguration()->getRoot();
         const auto entries = fairwindsk::ui::layout::entriesForBar(
@@ -166,22 +125,16 @@ namespace fairwindsk::ui::bottombar {
             }
 
             if (entry.kind == fairwindsk::ui::layout::EntryKind::Separator) {
-                auto *separator = createSeparatorWidget();
-                QSizePolicy policy(QSizePolicy::Fixed,
-                                   entry.expandVertically ? QSizePolicy::Expanding : QSizePolicy::Fixed);
-                separator->setSizePolicy(policy);
-                ui->horizontalLayoutButtons->addWidget(separator,
-                                                       entry.expandHorizontally ? 1 : 0,
-                                                       entry.expandVertically ? Qt::Alignment() : Qt::AlignVCenter);
+                fairwindsk::ui::layout::runtime::addSeparatorToLayout(
+                    ui->horizontalLayoutButtons,
+                    this,
+                    m_dynamicLayoutWidgets,
+                    entry);
                 continue;
             }
 
             if (entry.kind == fairwindsk::ui::layout::EntryKind::Stretch) {
-                ui->horizontalLayoutButtons->addSpacerItem(
-                    new QSpacerItem(0,
-                                    0,
-                                    entry.expandHorizontally ? QSizePolicy::Expanding : QSizePolicy::Preferred,
-                                    entry.expandVertically ? QSizePolicy::Expanding : QSizePolicy::Minimum));
+                fairwindsk::ui::layout::runtime::addStretchToLayout(ui->horizontalLayoutButtons, entry);
                 continue;
             }
 
@@ -189,16 +142,23 @@ namespace fairwindsk::ui::bottombar {
             QWidget *widget = widgetForItemId(entry.widgetId);
             if (!widget) {
                 const auto definition = fairwindsk::ui::widgets::dataWidgetDefinition(configRoot, entry.widgetId);
-                widget = createDataWidget(definition, entry);
-            }
-            if (!widget && fairwindsk::ui::topbar::TopBar::instance()) {
-                widget = fairwindsk::ui::topbar::TopBar::instance()->widgetForItemId(entry.widgetId);
+                widget = fairwindsk::ui::layout::runtime::createDataWidget(
+                    definition,
+                    entry,
+                    this,
+                    m_dataWidgets);
             }
             if (!widget) {
                 continue;
             }
 
-            applyEntrySizing(entry, itemId, widget, ui->horizontalLayoutButtons);
+            applyEntryPresentation(entry, widget);
+            fairwindsk::ui::layout::runtime::addWidgetToLayout(
+                ui->horizontalLayoutButtons,
+                entry,
+                itemId,
+                widget,
+                m_baseSizePolicies);
         }
 
         applyLayoutEditHints(entries);
@@ -237,7 +197,7 @@ namespace fairwindsk::ui::bottombar {
 
             QWidget *widget = widgetForItemId(entry.widgetId);
             if (!widget) {
-                widget = m_dataWidgets.value(entry.widgetId);
+                widget = m_dataWidgets.value(entry.widgetId).data();
             }
             if (!widget) {
                 continue;
@@ -560,6 +520,7 @@ namespace fairwindsk::ui::bottombar {
                     ? tr("Settings")
                     : tr("Settings\n%1").arg(m_runtimeHealthSummary.trimmed()));
         }
+        applyConfiguredNavigationButtonPresentation();
     }
 
     void BottomBar::onRuntimeHealthChanged(const fairwindsk::FairWindSK::RuntimeHealthState state,

@@ -5,19 +5,17 @@
 #include <algorithm>
 
 #include <QTimer>
-#include <QFrame>
 #include <QHBoxLayout>
-#include <QLayoutItem>
 #include <QToolButton>
 #include <QString>
 #include <QGraphicsDropShadowEffect>
 #include <QPixmap>
 
 #include "TopBar.hpp"
-#include "../bottombar/BottomBar.hpp"
 #include "../web/Web.hpp"
 #include "ui/IconUtils.hpp"
 #include "ui/layout/BarLayout.hpp"
+#include "ui/layout/BarRuntime.hpp"
 #include "ui/widgets/DataWidget.hpp"
 #include "ui/widgets/DataWidgetConfig.hpp"
 
@@ -71,32 +69,6 @@ namespace fairwindsk::ui::topbar {
         }
     }
 
-    void TopBar::applyEntrySizing(const fairwindsk::ui::layout::LayoutEntry &entry,
-                                  const QString &itemId,
-                                  QWidget *widget,
-                                  QHBoxLayout *layout) {
-        if (!widget || !layout) {
-            return;
-        }
-
-        if (!m_baseSizePolicies.contains(itemId)) {
-            m_baseSizePolicies.insert(itemId, widget->sizePolicy());
-        }
-
-        const QSizePolicy basePolicy = m_baseSizePolicies.value(itemId, widget->sizePolicy());
-        QSizePolicy effectivePolicy = basePolicy;
-        if (entry.expandHorizontally) {
-            effectivePolicy.setHorizontalPolicy(QSizePolicy::Expanding);
-        }
-        if (entry.expandVertically) {
-            effectivePolicy.setVerticalPolicy(QSizePolicy::Expanding);
-        }
-        widget->setSizePolicy(effectivePolicy);
-        widget->setVisible(true);
-        const Qt::Alignment alignment = entry.expandVertically ? Qt::Alignment() : Qt::AlignVCenter;
-        layout->addWidget(widget, entry.expandHorizontally ? 1 : 0, alignment);
-    }
-
     TopBar *TopBar::instance() {
         return s_instance;
     }
@@ -111,55 +83,6 @@ namespace fairwindsk::ui::topbar {
         return container;
     }
 
-    QWidget *TopBar::createSeparatorWidget() {
-        auto *line = new QFrame(this);
-        line->setFrameShape(QFrame::VLine);
-        line->setFrameShadow(QFrame::Plain);
-        line->setLineWidth(1);
-        m_dynamicLayoutWidgets.append(line);
-        return line;
-    }
-
-    QWidget *TopBar::createDataWidget(const fairwindsk::ui::widgets::DataWidgetDefinition &definition,
-                                      const fairwindsk::ui::layout::LayoutEntry &entry) {
-        if (definition.id.trimmed().isEmpty()) {
-            return nullptr;
-        }
-
-        auto *widget = new fairwindsk::ui::widgets::DataWidget(definition, this);
-        widget->setDisplayOptions(entry.showIcon, entry.showText, entry.showUnits, entry.showTrend);
-        m_dataWidgets.insert(definition.id, widget);
-        return widget;
-    }
-
-    void TopBar::clearConfiguredLayout() {
-        if (!ui || !ui->horizontalLayout) {
-            return;
-        }
-
-        while (ui->horizontalLayout->count() > 0) {
-            auto *item = ui->horizontalLayout->takeAt(0);
-            if (auto *widget = item->widget()) {
-                widget->hide();
-            }
-            delete item;
-        }
-
-        for (auto &widget : m_dynamicLayoutWidgets) {
-            if (widget) {
-                widget->deleteLater();
-            }
-        }
-        m_dynamicLayoutWidgets.clear();
-
-        for (auto &widget : m_dataWidgets) {
-            if (widget) {
-                widget->deleteLater();
-            }
-        }
-        m_dataWidgets.clear();
-    }
-
     QWidget *TopBar::widgetForItemId(const QString &itemId) const {
         if (itemId == QStringLiteral("current_context")) {
             return m_contextWidget;
@@ -171,33 +94,28 @@ namespace fairwindsk::ui::topbar {
         return nullptr;
     }
 
-    bool TopBar::isLayoutWidgetActive(const QString &itemId) const {
-        if (itemId.isEmpty() || m_activeLayoutWidgetIds.contains(itemId)) {
-            return true;
+    void TopBar::applyEntryPresentation(const fairwindsk::ui::layout::LayoutEntry &entry,
+                                        QWidget *widget) const {
+        Q_UNUSED(widget)
+
+        if (entry.widgetId == QStringLiteral("current_context")) {
+            if (ui->label_ApplicationName) {
+                ui->label_ApplicationName->setVisible(entry.showText);
+            }
+            return;
         }
 
-        auto *fairWindSK = FairWindSK::getInstance();
-        auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
-        if (!configuration) {
-            return false;
+        if (entry.widgetId == QStringLiteral("clock_icons")) {
+            if (ui->label_DateTime) {
+                ui->label_DateTime->setVisible(entry.showText);
+            }
+            if (ui->widget_SignalKStatusIcons) {
+                ui->widget_SignalKStatusIcons->setVisible(entry.showIcon);
+            }
+            if (ui->label_ComfortViewIcon) {
+                ui->label_ComfortViewIcon->setVisible(entry.showIcon);
+            }
         }
-
-        if (auto *bottomBar = fairwindsk::ui::bottombar::BottomBar::instance();
-            bottomBar && bottomBar->isTransientPanelVisible()) {
-            return false;
-        }
-
-        const auto bottomEntries = fairwindsk::ui::layout::entriesForBar(
-            configuration->getRoot(),
-            fairwindsk::ui::layout::BarId::Bottom);
-        return std::any_of(
-            bottomEntries.cbegin(),
-            bottomEntries.cend(),
-            [&itemId](const fairwindsk::ui::layout::LayoutEntry &entry) {
-                return entry.enabled &&
-                       entry.kind == fairwindsk::ui::layout::EntryKind::Widget &&
-                       entry.widgetId == itemId;
-            });
     }
 
     void TopBar::rebuildLayout() {
@@ -205,8 +123,10 @@ namespace fairwindsk::ui::topbar {
             return;
         }
 
-        clearConfiguredLayout();
-        m_activeLayoutWidgetIds.clear();
+        fairwindsk::ui::layout::runtime::clearConfiguredLayout(
+            ui->horizontalLayout,
+            m_dynamicLayoutWidgets,
+            m_dataWidgets);
         ui->toolButton_UL->setVisible(true);
         ui->horizontalLayout->addWidget(ui->toolButton_UL, 0, Qt::AlignVCenter);
 
@@ -220,22 +140,16 @@ namespace fairwindsk::ui::topbar {
             }
 
             if (entry.kind == fairwindsk::ui::layout::EntryKind::Separator) {
-                auto *separator = createSeparatorWidget();
-                QSizePolicy policy(QSizePolicy::Fixed,
-                                   entry.expandVertically ? QSizePolicy::Expanding : QSizePolicy::Fixed);
-                separator->setSizePolicy(policy);
-                ui->horizontalLayout->addWidget(separator,
-                                                entry.expandHorizontally ? 1 : 0,
-                                                entry.expandVertically ? Qt::Alignment() : Qt::AlignVCenter);
+                fairwindsk::ui::layout::runtime::addSeparatorToLayout(
+                    ui->horizontalLayout,
+                    this,
+                    m_dynamicLayoutWidgets,
+                    entry);
                 continue;
             }
 
             if (entry.kind == fairwindsk::ui::layout::EntryKind::Stretch) {
-                ui->horizontalLayout->addSpacerItem(
-                    new QSpacerItem(0,
-                                    0,
-                                    entry.expandHorizontally ? QSizePolicy::Expanding : QSizePolicy::Preferred,
-                                    entry.expandVertically ? QSizePolicy::Expanding : QSizePolicy::Minimum));
+                fairwindsk::ui::layout::runtime::addStretchToLayout(ui->horizontalLayout, entry);
                 continue;
             }
 
@@ -243,19 +157,23 @@ namespace fairwindsk::ui::topbar {
             QWidget *widget = widgetForItemId(entry.widgetId);
             if (!widget) {
                 const auto definition = fairwindsk::ui::widgets::dataWidgetDefinition(configRoot, entry.widgetId);
-                widget = createDataWidget(definition, entry);
-            }
-            if (!widget && fairwindsk::ui::bottombar::BottomBar::instance()) {
-                widget = fairwindsk::ui::bottombar::BottomBar::instance()->widgetForItemId(entry.widgetId);
+                widget = fairwindsk::ui::layout::runtime::createDataWidget(
+                    definition,
+                    entry,
+                    this,
+                    m_dataWidgets);
             }
             if (!widget) {
                 continue;
             }
 
-            if (entry.kind == fairwindsk::ui::layout::EntryKind::Widget) {
-                m_activeLayoutWidgetIds.insert(entry.widgetId);
-            }
-            applyEntrySizing(entry, itemId, widget, ui->horizontalLayout);
+            applyEntryPresentation(entry, widget);
+            fairwindsk::ui::layout::runtime::addWidgetToLayout(
+                ui->horizontalLayout,
+                entry,
+                itemId,
+                widget,
+                m_baseSizePolicies);
         }
 
         ui->toolButton_UR->setVisible(true);
@@ -301,7 +219,7 @@ namespace fairwindsk::ui::topbar {
 
             QWidget *widget = widgetForItemId(entry.widgetId);
             if (!widget) {
-                widget = m_dataWidgets.value(entry.widgetId);
+                widget = m_dataWidgets.value(entry.widgetId).data();
             }
             if (!widget) {
                 continue;

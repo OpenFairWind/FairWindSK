@@ -173,7 +173,7 @@ namespace fairwindsk::ui::settings {
                        Qt::ItemIsSelectable |
                        Qt::ItemIsDragEnabled |
                        Qt::ItemIsDropEnabled);
-        item->setIcon(WidgetPalette::entryIcon(entry));
+        item->setIcon(entry.showIcon ? WidgetPalette::entryIcon(entry) : QIcon());
         item->setTextAlignment(Qt::AlignCenter);
     }
 
