@@ -115,7 +115,8 @@ namespace fairwindsk::ui::bottombar {
         void updateTransientPanelHeight(QWidget *panel) const;
         void updateHealthChrome();
         void rebuildLayout();
-        QWidget *createDataWidget(const fairwindsk::ui::widgets::DataWidgetDefinition &definition);
+        QWidget *createDataWidget(const fairwindsk::ui::widgets::DataWidgetDefinition &definition,
+                                  const fairwindsk::ui::layout::LayoutEntry &entry);
         QWidget *createSeparatorWidget();
         void clearConfiguredLayout();
         void applyEntrySizing(const fairwindsk::ui::layout::LayoutEntry &entry,

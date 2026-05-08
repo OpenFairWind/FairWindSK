@@ -4,6 +4,7 @@
 
 #include <QObject>
 #include <QHash>
+#include <QSet>
 
 #include "FairWindSK.hpp"
 #include "ui/widgets/DataWidgetConfig.hpp"
@@ -133,6 +134,18 @@ namespace fairwindsk::ui::layout {
             if (jsonEntry.contains("expandVertically") && jsonEntry["expandVertically"].is_boolean()) {
                 entry.expandVertically = jsonEntry["expandVertically"].get<bool>();
             }
+            if (jsonEntry.contains("showIcon") && jsonEntry["showIcon"].is_boolean()) {
+                entry.showIcon = jsonEntry["showIcon"].get<bool>();
+            }
+            if (jsonEntry.contains("showText") && jsonEntry["showText"].is_boolean()) {
+                entry.showText = jsonEntry["showText"].get<bool>();
+            }
+            if (jsonEntry.contains("showUnits") && jsonEntry["showUnits"].is_boolean()) {
+                entry.showUnits = jsonEntry["showUnits"].get<bool>();
+            }
+            if (jsonEntry.contains("showTrend") && jsonEntry["showTrend"].is_boolean()) {
+                entry.showTrend = jsonEntry["showTrend"].get<bool>();
+            }
 
             if (entry.kind == EntryKind::Widget && entry.instanceId.isEmpty()) {
                 entry.instanceId = entry.widgetId;
@@ -159,7 +172,29 @@ namespace fairwindsk::ui::layout {
             }
             jsonEntry["expandHorizontally"] = entry.expandHorizontally;
             jsonEntry["expandVertically"] = entry.expandVertically;
+            jsonEntry["showIcon"] = entry.showIcon;
+            jsonEntry["showText"] = entry.showText;
+            jsonEntry["showUnits"] = entry.showUnits;
+            jsonEntry["showTrend"] = entry.showTrend;
             return jsonEntry;
+        }
+
+        void removeDuplicateWidgetEntries(QList<LayoutEntry> &entries) {
+            QSet<QString> seenWidgets;
+            QList<LayoutEntry> normalized;
+            normalized.reserve(entries.size());
+
+            for (const auto &entry : entries) {
+                if (entry.kind == EntryKind::Widget) {
+                    if (seenWidgets.contains(entry.widgetId)) {
+                        continue;
+                    }
+                    seenWidgets.insert(entry.widgetId);
+                }
+                normalized.append(entry);
+            }
+
+            entries = normalized;
         }
 
         void ensureAllWidgetEntriesPresent(QList<LayoutEntry> &entries, const nlohmann::json &root) {
@@ -280,6 +315,7 @@ namespace fairwindsk::ui::layout {
         if (entries.isEmpty()) {
             entries = defaultEntries(root, barId);
         } else {
+            removeDuplicateWidgetEntries(entries);
             ensureAllWidgetEntriesPresent(entries, root);
         }
 

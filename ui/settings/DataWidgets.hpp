@@ -6,7 +6,6 @@
 #include "Settings.hpp"
 #include "ui/widgets/DataWidgetConfig.hpp"
 
-class QCheckBox;
 class QLabel;
 class QLineEdit;
 class QListWidget;

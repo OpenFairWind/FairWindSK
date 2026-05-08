@@ -65,7 +65,8 @@ namespace fairwindsk::ui::topbar {
         bool isLayoutWidgetActive(const QString &itemId) const;
         void rebuildLayout();
         QWidget *createContextWidget();
-        QWidget *createDataWidget(const fairwindsk::ui::widgets::DataWidgetDefinition &definition);
+        QWidget *createDataWidget(const fairwindsk::ui::widgets::DataWidgetDefinition &definition,
+                                  const fairwindsk::ui::layout::LayoutEntry &entry);
         QWidget *createSeparatorWidget();
         void clearConfiguredLayout();
         void applyEntrySizing(const fairwindsk::ui::layout::LayoutEntry &entry,

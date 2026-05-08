@@ -4,6 +4,7 @@
 #include <QJsonObject>
 #include <QPointer>
 #include <QWidget>
+#include <limits>
 
 #include "DataWidgetConfig.hpp"
 
@@ -29,6 +30,7 @@ namespace fairwindsk::ui::widgets {
 
         QString widgetId() const;
         void setDefinition(const DataWidgetDefinition &definition);
+        void setDisplayOptions(bool showIcon, bool showText, bool showUnits, bool showTrend);
         QSize sizeHint() const override;
 
     public slots:
@@ -46,16 +48,26 @@ namespace fairwindsk::ui::widgets {
         QString formattedNumericValue(double value) const;
         QString unitLabel() const;
         void updateIcon();
+        void updateTrend(double value, bool hasValue);
+        QString trendText() const;
 
         DataWidgetDefinition m_definition;
         QJsonObject m_lastUpdate;
+        double m_lastTrendValue = std::numeric_limits<double>::quiet_NaN();
+        int m_trendDirection = 0;
         fairwindsk::Units *m_units = nullptr;
         QPointer<fairwindsk::signalk::Client> m_client;
         QLabel *m_iconLabel = nullptr;
         QLabel *m_titleLabel = nullptr;
         QLabel *m_valueLabel = nullptr;
         QLabel *m_unitLabel = nullptr;
+        QLabel *m_trendLabel = nullptr;
         QProgressBar *m_gauge = nullptr;
+        bool m_showIcon = true;
+        bool m_showText = true;
+        bool m_showUnits = true;
+        bool m_showTrend = false;
+        bool m_rendering = false;
         // Guards against re-entrant calls: setStyleSheet() triggers changeEvent()
         // which would call applyComfortChrome() again causing a stack overflow.
         bool m_applyingChrome = false;

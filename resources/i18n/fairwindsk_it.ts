@@ -4928,8 +4928,28 @@ Ultimo aggiornamento live %1</translation>
     </message>
     <message>
         <location filename="../../ui/settings/BarLayoutSettings.cpp" line="115"/>
-        <source>Tap a widget to edit it. Drag within the preview to reorder the bottom bar.</source>
-        <translation>Tocca un widget per modificarlo. Trascinalo nell&apos;anteprima per riordinare la barra inferiore.</translation>
+        <source>Tap a widget to edit it. Drag within the preview to reorder the %1.</source>
+        <translation>Tocca un widget per modificarlo. Trascinalo nell&apos;anteprima per riordinare %1.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="146"/>
+        <source>Icon</source>
+        <translation>Icona</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="147"/>
+        <source>Text</source>
+        <translation>Testo</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="148"/>
+        <source>Units</source>
+        <translation>Unità</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="149"/>
+        <source>Trend</source>
+        <translation>Tendenza</translation>
     </message>
     <message>
         <location filename="../../ui/settings/BarLayoutSettings.cpp" line="136"/>

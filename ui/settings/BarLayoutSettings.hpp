@@ -14,6 +14,11 @@ class QLabel;
 class QListWidgetItem;
 class QFrame;
 class QEvent;
+class QTimer;
+
+namespace fairwindsk::ui::widgets {
+    class TouchCheckBox;
+}
 
 namespace fairwindsk::ui::settings {
     class BarLayoutSettings : public QWidget {
@@ -43,6 +48,7 @@ namespace fairwindsk::ui::settings {
         void onRemoveSelected();
         void onResetDefaults();
         void onPreviewEdited();
+        void onDisplayOptionChanged();
 
     private:
         void buildUi();
@@ -57,6 +63,9 @@ namespace fairwindsk::ui::settings {
         int minimumItemWidth(const fairwindsk::ui::layout::LayoutEntry &entry) const;
         QSize itemSizeHint(const fairwindsk::ui::layout::LayoutEntry &entry) const;
         void updateActions();
+        void updateDisplayOptionControls();
+        bool isDataWidgetEntry(const fairwindsk::ui::layout::LayoutEntry &entry) const;
+        void scheduleRuntimeReconfigure();
         void appendPlaceholder(fairwindsk::ui::layout::EntryKind kind);
         void activateWidgetEntry(const QString &widgetId);
         void moveCurrentItem(int offset);
@@ -77,8 +86,13 @@ namespace fairwindsk::ui::settings {
         QToolButton *m_moveRightButton = nullptr;
         QToolButton *m_removeSelectedButton = nullptr;
         QToolButton *m_resetDefaultsButton = nullptr;
+        fairwindsk::ui::widgets::TouchCheckBox *m_showIconCheckBox = nullptr;
+        fairwindsk::ui::widgets::TouchCheckBox *m_showTextCheckBox = nullptr;
+        fairwindsk::ui::widgets::TouchCheckBox *m_showUnitsCheckBox = nullptr;
+        fairwindsk::ui::widgets::TouchCheckBox *m_showTrendCheckBox = nullptr;
         QLabel *m_paletteLabel = nullptr;
         WidgetPalette *m_paletteWidget = nullptr;
+        QTimer *m_reconfigureTimer = nullptr;
     };
 }
 

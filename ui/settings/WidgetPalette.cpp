@@ -243,6 +243,10 @@ namespace fairwindsk::ui::settings {
         payload.insert(QStringLiteral("instanceId"), entry.instanceId);
         payload.insert(QStringLiteral("expandHorizontally"), entry.expandHorizontally);
         payload.insert(QStringLiteral("expandVertically"), entry.expandVertically);
+        payload.insert(QStringLiteral("showIcon"), entry.showIcon);
+        payload.insert(QStringLiteral("showText"), entry.showText);
+        payload.insert(QStringLiteral("showUnits"), entry.showUnits);
+        payload.insert(QStringLiteral("showTrend"), entry.showTrend);
         return QJsonDocument(payload).toJson(QJsonDocument::Compact);
     }
 
@@ -259,6 +263,10 @@ namespace fairwindsk::ui::settings {
         entry.instanceId = object.value(QStringLiteral("instanceId")).toString();
         entry.expandHorizontally = object.value(QStringLiteral("expandHorizontally")).toBool();
         entry.expandVertically = object.value(QStringLiteral("expandVertically")).toBool();
+        entry.showIcon = !object.contains(QStringLiteral("showIcon")) || object.value(QStringLiteral("showIcon")).toBool();
+        entry.showText = !object.contains(QStringLiteral("showText")) || object.value(QStringLiteral("showText")).toBool();
+        entry.showUnits = !object.contains(QStringLiteral("showUnits")) || object.value(QStringLiteral("showUnits")).toBool();
+        entry.showTrend = object.value(QStringLiteral("showTrend")).toBool(false);
         return entry;
     }
 

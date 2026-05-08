@@ -15,7 +15,6 @@
 #include <QScrollArea>
 #include <QScroller>
 #include <QSignalBlocker>
-#include <QSplitter>
 #include <QToolButton>
 #include <QVBoxLayout>
 
@@ -72,22 +71,20 @@ namespace fairwindsk::ui::settings {
         toolbarLayout->addStretch(1);
         rootLayout->addLayout(toolbarLayout);
 
-        auto *splitter = new QSplitter(Qt::Horizontal, this);
-        splitter->setChildrenCollapsible(false);
-        splitter->setHandleWidth(16);
-        rootLayout->addWidget(splitter, 1);
-
-        m_listWidget = new QListWidget(splitter);
+        m_listWidget = new QListWidget(this);
         m_listWidget->setSelectionMode(QAbstractItemView::SingleSelection);
         m_listWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
         m_listWidget->setIconSize(QSize(40, 40));
-        m_listWidget->setMinimumWidth(250);
+        m_listWidget->setMinimumHeight(250);
+        m_listWidget->setMaximumHeight(330);
         m_listWidget->setUniformItemSizes(true);
         m_listWidget->setAlternatingRowColors(false);
+        m_listWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         QScroller::grabGesture(m_listWidget->viewport(), QScroller::TouchGesture);
         QScroller::grabGesture(m_listWidget->viewport(), QScroller::LeftMouseButtonGesture);
+        rootLayout->addWidget(m_listWidget);
 
-        auto *editorScrollArea = new QScrollArea(splitter);
+        auto *editorScrollArea = new QScrollArea(this);
         editorScrollArea->setWidgetResizable(true);
         editorScrollArea->setFrameShape(QFrame::NoFrame);
         editorScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -111,6 +108,8 @@ namespace fairwindsk::ui::settings {
         auto *identityFieldsLayout = new QFormLayout();
         identityFieldsLayout->setContentsMargins(0, 0, 0, 0);
         identityFieldsLayout->setSpacing(8);
+        identityFieldsLayout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
+        identityFieldsLayout->setLabelAlignment(Qt::AlignLeft | Qt::AlignVCenter);
         m_idValueLabel = new QLabel(editorWidget);
         m_idValueLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
         m_nameEdit = new QLineEdit(editorWidget);
@@ -123,6 +122,8 @@ namespace fairwindsk::ui::settings {
         auto *formLayout = new QFormLayout();
         formLayout->setContentsMargins(0, 0, 0, 0);
         formLayout->setSpacing(8);
+        formLayout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
+        formLayout->setLabelAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 
         auto *iconPathLayout = new QHBoxLayout();
         iconPathLayout->setContentsMargins(0, 0, 0, 0);
@@ -198,12 +199,7 @@ namespace fairwindsk::ui::settings {
         editorLayout->addLayout(formLayout);
         editorLayout->addStretch(1);
         editorScrollArea->setWidget(editorWidget);
-
-        splitter->addWidget(m_listWidget);
-        splitter->addWidget(editorScrollArea);
-        splitter->setStretchFactor(0, 0);
-        splitter->setStretchFactor(1, 1);
-        splitter->setSizes({280, 720});
+        rootLayout->addWidget(editorScrollArea, 1);
 
         const QList<QWidget *> controls = {
             m_nameEdit,

@@ -34,6 +34,10 @@ namespace fairwindsk::ui::layout {
         bool enabled = false;
         bool expandHorizontally = false;
         bool expandVertically = false;
+        bool showIcon = true;
+        bool showText = true;
+        bool showUnits = true;
+        bool showTrend = false;
     };
 
     QList<WidgetDefinition> widgetDefinitions();

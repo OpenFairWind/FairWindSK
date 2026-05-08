@@ -120,12 +120,14 @@ namespace fairwindsk::ui::topbar {
         return line;
     }
 
-    QWidget *TopBar::createDataWidget(const fairwindsk::ui::widgets::DataWidgetDefinition &definition) {
+    QWidget *TopBar::createDataWidget(const fairwindsk::ui::widgets::DataWidgetDefinition &definition,
+                                      const fairwindsk::ui::layout::LayoutEntry &entry) {
         if (definition.id.trimmed().isEmpty()) {
             return nullptr;
         }
 
         auto *widget = new fairwindsk::ui::widgets::DataWidget(definition, this);
+        widget->setDisplayOptions(entry.showIcon, entry.showText, entry.showUnits, entry.showTrend);
         m_dataWidgets.insert(definition.id, widget);
         return widget;
     }
@@ -241,7 +243,7 @@ namespace fairwindsk::ui::topbar {
             QWidget *widget = widgetForItemId(entry.widgetId);
             if (!widget) {
                 const auto definition = fairwindsk::ui::widgets::dataWidgetDefinition(configRoot, entry.widgetId);
-                widget = createDataWidget(definition);
+                widget = createDataWidget(definition, entry);
             }
             if (!widget && fairwindsk::ui::bottombar::BottomBar::instance()) {
                 widget = fairwindsk::ui::bottombar::BottomBar::instance()->widgetForItemId(entry.widgetId);

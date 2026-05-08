@@ -148,6 +148,10 @@ namespace fairwindsk::ui::settings {
         entry.enabled = true;
         entry.expandHorizontally = item->data(RoleExpandHorizontally).toBool();
         entry.expandVertically = item->data(RoleExpandVertically).toBool();
+        entry.showIcon = item->data(RoleShowIcon).isValid() ? item->data(RoleShowIcon).toBool() : true;
+        entry.showText = item->data(RoleShowText).isValid() ? item->data(RoleShowText).toBool() : true;
+        entry.showUnits = item->data(RoleShowUnits).isValid() ? item->data(RoleShowUnits).toBool() : true;
+        entry.showTrend = item->data(RoleShowTrend).isValid() ? item->data(RoleShowTrend).toBool() : false;
         return entry;
     }
 
@@ -161,6 +165,10 @@ namespace fairwindsk::ui::settings {
         item->setData(RoleInstanceId, entry.instanceId);
         item->setData(RoleExpandHorizontally, entry.expandHorizontally);
         item->setData(RoleExpandVertically, entry.expandVertically);
+        item->setData(RoleShowIcon, entry.showIcon);
+        item->setData(RoleShowText, entry.showText);
+        item->setData(RoleShowUnits, entry.showUnits);
+        item->setData(RoleShowTrend, entry.showTrend);
         item->setFlags(Qt::ItemIsEnabled |
                        Qt::ItemIsSelectable |
                        Qt::ItemIsDragEnabled |

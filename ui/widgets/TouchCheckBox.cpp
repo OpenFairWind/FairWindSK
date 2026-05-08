@@ -7,16 +7,18 @@
 #include <QEvent>
 #include <QPalette>
 #include <QPushButton>
+#include <QSizePolicy>
 
+#include "FairWindSK.hpp"
 #include "ui/IconUtils.hpp"
 #include "ui_TouchCheckBox.h"
 
 namespace fairwindsk::ui::widgets {
     namespace {
-        QString touchToggleStyle(const QPalette &palette) {
-            const QColor base = palette.color(QPalette::Button);
-            const QColor text = palette.color(QPalette::ButtonText);
-            const QColor border = palette.color(QPalette::Mid);
+        QString touchToggleStyle(const fairwindsk::ui::ComfortChromeColors &colors) {
+            const QColor base = colors.buttonBackground;
+            const QColor text = colors.buttonText;
+            const QColor border = colors.border;
             const QColor light = base.lighter(145);
             const QColor mid = base.lighter(118);
             const QColor dark = base.darker(120);
@@ -51,11 +53,20 @@ namespace fairwindsk::ui::widgets {
                 " }")
                 .arg(light.name(), mid.name(), dark.name(), text.name(), border.name(),
                      light.darker(108).name(), dark.name(),
-                     light.lighter(110).name(), mid.lighter(108).name(), dark.lighter(108).name(),
-                     base.darker(115).name(), base.lighter(120).name(),
-                     palette.color(QPalette::AlternateBase).name(),
-                     palette.color(QPalette::Disabled, QPalette::ButtonText).name(),
-                     palette.color(QPalette::Disabled, QPalette::Mid).name());
+                     colors.hoverBackground.name(QColor::HexArgb), mid.lighter(108).name(), dark.lighter(108).name(),
+                     colors.accentBottom.darker(108).name(), colors.accentTop.name(),
+                     fairwindsk::ui::comfortAlpha(colors.buttonBackground, 46).name(QColor::HexArgb),
+                     colors.disabledText.name(),
+                     colors.disabledText.darker(125).name());
+        }
+
+        fairwindsk::ui::ComfortChromeColors checkboxColors(const QPalette &palette) {
+            auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+            const auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+            const QString preset = fairWindSK
+                ? fairWindSK->getActiveComfortViewPreset(configuration)
+                : QStringLiteral("default");
+            return fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette, false);
         }
     }
 
@@ -66,8 +77,12 @@ namespace fairwindsk::ui::widgets {
 
         ui->pushButtonToggle->setObjectName(QStringLiteral("pushButton_touchCheckBox"));
         ui->pushButtonToggle->setCheckable(true);
-        ui->pushButtonToggle->setFixedSize(44, 44);
+        ui->pushButtonToggle->setMinimumSize(QSize(56, 52));
+        ui->pushButtonToggle->setMaximumSize(QSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX));
+        ui->pushButtonToggle->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
         ui->pushButtonToggle->installEventFilter(this);
+        setMinimumHeight(52);
+        setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
 
         connect(ui->pushButtonToggle, &QPushButton::clicked, this, &TouchCheckBox::onButtonClicked);
         connect(ui->pushButtonToggle, &QPushButton::pressed, this, &TouchCheckBox::onButtonPressed);
@@ -115,6 +130,8 @@ namespace fairwindsk::ui::widgets {
 
     void TouchCheckBox::setText(const QString &text) {
         ui->pushButtonToggle->setText(text);
+        ui->pushButtonToggle->setMinimumWidth(text.trimmed().isEmpty() ? 56 : 118);
+        updateGeometry();
     }
 
     void TouchCheckBox::setChecked(const bool checked) {
@@ -151,7 +168,7 @@ namespace fairwindsk::ui::widgets {
     }
 
     void TouchCheckBox::applyTouchStyle() {
-        const QString style = touchToggleStyle(palette());
+        const QString style = touchToggleStyle(checkboxColors(palette()));
         if (m_toggleStyleSheet == style) {
             refreshAppearance();
             return;
@@ -228,14 +245,11 @@ namespace fairwindsk::ui::widgets {
         }
 
         ui->pushButtonToggle->setChecked(m_checkState != Qt::Unchecked);
+        const auto colors = checkboxColors(palette());
         ui->pushButtonToggle->setIcon(
             fairwindsk::ui::tintedIcon(
                 QIcon(iconPath),
-                fairwindsk::ui::bestContrastingColor(
-                    palette().color(QPalette::Button),
-                    {palette().color(QPalette::Text),
-                     palette().color(QPalette::ButtonText),
-                     palette().color(QPalette::WindowText)}),
+                m_checkState == Qt::Unchecked ? colors.buttonText : colors.accentText,
                 ui->pushButtonToggle->iconSize()));
     }
 }

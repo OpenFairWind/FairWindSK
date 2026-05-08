@@ -55,14 +55,18 @@ namespace fairwindsk::ui::widgets {
     }
 
     QSize DataWidget::sizeHint() const {
+        const int collapsedWidth = (!m_showText && !m_showUnits) ? 72 : 0;
         if (m_definition.kind == DataWidgetKind::Position) {
-            return QSize(224, 58);
+            return QSize(collapsedWidth > 0 ? 128 : 224, 58);
         }
         if (m_definition.kind == DataWidgetKind::DateTime ||
             m_definition.kind == DataWidgetKind::Waypoint) {
-            return QSize(136, 58);
+            return QSize(collapsedWidth > 0 ? 92 : 136, 58);
         }
-        return m_definition.kind == DataWidgetKind::Gauge ? QSize(126, 74) : QSize(104, 58);
+        if (m_definition.kind == DataWidgetKind::Gauge) {
+            return QSize(collapsedWidth > 0 ? 86 : 126, 74);
+        }
+        return QSize(collapsedWidth > 0 ? 72 : 104, 58);
     }
 
     void DataWidget::setDefinition(const DataWidgetDefinition &definition) {
@@ -91,6 +95,26 @@ namespace fairwindsk::ui::widgets {
         updateIcon();
         subscribeToSignalK();
         renderCurrentUpdate();
+    }
+
+    void DataWidget::setDisplayOptions(const bool showIcon,
+                                       const bool showText,
+                                       const bool showUnits,
+                                       const bool showTrend) {
+        if (m_showIcon == showIcon &&
+            m_showText == showText &&
+            m_showUnits == showUnits &&
+            m_showTrend == showTrend) {
+            return;
+        }
+
+        m_showIcon = showIcon;
+        m_showText = showText;
+        m_showUnits = showUnits;
+        m_showTrend = showTrend;
+        updateIcon();
+        renderCurrentUpdate();
+        updateGeometry();
     }
 
     void DataWidget::buildUi() {
@@ -126,6 +150,12 @@ namespace fairwindsk::ui::widgets {
         m_unitLabel->setTextFormat(Qt::PlainText);
         m_unitLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
         valueLayout->addWidget(m_unitLabel, 0, Qt::AlignVCenter);
+
+        m_trendLabel = new QLabel(this);
+        m_trendLabel->setTextFormat(Qt::PlainText);
+        m_trendLabel->setAlignment(Qt::AlignCenter);
+        m_trendLabel->setMinimumWidth(18);
+        valueLayout->addWidget(m_trendLabel, 0, Qt::AlignVCenter);
         rootLayout->addLayout(valueLayout);
 
         m_gauge = new QProgressBar(this);
@@ -209,9 +239,42 @@ namespace fairwindsk::ui::widgets {
         return m_units->getSignalKUnitLabel(m_definition.signalKPath, m_definition.defaultUnit);
     }
 
+    void DataWidget::updateTrend(const double value, const bool hasValue) {
+        if (!hasValue || std::isnan(value)) {
+            m_trendDirection = 0;
+            m_lastTrendValue = std::numeric_limits<double>::quiet_NaN();
+            return;
+        }
+
+        if (!std::isnan(m_lastTrendValue)) {
+            const double delta = value - m_lastTrendValue;
+            if (std::abs(delta) > 0.0001) {
+                m_trendDirection = delta > 0.0 ? 1 : -1;
+            }
+        }
+        m_lastTrendValue = value;
+    }
+
+    QString DataWidget::trendText() const {
+        if (m_trendDirection > 0) {
+            return QStringLiteral("^");
+        }
+        if (m_trendDirection < 0) {
+            return QStringLiteral("v");
+        }
+        return QStringLiteral("-");
+    }
+
     void DataWidget::renderCurrentUpdate() {
+        if (m_rendering) {
+            return;
+        }
+        m_rendering = true;
+
         QString text;
         bool hasValue = false;
+        bool supportsUnits = false;
+        bool supportsTrend = false;
         const bool pathConfigured = !m_definition.signalKPath.trimmed().isEmpty();
 
         if (m_gauge) {
@@ -270,6 +333,9 @@ namespace fairwindsk::ui::widgets {
                     m_definition.signalKPath);
                 hasValue = pathConfigured && !m_lastUpdate.isEmpty() && !std::isnan(value);
                 text = hasValue ? formattedNumericValue(value) : QString();
+                supportsUnits = true;
+                supportsTrend = true;
+                updateTrend(value, hasValue);
                 if (m_unitLabel) {
                     m_unitLabel->setText(unitLabel());
                 }
@@ -289,6 +355,21 @@ namespace fairwindsk::ui::widgets {
             fairwindsk::ui::widgets::signalKMetricState(hasValue, pathConfigured),
             pathConfigured,
             true);
+
+        if (m_iconLabel) {
+            m_iconLabel->setVisible(m_showIcon && !m_definition.icon.trimmed().isEmpty());
+        }
+        if (m_titleLabel) {
+            m_titleLabel->setVisible(m_showText);
+        }
+        if (m_unitLabel) {
+            m_unitLabel->setVisible(m_showUnits && supportsUnits && !m_unitLabel->text().trimmed().isEmpty());
+        }
+        if (m_trendLabel) {
+            m_trendLabel->setText(trendText());
+            m_trendLabel->setVisible(m_showTrend && supportsTrend && hasValue);
+        }
+        m_rendering = false;
     }
 
     void DataWidget::updateIcon() {
@@ -306,7 +387,7 @@ namespace fairwindsk::ui::widgets {
         const auto chrome = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), false);
         const QIcon icon = fairwindsk::ui::tintedIcon(QIcon(m_definition.icon), chrome.transparentIcon, QSize(18, 18));
         m_iconLabel->setPixmap(icon.pixmap(QSize(18, 18)));
-        m_iconLabel->setVisible(!icon.isNull());
+        m_iconLabel->setVisible(m_showIcon && !icon.isNull());
     }
 
     void DataWidget::applyComfortChrome() {

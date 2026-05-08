@@ -21,7 +21,11 @@ namespace fairwindsk::ui::settings {
             RoleWidgetId,
             RoleInstanceId,
             RoleExpandHorizontally,
-            RoleExpandVertically
+            RoleExpandVertically,
+            RoleShowIcon,
+            RoleShowText,
+            RoleShowUnits,
+            RoleShowTrend
         };
 
         using ItemFactory = std::function<QListWidgetItem *(const fairwindsk::ui::layout::LayoutEntry &)>;
