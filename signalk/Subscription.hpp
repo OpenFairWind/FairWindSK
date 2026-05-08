@@ -22,7 +22,7 @@ namespace fairwindsk::signalk {
                      QObject *receiver,
                      const char *member,
                      int period = 1000,
-                     const QString &policy = QStringLiteral("ideal"),
+                     const QString &policy = QStringLiteral("instant"),
                      int minPeriod = 200);
 
         Subscription(Subscription const &other);
@@ -53,7 +53,7 @@ namespace fairwindsk::signalk {
         QString m_requestedContext;
         QString m_context;
         int m_period = 1000;
-        QString m_policy = QStringLiteral("ideal");
+        QString m_policy = QStringLiteral("instant");
         int m_minPeriod = 200;
 
     };

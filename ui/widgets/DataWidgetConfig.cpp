@@ -37,6 +37,14 @@ namespace fairwindsk::ui::widgets {
             return object[key].get<bool>();
         }
 
+        QString normalizedUpdatePolicy(QString policy) {
+            policy = policy.trimmed().toLower();
+            if (policy == QStringLiteral("fixed")) {
+                return QStringLiteral("fixed");
+            }
+            return QStringLiteral("instant");
+        }
+
         QString legacySignalKPath(const nlohmann::json &root,
                                   const QString &key,
                                   const QString &fallback) {
@@ -66,7 +74,7 @@ namespace fairwindsk::ui::widgets {
             definition.signalKPath = jsonString(object, "signalKPath");
             definition.sourceUnit = jsonString(object, "sourceUnit");
             definition.defaultUnit = jsonString(object, "defaultUnit");
-            definition.updatePolicy = jsonString(object, "updatePolicy", QStringLiteral("ideal"));
+            definition.updatePolicy = normalizedUpdatePolicy(jsonString(object, "updatePolicy", QStringLiteral("instant")));
             definition.dateTimeFormat = jsonString(object, "dateTimeFormat");
             definition.kind = dataWidgetKindFromId(jsonString(object, "type", QStringLiteral("numeric")));
             definition.period = std::max(100, jsonInt(object, "period", 1000));
@@ -110,7 +118,7 @@ namespace fairwindsk::ui::widgets {
             definition.defaultUnit = defaultUnit;
             definition.dateTimeFormat = dateTimeFormat;
             definition.kind = kind;
-            definition.updatePolicy = QStringLiteral("ideal");
+            definition.updatePolicy = QStringLiteral("instant");
             definition.period = 1000;
             definition.minPeriod = 200;
             definition.defaultTopEnabled = true;
@@ -252,7 +260,7 @@ namespace fairwindsk::ui::widgets {
         object["signalKPath"] = definition.signalKPath.toStdString();
         object["sourceUnit"] = definition.sourceUnit.toStdString();
         object["defaultUnit"] = definition.defaultUnit.toStdString();
-        object["updatePolicy"] = definition.updatePolicy.toStdString();
+        object["updatePolicy"] = normalizedUpdatePolicy(definition.updatePolicy).toStdString();
         object["period"] = definition.period;
         object["minPeriod"] = definition.minPeriod;
         object["minimum"] = definition.minimum;

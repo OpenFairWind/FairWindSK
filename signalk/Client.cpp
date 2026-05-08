@@ -40,6 +40,14 @@ namespace fairwindsk::signalk {
 
             return snapshot;
         }
+
+        QString normalizedSubscriptionPolicy(QString policy) {
+            policy = policy.trimmed().toLower();
+            if (policy == QStringLiteral("fixed")) {
+                return QStringLiteral("fixed");
+            }
+            return QStringLiteral("instant");
+        }
     }
 
     QNetworkRequest Client::createJsonRequest(const QUrl& url) const {
@@ -1176,6 +1184,7 @@ namespace fairwindsk::signalk {
     }
 
     QString Client::subscriptionMessage(const QString &context, const QString &path, const int period, const QString &policy, const int minPeriod) const {
+        const QString effectivePolicy = normalizedSubscriptionPolicy(policy);
         return QString("{\n"
                        "  \"context\": \"%1\",\n"
                        "  \"subscribe\": [\n"
@@ -1187,7 +1196,7 @@ namespace fairwindsk::signalk {
                        "      \"minPeriod\": %5\n"
                        "    }\n"
                        "  ]\n"
-                       "}").arg(context, path, QString::number(period), policy, QString::number(minPeriod));
+                       "}").arg(context, path, QString::number(period), effectivePolicy, QString::number(minPeriod));
     }
 
     bool Client::refreshServerDiscovery() {
@@ -1724,16 +1733,26 @@ namespace fairwindsk::signalk {
         return(subscribe("vessels.self", path, receiver, member, period, policy, minPeriod));
     }
     QJsonObject Client::subscribe(const QString& context, const QString& path, QObject *receiver, const char *member, int period, const QString& policy, int minPeriod) {
-        const auto contextEx = normalizedSubscriptionContext(context);
-        const auto message = subscriptionMessage(contextEx, path, period, policy, minPeriod);
-
-        m_WebSocket.sendTextMessage(message);
+        const bool canSendSubscription = !m_Server.isEmpty() && m_WebSocket.state() == QAbstractSocket::ConnectedState;
+        const auto contextEx = canSendSubscription ? normalizedSubscriptionContext(context) : context;
 
         if (!hasSubscription(context, path, receiver)) {
             Subscription subscription(context, contextEx, path, receiver, member, period, policy, minPeriod);
             m_subscriptions.append(subscription);
-            connect(receiver, &QObject::destroyed, this, &Client::unsubscribe, Qt::UniqueConnection);
+            if (receiver) {
+                connect(receiver, &QObject::destroyed, this, &Client::unsubscribe, Qt::UniqueConnection);
+            }
         }
+
+        if (!canSendSubscription) {
+            if (m_Debug) {
+                qDebug() << "subscribe:" << context << path << "queued until Signal K discovery is ready";
+            }
+            return {};
+        }
+
+        const auto message = subscriptionMessage(contextEx, path, period, policy, minPeriod);
+        m_WebSocket.sendTextMessage(message);
 
         if (!canHydrateSubscriptionPath(path)) {
             if (m_Debug) {
@@ -1760,16 +1779,26 @@ namespace fairwindsk::signalk {
     }
 
     void Client::subscribeStream(const QString& context, const QString& path, QObject *receiver, const char *member, int period, const QString& policy, int minPeriod) {
-        const auto contextEx = normalizedSubscriptionContext(context);
-        const auto message = subscriptionMessage(contextEx, path, period, policy, minPeriod);
-
-        m_WebSocket.sendTextMessage(message);
+        const bool canSendSubscription = !m_Server.isEmpty() && m_WebSocket.state() == QAbstractSocket::ConnectedState;
+        const auto contextEx = canSendSubscription ? normalizedSubscriptionContext(context) : context;
 
         if (!hasSubscription(context, path, receiver)) {
             Subscription subscription(context, contextEx, path, receiver, member, period, policy, minPeriod);
             m_subscriptions.append(subscription);
-            connect(receiver, &QObject::destroyed, this, &Client::unsubscribe, Qt::UniqueConnection);
+            if (receiver) {
+                connect(receiver, &QObject::destroyed, this, &Client::unsubscribe, Qt::UniqueConnection);
+            }
         }
+
+        if (!canSendSubscription) {
+            if (m_Debug) {
+                qDebug() << "subscribeStream:" << context << path << "queued until Signal K discovery is ready";
+            }
+            return;
+        }
+
+        const auto message = subscriptionMessage(contextEx, path, period, policy, minPeriod);
+        m_WebSocket.sendTextMessage(message);
 
         if (m_Debug) {
             qDebug() << "subscribeStream:" << message;

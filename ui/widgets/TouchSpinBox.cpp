@@ -194,6 +194,10 @@ namespace fairwindsk::ui::widgets {
         return m_alignment;
     }
 
+    QString TouchSpinBox::suffix() const {
+        return m_suffix;
+    }
+
     void TouchSpinBox::setMinimum(const double minimum) {
         setRange(minimum, m_maximum);
     }
@@ -251,6 +255,15 @@ namespace fairwindsk::ui::widgets {
         }
     }
 
+    void TouchSpinBox::setSuffix(const QString &suffix) {
+        if (m_suffix == suffix) {
+            return;
+        }
+
+        m_suffix = suffix;
+        refreshText();
+    }
+
     void TouchSpinBox::stepUp() {
         setValue(m_value + m_singleStep);
     }
@@ -282,11 +295,13 @@ namespace fairwindsk::ui::widgets {
             return;
         }
 
-        if (m_decimals == 0) {
-            m_valueLabel->setText(QLocale().toString(qRound64(m_value)));
-        } else {
-            m_valueLabel->setText(QLocale().toString(m_value, 'f', m_decimals));
+        QString text = m_decimals == 0
+                           ? QLocale().toString(qRound64(m_value))
+                           : QLocale().toString(m_value, 'f', m_decimals);
+        if (!m_suffix.isEmpty()) {
+            text += m_suffix;
         }
+        m_valueLabel->setText(text);
     }
 
     void TouchSpinBox::refreshButtonState() {

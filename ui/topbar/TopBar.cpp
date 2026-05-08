@@ -370,7 +370,6 @@ namespace fairwindsk::ui::topbar {
             m_signalKStatusIcons = new fairwindsk::ui::widgets::SignalKStatusIconsWidget(ui->widget_SignalKStatusIcons);
             statusLayout->addWidget(m_signalKStatusIcons, 0, Qt::AlignVCenter);
         }
-        rebuildLayout();
         
         // emit a signal when the Apps tool button from the UI is clicked
         connect(ui->toolButton_UL, &QToolButton::released, this, &TopBar::toolbuttonUL_clicked);

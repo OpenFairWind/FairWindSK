@@ -98,7 +98,7 @@ Top Bar and Bottom Bar instrument readouts are defined by the `dataWidgets` arra
       "signalKPath": "navigation.speedOverGround",
       "sourceUnit": "ms-1",
       "defaultUnit": "kn",
-      "updatePolicy": "ideal",
+      "updatePolicy": "instant",
       "period": 1000,
       "minPeriod": 200
     }
@@ -106,7 +106,7 @@ Top Bar and Bottom Bar instrument readouts are defined by the `dataWidgets` arra
 }
 ```
 
-Supported display types are `numerical`, `gauge`, `position`, `datetime`, and `waypoint`. `period`, `minPeriod`, and `updatePolicy` are passed through to the Signal K websocket subscription. The **Settings > Widgets** tab edits these definitions, while **Settings > Top Bar** and **Settings > Bottom Bar** place enabled widgets into `barLayouts.top` and `barLayouts.bottom`.
+Supported display types are `numerical`, `gauge`, `position`, `datetime`, and `waypoint`. `period`, `minPeriod`, and `updatePolicy` are passed through to the Signal K websocket subscription; FairWindSK sends `instant` by default and also supports `fixed` for servers that require a fixed cadence. The **Settings > Widgets** tab edits these definitions, while **Settings > Top Bar** and **Settings > Bottom Bar** place enabled widgets into `barLayouts.top` and `barLayouts.bottom`.
 
 If an older configuration does not contain `dataWidgets`, FairWindSK derives the standard Position, COG, SOG, HDG, STW, DPT, waypoint, route, and VMG widgets from the legacy `signalk` paths so existing installs keep showing data.
 

@@ -156,9 +156,9 @@ namespace fairwindsk::ui::widgets {
         const QJsonObject snapshot = client->subscribe(
             m_definition.signalKPath,
             this,
-            SLOT(fairwindsk::ui::widgets::DataWidget::updateFromSignalK),
+            SLOT(updateFromSignalK(QJsonObject)),
             m_definition.period,
-            m_definition.updatePolicy.trimmed().isEmpty() ? QStringLiteral("ideal") : m_definition.updatePolicy,
+            m_definition.updatePolicy.trimmed().isEmpty() ? QStringLiteral("instant") : m_definition.updatePolicy,
             m_definition.minPeriod);
         updateFromSignalK(snapshot);
     }

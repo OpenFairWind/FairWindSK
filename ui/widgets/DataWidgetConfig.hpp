@@ -22,7 +22,7 @@ namespace fairwindsk::ui::widgets {
         QString signalKPath;
         QString sourceUnit;
         QString defaultUnit;
-        QString updatePolicy = QStringLiteral("ideal");
+        QString updatePolicy = QStringLiteral("instant");
         QString dateTimeFormat;
         DataWidgetKind kind = DataWidgetKind::Numeric;
         int period = 1000;

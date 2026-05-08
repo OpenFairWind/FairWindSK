@@ -7,15 +7,17 @@
 #include "ui/widgets/DataWidgetConfig.hpp"
 
 class QCheckBox;
-class QComboBox;
-class QDoubleSpinBox;
 class QLabel;
 class QLineEdit;
 class QListWidget;
 class QListWidgetItem;
 class QPushButton;
-class QSpinBox;
 class QToolButton;
+
+namespace fairwindsk::ui::widgets {
+    class TouchComboBox;
+    class TouchSpinBox;
+}
 
 namespace fairwindsk::ui::settings {
 
@@ -59,15 +61,15 @@ namespace fairwindsk::ui::settings {
         QLineEdit *m_nameEdit = nullptr;
         QLineEdit *m_iconEdit = nullptr;
         QToolButton *m_chooseIconButton = nullptr;
-        QComboBox *m_typeComboBox = nullptr;
+        fairwindsk::ui::widgets::TouchComboBox *m_typeComboBox = nullptr;
         QLineEdit *m_signalKPathEdit = nullptr;
         QLineEdit *m_sourceUnitEdit = nullptr;
         QLineEdit *m_defaultUnitEdit = nullptr;
-        QComboBox *m_updatePolicyComboBox = nullptr;
-        QSpinBox *m_periodSpinBox = nullptr;
-        QSpinBox *m_minPeriodSpinBox = nullptr;
-        QDoubleSpinBox *m_minimumSpinBox = nullptr;
-        QDoubleSpinBox *m_maximumSpinBox = nullptr;
+        fairwindsk::ui::widgets::TouchComboBox *m_updatePolicyComboBox = nullptr;
+        fairwindsk::ui::widgets::TouchSpinBox *m_periodSpinBox = nullptr;
+        fairwindsk::ui::widgets::TouchSpinBox *m_minPeriodSpinBox = nullptr;
+        fairwindsk::ui::widgets::TouchSpinBox *m_minimumSpinBox = nullptr;
+        fairwindsk::ui::widgets::TouchSpinBox *m_maximumSpinBox = nullptr;
         QLineEdit *m_dateTimeFormatEdit = nullptr;
         QPushButton *m_addButton = nullptr;
         QPushButton *m_removeButton = nullptr;

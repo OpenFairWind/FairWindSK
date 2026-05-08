@@ -6,6 +6,8 @@
 
 #include "Subscription.hpp"
 
+#include <QByteArray>
+
 namespace fairwindsk::signalk {
     Subscription::Subscription(const QString &requestedContext,
                                const QString &context,
@@ -19,25 +21,26 @@ namespace fairwindsk::signalk {
         m_context = context;
         m_path = path;
         this->m_receiver = receiver;
-        m_memberName = QString(member);
+        m_memberName = QString::fromLatin1(member ? member : "");
         m_period = period;
-        m_policy = policy.trimmed().isEmpty() ? QStringLiteral("ideal") : policy.trimmed();
+        const QString normalizedPolicy = policy.trimmed().toLower();
+        m_policy = normalizedPolicy == QStringLiteral("fixed") ? QStringLiteral("fixed") : QStringLiteral("instant");
         m_minPeriod = minPeriod;
 
-        // Strip the leading Qt SLOT/SIGNAL type prefix digit (e.g. "1") and any
-        // class-path prefix (e.g. "fairwindsk::ui::topbar::TopBar::") so only the
-        // bare method name (optionally with its parameter list) remains.
-        int pos = m_memberName.lastIndexOf("::");
-        m_memberName = m_memberName.right(m_memberName.length() - pos - 2);
-
-        // When the SLOT() macro is used with a fully-qualified class name but without
-        // parameter types (e.g. SLOT(Foo::Bar::updateSOG)), the result after stripping
-        // is just "updateSOG" with no parentheses.  Qt's invokeMethod requires the full
-        // normalised signature, so supply the known parameter type.  All subscription
-        // slots in this codebase accept a single QJsonObject argument.
-        if (!m_memberName.contains(QLatin1Char('('))) {
-            m_memberName += QStringLiteral("(QJsonObject)");
+        // QMetaObject::invokeMethod() expects the bare member name; Qt will match
+        // the QJsonObject argument supplied by Q_ARG below.
+        if (!m_memberName.isEmpty() && m_memberName.front().isDigit()) {
+            m_memberName.remove(0, 1);
         }
+        const int classSeparator = m_memberName.lastIndexOf(QStringLiteral("::"));
+        if (classSeparator >= 0) {
+            m_memberName = m_memberName.mid(classSeparator + 2);
+        }
+        const int argumentList = m_memberName.indexOf(QLatin1Char('('));
+        if (argumentList >= 0) {
+            m_memberName = m_memberName.left(argumentList);
+        }
+        m_memberName = m_memberName.trimmed();
 
         rebuildRegularExpression();
     }
@@ -89,9 +92,13 @@ namespace fairwindsk::signalk {
         if (!m_regularExpression.match(fullPath).hasMatch()) {
             return false;
         }
+        if (!m_receiver || m_memberName.isEmpty()) {
+            return false;
+        }
 
+        const QByteArray memberName = m_memberName.toLatin1();
         const bool invoked = QMetaObject::invokeMethod(
-                m_receiver, m_memberName.toStdString().c_str(),
+                m_receiver, memberName.constData(),
                 Qt::AutoConnection, Q_ARG(QJsonObject, updateObject));
 
         if (!invoked) {

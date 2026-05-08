@@ -1,8 +1,6 @@
 #include "DataWidgets.hpp"
 
 #include <QAbstractItemView>
-#include <QComboBox>
-#include <QDoubleSpinBox>
 #include <QEvent>
 #include <QFormLayout>
 #include <QFrame>
@@ -15,8 +13,8 @@
 #include <QMessageBox>
 #include <QPushButton>
 #include <QScrollArea>
+#include <QScroller>
 #include <QSignalBlocker>
-#include <QSpinBox>
 #include <QSplitter>
 #include <QToolButton>
 #include <QVBoxLayout>
@@ -27,6 +25,8 @@
 #include "ui/IconUtils.hpp"
 #include "ui/layout/BarLayout.hpp"
 #include "ui/widgets/TouchIconBrowser.hpp"
+#include "ui/widgets/TouchComboBox.hpp"
+#include "ui/widgets/TouchSpinBox.hpp"
 
 namespace fairwindsk::ui::settings {
     namespace {
@@ -61,6 +61,12 @@ namespace fairwindsk::ui::settings {
         toolbarLayout->setSpacing(8);
         m_addButton = new QPushButton(tr("Add Widget"), this);
         m_removeButton = new QPushButton(tr("Remove Widget"), this);
+        m_addButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/widget-add-google.svg")));
+        m_removeButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/delete-google.svg")));
+        m_addButton->setIconSize(QSize(24, 24));
+        m_removeButton->setIconSize(QSize(24, 24));
+        m_addButton->setToolTip(tr("Add a data widget"));
+        m_removeButton->setToolTip(tr("Remove the selected data widget"));
         toolbarLayout->addWidget(m_addButton);
         toolbarLayout->addWidget(m_removeButton);
         toolbarLayout->addStretch(1);
@@ -68,6 +74,7 @@ namespace fairwindsk::ui::settings {
 
         auto *splitter = new QSplitter(Qt::Horizontal, this);
         splitter->setChildrenCollapsible(false);
+        splitter->setHandleWidth(16);
         rootLayout->addWidget(splitter, 1);
 
         m_listWidget = new QListWidget(splitter);
@@ -75,13 +82,18 @@ namespace fairwindsk::ui::settings {
         m_listWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
         m_listWidget->setIconSize(QSize(40, 40));
         m_listWidget->setMinimumWidth(250);
+        m_listWidget->setUniformItemSizes(true);
         m_listWidget->setAlternatingRowColors(false);
+        QScroller::grabGesture(m_listWidget->viewport(), QScroller::TouchGesture);
+        QScroller::grabGesture(m_listWidget->viewport(), QScroller::LeftMouseButtonGesture);
 
         auto *editorScrollArea = new QScrollArea(splitter);
         editorScrollArea->setWidgetResizable(true);
         editorScrollArea->setFrameShape(QFrame::NoFrame);
         editorScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         editorScrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+        QScroller::grabGesture(editorScrollArea->viewport(), QScroller::TouchGesture);
+        QScroller::grabGesture(editorScrollArea->viewport(), QScroller::LeftMouseButtonGesture);
 
         auto *editorWidget = new QWidget(editorScrollArea);
         auto *editorLayout = new QVBoxLayout(editorWidget);
@@ -126,7 +138,7 @@ namespace fairwindsk::ui::settings {
         iconPathLayout->addWidget(m_chooseIconButton, 0);
         formLayout->addRow(tr("Icon"), iconPathLayout);
 
-        m_typeComboBox = new QComboBox(editorWidget);
+        m_typeComboBox = new widgets::TouchComboBox(editorWidget);
         for (const auto kind : {widgets::DataWidgetKind::Numeric,
                                 widgets::DataWidgetKind::Gauge,
                                 widgets::DataWidgetKind::Position,
@@ -148,32 +160,35 @@ namespace fairwindsk::ui::settings {
         m_defaultUnitEdit->setPlaceholderText(tr("Default display unit, for example deg or kn"));
         formLayout->addRow(tr("Default Unit"), m_defaultUnitEdit);
 
-        m_updatePolicyComboBox = new QComboBox(editorWidget);
-        m_updatePolicyComboBox->addItem(tr("Ideal"), QStringLiteral("ideal"));
-        m_updatePolicyComboBox->addItem(tr("Fixed"), QStringLiteral("fixed"));
+        m_updatePolicyComboBox = new widgets::TouchComboBox(editorWidget);
         m_updatePolicyComboBox->addItem(tr("Instant"), QStringLiteral("instant"));
+        m_updatePolicyComboBox->addItem(tr("Fixed"), QStringLiteral("fixed"));
         formLayout->addRow(tr("Update Policy"), m_updatePolicyComboBox);
 
-        m_periodSpinBox = new QSpinBox(editorWidget);
+        m_periodSpinBox = new widgets::TouchSpinBox(editorWidget);
         m_periodSpinBox->setRange(100, 600000);
         m_periodSpinBox->setSingleStep(100);
+        m_periodSpinBox->setDecimals(0);
         m_periodSpinBox->setSuffix(tr(" ms"));
         formLayout->addRow(tr("Period"), m_periodSpinBox);
 
-        m_minPeriodSpinBox = new QSpinBox(editorWidget);
+        m_minPeriodSpinBox = new widgets::TouchSpinBox(editorWidget);
         m_minPeriodSpinBox->setRange(0, 600000);
         m_minPeriodSpinBox->setSingleStep(100);
+        m_minPeriodSpinBox->setDecimals(0);
         m_minPeriodSpinBox->setSuffix(tr(" ms"));
         formLayout->addRow(tr("Minimum Period"), m_minPeriodSpinBox);
 
-        m_minimumSpinBox = new QDoubleSpinBox(editorWidget);
+        m_minimumSpinBox = new widgets::TouchSpinBox(editorWidget);
         m_minimumSpinBox->setRange(-1000000000.0, 1000000000.0);
         m_minimumSpinBox->setDecimals(3);
+        m_minimumSpinBox->setSingleStep(1.0);
         formLayout->addRow(tr("Gauge Minimum"), m_minimumSpinBox);
 
-        m_maximumSpinBox = new QDoubleSpinBox(editorWidget);
+        m_maximumSpinBox = new widgets::TouchSpinBox(editorWidget);
         m_maximumSpinBox->setRange(-1000000000.0, 1000000000.0);
         m_maximumSpinBox->setDecimals(3);
+        m_maximumSpinBox->setSingleStep(1.0);
         formLayout->addRow(tr("Gauge Maximum"), m_maximumSpinBox);
 
         m_dateTimeFormatEdit = new QLineEdit(editorWidget);
@@ -215,15 +230,15 @@ namespace fairwindsk::ui::settings {
 
         connect(m_nameEdit, &QLineEdit::editingFinished, this, &DataWidgets::onEditorChanged);
         connect(m_iconEdit, &QLineEdit::editingFinished, this, &DataWidgets::onEditorChanged);
-        connect(m_typeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &DataWidgets::onEditorChanged);
+        connect(m_typeComboBox, qOverload<int>(&widgets::TouchComboBox::currentIndexChanged), this, &DataWidgets::onEditorChanged);
         connect(m_signalKPathEdit, &QLineEdit::editingFinished, this, &DataWidgets::onEditorChanged);
         connect(m_sourceUnitEdit, &QLineEdit::editingFinished, this, &DataWidgets::onEditorChanged);
         connect(m_defaultUnitEdit, &QLineEdit::editingFinished, this, &DataWidgets::onEditorChanged);
-        connect(m_updatePolicyComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &DataWidgets::onEditorChanged);
-        connect(m_periodSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &DataWidgets::onEditorChanged);
-        connect(m_minPeriodSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &DataWidgets::onEditorChanged);
-        connect(m_minimumSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &DataWidgets::onEditorChanged);
-        connect(m_maximumSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &DataWidgets::onEditorChanged);
+        connect(m_updatePolicyComboBox, qOverload<int>(&widgets::TouchComboBox::currentIndexChanged), this, &DataWidgets::onEditorChanged);
+        connect(m_periodSpinBox, qOverload<int>(&widgets::TouchSpinBox::valueChanged), this, &DataWidgets::onEditorChanged);
+        connect(m_minPeriodSpinBox, qOverload<int>(&widgets::TouchSpinBox::valueChanged), this, &DataWidgets::onEditorChanged);
+        connect(m_minimumSpinBox, qOverload<double>(&widgets::TouchSpinBox::valueChanged), this, &DataWidgets::onEditorChanged);
+        connect(m_maximumSpinBox, qOverload<double>(&widgets::TouchSpinBox::valueChanged), this, &DataWidgets::onEditorChanged);
         connect(m_dateTimeFormatEdit, &QLineEdit::editingFinished, this, &DataWidgets::onEditorChanged);
 
         applyChrome();
@@ -252,6 +267,8 @@ namespace fairwindsk::ui::settings {
         }
         fairwindsk::ui::applyBottomBarPushButtonChrome(m_addButton, chrome, true, kControlHeight);
         fairwindsk::ui::applyBottomBarPushButtonChrome(m_removeButton, chrome, false, kControlHeight);
+        fairwindsk::ui::applyTintedButtonIcon(m_addButton, chrome.accentText, QSize(24, 24));
+        fairwindsk::ui::applyTintedButtonIcon(m_removeButton, chrome.buttonText, QSize(24, 24));
         fairwindsk::ui::applyBottomBarToolButtonChrome(
             m_chooseIconButton,
             chrome,
@@ -286,7 +303,7 @@ namespace fairwindsk::ui::settings {
             item->setToolTip(definition.signalKPath.trimmed().isEmpty()
                                  ? definition.name
                                  : QStringLiteral("%1\n%2").arg(definition.name, definition.signalKPath));
-            item->setSizeHint(QSize(220, 58));
+            item->setSizeHint(QSize(220, 64));
             m_listWidget->addItem(item);
         }
 
@@ -386,8 +403,8 @@ namespace fairwindsk::ui::settings {
         definition.sourceUnit = m_sourceUnitEdit->text().trimmed();
         definition.defaultUnit = m_defaultUnitEdit->text().trimmed();
         definition.updatePolicy = m_updatePolicyComboBox->currentData().toString();
-        definition.period = m_periodSpinBox->value();
-        definition.minPeriod = m_minPeriodSpinBox->value();
+        definition.period = qRound(m_periodSpinBox->value());
+        definition.minPeriod = qRound(m_minPeriodSpinBox->value());
         definition.minimum = m_minimumSpinBox->value();
         definition.maximum = m_maximumSpinBox->value();
         if (definition.maximum <= definition.minimum) {
@@ -481,7 +498,7 @@ namespace fairwindsk::ui::settings {
         definition.id = widgets::uniqueDataWidgetId(root, definition.name);
         definition.icon = QStringLiteral(":/resources/svg/OpenBridge/lcd-sog.svg");
         definition.kind = widgets::DataWidgetKind::Numeric;
-        definition.updatePolicy = QStringLiteral("ideal");
+        definition.updatePolicy = QStringLiteral("instant");
         definition.period = 1000;
         definition.minPeriod = 200;
         definition.minimum = 0.0;

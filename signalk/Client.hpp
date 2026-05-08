@@ -43,9 +43,9 @@ namespace fairwindsk::signalk {
 
         bool init(QMap<QString, QVariant> params);
 
-        QJsonObject subscribe(const QString& path, QObject *receiver, const char *member, int period = 1000, const QString& policy = "ideal", int minPeriod = 200);
-        QJsonObject subscribe(const QString& context, const QString& path, QObject *receiver, const char *member, int period = 1000, const QString& policy = "ideal", int minPeriod = 200);
-        void subscribeStream(const QString& context, const QString& path, QObject *receiver, const char *member, int period = 1000, const QString& policy = "ideal", int minPeriod = 200);
+        QJsonObject subscribe(const QString& path, QObject *receiver, const char *member, int period = 1000, const QString& policy = "instant", int minPeriod = 200);
+        QJsonObject subscribe(const QString& context, const QString& path, QObject *receiver, const char *member, int period = 1000, const QString& policy = "instant", int minPeriod = 200);
+        void subscribeStream(const QString& context, const QString& path, QObject *receiver, const char *member, int period = 1000, const QString& policy = "instant", int minPeriod = 200);
         void removeSubscription(const QString& path, QObject *receiver);
 
         QString getSelf();

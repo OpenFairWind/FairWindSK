@@ -5,6 +5,7 @@
 #ifndef FAIRWINDSK_TOUCHSPINBOX_HPP
 #define FAIRWINDSK_TOUCHSPINBOX_HPP
 
+#include <QString>
 #include <QWidget>
 
 class QLabel;
@@ -23,6 +24,7 @@ namespace fairwindsk::ui::widgets {
     Q_PROPERTY(double singleStep READ singleStep WRITE setSingleStep)
     Q_PROPERTY(int decimals READ decimals WRITE setDecimals)
     Q_PROPERTY(Qt::Alignment alignment READ alignment WRITE setAlignment)
+    Q_PROPERTY(QString suffix READ suffix WRITE setSuffix)
 
     public:
         explicit TouchSpinBox(QWidget *parent = nullptr);
@@ -34,6 +36,7 @@ namespace fairwindsk::ui::widgets {
         double singleStep() const;
         int decimals() const;
         Qt::Alignment alignment() const;
+        QString suffix() const;
 
     public slots:
         void setMinimum(double minimum);
@@ -44,6 +47,7 @@ namespace fairwindsk::ui::widgets {
         void setSingleStep(double singleStep);
         void setDecimals(int decimals);
         void setAlignment(Qt::Alignment alignment);
+        void setSuffix(const QString &suffix);
         void stepUp();
         void stepDown();
 
@@ -66,6 +70,7 @@ namespace fairwindsk::ui::widgets {
         double m_singleStep = 1.0;
         int m_decimals = 0;
         Qt::Alignment m_alignment = Qt::AlignRight | Qt::AlignVCenter;
+        QString m_suffix;
         QString m_buttonStyleSheet;
     };
 }

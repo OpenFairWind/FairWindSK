@@ -5451,6 +5451,16 @@ Ultimo aggiornamento live %1</translation>
         <translation>Rimuovi widget</translation>
     </message>
     <message>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="68"/>
+        <source>Add a data widget</source>
+        <translation>Aggiungi un widget dati</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="69"/>
+        <source>Remove the selected data widget</source>
+        <translation>Rimuovi il widget dati selezionato</translation>
+    </message>
+    <message>
         <location filename="../../ui/settings/DataWidgets.cpp" line="105"/>
         <source>Widget name</source>
         <translation>Nome widget</translation>
@@ -5517,9 +5527,8 @@ Ultimo aggiornamento live %1</translation>
         <translation>Unità predefinita</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/DataWidgets.cpp" line="152"/>
         <source>Ideal</source>
-        <translation>Ideale</translation>
+        <translation type="vanished">Ideale</translation>
     </message>
     <message>
         <location filename="../../ui/settings/DataWidgets.cpp" line="153"/>
