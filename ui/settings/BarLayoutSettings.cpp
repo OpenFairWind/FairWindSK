@@ -6,6 +6,7 @@
 #include <QEvent>
 #include <QFrame>
 #include <QHBoxLayout>
+#include <QIcon>
 #include <QLabel>
 #include <QListWidgetItem>
 #include <QScroller>
@@ -233,7 +234,7 @@ namespace fairwindsk::ui::settings {
 
     QListWidgetItem *BarLayoutSettings::createItem(const LayoutEntry &entry) {
         auto *item = new QListWidgetItem(layout::entryLabel(entry, m_settings->getConfiguration()->getRoot()));
-        item->setIcon(WidgetPalette::entryIcon(entry));
+        item->setIcon(entry.showIcon ? WidgetPalette::entryIcon(entry) : QIcon());
         LayoutPreviewListWidget::applyEntryData(item, entry);
         item->setTextAlignment(Qt::AlignCenter);
         item->setSizeHint(itemSizeHint(entry));
@@ -290,6 +291,7 @@ namespace fairwindsk::ui::settings {
             entry.widgetId = definition.id;
             entry.instanceId = definition.id;
             entry.expandHorizontally = defaultExpandHorizontally(definition.id);
+            entry.showIcon = !definition.dataWidget;
             paletteEntries.append(entry);
         }
         m_paletteWidget->setEntries(paletteEntries);
@@ -397,6 +399,7 @@ namespace fairwindsk::ui::settings {
             entry.instanceId = definition.id;
             entry.enabled = false;
             entry.expandHorizontally = defaultExpandHorizontally(definition.id);
+            entry.showIcon = !definition.dataWidget;
             entries.append(entry);
         }
 
@@ -612,6 +615,7 @@ namespace fairwindsk::ui::settings {
         entry.instanceId = widgetId;
         entry.enabled = true;
         entry.expandHorizontally = defaultExpandHorizontally(widgetId);
+        entry.showIcon = !isDataWidgetEntry(entry);
         m_listWidget->addOrSelectEntry(entry);
     }
 

@@ -209,6 +209,7 @@ namespace fairwindsk::ui::layout {
                     entry.widgetId = definition.id;
                     entry.instanceId = definition.id;
                     entry.enabled = false;
+                    entry.showIcon = !definition.dataWidget;
                     entries.append(entry);
                 }
             }
@@ -292,6 +293,7 @@ namespace fairwindsk::ui::layout {
             entry.enabled = barId == BarId::Top ? definition.defaultTopEnabled : definition.defaultBottomEnabled;
             entry.expandHorizontally = entry.enabled && shouldDefaultToMaximumWidth(root, barId, definition.id);
             entry.expandVertically = entry.enabled && definition.expandVertically;
+            entry.showIcon = !definition.dataWidget;
             entries.append(entry);
         }
         return entries;
