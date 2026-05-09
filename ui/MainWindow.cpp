@@ -1329,7 +1329,7 @@ namespace fairwindsk::ui {
         }
 
         if (m_launcher) {
-            m_launcher->refreshFromConfiguration(true);
+            m_launcher->refreshFromConfiguration();
         }
         if (m_myDataPage) {
             m_myDataPage->refreshFromConfiguration();

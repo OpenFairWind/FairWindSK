@@ -56,6 +56,7 @@ namespace fairwindsk::ui::layout {
     QList<LayoutEntry> defaultEntries(BarId barId);
     QList<LayoutEntry> defaultEntries(const nlohmann::json &root, BarId barId);
     QList<LayoutEntry> entriesForBar(const nlohmann::json &root, BarId barId);
+    QString layoutSignature(const nlohmann::json &root, BarId barId);
     void setEntriesForBar(nlohmann::json &root, BarId barId, const QList<LayoutEntry> &entries);
     void removeWidgetFromBar(nlohmann::json &root, BarId barId, const QString &widgetId);
 }

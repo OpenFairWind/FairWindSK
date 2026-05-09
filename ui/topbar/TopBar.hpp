@@ -9,6 +9,7 @@
 #include <QHBoxLayout>
 #include <QPointer>
 #include <QHash>
+#include <QString>
 #include <QVector>
 #include <QWidget>
 
@@ -76,6 +77,7 @@ namespace fairwindsk::ui::topbar {
         QHBoxLayout *m_contextLayout = nullptr;
         QHash<QString, QPointer<fairwindsk::ui::widgets::DataWidget>> m_dataWidgets;
         QVector<QPointer<QWidget>> m_dynamicLayoutWidgets;
+        QString m_layoutSignature;
         QHash<QString, QSizePolicy> m_baseSizePolicies;
         QHash<QWidget *, QPointer<QGraphicsEffect>> m_layoutHintEffects;
         bool m_layoutEditHighlightEnabled = false;

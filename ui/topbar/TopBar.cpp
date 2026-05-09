@@ -132,6 +132,9 @@ namespace fairwindsk::ui::topbar {
         ui->horizontalLayout->addWidget(ui->toolButton_UL, 0, Qt::AlignVCenter);
 
         const auto configRoot = FairWindSK::getInstance()->getConfiguration()->getRoot();
+        m_layoutSignature = fairwindsk::ui::layout::layoutSignature(
+            configRoot,
+            fairwindsk::ui::layout::BarId::Top);
         const auto entries = fairwindsk::ui::layout::entriesForBar(
             configRoot,
             fairwindsk::ui::layout::BarId::Top);
@@ -241,7 +244,10 @@ namespace fairwindsk::ui::topbar {
         }
 
         m_layoutEditHighlightEnabled = enabled;
-        rebuildLayout();
+        const auto configRoot = FairWindSK::getInstance()->getConfiguration()->getRoot();
+        applyLayoutEditHints(fairwindsk::ui::layout::entriesForBar(
+            configRoot,
+            fairwindsk::ui::layout::BarId::Top));
     }
 
 /*
@@ -410,7 +416,14 @@ namespace fairwindsk::ui::topbar {
     }
 
     void TopBar::refreshFromConfiguration() {
-        rebuildLayout();
+        const auto configRoot = FairWindSK::getInstance()->getConfiguration()->getRoot();
+        const QString newLayoutSignature = fairwindsk::ui::layout::layoutSignature(
+            configRoot,
+            fairwindsk::ui::layout::BarId::Top);
+
+        if (m_layoutSignature != newLayoutSignature) {
+            rebuildLayout();
+        }
         if (m_signalKStatusIcons) {
             m_signalKStatusIcons->refreshFromConfiguration();
         }

@@ -117,6 +117,9 @@ namespace fairwindsk::ui::bottombar {
             m_dataWidgets);
 
         const auto configRoot = FairWindSK::getInstance()->getConfiguration()->getRoot();
+        m_layoutSignature = fairwindsk::ui::layout::layoutSignature(
+            configRoot,
+            fairwindsk::ui::layout::BarId::Bottom);
         const auto entries = fairwindsk::ui::layout::entriesForBar(
             configRoot,
             fairwindsk::ui::layout::BarId::Bottom);
@@ -219,7 +222,10 @@ namespace fairwindsk::ui::bottombar {
         }
 
         m_layoutEditHighlightEnabled = enabled;
-        rebuildLayout();
+        const auto configRoot = FairWindSK::getInstance()->getConfiguration()->getRoot();
+        applyLayoutEditHints(fairwindsk::ui::layout::entriesForBar(
+            configRoot,
+            fairwindsk::ui::layout::BarId::Bottom));
     }
 
     bool BottomBar::isTransientPanelVisible() const {
@@ -398,25 +404,31 @@ namespace fairwindsk::ui::bottombar {
         }
     }
 
-    void BottomBar::refreshFromConfiguration() const {
+    void BottomBar::refreshFromConfiguration() {
         const bool transientPanelVisible = isTransientPanelVisible();
-        const_cast<BottomBar *>(this)->rebuildLayout();
+        const auto configRoot = FairWindSK::getInstance()->getConfiguration()->getRoot();
+        const QString newLayoutSignature = fairwindsk::ui::layout::layoutSignature(
+            configRoot,
+            fairwindsk::ui::layout::BarId::Bottom);
+        if (m_layoutSignature != newLayoutSignature) {
+            rebuildLayout();
+        }
         if (transientPanelVisible) {
             setRegularBarVisible(false);
         }
-        if (m_POBBar) {
+        if (m_POBBar && m_POBBar->isVisible()) {
             m_POBBar->refreshFromConfiguration();
         }
-        if (m_AlarmsBar) {
+        if (m_AlarmsBar && m_AlarmsBar->isVisible()) {
             m_AlarmsBar->refreshFromConfiguration();
         }
-        if (m_AutopilotBar) {
+        if (m_AutopilotBar && m_AutopilotBar->isVisible()) {
             m_AutopilotBar->refreshFromConfiguration();
         }
-        if (m_AnchorBar) {
+        if (m_AnchorBar && m_AnchorBar->isVisible()) {
             m_AnchorBar->refreshFromConfiguration();
         }
-        const_cast<BottomBar *>(this)->updateHealthChrome();
+        updateHealthChrome();
     }
 
     void BottomBar::changeEvent(QEvent *event) {
@@ -563,6 +575,7 @@ namespace fairwindsk::ui::bottombar {
     void BottomBar::autopilot_clicked() {
         if (m_AutopilotBar) {
             fairwindsk::runtime::recordUserInteraction(QStringLiteral("bottom_bar"), QStringLiteral("autopilot"), QStringLiteral("Autopilot"));
+            m_AutopilotBar->refreshFromConfiguration();
             setPanelVisibility(m_AutopilotBar, true);
         }
     }
@@ -583,6 +596,7 @@ namespace fairwindsk::ui::bottombar {
     void BottomBar::anchor_clicked() {
         if (m_AnchorBar) {
             fairwindsk::runtime::recordUserInteraction(QStringLiteral("bottom_bar"), QStringLiteral("anchor"), QStringLiteral("Anchor"));
+            m_AnchorBar->refreshFromConfiguration();
             setPanelVisibility(m_AnchorBar, true);
         }
 
@@ -595,6 +609,7 @@ namespace fairwindsk::ui::bottombar {
     void BottomBar::alarms_clicked() {
         if (m_AlarmsBar) {
             fairwindsk::runtime::recordUserInteraction(QStringLiteral("bottom_bar"), QStringLiteral("alarms"), QStringLiteral("Alarms"));
+            m_AlarmsBar->refreshFromConfiguration();
             setPanelVisibility(m_AlarmsBar, true);
         }
     }

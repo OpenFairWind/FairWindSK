@@ -875,14 +875,10 @@ namespace fairwindsk {
             }
 
             qInfo() << "FairWindSK detected Signal K recovery; resynchronizing runtime state";
-            Units::getInstance()->refreshSignalKPreferences();
             reloadAppsAsync();
             refreshAutomaticComfortViewAvailability();
             if (m_configuration.getComfortViewMode() == "auto") {
                 applyUiPreferences();
-            }
-            if (auto *mainWindow = fairwindsk::ui::MainWindow::instance()) {
-                mainWindow->applyRuntimeConfiguration();
             }
         });
         connect(&m_signalkClient, &signalk::Client::connectionHealthStateChanged, this, [this](const signalk::Client::ConnectionHealthState,

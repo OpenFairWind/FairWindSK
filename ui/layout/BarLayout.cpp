@@ -416,6 +416,26 @@ namespace fairwindsk::ui::layout {
         return entries;
     }
 
+    QString layoutSignature(const nlohmann::json &root, const BarId barId) {
+        nlohmann::json signature = nlohmann::json::object();
+        signature["bar"] = configKeyForBar(barId).toStdString();
+        signature["entries"] = nlohmann::json::array();
+
+        const auto entries = entriesForBar(root, barId);
+        for (const auto &entry : entries) {
+            auto entryJson = toJson(entry);
+            if (entry.kind == EntryKind::Widget &&
+                fairwindsk::ui::widgets::isDataWidgetId(root, entry.widgetId)) {
+                entryJson["dataWidget"] =
+                    fairwindsk::ui::widgets::dataWidgetDefinitionToJson(
+                        fairwindsk::ui::widgets::dataWidgetDefinition(root, entry.widgetId));
+            }
+            signature["entries"].push_back(entryJson);
+        }
+
+        return QString::fromStdString(signature.dump());
+    }
+
     void setEntriesForBar(nlohmann::json &root, const BarId barId, const QList<LayoutEntry> &entries) {
         auto &layoutRoot = root["barLayouts"];
         layoutRoot[configKeyForBar(barId).toStdString()] = nlohmann::json::array();

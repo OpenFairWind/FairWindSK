@@ -222,7 +222,8 @@ namespace fairwindsk::ui::widgets {
             SLOT(updateFromSignalK(QJsonObject)),
             m_definition.period,
             m_definition.updatePolicy.trimmed().isEmpty() ? QStringLiteral("instant") : m_definition.updatePolicy,
-            m_definition.minPeriod);
+            m_definition.minPeriod,
+            false);
         updateFromSignalK(snapshot);
     }
 

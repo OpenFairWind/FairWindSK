@@ -74,14 +74,14 @@ namespace fairwindsk::ui::layout::runtime {
 
         for (auto &widget : dynamicWidgets) {
             if (widget) {
-                widget->deleteLater();
+                delete widget.data();
             }
         }
         dynamicWidgets.clear();
 
         for (auto &widget : dataWidgets) {
             if (widget) {
-                widget->deleteLater();
+                delete widget.data();
             }
         }
         dataWidgets.clear();

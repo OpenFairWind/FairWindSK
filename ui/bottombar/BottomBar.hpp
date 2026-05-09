@@ -8,6 +8,7 @@
 #include <QHash>
 #include <QHBoxLayout>
 #include <QPointer>
+#include <QString>
 #include <QVector>
 #include <QWidget>
 
@@ -45,7 +46,7 @@ namespace fairwindsk::ui::bottombar {
 
         // Set POB Icon visibility
         void setPOBIcon(bool value) const;
-        void refreshFromConfiguration() const;
+        void refreshFromConfiguration();
         void setLayoutEditHighlightEnabled(bool enabled);
         QWidget *widgetForItemId(const QString &itemId) const;
         bool isTransientPanelVisible() const;
@@ -150,6 +151,7 @@ namespace fairwindsk::ui::bottombar {
         QString m_runtimeHealthSummary;
         QHash<QString, QSizePolicy> m_baseSizePolicies;
         QHash<QWidget *, QPointer<QGraphicsEffect>> m_layoutHintEffects;
+        QString m_layoutSignature;
         bool m_layoutEditHighlightEnabled = false;
         QVector<QPointer<QWidget>> m_dynamicLayoutWidgets;
         QHash<QString, QPointer<fairwindsk::ui::widgets::DataWidget>> m_dataWidgets;

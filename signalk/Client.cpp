@@ -1035,9 +1035,7 @@ namespace fairwindsk::signalk {
         }
 
         const bool recoveredFromDisconnect = m_reconnectRecoveryPending;
-        // Always hydrate REST snapshots on (re)connect so data widgets populate immediately;
-        // the recoveredFromDisconnect flag is kept separate to control app-reload behaviour.
-        resubscribeAll(true);
+        resubscribeAll(false);
         m_hadStreamConnection = true;
         m_reconnectRecoveryPending = false;
         emit serverStateResynchronized(recoveredFromDisconnect);
@@ -1729,10 +1727,10 @@ namespace fairwindsk::signalk {
         return m_lastStreamActivity;
     }
 
-    QJsonObject Client::subscribe(const QString& path, QObject *receiver, const char *member, int period, const QString& policy, int minPeriod) {
-        return(subscribe("vessels.self", path, receiver, member, period, policy, minPeriod));
+    QJsonObject Client::subscribe(const QString& path, QObject *receiver, const char *member, int period, const QString& policy, int minPeriod, const bool hydrateSnapshot) {
+        return(subscribe("vessels.self", path, receiver, member, period, policy, minPeriod, hydrateSnapshot));
     }
-    QJsonObject Client::subscribe(const QString& context, const QString& path, QObject *receiver, const char *member, int period, const QString& policy, int minPeriod) {
+    QJsonObject Client::subscribe(const QString& context, const QString& path, QObject *receiver, const char *member, int period, const QString& policy, int minPeriod, const bool hydrateSnapshot) {
         const bool canSendSubscription = !m_Server.isEmpty() && m_WebSocket.state() == QAbstractSocket::ConnectedState;
         const auto contextEx = canSendSubscription ? normalizedSubscriptionContext(context) : context;
 
@@ -1754,7 +1752,7 @@ namespace fairwindsk::signalk {
         const auto message = subscriptionMessage(contextEx, path, period, policy, minPeriod);
         m_WebSocket.sendTextMessage(message);
 
-        if (!canHydrateSubscriptionPath(path)) {
+        if (!hydrateSnapshot || !canHydrateSubscriptionPath(path)) {
             if (m_Debug) {
                 qDebug() << "subscribe:" << message << "stream-only path";
             }

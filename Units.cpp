@@ -442,6 +442,20 @@ namespace fairwindsk {
         }
         loadSignalKPreferences();
 
+        const QString category = categoryForPath(path);
+        if (!category.isEmpty() && m_categoryDisplayUnits.contains(category)) {
+            auto info = m_categoryDisplayUnits.value(category);
+            if (info.category.isEmpty()) {
+                info.category = category;
+            }
+            const auto overrideInfo = localOverrideForCategory(category);
+            if (overrideInfo.valid) {
+                info = overrideInfo;
+            }
+            m_displayUnitsCache.insert(path, info);
+            return info;
+        }
+
         if (!m_attemptedDisplayUnitsPaths.contains(path)) {
             m_attemptedDisplayUnitsPaths.insert(path);
 
@@ -469,20 +483,6 @@ namespace fairwindsk {
                         return info;
                     }
                 }
-            }
-
-            const QString category = categoryForPath(path);
-            if (!category.isEmpty() && m_categoryDisplayUnits.contains(category)) {
-                auto info = m_categoryDisplayUnits.value(category);
-                if (info.category.isEmpty()) {
-                    info.category = category;
-                }
-                const auto overrideInfo = localOverrideForCategory(category);
-                if (overrideInfo.valid) {
-                    info = overrideInfo;
-                }
-                m_displayUnitsCache.insert(path, info);
-                return info;
             }
         }
 
