@@ -1,9 +1,11 @@
 #ifndef FAIRWINDSK_SIGNALKMETRICSTATE_HPP
 #define FAIRWINDSK_SIGNALKMETRICSTATE_HPP
 
+#include <QApplication>
 #include <QCoreApplication>
 #include <QFont>
 #include <QLabel>
+#include <QPalette>
 #include <QWidget>
 
 #include "FairWindSK.hpp"
@@ -69,6 +71,32 @@ namespace fairwindsk::ui::widgets {
         return tooltip;
     }
 
+    inline QPalette signalKMetricPalette(const QLabel *label, const QWidget *container) {
+        if (qApp) {
+            return qApp->palette();
+        }
+        if (container) {
+            return container->palette();
+        }
+        return label ? label->palette() : QPalette();
+    }
+
+    inline void applySignalKMetricLabelColor(QLabel *label, const QColor &color) {
+        if (!label) {
+            return;
+        }
+
+        QPalette palette = label->palette();
+        for (const auto group : {QPalette::Active, QPalette::Inactive, QPalette::Disabled}) {
+            palette.setColor(group, QPalette::WindowText, color);
+            palette.setColor(group, QPalette::Text, color);
+        }
+        label->setPalette(palette);
+        label->setStyleSheet(QStringLiteral(
+            "QLabel { background: transparent; border: none; color: %1; }")
+                                 .arg(color.name(QColor::HexArgb)));
+    }
+
     inline void applySignalKMetricPresentation(QLabel *valueLabel,
                                                QLabel *unitLabel,
                                                QWidget *container,
@@ -86,13 +114,15 @@ namespace fairwindsk::ui::widgets {
         auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
         const auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
         const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
-        const auto chrome = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, valueLabel->palette(), false);
-        const auto status = fairwindsk::ui::resolveComfortStatusColors(configuration, preset, valueLabel->palette());
+        const QPalette metricPalette = signalKMetricPalette(valueLabel, container);
+        const auto chrome = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, metricPalette, false);
+        const auto status = fairwindsk::ui::resolveComfortStatusColors(configuration, preset, metricPalette);
 
         QColor textColor = chrome.text;
         QFont font = valueLabel->font();
+        const bool preserveBold = font.bold();
         font.setItalic(false);
-        font.setBold(false);
+        font.setBold(preserveBold);
 
         switch (state) {
             case SignalKMetricState::Live:
@@ -110,12 +140,11 @@ namespace fairwindsk::ui::widgets {
         const QString tooltip = signalKMetricTooltip(title, state, pathConfigured, detail);
         valueLabel->setFont(font);
         valueLabel->setText(state == SignalKMetricState::Missing ? missingText : text);
-        valueLabel->setStyleSheet(QStringLiteral("QLabel { color: %1; }").arg(textColor.name()));
+        applySignalKMetricLabelColor(valueLabel, textColor);
         valueLabel->setToolTip(tooltip);
 
         if (unitLabel) {
-            unitLabel->setStyleSheet(QStringLiteral("QLabel { color: %1; }")
-                                         .arg((state == SignalKMetricState::Missing ? chrome.disabledText : textColor).name()));
+            applySignalKMetricLabelColor(unitLabel, state == SignalKMetricState::Missing ? chrome.disabledText : textColor);
             unitLabel->setToolTip(tooltip);
         }
 
@@ -141,13 +170,15 @@ namespace fairwindsk::ui::widgets {
         auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
         const auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
         const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
-        const auto chrome = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, primaryLabel->palette(), false);
-        const auto status = fairwindsk::ui::resolveComfortStatusColors(configuration, preset, primaryLabel->palette());
+        const QPalette metricPalette = signalKMetricPalette(primaryLabel, container);
+        const auto chrome = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, metricPalette, false);
+        const auto status = fairwindsk::ui::resolveComfortStatusColors(configuration, preset, metricPalette);
 
         QColor textColor = chrome.text;
         QFont font = primaryLabel->font();
+        const bool preserveBold = font.bold();
         font.setItalic(false);
-        font.setBold(false);
+        font.setBold(preserveBold);
 
         switch (state) {
             case SignalKMetricState::Live:
@@ -168,7 +199,7 @@ namespace fairwindsk::ui::widgets {
 
         for (auto *label : {primaryLabel, secondaryLabel}) {
             label->setFont(font);
-            label->setStyleSheet(QStringLiteral("QLabel { color: %1; }").arg(textColor.name()));
+            applySignalKMetricLabelColor(label, textColor);
             label->setToolTip(tooltip);
         }
 
