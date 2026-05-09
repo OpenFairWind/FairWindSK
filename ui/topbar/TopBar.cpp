@@ -67,30 +67,6 @@ namespace fairwindsk::ui::topbar {
                    entry.widgetId == QStringLiteral("current_context") ||
                    entry.widgetId == QStringLiteral("clock_icons");
         }
-
-        void hideLegacyReadoutWidgets(Ui::TopBar *ui) {
-            if (!ui) {
-                return;
-            }
-
-            for (auto *widget : {ui->widget_POS,
-                                 ui->widget_COG,
-                                 ui->widget_SOG,
-                                 ui->widget_HDG,
-                                 ui->widget_STW,
-                                 ui->widget_DPT,
-                                 ui->widget_WPT,
-                                 ui->widget_BTW,
-                                 ui->widget_DTG,
-                                 ui->widget_TTG,
-                                 ui->widget_ETA,
-                                 ui->widget_XTE,
-                                 ui->widget_VMG}) {
-                if (widget) {
-                    widget->hide();
-                }
-            }
-        }
     }
 
     TopBar *TopBar::instance() {
@@ -147,7 +123,6 @@ namespace fairwindsk::ui::topbar {
             return;
         }
 
-        hideLegacyReadoutWidgets(ui);
         clearLayoutEditHints();
         fairwindsk::ui::layout::runtime::clearConfiguredLayout(
             ui->horizontalLayout,
@@ -207,7 +182,6 @@ namespace fairwindsk::ui::topbar {
         ui->toolButton_UL->raise();
         ui->toolButton_UR->raise();
         applyLayoutEditHints(entries);
-        hideLegacyReadoutWidgets(ui);
     }
 
     void TopBar::clearLayoutEditHints() {
@@ -279,7 +253,6 @@ namespace fairwindsk::ui::topbar {
             ui(new Ui::TopBar) {
         // Setup the UI
         ui->setupUi(this);
-        hideLegacyReadoutWidgets(ui);
         s_instance = this;
 
         // Get the FairWind singleton
@@ -291,9 +264,6 @@ namespace fairwindsk::ui::topbar {
         const auto chromeColors = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), false);
 
         m_contextWidget = createContextWidget();
-        ui->line_1->hide();
-        ui->line_2->hide();
-        ui->line_3->hide();
         ui->horizontalLayout->setContentsMargins(4, 0, 4, 0);
         applyFramelessRuntimeChrome();
 
@@ -383,9 +353,6 @@ namespace fairwindsk::ui::topbar {
         const auto chrome = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), false);
 
         const QString widgetStyle = QStringLiteral("QWidget { background: transparent; border: none; }");
-        if (ui->widget_POS) {
-            ui->widget_POS->setStyleSheet(widgetStyle);
-        }
         if (m_contextWidget) {
             m_contextWidget->setStyleSheet(widgetStyle);
         }
@@ -395,12 +362,6 @@ namespace fairwindsk::ui::topbar {
 
         const QString labelStyle = QStringLiteral("QLabel { background: transparent; border: none; color: %1; }")
                                        .arg(chrome.text.name());
-        if (ui->label_textPOS) {
-            ui->label_textPOS->setStyleSheet(labelStyle);
-        }
-        if (ui->label_POS) {
-            ui->label_POS->setStyleSheet(labelStyle);
-        }
         if (ui->label_ApplicationName) {
             ui->label_ApplicationName->setStyleSheet(labelStyle);
         }
