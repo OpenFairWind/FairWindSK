@@ -11,6 +11,28 @@
 namespace fairwindsk::ui::layout::runtime {
     namespace {
         constexpr auto kStoredToolButtonTextProperty = "_fw_bar_layout_text";
+
+        void hideLayoutItemWidgets(QLayoutItem *item) {
+            if (!item) {
+                return;
+            }
+
+            if (auto *widget = item->widget()) {
+                widget->hide();
+                return;
+            }
+
+            auto *childLayout = item->layout();
+            if (!childLayout) {
+                return;
+            }
+
+            while (childLayout->count() > 0) {
+                auto *childItem = childLayout->takeAt(0);
+                hideLayoutItemWidgets(childItem);
+                delete childItem;
+            }
+        }
     }
 
     QWidget *createSeparatorWidget(QWidget *parent,
@@ -46,9 +68,7 @@ namespace fairwindsk::ui::layout::runtime {
 
         while (layout->count() > 0) {
             auto *item = layout->takeAt(0);
-            if (auto *widget = item->widget()) {
-                widget->hide();
-            }
+            hideLayoutItemWidgets(item);
             delete item;
         }
 

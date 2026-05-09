@@ -67,6 +67,30 @@ namespace fairwindsk::ui::topbar {
                    entry.widgetId == QStringLiteral("current_context") ||
                    entry.widgetId == QStringLiteral("clock_icons");
         }
+
+        void hideLegacyReadoutWidgets(Ui::TopBar *ui) {
+            if (!ui) {
+                return;
+            }
+
+            for (auto *widget : {ui->widget_POS,
+                                 ui->widget_COG,
+                                 ui->widget_SOG,
+                                 ui->widget_HDG,
+                                 ui->widget_STW,
+                                 ui->widget_DPT,
+                                 ui->widget_WPT,
+                                 ui->widget_BTW,
+                                 ui->widget_DTG,
+                                 ui->widget_TTG,
+                                 ui->widget_ETA,
+                                 ui->widget_XTE,
+                                 ui->widget_VMG}) {
+                if (widget) {
+                    widget->hide();
+                }
+            }
+        }
     }
 
     TopBar *TopBar::instance() {
@@ -123,6 +147,7 @@ namespace fairwindsk::ui::topbar {
             return;
         }
 
+        hideLegacyReadoutWidgets(ui);
         clearLayoutEditHints();
         fairwindsk::ui::layout::runtime::clearConfiguredLayout(
             ui->horizontalLayout,
@@ -182,6 +207,7 @@ namespace fairwindsk::ui::topbar {
         ui->toolButton_UL->raise();
         ui->toolButton_UR->raise();
         applyLayoutEditHints(entries);
+        hideLegacyReadoutWidgets(ui);
     }
 
     void TopBar::clearLayoutEditHints() {
@@ -253,6 +279,7 @@ namespace fairwindsk::ui::topbar {
             ui(new Ui::TopBar) {
         // Setup the UI
         ui->setupUi(this);
+        hideLegacyReadoutWidgets(ui);
         s_instance = this;
 
         // Get the FairWind singleton
