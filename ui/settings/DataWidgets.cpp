@@ -14,6 +14,7 @@
 #include <QPushButton>
 #include <QScrollArea>
 #include <QScroller>
+#include <QSizePolicy>
 #include <QSignalBlocker>
 #include <QToolButton>
 #include <QVBoxLayout>
@@ -51,9 +52,16 @@ namespace fairwindsk::ui::settings {
     }
 
     void DataWidgets::buildUi() {
-        auto *rootLayout = new QVBoxLayout(this);
+        auto *rootLayout = new QHBoxLayout(this);
         rootLayout->setContentsMargins(8, 8, 8, 8);
         rootLayout->setSpacing(8);
+
+        auto *selectionPane = new QWidget(this);
+        selectionPane->setMinimumWidth(220);
+        selectionPane->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+        auto *selectionLayout = new QVBoxLayout(selectionPane);
+        selectionLayout->setContentsMargins(0, 0, 0, 0);
+        selectionLayout->setSpacing(8);
 
         auto *toolbarLayout = new QHBoxLayout();
         toolbarLayout->setContentsMargins(0, 0, 0, 0);
@@ -69,26 +77,28 @@ namespace fairwindsk::ui::settings {
         toolbarLayout->addWidget(m_addButton);
         toolbarLayout->addWidget(m_removeButton);
         toolbarLayout->addStretch(1);
-        rootLayout->addLayout(toolbarLayout);
+        selectionLayout->addLayout(toolbarLayout);
 
         m_listWidget = new QListWidget(this);
         m_listWidget->setSelectionMode(QAbstractItemView::SingleSelection);
         m_listWidget->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
         m_listWidget->setIconSize(QSize(40, 40));
         m_listWidget->setMinimumHeight(250);
-        m_listWidget->setMaximumHeight(330);
         m_listWidget->setUniformItemSizes(true);
         m_listWidget->setAlternatingRowColors(false);
-        m_listWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        m_listWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         QScroller::grabGesture(m_listWidget->viewport(), QScroller::TouchGesture);
         QScroller::grabGesture(m_listWidget->viewport(), QScroller::LeftMouseButtonGesture);
-        rootLayout->addWidget(m_listWidget);
+        selectionLayout->addWidget(m_listWidget, 1);
+        rootLayout->addWidget(selectionPane, 1);
 
         auto *editorScrollArea = new QScrollArea(this);
         editorScrollArea->setWidgetResizable(true);
         editorScrollArea->setFrameShape(QFrame::NoFrame);
         editorScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         editorScrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+        editorScrollArea->setMinimumWidth(420);
+        editorScrollArea->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         QScroller::grabGesture(editorScrollArea->viewport(), QScroller::TouchGesture);
         QScroller::grabGesture(editorScrollArea->viewport(), QScroller::LeftMouseButtonGesture);
 
@@ -199,7 +209,7 @@ namespace fairwindsk::ui::settings {
         editorLayout->addLayout(formLayout);
         editorLayout->addStretch(1);
         editorScrollArea->setWidget(editorWidget);
-        rootLayout->addWidget(editorScrollArea, 1);
+        rootLayout->addWidget(editorScrollArea, 3);
 
         const QList<QWidget *> controls = {
             m_nameEdit,

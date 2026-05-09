@@ -214,14 +214,15 @@ namespace fairwindsk::ui::layout {
             QList<LayoutEntry> normalized;
             normalized.reserve(entries.size());
 
-            for (const auto &entry : entries) {
+            for (auto it = entries.crbegin(); it != entries.crend(); ++it) {
+                const auto &entry = *it;
                 if (entry.kind == EntryKind::Widget) {
                     if (seenWidgets.contains(entry.widgetId)) {
                         continue;
                     }
                     seenWidgets.insert(entry.widgetId);
                 }
-                normalized.append(entry);
+                normalized.prepend(entry);
             }
 
             entries = normalized;
@@ -381,9 +382,24 @@ namespace fairwindsk::ui::layout {
             root["barLayouts"].contains(configKeyForBar(barId).toStdString()) &&
             root["barLayouts"][configKeyForBar(barId).toStdString()].is_array()) {
             for (const auto &jsonEntry : root["barLayouts"][configKeyForBar(barId).toStdString()]) {
-                const auto entry = parseEntry(jsonEntry);
+                auto entry = parseEntry(jsonEntry);
                 if (entry.kind == EntryKind::Widget && entry.widgetId.isEmpty()) {
                     continue;
+                }
+                if (entry.kind == EntryKind::Widget &&
+                    fairwindsk::ui::widgets::isDataWidgetId(root, entry.widgetId)) {
+                    if (!jsonEntry.contains("showIcon")) {
+                        entry.showIcon = false;
+                    }
+                    if (!jsonEntry.contains("showText")) {
+                        entry.showText = true;
+                    }
+                    if (!jsonEntry.contains("showUnits")) {
+                        entry.showUnits = true;
+                    }
+                    if (!jsonEntry.contains("showTrend")) {
+                        entry.showTrend = false;
+                    }
                 }
                 entries.append(entry);
             }

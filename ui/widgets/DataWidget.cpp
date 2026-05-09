@@ -3,15 +3,17 @@
 #include <algorithm>
 #include <cmath>
 
-#include <QBoxLayout>
+#include <QApplication>
 #include <QDateTime>
 #include <QEvent>
 #include <QFont>
 #include <QGeoCoordinate>
+#include <QHBoxLayout>
 #include <QIcon>
 #include <QLabel>
 #include <QProgressBar>
 #include <QSizePolicy>
+#include <QVBoxLayout>
 
 #include "FairWindSK.hpp"
 #include "Units.hpp"
@@ -23,11 +25,24 @@
 
 namespace fairwindsk::ui::widgets {
     namespace {
-        constexpr int kMetricHeight = 28;
-        constexpr int kMetricIconSize = 18;
+        constexpr int kMetricHeight = 44;
+        constexpr int kMetricIconSize = 16;
+        constexpr int kMetricHorizontalPadding = 10;
+        constexpr int kTrendWidth = 12;
+        constexpr int kUnitWidth = 34;
 
         QString fallbackNumericText(const double value) {
             return QString::number(value, 'f', std::abs(value) < 10.0 ? 2 : 1);
+        }
+
+        int valueMaximumWidth(const DataWidgetKind kind) {
+            if (kind == DataWidgetKind::Position) {
+                return 170;
+            }
+            if (kind == DataWidgetKind::DateTime || kind == DataWidgetKind::Waypoint) {
+                return 102;
+            }
+            return 76;
         }
 
         int gaugePercent(const double value, const double minimum, const double maximum) {
@@ -59,18 +74,14 @@ namespace fairwindsk::ui::widgets {
     }
 
     QSize DataWidget::sizeHint() const {
-        const int collapsedWidth = (!m_showText && !m_showUnits) ? 64 : 0;
-        if (m_definition.kind == DataWidgetKind::Position) {
-            return QSize(collapsedWidth > 0 ? 128 : 196, kMetricHeight);
-        }
-        if (m_definition.kind == DataWidgetKind::DateTime ||
-            m_definition.kind == DataWidgetKind::Waypoint) {
-            return QSize(collapsedWidth > 0 ? 84 : 126, kMetricHeight);
-        }
-        if (m_definition.kind == DataWidgetKind::Gauge) {
-            return QSize(collapsedWidth > 0 ? 84 : 118, kMetricHeight);
-        }
-        return QSize(collapsedWidth > 0 ? 64 : 96, kMetricHeight);
+        const int iconWidth = m_showIcon && !m_definition.icon.trimmed().isEmpty() ? kMetricIconSize + 4 : 0;
+        const int titleWidth = m_showText ? std::min(72, std::max(34, static_cast<int>(m_definition.name.size()) * 8)) : 0;
+        const int headerWidth = iconWidth + titleWidth;
+        const int trendWidth = m_showTrend ? kTrendWidth + 3 : 0;
+        const int unitsWidth = m_showUnits ? kUnitWidth + 3 : 0;
+        const int gaugeWidth = m_definition.kind == DataWidgetKind::Gauge ? 34 : 0;
+        const int valueWidth = valueMaximumWidth(m_definition.kind) + trendWidth + unitsWidth + gaugeWidth;
+        return QSize(std::max(headerWidth, valueWidth) + kMetricHorizontalPadding, kMetricHeight);
     }
 
     void DataWidget::setDefinition(const DataWidgetDefinition &definition) {
@@ -97,7 +108,7 @@ namespace fairwindsk::ui::widgets {
             m_titleLabel->setText(m_definition.name);
         }
         if (m_valueLabel) {
-            m_valueLabel->setMaximumWidth(m_definition.kind == DataWidgetKind::Position ? 150 : 72);
+            m_valueLabel->setMaximumWidth(valueMaximumWidth(m_definition.kind));
         }
         updateIcon();
         subscribeToSignalK();
@@ -125,52 +136,66 @@ namespace fairwindsk::ui::widgets {
     }
 
     void DataWidget::buildUi() {
-        auto *rootLayout = new QHBoxLayout(this);
-        rootLayout->setContentsMargins(5, 0, 5, 0);
-        rootLayout->setSpacing(3);
+        auto *rootLayout = new QVBoxLayout(this);
+        rootLayout->setContentsMargins(5, 2, 5, 2);
+        rootLayout->setSpacing(0);
         setMinimumHeight(kMetricHeight);
         setMaximumHeight(kMetricHeight);
+
+        m_headerWidget = new QWidget(this);
+        auto *headerLayout = new QHBoxLayout(m_headerWidget);
+        headerLayout->setContentsMargins(0, 0, 0, 0);
+        headerLayout->setSpacing(4);
+        m_headerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 
         m_iconLabel = new QLabel(this);
         m_iconLabel->setFixedSize(QSize(kMetricIconSize, kMetricIconSize));
         m_iconLabel->setScaledContents(true);
-        rootLayout->addWidget(m_iconLabel, 0, Qt::AlignVCenter);
+        headerLayout->addWidget(m_iconLabel, 0, Qt::AlignVCenter);
 
         m_titleLabel = new QLabel(m_definition.name, this);
         m_titleLabel->setTextFormat(Qt::PlainText);
-        m_titleLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+        m_titleLabel->setAlignment(Qt::AlignCenter);
         m_titleLabel->setMinimumWidth(0);
-        m_titleLabel->setMaximumWidth(46);
-        m_titleLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-        rootLayout->addWidget(m_titleLabel, 0, Qt::AlignVCenter);
+        m_titleLabel->setMaximumWidth(78);
+        m_titleLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+        headerLayout->addWidget(m_titleLabel, 1, Qt::AlignVCenter);
+        rootLayout->addWidget(m_headerWidget, 0);
+
+        m_valueWidget = new QWidget(this);
+        auto *valueLayout = new QHBoxLayout(m_valueWidget);
+        valueLayout->setContentsMargins(0, 0, 0, 0);
+        valueLayout->setSpacing(3);
+        m_valueWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+
+        m_trendLabel = new QLabel(this);
+        m_trendLabel->setTextFormat(Qt::PlainText);
+        m_trendLabel->setAlignment(Qt::AlignCenter);
+        m_trendLabel->setFixedWidth(kTrendWidth);
+        valueLayout->addWidget(m_trendLabel, 0, Qt::AlignVCenter);
 
         m_valueLabel = new QLabel(QStringLiteral("--"), this);
         m_valueLabel->setTextFormat(Qt::PlainText);
-        m_valueLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+        m_valueLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
         m_valueLabel->setMinimumWidth(0);
-        m_valueLabel->setMaximumWidth(m_definition.kind == DataWidgetKind::Position ? 150 : 72);
-        m_valueLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
-        rootLayout->addWidget(m_valueLabel, 1, Qt::AlignVCenter);
+        m_valueLabel->setMaximumWidth(valueMaximumWidth(m_definition.kind));
+        m_valueLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+        valueLayout->addWidget(m_valueLabel, 1, Qt::AlignVCenter);
 
         m_unitLabel = new QLabel(this);
         m_unitLabel->setTextFormat(Qt::PlainText);
         m_unitLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
         m_unitLabel->setMinimumWidth(0);
-        m_unitLabel->setMaximumWidth(34);
+        m_unitLabel->setMaximumWidth(kUnitWidth);
         m_unitLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-        rootLayout->addWidget(m_unitLabel, 0, Qt::AlignVCenter);
-
-        m_trendLabel = new QLabel(this);
-        m_trendLabel->setTextFormat(Qt::PlainText);
-        m_trendLabel->setAlignment(Qt::AlignCenter);
-        m_trendLabel->setMinimumWidth(18);
-        rootLayout->addWidget(m_trendLabel, 0, Qt::AlignVCenter);
+        valueLayout->addWidget(m_unitLabel, 0, Qt::AlignVCenter);
 
         m_gauge = new QProgressBar(this);
         m_gauge->setRange(0, 100);
         m_gauge->setTextVisible(false);
         m_gauge->setFixedSize(QSize(28, 6));
-        rootLayout->addWidget(m_gauge, 0, Qt::AlignVCenter);
+        valueLayout->addWidget(m_gauge, 0, Qt::AlignVCenter);
+        rootLayout->addWidget(m_valueWidget, 0);
         updateIcon();
     }
 
@@ -265,12 +290,12 @@ namespace fairwindsk::ui::widgets {
 
     QString DataWidget::trendText() const {
         if (m_trendDirection > 0) {
-            return QStringLiteral("^");
+            return QStringLiteral("▲");
         }
         if (m_trendDirection < 0) {
-            return QStringLiteral("v");
+            return QStringLiteral("▼");
         }
-        return QStringLiteral("-");
+        return {};
     }
 
     void DataWidget::renderCurrentUpdate() {
@@ -364,18 +389,42 @@ namespace fairwindsk::ui::widgets {
             pathConfigured,
             true);
 
+        if (m_valueLabel) {
+            if (m_definition.kind == DataWidgetKind::Numeric ||
+                m_definition.kind == DataWidgetKind::Gauge) {
+                m_valueLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            } else {
+                m_valueLabel->setAlignment(Qt::AlignCenter);
+            }
+        }
         if (m_iconLabel) {
             m_iconLabel->setVisible(m_showIcon && !m_definition.icon.trimmed().isEmpty());
         }
         if (m_titleLabel) {
+            m_titleLabel->setAlignment(m_showIcon ? Qt::AlignLeft | Qt::AlignVCenter : Qt::AlignCenter);
             m_titleLabel->setVisible(m_showText);
         }
         if (m_unitLabel) {
             m_unitLabel->setVisible(m_showUnits && supportsUnits && !m_unitLabel->text().trimmed().isEmpty());
         }
         if (m_trendLabel) {
-            m_trendLabel->setText(trendText());
-            m_trendLabel->setVisible(m_showTrend && supportsTrend && hasValue);
+            const QString trend = trendText();
+            m_trendLabel->setText(trend);
+            if (!trend.isEmpty()) {
+                auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+                const auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+                const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+                const QPalette referencePalette = qApp ? qApp->palette() : palette();
+                const auto statusColors = fairwindsk::ui::resolveComfortStatusColors(configuration, preset, referencePalette);
+                fairwindsk::ui::widgets::applySignalKMetricLabelColor(
+                    m_trendLabel,
+                    m_trendDirection > 0 ? statusColors.healthyFill : statusColors.errorFill);
+            }
+            m_trendLabel->setVisible(m_showTrend && supportsTrend && hasValue && !trend.isEmpty());
+        }
+        if (m_headerWidget) {
+            m_headerWidget->setVisible((m_iconLabel && m_iconLabel->isVisible()) ||
+                                       (m_titleLabel && m_titleLabel->isVisible()));
         }
         m_rendering = false;
     }
@@ -392,7 +441,8 @@ namespace fairwindsk::ui::widgets {
         auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
         const auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
         const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
-        const auto chrome = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), false);
+        const QPalette referencePalette = qApp ? qApp->palette() : palette();
+        const auto chrome = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, referencePalette, false);
         const QIcon icon = fairwindsk::ui::tintedIcon(QIcon(m_definition.icon), chrome.transparentIcon, QSize(kMetricIconSize, kMetricIconSize));
         m_iconLabel->setPixmap(icon.pixmap(QSize(kMetricIconSize, kMetricIconSize)));
         m_iconLabel->setVisible(m_showIcon && !icon.isNull());
@@ -409,7 +459,8 @@ namespace fairwindsk::ui::widgets {
         auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
         const auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
         const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
-        const auto chrome = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), false);
+        const QPalette referencePalette = qApp ? qApp->palette() : palette();
+        const auto chrome = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, referencePalette, false);
 
         setStyleSheet(QStringLiteral(
             "QWidget#%1 { background: transparent; border: none; }"
@@ -433,6 +484,17 @@ namespace fairwindsk::ui::widgets {
             valueFont.setBold(true);
             valueFont.setPointSizeF(std::max(11.0, valueFont.pointSizeF()));
             m_valueLabel->setFont(valueFont);
+        }
+        if (m_unitLabel) {
+            QFont unitFont = m_unitLabel->font();
+            unitFont.setPointSizeF(std::max(9.0, unitFont.pointSizeF()));
+            m_unitLabel->setFont(unitFont);
+        }
+        if (m_trendLabel) {
+            QFont trendFont = m_trendLabel->font();
+            trendFont.setBold(true);
+            trendFont.setPointSizeF(std::max(8.0, trendFont.pointSizeF()));
+            m_trendLabel->setFont(trendFont);
         }
         updateIcon();
         renderCurrentUpdate();

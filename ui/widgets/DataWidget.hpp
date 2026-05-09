@@ -10,6 +10,7 @@
 
 class QLabel;
 class QProgressBar;
+class QWidget;
 
 namespace fairwindsk {
     class Units;
@@ -57,6 +58,8 @@ namespace fairwindsk::ui::widgets {
         int m_trendDirection = 0;
         fairwindsk::Units *m_units = nullptr;
         QPointer<fairwindsk::signalk::Client> m_client;
+        QWidget *m_headerWidget = nullptr;
+        QWidget *m_valueWidget = nullptr;
         QLabel *m_iconLabel = nullptr;
         QLabel *m_titleLabel = nullptr;
         QLabel *m_valueLabel = nullptr;

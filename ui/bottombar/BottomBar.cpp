@@ -110,6 +110,7 @@ namespace fairwindsk::ui::bottombar {
             return;
         }
 
+        clearLayoutEditHints();
         fairwindsk::ui::layout::runtime::clearConfiguredLayout(
             ui->horizontalLayoutButtons,
             m_dynamicLayoutWidgets,

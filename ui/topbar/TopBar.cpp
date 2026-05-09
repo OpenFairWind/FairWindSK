@@ -123,6 +123,7 @@ namespace fairwindsk::ui::topbar {
             return;
         }
 
+        clearLayoutEditHints();
         fairwindsk::ui::layout::runtime::clearConfiguredLayout(
             ui->horizontalLayout,
             m_dynamicLayoutWidgets,
