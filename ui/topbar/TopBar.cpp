@@ -67,7 +67,8 @@ namespace fairwindsk::ui::topbar {
         bool isFramelessExpandedWidget(const fairwindsk::ui::layout::LayoutEntry &entry) {
             return entry.widgetId == QStringLiteral("position") ||
                    entry.widgetId == QStringLiteral("current_context") ||
-                   entry.widgetId == QStringLiteral("clock_icons");
+                   entry.widgetId == QStringLiteral("clock_icons") ||
+                   entry.widgetId == QStringLiteral("status");
         }
     }
 
@@ -85,12 +86,31 @@ namespace fairwindsk::ui::topbar {
         return container;
     }
 
+    QWidget *TopBar::createStatusWidget() {
+        auto *container = new QWidget(this);
+        container->setObjectName(QStringLiteral("widget_StatusBlock"));
+        container->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+
+        auto *layout = new QHBoxLayout(container);
+        layout->setContentsMargins(0, 0, 0, 0);
+        layout->setSpacing(0);
+
+        m_compactStatusIcons = new fairwindsk::ui::widgets::SignalKStatusIconsWidget(container);
+        m_compactStatusIcons->setDetailIndicatorsVisible(false);
+        layout->addWidget(m_compactStatusIcons, 0, Qt::AlignCenter);
+
+        return container;
+    }
+
     QWidget *TopBar::widgetForItemId(const QString &itemId) const {
         if (itemId == QStringLiteral("current_context")) {
             return m_contextWidget;
         }
         if (itemId == QStringLiteral("clock_icons")) {
             return ui->widget_ClockBlock;
+        }
+        if (itemId == QStringLiteral("status")) {
+            return m_statusWidget;
         }
 
         return nullptr;
@@ -124,10 +144,20 @@ namespace fairwindsk::ui::topbar {
                 ui->label_DateTime->setVisible(entry.showText);
             }
             if (ui->widget_SignalKStatusIcons) {
-                ui->widget_SignalKStatusIcons->setVisible(entry.showIcon);
+                ui->widget_SignalKStatusIcons->setVisible(true);
             }
             if (ui->label_ComfortViewIcon) {
                 ui->label_ComfortViewIcon->setVisible(entry.showIcon);
+            }
+            if (m_signalKStatusIcons) {
+                m_signalKStatusIcons->setVisible(true);
+            }
+            return;
+        }
+
+        if (entry.widgetId == QStringLiteral("status")) {
+            if (m_compactStatusIcons) {
+                m_compactStatusIcons->setVisible(entry.showIcon || entry.showText);
             }
         }
     }
@@ -292,6 +322,7 @@ namespace fairwindsk::ui::topbar {
         const auto chromeColors = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), false);
 
         m_contextWidget = createContextWidget();
+        m_statusWidget = createStatusWidget();
         ui->horizontalLayout->setContentsMargins(4, 0, 4, 0);
         applyFramelessRuntimeChrome();
 
@@ -314,6 +345,7 @@ namespace fairwindsk::ui::topbar {
             statusLayout->setContentsMargins(0, 0, 0, 0);
             statusLayout->setSpacing(0);
             m_signalKStatusIcons = new fairwindsk::ui::widgets::SignalKStatusIconsWidget(ui->widget_SignalKStatusIcons);
+            m_signalKStatusIcons->setDetailIndicatorsVisible(true);
             statusLayout->addWidget(m_signalKStatusIcons, 0, Qt::AlignVCenter);
         }
         
@@ -348,6 +380,9 @@ namespace fairwindsk::ui::topbar {
             updateComfortViewIcon();
             if (m_signalKStatusIcons) {
                 m_signalKStatusIcons->refreshFromConfiguration();
+            }
+            if (m_compactStatusIcons) {
+                m_compactStatusIcons->refreshFromConfiguration();
             }
         }
     }
@@ -389,6 +424,9 @@ namespace fairwindsk::ui::topbar {
         }
         if (ui->widget_ClockBlock) {
             ui->widget_ClockBlock->setStyleSheet(widgetStyle);
+        }
+        if (m_statusWidget) {
+            m_statusWidget->setStyleSheet(widgetStyle);
         }
 
         const QString labelStyle = QStringLiteral("QLabel { background: transparent; border: none; color: %1; }")
@@ -451,6 +489,9 @@ namespace fairwindsk::ui::topbar {
         }
         if (m_signalKStatusIcons) {
             m_signalKStatusIcons->refreshFromConfiguration();
+        }
+        if (m_compactStatusIcons) {
+            m_compactStatusIcons->refreshFromConfiguration();
         }
     }
 

@@ -23,6 +23,7 @@ namespace fairwindsk::ui::widgets {
         explicit SignalKStatusIconsWidget(QWidget *parent = nullptr);
         ~SignalKStatusIconsWidget() override;
 
+        void setDetailIndicatorsVisible(bool visible);
         void refreshFromConfiguration();
 
     protected:
@@ -44,6 +45,7 @@ namespace fairwindsk::ui::widgets {
     private:
         void applyIndicatorColor(QLabel *label, const QColor &color) const;
         void applyStatusBadge(QLabel *label, const QString &text, const QColor &fillColor, const QColor &textColor) const;
+        void refreshDetailIndicatorVisibility() const;
         void setBusyVisible(bool active);
         void refreshIndicators(bool serverHealthy,
                                bool restHealthy,
@@ -61,6 +63,7 @@ namespace fairwindsk::ui::widgets {
         bool m_restHealthy = false;
         bool m_streamHealthy = false;
         bool m_requestActive = false;
+        bool m_detailIndicatorsVisible = true;
         QString m_stateText;
         QString m_runtimeSummary;
         QString m_runtimeBadgeText;

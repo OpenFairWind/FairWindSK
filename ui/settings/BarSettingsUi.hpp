@@ -26,6 +26,9 @@ namespace fairwindsk::ui::settings::barsettings {
         if (entry.widgetId == QStringLiteral("clock_icons")) {
             return QObject::tr("Clock");
         }
+        if (entry.widgetId == QStringLiteral("status")) {
+            return QObject::tr("Status");
+        }
         if (entry.widgetId == QStringLiteral("open_apps")) {
             return QObject::tr("Apps");
         }

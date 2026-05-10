@@ -1246,6 +1246,12 @@
         <translation>Orologio e stato</translation>
     </message>
     <message>
+        <location filename="../../ui/layout/BarLayout.cpp" line="41"/>
+        <location filename="../../ui/settings/BarSettingsUi.hpp" line="29"/>
+        <source>Status</source>
+        <translation>Stato</translation>
+    </message>
+    <message>
         <location filename="../../ui/layout/BarLayout.cpp" line="46"/>
         <source>Anchor</source>
         <translation>Ancora</translation>

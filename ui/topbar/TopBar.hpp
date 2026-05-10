@@ -64,6 +64,7 @@ namespace fairwindsk::ui::topbar {
         void resetCurrentAppPresentation() const;
         void rebuildLayout();
         QWidget *createContextWidget();
+        QWidget *createStatusWidget();
         void applyEntryPresentation(const fairwindsk::ui::layout::LayoutEntry &entry,
                                     QWidget *widget) const;
         void clearLayoutEditHints();
@@ -72,8 +73,10 @@ namespace fairwindsk::ui::topbar {
         Ui::TopBar *ui;
         QPointer<AppItem> m_currentApp;
         widgets::SignalKStatusIconsWidget *m_signalKStatusIcons = nullptr;
+        widgets::SignalKStatusIconsWidget *m_compactStatusIcons = nullptr;
         QTimer *m_timer = nullptr;
         QWidget *m_contextWidget = nullptr;
+        QWidget *m_statusWidget = nullptr;
         QHBoxLayout *m_contextLayout = nullptr;
         QHash<QString, QPointer<fairwindsk::ui::widgets::DataWidget>> m_dataWidgets;
         QVector<QPointer<QWidget>> m_dynamicLayoutWidgets;
