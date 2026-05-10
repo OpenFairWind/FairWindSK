@@ -81,6 +81,7 @@ namespace fairwindsk::ui::topbar {
         QHash<QString, QSizePolicy> m_baseSizePolicies;
         QHash<QWidget *, QPointer<QGraphicsEffect>> m_layoutHintEffects;
         bool m_layoutEditHighlightEnabled = false;
+        bool m_deferredExternalWidgetResolution = false;
         inline static TopBar *s_instance = nullptr;
     };
 }

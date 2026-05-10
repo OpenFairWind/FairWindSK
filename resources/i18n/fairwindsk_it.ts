@@ -443,88 +443,88 @@
 <context>
     <name>DataWidgetConfig</name>
     <message>
-        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="125"/>
-        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="167"/>
+        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="133"/>
+        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="175"/>
         <source>Position</source>
         <translation>Posizione</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="126"/>
+        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="134"/>
         <source>COG</source>
         <translation>COG</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="127"/>
+        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="135"/>
         <source>SOG</source>
         <translation>SOG</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="128"/>
+        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="136"/>
         <source>HDG</source>
         <translation>HDG</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="129"/>
+        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="137"/>
         <source>STW</source>
         <translation>STW</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="130"/>
+        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="138"/>
         <source>DPT</source>
         <translation>DPT</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="131"/>
+        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="139"/>
         <source>WPT</source>
         <translation>WPT</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="132"/>
+        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="140"/>
         <source>BTW</source>
         <translation>BTW</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="133"/>
+        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="141"/>
         <source>DTG</source>
         <translation>DTG</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="134"/>
+        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="142"/>
         <source>TTG</source>
         <translation>TTG</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="135"/>
+        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="143"/>
         <source>ETA</source>
         <translation>ETA</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="136"/>
+        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="144"/>
         <source>XTE</source>
         <translation>XTE</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="137"/>
+        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="145"/>
         <source>VMG</source>
         <translation>VMG</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="165"/>
+        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="173"/>
         <source>Gauge</source>
         <translation>Indicatore</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="169"/>
+        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="177"/>
         <source>Date/Time</source>
         <translation>Data/Ora</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="171"/>
+        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="179"/>
         <source>Waypoint</source>
         <translation>Waypoint</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="174"/>
+        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="182"/>
         <source>Numerical</source>
         <translation>Numerico</translation>
     </message>
@@ -684,98 +684,98 @@
 <context>
     <name>FairWindSK</name>
     <message>
-        <location filename="../../FairWindSK.cpp" line="1366"/>
-        <location filename="../../FairWindSK.cpp" line="1533"/>
+        <location filename="../../FairWindSK.cpp" line="1362"/>
+        <location filename="../../FairWindSK.cpp" line="1529"/>
         <source>Apps ready</source>
         <translation type="unfinished">App pronte</translation>
     </message>
     <message>
-        <location filename="../../FairWindSK.cpp" line="1366"/>
-        <location filename="../../FairWindSK.cpp" line="1376"/>
-        <location filename="../../FairWindSK.cpp" line="1495"/>
+        <location filename="../../FairWindSK.cpp" line="1362"/>
+        <location filename="../../FairWindSK.cpp" line="1372"/>
+        <location filename="../../FairWindSK.cpp" line="1491"/>
         <source>Apps idle</source>
         <translation type="unfinished">App inattive</translation>
     </message>
     <message>
-        <location filename="../../FairWindSK.cpp" line="1376"/>
-        <location filename="../../FairWindSK.cpp" line="1545"/>
+        <location filename="../../FairWindSK.cpp" line="1372"/>
+        <location filename="../../FairWindSK.cpp" line="1541"/>
         <source>Apps cached</source>
         <translation type="unfinished">App in cache</translation>
     </message>
     <message>
-        <location filename="../../FairWindSK.cpp" line="1389"/>
+        <location filename="../../FairWindSK.cpp" line="1385"/>
         <source>Loading apps</source>
         <translation type="unfinished">Caricamento app</translation>
     </message>
     <message>
-        <location filename="../../FairWindSK.cpp" line="1389"/>
+        <location filename="../../FairWindSK.cpp" line="1385"/>
         <source>Refreshing apps</source>
         <translation type="unfinished">Aggiornamento app</translation>
     </message>
     <message>
-        <location filename="../../FairWindSK.cpp" line="1508"/>
-        <location filename="../../FairWindSK.cpp" line="1544"/>
+        <location filename="../../FairWindSK.cpp" line="1504"/>
+        <location filename="../../FairWindSK.cpp" line="1540"/>
         <source>Apps refresh failed</source>
         <translation type="unfinished">Aggiornamento app non riuscito</translation>
     </message>
     <message>
-        <location filename="../../FairWindSK.cpp" line="1645"/>
+        <location filename="../../FairWindSK.cpp" line="1641"/>
         <source>Signal K disconnected</source>
         <translation type="unfinished">Signal K disconnesso</translation>
     </message>
     <message>
-        <location filename="../../FairWindSK.cpp" line="1656"/>
+        <location filename="../../FairWindSK.cpp" line="1652"/>
         <source>Foreground app degraded</source>
         <translation type="unfinished">App in primo piano degradata</translation>
     </message>
     <message>
-        <location filename="../../FairWindSK.cpp" line="1660"/>
+        <location filename="../../FairWindSK.cpp" line="1656"/>
         <source>Connecting to Signal K</source>
         <translation type="unfinished">Connessione a Signal K</translation>
     </message>
     <message>
-        <location filename="../../FairWindSK.cpp" line="1664"/>
+        <location filename="../../FairWindSK.cpp" line="1660"/>
         <source>Reconnecting to Signal K</source>
         <translation type="unfinished">Riconnessione a Signal K</translation>
     </message>
     <message>
-        <location filename="../../FairWindSK.cpp" line="1668"/>
+        <location filename="../../FairWindSK.cpp" line="1664"/>
         <source>REST degraded</source>
         <translation type="unfinished">REST degradato</translation>
     </message>
     <message>
-        <location filename="../../FairWindSK.cpp" line="1672"/>
+        <location filename="../../FairWindSK.cpp" line="1668"/>
         <source>Stream degraded</source>
         <translation type="unfinished">Stream degradato</translation>
     </message>
     <message>
-        <location filename="../../FairWindSK.cpp" line="1676"/>
+        <location filename="../../FairWindSK.cpp" line="1672"/>
         <source>Live data stale</source>
         <translation type="unfinished">Dati live non aggiornati</translation>
     </message>
     <message>
-        <location filename="../../FairWindSK.cpp" line="1681"/>
+        <location filename="../../FairWindSK.cpp" line="1677"/>
         <source>Signal K live • Refreshing apps</source>
         <translation type="unfinished">Signal K live • Aggiornamento app</translation>
     </message>
     <message>
+        <location filename="../../FairWindSK.cpp" line="1677"/>
         <location filename="../../FairWindSK.cpp" line="1681"/>
-        <location filename="../../FairWindSK.cpp" line="1685"/>
         <source>Signal K live • %1</source>
         <translation type="unfinished">Signal K live • %1</translation>
     </message>
     <message>
-        <location filename="../../FairWindSK.cpp" line="1685"/>
+        <location filename="../../FairWindSK.cpp" line="1681"/>
         <source>Signal K live • Apps stale</source>
         <translation type="unfinished">Signal K live • App non aggiornate</translation>
     </message>
     <message>
-        <location filename="../../FairWindSK.cpp" line="1689"/>
+        <location filename="../../FairWindSK.cpp" line="1685"/>
         <source>Signal K live</source>
         <translation type="unfinished">Signal K live</translation>
     </message>
     <message>
-        <location filename="../../FairWindSK.cpp" line="1694"/>
+        <location filename="../../FairWindSK.cpp" line="1690"/>
         <source>Signal K degraded</source>
         <translation type="unfinished">Signal K degradato</translation>
     </message>
@@ -1178,6 +1178,7 @@
         <translation>Minuti e secondi devono essere inferiori a 60.</translation>
     </message>
     <message>
+        <location filename="../../ui/layout/BarLayout.cpp" line="45"/>
         <location filename="../../ui/launcher/Launcher.cpp" line="170"/>
         <location filename="../../ui/launcher/Launcher.cpp" line="220"/>
         <location filename="../../ui/launcher/Launcher.cpp" line="225"/>
@@ -1207,88 +1208,95 @@
         <translation type="vanished">Posizione</translation>
     </message>
     <message>
-        <location filename="../../ui/layout/BarLayout.cpp" line="38"/>
+        <location filename="../../ui/layout/BarLayout.cpp" line="39"/>
         <source>Current Application / Launcher Page Label</source>
         <translation>Nome applicazione corrente / nome pagina launcher</translation>
     </message>
     <message>
-        <location filename="../../ui/layout/BarLayout.cpp" line="39"/>
         <source>Clock and Icons</source>
-        <translation>Orologio e icone</translation>
+        <translation type="vanished">Orologio e icone</translation>
     </message>
     <message>
-        <location filename="../../ui/layout/BarLayout.cpp" line="40"/>
         <source>Currently Open Applications</source>
-        <translation>Applicazioni aperte</translation>
+        <translation type="vanished">Applicazioni aperte</translation>
     </message>
     <message>
-        <location filename="../../ui/layout/BarLayout.cpp" line="41"/>
+        <location filename="../../ui/layout/BarLayout.cpp" line="42"/>
         <source>MyData</source>
         <translation>MyData</translation>
     </message>
     <message>
-        <location filename="../../ui/layout/BarLayout.cpp" line="42"/>
+        <location filename="../../ui/layout/BarLayout.cpp" line="43"/>
         <source>POB</source>
         <translation type="unfinished">POB</translation>
     </message>
     <message>
-        <location filename="../../ui/layout/BarLayout.cpp" line="43"/>
+        <location filename="../../ui/layout/BarLayout.cpp" line="44"/>
         <source>Autopilot</source>
         <translation>Autopilota</translation>
     </message>
     <message>
-        <location filename="../../ui/layout/BarLayout.cpp" line="44"/>
+        <location filename="../../ui/layout/BarLayout.cpp" line="41"/>
         <source>Apps</source>
-        <translation type="unfinished"></translation>
+        <translation>Applicazioni</translation>
     </message>
     <message>
-        <location filename="../../ui/layout/BarLayout.cpp" line="45"/>
+        <location filename="../../ui/layout/BarLayout.cpp" line="40"/>
+        <source>Clock and Status</source>
+        <translation>Orologio e stato</translation>
+    </message>
+    <message>
+        <location filename="../../ui/layout/BarLayout.cpp" line="46"/>
         <source>Anchor</source>
         <translation>Ancora</translation>
     </message>
     <message>
-        <location filename="../../ui/layout/BarLayout.cpp" line="46"/>
+        <location filename="../../ui/layout/BarLayout.cpp" line="47"/>
         <source>Alarms</source>
         <translation>Allarmi</translation>
     </message>
     <message>
-        <location filename="../../ui/layout/BarLayout.cpp" line="47"/>
+        <location filename="../../ui/layout/BarLayout.cpp" line="48"/>
         <source>Settings</source>
         <translation>Impostazioni</translation>
     </message>
     <message>
-        <location filename="../../ui/layout/BarLayout.cpp" line="48"/>
         <source>SignalK Status</source>
-        <translation>Stato Signal K</translation>
+        <translation type="vanished">Stato Signal K</translation>
     </message>
     <message>
-        <location filename="../../ui/layout/BarLayout.cpp" line="192"/>
+        <location filename="../../ui/layout/BarLayout.cpp" line="49"/>
+        <source>Signal K Box</source>
+        <translation>Riquadro Signal K</translation>
+    </message>
+    <message>
+        <location filename="../../ui/layout/BarLayout.cpp" line="296"/>
         <source>Top Bar</source>
         <translation>Barra superiore</translation>
     </message>
     <message>
-        <location filename="../../ui/layout/BarLayout.cpp" line="192"/>
+        <location filename="../../ui/layout/BarLayout.cpp" line="296"/>
         <source>Bottom Bar</source>
         <translation>Barra inferiore</translation>
     </message>
     <message>
-        <location filename="../../ui/layout/BarLayout.cpp" line="205"/>
+        <location filename="../../ui/layout/BarLayout.cpp" line="309"/>
         <source>Separator</source>
         <translation>Separatore</translation>
     </message>
     <message>
-        <location filename="../../ui/layout/BarLayout.cpp" line="208"/>
+        <location filename="../../ui/layout/BarLayout.cpp" line="312"/>
         <source>Elastic Extender</source>
         <translation>Estensore elastico</translation>
     </message>
     <message>
-        <location filename="../../ui/layout/BarLayout.cpp" line="221"/>
-        <location filename="../../ui/layout/BarLayout.cpp" line="225"/>
+        <location filename="../../ui/layout/BarLayout.cpp" line="325"/>
+        <location filename="../../ui/layout/BarLayout.cpp" line="329"/>
         <source>Maximum possible size</source>
         <translation>Dimensione massima possibile</translation>
     </message>
     <message>
-        <location filename="../../ui/layout/BarLayout.cpp" line="226"/>
+        <location filename="../../ui/layout/BarLayout.cpp" line="330"/>
         <source>Minimum needed size</source>
         <translation>Dimensione minima necessaria</translation>
     </message>
@@ -1464,7 +1472,7 @@
     <message>
         <location filename="../../ui/settings/Units.cpp" line="58"/>
         <source>Date/Time</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Data/Ora</translation>
     </message>
     <message>
         <location filename="../../ui/settings/WidgetPalette.cpp" line="175"/>
@@ -1562,7 +1570,7 @@
     <message>
         <location filename="../../ui/settings/Comfort.cpp" line="85"/>
         <source>Text</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Testo</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Comfort.cpp" line="86"/>
@@ -1592,7 +1600,7 @@
     <message>
         <location filename="../../ui/settings/Comfort.cpp" line="91"/>
         <source>Icon</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Icona</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Comfort.cpp" line="92"/>
@@ -1901,33 +1909,33 @@
 <context>
     <name>SignalKMetricState</name>
     <message>
-        <location filename="../../ui/widgets/SignalKMetricState.hpp" line="38"/>
+        <location filename="../../ui/widgets/SignalKMetricState.hpp" line="40"/>
         <source>Not configured</source>
         <translation>Non configurato</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/SignalKMetricState.hpp" line="43"/>
+        <location filename="../../ui/widgets/SignalKMetricState.hpp" line="45"/>
         <source>Live</source>
         <translation>Live</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/SignalKMetricState.hpp" line="45"/>
+        <location filename="../../ui/widgets/SignalKMetricState.hpp" line="47"/>
         <source>Stale</source>
         <translation>Non aggiornato</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/SignalKMetricState.hpp" line="47"/>
-        <location filename="../../ui/widgets/SignalKMetricState.hpp" line="50"/>
+        <location filename="../../ui/widgets/SignalKMetricState.hpp" line="49"/>
+        <location filename="../../ui/widgets/SignalKMetricState.hpp" line="52"/>
         <source>Missing</source>
         <translation>Mancante</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/SignalKMetricState.hpp" line="60"/>
+        <location filename="../../ui/widgets/SignalKMetricState.hpp" line="62"/>
         <source>%1: %2</source>
         <translation>%1: %2</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/SignalKMetricState.hpp" line="66"/>
+        <location filename="../../ui/widgets/SignalKMetricState.hpp" line="68"/>
         <source>
 Last live update %1</source>
         <translation>
@@ -1942,139 +1950,24 @@ Ultimo aggiornamento live %1</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.ui" line="86"/>
         <source>Position</source>
-        <translation>Posizione</translation>
+        <translation type="vanished">Posizione</translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.ui" line="107"/>
-        <source>888888888888888888888888</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../ui/topbar/TopBar.ui" line="140"/>
-        <source>COG</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../ui/topbar/TopBar.ui" line="161"/>
-        <location filename="../../ui/topbar/TopBar.ui" line="228"/>
-        <location filename="../../ui/topbar/TopBar.ui" line="366"/>
-        <location filename="../../ui/topbar/TopBar.ui" line="431"/>
-        <location filename="../../ui/topbar/TopBar.ui" line="573"/>
-        <location filename="../../ui/topbar/TopBar.ui" line="886"/>
-        <source>8888</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../ui/topbar/TopBar.ui" line="177"/>
-        <location filename="../../ui/topbar/TopBar.ui" line="318"/>
-        <location filename="../../ui/topbar/TopBar.ui" line="589"/>
         <source>°</source>
-        <translation type="unfinished">°</translation>
+        <translation type="obsolete">°</translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.ui" line="207"/>
-        <source>SOG</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../ui/topbar/TopBar.ui" line="244"/>
-        <location filename="../../ui/topbar/TopBar.ui" line="379"/>
-        <location filename="../../ui/topbar/TopBar.ui" line="905"/>
-        <source>kn</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../ui/topbar/TopBar.ui" line="281"/>
-        <source>HDG</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../ui/topbar/TopBar.ui" line="302"/>
-        <source>888</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../ui/topbar/TopBar.ui" line="348"/>
-        <source>STW</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../ui/topbar/TopBar.ui" line="413"/>
-        <source>DPT</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../ui/topbar/TopBar.ui" line="444"/>
         <source>m</source>
-        <translation type="unfinished">m</translation>
+        <translation type="obsolete">m</translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.ui" line="469"/>
+        <location filename="../../ui/topbar/TopBar.ui" line="68"/>
         <source>...</source>
         <translation type="unfinished">...</translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.ui" line="504"/>
-        <source>WPT</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../ui/topbar/TopBar.ui" line="522"/>
-        <source>--</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../ui/topbar/TopBar.ui" line="552"/>
-        <source>BTW</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../ui/topbar/TopBar.ui" line="616"/>
-        <source>DTG</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../ui/topbar/TopBar.ui" line="637"/>
-        <location filename="../../ui/topbar/TopBar.ui" line="813"/>
-        <source>888888</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../ui/topbar/TopBar.ui" line="656"/>
-        <location filename="../../ui/topbar/TopBar.ui" line="832"/>
-        <source>nm</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../ui/topbar/TopBar.ui" line="683"/>
-        <source>TTG</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../ui/topbar/TopBar.ui" line="701"/>
-        <location filename="../../ui/topbar/TopBar.ui" line="749"/>
-        <source>88:88:88</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../ui/topbar/TopBar.ui" line="728"/>
-        <source>ETA</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../ui/topbar/TopBar.ui" line="789"/>
-        <source>XTE</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../ui/topbar/TopBar.ui" line="862"/>
-        <source>VMG</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../ui/topbar/TopBar.ui" line="947"/>
+        <location filename="../../ui/topbar/TopBar.ui" line="105"/>
         <source>-- -- ---- --:--</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2249,190 +2142,190 @@ Ultimo aggiornamento live %1</translation>
 <context>
     <name>fairwindsk::signalk::Client</name>
     <message>
-        <location filename="../../signalk/Client.cpp" line="90"/>
+        <location filename="../../signalk/Client.cpp" line="98"/>
         <source>Timeout while contacting %1</source>
         <translation>Timeout durante il contatto con %1</translation>
     </message>
     <message>
-        <location filename="../../signalk/Client.cpp" line="154"/>
-        <location filename="../../signalk/Client.cpp" line="1219"/>
+        <location filename="../../signalk/Client.cpp" line="162"/>
+        <location filename="../../signalk/Client.cpp" line="1226"/>
         <source>REST online</source>
         <translation>REST online</translation>
     </message>
     <message>
-        <location filename="../../signalk/Client.cpp" line="156"/>
+        <location filename="../../signalk/Client.cpp" line="164"/>
         <source>REST error</source>
         <translation>Errore REST</translation>
     </message>
     <message>
-        <location filename="../../signalk/Client.cpp" line="171"/>
+        <location filename="../../signalk/Client.cpp" line="179"/>
         <source>Signal K request failed</source>
         <translation>Richiesta Signal K non riuscita</translation>
     </message>
     <message>
-        <location filename="../../signalk/Client.cpp" line="193"/>
-        <location filename="../../signalk/Client.cpp" line="1657"/>
+        <location filename="../../signalk/Client.cpp" line="201"/>
+        <location filename="../../signalk/Client.cpp" line="1664"/>
         <source>REST + Stream online</source>
         <translation>REST + stream online</translation>
     </message>
     <message>
-        <location filename="../../signalk/Client.cpp" line="195"/>
-        <location filename="../../signalk/Client.cpp" line="1660"/>
+        <location filename="../../signalk/Client.cpp" line="203"/>
+        <location filename="../../signalk/Client.cpp" line="1667"/>
         <source>REST online, stream offline</source>
         <translation>REST online, stream offline</translation>
     </message>
     <message>
-        <location filename="../../signalk/Client.cpp" line="197"/>
-        <location filename="../../signalk/Client.cpp" line="1663"/>
+        <location filename="../../signalk/Client.cpp" line="205"/>
+        <location filename="../../signalk/Client.cpp" line="1670"/>
         <source>Stream online, REST offline</source>
         <translation>Stream online, REST offline</translation>
     </message>
     <message>
-        <location filename="../../signalk/Client.cpp" line="199"/>
-        <location filename="../../signalk/Client.cpp" line="1298"/>
-        <location filename="../../signalk/Client.cpp" line="1310"/>
-        <location filename="../../signalk/Client.cpp" line="1665"/>
+        <location filename="../../signalk/Client.cpp" line="207"/>
+        <location filename="../../signalk/Client.cpp" line="1305"/>
+        <location filename="../../signalk/Client.cpp" line="1317"/>
+        <location filename="../../signalk/Client.cpp" line="1672"/>
         <source>Signal K offline</source>
         <translation>Signal K offline</translation>
     </message>
     <message>
-        <location filename="../../signalk/Client.cpp" line="242"/>
+        <location filename="../../signalk/Client.cpp" line="250"/>
         <source>%1 %2</source>
         <translation>%1 %2</translation>
     </message>
     <message>
-        <location filename="../../signalk/Client.cpp" line="248"/>
+        <location filename="../../signalk/Client.cpp" line="256"/>
         <source>Version %1</source>
         <translation>Versione %1</translation>
     </message>
     <message>
-        <location filename="../../signalk/Client.cpp" line="252"/>
+        <location filename="../../signalk/Client.cpp" line="260"/>
         <source>Signal K reachable</source>
         <translation>Signal K raggiungibile</translation>
     </message>
     <message>
-        <location filename="../../signalk/Client.cpp" line="373"/>
-        <location filename="../../signalk/Client.cpp" line="374"/>
-        <location filename="../../signalk/Client.cpp" line="375"/>
-        <location filename="../../signalk/Client.cpp" line="1272"/>
+        <location filename="../../signalk/Client.cpp" line="381"/>
+        <location filename="../../signalk/Client.cpp" line="382"/>
+        <location filename="../../signalk/Client.cpp" line="383"/>
+        <location filename="../../signalk/Client.cpp" line="1279"/>
         <source>Connecting to Signal K</source>
         <translation>Connessione a Signal K</translation>
     </message>
     <message>
-        <location filename="../../signalk/Client.cpp" line="380"/>
-        <location filename="../../signalk/Client.cpp" line="381"/>
+        <location filename="../../signalk/Client.cpp" line="388"/>
+        <location filename="../../signalk/Client.cpp" line="389"/>
         <source>Signal K disabled</source>
         <translation>Signal K disabilitato</translation>
     </message>
     <message>
-        <location filename="../../signalk/Client.cpp" line="382"/>
+        <location filename="../../signalk/Client.cpp" line="390"/>
         <source>Signal K connection disabled</source>
         <translation>Connessione Signal K disabilitata</translation>
     </message>
     <message>
-        <location filename="../../signalk/Client.cpp" line="1010"/>
-        <location filename="../../signalk/Client.cpp" line="1063"/>
+        <location filename="../../signalk/Client.cpp" line="1018"/>
+        <location filename="../../signalk/Client.cpp" line="1069"/>
         <source>Stream online</source>
         <translation>Stream online</translation>
     </message>
     <message>
-        <location filename="../../signalk/Client.cpp" line="1047"/>
-        <location filename="../../signalk/Client.cpp" line="1440"/>
-        <location filename="../../signalk/Client.cpp" line="1441"/>
+        <location filename="../../signalk/Client.cpp" line="1053"/>
+        <location filename="../../signalk/Client.cpp" line="1447"/>
+        <location filename="../../signalk/Client.cpp" line="1448"/>
         <source>Signal K restarting</source>
         <translation>Riavvio Signal K</translation>
     </message>
     <message>
-        <location filename="../../signalk/Client.cpp" line="1048"/>
+        <location filename="../../signalk/Client.cpp" line="1054"/>
         <source>Waiting for Signal K restart</source>
         <translation>Attesa riavvio Signal K</translation>
     </message>
     <message>
-        <location filename="../../signalk/Client.cpp" line="1052"/>
+        <location filename="../../signalk/Client.cpp" line="1058"/>
         <source>Stream disconnected</source>
         <translation>Stream disconnesso</translation>
     </message>
     <message>
-        <location filename="../../signalk/Client.cpp" line="1053"/>
+        <location filename="../../signalk/Client.cpp" line="1059"/>
         <source>Waiting for Signal K</source>
         <translation>Attesa Signal K</translation>
     </message>
     <message>
-        <location filename="../../signalk/Client.cpp" line="1144"/>
+        <location filename="../../signalk/Client.cpp" line="1150"/>
         <source>Data stale</source>
         <translation>Dati non aggiornati</translation>
     </message>
     <message>
-        <location filename="../../signalk/Client.cpp" line="1145"/>
+        <location filename="../../signalk/Client.cpp" line="1151"/>
         <source>Using cached Signal K data</source>
         <translation>Uso dati Signal K in cache</translation>
     </message>
     <message>
-        <location filename="../../signalk/Client.cpp" line="1220"/>
+        <location filename="../../signalk/Client.cpp" line="1227"/>
         <source>Connecting stream</source>
         <translation>Connessione stream</translation>
     </message>
     <message>
-        <location filename="../../signalk/Client.cpp" line="1236"/>
+        <location filename="../../signalk/Client.cpp" line="1243"/>
         <source>Connected in public mode</source>
         <translation>Connesso in modalità pubblica</translation>
     </message>
     <message>
-        <location filename="../../signalk/Client.cpp" line="1261"/>
+        <location filename="../../signalk/Client.cpp" line="1268"/>
         <source>Reconnecting stream</source>
         <translation>Riconnessione stream</translation>
     </message>
     <message>
-        <location filename="../../signalk/Client.cpp" line="1262"/>
-        <location filename="../../signalk/Client.cpp" line="1272"/>
+        <location filename="../../signalk/Client.cpp" line="1269"/>
+        <location filename="../../signalk/Client.cpp" line="1279"/>
         <source>Reconnecting to Signal K</source>
         <translation>Riconnessione a Signal K</translation>
     </message>
     <message>
-        <location filename="../../signalk/Client.cpp" line="1294"/>
-        <location filename="../../signalk/Client.cpp" line="1299"/>
-        <location filename="../../signalk/Client.cpp" line="1311"/>
+        <location filename="../../signalk/Client.cpp" line="1301"/>
+        <location filename="../../signalk/Client.cpp" line="1306"/>
+        <location filename="../../signalk/Client.cpp" line="1318"/>
         <source>Signal K server not available</source>
         <translation>Server Signal K non disponibile</translation>
     </message>
     <message>
-        <location filename="../../signalk/Client.cpp" line="1308"/>
+        <location filename="../../signalk/Client.cpp" line="1315"/>
         <source>Invalid Signal K discovery payload</source>
         <translation>Payload rilevamento Signal K non valido</translation>
     </message>
     <message>
-        <location filename="../../signalk/Client.cpp" line="1442"/>
+        <location filename="../../signalk/Client.cpp" line="1449"/>
         <source>Signal K restart requested</source>
         <translation>Riavvio Signal K richiesto</translation>
     </message>
     <message>
-        <location filename="../../signalk/Client.cpp" line="1699"/>
-        <location filename="../../signalk/Client.cpp" line="1712"/>
+        <location filename="../../signalk/Client.cpp" line="1706"/>
+        <location filename="../../signalk/Client.cpp" line="1719"/>
         <source>Disconnected</source>
         <translation>Disconnesso</translation>
     </message>
     <message>
-        <location filename="../../signalk/Client.cpp" line="1701"/>
+        <location filename="../../signalk/Client.cpp" line="1708"/>
         <source>Connecting</source>
         <translation>Connessione</translation>
     </message>
     <message>
-        <location filename="../../signalk/Client.cpp" line="1703"/>
+        <location filename="../../signalk/Client.cpp" line="1710"/>
         <source>Live</source>
         <translation>Live</translation>
     </message>
     <message>
-        <location filename="../../signalk/Client.cpp" line="1705"/>
+        <location filename="../../signalk/Client.cpp" line="1712"/>
         <source>Stale</source>
         <translation>Non aggiornato</translation>
     </message>
     <message>
-        <location filename="../../signalk/Client.cpp" line="1707"/>
+        <location filename="../../signalk/Client.cpp" line="1714"/>
         <source>Reconnecting</source>
         <translation>Riconnessione</translation>
     </message>
     <message>
-        <location filename="../../signalk/Client.cpp" line="1709"/>
+        <location filename="../../signalk/Client.cpp" line="1716"/>
         <source>Degraded</source>
         <translation>Degradato</translation>
     </message>
@@ -2702,23 +2595,23 @@ Ultimo aggiornamento live %1</translation>
 <context>
     <name>fairwindsk::ui::bottombar::BottomBar</name>
     <message>
-        <location filename="../../ui/bottombar/BottomBar.cpp" line="553"/>
+        <location filename="../../ui/bottombar/BottomBar.cpp" line="533"/>
         <source>Application launcher</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/bottombar/BottomBar.cpp" line="554"/>
+        <location filename="../../ui/bottombar/BottomBar.cpp" line="534"/>
         <source>Application launcher
 %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/bottombar/BottomBar.cpp" line="558"/>
+        <location filename="../../ui/bottombar/BottomBar.cpp" line="538"/>
         <source>Settings</source>
         <translation>Impostazioni</translation>
     </message>
     <message>
-        <location filename="../../ui/bottombar/BottomBar.cpp" line="559"/>
+        <location filename="../../ui/bottombar/BottomBar.cpp" line="539"/>
         <source>Settings
 %1</source>
         <translation type="unfinished"></translation>
@@ -4863,52 +4756,52 @@ Ultimo aggiornamento live %1</translation>
 <context>
     <name>fairwindsk::ui::settings::BarLayoutSettings</name>
     <message>
-        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="65"/>
+        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="75"/>
         <source>Keep the selected widget at the minimum needed size</source>
         <translation>Mantieni il widget selezionato alla dimensione minima necessaria</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="66"/>
+        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="76"/>
         <source>Minimize horizontally</source>
         <translation>Minimizza orizzontalmente</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="70"/>
+        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="80"/>
         <source>Let the selected widget grow to the maximum possible size</source>
         <translation>Consenti al widget selezionato di espandersi alla dimensione massima possibile</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="71"/>
+        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="81"/>
         <source>Maximize horizontally</source>
         <translation>Massimizza orizzontalmente</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="75"/>
+        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="85"/>
         <source>Keep the selected widget at the normal bar height</source>
         <translation>Mantieni il widget selezionato all&apos;altezza normale della barra</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="76"/>
+        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="86"/>
         <source>Minimize vertically</source>
         <translation>Minimizza verticalmente</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="80"/>
+        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="90"/>
         <source>Let the selected widget use the full bar height</source>
         <translation>Consenti al widget selezionato di usare l&apos;intera altezza della barra</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="81"/>
+        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="91"/>
         <source>Maximize vertically</source>
         <translation>Massimizza verticalmente</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="85"/>
+        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="95"/>
         <source>Move selected widget left</source>
         <translation>Sposta il widget selezionato a sinistra</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="89"/>
+        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="99"/>
         <source>Move selected widget right</source>
         <translation>Sposta il widget selezionato a destra</translation>
     </message>
@@ -4917,17 +4810,17 @@ Ultimo aggiornamento live %1</translation>
         <translation type="vanished">Estendi in altezza</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="93"/>
+        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="103"/>
         <source>Remove Selected</source>
         <translation>Rimuovi selezionato</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="97"/>
+        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="107"/>
         <source>Reset Defaults</source>
         <translation>Ripristina predefiniti</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="115"/>
+        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="125"/>
         <source>Tap a widget to edit it. Drag within the preview to reorder the %1.</source>
         <translation>Tocca un widget per modificarlo. Trascinalo nell&apos;anteprima per riordinare %1.</translation>
     </message>
@@ -4952,7 +4845,7 @@ Ultimo aggiornamento live %1</translation>
         <translation>Tendenza</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="136"/>
+        <location filename="../../ui/settings/BarLayoutSettings.cpp" line="162"/>
         <source>Tap or drag a palette item to place it on the preview bar.</source>
         <translation>Tocca o trascina un elemento della palette per posizionarlo sulla barra di anteprima.</translation>
     </message>
@@ -5461,88 +5354,88 @@ Ultimo aggiornamento live %1</translation>
 <context>
     <name>fairwindsk::ui::settings::DataWidgets</name>
     <message>
-        <location filename="../../ui/settings/DataWidgets.cpp" line="62"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="69"/>
         <source>Add Widget</source>
         <translation>Aggiungi widget</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/DataWidgets.cpp" line="63"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="70"/>
         <source>Remove Widget</source>
         <translation>Rimuovi widget</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/DataWidgets.cpp" line="68"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="75"/>
         <source>Add a data widget</source>
         <translation>Aggiungi un widget dati</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/DataWidgets.cpp" line="69"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="76"/>
         <source>Remove the selected data widget</source>
         <translation>Rimuovi il widget dati selezionato</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/DataWidgets.cpp" line="105"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="126"/>
         <source>Widget name</source>
         <translation>Nome widget</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/DataWidgets.cpp" line="106"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="127"/>
         <source>ID</source>
         <translation>ID</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/DataWidgets.cpp" line="107"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="128"/>
         <source>Name</source>
         <translation>Nome</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/DataWidgets.cpp" line="119"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="142"/>
         <source>Icon resource path</source>
         <translation>Percorso risorsa icona</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/DataWidgets.cpp" line="122"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="145"/>
         <source>Choose icon</source>
         <translation>Scegli icona</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/DataWidgets.cpp" line="127"/>
-        <location filename="../../ui/settings/DataWidgets.cpp" line="457"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="150"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="480"/>
         <source>Icon</source>
         <translation>Icona</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/DataWidgets.cpp" line="137"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="160"/>
         <source>Type</source>
         <translation>Tipo</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/DataWidgets.cpp" line="140"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="163"/>
         <source>Signal K path</source>
         <translation>Percorso Signal K</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/DataWidgets.cpp" line="141"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="164"/>
         <source>Signal K Path</source>
         <translation>Percorso Signal K</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/DataWidgets.cpp" line="144"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="167"/>
         <source>Source unit, for example rad or ms-1</source>
         <translation>Unità sorgente, ad esempio rad o ms-1</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/DataWidgets.cpp" line="145"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="168"/>
         <source>Source Unit</source>
         <translation>Unità sorgente</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/DataWidgets.cpp" line="148"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="171"/>
         <source>Default display unit, for example deg or kn</source>
         <translation>Unità visualizzata predefinita, ad esempio deg o kn</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/DataWidgets.cpp" line="149"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="172"/>
         <source>Default Unit</source>
         <translation>Unità predefinita</translation>
     </message>
@@ -5551,73 +5444,73 @@ Ultimo aggiornamento live %1</translation>
         <translation type="vanished">Ideale</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/DataWidgets.cpp" line="153"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="176"/>
         <source>Fixed</source>
         <translation>Fissa</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/DataWidgets.cpp" line="154"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="175"/>
         <source>Instant</source>
         <translation>Istantanea</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/DataWidgets.cpp" line="155"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="177"/>
         <source>Update Policy</source>
         <translation>Politica di aggiornamento</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/DataWidgets.cpp" line="160"/>
-        <location filename="../../ui/settings/DataWidgets.cpp" line="166"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="183"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="190"/>
         <source> ms</source>
         <translation> ms</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/DataWidgets.cpp" line="161"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="184"/>
         <source>Period</source>
         <translation>Periodo</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/DataWidgets.cpp" line="167"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="191"/>
         <source>Minimum Period</source>
         <translation>Periodo minimo</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/DataWidgets.cpp" line="172"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="197"/>
         <source>Gauge Minimum</source>
         <translation>Minimo indicatore</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/DataWidgets.cpp" line="177"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="203"/>
         <source>Gauge Maximum</source>
         <translation>Massimo indicatore</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/DataWidgets.cpp" line="180"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="206"/>
         <source>Date/time format</source>
         <translation>Formato data/ora</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/DataWidgets.cpp" line="181"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="207"/>
         <source>Date Format</source>
         <translation>Formato data</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/DataWidgets.cpp" line="480"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="503"/>
         <source>New Data Widget</source>
         <translation>Nuovo widget dati</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/DataWidgets.cpp" line="507"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="530"/>
         <source>Remove Data Widget</source>
         <translation>Rimuovi widget dati</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/DataWidgets.cpp" line="508"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="531"/>
         <source>Remove %1 from data widgets and bar layouts?</source>
         <translation>Rimuovere %1 dai widget dati e dai layout delle barre?</translation>
     </message>
     <message>
-        <location filename="../../ui/settings/DataWidgets.cpp" line="528"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="551"/>
         <source>Choose Data Widget Icon</source>
         <translation>Scegli icona widget dati</translation>
     </message>
@@ -6387,127 +6280,50 @@ Ultimo aggiornamento live %1</translation>
 <context>
     <name>fairwindsk::ui::topbar::TopBar</name>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="43"/>
-        <source>%1 (not configured)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="117"/>
         <source>Not configured</source>
-        <translation type="unfinished">Non configurato</translation>
+        <translation type="obsolete">Non configurato</translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="121"/>
         <source>Live</source>
-        <translation type="unfinished">Live</translation>
+        <translation type="obsolete">Live</translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="124"/>
         <source>Stale</source>
-        <translation type="unfinished">Non aggiornato</translation>
+        <translation type="obsolete">Non aggiornato</translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="127"/>
         <source>Missing</source>
-        <translation type="unfinished">Mancante</translation>
+        <translation type="obsolete">Mancante</translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="132"/>
         <source>%1: %2</source>
-        <translation type="unfinished">%1: %2</translation>
+        <translation type="obsolete">%1: %2</translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="134"/>
         <source>
 Last live update %1</source>
-        <translation type="unfinished">
+        <translation type="obsolete">
 Ultimo aggiornamento live %1</translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="895"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="360"/>
         <source>Comfort view: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="704"/>
-        <location filename="../../ui/topbar/TopBar.cpp" line="987"/>
         <source>Position</source>
-        <translation>Posizione</translation>
+        <translation type="vanished">Posizione</translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="707"/>
-        <location filename="../../ui/topbar/TopBar.cpp" line="998"/>
-        <source>Course over ground</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="711"/>
-        <location filename="../../ui/topbar/TopBar.cpp" line="1010"/>
-        <source>Speed over ground</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="715"/>
-        <location filename="../../ui/topbar/TopBar.cpp" line="1024"/>
-        <source>Heading</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="719"/>
-        <location filename="../../ui/topbar/TopBar.cpp" line="1036"/>
-        <source>Speed through water</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="723"/>
-        <location filename="../../ui/topbar/TopBar.cpp" line="1050"/>
         <source>Depth</source>
-        <translation type="unfinished">Profondità</translation>
+        <translation type="obsolete">Profondità</translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="727"/>
-        <location filename="../../ui/topbar/TopBar.cpp" line="1059"/>
         <source>Waypoint</source>
-        <translation>Waypoint</translation>
+        <translation type="vanished">Waypoint</translation>
     </message>
     <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="730"/>
-        <location filename="../../ui/topbar/TopBar.cpp" line="1065"/>
-        <source>Bearing to waypoint</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="734"/>
-        <location filename="../../ui/topbar/TopBar.cpp" line="1073"/>
-        <source>Distance to go</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="738"/>
-        <location filename="../../ui/topbar/TopBar.cpp" line="1083"/>
-        <source>Time to go</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="741"/>
-        <location filename="../../ui/topbar/TopBar.cpp" line="1091"/>
-        <source>Estimated time of arrival</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="744"/>
-        <location filename="../../ui/topbar/TopBar.cpp" line="1099"/>
-        <source>Cross track error</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="748"/>
-        <location filename="../../ui/topbar/TopBar.cpp" line="1109"/>
-        <source>Velocity made good</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../ui/topbar/TopBar.cpp" line="1137"/>
+        <location filename="../../ui/topbar/TopBar.cpp" line="465"/>
         <source>%1
 %2</source>
         <translation type="unfinished"></translation>
@@ -6895,9 +6711,9 @@ Ultimo aggiornamento live %1</translation>
     <message>
         <location filename="../../ui/widgets/SignalKServerBox.ui" line="70"/>
         <location filename="../../ui/widgets/SignalKServerBox.cpp" line="53"/>
-        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="103"/>
-        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="110"/>
-        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="153"/>
+        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="117"/>
+        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="124"/>
+        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="167"/>
         <source>Signal K</source>
         <translation>Signal K</translation>
     </message>
@@ -6905,7 +6721,7 @@ Ultimo aggiornamento live %1</translation>
         <location filename="../../ui/widgets/SignalKServerBox.ui" line="122"/>
         <location filename="../../ui/widgets/SignalKServerBox.cpp" line="47"/>
         <location filename="../../ui/widgets/SignalKServerBox.cpp" line="68"/>
-        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="165"/>
+        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="179"/>
         <source>Waiting for server</source>
         <translation>Attesa server</translation>
     </message>
@@ -6930,73 +6746,73 @@ Ultimo aggiornamento live %1</translation>
         <translation>Ultimo aggiornamento %1</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="166"/>
+        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="180"/>
         <source>%1 • %2</source>
         <translation>%1 • %2</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="167"/>
+        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="181"/>
         <source>Disconnected</source>
         <translation>Disconnesso</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="170"/>
+        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="184"/>
         <source>Shell %1 • %2</source>
         <translation>Shell %1 • %2</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="173"/>
-        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="184"/>
+        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="187"/>
+        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="198"/>
         <source>disconnected</source>
         <translation>disconnesso</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="174"/>
+        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="188"/>
         <source>connecting</source>
         <translation>connessione</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="175"/>
+        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="189"/>
         <source>live</source>
         <translation>live</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="176"/>
+        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="190"/>
         <source>stale</source>
         <translation>non aggiornato</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="177"/>
+        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="191"/>
         <source>reconnecting</source>
         <translation>riconnessione</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="178"/>
+        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="192"/>
         <source>REST degraded</source>
         <translation>REST degradato</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="179"/>
+        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="193"/>
         <source>stream degraded</source>
         <translation>stream degradato</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="180"/>
+        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="194"/>
         <source>apps loading</source>
         <translation>app in caricamento</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="181"/>
+        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="195"/>
         <source>apps stale</source>
         <translation>app non aggiornate</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="182"/>
+        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="196"/>
         <source>app degraded</source>
         <translation>app degradata</translation>
     </message>
     <message>
-        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="186"/>
+        <location filename="../../ui/widgets/SignalKServerBox.cpp" line="200"/>
         <source>Apps idle</source>
         <translation>App inattive</translation>
     </message>

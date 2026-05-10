@@ -26,9 +26,10 @@
 namespace fairwindsk::ui::widgets {
     namespace {
         constexpr int kMetricHeight = 44;
+        constexpr int kMetricRowHeight = 20;
         constexpr int kMetricIconSize = 16;
         constexpr int kMetricHorizontalPadding = 10;
-        constexpr int kTrendWidth = 12;
+        constexpr int kTrendWidth = 10;
         constexpr int kUnitWidth = 34;
 
         QString fallbackNumericText(const double value) {
@@ -119,20 +120,20 @@ namespace fairwindsk::ui::widgets {
                                        const bool showText,
                                        const bool showUnits,
                                        const bool showTrend) {
-        if (m_showIcon == showIcon &&
-            m_showText == showText &&
-            m_showUnits == showUnits &&
-            m_showTrend == showTrend) {
-            return;
-        }
+        const bool changed = m_showIcon != showIcon ||
+                             m_showText != showText ||
+                             m_showUnits != showUnits ||
+                             m_showTrend != showTrend;
 
         m_showIcon = showIcon;
         m_showText = showText;
         m_showUnits = showUnits;
         m_showTrend = showTrend;
-        updateIcon();
+        updateHeaderVisibility();
         renderCurrentUpdate();
-        updateGeometry();
+        if (changed) {
+            updateGeometry();
+        }
     }
 
     void DataWidget::buildUi() {
@@ -141,12 +142,15 @@ namespace fairwindsk::ui::widgets {
         rootLayout->setSpacing(0);
         setMinimumHeight(kMetricHeight);
         setMaximumHeight(kMetricHeight);
+        setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
 
         m_headerWidget = new QWidget(this);
         auto *headerLayout = new QHBoxLayout(m_headerWidget);
         headerLayout->setContentsMargins(0, 0, 0, 0);
         headerLayout->setSpacing(4);
+        m_headerWidget->setFixedHeight(kMetricRowHeight);
         m_headerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+        headerLayout->addStretch(1);
 
         m_iconLabel = new QLabel(this);
         m_iconLabel->setFixedSize(QSize(kMetricIconSize, kMetricIconSize));
@@ -157,20 +161,24 @@ namespace fairwindsk::ui::widgets {
         m_titleLabel->setTextFormat(Qt::PlainText);
         m_titleLabel->setAlignment(Qt::AlignCenter);
         m_titleLabel->setMinimumWidth(0);
+        m_titleLabel->setMinimumHeight(kMetricRowHeight);
         m_titleLabel->setMaximumWidth(78);
-        m_titleLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-        headerLayout->addWidget(m_titleLabel, 1, Qt::AlignVCenter);
+        m_titleLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+        headerLayout->addWidget(m_titleLabel, 0, Qt::AlignVCenter);
+        headerLayout->addStretch(1);
         rootLayout->addWidget(m_headerWidget, 0);
 
         m_valueWidget = new QWidget(this);
         auto *valueLayout = new QHBoxLayout(m_valueWidget);
         valueLayout->setContentsMargins(0, 0, 0, 0);
-        valueLayout->setSpacing(3);
+        valueLayout->setSpacing(2);
+        m_valueWidget->setFixedHeight(kMetricRowHeight);
         m_valueWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+        valueLayout->addStretch(1);
 
         m_trendLabel = new QLabel(this);
         m_trendLabel->setTextFormat(Qt::PlainText);
-        m_trendLabel->setAlignment(Qt::AlignCenter);
+        m_trendLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
         m_trendLabel->setFixedWidth(kTrendWidth);
         valueLayout->addWidget(m_trendLabel, 0, Qt::AlignVCenter);
 
@@ -178,16 +186,17 @@ namespace fairwindsk::ui::widgets {
         m_valueLabel->setTextFormat(Qt::PlainText);
         m_valueLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
         m_valueLabel->setMinimumWidth(0);
+        m_valueLabel->setMinimumHeight(kMetricRowHeight);
         m_valueLabel->setMaximumWidth(valueMaximumWidth(m_definition.kind));
-        m_valueLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-        valueLayout->addWidget(m_valueLabel, 1, Qt::AlignVCenter);
+        m_valueLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+        valueLayout->addWidget(m_valueLabel, 0, Qt::AlignVCenter);
 
         m_unitLabel = new QLabel(this);
         m_unitLabel->setTextFormat(Qt::PlainText);
         m_unitLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
         m_unitLabel->setMinimumWidth(0);
         m_unitLabel->setMaximumWidth(kUnitWidth);
-        m_unitLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+        m_unitLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
         valueLayout->addWidget(m_unitLabel, 0, Qt::AlignVCenter);
 
         m_gauge = new QProgressBar(this);
@@ -195,8 +204,9 @@ namespace fairwindsk::ui::widgets {
         m_gauge->setTextVisible(false);
         m_gauge->setFixedSize(QSize(28, 6));
         valueLayout->addWidget(m_gauge, 0, Qt::AlignVCenter);
+        valueLayout->addStretch(1);
         rootLayout->addWidget(m_valueWidget, 0);
-        updateIcon();
+        updateHeaderVisibility();
     }
 
     void DataWidget::subscribeToSignalK() {
@@ -398,13 +408,15 @@ namespace fairwindsk::ui::widgets {
                 m_valueLabel->setAlignment(Qt::AlignCenter);
             }
         }
-        if (m_iconLabel) {
-            m_iconLabel->setVisible(m_showIcon && !m_definition.icon.trimmed().isEmpty());
-        }
-        if (m_titleLabel) {
-            m_titleLabel->setAlignment(m_showIcon ? Qt::AlignLeft | Qt::AlignVCenter : Qt::AlignCenter);
-            m_titleLabel->setVisible(m_showText);
-        }
+        auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+        const auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+        const QPalette referencePalette = qApp ? qApp->palette() : palette();
+        const auto chrome = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, referencePalette, false);
+        const QColor metricColor = hasValue ? chrome.text : chrome.disabledText;
+        fairwindsk::ui::widgets::applySignalKMetricLabelColor(m_valueLabel, metricColor);
+        fairwindsk::ui::widgets::applySignalKMetricLabelColor(m_unitLabel, metricColor);
+        updateHeaderVisibility();
         if (m_unitLabel) {
             m_unitLabel->setVisible(m_showUnits && supportsUnits && !m_unitLabel->text().trimmed().isEmpty());
         }
@@ -412,20 +424,12 @@ namespace fairwindsk::ui::widgets {
             const QString trend = trendText();
             m_trendLabel->setText(trend);
             if (!trend.isEmpty()) {
-                auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
-                const auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
-                const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
-                const QPalette referencePalette = qApp ? qApp->palette() : palette();
                 const auto statusColors = fairwindsk::ui::resolveComfortStatusColors(configuration, preset, referencePalette);
                 fairwindsk::ui::widgets::applySignalKMetricLabelColor(
                     m_trendLabel,
                     m_trendDirection > 0 ? statusColors.healthyFill : statusColors.errorFill);
             }
             m_trendLabel->setVisible(m_showTrend && supportsTrend && hasValue && !trend.isEmpty());
-        }
-        if (m_headerWidget) {
-            m_headerWidget->setVisible((m_iconLabel && m_iconLabel->isVisible()) ||
-                                       (m_titleLabel && m_titleLabel->isVisible()));
         }
         m_rendering = false;
     }
@@ -447,6 +451,22 @@ namespace fairwindsk::ui::widgets {
         const QIcon icon = fairwindsk::ui::tintedIcon(QIcon(m_definition.icon), chrome.transparentIcon, QSize(kMetricIconSize, kMetricIconSize));
         m_iconLabel->setPixmap(icon.pixmap(QSize(kMetricIconSize, kMetricIconSize)));
         m_iconLabel->setVisible(m_showIcon && !icon.isNull());
+    }
+
+    void DataWidget::updateHeaderVisibility() {
+        updateIcon();
+
+        const bool iconEnabled = m_iconLabel && !m_iconLabel->isHidden();
+        const bool textEnabled = m_showText && !m_definition.name.trimmed().isEmpty();
+
+        if (m_titleLabel) {
+            m_titleLabel->setText(m_definition.name);
+            m_titleLabel->setAlignment(Qt::AlignCenter);
+            m_titleLabel->setVisible(textEnabled);
+        }
+        if (m_headerWidget) {
+            m_headerWidget->setVisible(iconEnabled || textEnabled);
+        }
     }
 
     void DataWidget::applyComfortChrome() {

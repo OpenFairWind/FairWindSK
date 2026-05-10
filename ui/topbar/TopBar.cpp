@@ -12,12 +12,14 @@
 #include <QPixmap>
 
 #include "TopBar.hpp"
+#include "../bottombar/BottomBar.hpp"
 #include "../web/Web.hpp"
 #include "ui/IconUtils.hpp"
 #include "ui/layout/BarLayout.hpp"
 #include "ui/layout/BarRuntime.hpp"
 #include "ui/widgets/DataWidget.hpp"
 #include "ui/widgets/DataWidgetConfig.hpp"
+#include "ui/widgets/SignalKServerBox.hpp"
 
 namespace fairwindsk::ui::topbar {
     namespace {
@@ -96,7 +98,19 @@ namespace fairwindsk::ui::topbar {
 
     void TopBar::applyEntryPresentation(const fairwindsk::ui::layout::LayoutEntry &entry,
                                         QWidget *widget) const {
-        Q_UNUSED(widget)
+        if (!widget) {
+            return;
+        }
+
+        if (auto *button = qobject_cast<QToolButton *>(widget)) {
+            fairwindsk::ui::layout::runtime::applyToolButtonDisplayOptions(button, entry);
+        }
+        if (entry.widgetId == QStringLiteral("signalk_status")) {
+            if (auto *signalKServerBox = qobject_cast<fairwindsk::ui::widgets::SignalKServerBox *>(widget)) {
+                signalKServerBox->setDisplayOptions(entry.showText);
+            }
+            return;
+        }
 
         if (entry.widgetId == QStringLiteral("current_context")) {
             if (ui->label_ApplicationName) {
@@ -123,6 +137,7 @@ namespace fairwindsk::ui::topbar {
             return;
         }
 
+        m_deferredExternalWidgetResolution = false;
         clearLayoutEditHints();
         fairwindsk::ui::layout::runtime::clearConfiguredLayout(
             ui->horizontalLayout,
@@ -159,6 +174,13 @@ namespace fairwindsk::ui::topbar {
 
             QString itemId = entry.widgetId;
             QWidget *widget = widgetForItemId(entry.widgetId);
+            const bool dataWidgetEntry = fairwindsk::ui::widgets::isDataWidgetId(configRoot, entry.widgetId);
+            if (!widget && !dataWidgetEntry && fairwindsk::ui::bottombar::BottomBar::instance()) {
+                widget = fairwindsk::ui::bottombar::BottomBar::instance()->widgetForItemId(entry.widgetId);
+            }
+            if (!widget && !dataWidgetEntry) {
+                m_deferredExternalWidgetResolution = true;
+            }
             if (!widget) {
                 const auto definition = fairwindsk::ui::widgets::dataWidgetDefinition(configRoot, entry.widgetId);
                 widget = fairwindsk::ui::layout::runtime::createDataWidget(
@@ -313,6 +335,9 @@ namespace fairwindsk::ui::topbar {
         updateComfortViewIcon();
         resetCurrentAppPresentation();
         rebuildLayout();
+        QTimer::singleShot(0, this, [this]() {
+            refreshFromConfiguration();
+        });
     }
 
     void TopBar::changeEvent(QEvent *event) {
@@ -421,7 +446,7 @@ namespace fairwindsk::ui::topbar {
             configRoot,
             fairwindsk::ui::layout::BarId::Top);
 
-        if (m_layoutSignature != newLayoutSignature) {
+        if (m_layoutSignature != newLayoutSignature || m_deferredExternalWidgetResolution) {
             rebuildLayout();
         }
         if (m_signalKStatusIcons) {

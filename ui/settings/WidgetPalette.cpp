@@ -137,7 +137,7 @@ namespace fairwindsk::ui::settings {
             }
 
             if (widgetId == QStringLiteral("apps")) {
-                return QIcon(QStringLiteral(":/resources/svg/OpenBridge/applications.svg"));
+                return QIcon(QStringLiteral(":/resources/svg/OpenBridge/home.svg"));
             }
             if (widgetId == QStringLiteral("mydata")) {
                 return QIcon(QStringLiteral(":/resources/svg/OpenBridge/database.svg"));

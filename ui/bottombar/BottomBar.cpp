@@ -14,8 +14,10 @@
 #include <QScroller>
 #include <QScrollerProperties>
 #include <QGraphicsDropShadowEffect>
+#include <QLayoutItem>
 #include <QVBoxLayout>
 #include <QResizeEvent>
+#include <QTimer>
 #include "BottomBar.hpp"
 
 #include <QtWidgets/QLabel>
@@ -25,6 +27,7 @@
 #include "ui/IconUtils.hpp"
 #include "ui/layout/BarLayout.hpp"
 #include "ui/layout/BarRuntime.hpp"
+#include "ui/topbar/TopBar.hpp"
 #include "ui/widgets/DataWidget.hpp"
 #include "ui/widgets/DataWidgetConfig.hpp"
 
@@ -33,6 +36,40 @@ namespace fairwindsk::ui::bottombar {
         constexpr int kBottomBarIconSize = 44;
         constexpr int kBottomBarButtonHeight = 90;
         constexpr int kPortAreaHeight = 84;
+
+        void setLayoutItemVisible(QLayoutItem *item, const bool visible) {
+            if (!item) {
+                return;
+            }
+
+            if (auto *widget = item->widget()) {
+                widget->setVisible(visible);
+                return;
+            }
+
+            auto *layout = item->layout();
+            if (!layout) {
+                return;
+            }
+
+            for (int index = 0; index < layout->count(); ++index) {
+                setLayoutItemVisible(layout->itemAt(index), visible);
+            }
+        }
+
+        bool hasWidgetAncestor(const QWidget *widget, const QWidget *ancestor) {
+            if (!widget || !ancestor) {
+                return false;
+            }
+
+            for (auto *candidate = widget; candidate; candidate = candidate->parentWidget()) {
+                if (candidate == ancestor) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 
     BottomBar *BottomBar::instance() {
@@ -79,6 +116,26 @@ namespace fairwindsk::ui::bottombar {
 
         if (auto *button = qobject_cast<QToolButton *>(widget)) {
             fairwindsk::ui::layout::runtime::applyToolButtonDisplayOptions(button, entry);
+        }
+
+        if (entry.widgetId == QStringLiteral("current_context")) {
+            if (auto *label = widget->findChild<QLabel *>(QStringLiteral("label_ApplicationName"))) {
+                label->setVisible(entry.showText);
+            }
+            return;
+        }
+
+        if (entry.widgetId == QStringLiteral("clock_icons")) {
+            if (auto *label = widget->findChild<QLabel *>(QStringLiteral("label_DateTime"))) {
+                label->setVisible(entry.showText);
+            }
+            if (auto *statusIcons = widget->findChild<QWidget *>(QStringLiteral("widget_SignalKStatusIcons"))) {
+                statusIcons->setVisible(entry.showIcon);
+            }
+            if (auto *comfortIcon = widget->findChild<QLabel *>(QStringLiteral("label_ComfortViewIcon"))) {
+                comfortIcon->setVisible(entry.showIcon);
+            }
+            return;
         }
 
         if (entry.widgetId == QStringLiteral("signalk_status") && m_signalKServerBox) {
@@ -144,6 +201,10 @@ namespace fairwindsk::ui::bottombar {
 
             QString itemId = entry.widgetId;
             QWidget *widget = widgetForItemId(entry.widgetId);
+            const bool dataWidgetEntry = fairwindsk::ui::widgets::isDataWidgetId(configRoot, entry.widgetId);
+            if (!widget && !dataWidgetEntry && fairwindsk::ui::topbar::TopBar::instance()) {
+                widget = fairwindsk::ui::topbar::TopBar::instance()->widgetForItemId(entry.widgetId);
+            }
             if (!widget) {
                 const auto definition = fairwindsk::ui::widgets::dataWidgetDefinition(configRoot, entry.widgetId);
                 widget = fairwindsk::ui::layout::runtime::createDataWidget(
@@ -156,6 +217,9 @@ namespace fairwindsk::ui::bottombar {
                 continue;
             }
 
+            if (auto *dataWidget = qobject_cast<fairwindsk::ui::widgets::DataWidget *>(widget)) {
+                dataWidget->installEventFilter(this);
+            }
             applyEntryPresentation(entry, widget);
             fairwindsk::ui::layout::runtime::addWidgetToLayout(
                 ui->horizontalLayoutButtons,
@@ -166,6 +230,9 @@ namespace fairwindsk::ui::bottombar {
         }
 
         applyLayoutEditHints(entries);
+        if (isTransientPanelVisible()) {
+            setRegularBarVisible(false);
+        }
     }
 
     void BottomBar::clearLayoutEditHints() {
@@ -355,7 +422,7 @@ namespace fairwindsk::ui::bottombar {
         connect(m_POBBar, &POBBar::hidden, this, [this]() { setPanelVisibility(m_POBBar, false); });
         connect(m_AutopilotBar, &AutopilotBar::hidden, this, [this]() { setPanelVisibility(m_AutopilotBar, false); });
         connect(m_AnchorBar, &AnchorBar::hidden, this, [this]() { setPanelVisibility(m_AnchorBar, false); });
-            connect(m_AlarmsBar, &AlarmsBar::hidden, this, [this]() { setPanelVisibility(m_AlarmsBar, false); });
+        connect(m_AlarmsBar, &AlarmsBar::hidden, this, [this]() { setPanelVisibility(m_AlarmsBar, false); });
 
         if (fairWindSK) {
             m_runtimeHealthState = fairWindSK->runtimeHealthState();
@@ -444,6 +511,18 @@ namespace fairwindsk::ui::bottombar {
     }
 
     bool BottomBar::eventFilter(QObject *watched, QEvent *event) {
+        if (m_regularBarSuppressed &&
+            watched &&
+            event &&
+            event->type() == QEvent::Show) {
+            if (auto *dataWidget = qobject_cast<fairwindsk::ui::widgets::DataWidget *>(watched)) {
+                if (!isTransientPanelWidget(dataWidget)) {
+                    dataWidget->hide();
+                    return true;
+                }
+            }
+        }
+
         const bool needsRebalance = watched &&
                                     event &&
                                     (watched == ui->scrollArea_Port ||
@@ -782,18 +861,43 @@ namespace fairwindsk::ui::bottombar {
             return;
         }
 
+        m_regularBarSuppressed = !visible;
+
         for (int index = 0; index < ui->horizontalLayoutButtons->count(); ++index) {
             if (auto *item = ui->horizontalLayoutButtons->itemAt(index)) {
-                auto *widget = item->widget();
-                if (widget) {
-                    widget->setVisible(visible);
+                setLayoutItemVisible(item, visible);
+            }
+        }
+
+        for (const auto &widget : m_dynamicLayoutWidgets) {
+            if (widget) {
+                widget->setVisible(visible);
+            }
+        }
+
+        for (auto it = m_dataWidgets.cbegin(); it != m_dataWidgets.cend(); ++it) {
+            if (it.value()) {
+                it.value()->setVisible(visible);
+            }
+        }
+
+        if (!visible) {
+            const auto dataWidgets = const_cast<BottomBar *>(this)->findChildren<fairwindsk::ui::widgets::DataWidget *>(
+                QString(),
+                Qt::FindChildrenRecursively);
+            for (auto *dataWidget : dataWidgets) {
+                if (!dataWidget || isTransientPanelWidget(dataWidget)) {
+                    continue;
                 }
+                dataWidget->installEventFilter(const_cast<BottomBar *>(this));
+                dataWidget->hide();
             }
         }
     }
 
     void BottomBar::restoreRegularBarVisibility() const {
         const_cast<BottomBar *>(this)->rebuildLayout();
+        setRegularBarVisible(true);
     }
 
     void BottomBar::setPanelVisibility(QWidget *panel, const bool visible) const {
@@ -807,7 +911,9 @@ namespace fairwindsk::ui::bottombar {
             updateTransientPanelHeight(panel);
             panel->setVisible(true);
             panel->raise();
+            setRegularBarVisible(false);
         } else {
+            panel->setVisible(false);
             const QList<QWidget *> panels = {m_POBBar, m_AutopilotBar, m_AnchorBar, m_AlarmsBar};
             const bool anotherPanelVisible = std::any_of(
                 panels.cbegin(),
@@ -819,10 +925,19 @@ namespace fairwindsk::ui::bottombar {
                 restoreRegularBarVisibility();
                 updateTransientPanelHeight(nullptr);
             }
-            panel->setVisible(false);
         }
 
         const_cast<BottomBar *>(this)->updateGeometry();
+    }
+
+    bool BottomBar::isTransientPanelWidget(const QWidget *widget) const {
+        const QList<QWidget *> panels = {m_POBBar, m_AutopilotBar, m_AnchorBar, m_AlarmsBar};
+        return std::any_of(
+            panels.cbegin(),
+            panels.cend(),
+            [widget](const QWidget *panel) {
+                return hasWidgetAncestor(widget, panel);
+            });
     }
 
     void BottomBar::hideTransientPanels(QWidget *except) const {

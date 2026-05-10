@@ -37,16 +37,16 @@ namespace fairwindsk::ui::layout {
         const QList<WidgetDefinition> &fixedWidgetDefinitionsStorage() {
             static const QList<WidgetDefinition> definitions = {
                 {QStringLiteral("current_context"), QObject::tr("Current Application / Launcher Page Label"), true, false, false, true},
-                {QStringLiteral("clock_icons"), QObject::tr("Clock and Icons"), true, false, false, true},
-                {QStringLiteral("open_apps"), QObject::tr("Currently Open Applications"), false, true, false, true},
+                {QStringLiteral("clock_icons"), QObject::tr("Clock and Status"), true, false, false, true},
+                {QStringLiteral("open_apps"), QObject::tr("Apps"), false, true, false, true},
                 {QStringLiteral("mydata"), QObject::tr("MyData"), false, true},
                 {QStringLiteral("pob"), QObject::tr("POB"), false, true},
                 {QStringLiteral("autopilot"), QObject::tr("Autopilot"), false, true},
-                {QStringLiteral("apps"), QObject::tr("Apps"), false, true},
+                {QStringLiteral("apps"), QObject::tr("Home"), false, true},
                 {QStringLiteral("anchor"), QObject::tr("Anchor"), false, true},
                 {QStringLiteral("alarms"), QObject::tr("Alarms"), false, true},
                 {QStringLiteral("settings"), QObject::tr("Settings"), false, true},
-                {QStringLiteral("signalk_status"), QObject::tr("SignalK Status"), false, true, false, true}
+                {QStringLiteral("signalk_status"), QObject::tr("Signal K Box"), false, true, false, true}
             };
             return definitions;
         }
@@ -89,20 +89,12 @@ namespace fairwindsk::ui::layout {
         }
 
         bool fixedWidgetAvailableOnBar(const BarId barId, const QString &widgetId) {
-            if (barId == BarId::Top) {
-                return widgetId == QStringLiteral("current_context") ||
-                       widgetId == QStringLiteral("clock_icons");
-            }
+            Q_UNUSED(barId)
 
-            return widgetId == QStringLiteral("open_apps") ||
-                   widgetId == QStringLiteral("mydata") ||
-                   widgetId == QStringLiteral("pob") ||
-                   widgetId == QStringLiteral("autopilot") ||
-                   widgetId == QStringLiteral("apps") ||
-                   widgetId == QStringLiteral("anchor") ||
-                   widgetId == QStringLiteral("alarms") ||
-                   widgetId == QStringLiteral("settings") ||
-                   widgetId == QStringLiteral("signalk_status");
+            const auto &definitions = fixedWidgetDefinitionsStorage();
+            return std::any_of(definitions.cbegin(), definitions.cend(), [&widgetId](const WidgetDefinition &definition) {
+                return definition.id == widgetId;
+            });
         }
 
         bool widgetAvailableOnBarInternal(const nlohmann::json &root,

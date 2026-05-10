@@ -49,6 +49,7 @@ namespace fairwindsk::ui::widgets {
         QString formattedNumericValue(double value) const;
         QString unitLabel() const;
         void updateIcon();
+        void updateHeaderVisibility();
         void updateTrend(double value, bool hasValue);
         QString trendText() const;
 

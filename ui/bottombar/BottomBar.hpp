@@ -113,6 +113,7 @@ namespace fairwindsk::ui::bottombar {
         void restoreRegularBarVisibility() const;
         void setPanelVisibility(QWidget *panel, bool visible) const;
         void hideTransientPanels(QWidget *except = nullptr) const;
+        bool isTransientPanelWidget(const QWidget *widget) const;
         void updateTransientPanelHeight(QWidget *panel) const;
         void updateHealthChrome();
         void rebuildLayout();
@@ -155,6 +156,7 @@ namespace fairwindsk::ui::bottombar {
         bool m_layoutEditHighlightEnabled = false;
         QVector<QPointer<QWidget>> m_dynamicLayoutWidgets;
         QHash<QString, QPointer<fairwindsk::ui::widgets::DataWidget>> m_dataWidgets;
+        mutable bool m_regularBarSuppressed = false;
         inline static BottomBar *s_instance = nullptr;
     };
 }
