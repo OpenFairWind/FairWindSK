@@ -112,6 +112,9 @@ namespace fairwindsk::ui::settings {
             if (widgetId == QStringLiteral("clock_icons")) {
                 return QStringLiteral(":/resources/svg/OpenBridge/lcd-clock.svg");
             }
+            if (widgetId == QStringLiteral("status")) {
+                return QStringLiteral(":/resources/svg/OpenBridge/info.svg");
+            }
             if (widgetId == QStringLiteral("signalk_status")) {
                 return QStringLiteral(":/resources/svg/OpenBridge/layout-signalk.svg");
             }

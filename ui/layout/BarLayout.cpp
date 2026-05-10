@@ -38,6 +38,7 @@ namespace fairwindsk::ui::layout {
             static const QList<WidgetDefinition> definitions = {
                 {QStringLiteral("current_context"), QObject::tr("Current Application / Launcher Page Label"), true, false, false, true},
                 {QStringLiteral("clock_icons"), QObject::tr("Clock and Status"), true, false, false, true},
+                {QStringLiteral("status"), QObject::tr("Status"), false, false},
                 {QStringLiteral("open_apps"), QObject::tr("Apps"), false, true, false, true},
                 {QStringLiteral("mydata"), QObject::tr("MyData"), false, true},
                 {QStringLiteral("pob"), QObject::tr("POB"), false, true},

@@ -30,6 +30,7 @@
 #include "ui/topbar/TopBar.hpp"
 #include "ui/widgets/DataWidget.hpp"
 #include "ui/widgets/DataWidgetConfig.hpp"
+#include "ui/widgets/SignalKStatusIconsWidget.hpp"
 
 namespace fairwindsk::ui::bottombar {
     namespace {
@@ -130,10 +131,20 @@ namespace fairwindsk::ui::bottombar {
                 label->setVisible(entry.showText);
             }
             if (auto *statusIcons = widget->findChild<QWidget *>(QStringLiteral("widget_SignalKStatusIcons"))) {
-                statusIcons->setVisible(entry.showIcon);
+                statusIcons->setVisible(true);
             }
             if (auto *comfortIcon = widget->findChild<QLabel *>(QStringLiteral("label_ComfortViewIcon"))) {
                 comfortIcon->setVisible(entry.showIcon);
+            }
+            if (auto *statusCluster = widget->findChild<fairwindsk::ui::widgets::SignalKStatusIconsWidget *>()) {
+                statusCluster->setVisible(true);
+            }
+            return;
+        }
+
+        if (entry.widgetId == QStringLiteral("status")) {
+            if (auto *statusCluster = widget->findChild<fairwindsk::ui::widgets::SignalKStatusIconsWidget *>()) {
+                statusCluster->setVisible(entry.showIcon || entry.showText);
             }
             return;
         }

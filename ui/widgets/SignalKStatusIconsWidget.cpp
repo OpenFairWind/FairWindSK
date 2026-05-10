@@ -130,6 +130,15 @@ namespace fairwindsk::ui::widgets {
 
     SignalKStatusIconsWidget::~SignalKStatusIconsWidget() = default;
 
+    void SignalKStatusIconsWidget::setDetailIndicatorsVisible(const bool visible) {
+        if (m_detailIndicatorsVisible == visible) {
+            return;
+        }
+
+        m_detailIndicatorsVisible = visible;
+        refreshDetailIndicatorVisibility();
+    }
+
     void SignalKStatusIconsWidget::refreshFromConfiguration() {
         refreshIndicators(m_serverHealthy, m_restHealthy, m_streamHealthy, m_requestActive, QString());
     }
@@ -239,6 +248,15 @@ namespace fairwindsk::ui::widgets {
             " }").arg(fillColor.name(), textColor.name(), borderColor.name()));
     }
 
+    void SignalKStatusIconsWidget::refreshDetailIndicatorVisibility() const {
+        if (m_restIndicator) {
+            m_restIndicator->setVisible(m_detailIndicatorsVisible);
+        }
+        if (m_streamIndicator) {
+            m_streamIndicator->setVisible(m_detailIndicatorsVisible);
+        }
+    }
+
     void SignalKStatusIconsWidget::setBusyVisible(const bool active) {
         if (!m_busyIndicator) {
             return;
@@ -321,5 +339,6 @@ namespace fairwindsk::ui::widgets {
         m_restIndicator->setToolTip(tr("Signal K REST API\n%1").arg(restHealthy ? tr("Healthy") : tr("Unavailable")));
         m_streamIndicator->setToolTip(tr("Signal K stream\n%1\n%2").arg(streamHealthy ? tr("Healthy") : tr("Unavailable"),
                                                                          tooltipLastUpdate(m_lastStreamUpdate)));
+        refreshDetailIndicatorVisibility();
     }
 }
