@@ -875,14 +875,10 @@ namespace fairwindsk {
             }
 
             qInfo() << "FairWindSK detected Signal K recovery; resynchronizing runtime state";
-            Units::getInstance()->refreshSignalKPreferences();
             reloadAppsAsync();
             refreshAutomaticComfortViewAvailability();
             if (m_configuration.getComfortViewMode() == "auto") {
                 applyUiPreferences();
-            }
-            if (auto *mainWindow = fairwindsk::ui::MainWindow::instance()) {
-                mainWindow->applyRuntimeConfiguration();
             }
         });
         connect(&m_signalkClient, &signalk::Client::connectionHealthStateChanged, this, [this](const signalk::Client::ConnectionHealthState,
@@ -1309,15 +1305,9 @@ namespace fairwindsk {
             // Set the url
             params["url"] = signalKServerUrl + "/signalk";
 
-            // Get the token
-            QString token = fairwindsk::Configuration::getToken();
-
-            // Check if the token is defined
-            if (!token.isEmpty()) {
-
-                // Set the token
-                params["token"] = token;
-            }
+            // Always pass the token so Client::init() resets m_Token even when
+            // the token has been removed; an empty value clears the in-memory token.
+            params["token"] = fairwindsk::Configuration::getToken();
 
             qInfo() << "FairWindSK::startSignalK starting non-blocking client initialization";
             result = m_signalkClient.init(params);

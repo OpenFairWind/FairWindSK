@@ -2,21 +2,32 @@
 // Created by Raffaele Montella on 06/05/24.
 //
 
-// You may need to build the project (run Qt uic code generator) to get "ui_Connection.h" resolved
-
+#include <QEvent>
+#include <QFrame>
+#include <QHBoxLayout>
+#include <QIcon>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QLabel>
+#include <QNetworkCookie>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+#include <QWebEngineCookieStore>
+#endif
+#include <QPushButton>
 #include <QSettings>
 #include <QSignalBlocker>
+#include <QTextEdit>
 #include <QUuid>
 #include <QVBoxLayout>
 
 #include "Connection.hpp"
-#include "ui_Connection.h"
 #include "FairWindSK.hpp"
+#include "ui/IconUtils.hpp"
+#include "ui/MainWindow.hpp"
 #include "ui/widgets/TouchComboBox.hpp"
+#include "ui/widgets/TouchScrollArea.hpp"
 
 namespace fairwindsk::ui::settings {
     namespace {
@@ -80,6 +91,29 @@ namespace fairwindsk::ui::settings {
             return QObject::tr("Error connecting the server.");
         }
 
+        // Walk up the widget hierarchy to find the MainWindow.
+        fairwindsk::ui::MainWindow *resolveMainWindow(QWidget *context) {
+            QWidget *candidate = context;
+            while (candidate) {
+                if (auto *mainWindow = qobject_cast<fairwindsk::ui::MainWindow *>(candidate)) {
+                    return mainWindow;
+                }
+                candidate = candidate->parentWidget();
+            }
+            return fairwindsk::ui::MainWindow::instance(context);
+        }
+
+        void applyTextPalette(QWidget *widget, const QColor &color) {
+            if (!widget) {
+                return;
+            }
+
+            QPalette p = widget->palette();
+            p.setColor(QPalette::WindowText, color);
+            p.setColor(QPalette::Text, color);
+            widget->setPalette(p);
+        }
+
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         QStringList signalKDiscoveryTypes() {
             return {
@@ -127,12 +161,18 @@ namespace fairwindsk::ui::settings {
 #endif
     }
 
+    // -------------------------------------------------------------------------
+    // Helper accessors
+    // -------------------------------------------------------------------------
+
     QUrl Connection::currentSignalKServerUrl() const {
-        return validatedSignalKServerUrl(ui->comboBox_signalkserverurl->currentText());
+        return validatedSignalKServerUrl(m_comboBox ? m_comboBox->currentText() : QString());
     }
 
     void Connection::appendMessage(const QString &message) const {
-        ui->textEdit_message->append(message);
+        if (m_consoleEdit) {
+            m_consoleEdit->append(message);
+        }
     }
 
     void Connection::stopTokenTimer() {
@@ -147,20 +187,123 @@ namespace fairwindsk::ui::settings {
         }
     }
 
-    void Connection::showConsole() const {
-        if (m_browserView) {
-            m_browserView->setVisible(false);
-        }
-        ui->textEdit_message->setVisible(true);
+    // -------------------------------------------------------------------------
+    // Status label helpers
+    // -------------------------------------------------------------------------
+
+    void Connection::setStatusTexts(const QString &state,
+                                    const QString &permission,
+                                    const QString &expiration) {
+        m_stateText = state;
+        m_permissionText = permission;
+        m_expirationText = expiration;
+        updateStatusLabel();
     }
 
-    void Connection::showBrowserPage(const QUrl &url) const {
-        if (m_browserView) {
-            m_browserView->setUrl(url);
-            m_browserView->setVisible(true);
+    void Connection::updateStatusLabel() const {
+        if (!m_statusLabel) {
+            return;
         }
-        ui->textEdit_message->setVisible(false);
+
+        QString text;
+        if (!m_stateText.isEmpty()) {
+            text += tr("State: ") + m_stateText;
+        }
+        if (!m_permissionText.isEmpty()) {
+            if (!text.isEmpty()) {
+                text += QStringLiteral("  ·  "); // middle dot separator
+            }
+            text += tr("Permission: ") + m_permissionText;
+        }
+        if (!m_expirationText.isEmpty()) {
+            if (!text.isEmpty()) {
+                text += QStringLiteral("  ·  ");
+            }
+            text += tr("Expires: ") + m_expirationText;
+        }
+        m_statusLabel->setText(text);
     }
+
+    // -------------------------------------------------------------------------
+    // Browser / console visibility
+    // -------------------------------------------------------------------------
+
+    void Connection::showConsole() {
+        if (!m_browserDrawerOpen) {
+            return;
+        }
+
+        // Close the browser drawer; the console is always visible in the layout.
+        auto *mainWindow = resolveMainWindow(this);
+        if (mainWindow) {
+            mainWindow->finishActiveDrawer(0);
+            // m_browserDrawerOpen is reset in the onFinished callback.
+        }
+    }
+
+    void Connection::showBrowserPage(const QUrl &url) {
+        auto *mainWindow = resolveMainWindow(this);
+        if (!mainWindow) {
+            return;
+        }
+
+        // If the drawer is already open, just navigate to the new URL.
+        if (m_browserDrawerOpen && m_browserView) {
+            m_browserView->setUrl(url);
+            return;
+        }
+
+        // Create a fill-center-area container for the browser.
+        auto *container = new QWidget;
+        container->setObjectName(QStringLiteral("connectionBrowserContainer"));
+        container->setProperty("drawerFillCenterArea", true);
+        container->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+        auto *rootLayout = new QVBoxLayout(container);
+        rootLayout->setContentsMargins(0, 0, 0, 0);
+        rootLayout->setSpacing(0);
+
+        // Toolbar: title + close button.
+        auto *toolbar = new QWidget(container);
+        auto *toolbarLayout = new QHBoxLayout(toolbar);
+        toolbarLayout->setContentsMargins(12, 8, 12, 8);
+        toolbarLayout->setSpacing(12);
+
+        auto *titleLabel = new QLabel(tr("Token Request — approve or deny in the browser below"), toolbar);
+        titleLabel->setWordWrap(false);
+        toolbarLayout->addWidget(titleLabel, 1);
+
+        auto *closeButton = new QPushButton(toolbar);
+        closeButton->setObjectName(QStringLiteral("drawerNavButton"));
+        closeButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/close-google.svg")));
+        closeButton->setIconSize(QSize(24, 24));
+        closeButton->setMinimumSize(52, 52);
+        closeButton->setMaximumSize(52, 52);
+        toolbarLayout->addWidget(closeButton);
+
+        rootLayout->addWidget(toolbar);
+
+        // Embedded browser.
+        auto *profile = FairWindSK::getInstance() ? FairWindSK::getInstance()->getWebEngineProfile() : nullptr;
+        m_browserView = new fairwindsk::ui::web::WebView(profile, container);
+        m_browserView->setUrl(url);
+        rootLayout->addWidget(m_browserView, 1);
+
+        m_browserDrawerOpen = true;
+
+        connect(closeButton, &QPushButton::clicked, this, [mainWindow]() {
+            mainWindow->finishActiveDrawer(0);
+        });
+
+        mainWindow->showDrawerAsync(QString(), container, {}, [this](int) {
+            m_browserDrawerOpen = false;
+            m_browserView = nullptr;
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // Token request helpers
+    // -------------------------------------------------------------------------
 
     void Connection::abortActiveTokenReply() {
         if (!m_activeTokenReply) {
@@ -191,6 +334,10 @@ namespace fairwindsk::ui::settings {
         settings.sync();
     }
 
+    // -------------------------------------------------------------------------
+    // UI state synchronisation
+    // -------------------------------------------------------------------------
+
     void Connection::syncTokenUiState() {
         const QSettings settings(Configuration::settingsFilename(), QSettings::IniFormat);
         const QString href = settings.value("href", "").toString();
@@ -202,21 +349,31 @@ namespace fairwindsk::ui::settings {
         const bool isBusy = !m_activeTokenReply.isNull();
         const bool isConnectionEnabled = connectionEnabled();
 
-        ui->comboBox_signalkserverurl->setEnabled(!hasPendingRequest && !isBusy);
-        ui->pushButton_connectionToggle->setEnabled(!hasPendingRequest && !isBusy);
-        ui->pushButton_requestToken->setEnabled(isConnectionEnabled && !hasPendingRequest && !hasToken && !isBusy);
-        ui->pushButton_cancelRequest->setEnabled(hasPendingRequest || isBusy);
-        ui->pushButton_readOnly->setEnabled(!hasPendingRequest && !isBusy);
-        ui->pushButton_removeToken->setEnabled(!hasPendingRequest && hasToken && !isBusy);
+        if (m_comboBox) {
+            m_comboBox->setEnabled(!hasPendingRequest && !isBusy);
+        }
+        if (m_connectButton) {
+            m_connectButton->setEnabled(!hasPendingRequest && !isBusy);
+        }
+        if (m_requestTokenButton) {
+            m_requestTokenButton->setEnabled(isConnectionEnabled && !hasPendingRequest && !hasToken && !isBusy);
+        }
+        if (m_cancelButton) {
+            m_cancelButton->setEnabled(hasPendingRequest || isBusy);
+        }
+        if (m_removeTokenButton) {
+            m_removeTokenButton->setEnabled(!hasPendingRequest && hasToken && !isBusy);
+        }
         updateConnectionToggle();
 
         if (hasToken) {
-            ui->label_lblPermission->setText(tr("Approved"));
-            ui->label_lblExpirationTime->setText(expirationTime);
+            m_permissionText = tr("Approved");
+            m_expirationText = expirationTime;
         } else if (!hasPendingRequest && !isBusy) {
-            ui->label_lblPermission->clear();
-            ui->label_lblExpirationTime->clear();
+            m_permissionText.clear();
+            m_expirationText.clear();
         }
+        updateStatusLabel();
     }
 
     void Connection::applyCompletedAccessRequest(const QJsonObject &accessRequest) {
@@ -227,20 +384,19 @@ namespace fairwindsk::ui::settings {
         QSettings settings(Configuration::settingsFilename(), QSettings::IniFormat);
 
         if (permission == "DENIED") {
-            ui->label_lblPermission->setText(tr("Denied"));
-            ui->label_lblExpirationTime->clear();
+            m_permissionText = tr("Denied");
+            m_expirationText.clear();
             settings.remove("token");
             settings.remove("expirationTime");
             settings.sync();
         } else if (permission == "APPROVED") {
-            ui->label_lblPermission->setText(tr("Approved"));
+            m_permissionText = tr("Approved");
 
             if (accessRequest.contains("expirationTime") && accessRequest["expirationTime"].isString()) {
-                const QString expirationTime = accessRequest["expirationTime"].toString();
-                ui->label_lblExpirationTime->setText(expirationTime);
-                settings.setValue("expirationTime", expirationTime);
+                m_expirationText = accessRequest["expirationTime"].toString();
+                settings.setValue("expirationTime", m_expirationText);
             } else {
-                ui->label_lblExpirationTime->clear();
+                m_expirationText.clear();
                 settings.remove("expirationTime");
             }
 
@@ -253,12 +409,14 @@ namespace fairwindsk::ui::settings {
             settings.sync();
             m_settings->markDirty(FairWindSK::RuntimeSignalKConnection, 0);
         } else {
-            ui->label_lblPermission->setText(permission);
-            ui->label_lblExpirationTime->clear();
+            m_permissionText = permission;
+            m_expirationText.clear();
             settings.remove("token");
             settings.remove("expirationTime");
             settings.sync();
         }
+
+        updateStatusLabel();
     }
 
     void Connection::finishTokenFlowWithError(const QString &state, const QString &message) {
@@ -266,7 +424,8 @@ namespace fairwindsk::ui::settings {
         abortActiveTokenReply();
         clearPendingRequest(false);
 
-        ui->label_lblState->setText(state);
+        m_stateText = state;
+        updateStatusLabel();
         showConsole();
 
         if (!message.isEmpty()) {
@@ -276,12 +435,16 @@ namespace fairwindsk::ui::settings {
         syncTokenUiState();
     }
 
+    // -------------------------------------------------------------------------
+    // URL / connection management
+    // -------------------------------------------------------------------------
+
     void Connection::commitSignalKServerUrl(const bool restartWhenActive) {
-        if (!ui || !ui->comboBox_signalkserverurl || !m_settings || m_committingServerUrl) {
+        if (!m_comboBox || !m_settings || m_committingServerUrl) {
             return;
         }
 
-        const QString normalized = normalizedSignalKServerUrlText(ui->comboBox_signalkserverurl->currentText());
+        const QString normalized = normalizedSignalKServerUrlText(m_comboBox->currentText());
         if (normalized.isEmpty()) {
             const bool changed = !m_settings->getConfiguration()->getSignalKServerUrl().isEmpty();
             m_settings->getConfiguration()->setSignalKServerUrl(QString());
@@ -301,8 +464,8 @@ namespace fairwindsk::ui::settings {
         m_committingServerUrl = true;
         addServerUrlOption(signalKServerUrl.toString());
         {
-            const QSignalBlocker blocker(ui->comboBox_signalkserverurl);
-            ui->comboBox_signalkserverurl->setCurrentText(signalKServerUrl.toString());
+            const QSignalBlocker blocker(m_comboBox);
+            m_comboBox->setCurrentText(signalKServerUrl.toString());
         }
         m_committingServerUrl = false;
 
@@ -315,7 +478,7 @@ namespace fairwindsk::ui::settings {
     }
 
     void Connection::addServerUrlOption(const QString &serverUrl) const {
-        if (!ui || !ui->comboBox_signalkserverurl) {
+        if (!m_comboBox) {
             return;
         }
 
@@ -324,9 +487,9 @@ namespace fairwindsk::ui::settings {
             return;
         }
 
-        if (ui->comboBox_signalkserverurl->findText(normalized, Qt::MatchExactly) == -1) {
-            const QSignalBlocker blocker(ui->comboBox_signalkserverurl);
-            ui->comboBox_signalkserverurl->addItem(normalized);
+        if (m_comboBox->findText(normalized, Qt::MatchExactly) == -1) {
+            const QSignalBlocker blocker(m_comboBox);
+            m_comboBox->addItem(normalized);
         }
     }
 
@@ -350,17 +513,21 @@ namespace fairwindsk::ui::settings {
     }
 
     void Connection::updateConnectionToggle() {
-        if (!ui || !ui->pushButton_connectionToggle) {
+        if (!m_connectButton) {
             return;
         }
 
         const bool enabled = connectionEnabled();
-        ui->pushButton_connectionToggle->setText(enabled ? tr("Pause Connection") : tr("Start Connection"));
-        ui->pushButton_connectionToggle->setToolTip(enabled
-                                                        ? tr("Pause the Signal K connection without clearing the selected URL")
-                                                        : tr("Start the Signal K connection using the selected URL"));
-        ui->pushButton_connectionToggle->setAccessibleName(ui->pushButton_connectionToggle->text());
+        m_connectButton->setText(enabled ? tr("Pause") : tr("Connect"));
+        m_connectButton->setToolTip(enabled
+                                        ? tr("Pause the Signal K connection without clearing the selected URL")
+                                        : tr("Connect to the Signal K server using the selected URL"));
+        m_connectButton->setAccessibleName(m_connectButton->text());
     }
+
+    // -------------------------------------------------------------------------
+    // ZeroConf discovery
+    // -------------------------------------------------------------------------
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
     void Connection::startZeroConfDiscovery() {
@@ -444,20 +611,170 @@ namespace fairwindsk::ui::settings {
     }
 #endif
 
+    // -------------------------------------------------------------------------
+    // buildUi — construct the layout programmatically
+    // -------------------------------------------------------------------------
 
-    /*
-     * Connection
-     * Class constructor
-     */
+    void Connection::buildUi() {
+        auto *rootLayout = new QVBoxLayout(this);
+        rootLayout->setContentsMargins(0, 0, 0, 0);
+        rootLayout->setSpacing(0);
+
+        auto *scrollArea = new fairwindsk::ui::widgets::TouchScrollArea(this);
+        scrollArea->setWidgetResizable(true);
+        scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        rootLayout->addWidget(scrollArea);
+
+        auto *content = new QWidget(scrollArea);
+        scrollArea->setWidget(content);
+
+        auto *contentLayout = new QVBoxLayout(content);
+        contentLayout->setContentsMargins(12, 12, 12, 12);
+        contentLayout->setSpacing(12);
+
+        // Title + hint
+        m_titleLabel = new QLabel(tr("Signal K Connection"), content);
+        contentLayout->addWidget(m_titleLabel);
+
+        m_hintLabel = new QLabel(
+            tr("Select or type a Signal K server URL. "
+               "Use Connect to start or pause the connection. "
+               "Request a token to enable full read/write access — "
+               "a browser will open so you can approve the request on the server."),
+            content);
+        m_hintLabel->setWordWrap(true);
+        contentLayout->addWidget(m_hintLabel);
+
+        // --- Control frame ---
+        m_controlFrame = new QFrame(content);
+        auto *controlLayout = new QVBoxLayout(m_controlFrame);
+        controlLayout->setContentsMargins(12, 12, 12, 12);
+        controlLayout->setSpacing(10);
+        contentLayout->addWidget(m_controlFrame);
+
+        // URL row: label + editable combo
+        auto *urlRow = new QHBoxLayout();
+        urlRow->setContentsMargins(0, 0, 0, 0);
+        urlRow->setSpacing(8);
+
+        m_urlLabel = new QLabel(tr("Server URL"), m_controlFrame);
+        urlRow->addWidget(m_urlLabel);
+
+        m_comboBox = new fairwindsk::ui::widgets::TouchComboBox(m_controlFrame);
+        m_comboBox->setEditable(true);
+        m_comboBox->setMinimumHeight(52);
+        urlRow->addWidget(m_comboBox, 1);
+
+        controlLayout->addLayout(urlRow);
+
+        // Status row: single label showing State · Permission · Expires
+        m_statusLabel = new QLabel(m_controlFrame);
+        m_statusLabel->setWordWrap(false);
+        controlLayout->addWidget(m_statusLabel);
+
+        // Action row: Connect | Request Token | Cancel | Remove Token
+        auto *actionRow = new QHBoxLayout();
+        actionRow->setContentsMargins(0, 0, 0, 0);
+        actionRow->setSpacing(8);
+
+        m_connectButton = new QPushButton(tr("Connect"), m_controlFrame);
+        m_connectButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/refresh-google.svg")));
+        m_connectButton->setIconSize(QSize(20, 20));
+        m_connectButton->setToolTip(tr("Connect to the Signal K server using the selected URL"));
+        m_connectButton->setAccessibleName(tr("Toggle Signal K connection"));
+
+        m_requestTokenButton = new QPushButton(tr("Request Token"), m_controlFrame);
+        m_requestTokenButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/route-export-iec.svg")));
+        m_requestTokenButton->setIconSize(QSize(20, 20));
+        m_requestTokenButton->setToolTip(tr("Request a read/write access token from the Signal K server"));
+
+        m_cancelButton = new QPushButton(tr("Cancel"), m_controlFrame);
+        m_cancelButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/close-google.svg")));
+        m_cancelButton->setIconSize(QSize(20, 20));
+        m_cancelButton->setToolTip(tr("Cancel the pending token request"));
+
+        m_removeTokenButton = new QPushButton(tr("Remove Token"), m_controlFrame);
+        m_removeTokenButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/delete-google.svg")));
+        m_removeTokenButton->setIconSize(QSize(20, 20));
+        m_removeTokenButton->setToolTip(tr("Remove the stored access token"));
+
+        actionRow->addWidget(m_connectButton);
+        actionRow->addWidget(m_requestTokenButton);
+        actionRow->addWidget(m_cancelButton);
+        actionRow->addWidget(m_removeTokenButton);
+        actionRow->addStretch(1);
+
+        controlLayout->addLayout(actionRow);
+
+        // --- Console ---
+        m_consoleEdit = new QTextEdit(content);
+        m_consoleEdit->setReadOnly(true);
+        m_consoleEdit->setMinimumHeight(80);
+        m_consoleEdit->setMaximumHeight(120);
+        m_consoleEdit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        contentLayout->addWidget(m_consoleEdit);
+
+        contentLayout->addStretch(1);
+
+        // Signals
+        connect(m_connectButton, &QPushButton::clicked, this, &Connection::onToggleConnection);
+        connect(m_requestTokenButton, &QPushButton::clicked, this, &Connection::onRequestToken);
+        connect(m_cancelButton, &QPushButton::clicked, this, &Connection::onCancelRequest);
+        connect(m_removeTokenButton, &QPushButton::clicked, this, &Connection::onRemoveToken);
+
+        // Only commit the URL when the user selects an item from the dropdown.
+        // Typed URLs are added to the combo on connect so accidental keystrokes
+        // don't overwrite the saved server URL.
+        connect(m_comboBox,
+                qOverload<int>(&fairwindsk::ui::widgets::TouchComboBox::currentIndexChanged),
+                this,
+                &Connection::onUpdateSignalKServerUrl);
+    }
+
+    // -------------------------------------------------------------------------
+    // refreshChrome — apply comfort theme to all chrome elements
+    // -------------------------------------------------------------------------
+
+    void Connection::refreshChrome() {
+        auto *fairWindSK = FairWindSK::getInstance();
+        const auto *configuration = m_settings ? m_settings->getConfiguration()
+                                                : (fairWindSK ? fairWindSK->getConfiguration() : nullptr);
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration)
+                                          : QStringLiteral("default");
+        const auto chrome = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), false);
+
+        fairwindsk::ui::applySectionTitleLabelStyle(m_titleLabel, configuration, preset, palette(), 18.0);
+        applyTextPalette(m_hintLabel, chrome.text);
+        applyTextPalette(m_urlLabel, chrome.text);
+        applyTextPalette(m_statusLabel, chrome.text);
+
+        if (m_controlFrame) {
+            m_controlFrame->setStyleSheet(QStringLiteral(
+                "QFrame { border: 1px solid %1; border-radius: 14px; background: %2; }")
+                                              .arg(chrome.border.name(),
+                                                   fairwindsk::ui::comfortAlpha(chrome.buttonBackground, 18).name(QColor::HexArgb)));
+        }
+
+        fairwindsk::ui::applyBottomBarPushButtonChrome(m_connectButton, chrome, false, 52);
+        fairwindsk::ui::applyBottomBarPushButtonChrome(m_requestTokenButton, chrome, false, 52);
+        fairwindsk::ui::applyBottomBarPushButtonChrome(m_cancelButton, chrome, false, 52);
+        fairwindsk::ui::applyBottomBarPushButtonChrome(m_removeTokenButton, chrome, false, 52);
+
+        fairwindsk::ui::applyTintedButtonIcon(m_connectButton, chrome.buttonText, QSize(20, 20));
+        fairwindsk::ui::applyTintedButtonIcon(m_requestTokenButton, chrome.buttonText, QSize(20, 20));
+        fairwindsk::ui::applyTintedButtonIcon(m_cancelButton, chrome.buttonText, QSize(20, 20));
+        fairwindsk::ui::applyTintedButtonIcon(m_removeTokenButton, chrome.buttonText, QSize(20, 20));
+    }
+
+    // -------------------------------------------------------------------------
+    // Constructor
+    // -------------------------------------------------------------------------
+
     Connection::Connection(Settings *settingsWidget, QWidget *parent)
         : QWidget(parent),
-          ui(new Ui::Connection) {
+          m_settings(settingsWidget) {
 
-        // Set the settings widge
-        m_settings = settingsWidget;
-
-        // Set the UI
-        ui->setupUi(this);
+        buildUi();
 
         m_timer = new QTimer(this);
         m_timer->setInterval(kTokenPollIntervalMs);
@@ -465,36 +782,17 @@ namespace fairwindsk::ui::settings {
 
         m_networkAccessManager = new QNetworkAccessManager(this);
 
-        // Set the current signal k server url
+        // Populate combo with the configured URL and defaults.
         const QString configuredServerUrl = m_settings->getConfiguration()->getSignalKServerUrl();
         addServerUrlOption(configuredServerUrl);
-        ui->comboBox_signalkserverurl->setCurrentText(configuredServerUrl);
-
+        {
+            const QSignalBlocker blocker(m_comboBox);
+            m_comboBox->setCurrentText(configuredServerUrl);
+        }
         addServerUrlOption(QStringLiteral("http://localhost:3000"));
         addServerUrlOption(QStringLiteral("https://demo.signalk.org"));
 
-        for (auto *button : {
-                 ui->pushButton_connectionToggle,
-                 ui->pushButton_requestToken,
-                 ui->pushButton_cancelRequest,
-                 ui->pushButton_readOnly,
-                 ui->pushButton_removeToken
-             }) {
-            button->setMinimumHeight(52);
-        }
-
-        auto *browserLayout = new QVBoxLayout(ui->widgetBrowserHost);
-        browserLayout->setContentsMargins(0, 0, 0, 0);
-        browserLayout->setSpacing(0);
-        m_browserView = new fairwindsk::ui::web::WebView(FairWindSK::getInstance()->getWebEngineProfile(),
-                                                         ui->widgetBrowserHost);
-        browserLayout->addWidget(m_browserView);
-        m_browserView->setVisible(false);
-
-        // Show the console
-        ui->textEdit_message->setVisible(true);
-
-        // Initialize the QT managed settings
+        // Load persisted token/href state.
         const QSettings settings(Configuration::settingsFilename(), QSettings::IniFormat);
         const QString href = settings.value("href", "").toString();
         const QString expirationTime = settings.value("expirationTime", "").toString();
@@ -505,10 +803,15 @@ namespace fairwindsk::ui::settings {
                      << "expirationTime:" << expirationTime;
         }
 
+        if (!expirationTime.isEmpty()) {
+            m_expirationText = expirationTime;
+        }
+
         syncTokenUiState();
 
         if (!href.isEmpty()) {
-            ui->label_lblState->setText(tr("Pending..."));
+            m_stateText = tr("Pending...");
+            updateStatusLabel();
             startTokenTimer();
 
             const QUrl signalKServerUrl = currentSignalKServerUrl();
@@ -517,24 +820,7 @@ namespace fairwindsk::ui::settings {
             }
         }
 
-        if (!expirationTime.isEmpty()) {
-            ui->label_lblExpirationTime->setText(expirationTime);
-        }
-
-        connect(ui->pushButton_requestToken, &QPushButton::clicked, this, &Connection::onRequestToken);
-        connect(ui->pushButton_cancelRequest, &QPushButton::clicked, this, &Connection::onCancelRequest);
-        connect(ui->pushButton_readOnly, &QPushButton::clicked, this, &Connection::onReadOnly);
-        connect(ui->pushButton_removeToken, &QPushButton::clicked, this, &Connection::onRemoveToken);
-        connect(ui->pushButton_connectionToggle, &QPushButton::clicked, this, &Connection::onToggleConnection);
-
-        connect(ui->comboBox_signalkserverurl,
-                qOverload<int>(&fairwindsk::ui::widgets::TouchComboBox::currentIndexChanged),
-                this,
-                &Connection::onUpdateSignalKServerUrl);
-        connect(ui->comboBox_signalkserverurl,
-                &fairwindsk::ui::widgets::TouchComboBox::editTextChanged,
-                this,
-                &Connection::onUpdateSignalKServerUrl);
+        refreshChrome();
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         startZeroConfDiscovery();
@@ -543,18 +829,36 @@ namespace fairwindsk::ui::settings {
 #endif
     }
 
+    // -------------------------------------------------------------------------
+    // event override — refresh chrome on palette change
+    // -------------------------------------------------------------------------
+
+    bool Connection::event(QEvent *event) {
+        if (event && (event->type() == QEvent::PaletteChange ||
+                      event->type() == QEvent::ApplicationPaletteChange)) {
+            refreshChrome();
+        }
+        return QWidget::event(event);
+    }
+
+    // -------------------------------------------------------------------------
+    // Slots
+    // -------------------------------------------------------------------------
+
     /*
      * onUpdateSignalKServerUrl
-     * Invoked when the signal k server url has changed
+     * Invoked when the user picks an item from the combo dropdown.
+     * Saves the selected URL to config without restarting the active connection;
+     * typed URLs are committed only when the Connect button is pressed.
      */
     void Connection::onUpdateSignalKServerUrl() {
-        commitSignalKServerUrl(true);
+        commitSignalKServerUrl(false);
     }
 
     /*
-    * addService
-    * Invoked when zero conf find a new service
-    */
+     * addService
+     * Invoked when ZeroConf finds a new service.
+     */
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
     void Connection::addService(const QZeroConfService &item) {
         const QString signalKServerUrl = signalKUrlForService(item);
@@ -568,9 +872,33 @@ namespace fairwindsk::ui::settings {
 #endif
 
     /*
-    * onRequestToken
-    * Invoked when the button request token is hit
-    */
+     * onToggleConnection
+     * Connects or pauses the Signal K connection.
+     * Commits (and adds to the combo) any URL the user typed before toggling.
+     */
+    void Connection::onToggleConnection() {
+        commitSignalKServerUrl(false);
+        const bool nextEnabled = !connectionEnabled();
+        if (nextEnabled && !currentSignalKServerUrl().isValid()) {
+            appendMessage(tr("Please provide a valid Signal K server URL before starting the connection."));
+            updateConnectionToggle();
+            return;
+        }
+
+        setConnectionEnabled(nextEnabled);
+        m_stateText = nextEnabled ? tr("Starting") : tr("Paused");
+        updateStatusLabel();
+        appendMessage(nextEnabled
+                          ? tr("Starting Signal K connection.")
+                          : tr("Signal K connection paused."));
+        syncTokenUiState();
+    }
+
+    /*
+     * onRequestToken
+     * Posts a new access-request to the Signal K server and opens the
+     * admin browser so the user can approve it.
+     */
     void Connection::onRequestToken() {
         if (m_activeTokenReply) {
             return;
@@ -591,10 +919,10 @@ namespace fairwindsk::ui::settings {
         clearPendingRequest(true);
         stopTokenTimer();
 
-        ui->label_lblState->setText(tr("Requesting..."));
-        ui->label_lblPermission->clear();
-        ui->label_lblExpirationTime->clear();
-        showConsole();
+        m_stateText = tr("Requesting...");
+        m_permissionText.clear();
+        m_expirationText.clear();
+        updateStatusLabel();
 
         QNetworkRequest networkRequest(buildSignalKUrl(signalKServerUrl, "/signalk/v1/access/requests"));
         networkRequest.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
@@ -642,7 +970,8 @@ namespace fairwindsk::ui::settings {
 
             if (state == "PENDING" && !href.isEmpty()) {
                 setPendingRequestHref(href);
-                ui->label_lblState->setText(tr("Requested/pending"));
+                m_stateText = tr("Requested/pending");
+                updateStatusLabel();
                 startTokenTimer();
                 syncTokenUiState();
 
@@ -661,13 +990,12 @@ namespace fairwindsk::ui::settings {
         }
 
         if (statusCode == 400) {
-            ui->label_lblState->setText(tr("Login required"));
+            m_stateText = tr("Login required");
+            updateStatusLabel();
             syncTokenUiState();
 
             if (signalKServerUrl.isValid()) {
                 showBrowserPage(buildSignalKUrl(signalKServerUrl, "/admin/#/login"));
-            } else {
-                showConsole();
             }
             return;
         }
@@ -677,9 +1005,9 @@ namespace fairwindsk::ui::settings {
     }
 
     /*
-    * onCheckRequestToken
-    * Invoked by a timer each second
-    */
+     * onCheckRequestToken
+     * Invoked by the polling timer each second while a request is pending.
+     */
     void Connection::onCheckRequestToken() {
         if (m_activeTokenReply) {
             return;
@@ -729,7 +1057,8 @@ namespace fairwindsk::ui::settings {
         }
 
         if (networkError != QNetworkReply::NoError && statusCode <= 0) {
-            ui->label_lblState->setText(tr("Pending..."));
+            m_stateText = tr("Pending...");
+            updateStatusLabel();
             syncTokenUiState();
             return;
         }
@@ -744,18 +1073,21 @@ namespace fairwindsk::ui::settings {
         const QString state = jsonObject["state"].toString();
 
         if (state == "PENDING") {
-            ui->label_lblState->setText(tr("Pending..."));
+            m_stateText = tr("Pending...");
+            updateStatusLabel();
             syncTokenUiState();
             return;
         }
 
         if (state != "COMPLETED") {
-            ui->label_lblState->setText(state);
+            m_stateText = state;
+            updateStatusLabel();
             syncTokenUiState();
             return;
         }
 
-        ui->label_lblState->setText(tr("Completed"));
+        m_stateText = tr("Completed");
+        updateStatusLabel();
         stopTokenTimer();
         showConsole();
 
@@ -775,9 +1107,9 @@ namespace fairwindsk::ui::settings {
     }
 
     /*
-    * onCancelRequest
-    * Invoked when the cancel request button has hit
-    */
+     * onCancelRequest
+     * Aborts any in-flight network request and clears the pending href.
+     */
     void Connection::onCancelRequest() {
         abortActiveTokenReply();
         stopTokenTimer();
@@ -785,98 +1117,76 @@ namespace fairwindsk::ui::settings {
         syncTokenUiState();
 
         showConsole();
-        ui->label_lblState->setText(tr("Canceled"));
-        ui->label_lblPermission->clear();
-        ui->label_lblExpirationTime->clear();
+        m_stateText = tr("Canceled");
+        m_permissionText.clear();
+        m_expirationText.clear();
+        updateStatusLabel();
     }
 
     /*
-    * onReadOnly
-    * Invoked when the read only button has hit
-    */
-    void Connection::onReadOnly() {
-        commitSignalKServerUrl(false);
-        const QUrl signalKServerUrl = currentSignalKServerUrl();
-        if (!signalKServerUrl.isValid()) {
-            appendMessage(tr("Please provide a valid Signal K server URL."));
-            return;
-        }
-
-        m_settings->getConfiguration()->setSignalKServerUrl(signalKServerUrl.toString());
-        m_settings->getConfiguration()->setSignalKConnectionEnabled(true);
-        m_settings->markDirty(FairWindSK::RuntimeSignalKConnection, 0);
-        updateConnectionToggle();
-
-        abortActiveTokenReply();
-        stopTokenTimer();
-        clearPendingRequest(true);
-        syncTokenUiState();
-
-        showConsole();
-        ui->label_lblState->setText(tr("Read only"));
-        ui->label_lblPermission->setText(tr("No token"));
-        ui->label_lblExpirationTime->clear();
-
-        appendMessage(tr("Configured %1 in read-only mode.").arg(signalKServerUrl.toString()));
-    }
-
-    void Connection::onToggleConnection() {
-        commitSignalKServerUrl(false);
-        const bool nextEnabled = !connectionEnabled();
-        if (nextEnabled && !currentSignalKServerUrl().isValid()) {
-            appendMessage(tr("Please provide a valid Signal K server URL before starting the connection."));
-            updateConnectionToggle();
-            return;
-        }
-
-        setConnectionEnabled(nextEnabled);
-        showConsole();
-        ui->label_lblState->setText(nextEnabled ? tr("Starting") : tr("Paused"));
-        appendMessage(nextEnabled
-                          ? tr("Starting Signal K connection.")
-                          : tr("Signal K connection paused."));
-        syncTokenUiState();
-    }
-
-    /*
-    * onRemoveToken
-    * Invoked when the remove token button has hit
-    */
+     * onRemoveToken
+     * Deletes the stored access token from settings, clears the JAUTHENTICATION
+     * cookie from the WebEngine profile, and triggers a reconnect so the Signal K
+     * client re-initialises in public (unauthenticated) mode.
+     */
     void Connection::onRemoveToken() {
         abortActiveTokenReply();
         stopTokenTimer();
-        clearPendingRequest(true);
-        syncTokenUiState();
 
+        // Wipe the in-memory token synchronously before clearing QSettings.
+        // connectivityChanged may fire while the async markDirty → Client::init()
+        // chain is still pending; if m_Token is non-empty at that point the handler
+        // writes the old token back to QSettings, causing it to reappear on restart.
+        if (auto *fairWindSK = FairWindSK::getInstance()) {
+            if (auto *client = fairWindSK->getSignalKClient()) {
+                client->clearTokenAndCookie();
+            }
+        }
+
+        clearPendingRequest(true);
+
+        // Delete the JAUTHENTICATION cookie from the embedded browser's cookie store
+        // so the WebView no longer sends it with requests to the Signal K server.
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
+        if (auto *fairWindSK = FairWindSK::getInstance()) {
+            if (auto *profile = fairWindSK->getWebEngineProfile()) {
+                QNetworkCookie authCookie(QByteArrayLiteral("JAUTHENTICATION"), QByteArray());
+                authCookie.setPath(QStringLiteral("/"));
+                const QString serverUrl = fairWindSK->getConfiguration()->getSignalKServerUrl();
+                if (!serverUrl.isEmpty()) {
+                    profile->cookieStore()->deleteCookie(authCookie, QUrl(serverUrl));
+                } else {
+                    // No server URL configured; delete from all origins.
+                    profile->cookieStore()->deleteCookie(authCookie);
+                }
+            }
+        }
+#endif
+
+        // Reconnect so Client::init() is called with an empty token, which clears
+        // the in-memory m_Token and m_Cookie and switches to public mode.
+        if (m_settings) {
+            m_settings->markDirty(FairWindSK::RuntimeSignalKConnection, 0);
+        }
+
+        syncTokenUiState();
         showConsole();
-        ui->label_lblExpirationTime->setText(tr("Removed"));
-        ui->label_lblPermission->clear();
-        ui->label_lblState->setText(tr("Removed"));
+        m_stateText = tr("Removed");
+        m_permissionText.clear();
+        m_expirationText.clear();
+        updateStatusLabel();
     }
 
-    /*
-     * ~Connection
-     * Class destructor
-     */
-    Connection::~Connection() {
+    // -------------------------------------------------------------------------
+    // Destructor
+    // -------------------------------------------------------------------------
 
-        // Stop the zeroconf browser
+    Connection::~Connection() {
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         stopZeroConfDiscovery();
 #endif
-
         abortActiveTokenReply();
         stopTokenTimer();
-
-        // Check if the UI is valid
-        if (ui) {
-
-            // Delete the UI
-            delete ui;
-
-            // Set the ui pointer to null
-            ui = nullptr;
-        }
     }
 
 } // fairwindsk::ui::settings

@@ -271,6 +271,9 @@ Contributor work should keep using those names consistently.
 `ui/settings/Settings` groups the major configuration surfaces:
 
 - `Main`
+- `Top Bar`
+- `Bottom Bar`
+- `Widgets`
 - `Comfort`
 - `Connection`
 - `SignalK`

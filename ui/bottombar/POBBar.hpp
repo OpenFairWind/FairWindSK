@@ -83,6 +83,7 @@ namespace fairwindsk::ui::bottombar {
         void applyStandardNotificationUpdate(const QJsonObject &value);
         void loadExistingPobs();
         void setMetricSubscriptionsActive(bool active);
+        void closePanelAfterNoActivePobs();
         void refreshCurrentPobUi();
         void refreshCancelButton();
         void clearDisplayedPob();

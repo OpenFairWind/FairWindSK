@@ -11,10 +11,6 @@ QT_BEGIN_NAMESPACE
 namespace Ui { class AppDetailsWidget; }
 QT_END_NAMESPACE
 
-namespace fairwindsk::ui::widgets {
-    class TouchIconBrowser;
-}
-
 namespace fairwindsk::ui::settings {
     class AppDetailsWidget final : public QWidget {
         Q_OBJECT
@@ -36,7 +32,6 @@ namespace fairwindsk::ui::settings {
 
     private:
         QString m_currentIconPath;
-        fairwindsk::ui::widgets::TouchIconBrowser *m_iconBrowser = nullptr;
 
     public:
         ::Ui::AppDetailsWidget *ui = nullptr;

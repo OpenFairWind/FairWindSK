@@ -11,6 +11,7 @@
 
 #include "FairWindSK.hpp"
 #include "ui/IconUtils.hpp"
+#include "ui/widgets/DataWidgetConfig.hpp"
 
 namespace fairwindsk::ui::settings {
     namespace {
@@ -121,13 +122,22 @@ namespace fairwindsk::ui::settings {
         }
 
         QIcon iconForWidgetId(const QString &widgetId) {
+            if (auto *fairWindSK = FairWindSK::getInstance()) {
+                if (auto *configuration = fairWindSK->getConfiguration()) {
+                    const auto definition = fairwindsk::ui::widgets::dataWidgetDefinition(configuration->getRoot(), widgetId);
+                    if (!definition.icon.trimmed().isEmpty()) {
+                        return QIcon(definition.icon);
+                    }
+                }
+            }
+
             const QString lcdMetricIcon = lcdMetricIconPath(widgetId);
             if (!lcdMetricIcon.isEmpty()) {
                 return QIcon(lcdMetricIcon);
             }
 
             if (widgetId == QStringLiteral("apps")) {
-                return QIcon(QStringLiteral(":/resources/svg/OpenBridge/applications.svg"));
+                return QIcon(QStringLiteral(":/resources/svg/OpenBridge/home.svg"));
             }
             if (widgetId == QStringLiteral("mydata")) {
                 return QIcon(QStringLiteral(":/resources/svg/OpenBridge/database.svg"));
@@ -233,6 +243,10 @@ namespace fairwindsk::ui::settings {
         payload.insert(QStringLiteral("instanceId"), entry.instanceId);
         payload.insert(QStringLiteral("expandHorizontally"), entry.expandHorizontally);
         payload.insert(QStringLiteral("expandVertically"), entry.expandVertically);
+        payload.insert(QStringLiteral("showIcon"), entry.showIcon);
+        payload.insert(QStringLiteral("showText"), entry.showText);
+        payload.insert(QStringLiteral("showUnits"), entry.showUnits);
+        payload.insert(QStringLiteral("showTrend"), entry.showTrend);
         return QJsonDocument(payload).toJson(QJsonDocument::Compact);
     }
 
@@ -249,6 +263,10 @@ namespace fairwindsk::ui::settings {
         entry.instanceId = object.value(QStringLiteral("instanceId")).toString();
         entry.expandHorizontally = object.value(QStringLiteral("expandHorizontally")).toBool();
         entry.expandVertically = object.value(QStringLiteral("expandVertically")).toBool();
+        entry.showIcon = !object.contains(QStringLiteral("showIcon")) || object.value(QStringLiteral("showIcon")).toBool();
+        entry.showText = !object.contains(QStringLiteral("showText")) || object.value(QStringLiteral("showText")).toBool();
+        entry.showUnits = !object.contains(QStringLiteral("showUnits")) || object.value(QStringLiteral("showUnits")).toBool();
+        entry.showTrend = object.value(QStringLiteral("showTrend")).toBool(false);
         return entry;
     }
 

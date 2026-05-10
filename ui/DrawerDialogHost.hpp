@@ -5,6 +5,7 @@
 #ifndef FAIRWINDSK_UI_DRAWERDIALOGHOST_HPP
 #define FAIRWINDSK_UI_DRAWERDIALOGHOST_HPP
 
+#include <QColor>
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QWidget>
@@ -61,6 +62,11 @@ namespace fairwindsk::ui::drawer {
     QString getIconPath(QWidget *parent,
                         const QString &title,
                         const QString &currentPath = QString());
+    QColor getColor(QWidget *parent,
+                    const QString &title,
+                    const QColor &initialColor,
+                    bool *accepted = nullptr,
+                    bool alphaEnabled = false);
     QString getSaveFilePath(QWidget *parent,
                             const QString &title,
                             const QString &path = QString(),

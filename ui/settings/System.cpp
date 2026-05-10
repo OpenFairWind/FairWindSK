@@ -13,10 +13,12 @@
 #include <QFormLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
+#include <QHostAddress>
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QLabel>
 #include <QLineEdit>
+#include <QNetworkInterface>
 #include <QProgressBar>
 #include <QPushButton>
 #include <QSaveFile>
@@ -157,6 +159,7 @@ namespace fairwindsk::ui::settings {
             m_settings->quitApplication();
         });
 
+        ensureNetworkWidgets();
         ensureLoggingSettingsWidgets();
         syncLoggingSettings();
 
@@ -294,6 +297,7 @@ namespace fairwindsk::ui::settings {
 
         m_previousCpuStats = currentCpuStats;
         refreshRpiDiagnostics();
+        refreshNetworkInfo();
     }
 
     void System::ensureCoreWidgets(const int coreCount) {
@@ -340,6 +344,63 @@ namespace fairwindsk::ui::settings {
                 {confirmText, int(QMessageBox::Ok), false}
             },
             int(QMessageBox::Cancel)) == int(QMessageBox::Ok);
+    }
+
+    void System::ensureNetworkWidgets() {
+        if (m_networkGroupBox) {
+            return;
+        }
+
+        m_networkGroupBox = new QGroupBox(tr("Network"), this);
+        auto *formLayout = new QFormLayout(m_networkGroupBox);
+        formLayout->setContentsMargins(0, 0, 0, 0);
+        formLayout->setSpacing(8);
+
+        m_networkAddressesValue = new QLabel(tr("Detecting…"), m_networkGroupBox);
+        m_networkAddressesValue->setWordWrap(true);
+        m_networkAddressesValue->setTextInteractionFlags(Qt::TextSelectableByMouse);
+        formLayout->addRow(tr("IP address"), m_networkAddressesValue);
+
+        // Insert before the trailing vertical spacer in the Performance pane.
+        ui->verticalLayout_Performance->insertWidget(
+            ui->verticalLayout_Performance->count() - 1, m_networkGroupBox);
+    }
+
+    void System::refreshNetworkInfo() {
+        if (!m_networkAddressesValue) {
+            return;
+        }
+
+        // Refresh at most once every 10 seconds; IP addresses rarely change.
+        const QDateTime now = QDateTime::currentDateTimeUtc();
+        if (m_lastNetworkRefresh.isValid() && m_lastNetworkRefresh.msecsTo(now) < 10000) {
+            return;
+        }
+        m_lastNetworkRefresh = now;
+
+        QStringList lines;
+        for (const QNetworkInterface &iface : QNetworkInterface::allInterfaces()) {
+            if (iface.flags().testFlag(QNetworkInterface::IsLoopBack)) {
+                continue;
+            }
+            if (!iface.flags().testFlag(QNetworkInterface::IsUp) ||
+                !iface.flags().testFlag(QNetworkInterface::IsRunning)) {
+                continue;
+            }
+            for (const QNetworkAddressEntry &entry : iface.addressEntries()) {
+                const QHostAddress addr = entry.ip();
+                // Show IPv4 addresses; skip IPv6 link-local (fe80::/10).
+                if (addr.protocol() == QAbstractSocket::IPv4Protocol) {
+                    lines << QStringLiteral("%1: %2").arg(iface.humanReadableName(), addr.toString());
+                } else if (addr.protocol() == QAbstractSocket::IPv6Protocol &&
+                           !addr.isLinkLocal()) {
+                    lines << QStringLiteral("%1: %2").arg(iface.humanReadableName(), addr.toString());
+                }
+            }
+        }
+
+        m_networkAddressesValue->setText(
+            lines.isEmpty() ? tr("No network connection") : lines.join(QLatin1Char('\n')));
     }
 
     void System::ensureLoggingSettingsWidgets() {

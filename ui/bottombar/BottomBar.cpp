@@ -11,13 +11,13 @@
 #include <QToolButton>
 #include <QAbstractButton>
 #include <QEasingCurve>
-#include <QFrame>
 #include <QScroller>
 #include <QScrollerProperties>
-#include <QLayoutItem>
 #include <QGraphicsDropShadowEffect>
+#include <QLayoutItem>
 #include <QVBoxLayout>
 #include <QResizeEvent>
+#include <QTimer>
 #include "BottomBar.hpp"
 
 #include <QtWidgets/QLabel>
@@ -26,47 +26,54 @@
 #include "runtime/DiagnosticsSupport.hpp"
 #include "ui/IconUtils.hpp"
 #include "ui/layout/BarLayout.hpp"
+#include "ui/layout/BarRuntime.hpp"
 #include "ui/topbar/TopBar.hpp"
+#include "ui/widgets/DataWidget.hpp"
+#include "ui/widgets/DataWidgetConfig.hpp"
 
 namespace fairwindsk::ui::bottombar {
     namespace {
         constexpr int kBottomBarIconSize = 44;
         constexpr int kBottomBarButtonHeight = 90;
         constexpr int kPortAreaHeight = 84;
+
+        void setLayoutItemVisible(QLayoutItem *item, const bool visible) {
+            if (!item) {
+                return;
+            }
+
+            if (auto *widget = item->widget()) {
+                widget->setVisible(visible);
+                return;
+            }
+
+            auto *layout = item->layout();
+            if (!layout) {
+                return;
+            }
+
+            for (int index = 0; index < layout->count(); ++index) {
+                setLayoutItemVisible(layout->itemAt(index), visible);
+            }
+        }
+
+        bool hasWidgetAncestor(const QWidget *widget, const QWidget *ancestor) {
+            if (!widget || !ancestor) {
+                return false;
+            }
+
+            for (auto *candidate = widget; candidate; candidate = candidate->parentWidget()) {
+                if (candidate == ancestor) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 
     BottomBar *BottomBar::instance() {
         return s_instance;
-    }
-
-    QWidget *BottomBar::createSeparatorWidget() {
-        auto *line = new QFrame(this);
-        line->setFrameShape(QFrame::VLine);
-        line->setFrameShadow(QFrame::Plain);
-        line->setLineWidth(1);
-        m_dynamicLayoutWidgets.append(line);
-        return line;
-    }
-
-    void BottomBar::clearConfiguredLayout() {
-        if (!ui || !ui->horizontalLayoutButtons) {
-            return;
-        }
-
-        while (ui->horizontalLayoutButtons->count() > 0) {
-            auto *item = ui->horizontalLayoutButtons->takeAt(0);
-            if (auto *widget = item->widget()) {
-                widget->hide();
-            }
-            delete item;
-        }
-
-        for (auto &widget : m_dynamicLayoutWidgets) {
-            if (widget) {
-                widget->deleteLater();
-            }
-        }
-        m_dynamicLayoutWidgets.clear();
     }
 
     QWidget *BottomBar::widgetForItemId(const QString &itemId) const {
@@ -101,31 +108,58 @@ namespace fairwindsk::ui::bottombar {
         return nullptr;
     }
 
-    void BottomBar::applyEntrySizing(const fairwindsk::ui::layout::LayoutEntry &entry,
-                                     const QString &itemId,
-                                     QWidget *widget,
-                                     QHBoxLayout *layout) {
-        if (!widget || !layout) {
+    void BottomBar::applyEntryPresentation(const fairwindsk::ui::layout::LayoutEntry &entry,
+                                           QWidget *widget) const {
+        if (!widget) {
             return;
         }
 
-        if (!m_baseSizePolicies.contains(itemId)) {
-            m_baseSizePolicies.insert(itemId, widget->sizePolicy());
+        if (auto *button = qobject_cast<QToolButton *>(widget)) {
+            fairwindsk::ui::layout::runtime::applyToolButtonDisplayOptions(button, entry);
         }
 
-        const QSizePolicy basePolicy = m_baseSizePolicies.value(itemId, widget->sizePolicy());
-        QSizePolicy effectivePolicy = basePolicy;
-        if (entry.expandHorizontally) {
-            effectivePolicy.setHorizontalPolicy(QSizePolicy::Expanding);
+        if (entry.widgetId == QStringLiteral("current_context")) {
+            if (auto *label = widget->findChild<QLabel *>(QStringLiteral("label_ApplicationName"))) {
+                label->setVisible(entry.showText);
+            }
+            return;
         }
-        if (entry.expandVertically) {
-            effectivePolicy.setVerticalPolicy(QSizePolicy::Expanding);
-        }
-        widget->setSizePolicy(effectivePolicy);
-        widget->setVisible(true);
 
-        const Qt::Alignment alignment = entry.expandVertically ? Qt::Alignment() : Qt::AlignVCenter;
-        layout->addWidget(widget, entry.expandHorizontally ? 1 : 0, alignment);
+        if (entry.widgetId == QStringLiteral("clock_icons")) {
+            if (auto *label = widget->findChild<QLabel *>(QStringLiteral("label_DateTime"))) {
+                label->setVisible(entry.showText);
+            }
+            if (auto *statusIcons = widget->findChild<QWidget *>(QStringLiteral("widget_SignalKStatusIcons"))) {
+                statusIcons->setVisible(entry.showIcon);
+            }
+            if (auto *comfortIcon = widget->findChild<QLabel *>(QStringLiteral("label_ComfortViewIcon"))) {
+                comfortIcon->setVisible(entry.showIcon);
+            }
+            return;
+        }
+
+        if (entry.widgetId == QStringLiteral("signalk_status") && m_signalKServerBox) {
+            m_signalKServerBox->setDisplayOptions(entry.showText);
+        }
+    }
+
+    void BottomBar::applyConfiguredNavigationButtonPresentation() const {
+        auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+        auto *configuration = fairWindSK ? fairWindSK->getConfiguration() : nullptr;
+        if (!configuration) {
+            return;
+        }
+
+        const auto entries = fairwindsk::ui::layout::entriesForBar(
+            configuration->getRoot(),
+            fairwindsk::ui::layout::BarId::Bottom);
+        for (const auto &entry : entries) {
+            if (!entry.enabled || entry.kind != fairwindsk::ui::layout::EntryKind::Widget) {
+                continue;
+            }
+
+            applyEntryPresentation(entry, widgetForItemId(entry.widgetId));
+        }
     }
 
     void BottomBar::rebuildLayout() {
@@ -133,10 +167,18 @@ namespace fairwindsk::ui::bottombar {
             return;
         }
 
-        clearConfiguredLayout();
+        clearLayoutEditHints();
+        fairwindsk::ui::layout::runtime::clearConfiguredLayout(
+            ui->horizontalLayoutButtons,
+            m_dynamicLayoutWidgets,
+            m_dataWidgets);
 
+        const auto configRoot = FairWindSK::getInstance()->getConfiguration()->getRoot();
+        m_layoutSignature = fairwindsk::ui::layout::layoutSignature(
+            configRoot,
+            fairwindsk::ui::layout::BarId::Bottom);
         const auto entries = fairwindsk::ui::layout::entriesForBar(
-            FairWindSK::getInstance()->getConfiguration()->getRoot(),
+            configRoot,
             fairwindsk::ui::layout::BarId::Bottom);
         for (const auto &entry : entries) {
             if (!entry.enabled) {
@@ -144,38 +186,53 @@ namespace fairwindsk::ui::bottombar {
             }
 
             if (entry.kind == fairwindsk::ui::layout::EntryKind::Separator) {
-                auto *separator = createSeparatorWidget();
-                QSizePolicy policy(QSizePolicy::Fixed,
-                                   entry.expandVertically ? QSizePolicy::Expanding : QSizePolicy::Fixed);
-                separator->setSizePolicy(policy);
-                ui->horizontalLayoutButtons->addWidget(separator,
-                                                       entry.expandHorizontally ? 1 : 0,
-                                                       entry.expandVertically ? Qt::Alignment() : Qt::AlignVCenter);
+                fairwindsk::ui::layout::runtime::addSeparatorToLayout(
+                    ui->horizontalLayoutButtons,
+                    this,
+                    m_dynamicLayoutWidgets,
+                    entry);
                 continue;
             }
 
             if (entry.kind == fairwindsk::ui::layout::EntryKind::Stretch) {
-                ui->horizontalLayoutButtons->addSpacerItem(
-                    new QSpacerItem(0,
-                                    0,
-                                    entry.expandHorizontally ? QSizePolicy::Expanding : QSizePolicy::Preferred,
-                                    entry.expandVertically ? QSizePolicy::Expanding : QSizePolicy::Minimum));
+                fairwindsk::ui::layout::runtime::addStretchToLayout(ui->horizontalLayoutButtons, entry);
                 continue;
             }
 
             QString itemId = entry.widgetId;
             QWidget *widget = widgetForItemId(entry.widgetId);
-            if (!widget && fairwindsk::ui::topbar::TopBar::instance()) {
+            const bool dataWidgetEntry = fairwindsk::ui::widgets::isDataWidgetId(configRoot, entry.widgetId);
+            if (!widget && !dataWidgetEntry && fairwindsk::ui::topbar::TopBar::instance()) {
                 widget = fairwindsk::ui::topbar::TopBar::instance()->widgetForItemId(entry.widgetId);
+            }
+            if (!widget) {
+                const auto definition = fairwindsk::ui::widgets::dataWidgetDefinition(configRoot, entry.widgetId);
+                widget = fairwindsk::ui::layout::runtime::createDataWidget(
+                    definition,
+                    entry,
+                    this,
+                    m_dataWidgets);
             }
             if (!widget) {
                 continue;
             }
 
-            applyEntrySizing(entry, itemId, widget, ui->horizontalLayoutButtons);
+            if (auto *dataWidget = qobject_cast<fairwindsk::ui::widgets::DataWidget *>(widget)) {
+                dataWidget->installEventFilter(this);
+            }
+            applyEntryPresentation(entry, widget);
+            fairwindsk::ui::layout::runtime::addWidgetToLayout(
+                ui->horizontalLayoutButtons,
+                entry,
+                itemId,
+                widget,
+                m_baseSizePolicies);
         }
 
         applyLayoutEditHints(entries);
+        if (isTransientPanelVisible()) {
+            setRegularBarVisible(false);
+        }
     }
 
     void BottomBar::clearLayoutEditHints() {
@@ -211,6 +268,9 @@ namespace fairwindsk::ui::bottombar {
 
             QWidget *widget = widgetForItemId(entry.widgetId);
             if (!widget) {
+                widget = m_dataWidgets.value(entry.widgetId).data();
+            }
+            if (!widget) {
                 continue;
             }
 
@@ -229,7 +289,10 @@ namespace fairwindsk::ui::bottombar {
         }
 
         m_layoutEditHighlightEnabled = enabled;
-        rebuildLayout();
+        const auto configRoot = FairWindSK::getInstance()->getConfiguration()->getRoot();
+        applyLayoutEditHints(fairwindsk::ui::layout::entriesForBar(
+            configRoot,
+            fairwindsk::ui::layout::BarId::Bottom));
     }
 
     bool BottomBar::isTransientPanelVisible() const {
@@ -359,7 +422,7 @@ namespace fairwindsk::ui::bottombar {
         connect(m_POBBar, &POBBar::hidden, this, [this]() { setPanelVisibility(m_POBBar, false); });
         connect(m_AutopilotBar, &AutopilotBar::hidden, this, [this]() { setPanelVisibility(m_AutopilotBar, false); });
         connect(m_AnchorBar, &AnchorBar::hidden, this, [this]() { setPanelVisibility(m_AnchorBar, false); });
-            connect(m_AlarmsBar, &AlarmsBar::hidden, this, [this]() { setPanelVisibility(m_AlarmsBar, false); });
+        connect(m_AlarmsBar, &AlarmsBar::hidden, this, [this]() { setPanelVisibility(m_AlarmsBar, false); });
 
         if (fairWindSK) {
             m_runtimeHealthState = fairWindSK->runtimeHealthState();
@@ -408,25 +471,31 @@ namespace fairwindsk::ui::bottombar {
         }
     }
 
-    void BottomBar::refreshFromConfiguration() const {
+    void BottomBar::refreshFromConfiguration() {
         const bool transientPanelVisible = isTransientPanelVisible();
-        const_cast<BottomBar *>(this)->rebuildLayout();
+        const auto configRoot = FairWindSK::getInstance()->getConfiguration()->getRoot();
+        const QString newLayoutSignature = fairwindsk::ui::layout::layoutSignature(
+            configRoot,
+            fairwindsk::ui::layout::BarId::Bottom);
+        if (m_layoutSignature != newLayoutSignature) {
+            rebuildLayout();
+        }
         if (transientPanelVisible) {
             setRegularBarVisible(false);
         }
-        if (m_POBBar) {
+        if (m_POBBar && m_POBBar->isVisible()) {
             m_POBBar->refreshFromConfiguration();
         }
-        if (m_AlarmsBar) {
+        if (m_AlarmsBar && m_AlarmsBar->isVisible()) {
             m_AlarmsBar->refreshFromConfiguration();
         }
-        if (m_AutopilotBar) {
+        if (m_AutopilotBar && m_AutopilotBar->isVisible()) {
             m_AutopilotBar->refreshFromConfiguration();
         }
-        if (m_AnchorBar) {
+        if (m_AnchorBar && m_AnchorBar->isVisible()) {
             m_AnchorBar->refreshFromConfiguration();
         }
-        const_cast<BottomBar *>(this)->updateHealthChrome();
+        updateHealthChrome();
     }
 
     void BottomBar::changeEvent(QEvent *event) {
@@ -442,6 +511,18 @@ namespace fairwindsk::ui::bottombar {
     }
 
     bool BottomBar::eventFilter(QObject *watched, QEvent *event) {
+        if (m_regularBarSuppressed &&
+            watched &&
+            event &&
+            event->type() == QEvent::Show) {
+            if (auto *dataWidget = qobject_cast<fairwindsk::ui::widgets::DataWidget *>(watched)) {
+                if (!isTransientPanelWidget(dataWidget)) {
+                    dataWidget->hide();
+                    return true;
+                }
+            }
+        }
+
         const bool needsRebalance = watched &&
                                     event &&
                                     (watched == ui->scrollArea_Port ||
@@ -531,6 +612,7 @@ namespace fairwindsk::ui::bottombar {
                     ? tr("Settings")
                     : tr("Settings\n%1").arg(m_runtimeHealthSummary.trimmed()));
         }
+        applyConfiguredNavigationButtonPresentation();
     }
 
     void BottomBar::onRuntimeHealthChanged(const fairwindsk::FairWindSK::RuntimeHealthState state,
@@ -572,6 +654,7 @@ namespace fairwindsk::ui::bottombar {
     void BottomBar::autopilot_clicked() {
         if (m_AutopilotBar) {
             fairwindsk::runtime::recordUserInteraction(QStringLiteral("bottom_bar"), QStringLiteral("autopilot"), QStringLiteral("Autopilot"));
+            m_AutopilotBar->refreshFromConfiguration();
             setPanelVisibility(m_AutopilotBar, true);
         }
     }
@@ -592,6 +675,7 @@ namespace fairwindsk::ui::bottombar {
     void BottomBar::anchor_clicked() {
         if (m_AnchorBar) {
             fairwindsk::runtime::recordUserInteraction(QStringLiteral("bottom_bar"), QStringLiteral("anchor"), QStringLiteral("Anchor"));
+            m_AnchorBar->refreshFromConfiguration();
             setPanelVisibility(m_AnchorBar, true);
         }
 
@@ -604,6 +688,7 @@ namespace fairwindsk::ui::bottombar {
     void BottomBar::alarms_clicked() {
         if (m_AlarmsBar) {
             fairwindsk::runtime::recordUserInteraction(QStringLiteral("bottom_bar"), QStringLiteral("alarms"), QStringLiteral("Alarms"));
+            m_AlarmsBar->refreshFromConfiguration();
             setPanelVisibility(m_AlarmsBar, true);
         }
     }
@@ -776,18 +861,43 @@ namespace fairwindsk::ui::bottombar {
             return;
         }
 
+        m_regularBarSuppressed = !visible;
+
         for (int index = 0; index < ui->horizontalLayoutButtons->count(); ++index) {
             if (auto *item = ui->horizontalLayoutButtons->itemAt(index)) {
-                auto *widget = item->widget();
-                if (widget) {
-                    widget->setVisible(visible);
+                setLayoutItemVisible(item, visible);
+            }
+        }
+
+        for (const auto &widget : m_dynamicLayoutWidgets) {
+            if (widget) {
+                widget->setVisible(visible);
+            }
+        }
+
+        for (auto it = m_dataWidgets.cbegin(); it != m_dataWidgets.cend(); ++it) {
+            if (it.value()) {
+                it.value()->setVisible(visible);
+            }
+        }
+
+        if (!visible) {
+            const auto dataWidgets = const_cast<BottomBar *>(this)->findChildren<fairwindsk::ui::widgets::DataWidget *>(
+                QString(),
+                Qt::FindChildrenRecursively);
+            for (auto *dataWidget : dataWidgets) {
+                if (!dataWidget || isTransientPanelWidget(dataWidget)) {
+                    continue;
                 }
+                dataWidget->installEventFilter(const_cast<BottomBar *>(this));
+                dataWidget->hide();
             }
         }
     }
 
     void BottomBar::restoreRegularBarVisibility() const {
         const_cast<BottomBar *>(this)->rebuildLayout();
+        setRegularBarVisible(true);
     }
 
     void BottomBar::setPanelVisibility(QWidget *panel, const bool visible) const {
@@ -801,7 +911,9 @@ namespace fairwindsk::ui::bottombar {
             updateTransientPanelHeight(panel);
             panel->setVisible(true);
             panel->raise();
+            setRegularBarVisible(false);
         } else {
+            panel->setVisible(false);
             const QList<QWidget *> panels = {m_POBBar, m_AutopilotBar, m_AnchorBar, m_AlarmsBar};
             const bool anotherPanelVisible = std::any_of(
                 panels.cbegin(),
@@ -813,10 +925,19 @@ namespace fairwindsk::ui::bottombar {
                 restoreRegularBarVisibility();
                 updateTransientPanelHeight(nullptr);
             }
-            panel->setVisible(false);
         }
 
         const_cast<BottomBar *>(this)->updateGeometry();
+    }
+
+    bool BottomBar::isTransientPanelWidget(const QWidget *widget) const {
+        const QList<QWidget *> panels = {m_POBBar, m_AutopilotBar, m_AnchorBar, m_AlarmsBar};
+        return std::any_of(
+            panels.cbegin(),
+            panels.cend(),
+            [widget](const QWidget *panel) {
+                return hasWidgetAncestor(widget, panel);
+            });
     }
 
     void BottomBar::hideTransientPanels(QWidget *except) const {

@@ -15,7 +15,7 @@
 
 #include "Main.hpp"
 #include "BarLayoutSettings.hpp"
-#include "TopBar.hpp"
+#include "DataWidgets.hpp"
 #include "Comfort.hpp"
 #include "Connection.hpp"
 #include "SignalK.hpp"
@@ -78,7 +78,7 @@ namespace fairwindsk::ui::settings {
         if (m_configuration.getSignalKServerUrl().isEmpty()) {
 
             // Set the tab index to the connection tab
-            currentIndex = 4;
+            currentIndex = 5;
         }
 
         // Initialize the tabs
@@ -140,10 +140,11 @@ namespace fairwindsk::ui::settings {
         // Remove tabs if present
         removeTabs();
 
-        m_tabPages = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+        m_tabPages = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
         for (const auto &tabTitle : {tr("Main"),
                                      tr("Top Bar"),
                                      tr("Bottom Bar"),
+                                     tr("Widgets"),
                                      tr("Comfort"),
                                      tr("Connection"),
                                      tr("Signal K"),
@@ -169,20 +170,22 @@ namespace fairwindsk::ui::settings {
             case 0:
                 return new Main(this);
             case 1:
-                return new TopBar(this, this);
+                return new BarLayoutSettings(this, fairwindsk::ui::layout::BarId::Top, this);
             case 2:
                 return new BarLayoutSettings(this, fairwindsk::ui::layout::BarId::Bottom, this);
             case 3:
-                return new Comfort(this);
+                return new DataWidgets(this, this);
             case 4:
-                return new Connection(this);
+                return new Comfort(this);
             case 5:
-                return new SignalK(this);
+                return new Connection(this);
             case 6:
-                return new Units(this);
+                return new SignalK(this);
             case 7:
-                return new Apps(this);
+                return new Units(this);
             case 8:
+                return new Apps(this);
+            case 9:
                 return new System(this);
             default:
                 return new QWidget(this);
@@ -227,6 +230,8 @@ namespace fairwindsk::ui::settings {
             appsTab->refreshFromConfiguration();
         } else if (auto *barLayoutTab = qobject_cast<BarLayoutSettings *>(page)) {
             barLayoutTab->refreshFromConfiguration();
+        } else if (auto *dataWidgetsTab = qobject_cast<DataWidgets *>(page)) {
+            dataWidgetsTab->refreshFromConfiguration();
         }
 
         emitLayoutEditHighlightModeChanged();

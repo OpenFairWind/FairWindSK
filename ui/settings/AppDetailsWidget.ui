@@ -310,27 +310,6 @@ QPushButton {
     </widget>
    </item>
    <item>
-    <widget class="QFrame" name="frame_AppsIconPicker">
-     <property name="frameShape">
-      <enum>QFrame::StyledPanel</enum>
-     </property>
-     <property name="frameShadow">
-      <enum>QFrame::Raised</enum>
-     </property>
-     <property name="visible">
-      <bool>false</bool>
-     </property>
-     <layout class="QVBoxLayout" name="verticalLayout_AppsIconPicker">
-      <property name="spacing">
-       <number>8</number>
-      </property>
-      <item>
-       <widget class="QWidget" name="widget_AppsIconBrowserHost" native="true"/>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
     <widget class="QLabel" name="label_Apps_MetadataTitle">
      <property name="text">
       <string>Package Information</string>

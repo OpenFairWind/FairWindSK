@@ -4,19 +4,27 @@
 
 #include "Comfort.hpp"
 
+#include <QDir>
 #include <QEvent>
+#include <QFile>
+#include <QFileInfo>
+#include <QFormLayout>
 #include <QFrame>
+#include <QGroupBox>
 #include <QHBoxLayout>
 #include <QIcon>
 #include <QLabel>
 #include <QPushButton>
+#include <QSaveFile>
 #include <QSignalBlocker>
 #include <QStringList>
 #include <QVBoxLayout>
 
 #include "FairWindSK.hpp"
 #include "Settings.hpp"
+#include "ui/DrawerDialogHost.hpp"
 #include "ui/IconUtils.hpp"
+#include "ui/widgets/TouchColorPicker.hpp"
 #include "ui/widgets/TouchComboBox.hpp"
 #include "ui/widgets/TouchScrollArea.hpp"
 
@@ -43,7 +51,8 @@ namespace fairwindsk::ui::settings {
                 QStringLiteral("tabs-default"),
                 QStringLiteral("tabs-selected"),
                 QStringLiteral("checkbox-default"),
-                QStringLiteral("checkbox-selected")
+                QStringLiteral("checkbox-selected"),
+                QStringLiteral("window")
             };
         }
 
@@ -67,6 +76,22 @@ namespace fairwindsk::ui::settings {
             palette.setColor(QPalette::WindowText, color);
             palette.setColor(QPalette::Text, color);
             widget->setPalette(palette);
+        }
+
+        // Color rows exposed to the user: (configuration key, display label).
+        QList<QPair<QString, QString>> colorRows() {
+            return {
+                {QStringLiteral("window"),              QObject::tr("Window background")},
+                {QStringLiteral("text"),                QObject::tr("Text")},
+                {QStringLiteral("buttonBackground"),    QObject::tr("Button background")},
+                {QStringLiteral("buttonText"),          QObject::tr("Button text")},
+                {QStringLiteral("border"),              QObject::tr("Border")},
+                {QStringLiteral("accentTop"),           QObject::tr("Accent")},
+                {QStringLiteral("accentText"),          QObject::tr("Accent text")},
+                {QStringLiteral("iconDefault"),         QObject::tr("Icon")},
+                {QStringLiteral("scrollBarBackground"), QObject::tr("Scroll track")},
+                {QStringLiteral("scrollBarKnob"),       QObject::tr("Scroll knob")},
+            };
         }
     }
 
@@ -119,6 +144,7 @@ namespace fairwindsk::ui::settings {
         m_hintLabel->setWordWrap(true);
         contentLayout->addWidget(m_hintLabel);
 
+        // --- Control frame: preset selection and actions ---
         m_controlFrame = new QFrame(content);
         auto *controlLayout = new QVBoxLayout(m_controlFrame);
         controlLayout->setContentsMargins(12, 12, 12, 12);
@@ -143,21 +169,101 @@ namespace fairwindsk::ui::settings {
         m_presetComboBox->setMinimumHeight(52);
         presetRow->addWidget(m_presetComboBox, 1);
 
-        auto *buttonRow = new QHBoxLayout();
-        buttonRow->setContentsMargins(0, 0, 0, 0);
-        buttonRow->setSpacing(8);
-        controlLayout->addLayout(buttonRow);
+        // Single action row: reset + QSS export/import, all icons from the OpenBridge set.
+        auto *actionRow = new QHBoxLayout();
+        actionRow->setContentsMargins(0, 0, 0, 0);
+        actionRow->setSpacing(8);
+        controlLayout->addLayout(actionRow);
 
-        m_resetCurrentButton = new QPushButton(tr("Reset Current"), m_controlFrame);
-        m_resetAllButton = new QPushButton(tr("Reset All"), m_controlFrame);
+        m_resetCurrentButton = new QPushButton(tr("Reset"), m_controlFrame);
+        m_resetCurrentButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/anchor-reset.svg")));
+        m_resetCurrentButton->setIconSize(QSize(20, 20));
         m_resetCurrentButton->setToolTip(tr("Clear custom colors, images, and QSS for the selected comfort preset"));
-        m_resetAllButton->setToolTip(tr("Clear custom colors, images, and QSS for every comfort preset"));
         m_resetCurrentButton->setAccessibleName(tr("Reset current comfort preset"));
-        m_resetAllButton->setAccessibleName(tr("Reset all comfort presets"));
-        buttonRow->addWidget(m_resetCurrentButton);
-        buttonRow->addWidget(m_resetAllButton);
-        buttonRow->addStretch(1);
 
+        m_resetAllButton = new QPushButton(tr("Reset All"), m_controlFrame);
+        m_resetAllButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/delete-google.svg")));
+        m_resetAllButton->setIconSize(QSize(20, 20));
+        m_resetAllButton->setToolTip(tr("Clear custom colors, images, and QSS for every comfort preset"));
+        m_resetAllButton->setAccessibleName(tr("Reset all comfort presets"));
+
+        m_exportQssButton = new QPushButton(tr("Export QSS"), m_controlFrame);
+        m_exportQssButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/route-export-iec.svg")));
+        m_exportQssButton->setIconSize(QSize(20, 20));
+        m_exportQssButton->setToolTip(tr("Save the current preset stylesheet to a .qss file"));
+        m_exportQssButton->setAccessibleName(tr("Export comfort stylesheet"));
+
+        m_importQssButton = new QPushButton(tr("Import QSS"), m_controlFrame);
+        m_importQssButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/route-import-iec.svg")));
+        m_importQssButton->setIconSize(QSize(20, 20));
+        m_importQssButton->setToolTip(tr("Load a .qss file as the current preset stylesheet"));
+        m_importQssButton->setAccessibleName(tr("Import comfort stylesheet"));
+
+        actionRow->addWidget(m_resetCurrentButton);
+        actionRow->addWidget(m_resetAllButton);
+        actionRow->addWidget(m_exportQssButton);
+        actionRow->addWidget(m_importQssButton);
+        actionRow->addStretch(1);
+
+        // --- Colors section ---
+        m_colorsGroupBox = new QGroupBox(tr("Colors"), content);
+        auto *colorsFormLayout = new QFormLayout(m_colorsGroupBox);
+        colorsFormLayout->setContentsMargins(0, 0, 0, 0);
+        colorsFormLayout->setSpacing(8);
+        colorsFormLayout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
+        contentLayout->addWidget(m_colorsGroupBox);
+
+        for (const auto &row : colorRows()) {
+            auto *swatchButton = new QPushButton(m_colorsGroupBox);
+            swatchButton->setMinimumHeight(44);
+            swatchButton->setMinimumWidth(100);
+            swatchButton->setCursor(Qt::PointingHandCursor);
+            swatchButton->setAccessibleName(tr("Edit %1 color").arg(row.second));
+            m_colorSwatchButtons.insert(row.first, swatchButton);
+            colorsFormLayout->addRow(row.second, swatchButton);
+
+            const QString key = row.first;
+            connect(swatchButton, &QPushButton::clicked, this, [this, key]() {
+                editColor(key);
+            });
+        }
+
+        // --- Background section ---
+        m_backgroundGroupBox = new QGroupBox(tr("Background"), content);
+        auto *backgroundLayout = new QVBoxLayout(m_backgroundGroupBox);
+        backgroundLayout->setContentsMargins(0, 0, 0, 0);
+        backgroundLayout->setSpacing(8);
+        contentLayout->addWidget(m_backgroundGroupBox);
+
+        auto *bgButtonRow = new QHBoxLayout();
+        bgButtonRow->setContentsMargins(0, 0, 0, 0);
+        bgButtonRow->setSpacing(8);
+        backgroundLayout->addLayout(bgButtonRow);
+
+        auto *bgLabel = new QLabel(tr("Main window"), m_backgroundGroupBox);
+        bgButtonRow->addWidget(bgLabel);
+        bgButtonRow->addStretch(1);
+
+        m_selectBackgroundButton = new QPushButton(tr("Select…"), m_backgroundGroupBox);
+        m_selectBackgroundButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/edit-google.svg")));
+        m_selectBackgroundButton->setIconSize(QSize(20, 20));
+        m_selectBackgroundButton->setMinimumHeight(44);
+        m_selectBackgroundButton->setAccessibleName(tr("Select main window background image"));
+        bgButtonRow->addWidget(m_selectBackgroundButton);
+
+        m_clearBackgroundButton = new QPushButton(tr("Clear"), m_backgroundGroupBox);
+        m_clearBackgroundButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/close-google.svg")));
+        m_clearBackgroundButton->setIconSize(QSize(20, 20));
+        m_clearBackgroundButton->setMinimumHeight(44);
+        m_clearBackgroundButton->setAccessibleName(tr("Clear main window background image"));
+        bgButtonRow->addWidget(m_clearBackgroundButton);
+
+        m_backgroundPathLabel = new QLabel(tr("No image selected"), m_backgroundGroupBox);
+        m_backgroundPathLabel->setWordWrap(true);
+        m_backgroundPathLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+        backgroundLayout->addWidget(m_backgroundPathLabel);
+
+        // --- Status label and padding ---
         m_statusLabel = new QLabel(content);
         m_statusLabel->setWordWrap(true);
         contentLayout->addWidget(m_statusLabel);
@@ -169,8 +275,13 @@ namespace fairwindsk::ui::settings {
                 &Comfort::onPresetChanged);
         connect(m_resetCurrentButton, &QPushButton::clicked, this, &Comfort::resetCurrentPreset);
         connect(m_resetAllButton, &QPushButton::clicked, this, &Comfort::resetAllPresets);
+        connect(m_exportQssButton, &QPushButton::clicked, this, &Comfort::exportQss);
+        connect(m_importQssButton, &QPushButton::clicked, this, &Comfort::importQss);
+        connect(m_selectBackgroundButton, &QPushButton::clicked, this, &Comfort::selectBackground);
+        connect(m_clearBackgroundButton, &QPushButton::clicked, this, &Comfort::clearBackground);
 
         refreshChrome();
+        refreshBackgroundPath();
     }
 
     void Comfort::onPresetChanged(const int) {
@@ -180,6 +291,8 @@ namespace fairwindsk::ui::settings {
 
         m_settings->getConfiguration()->setComfortViewPreset(selectedPreset());
         updateStatusLabel();
+        refreshColorSwatches();
+        refreshBackgroundPath();
         m_settings->markDirty(FairWindSK::RuntimeUi, 0);
     }
 
@@ -190,6 +303,8 @@ namespace fairwindsk::ui::settings {
 
         const QString preset = selectedPreset();
         clearPresetCustomization(preset);
+        refreshColorSwatches();
+        refreshBackgroundPath();
         updateStatusLabel(tr("Preset reset."));
         m_settings->markDirty(FairWindSK::RuntimeUi, 0);
     }
@@ -202,7 +317,116 @@ namespace fairwindsk::ui::settings {
         for (const QString &preset : comfortPresetIds()) {
             clearPresetCustomization(preset);
         }
+        refreshColorSwatches();
+        refreshBackgroundPath();
         updateStatusLabel(tr("All presets reset."));
+        m_settings->markDirty(FairWindSK::RuntimeUi, 0);
+    }
+
+    void Comfort::exportQss() {
+        if (!m_settings || !m_settings->getConfiguration()) {
+            return;
+        }
+
+        const QString preset = selectedPreset();
+
+        // Prefer any custom stylesheet stored in the configuration; fall back to the
+        // built-in resource so the user always gets a usable starting point.
+        QString content = m_settings->getConfiguration()->getComfortThemeStyleSheet(preset);
+        if (content.isEmpty()) {
+            QFile builtIn(QStringLiteral(":/resources/stylesheets/%1.qss").arg(preset));
+            if (builtIn.open(QIODevice::ReadOnly | QIODevice::Text)) {
+                content = QString::fromUtf8(builtIn.readAll());
+            }
+        }
+
+        const QString defaultPath = QDir(QDir::homePath()).filePath(
+            QStringLiteral("%1.qss").arg(preset));
+        const QString path = fairwindsk::ui::drawer::getSaveFilePath(
+            this,
+            tr("Export Comfort Stylesheet"),
+            defaultPath,
+            tr("Qt Stylesheets (*.qss);;All files (*)"));
+
+        if (path.isEmpty()) {
+            return;
+        }
+
+        QSaveFile file(path);
+        if (!file.open(QIODevice::WriteOnly | QIODevice::Text) ||
+            file.write(content.toUtf8()) < 0 ||
+            !file.commit()) {
+            fairwindsk::ui::drawer::warning(
+                this, tr("Comfort"), tr("Unable to export the stylesheet."));
+            return;
+        }
+
+        updateStatusLabel(tr("Stylesheet exported."));
+    }
+
+    void Comfort::importQss() {
+        if (!m_settings || !m_settings->getConfiguration()) {
+            return;
+        }
+
+        const QString path = fairwindsk::ui::drawer::getOpenFilePath(
+            this,
+            tr("Import Comfort Stylesheet"),
+            QDir::homePath(),
+            tr("Qt Stylesheets (*.qss);;All files (*)"));
+
+        if (path.isEmpty()) {
+            return;
+        }
+
+        QFile file(path);
+        if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            fairwindsk::ui::drawer::warning(
+                this, tr("Comfort"), tr("Unable to read the selected stylesheet."));
+            return;
+        }
+
+        const QString content = QString::fromUtf8(file.readAll());
+        if (content.trimmed().isEmpty()) {
+            fairwindsk::ui::drawer::warning(
+                this, tr("Comfort"), tr("The selected stylesheet file is empty."));
+            return;
+        }
+
+        m_settings->getConfiguration()->setComfortThemeStyleSheet(selectedPreset(), content);
+        m_settings->markDirty(FairWindSK::RuntimeUi, 0);
+        updateStatusLabel(tr("Stylesheet imported."));
+    }
+
+    void Comfort::selectBackground() {
+        if (!m_settings || !m_settings->getConfiguration()) {
+            return;
+        }
+
+        const QString path = fairwindsk::ui::drawer::getOpenFilePath(
+            this,
+            tr("Select Background Image"),
+            QDir::homePath(),
+            tr("Images (*.png *.jpg *.jpeg *.webp *.bmp *.svg);;All files (*)"));
+
+        if (path.isEmpty()) {
+            return;
+        }
+
+        m_settings->getConfiguration()->setComfortBackgroundImagePath(
+            selectedPreset(), QStringLiteral("window"), path);
+        refreshBackgroundPath();
+        m_settings->markDirty(FairWindSK::RuntimeUi, 0);
+    }
+
+    void Comfort::clearBackground() {
+        if (!m_settings || !m_settings->getConfiguration()) {
+            return;
+        }
+
+        m_settings->getConfiguration()->clearComfortBackgroundImagePath(
+            selectedPreset(), QStringLiteral("window"));
+        refreshBackgroundPath();
         m_settings->markDirty(FairWindSK::RuntimeUi, 0);
     }
 
@@ -230,6 +454,50 @@ namespace fairwindsk::ui::settings {
 
         fairwindsk::ui::applyBottomBarPushButtonChrome(m_resetCurrentButton, chrome, false, 52);
         fairwindsk::ui::applyBottomBarPushButtonChrome(m_resetAllButton, chrome, false, 52);
+        fairwindsk::ui::applyBottomBarPushButtonChrome(m_exportQssButton, chrome, false, 52);
+        fairwindsk::ui::applyBottomBarPushButtonChrome(m_importQssButton, chrome, false, 52);
+        fairwindsk::ui::applyBottomBarPushButtonChrome(m_selectBackgroundButton, chrome, false, 44);
+        fairwindsk::ui::applyBottomBarPushButtonChrome(m_clearBackgroundButton, chrome, false, 44);
+
+        // Tint all action-button icons to match the button text color from the active preset.
+        fairwindsk::ui::applyTintedButtonIcon(m_resetCurrentButton, chrome.buttonText, QSize(20, 20));
+        fairwindsk::ui::applyTintedButtonIcon(m_resetAllButton, chrome.buttonText, QSize(20, 20));
+        fairwindsk::ui::applyTintedButtonIcon(m_exportQssButton, chrome.buttonText, QSize(20, 20));
+        fairwindsk::ui::applyTintedButtonIcon(m_importQssButton, chrome.buttonText, QSize(20, 20));
+        fairwindsk::ui::applyTintedButtonIcon(m_selectBackgroundButton, chrome.buttonText, QSize(20, 20));
+        fairwindsk::ui::applyTintedButtonIcon(m_clearBackgroundButton, chrome.buttonText, QSize(20, 20));
+
+        // Style both new group boxes uniformly: titled frame matching the control frame chrome.
+        const QString groupStyle = QStringLiteral(
+            "QGroupBox {"
+            " border: 1px solid %1;"
+            " border-radius: 10px;"
+            " background: %2;"
+            " margin-top: 14px;"
+            " padding: 8px;"
+            "}"
+            "QGroupBox::title {"
+            " color: %3;"
+            " subcontrol-origin: margin;"
+            " subcontrol-position: top left;"
+            " padding: 2px 6px;"
+            "}"
+            "QGroupBox QLabel {"
+            " color: %3;"
+            " background: transparent;"
+            "}")
+            .arg(chrome.border.name(),
+                 fairwindsk::ui::comfortAlpha(chrome.buttonBackground, 18).name(QColor::HexArgb),
+                 chrome.text.name());
+
+        if (m_colorsGroupBox) {
+            m_colorsGroupBox->setStyleSheet(groupStyle);
+        }
+        if (m_backgroundGroupBox) {
+            m_backgroundGroupBox->setStyleSheet(groupStyle);
+        }
+
+        refreshColorSwatches();
     }
 
     void Comfort::clearPresetCustomization(const QString &preset) const {
@@ -255,5 +523,133 @@ namespace fairwindsk::ui::settings {
         m_statusLabel->setText(normalizedMessage.isEmpty()
                                    ? tr("Active preset: %1").arg(m_presetComboBox ? m_presetComboBox->currentText() : QString())
                                    : normalizedMessage);
+    }
+
+    void Comfort::editColor(const QString &key) {
+        if (!m_settings || !m_settings->getConfiguration()) {
+            return;
+        }
+
+        bool accepted = false;
+        const QColor chosen = fairwindsk::ui::widgets::TouchColorPickerDialog::getColor(
+            this,
+            tr("Edit Color"),
+            resolveInitialColor(key),
+            &accepted,
+            false);
+
+        if (!accepted) {
+            return;
+        }
+
+        m_settings->getConfiguration()->setComfortThemeColor(selectedPreset(), key, chosen);
+        refreshColorSwatches();
+        m_settings->markDirty(FairWindSK::RuntimeUi, 0);
+    }
+
+    QColor Comfort::resolveInitialColor(const QString &key) const {
+        const auto *configuration = m_settings ? m_settings->getConfiguration() : nullptr;
+        const auto chrome = fairwindsk::ui::resolveComfortChromeColors(
+            configuration, selectedPreset(), palette(), false);
+
+        if (key == QLatin1String("window"))              return chrome.window;
+        if (key == QLatin1String("text"))               return chrome.text;
+        if (key == QLatin1String("buttonBackground"))   return chrome.buttonBackground;
+        if (key == QLatin1String("buttonText"))         return chrome.buttonText;
+        if (key == QLatin1String("border"))             return chrome.border;
+        if (key == QLatin1String("accentTop"))          return chrome.accentTop;
+        if (key == QLatin1String("accentText"))         return chrome.accentText;
+        if (key == QLatin1String("iconDefault"))        return chrome.icon;
+        if (key == QLatin1String("scrollBarBackground") || key == QLatin1String("scrollBarKnob")) {
+            auto *fairWindSK = FairWindSK::getInstance();
+            const auto scrollPalette = fairWindSK
+                ? fairWindSK->getActiveComfortScrollPalette(configuration)
+                : fairwindsk::UiScrollPalette{};
+            return key == QLatin1String("scrollBarBackground") ? scrollPalette.track : scrollPalette.handleMid;
+        }
+        return palette().color(QPalette::Window);
+    }
+
+    void Comfort::refreshColorSwatches() {
+        if (m_colorSwatchButtons.isEmpty()) {
+            return;
+        }
+
+        const auto *configuration = m_settings ? m_settings->getConfiguration() : nullptr;
+        const auto chrome = fairwindsk::ui::resolveComfortChromeColors(
+            configuration, selectedPreset(), palette(), false);
+
+        auto *fairWindSK = FairWindSK::getInstance();
+        const auto scrollPalette = fairWindSK
+            ? fairWindSK->getActiveComfortScrollPalette(configuration)
+            : fairwindsk::UiScrollPalette{};
+
+        const QMap<QString, QColor> resolved = {
+            {QStringLiteral("window"),              chrome.window},
+            {QStringLiteral("text"),                chrome.text},
+            {QStringLiteral("buttonBackground"),    chrome.buttonBackground},
+            {QStringLiteral("buttonText"),          chrome.buttonText},
+            {QStringLiteral("border"),              chrome.border},
+            {QStringLiteral("accentTop"),           chrome.accentTop},
+            {QStringLiteral("accentText"),          chrome.accentText},
+            {QStringLiteral("iconDefault"),         chrome.icon},
+            {QStringLiteral("scrollBarBackground"), scrollPalette.track},
+            {QStringLiteral("scrollBarKnob"),       scrollPalette.handleMid},
+        };
+
+        for (auto it = m_colorSwatchButtons.cbegin(); it != m_colorSwatchButtons.cend(); ++it) {
+            QPushButton *btn = it.value();
+            if (!btn) {
+                continue;
+            }
+
+            const QColor color = resolved.value(it.key());
+            if (!color.isValid()) {
+                continue;
+            }
+
+            // Foreground: whichever of white/black contrasts better with the swatch.
+            const QColor fg = fairwindsk::ui::bestContrastingColor(color, {Qt::white, Qt::black});
+            btn->setText(color.name().toUpper());
+            btn->setStyleSheet(QStringLiteral(
+                "QPushButton {"
+                " background: %1;"
+                " color: %2;"
+                " border: 2px solid %3;"
+                " border-radius: 6px;"
+                " min-height: 44px;"
+                " min-width: 100px;"
+                " padding: 4px 12px;"
+                "}"
+                "QPushButton:hover { background: %4; }"
+                "QPushButton:pressed { background: %5; border-width: 3px; }")
+                .arg(color.name(),
+                     fg.name(),
+                     color.darker(130).name(),
+                     color.lighter(115).name(),
+                     color.darker(115).name()));
+        }
+    }
+
+    void Comfort::refreshBackgroundPath() {
+        if (!m_backgroundPathLabel || !m_settings) {
+            return;
+        }
+
+        const QString path = m_settings->getConfiguration()->getComfortBackgroundImagePath(
+            selectedPreset(), QStringLiteral("window"));
+
+        if (path.isEmpty()) {
+            m_backgroundPathLabel->setText(tr("No image selected"));
+            if (m_clearBackgroundButton) {
+                m_clearBackgroundButton->setEnabled(false);
+            }
+        } else {
+            m_backgroundPathLabel->setText(QFileInfo(path).fileName());
+            m_backgroundPathLabel->setToolTip(path);
+            if (m_clearBackgroundButton) {
+                m_clearBackgroundButton->setEnabled(true);
+            }
+        }
     }
 }

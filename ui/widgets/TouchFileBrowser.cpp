@@ -306,7 +306,10 @@ namespace fairwindsk::ui::widgets {
         m_view->setTextElideMode(Qt::ElideMiddle);
         m_view->header()->setMinimumHeight(48);
         m_view->header()->setDefaultAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-        m_view->header()->setStretchLastSection(true);
+        // Column 0 (Name) stretches; columns 1 (Size) and 3 (Date) size to content.
+        // stretchLastSection=false is required so it does not override the column 0
+        // Stretch mode and collapse the name column to icon-only width.
+        m_view->header()->setStretchLastSection(false);
         m_view->header()->setSortIndicatorShown(false);
         m_view->header()->setSectionResizeMode(0, QHeaderView::Stretch);
         m_view->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);

@@ -247,9 +247,10 @@ set(FAIRWINDSK_SOURCES
         signalk/Client.cpp signalk/Client.hpp
         runtime/DiagnosticsSupport.cpp runtime/DiagnosticsSupport.hpp
         ui/layout/BarLayout.cpp ui/layout/BarLayout.hpp
+        ui/layout/BarRuntime.cpp ui/layout/BarRuntime.hpp
         ui/settings/Settings.cpp ui/settings/Settings.hpp ui/settings/Settings.ui
         ui/settings/BarLayoutSettings.cpp ui/settings/BarLayoutSettings.hpp
-        ui/settings/TopBar.cpp ui/settings/TopBar.hpp
+        ui/settings/DataWidgets.cpp ui/settings/DataWidgets.hpp
         ui/settings/LayoutPreviewListWidget.cpp ui/settings/LayoutPreviewListWidget.hpp
         ui/settings/WidgetPalette.cpp ui/settings/WidgetPalette.hpp
         ui/launcher/Launcher.cpp ui/launcher/Launcher.hpp ui/launcher/Launcher.ui
@@ -268,6 +269,8 @@ set(FAIRWINDSK_SOURCES
         ui/widgets/TouchScrollArea.cpp ui/widgets/TouchScrollArea.hpp
         ui/widgets/TouchSpinBox.cpp ui/widgets/TouchSpinBox.hpp ui/widgets/TouchSpinBox.ui
         ui/widgets/SignalKMetricState.hpp
+        ui/widgets/DataWidgetConfig.cpp ui/widgets/DataWidgetConfig.hpp
+        ui/widgets/DataWidget.cpp ui/widgets/DataWidget.hpp
         ui/widgets/SignalKStatusIconsWidget.cpp ui/widgets/SignalKStatusIconsWidget.hpp
         ui/widgets/SignalKServerBox.cpp ui/widgets/SignalKServerBox.hpp ui/widgets/SignalKServerBox.ui
         ui/web/Web.cpp ui/web/Web.hpp ui/web/Web.ui

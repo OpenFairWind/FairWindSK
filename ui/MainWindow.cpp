@@ -2,6 +2,7 @@
 // Created by Raffaele Montella on 21/03/21.
 //
 
+#include <QCoreApplication>
 #include <QTimer>
 #include <QToolButton>
 #include <QNetworkCookie>
@@ -341,8 +342,12 @@ namespace fairwindsk::ui {
         const int resolvedResult = result == 0 ? m_activeDrawerDefaultResult : result;
         auto finishedHandler = std::move(m_activeDrawerFinishedHandler);
         m_activeDrawerFinishedHandler = nullptr;
+        const bool wasOccupying = m_drawerOccupiesApplicationArea;
         m_dialogDrawer->hide();
         m_drawerOccupiesApplicationArea = false;
+        if (wasOccupying && ui->stackedWidget_Center) {
+            ui->stackedWidget_Center->setVisible(true);
+        }
         if (m_dialogDrawerTitle) {
             m_dialogDrawerTitle->setVisible(true);
         }
@@ -421,6 +426,9 @@ namespace fairwindsk::ui {
 
         setDrawerEnabled(false);
         updateDrawerGeometry();
+        if (m_drawerOccupiesApplicationArea && ui->stackedWidget_Center) {
+            ui->stackedWidget_Center->setVisible(false);
+        }
         m_dialogDrawer->show();
         m_dialogDrawer->raise();
     }
@@ -462,6 +470,14 @@ namespace fairwindsk::ui {
 
         m_dialogDrawer->setMinimumHeight(targetDrawerHeight);
         m_dialogDrawer->setMaximumHeight(targetDrawerHeight);
+
+        if (fillCenterArea && ui->stackedWidget_Center) {
+            ui->stackedWidget_Center->setVisible(false);
+            // Flush deferred layout events so the center area collapses before the
+            // drawer is rendered; without this the center stays visible for one frame
+            // while the drawer appears below it.
+            QCoreApplication::sendPostedEvents(nullptr, QEvent::LayoutRequest);
+        }
     }
 
     void MainWindow::updateAdaptiveShellMode() {
@@ -1313,7 +1329,7 @@ namespace fairwindsk::ui {
         }
 
         if (m_launcher) {
-            m_launcher->refreshFromConfiguration(true);
+            m_launcher->refreshFromConfiguration();
         }
         if (m_myDataPage) {
             m_myDataPage->refreshFromConfiguration();

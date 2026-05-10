@@ -8,6 +8,7 @@
 #include <QHash>
 #include <QHBoxLayout>
 #include <QPointer>
+#include <QString>
 #include <QVector>
 #include <QWidget>
 
@@ -18,10 +19,15 @@
 #include "AutopilotBar.hpp"
 #include "AnchorBar.hpp"
 #include "ui/layout/BarLayout.hpp"
+#include "ui/widgets/DataWidgetConfig.hpp"
 #include "ui/widgets/SignalKServerBox.hpp"
 
 namespace Ui { class BottomBar; }
 class QGraphicsEffect;
+
+namespace fairwindsk::ui::widgets {
+    class DataWidget;
+}
 
 namespace fairwindsk::ui::bottombar {
 
@@ -40,7 +46,7 @@ namespace fairwindsk::ui::bottombar {
 
         // Set POB Icon visibility
         void setPOBIcon(bool value) const;
-        void refreshFromConfiguration() const;
+        void refreshFromConfiguration();
         void setLayoutEditHighlightEnabled(bool enabled);
         QWidget *widgetForItemId(const QString &itemId) const;
         bool isTransientPanelVisible() const;
@@ -107,15 +113,13 @@ namespace fairwindsk::ui::bottombar {
         void restoreRegularBarVisibility() const;
         void setPanelVisibility(QWidget *panel, bool visible) const;
         void hideTransientPanels(QWidget *except = nullptr) const;
+        bool isTransientPanelWidget(const QWidget *widget) const;
         void updateTransientPanelHeight(QWidget *panel) const;
         void updateHealthChrome();
         void rebuildLayout();
-        QWidget *createSeparatorWidget();
-        void clearConfiguredLayout();
-        void applyEntrySizing(const fairwindsk::ui::layout::LayoutEntry &entry,
-                              const QString &itemId,
-                              QWidget *widget,
-                              QHBoxLayout *layout);
+        void applyEntryPresentation(const fairwindsk::ui::layout::LayoutEntry &entry,
+                                    QWidget *widget) const;
+        void applyConfiguredNavigationButtonPresentation() const;
         void clearLayoutEditHints();
         void applyLayoutEditHints(const QList<fairwindsk::ui::layout::LayoutEntry> &entries);
 
@@ -148,8 +152,11 @@ namespace fairwindsk::ui::bottombar {
         QString m_runtimeHealthSummary;
         QHash<QString, QSizePolicy> m_baseSizePolicies;
         QHash<QWidget *, QPointer<QGraphicsEffect>> m_layoutHintEffects;
+        QString m_layoutSignature;
         bool m_layoutEditHighlightEnabled = false;
         QVector<QPointer<QWidget>> m_dynamicLayoutWidgets;
+        QHash<QString, QPointer<fairwindsk::ui::widgets::DataWidget>> m_dataWidgets;
+        mutable bool m_regularBarSuppressed = false;
         inline static BottomBar *s_instance = nullptr;
     };
 }

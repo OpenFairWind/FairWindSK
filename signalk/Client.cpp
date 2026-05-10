@@ -23,6 +23,31 @@ namespace fairwindsk::signalk {
     namespace {
         constexpr int kStreamTimeoutMs = 30000;
         constexpr int kStreamHealthCheckIntervalMs = 5000;
+
+        bool canHydrateSubscriptionPath(const QString &path) {
+            return !path.trimmed().isEmpty() && !path.contains('*');
+        }
+
+        QJsonValue deltaValueFromSnapshot(const QJsonValue &snapshot) {
+            if (!snapshot.isObject()) {
+                return snapshot;
+            }
+
+            const auto snapshotObject = snapshot.toObject();
+            if (snapshotObject.contains(QStringLiteral("value"))) {
+                return snapshotObject.value(QStringLiteral("value"));
+            }
+
+            return snapshot;
+        }
+
+        QString normalizedSubscriptionPolicy(QString policy) {
+            policy = policy.trimmed().toLower();
+            if (policy == QStringLiteral("fixed")) {
+                return QStringLiteral("fixed");
+            }
+            return QStringLiteral("instant");
+        }
     }
 
     QNetworkRequest Client::createJsonRequest(const QUrl& url) const {
@@ -378,12 +403,38 @@ namespace fairwindsk::signalk {
  * Returns the self key
  */
     QString Client::getSelf() {
-        auto result = httpGet(QUrl(http().toString()+"self"));
+        // Prefer the URN from the discovery document — avoids an extra HTTP round-trip
+        // and works regardless of how the server implements GET /api/self
+        if (m_Server.contains(QStringLiteral("self")) && m_Server[QStringLiteral("self")].isString()) {
+            const QString discoveryUrn = m_Server[QStringLiteral("self")].toString();
+            if (discoveryUrn.startsWith(QStringLiteral("vessels."))) {
+                if (m_Debug)
+                    qDebug() << "SignalKClient::getSelf: from discovery doc:" << discoveryUrn;
+                return discoveryUrn;
+            }
+        }
+
+        // Fallback: ask the REST API; ensure the path separator is present
+        const QString baseUrl = http().toString();
+        const QString selfUrl = baseUrl.endsWith('/') ? baseUrl + QStringLiteral("self")
+                                                      : baseUrl + QStringLiteral("/self");
+        auto result = httpGet(QUrl(selfUrl));
 
         if (m_Debug)
             qDebug() << "SignalKClient::getSelf :" << result;
 
-        return result.replace("\"","");
+        // Strip JSON string quotes from a valid response like "vessels.urn:mrn:..."
+        const QString self = QString::fromUtf8(result).replace(QStringLiteral("\""), QString());
+
+        // A valid Signal K self URN always starts with "vessels."
+        // Reject error bodies such as "bad auth token" returned on 401 responses
+        if (!self.startsWith(QStringLiteral("vessels."))) {
+            if (m_Debug)
+                qDebug() << "SignalKClient::getSelf : rejected invalid self URN:" << self;
+            return {};
+        }
+
+        return self;
     }
 
     QJsonObject Client::getAll() {
@@ -449,8 +500,10 @@ namespace fairwindsk::signalk {
         // Process the path
         processedPath = processedPath.replace(".","/");
 
-        // Create the url
-        const auto url = QUrl(http().toString()+processedPath);
+        // Build the URL; ensure a slash separates the base endpoint and the path
+        const QString baseUrl = http().toString();
+        const auto url = QUrl(baseUrl.endsWith('/') ? baseUrl + processedPath
+                                                    : baseUrl + '/' + processedPath);
 
         // Check if the debug is active
         if (m_Debug) {
@@ -558,8 +611,10 @@ namespace fairwindsk::signalk {
         // Process the path
         processedPath = processedPath.replace(".","/");
 
-        // Create the url
-        auto url = QUrl(http().toString()+processedPath);
+        // Build the URL; ensure a slash separates the base endpoint and the path
+        const QString baseUrlPost = http().toString();
+        auto url = QUrl(baseUrlPost.endsWith('/') ? baseUrlPost + processedPath
+                                                  : baseUrlPost + '/' + processedPath);
 
         // Check if the debug is active
         if (m_Debug) {
@@ -649,7 +704,9 @@ namespace fairwindsk::signalk {
     QJsonObject Client::signalkPut(const QString& path,  QJsonObject& payload) {
         QString processedPath = path;
         processedPath = processedPath.replace(".","/");
-        auto url = QUrl(http().toString()+processedPath);
+        const QString baseUrlPut = http().toString();
+        auto url = QUrl(baseUrlPut.endsWith('/') ? baseUrlPut + processedPath
+                                                 : baseUrlPut + '/' + processedPath);
         if (m_Debug)
         {
             qDebug() << "signalkPut " << path << " --> " << url;
@@ -737,8 +794,10 @@ namespace fairwindsk::signalk {
         // Create the path (it works only with v1 APIs)
         processedPath = processedPath.replace(".","/");
 
-        // Create the URL object
-        const auto url = QUrl(http().toString()+processedPath);
+        // Create the URL object; ensure a slash separates the base endpoint and the path
+        const QString baseUrlDel = http().toString();
+        const auto url = QUrl(baseUrlDel.endsWith('/') ? baseUrlDel + processedPath
+                                                       : baseUrlDel + '/' + processedPath);
 
         // Check if debug is active
         if (m_Debug) {
@@ -962,8 +1021,21 @@ namespace fairwindsk::signalk {
         connect(&m_WebSocket, &QWebSocket::textMessageReceived,
                 this, &Client::onTextMessageReceived, Qt::UniqueConnection);
 
+        // Pre-fetch and cache the self URN once so resubscribeAll() resolves all
+        // "vessels.self" contexts consistently without N blocking HTTP calls
+        if (m_selfUrn.isEmpty()) {
+            const QString resolvedSelf = getSelf();
+            if (!resolvedSelf.isEmpty()) {
+                m_selfUrn = resolvedSelf;
+                qInfo() << "SignalK::Client::onConnected cached selfUrn =" << m_selfUrn;
+            } else {
+                qWarning() << "SignalK::Client::onConnected getSelf() returned empty; "
+                              "live-stream matching will rely on vessels.self alias";
+            }
+        }
+
         const bool recoveredFromDisconnect = m_reconnectRecoveryPending;
-        resubscribeAll(recoveredFromDisconnect);
+        resubscribeAll(false);
         m_hadStreamConnection = true;
         m_reconnectRecoveryPending = false;
         emit serverStateResynchronized(recoveredFromDisconnect);
@@ -998,25 +1070,70 @@ namespace fairwindsk::signalk {
 
         QJsonDocument jsonDocument = QJsonDocument::fromJson(message.toUtf8());
 
-        // check validity of the document
-        if (!jsonDocument.isNull()) {
-            if (jsonDocument.isObject()) {
-                auto updateObject = jsonDocument.object();
+        if (jsonDocument.isNull()) {
+            qWarning() << "SignalK::Client::onTextMessageReceived malformed JSON (first 200 chars):"
+                       << message.left(200);
+            return;
+        }
+
+        if (!jsonDocument.isObject()) {
+            qWarning() << "SignalK::Client::onTextMessageReceived unexpected non-object message";
+            if (m_Debug)
+                qDebug() << "SignalK::Client::onTextMessageReceived raw message:" << message.left(200);
+            return;
+        }
+
+        auto updateObject = jsonDocument.object();
+        const auto context = updateObject["context"].toString();
+        const auto updates = updateObject["updates"].toArray();
+
+        if (m_Debug)
+            qDebug() << "SignalK::Client::onTextMessageReceived context=" << context
+                     << "updates=" << updates.size();
+
+        // Determine once per message whether context is the self vessel.
+        // If m_selfUrn is not yet cached, fall back to the discovery-document self field
+        // so that subscriptions using "vessels.self" alias can still dispatch correctly.
+        const QString discoveryUrn = m_Server.value(QStringLiteral("self")).toString();
+        const bool isSelfContext = (!m_selfUrn.isEmpty() && context == m_selfUrn)
+                                || (!discoveryUrn.isEmpty() && context == discoveryUrn);
+        if (isSelfContext && m_selfUrn.isEmpty() && !discoveryUrn.isEmpty()) {
+            m_selfUrn = discoveryUrn;
+            qInfo() << "SignalK::Client::onTextMessageReceived cached selfUrn from live message =" << m_selfUrn;
+        }
+
+        for (auto updateItem: updates) {
+            auto values = updateItem.toObject()["values"].toArray();
+            for (auto valueItem: values) {
+                const auto valueObj = valueItem.toObject();
+                const QString path = valueObj[QStringLiteral("path")].toString();
+                if (path.isEmpty()) {
+                    continue;
+                }
+                const QString fullPath = context + "." + path;
+
+                // Build a single-path delta so slots receive exactly the one value they
+                // subscribed for; passing the full batched update would cause
+                // getDoubleFromUpdateByPath("") to average all numeric values in the message
+                const QJsonValue value = valueObj[QStringLiteral("value")];
+                const QJsonObject perPathUpdate = buildDeltaUpdate(context, path, value);
+
+                // If the server sends updates with the actual vessel URN but some subscriptions
+                // still hold the "vessels.self" context (getSelf failed at startup), build an
+                // alias path so those subscriptions can still match.
+                const QString selfAliasPath = isSelfContext
+                    ? QStringLiteral("vessels.self.") + path
+                    : QString();
 
                 if (m_Debug)
-                    qDebug() << "Update received:" << message;
+                    qDebug() << "SignalK::Client::onTextMessageReceived dispatching"
+                             << fullPath
+                             << (isSelfContext ? "(+ vessels.self alias)" : "");
 
-                const auto context = updateObject["context"].toString();
-                auto updates = updateObject["updates"].toArray();
-                for (auto updateItem: updates) {
-                    auto values = updateItem.toObject()["values"].toArray();
-                    for (auto valueItem: values) {
-                        QString fullPath = context + "." + valueItem.toObject()["path"].toString();
-
-
-                        for (auto subscription: m_subscriptions) {
-                            subscription.match(fullPath, updateObject);
-                        }
+                for (auto subscription: m_subscriptions) {
+                    subscription.match(fullPath, perPathUpdate);
+                    if (!selfAliasPath.isEmpty()) {
+                        subscription.match(selfAliasPath, perPathUpdate);
                     }
                 }
             }
@@ -1039,15 +1156,33 @@ namespace fairwindsk::signalk {
         return m_Token;
     }
 
+    // Synchronously wipes the in-memory token and cookie so that any signal
+    // handlers firing after this call (e.g. connectivityChanged) see an empty
+    // token and do not write the old value back to persistent storage.
+    void Client::clearTokenAndCookie() {
+        m_Token.clear();
+        m_Cookie.clear();
+    }
+
     QString Client::normalizedSubscriptionContext(const QString &context) const {
         if (context == "vessels.self") {
-            return const_cast<Client *>(this)->getSelf();
+            // Use cached URN to avoid repeated blocking HTTP calls for every subscription
+            if (!m_selfUrn.isEmpty()) {
+                return m_selfUrn;
+            }
+            const QString resolved = const_cast<Client *>(this)->getSelf();
+            if (!resolved.isEmpty()) {
+                const_cast<Client *>(this)->m_selfUrn = resolved;
+                return resolved;
+            }
+            return context;
         }
 
         return context;
     }
 
     QString Client::subscriptionMessage(const QString &context, const QString &path, const int period, const QString &policy, const int minPeriod) const {
+        const QString effectivePolicy = normalizedSubscriptionPolicy(policy);
         return QString("{\n"
                        "  \"context\": \"%1\",\n"
                        "  \"subscribe\": [\n"
@@ -1059,7 +1194,7 @@ namespace fairwindsk::signalk {
                        "      \"minPeriod\": %5\n"
                        "    }\n"
                        "  ]\n"
-                       "}").arg(context, path, QString::number(period), policy, QString::number(minPeriod));
+                       "}").arg(context, path, QString::number(period), effectivePolicy, QString::number(minPeriod));
     }
 
     bool Client::refreshServerDiscovery() {
@@ -1204,6 +1339,9 @@ namespace fairwindsk::signalk {
     }
 
     void Client::resubscribeAll(const bool hydrateSnapshots) {
+        qInfo() << "SignalK::Client::resubscribeAll hydrateSnapshots=" << hydrateSnapshots
+                << "subscriptions=" << m_subscriptions.size();
+
         QMutableListIterator<Subscription> iterator(m_subscriptions);
         while (iterator.hasNext()) {
             auto &subscription = iterator.next();
@@ -1216,20 +1354,44 @@ namespace fairwindsk::signalk {
             subscription.retargetContext(effectiveContext);
             m_WebSocket.sendTextMessage(subscriptionMessage(effectiveContext,
                                                            subscription.getPath(),
-                                                           1000,
-                                                           QStringLiteral("ideal"),
-                                                           200));
+                                                           subscription.getPeriod(),
+                                                           subscription.getPolicy(),
+                                                           subscription.getMinPeriod()));
 
-            if (!hydrateSnapshots || subscription.getPath().contains('*')) {
+            if (!hydrateSnapshots || !canHydrateSubscriptionPath(subscription.getPath())) {
                 continue;
             }
 
-            const QJsonObject snapshot = signalkGet(effectiveContext + "." + subscription.getPath());
+            const QString fullPath = effectiveContext + "." + subscription.getPath();
+            const QJsonObject snapshot = signalkGet(fullPath);
+
+            if (m_Debug) {
+                qDebug() << "SignalK::Client::resubscribeAll snapshot for" << fullPath
+                         << "isEmpty=" << snapshot.isEmpty()
+                         << "hasValue=" << snapshot.contains(QStringLiteral("value"));
+            }
+
             if (!snapshot.isEmpty()) {
-                const QJsonObject update = buildDeltaUpdate(effectiveContext, subscription.getPath(), snapshot);
-                subscription.match(effectiveContext + "." + subscription.getPath(), update);
+                const QJsonValue snapshotValue = deltaValueFromSnapshot(snapshot);
+
+                if (m_Debug) {
+                    qDebug() << "SignalK::Client::resubscribeAll snapshotValue type="
+                             << snapshotValue.type() << "for" << subscription.getPath();
+                }
+
+                const QJsonObject update = buildDeltaUpdate(effectiveContext, subscription.getPath(), snapshotValue);
+                const bool matched = subscription.match(fullPath, update);
+
+                if (m_Debug) {
+                    qDebug() << "SignalK::Client::resubscribeAll match result=" << matched
+                             << "for" << fullPath;
+                }
+            } else {
+                qInfo() << "SignalK::Client::resubscribeAll empty snapshot for" << fullPath;
             }
         }
+
+        qInfo() << "SignalK::Client::resubscribeAll done";
     }
 
     QString Client::serverFingerprint(const QJsonObject &server) const {
@@ -1243,7 +1405,7 @@ namespace fairwindsk::signalk {
     QJsonObject Client::buildDeltaUpdate(const QString &context, const QString &path, const QJsonValue &value) const {
         QJsonObject valueObject;
         valueObject.insert(QStringLiteral("path"), path);
-        valueObject.insert(QStringLiteral("value"), value);
+        valueObject.insert(QStringLiteral("value"), deltaValueFromSnapshot(value));
 
         QJsonObject updateEntry;
         updateEntry.insert(QStringLiteral("values"), QJsonArray{valueObject});
@@ -1565,40 +1727,76 @@ namespace fairwindsk::signalk {
         return m_lastStreamActivity;
     }
 
-    QJsonObject Client::subscribe(const QString& path, QObject *receiver, const char *member, int period, const QString& policy, int minPeriod) {
-        return(subscribe("vessels.self", path, receiver, member, period, policy, minPeriod));
+    QJsonObject Client::subscribe(const QString& path, QObject *receiver, const char *member, int period, const QString& policy, int minPeriod, const bool hydrateSnapshot) {
+        return(subscribe("vessels.self", path, receiver, member, period, policy, minPeriod, hydrateSnapshot));
     }
-    QJsonObject Client::subscribe(const QString& context, const QString& path, QObject *receiver, const char *member, int period, const QString& policy, int minPeriod) {
-        const auto contextEx = normalizedSubscriptionContext(context);
-        const auto message = subscriptionMessage(contextEx, path, period, policy, minPeriod);
-
-        m_WebSocket.sendTextMessage(message);
+    QJsonObject Client::subscribe(const QString& context, const QString& path, QObject *receiver, const char *member, int period, const QString& policy, int minPeriod, const bool hydrateSnapshot) {
+        const bool canSendSubscription = !m_Server.isEmpty() && m_WebSocket.state() == QAbstractSocket::ConnectedState;
+        const auto contextEx = canSendSubscription ? normalizedSubscriptionContext(context) : context;
 
         if (!hasSubscription(context, path, receiver)) {
-            Subscription subscription(context, contextEx, path, receiver, member);
+            Subscription subscription(context, contextEx, path, receiver, member, period, policy, minPeriod);
             m_subscriptions.append(subscription);
-            connect(receiver, &QObject::destroyed, this, &Client::unsubscribe, Qt::UniqueConnection);
+            if (receiver) {
+                connect(receiver, &QObject::destroyed, this, &Client::unsubscribe, Qt::UniqueConnection);
+            }
         }
 
-        auto result = signalkGet(contextEx + "." + path);
+        if (!canSendSubscription) {
+            if (m_Debug) {
+                qDebug() << "subscribe:" << context << path << "queued until Signal K discovery is ready";
+            }
+            return {};
+        }
+
+        const auto message = subscriptionMessage(contextEx, path, period, policy, minPeriod);
+        m_WebSocket.sendTextMessage(message);
+
+        if (!hydrateSnapshot || !canHydrateSubscriptionPath(path)) {
+            if (m_Debug) {
+                qDebug() << "subscribe:" << message << "stream-only path";
+            }
+            return {};
+        }
+
+        // REST snapshots are wrapped in delta format so direct update-slot callers can read them.
+        const QJsonObject snapshot = signalkGet(contextEx + "." + path);
+        if (!snapshot.isEmpty()) {
+            const QJsonValue snapshotValue = deltaValueFromSnapshot(snapshot);
+            const QJsonObject result = buildDeltaUpdate(contextEx, path, snapshotValue);
+            if (m_Debug) {
+                qDebug() << "subscribe:" << message << "snapshot value:" << snapshotValue;
+            }
+            return result;
+        }
 
         if (m_Debug) {
-            qDebug() << "subscribe: " << message << " result: " << result;
+            qDebug() << "subscribe:" << message << "no snapshot";
         }
-        return result;
+        return {};
     }
 
     void Client::subscribeStream(const QString& context, const QString& path, QObject *receiver, const char *member, int period, const QString& policy, int minPeriod) {
-        const auto contextEx = normalizedSubscriptionContext(context);
-        const auto message = subscriptionMessage(contextEx, path, period, policy, minPeriod);
-
-        m_WebSocket.sendTextMessage(message);
+        const bool canSendSubscription = !m_Server.isEmpty() && m_WebSocket.state() == QAbstractSocket::ConnectedState;
+        const auto contextEx = canSendSubscription ? normalizedSubscriptionContext(context) : context;
 
         if (!hasSubscription(context, path, receiver)) {
-            Subscription subscription(context, contextEx, path, receiver, member);
+            Subscription subscription(context, contextEx, path, receiver, member, period, policy, minPeriod);
             m_subscriptions.append(subscription);
-            connect(receiver, &QObject::destroyed, this, &Client::unsubscribe, Qt::UniqueConnection);
+            if (receiver) {
+                connect(receiver, &QObject::destroyed, this, &Client::unsubscribe, Qt::UniqueConnection);
+            }
         }
+
+        if (!canSendSubscription) {
+            if (m_Debug) {
+                qDebug() << "subscribeStream:" << context << path << "queued until Signal K discovery is ready";
+            }
+            return;
+        }
+
+        const auto message = subscriptionMessage(contextEx, path, period, policy, minPeriod);
+        m_WebSocket.sendTextMessage(message);
 
         if (m_Debug) {
             qDebug() << "subscribeStream:" << message;

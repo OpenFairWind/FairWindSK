@@ -6,17 +6,20 @@
 #include <QEvent>
 #include <QFrame>
 #include <QHBoxLayout>
+#include <QIcon>
 #include <QLabel>
 #include <QListWidgetItem>
 #include <QScroller>
 #include <QSizePolicy>
 #include <QSignalBlocker>
+#include <QTimer>
 #include <QVBoxLayout>
 
 #include "FairWindSK.hpp"
 #include "BarSettingsUi.hpp"
 #include "LayoutPreviewListWidget.hpp"
 #include "ui/IconUtils.hpp"
+#include "ui/widgets/TouchCheckBox.hpp"
 
 namespace fairwindsk::ui::settings {
     using fairwindsk::ui::layout::BarId;
@@ -60,6 +63,13 @@ namespace fairwindsk::ui::settings {
         m_moveRightButton = new QToolButton(this);
         m_removeSelectedButton = new QToolButton(this);
         m_resetDefaultsButton = new QToolButton(this);
+        m_showIconCheckBox = new fairwindsk::ui::widgets::TouchCheckBox(this);
+        m_showTextCheckBox = new fairwindsk::ui::widgets::TouchCheckBox(this);
+        m_showUnitsCheckBox = new fairwindsk::ui::widgets::TouchCheckBox(this);
+        m_showTrendCheckBox = new fairwindsk::ui::widgets::TouchCheckBox(this);
+        m_reconfigureTimer = new QTimer(this);
+        m_reconfigureTimer->setSingleShot(true);
+        m_reconfigureTimer->setInterval(120);
         barsettings::configureSizeButton(m_minimumWidthButton,
                                          QStringLiteral(":/resources/svg/OpenBridge/layout-horizontal-minimize.svg"),
                                          tr("Keep the selected widget at the minimum needed size"),
@@ -112,7 +122,8 @@ namespace fairwindsk::ui::settings {
         m_listWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         m_listWidget->viewport()->setAttribute(Qt::WA_AcceptTouchEvents, true);
         QScroller::grabGesture(m_listWidget->viewport(), QScroller::TouchGesture);
-        m_listWidget->setToolTip(tr("Tap a widget to edit it. Drag within the preview to reorder the bottom bar."));
+        m_listWidget->setToolTip(tr("Tap a widget to edit it. Drag within the preview to reorder the %1.")
+                                 .arg(layout::barLabel(m_barId).toLower()));
         m_listWidget->installEventFilter(this);
         m_listWidget->viewport()->installEventFilter(this);
         previewLayout->addWidget(m_listWidget);
@@ -132,32 +143,25 @@ namespace fairwindsk::ui::settings {
         controlsLayout->addStretch(1);
         rootLayout->addLayout(controlsLayout);
 
+        m_showIconCheckBox->setText(tr("Icon"));
+        m_showTextCheckBox->setText(tr("Text"));
+        m_showUnitsCheckBox->setText(tr("Units"));
+        m_showTrendCheckBox->setText(tr("Trend"));
+
+        auto *displayOptionsLayout = new QHBoxLayout();
+        displayOptionsLayout->setContentsMargins(0, 0, 0, 0);
+        displayOptionsLayout->setSpacing(8);
+        displayOptionsLayout->addWidget(m_showIconCheckBox);
+        displayOptionsLayout->addWidget(m_showTextCheckBox);
+        displayOptionsLayout->addWidget(m_showUnitsCheckBox);
+        displayOptionsLayout->addWidget(m_showTrendCheckBox);
+        displayOptionsLayout->addStretch(1);
+        rootLayout->addLayout(displayOptionsLayout);
+
         m_paletteWidget = new WidgetPalette(this);
         m_paletteWidget->setToolTip(tr("Tap or drag a palette item to place it on the preview bar."));
         rootLayout->addWidget(m_paletteWidget);
-
-        QList<LayoutEntry> paletteEntries;
-        LayoutEntry separatorEntry;
-        separatorEntry.kind = EntryKind::Separator;
-        separatorEntry.instanceId = QStringLiteral("separator");
-        paletteEntries.append(separatorEntry);
-
-        LayoutEntry stretchEntry;
-        stretchEntry.kind = EntryKind::Stretch;
-        stretchEntry.instanceId = QStringLiteral("stretch");
-        stretchEntry.expandHorizontally = true;
-        paletteEntries.append(stretchEntry);
-
-        const auto definitions = layout::widgetDefinitions();
-        for (const auto &definition : definitions) {
-            LayoutEntry entry;
-            entry.kind = EntryKind::Widget;
-            entry.widgetId = definition.id;
-            entry.instanceId = definition.id;
-            entry.expandHorizontally = defaultExpandHorizontally(definition.id);
-            paletteEntries.append(entry);
-        }
-        m_paletteWidget->setEntries(paletteEntries);
+        refreshPaletteEntries();
 
         connect(m_listWidget, &QListWidget::itemChanged, this, &BarLayoutSettings::onItemChanged);
         connect(m_listWidget, &QListWidget::itemSelectionChanged, this, &BarLayoutSettings::onSelectionChanged);
@@ -173,6 +177,15 @@ namespace fairwindsk::ui::settings {
         connect(m_moveRightButton, &QToolButton::clicked, this, &BarLayoutSettings::onMoveSelectedRight);
         connect(m_removeSelectedButton, &QToolButton::clicked, this, &BarLayoutSettings::onRemoveSelected);
         connect(m_resetDefaultsButton, &QToolButton::clicked, this, &BarLayoutSettings::onResetDefaults);
+        connect(m_showIconCheckBox, &fairwindsk::ui::widgets::TouchCheckBox::toggled, this, &BarLayoutSettings::onDisplayOptionChanged);
+        connect(m_showTextCheckBox, &fairwindsk::ui::widgets::TouchCheckBox::toggled, this, &BarLayoutSettings::onDisplayOptionChanged);
+        connect(m_showUnitsCheckBox, &fairwindsk::ui::widgets::TouchCheckBox::toggled, this, &BarLayoutSettings::onDisplayOptionChanged);
+        connect(m_showTrendCheckBox, &fairwindsk::ui::widgets::TouchCheckBox::toggled, this, &BarLayoutSettings::onDisplayOptionChanged);
+        connect(m_reconfigureTimer, &QTimer::timeout, this, [this]() {
+            if (auto *fairWindSK = FairWindSK::getInstance()) {
+                fairWindSK->reconfigureRuntime(FairWindSK::RuntimeUi);
+            }
+        });
 
         applyChrome();
         updateActions();
@@ -220,8 +233,8 @@ namespace fairwindsk::ui::settings {
     }
 
     QListWidgetItem *BarLayoutSettings::createItem(const LayoutEntry &entry) {
-        auto *item = new QListWidgetItem(layout::entryLabel(entry));
-        item->setIcon(WidgetPalette::entryIcon(entry));
+        auto *item = new QListWidgetItem(layout::entryLabel(entry, m_settings->getConfiguration()->getRoot()));
+        item->setIcon(entry.showIcon ? WidgetPalette::entryIcon(entry) : QIcon());
         LayoutPreviewListWidget::applyEntryData(item, entry);
         item->setTextAlignment(Qt::AlignCenter);
         item->setSizeHint(itemSizeHint(entry));
@@ -236,8 +249,8 @@ namespace fairwindsk::ui::settings {
 
         const QSignalBlocker blocker(m_listWidget);
         const auto entry = entryForItem(item);
-        item->setText(barsettings::previewEntryText(entry));
-        item->setIcon(WidgetPalette::entryIcon(entry));
+        item->setText(entry.showText ? barsettings::previewEntryText(entry) : QString());
+        item->setIcon(entry.showIcon ? WidgetPalette::entryIcon(entry) : QIcon());
         item->setTextAlignment(Qt::AlignCenter);
         item->setSizeHint(itemSizeHint(entry));
     }
@@ -252,6 +265,37 @@ namespace fairwindsk::ui::settings {
         }
         m_listWidget->doItemsLayout();
         m_listWidget->viewport()->update();
+    }
+
+    void BarLayoutSettings::refreshPaletteEntries(const QList<LayoutEntry> &activeEntries) {
+        if (!m_paletteWidget || !m_settings) {
+            return;
+        }
+
+        QList<LayoutEntry> paletteEntries;
+        LayoutEntry separatorEntry;
+        separatorEntry.kind = EntryKind::Separator;
+        separatorEntry.instanceId = QStringLiteral("separator");
+        paletteEntries.append(separatorEntry);
+
+        LayoutEntry stretchEntry;
+        stretchEntry.kind = EntryKind::Stretch;
+        stretchEntry.instanceId = QStringLiteral("stretch");
+        stretchEntry.expandHorizontally = true;
+        paletteEntries.append(stretchEntry);
+
+        const auto definitions = layout::widgetDefinitions(m_settings->getConfiguration()->getRoot(), m_barId);
+        for (const auto &definition : definitions) {
+            LayoutEntry entry;
+            entry.kind = EntryKind::Widget;
+            entry.widgetId = definition.id;
+            entry.instanceId = definition.id;
+            entry.expandHorizontally = defaultExpandHorizontally(definition.id);
+            entry.showIcon = !definition.dataWidget;
+            paletteEntries.append(entry);
+        }
+        m_paletteWidget->setEntries(paletteEntries);
+        m_paletteWidget->setActiveEntries(activeEntries);
     }
 
     int BarLayoutSettings::minimumItemWidth(const LayoutEntry &entry) const {
@@ -318,7 +362,7 @@ namespace fairwindsk::ui::settings {
         refreshPreviewItems();
         m_populating = false;
         if (m_paletteWidget) {
-            m_paletteWidget->setActiveEntries(entries);
+            refreshPaletteEntries(entries);
         }
         updateActions();
     }
@@ -329,7 +373,7 @@ namespace fairwindsk::ui::settings {
         }
 
         QList<LayoutEntry> entries;
-        entries.reserve(m_listWidget->count() + layout::widgetDefinitions().size());
+        entries.reserve(m_listWidget->count() + layout::widgetDefinitions(m_settings->getConfiguration()->getRoot(), m_barId).size());
         QStringList enabledWidgetIds;
         for (int index = 0; index < m_listWidget->count(); ++index) {
             auto *item = m_listWidget->item(index);
@@ -343,7 +387,7 @@ namespace fairwindsk::ui::settings {
             }
         }
 
-        const auto definitions = layout::widgetDefinitions();
+        const auto definitions = layout::widgetDefinitions(m_settings->getConfiguration()->getRoot(), m_barId);
         for (const auto &definition : definitions) {
             if (enabledWidgetIds.contains(definition.id)) {
                 continue;
@@ -355,6 +399,7 @@ namespace fairwindsk::ui::settings {
             entry.instanceId = definition.id;
             entry.enabled = false;
             entry.expandHorizontally = defaultExpandHorizontally(definition.id);
+            entry.showIcon = !definition.dataWidget;
             entries.append(entry);
         }
 
@@ -363,15 +408,13 @@ namespace fairwindsk::ui::settings {
 
         const auto otherBarId = m_barId == BarId::Top ? BarId::Bottom : BarId::Top;
         for (const auto &entry : entries) {
-            if (entry.kind == EntryKind::Widget && entry.enabled) {
+            if (entry.kind == EntryKind::Widget && entry.enabled && !isDataWidgetEntry(entry)) {
                 layout::removeWidgetFromBar(root, otherBarId, entry.widgetId);
             }
         }
 
         m_settings->markDirty(FairWindSK::RuntimeUi, 0);
-        if (auto *fairWindSK = FairWindSK::getInstance()) {
-            fairWindSK->reconfigureRuntime(FairWindSK::RuntimeUi);
-        }
+        scheduleRuntimeReconfigure();
         if (m_paletteWidget) {
             m_paletteWidget->setActiveEntries(entries);
         }
@@ -412,6 +455,64 @@ namespace fairwindsk::ui::settings {
         }
         if (m_removeSelectedButton) {
             m_removeSelectedButton->setEnabled(hasSelection);
+        }
+        updateDisplayOptionControls();
+    }
+
+    bool BarLayoutSettings::isDataWidgetEntry(const LayoutEntry &entry) const {
+        if (entry.kind != EntryKind::Widget || !m_settings) {
+            return false;
+        }
+
+        const auto definitions = layout::widgetDefinitions(m_settings->getConfiguration()->getRoot());
+        const auto it = std::find_if(definitions.cbegin(), definitions.cend(), [&entry](const layout::WidgetDefinition &definition) {
+            return definition.id == entry.widgetId;
+        });
+        return it != definitions.cend() && it->dataWidget;
+    }
+
+    void BarLayoutSettings::updateDisplayOptionControls() {
+        const auto *item = m_listWidget ? m_listWidget->currentItem() : nullptr;
+        const auto entry = entryForItem(item);
+        const bool hasWidgetSelection = item && entry.kind == EntryKind::Widget;
+        const bool dataWidget = hasWidgetSelection && isDataWidgetEntry(entry);
+
+        const QList<fairwindsk::ui::widgets::TouchCheckBox *> controls = {
+            m_showIconCheckBox,
+            m_showTextCheckBox,
+            m_showUnitsCheckBox,
+            m_showTrendCheckBox
+        };
+        for (auto *control : controls) {
+            if (control) {
+                const QSignalBlocker blocker(control);
+                control->setEnabled(hasWidgetSelection);
+            }
+        }
+
+        if (m_showIconCheckBox) {
+            const QSignalBlocker blocker(m_showIconCheckBox);
+            m_showIconCheckBox->setChecked(hasWidgetSelection && entry.showIcon);
+        }
+        if (m_showTextCheckBox) {
+            const QSignalBlocker blocker(m_showTextCheckBox);
+            m_showTextCheckBox->setChecked(hasWidgetSelection && entry.showText);
+        }
+        if (m_showUnitsCheckBox) {
+            const QSignalBlocker blocker(m_showUnitsCheckBox);
+            m_showUnitsCheckBox->setEnabled(dataWidget);
+            m_showUnitsCheckBox->setChecked(dataWidget && entry.showUnits);
+        }
+        if (m_showTrendCheckBox) {
+            const QSignalBlocker blocker(m_showTrendCheckBox);
+            m_showTrendCheckBox->setEnabled(dataWidget);
+            m_showTrendCheckBox->setChecked(dataWidget && entry.showTrend);
+        }
+    }
+
+    void BarLayoutSettings::scheduleRuntimeReconfigure() {
+        if (m_reconfigureTimer) {
+            m_reconfigureTimer->start();
         }
     }
 
@@ -514,11 +615,12 @@ namespace fairwindsk::ui::settings {
         entry.instanceId = widgetId;
         entry.enabled = true;
         entry.expandHorizontally = defaultExpandHorizontally(widgetId);
+        entry.showIcon = !isDataWidgetEntry(entry);
         m_listWidget->addOrSelectEntry(entry);
     }
 
     bool BarLayoutSettings::defaultExpandHorizontally(const QString &widgetId) const {
-        return layout::defaultExpandHorizontally(m_barId, widgetId);
+        return layout::defaultExpandHorizontally(m_settings->getConfiguration()->getRoot(), m_barId, widgetId);
     }
 
     void BarLayoutSettings::onPaletteEntryActivated(const LayoutEntry &entry) {
@@ -547,19 +649,17 @@ namespace fairwindsk::ui::settings {
         }
 
         auto &root = m_settings->getConfiguration()->getRoot();
-        const auto defaults = layout::defaultEntries(m_barId);
+        const auto defaults = layout::defaultEntries(root, m_barId);
         layout::setEntriesForBar(root, m_barId, defaults);
         const auto otherBarId = m_barId == BarId::Top ? BarId::Bottom : BarId::Top;
         for (const auto &entry : defaults) {
-            if (entry.kind == EntryKind::Widget && entry.enabled) {
+            if (entry.kind == EntryKind::Widget && entry.enabled && !isDataWidgetEntry(entry)) {
                 layout::removeWidgetFromBar(root, otherBarId, entry.widgetId);
             }
         }
         populateFromConfiguration();
         m_settings->markDirty(FairWindSK::RuntimeUi, 0);
-        if (auto *fairWindSK = FairWindSK::getInstance()) {
-            fairWindSK->reconfigureRuntime(FairWindSK::RuntimeUi);
-        }
+        scheduleRuntimeReconfigure();
     }
 
     void BarLayoutSettings::onPreviewEdited() {
@@ -568,6 +668,28 @@ namespace fairwindsk::ui::settings {
         }
 
         refreshPreviewItems();
+        persistToConfiguration();
+        updateActions();
+    }
+
+    void BarLayoutSettings::onDisplayOptionChanged() {
+        auto *item = m_listWidget ? m_listWidget->currentItem() : nullptr;
+        if (!item) {
+            return;
+        }
+
+        auto entry = entryForItem(item);
+        if (entry.kind != EntryKind::Widget) {
+            return;
+        }
+
+        entry.showIcon = m_showIconCheckBox ? m_showIconCheckBox->isChecked() : entry.showIcon;
+        entry.showText = m_showTextCheckBox ? m_showTextCheckBox->isChecked() : entry.showText;
+        entry.showUnits = m_showUnitsCheckBox ? m_showUnitsCheckBox->isChecked() : entry.showUnits;
+        entry.showTrend = m_showTrendCheckBox ? m_showTrendCheckBox->isChecked() : entry.showTrend;
+
+        LayoutPreviewListWidget::applyEntryData(item, entry);
+        refreshPreviewItem(item);
         persistToConfiguration();
         updateActions();
     }

@@ -23,6 +23,7 @@ namespace fairwindsk::ui::widgets {
     public:
         explicit SignalKServerBox(QWidget *parent = nullptr);
         ~SignalKServerBox() override;
+        void setDisplayOptions(bool showText);
 
     protected:
         void resizeEvent(QResizeEvent *event) override;
