@@ -382,6 +382,7 @@ namespace fairwindsk::ui::mydata {
 
             for (int column = 0; column < m_model->columnCount(); ++column) {
                 auto *item = new QTableWidgetItem(m_model->data(m_model->index(row, column), Qt::DisplayRole).toString());
+                item->setData(Qt::UserRole, row);
                 item->setFlags(item->flags() & ~Qt::ItemIsEditable);
                 const QVariant alignment = m_model->data(m_model->index(row, column), Qt::TextAlignmentRole);
                 if (alignment.isValid()) {
@@ -547,7 +548,27 @@ namespace fairwindsk::ui::mydata {
         if (selectedItems.isEmpty()) {
             return -1;
         }
+
+        const QVariant sourceRow = selectedItems.first()->data(Qt::UserRole);
+        if (sourceRow.isValid()) {
+            return sourceRow.toInt();
+        }
         return selectedItems.first()->row();
+    }
+
+    void HistoryTrackTab::selectSourceRow(const int sourceRow) const {
+        if (!m_tableWidget || sourceRow < 0) {
+            return;
+        }
+
+        for (int row = 0; row < m_tableWidget->rowCount(); ++row) {
+            if (auto *item = m_tableWidget->item(row, 0)) {
+                if (item->data(Qt::UserRole).toInt() == sourceRow) {
+                    m_tableWidget->selectRow(row);
+                    return;
+                }
+            }
+        }
     }
 
     QList<HistoryTrackPoint> HistoryTrackTab::allPoints() const {
@@ -581,9 +602,7 @@ namespace fairwindsk::ui::mydata {
         rebuildTable();
 
         const int selectedRow = creating ? m_model->rowCount() - 1 : row;
-        if (selectedRow >= 0 && selectedRow < m_tableWidget->rowCount()) {
-            m_tableWidget->selectRow(selectedRow);
-        }
+        selectSourceRow(selectedRow);
         return true;
     }
 

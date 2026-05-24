@@ -450,6 +450,12 @@
     </message>
     <message>
         <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="134"/>
+        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="177"/>
+        <source>Position Rows</source>
+        <translation>Posizione su righe</translation>
+    </message>
+    <message>
+        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="134"/>
         <source>COG</source>
         <translation>COG</translation>
     </message>
@@ -512,6 +518,11 @@
         <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="173"/>
         <source>Gauge</source>
         <translation>Indicatore</translation>
+    </message>
+    <message>
+        <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="231"/>
+        <source>Text</source>
+        <translation>Testo</translation>
     </message>
     <message>
         <location filename="../../ui/widgets/DataWidgetConfig.cpp" line="177"/>
@@ -5416,6 +5427,31 @@ Ultimo aggiornamento live %1</translation>
         <translation>Tipo</translation>
     </message>
     <message>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="168"/>
+        <source>Visualization Mode</source>
+        <translation>Modalità di visualizzazione</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="171"/>
+        <source>Show icon</source>
+        <translation>Mostra icona</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="172"/>
+        <source>Default Icon</source>
+        <translation>Icona predefinita</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="175"/>
+        <source>Show text</source>
+        <translation>Mostra testo</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="176"/>
+        <source>Default Text</source>
+        <translation>Testo predefinito</translation>
+    </message>
+    <message>
         <location filename="../../ui/settings/DataWidgets.cpp" line="163"/>
         <source>Signal K path</source>
         <translation>Percorso Signal K</translation>
@@ -5482,6 +5518,68 @@ Ultimo aggiornamento live %1</translation>
     </message>
     <message>
         <location filename="../../ui/settings/DataWidgets.cpp" line="197"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="213"/>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="229"/>
+        <source> pt</source>
+        <translation> pt</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="198"/>
+        <source>Value Text Size</source>
+        <translation>Dimensione valore</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="200"/>
+        <source>Value Text Color</source>
+        <translation>Colore valore</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="204"/>
+        <source>Choose value text color</source>
+        <translation>Scegli colore del valore</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="214"/>
+        <source>Label Text Size</source>
+        <translation>Dimensione etichetta</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="216"/>
+        <source>Label Text Color</source>
+        <translation>Colore etichetta</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="220"/>
+        <source>Choose label text color</source>
+        <translation>Scegli colore dell'etichetta</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="230"/>
+        <source>Trend Text Size</source>
+        <translation>Dimensione tendenza</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="232"/>
+        <source>Trend Increasing Color</source>
+        <translation>Colore tendenza crescente</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="236"/>
+        <source>Choose increasing trend color</source>
+        <translation>Scegli colore tendenza crescente</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="238"/>
+        <source>Trend Decreasing Color</source>
+        <translation>Colore tendenza decrescente</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="242"/>
+        <source>Choose decreasing trend color</source>
+        <translation>Scegli colore tendenza decrescente</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="197"/>
         <source>Gauge Minimum</source>
         <translation>Minimo indicatore</translation>
     </message>
@@ -5519,6 +5617,16 @@ Ultimo aggiornamento live %1</translation>
         <location filename="../../ui/settings/DataWidgets.cpp" line="551"/>
         <source>Choose Data Widget Icon</source>
         <translation>Scegli icona widget dati</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="630"/>
+        <source>Use theme color</source>
+        <translation>Usa colore del tema</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/DataWidgets.cpp" line="736"/>
+        <source>Theme</source>
+        <translation>Tema</translation>
     </message>
 </context>
 <context>

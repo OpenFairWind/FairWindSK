@@ -65,7 +65,9 @@ namespace fairwindsk::ui::layout {
                     dataWidget.defaultBottomEnabled,
                     true,
                     dataWidget.expandHorizontally,
-                    dataWidget.expandVertically
+                    dataWidget.expandVertically,
+                    dataWidget.showIcon,
+                    dataWidget.showText
                 });
             }
 
@@ -258,7 +260,8 @@ namespace fairwindsk::ui::layout {
                     entry.enabled = false;
                     entry.expandHorizontally = shouldDefaultToMaximumWidth(root, barId, definition.id);
                     entry.expandVertically = definition.expandVertically;
-                    entry.showIcon = !definition.dataWidget;
+                    entry.showIcon = definition.dataWidget ? definition.showIcon : true;
+                    entry.showText = definition.showText;
                     entries.append(entry);
                 }
             }
@@ -362,7 +365,8 @@ namespace fairwindsk::ui::layout {
             entry.enabled = barId == BarId::Top ? definition.defaultTopEnabled : definition.defaultBottomEnabled;
             entry.expandHorizontally = entry.enabled && shouldDefaultToMaximumWidth(root, barId, definition.id);
             entry.expandVertically = entry.enabled && definition.expandVertically;
-            entry.showIcon = !definition.dataWidget;
+            entry.showIcon = definition.dataWidget ? definition.showIcon : true;
+            entry.showText = definition.showText;
             entries.append(entry);
         }
         return entries;
@@ -381,11 +385,12 @@ namespace fairwindsk::ui::layout {
                 }
                 if (entry.kind == EntryKind::Widget &&
                     fairwindsk::ui::widgets::isDataWidgetId(root, entry.widgetId)) {
+                    const auto definition = fairwindsk::ui::widgets::dataWidgetDefinition(root, entry.widgetId);
                     if (!jsonEntry.contains("showIcon")) {
-                        entry.showIcon = false;
+                        entry.showIcon = definition.showIcon;
                     }
                     if (!jsonEntry.contains("showText")) {
-                        entry.showText = true;
+                        entry.showText = definition.showText;
                     }
                     if (!jsonEntry.contains("showUnits")) {
                         entry.showUnits = true;

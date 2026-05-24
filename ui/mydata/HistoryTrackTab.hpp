@@ -51,6 +51,7 @@ namespace fairwindsk::ui::mydata {
         void updateStatus(const QString &message);
         void updateStatusLabel();
         int selectedSourceRow() const;
+        void selectSourceRow(int sourceRow) const;
         QList<HistoryTrackPoint> allPoints() const;
         bool editTrackPoint(int row, bool creating);
         QString currentDuration() const;

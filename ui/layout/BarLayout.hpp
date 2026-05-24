@@ -25,6 +25,8 @@ namespace fairwindsk::ui::layout {
         bool dataWidget = false;
         bool expandHorizontally = false;
         bool expandVertically = false;
+        bool showIcon = true;
+        bool showText = true;
     };
 
     struct LayoutEntry {

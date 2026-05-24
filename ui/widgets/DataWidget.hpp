@@ -9,7 +9,6 @@
 #include "DataWidgetConfig.hpp"
 
 class QLabel;
-class QProgressBar;
 class QWidget;
 
 namespace fairwindsk {
@@ -21,6 +20,8 @@ namespace fairwindsk::signalk {
 }
 
 namespace fairwindsk::ui::widgets {
+
+    class DataGaugeWidget;
 
     class DataWidget final : public QWidget {
         Q_OBJECT
@@ -52,6 +53,8 @@ namespace fairwindsk::ui::widgets {
         void updateHeaderVisibility();
         void updateTrend(double value, bool hasValue);
         QString trendText() const;
+        bool gaugeVisible() const;
+        void updateLayoutMetrics();
 
         DataWidgetDefinition m_definition;
         QJsonObject m_lastUpdate;
@@ -66,7 +69,7 @@ namespace fairwindsk::ui::widgets {
         QLabel *m_valueLabel = nullptr;
         QLabel *m_unitLabel = nullptr;
         QLabel *m_trendLabel = nullptr;
-        QProgressBar *m_gauge = nullptr;
+        DataGaugeWidget *m_gauge = nullptr;
         bool m_showIcon = true;
         bool m_showText = true;
         bool m_showUnits = true;

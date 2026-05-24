@@ -11,8 +11,14 @@ namespace fairwindsk::ui::widgets {
         Numeric,
         Gauge,
         Position,
+        PositionRows,
         DateTime,
         Waypoint
+    };
+
+    enum class DataWidgetVisualizationMode {
+        Text,
+        Gauge
     };
 
     struct DataWidgetDefinition {
@@ -25,10 +31,20 @@ namespace fairwindsk::ui::widgets {
         QString updatePolicy = QStringLiteral("instant");
         QString dateTimeFormat;
         DataWidgetKind kind = DataWidgetKind::Numeric;
+        DataWidgetVisualizationMode visualizationMode = DataWidgetVisualizationMode::Text;
+        QString valueTextColor;
+        QString labelTextColor;
+        QString trendIncreasingColor;
+        QString trendDecreasingColor;
         int period = 1000;
         int minPeriod = 200;
+        int valueTextSize = 0;
+        int labelTextSize = 0;
+        int trendTextSize = 0;
         double minimum = 0.0;
         double maximum = 100.0;
+        bool showIcon = false;
+        bool showText = true;
         bool defaultTopEnabled = false;
         bool defaultBottomEnabled = false;
         bool expandHorizontally = false;
@@ -39,6 +55,9 @@ namespace fairwindsk::ui::widgets {
     QString dataWidgetKindId(DataWidgetKind kind);
     QString dataWidgetKindLabel(DataWidgetKind kind);
     DataWidgetKind dataWidgetKindFromId(const QString &id);
+    QString dataWidgetVisualizationModeId(DataWidgetVisualizationMode mode);
+    QString dataWidgetVisualizationModeLabel(DataWidgetVisualizationMode mode);
+    DataWidgetVisualizationMode dataWidgetVisualizationModeFromId(const QString &id);
     QList<DataWidgetDefinition> dataWidgetDefinitions(const nlohmann::json &root);
     DataWidgetDefinition dataWidgetDefinition(const nlohmann::json &root, const QString &id);
     bool isDataWidgetId(const nlohmann::json &root, const QString &id);

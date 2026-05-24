@@ -2,6 +2,7 @@
 
 #include <algorithm>
 
+#include <QColor>
 #include <QCoreApplication>
 #include <QRegularExpression>
 
@@ -35,6 +36,19 @@ namespace fairwindsk::ui::widgets {
                 return fallback;
             }
             return object[key].get<bool>();
+        }
+
+        int jsonBoundedInt(const nlohmann::json &object,
+                           const char *key,
+                           const int fallback,
+                           const int minimum,
+                           const int maximum) {
+            return std::clamp(jsonInt(object, key, fallback), minimum, maximum);
+        }
+
+        QString normalizedColor(const QString &value) {
+            const QColor color(value.trimmed());
+            return color.isValid() ? color.name(QColor::HexRgb) : QString();
         }
 
         QString normalizedUpdatePolicy(QString policy) {
@@ -77,13 +91,26 @@ namespace fairwindsk::ui::widgets {
             definition.updatePolicy = normalizedUpdatePolicy(jsonString(object, "updatePolicy", QStringLiteral("instant")));
             definition.dateTimeFormat = jsonString(object, "dateTimeFormat");
             definition.kind = dataWidgetKindFromId(jsonString(object, "type", QStringLiteral("numeric")));
+            definition.visualizationMode = dataWidgetVisualizationModeFromId(
+                jsonString(object,
+                           "visualizationMode",
+                           definition.kind == DataWidgetKind::Gauge ? QStringLiteral("gauge") : QStringLiteral("text")));
+            definition.valueTextColor = normalizedColor(jsonString(object, "valueTextColor"));
+            definition.labelTextColor = normalizedColor(jsonString(object, "labelTextColor"));
+            definition.trendIncreasingColor = normalizedColor(jsonString(object, "trendIncreasingColor"));
+            definition.trendDecreasingColor = normalizedColor(jsonString(object, "trendDecreasingColor"));
             definition.period = std::max(100, jsonInt(object, "period", 1000));
             definition.minPeriod = std::max(0, jsonInt(object, "minPeriod", 200));
+            definition.valueTextSize = jsonBoundedInt(object, "valueTextSize", 0, 0, 48);
+            definition.labelTextSize = jsonBoundedInt(object, "labelTextSize", 0, 0, 48);
+            definition.trendTextSize = jsonBoundedInt(object, "trendTextSize", 0, 0, 48);
             definition.minimum = jsonDouble(object, "minimum", 0.0);
             definition.maximum = jsonDouble(object, "maximum", 100.0);
             if (definition.maximum <= definition.minimum) {
                 definition.maximum = definition.minimum + 100.0;
             }
+            definition.showIcon = jsonBool(object, "showIcon", false);
+            definition.showText = jsonBool(object, "showText", true);
             definition.defaultTopEnabled = jsonBool(object, "defaultTopEnabled", false);
             definition.defaultBottomEnabled = jsonBool(object, "defaultBottomEnabled", false);
             definition.expandHorizontally = jsonBool(object, "expandHorizontally", false);
@@ -108,7 +135,8 @@ namespace fairwindsk::ui::widgets {
                                               const QString &sourceUnit = QString(),
                                               const QString &defaultUnit = QString(),
                                               const QString &dateTimeFormat = QString(),
-                                              const bool expandHorizontally = false) {
+                                              const bool expandHorizontally = false,
+                                              const bool defaultTopEnabled = true) {
             DataWidgetDefinition definition;
             definition.id = id;
             definition.name = name;
@@ -118,10 +146,15 @@ namespace fairwindsk::ui::widgets {
             definition.defaultUnit = defaultUnit;
             definition.dateTimeFormat = dateTimeFormat;
             definition.kind = kind;
+            definition.visualizationMode = kind == DataWidgetKind::Gauge
+                                               ? DataWidgetVisualizationMode::Gauge
+                                               : DataWidgetVisualizationMode::Text;
             definition.updatePolicy = QStringLiteral("instant");
             definition.period = 1000;
             definition.minPeriod = 200;
-            definition.defaultTopEnabled = true;
+            definition.showIcon = false;
+            definition.showText = true;
+            definition.defaultTopEnabled = defaultTopEnabled;
             definition.defaultBottomEnabled = false;
             definition.expandHorizontally = expandHorizontally;
             definition.expandVertically = false;
@@ -131,6 +164,7 @@ namespace fairwindsk::ui::widgets {
         QList<DataWidgetDefinition> legacyDataWidgetDefinitions(const nlohmann::json &root) {
             return {
                 legacyDataWidget(root, QStringLiteral("position"), QCoreApplication::translate("DataWidgetConfig", "Position"), QStringLiteral(":/resources/svg/OpenBridge/lcd-position.svg"), QStringLiteral("pos"), QStringLiteral("navigation.position"), DataWidgetKind::Position, {}, {}, {}, true),
+                legacyDataWidget(root, QStringLiteral("position_rows"), QCoreApplication::translate("DataWidgetConfig", "Position Rows"), QStringLiteral(":/resources/svg/OpenBridge/lcd-position.svg"), QStringLiteral("pos"), QStringLiteral("navigation.position"), DataWidgetKind::PositionRows, {}, {}, {}, true, false),
                 legacyDataWidget(root, QStringLiteral("cog"), QCoreApplication::translate("DataWidgetConfig", "COG"), QStringLiteral(":/resources/svg/OpenBridge/lcd-cog.svg"), QStringLiteral("cog"), QStringLiteral("navigation.courseOverGroundTrue"), DataWidgetKind::Numeric, QStringLiteral("rad"), QStringLiteral("deg")),
                 legacyDataWidget(root, QStringLiteral("sog"), QCoreApplication::translate("DataWidgetConfig", "SOG"), QStringLiteral(":/resources/svg/OpenBridge/lcd-sog.svg"), QStringLiteral("sog"), QStringLiteral("navigation.speedOverGround"), DataWidgetKind::Numeric, QStringLiteral("ms-1"), QStringLiteral("kn")),
                 legacyDataWidget(root, QStringLiteral("hdg"), QCoreApplication::translate("DataWidgetConfig", "HDG"), QStringLiteral(":/resources/svg/OpenBridge/lcd-hdg.svg"), QStringLiteral("hdg"), QStringLiteral("navigation.headingTrue"), DataWidgetKind::Numeric, QStringLiteral("rad"), QStringLiteral("deg")),
@@ -155,6 +189,8 @@ namespace fairwindsk::ui::widgets {
         switch (kind) {
             case DataWidgetKind::Gauge:
                 return QStringLiteral("gauge");
+            case DataWidgetKind::PositionRows:
+                return QStringLiteral("position-rows");
             case DataWidgetKind::Position:
                 return QStringLiteral("position");
             case DataWidgetKind::DateTime:
@@ -171,6 +207,8 @@ namespace fairwindsk::ui::widgets {
         switch (kind) {
             case DataWidgetKind::Gauge:
                 return QCoreApplication::translate("DataWidgetConfig", "Gauge");
+            case DataWidgetKind::PositionRows:
+                return QCoreApplication::translate("DataWidgetConfig", "Position Rows");
             case DataWidgetKind::Position:
                 return QCoreApplication::translate("DataWidgetConfig", "Position");
             case DataWidgetKind::DateTime:
@@ -191,6 +229,13 @@ namespace fairwindsk::ui::widgets {
         if (normalized == QStringLiteral("position")) {
             return DataWidgetKind::Position;
         }
+        if (normalized == QStringLiteral("position_rows") ||
+            normalized == QStringLiteral("position-rows") ||
+            normalized == QStringLiteral("positionrows") ||
+            normalized == QStringLiteral("position_lines") ||
+            normalized == QStringLiteral("position-lines")) {
+            return DataWidgetKind::PositionRows;
+        }
         if (normalized == QStringLiteral("datetime") ||
             normalized == QStringLiteral("date_time") ||
             normalized == QStringLiteral("date-time")) {
@@ -205,6 +250,34 @@ namespace fairwindsk::ui::widgets {
             return DataWidgetKind::Numeric;
         }
         return DataWidgetKind::Numeric;
+    }
+
+    QString dataWidgetVisualizationModeId(const DataWidgetVisualizationMode mode) {
+        switch (mode) {
+            case DataWidgetVisualizationMode::Gauge:
+                return QStringLiteral("gauge");
+            case DataWidgetVisualizationMode::Text:
+            default:
+                return QStringLiteral("text");
+        }
+    }
+
+    QString dataWidgetVisualizationModeLabel(const DataWidgetVisualizationMode mode) {
+        switch (mode) {
+            case DataWidgetVisualizationMode::Gauge:
+                return QCoreApplication::translate("DataWidgetConfig", "Gauge");
+            case DataWidgetVisualizationMode::Text:
+            default:
+                return QCoreApplication::translate("DataWidgetConfig", "Text");
+        }
+    }
+
+    DataWidgetVisualizationMode dataWidgetVisualizationModeFromId(const QString &id) {
+        const QString normalized = id.trimmed().toLower();
+        if (normalized == QStringLiteral("gauge")) {
+            return DataWidgetVisualizationMode::Gauge;
+        }
+        return DataWidgetVisualizationMode::Text;
     }
 
     QList<DataWidgetDefinition> dataWidgetDefinitions(const nlohmann::json &root) {
@@ -261,11 +334,21 @@ namespace fairwindsk::ui::widgets {
         object["sourceUnit"] = definition.sourceUnit.toStdString();
         object["defaultUnit"] = definition.defaultUnit.toStdString();
         object["updatePolicy"] = normalizedUpdatePolicy(definition.updatePolicy).toStdString();
+        object["visualizationMode"] = dataWidgetVisualizationModeId(definition.visualizationMode).toStdString();
         object["period"] = definition.period;
         object["minPeriod"] = definition.minPeriod;
         object["minimum"] = definition.minimum;
         object["maximum"] = definition.maximum;
         object["dateTimeFormat"] = definition.dateTimeFormat.toStdString();
+        object["valueTextSize"] = definition.valueTextSize;
+        object["valueTextColor"] = normalizedColor(definition.valueTextColor).toStdString();
+        object["labelTextSize"] = definition.labelTextSize;
+        object["labelTextColor"] = normalizedColor(definition.labelTextColor).toStdString();
+        object["trendTextSize"] = definition.trendTextSize;
+        object["trendIncreasingColor"] = normalizedColor(definition.trendIncreasingColor).toStdString();
+        object["trendDecreasingColor"] = normalizedColor(definition.trendDecreasingColor).toStdString();
+        object["showIcon"] = definition.showIcon;
+        object["showText"] = definition.showText;
         object["defaultTopEnabled"] = definition.defaultTopEnabled;
         object["defaultBottomEnabled"] = definition.defaultBottomEnabled;
         object["expandHorizontally"] = definition.expandHorizontally;
