@@ -1,0 +1,218 @@
+#!/usr/bin/env python3
+import configparser
+import json
+import os
+import shutil
+import subprocess as sp
+import sys
+import time
+import urllib.error
+import urllib.request
+from pathlib import Path
+from typing import Dict, List, Optional
+
+
+APP_NAME = "FairWindSK"
+ORGANIZATION_NAME = "uniparthenope.it"
+SETTINGS_FILENAME = "fairwindsk.ini"
+CONFIG_FILENAME = "fairwindsk.json"
+RESTART_EXIT_CODE = 1
+SERVER_WAIT_TIMEOUT_SECONDS = 45
+SERVER_WAIT_INTERVAL_SECONDS = 2
+SERVER_SETTLE_DELAY_SECONDS = 2
+
+
+def log(message: str) -> None:
+    print(f"[fairwindsk-startup] {message}", flush=True)
+
+
+def candidate_settings_paths() -> List[Path]:
+    home = Path.home()
+    xdg_config_home = Path(os.environ.get("XDG_CONFIG_HOME", home / ".config")).expanduser()
+    candidates = [
+        xdg_config_home / APP_NAME / SETTINGS_FILENAME,
+        xdg_config_home / ORGANIZATION_NAME / APP_NAME / SETTINGS_FILENAME,
+        home / APP_NAME / SETTINGS_FILENAME,
+        home / SETTINGS_FILENAME,
+    ]
+
+    unique_candidates: List[Path] = []
+    seen = set()
+    for candidate in candidates:
+        normalized = candidate.expanduser()
+        if normalized not in seen:
+            unique_candidates.append(normalized)
+            seen.add(normalized)
+    return unique_candidates
+
+
+def find_settings_path() -> Path:
+    for candidate in candidate_settings_paths():
+        if candidate.is_file():
+            return candidate
+    return candidate_settings_paths()[0]
+
+
+def read_settings(settings_path: Path) -> configparser.ConfigParser:
+    parser = configparser.ConfigParser()
+    if settings_path.is_file():
+        parser.read(settings_path, encoding="utf-8")
+    else:
+        log(f"Settings file not found, using defaults: {settings_path}")
+    return parser
+
+
+def resolve_config_path(parser: configparser.ConfigParser, settings_path: Path) -> Path:
+    settings_dir = settings_path.parent
+    configured_path = ""
+    if parser.has_section("General"):
+        configured_path = parser.get("General", "config", fallback="").strip()
+
+    if configured_path:
+        candidate = Path(configured_path).expanduser()
+        if candidate.is_absolute():
+            return candidate
+        return settings_dir / candidate
+
+    return settings_dir / CONFIG_FILENAME
+
+
+def read_virtual_keyboard_flag(config_path: Path) -> Optional[bool]:
+    if not config_path.is_file():
+        log(f"Configuration file not found, keeping keyboard defaults: {config_path}")
+        return None
+
+    try:
+        with config_path.open("r", encoding="utf-8") as handle:
+            config_data = json.load(handle)
+    except (OSError, json.JSONDecodeError) as exc:
+        log(f"Unable to read configuration file {config_path}: {exc}")
+        return None
+
+    main_config = config_data.get("main")
+    if not isinstance(main_config, dict) or "virtualKeyboard" not in main_config:
+        return None
+
+    return bool(main_config["virtualKeyboard"])
+
+
+def read_signal_k_server_url(config_path: Path) -> str:
+    if not config_path.is_file():
+        return ""
+
+    try:
+        with config_path.open("r", encoding="utf-8") as handle:
+            config_data = json.load(handle)
+    except (OSError, json.JSONDecodeError) as exc:
+        log(f"Unable to read Signal K server configuration from {config_path}: {exc}")
+        return ""
+
+    connection_config = config_data.get("connection")
+    if not isinstance(connection_config, dict):
+        return ""
+
+    server_url = str(connection_config.get("server", "")).strip()
+    return server_url.rstrip("/")
+
+
+def url_is_ready(url: str) -> bool:
+    try:
+        request = urllib.request.Request(
+            url,
+            headers={
+                "Accept": "application/json",
+                "User-Agent": "fairwindsk-startup/1.0",
+            },
+        )
+        with urllib.request.urlopen(request, timeout=5) as response:
+            status_code = getattr(response, "status", response.getcode())
+            return 200 <= int(status_code) < 300
+    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, ValueError) as exc:
+        log(f"Endpoint not ready yet: {url} ({exc})")
+        return False
+
+
+def wait_for_signal_k_server(config_path: Path) -> None:
+    server_url = read_signal_k_server_url(config_path)
+    if not server_url:
+        log("No Signal K server configured, skipping autostart readiness wait.")
+        return
+
+    readiness_urls = [
+        f"{server_url}/signalk/v1/apps/list",
+        f"{server_url}/skServer/webapps",
+    ]
+
+    deadline = time.monotonic() + SERVER_WAIT_TIMEOUT_SECONDS
+    while time.monotonic() < deadline:
+        if any(url_is_ready(url) for url in readiness_urls):
+            log("Signal K application catalog is reachable.")
+            if SERVER_SETTLE_DELAY_SECONDS > 0:
+                log(f"Waiting {SERVER_SETTLE_DELAY_SECONDS}s for plugin static assets to settle.")
+                time.sleep(SERVER_SETTLE_DELAY_SECONDS)
+            return
+        time.sleep(SERVER_WAIT_INTERVAL_SECONDS)
+
+    log("Signal K application catalog did not become reachable before timeout; launching anyway.")
+
+
+def configure_environment(settings_path: Path, config_path: Path) -> Dict[str, str]:
+    env = os.environ.copy()
+    use_virtual_keyboard = read_virtual_keyboard_flag(config_path)
+
+    if use_virtual_keyboard is True:
+        env["QT_IM_MODULE"] = "qtvirtualkeyboard"
+    elif use_virtual_keyboard is False:
+        env.pop("QT_IM_MODULE", None)
+
+    log(f"Settings path: {settings_path}")
+    log(f"Configuration path: {config_path}")
+    log(f"Virtual keyboard: {env.get('QT_IM_MODULE', '<disabled>')}")
+    return env
+
+
+def resolve_executable() -> Optional[str]:
+    executable = shutil.which(APP_NAME)
+    if executable:
+        return executable
+
+    script_dir = Path(__file__).resolve().parent
+    local_candidate = script_dir / APP_NAME
+    if local_candidate.is_file() and os.access(local_candidate, os.X_OK):
+        return str(local_candidate)
+
+    return None
+
+
+def run_once(env: Dict[str, str]) -> int:
+    executable = resolve_executable()
+    if not executable:
+        log(f"Unable to locate the {APP_NAME} executable in PATH.")
+        return 127
+
+    log(f"Launching: {executable}")
+    child = sp.run([executable], cwd=Path.home(), env=env, check=False)
+    log(f"Exit code: {child.returncode}")
+    return child.returncode
+
+
+def main() -> int:
+    attempt = 1
+    while True:
+        settings_path = find_settings_path()
+        parser = read_settings(settings_path)
+        config_path = resolve_config_path(parser, settings_path)
+        env = configure_environment(settings_path, config_path)
+        wait_for_signal_k_server(config_path)
+
+        log(f"Startup attempt: {attempt}")
+        return_code = run_once(env)
+        if return_code != RESTART_EXIT_CODE:
+            return return_code
+
+        log("Application requested restart.")
+        attempt += 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

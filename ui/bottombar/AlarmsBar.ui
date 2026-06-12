@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>AlarmsBar</class>
+ <widget class="QWidget" name="AlarmsBar">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>753</width>
+    <height>46</height>
+   </rect>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_Alarms">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_Alarms">
+     <property name="sizeConstraint">
+      <enum>QLayout::SizeConstraint::SetFixedSize</enum>
+     </property>
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_SX">
+       <property name="sizeConstraint">
+        <enum>QLayout::SizeConstraint::SetFixedSize</enum>
+       </property>
+       <item>
+        <widget class="QToolButton" name="toolButton_Alarms">
+         <property name="icon">
+          <iconset>
+           <normaloff>:/resources/svg/OpenBridge/alarm-general.svg</normaloff>:/resources/svg/OpenBridge/alarm-general.svg</iconset>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>32</width>
+           <height>32</height>
+          </size>
+         </property>
+         <property name="toolButtonStyle">
+          <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_CN">
+       <item>
+        <layout class="QGridLayout" name="gridLayout_Alarms">
+         <item row="0" column="9">
+          <layout class="QHBoxLayout" name="horizontalLayout_Piracy">
+           <item>
+            <widget class="QToolButton" name="toolButton_Piracy">
+             <property name="text">
+              <string>Piracy</string>
+             </property>
+             <property name="icon">
+              <iconset>
+               <normaloff>:/resources/svg/OpenBridge/alarm-piracy.svg</normaloff>
+               <normalon>:/resources/svg/OpenBridge/alarm-piracy.svg</normalon>:/resources/svg/OpenBridge/alarm-piracy.svg</iconset>
+             </property>
+             <property name="iconSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="checkable">
+              <bool>true</bool>
+             </property>
+             <property name="toolButtonStyle">
+              <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item row="0" column="1">
+          <layout class="QHBoxLayout" name="horizontalLayout_Abandon">
+           <item>
+            <widget class="QToolButton" name="toolButton_Abandon">
+             <property name="text">
+              <string>Abandon</string>
+             </property>
+             <property name="icon">
+              <iconset>
+               <normaloff>:/resources/svg/OpenBridge/alarm-abandon.svg</normaloff>
+               <normalon>:/resources/svg/OpenBridge/alarm-abandon.svg</normalon>:/resources/svg/OpenBridge/alarm-abandon.svg</iconset>
+             </property>
+             <property name="iconSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="checkable">
+              <bool>true</bool>
+             </property>
+             <property name="toolButtonStyle">
+              <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item row="0" column="6">
+          <spacer name="horizontalSpacer_5">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="0" column="3">
+          <layout class="QHBoxLayout" name="horizontalLayout_Adrift">
+           <item>
+            <widget class="QToolButton" name="toolButton_Adrift">
+             <property name="text">
+              <string>Adrift</string>
+             </property>
+             <property name="icon">
+              <iconset>
+               <normaloff>:/resources/svg/OpenBridge/alarm-adrift.svg</normaloff>
+               <normalon>:/resources/svg/OpenBridge/alarm-adrift.svg</normalon>:/resources/svg/OpenBridge/alarm-adrift.svg</iconset>
+             </property>
+             <property name="iconSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="checkable">
+              <bool>true</bool>
+             </property>
+             <property name="toolButtonStyle">
+              <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item row="0" column="11">
+          <layout class="QHBoxLayout" name="horizontalLayout_Sinking">
+           <item>
+            <widget class="QToolButton" name="toolButton_Sinking">
+             <property name="text">
+              <string>Sinking</string>
+             </property>
+             <property name="icon">
+              <iconset>
+               <normaloff>:/resources/svg/OpenBridge/alarm-sinking.svg</normaloff>
+               <normalon>:/resources/svg/OpenBridge/alarm-sinking.svg</normalon>:/resources/svg/OpenBridge/alarm-sinking.svg</iconset>
+             </property>
+             <property name="iconSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="checkable">
+              <bool>true</bool>
+             </property>
+             <property name="toolButtonStyle">
+              <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item row="0" column="5">
+          <layout class="QHBoxLayout" name="horizontalLayout_Fire">
+           <item>
+            <widget class="QToolButton" name="toolButton_Fire">
+             <property name="text">
+              <string>Fire</string>
+             </property>
+             <property name="icon">
+              <iconset>
+               <normaloff>:/resources/svg/OpenBridge/alarm-fire.svg</normaloff>
+               <normalon>:/resources/svg/OpenBridge/alarm-fire.svg</normalon>:/resources/svg/OpenBridge/alarm-fire.svg</iconset>
+             </property>
+             <property name="iconSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="checkable">
+              <bool>true</bool>
+             </property>
+             <property name="toolButtonStyle">
+              <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item row="0" column="2">
+          <spacer name="horizontalSpacer_3">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="0" column="4">
+          <spacer name="horizontalSpacer_4">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="0" column="8">
+          <spacer name="horizontalSpacer_6">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="0" column="7">
+          <layout class="QHBoxLayout" name="horizontalLayout_POB">
+           <item>
+            <widget class="QToolButton" name="toolButton_POB">
+             <property name="text">
+              <string>POB</string>
+             </property>
+             <property name="icon">
+              <iconset>
+               <normaloff>:/resources/svg/OpenBridge/alarm-pob.svg</normaloff>
+               <normalon>:/resources/svg/OpenBridge/alarm-pob.svg</normalon></iconset>
+             </property>
+             <property name="iconSize">
+              <size>
+               <width>32</width>
+               <height>32</height>
+              </size>
+             </property>
+             <property name="checkable">
+              <bool>true</bool>
+             </property>
+             <property name="toolButtonStyle">
+              <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item row="0" column="10">
+          <spacer name="horizontalSpacer_7">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_DX">
+       <property name="spacing">
+        <number>-1</number>
+       </property>
+       <property name="sizeConstraint">
+        <enum>QLayout::SizeConstraint::SetFixedSize</enum>
+       </property>
+       <item>
+        <widget class="QToolButton" name="toolButton_Hide">
+         <property name="icon">
+          <iconset>
+           <normaloff>:/resources/svg/OpenBridge/close-google.svg</normaloff>
+           <normalon>:/resources/svg/OpenBridge/close-google.svg</normalon></iconset>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>32</width>
+           <height>32</height>
+          </size>
+         </property>
+         <property name="toolButtonStyle">
+          <enum>Qt::ToolButtonStyle::ToolButtonTextUnderIcon</enum>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

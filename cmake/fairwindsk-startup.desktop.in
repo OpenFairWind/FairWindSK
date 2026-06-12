@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=FairWindSK Startup
+Comment=Launch FairWindSK after Signal K is ready
+Exec=@CMAKE_INSTALL_FULL_BINDIR@/fairwindsk-startup
+Icon=fairwindsk
+Terminal=false
+StartupNotify=false
+Categories=Navigation;Network;Utility;OpenPlotter;
+X-GNOME-Autostart-enabled=true

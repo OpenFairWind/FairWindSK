@@ -1,0 +1,673 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Waypoints</class>
+ <widget class="QWidget" name="Waypoints">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1100</width>
+    <height>760</height>
+   </rect>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayoutRoot">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QStackedWidget" name="stackedWidget">
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <widget class="QWidget" name="pageList">
+      <layout class="QVBoxLayout" name="verticalLayoutList">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <property name="spacing">
+        <number>6</number>
+       </property>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayoutListToolbar">
+         <property name="spacing">
+          <number>6</number>
+         </property>
+         <item>
+          <widget class="QStackedWidget" name="stackedWidgetSearch">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="currentIndex">
+            <number>0</number>
+           </property>
+           <widget class="QWidget" name="pageSearch">
+            <layout class="QVBoxLayout" name="verticalLayoutSearchPage">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QLineEdit" name="lineEditSearch"/>
+             </item>
+            </layout>
+           </widget>
+           <widget class="QWidget" name="pageProgress">
+            <layout class="QVBoxLayout" name="verticalLayoutProgressPage">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QProgressBar" name="progressBar"/>
+             </item>
+            </layout>
+           </widget>
+          </widget>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButtonRefresh"/>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButtonImport"/>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButtonExport"/>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButtonAdd"/>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButtonSelectAll"/>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButtonBulkRemove"/>
+         </item>
+         <item>
+          <spacer name="horizontalSpacerListToolbar">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButtonNavigateSelected"/>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButtonEditSelected"/>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButtonRemoveSelected"/>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QTableWidget" name="tableWidget">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="pageDetails">
+      <layout class="QVBoxLayout" name="verticalLayoutDetails">
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayoutDetailsToolbar">
+         <item>
+          <widget class="QToolButton" name="toolButtonBack"/>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButtonNew"/>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButtonNavigate"/>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButtonEdit"/>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButtonSave"/>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButtonCancel"/>
+         </item>
+         <item>
+          <widget class="QToolButton" name="toolButtonDelete"/>
+         </item>
+         <item>
+          <spacer name="horizontalSpacerDetailsToolbar">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QLabel" name="labelTitle"/>
+       </item>
+       <item>
+        <widget class="QSplitter" name="splitterDetails">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>1</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="childrenCollapsible">
+          <bool>false</bool>
+         </property>
+         <widget class="fairwindsk::ui::widgets::TouchScrollArea" name="scrollAreaDetailsForm">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>1</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::NoFrame</enum>
+          </property>
+          <property name="widgetResizable">
+           <bool>true</bool>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+          </property>
+          <widget class="QWidget" name="widgetDetailsForm">
+           <property name="geometry">
+            <rect>
+             <x>0</x>
+             <y>0</y>
+             <width>467</width>
+             <height>602</height>
+            </rect>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayoutDetailsFormHost">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>6</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <layout class="QFormLayout" name="formLayoutDetails">
+              <property name="fieldGrowthPolicy">
+               <enum>QFormLayout::ExpandingFieldsGrow</enum>
+              </property>
+              <property name="verticalSpacing">
+               <number>10</number>
+              </property>
+           <item row="0" column="0">
+            <widget class="QLabel" name="labelNameRow">
+             <property name="text">
+              <string>Name</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QWidget" name="widgetNameType">
+             <layout class="QHBoxLayout" name="horizontalLayoutNameType">
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <property name="spacing">
+               <number>6</number>
+              </property>
+              <item>
+               <widget class="QLineEdit" name="lineEditName"/>
+              </item>
+              <item>
+               <widget class="QLabel" name="labelInlineType">
+                <property name="text">
+                 <string>Type</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="lineEditType"/>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="labelDescriptionRow">
+             <property name="text">
+              <string>Description</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QPlainTextEdit" name="plainTextEditDescription"/>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="labelPositionRow">
+             <property name="text">
+              <string>Position</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QWidget" name="widgetPosition">
+             <layout class="QHBoxLayout" name="horizontalLayoutPosition">
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <property name="spacing">
+               <number>6</number>
+              </property>
+              <item>
+               <widget class="QLabel" name="labelInlineLatitude">
+                <property name="text">
+                 <string>Lat</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QDoubleSpinBox" name="doubleSpinBoxLatitude"/>
+              </item>
+              <item>
+               <widget class="QLabel" name="labelInlineLongitude">
+                <property name="text">
+                 <string>Lon</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QDoubleSpinBox" name="doubleSpinBoxLongitude"/>
+              </item>
+              <item>
+               <widget class="QLabel" name="labelInlineAltitude">
+                <property name="text">
+                 <string>Alt</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QDoubleSpinBox" name="doubleSpinBoxAltitude"/>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="labelContacts">
+             <property name="text">
+              <string>Contacts</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QPlainTextEdit" name="plainTextEditContacts"/>
+           </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="labelSeaFloor">
+             <property name="text">
+              <string>Sea floor</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <widget class="QWidget" name="widgetSeaFloor">
+             <layout class="QHBoxLayout" name="horizontalLayoutSeaFloor">
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <property name="spacing">
+               <number>6</number>
+              </property>
+              <item>
+               <widget class="QLabel" name="labelSeaFloorMin">
+                <property name="text">
+                 <string>Min</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="labelSeaFloorMinValue"/>
+              </item>
+              <item>
+               <spacer name="horizontalSpacerSeaFloorOne">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>12</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="QLabel" name="labelSeaFloorMax">
+                <property name="text">
+                 <string>Max</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="labelSeaFloorMaxValue"/>
+              </item>
+              <item>
+               <spacer name="horizontalSpacerSeaFloorTwo">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>12</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="QLabel" name="labelSeaFloorType">
+                <property name="text">
+                 <string>Type</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QWidget" name="widgetSeaFloorType">
+                <layout class="QHBoxLayout" name="horizontalLayoutSeaFloorType">
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="spacing">
+                  <number>4</number>
+                 </property>
+                </layout>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacerSeaFloorEnd">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="5" column="0">
+            <widget class="QLabel" name="labelSlips">
+             <property name="text">
+              <string>Slips</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="1">
+            <widget class="QWidget" name="widgetSlips">
+             <layout class="QHBoxLayout" name="horizontalLayoutSlips">
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <property name="spacing">
+               <number>6</number>
+              </property>
+              <item>
+               <widget class="QLabel" name="labelSlipsValue"/>
+              </item>
+              <item>
+               <spacer name="horizontalSpacerSlipsEnd">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </widget>
+           </item>
+             </layout>
+            </item>
+            <item>
+             <spacer name="verticalSpacerDetailsFormBottom">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+         <widget class="QTabWidget" name="tabWidgetDetails">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>1</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="currentIndex">
+           <number>0</number>
+          </property>
+          <widget class="QWidget" name="tabPreview">
+           <attribute name="title">
+            <string>Preview</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayoutPreview">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QWidget" name="widgetPreviewHost" native="true"/>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="tabPropertiesTree">
+           <attribute name="title">
+            <string>Properties Tree</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayoutPropertiesTree">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QWidget" name="widgetPropertiesTreeContainer"/>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="tabPropertiesJson">
+           <attribute name="title">
+            <string>Properties JSON</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayoutPropertiesJson">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QWidget" name="widgetPropertiesJsonContainer"/>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="tabGeoJson">
+           <attribute name="title">
+            <string>GeoJSON</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayoutGeoJson">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QPlainTextEdit" name="plainTextEditGeoJson"/>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>fairwindsk::ui::widgets::TouchScrollArea</class>
+   <extends>QScrollArea</extends>
+   <header>ui/widgets/TouchScrollArea.hpp</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

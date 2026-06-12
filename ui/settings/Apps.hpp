@@ -1,0 +1,206 @@
+//
+// Created by Raffaele Montella on 06/05/24.
+//
+
+#ifndef FAIRWINDSK_APPS_HPP
+#define FAIRWINDSK_APPS_HPP
+
+#include <QEvent>
+#include <QDragEnterEvent>
+#include <QDropEvent>
+#include <QKeyEvent>
+#include <QListWidget>
+#include <QMouseEvent>
+#include <QTableWidget>
+#include <QTimer>
+#include <QTreeWidget>
+#include <QWidget>
+#include <functional>
+#include <nlohmann/json.hpp>
+
+#include "Settings.hpp"
+
+namespace fairwindsk::ui::settings {
+    QT_BEGIN_NAMESPACE
+    namespace Ui { class Apps; }
+    QT_END_NAMESPACE
+
+    class AppDetailsWidget;
+    class PageDetailsWidget;
+
+    class AvailableAppsListWidget final : public QListWidget {
+        Q_OBJECT
+
+    public:
+        explicit AvailableAppsListWidget(QWidget *parent = nullptr);
+
+    protected:
+        void mousePressEvent(QMouseEvent *event) override;
+        void mouseMoveEvent(QMouseEvent *event) override;
+        void startDrag(Qt::DropActions supportedActions) override;
+
+    private:
+        QPoint m_dragStartPosition;
+    };
+
+    class LauncherPageGridWidget final : public QTableWidget {
+        Q_OBJECT
+
+    public:
+        explicit LauncherPageGridWidget(QWidget *parent = nullptr);
+
+        void setGridSize(int rows, int columns);
+        void setAppResolver(std::function<QPair<QString, QPixmap>(const QString &)> resolver);
+        void setPageItems(const QStringList &items);
+        QStringList pageItems() const;
+        void clearSelectedSlot();
+        bool hasSelectedSlot() const;
+        void assignSelectedSlot(const QString &appName);
+
+    signals:
+        void itemsChanged(const QStringList &items);
+        void appDoubleClicked(const QString &appName);
+
+    protected:
+        void dragEnterEvent(QDragEnterEvent *event) override;
+        void dragMoveEvent(QDragMoveEvent *event) override;
+        void dropEvent(QDropEvent *event) override;
+        void startDrag(Qt::DropActions supportedActions) override;
+        void keyPressEvent(QKeyEvent *event) override;
+        void mouseDoubleClickEvent(QMouseEvent *event) override;
+
+    private:
+        void setSlotApp(int row, int column, const QString &appName);
+        QString slotApp(int row, int column) const;
+        void emitItemsChanged();
+
+    private:
+        std::function<QPair<QString, QPixmap>(const QString &)> m_appResolver;
+    };
+
+    class Apps : public QWidget {
+        Q_OBJECT
+
+    public:
+        explicit Apps(Settings *settings, QWidget *parent = nullptr);
+        ~Apps() override;
+        void refreshFromConfiguration();
+
+    protected:
+        void changeEvent(QEvent *event) override;
+
+    private slots:
+        void onAvailableAppSelectionChanged();
+        void onAvailableAppDoubleClicked(QListWidgetItem *listWidgetItem);
+        void onAppsDetailsFieldsTextChanged(const QString &text);
+        void onAppsAppIconBrowse();
+        void onAppsNameBrowse();
+        void onAddAppClicked();
+        void onAddAllAppsClicked();
+        void onRemoveAppClicked();
+        void onAddPageClicked();
+        void onAddSelectedAppToPageClicked();
+        void onClearCurrentPageAppsClicked();
+        void onClearAllPagesAppsClicked();
+        void onRemoveNodeClicked();
+        void onMoveNodeLeftClicked();
+        void onMoveNodeRightClicked();
+        void onMoveNodeUpClicked();
+        void onMoveNodeDownClicked();
+        void onPageTreeSelectionChanged();
+        void onPageTreeItemDoubleClicked(QTreeWidgetItem *item, int column);
+        void onPageTreeItemChanged(QTreeWidgetItem *item, int column);
+        void onPageGridItemsChanged(const QStringList &items);
+        void onPageGridAppDoubleClicked(const QString &appName);
+        void onClearPageSlotClicked();
+        void onBackToLayoutClicked();
+        void onShowSelectedPageDetails();
+        void onShowSelectedGridItemDetails();
+        void onPageDetailsFieldsTextChanged(const QString &text);
+
+    private:
+        bool eventFilter(QObject *object, QEvent *event) override;
+        void retintToolButtons();
+        void setAppsEditMode(bool appsEditMode);
+        void setPageEditMode(bool pageEditMode);
+        void saveAppsDetails();
+        void savePageDetails();
+        QString uniqueAppName(const QString &baseName) const;
+        void refreshAvailableAppActionButtons() const;
+        void refreshPageTreeActionButtons() const;
+        void rebuildAvailableAppsList();
+        void rebuildPageTree();
+        void rebuildPageEditor();
+        bool synchronizeAvailableApps(bool showErrors);
+        void normalizeLauncherLayout();
+        void normalizeLauncherNodes(nlohmann::json &nodes);
+        void appendOverflowPages(nlohmann::json &nodes, int insertIndex, const QStringList &overflowItems, const QString &baseName);
+        void collectPageIds(const nlohmann::json &nodes, QStringList &pageIds) const;
+        void fillPageChainWithApps(const QString &startPageId, const QStringList &appNames);
+        void refreshDetailActionButtons() const;
+        void showDetailsForApp(const QString &appName, bool startEditing = false);
+        void showDetailsForPage(const QString &pageId, bool startEditing = false);
+        void showLayoutEditor();
+        void removeAppFromLauncherNodes(const QString &appName);
+        void renameAppInLauncherNodes(const QString &oldName, const QString &newName);
+        bool pageHasRemovableApps(const nlohmann::json &node) const;
+        bool anyPageHasRemovableApps(const nlohmann::json &nodes) const;
+        void clearRemovableAppsFromNode(nlohmann::json &node) const;
+        void clearRemovableAppsFromNodes(nlohmann::json &nodes) const;
+        void markSettingsDirty();
+        bool promotePageNode(const QString &pageId, bool selectPromotedPage = true);
+        void ensureLauncherLayout();
+        int launcherItemsPerPage() const;
+        QString defaultNodeTitle(const nlohmann::json &node) const;
+        QString selectedPageId() const;
+        bool isFolderReference(const QString &value) const;
+        bool isParentReference(const QString &value) const;
+        QString folderReferenceForPageId(const QString &pageId) const;
+        QString pageIdFromFolderReference(const QString &value) const;
+        QString parentReferenceToken() const;
+        int firstAvailableSlot(const QStringList &items) const;
+        QString requestedPageName(const QString &title, const QString &initialText = QString()) const;
+        QString requestedPageIcon(const QString &pageName) const;
+        void removeFolderReferenceFromNode(nlohmann::json &node, const QString &pageId) const;
+        void normalizeParentReferenceForNode(nlohmann::json &node, const QString &parentPageId) const;
+        QTreeWidgetItem *addTreeNode(const nlohmann::json &node, QTreeWidgetItem *parentItem);
+        nlohmann::json makePageNode(const QString &name = QString(), const QString &icon = QString()) const;
+        nlohmann::json makeFolderNode(const QString &name = QString()) const;
+        nlohmann::json *launcherLayoutNodes();
+        const nlohmann::json *launcherLayoutNodes() const;
+        nlohmann::json *findNodeById(nlohmann::json &nodes, const QString &id) const;
+        const nlohmann::json *findNodeById(const nlohmann::json &nodes, const QString &id) const;
+        bool findNodeParent(nlohmann::json &nodes, const QString &id, nlohmann::json **parentChildren, int *index) const;
+        QString parentPageIdForNodeId(const QString &pageId) const;
+        QStringList pageItemsFromNode(const nlohmann::json &node) const;
+        void setPageItemsForNode(nlohmann::json &node, const QStringList &items) const;
+        QString pageIconPath(const nlohmann::json &node) const;
+        QPixmap pageIconPixmap(const nlohmann::json &node) const;
+        QPair<QString, QPixmap> resolveAppPresentation(const QString &appName) const;
+        QString selectedGridEntry() const;
+        nlohmann::json *selectedNode();
+        const nlohmann::json *selectedNode() const;
+        void selectTreeItemById(const QString &id);
+        QString nextNodeId(const QString &prefix) const;
+
+    private:
+        Ui::Apps *ui = nullptr;
+        Settings *m_settings = nullptr;
+        bool m_appsEditMode = false;
+        bool m_appsEditChanged = false;
+        bool m_pageEditMode = false;
+        bool m_pageEditChanged = false;
+        QString m_currentDetailAppName;
+        QString m_currentDetailPageId;
+        QString m_selectedPageNodeId;
+        AvailableAppsListWidget *m_availableAppsList = nullptr;
+        QTreeWidget *m_pageTree = nullptr;
+        LauncherPageGridWidget *m_pageGrid = nullptr;
+        AppDetailsWidget *m_appDetailsWidget = nullptr;
+        PageDetailsWidget *m_pageDetailsWidget = nullptr;
+        QTimer *m_appDetailsSaveTimer = nullptr;
+        QTimer *m_pageDetailsSaveTimer = nullptr;
+    };
+} // fairwindsk::ui::settings
+
+#endif //FAIRWINDSK_APPS_HPP

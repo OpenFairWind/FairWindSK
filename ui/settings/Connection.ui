@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>fairwindsk::ui::settings::Connection</class>
+ <widget class="QWidget" name="Connection">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>520</width>
+    <height>498</height>
+   </rect>
+  </property>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

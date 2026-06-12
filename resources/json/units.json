@@ -1,0 +1,143 @@
+{
+  "types":{
+    "deg": {
+      "text":"North Degrees",
+      "label":"°",
+      "type":"bearing"
+    },
+    "hPa":{
+      "text":"HectoPascal",
+      "label":"hPa",
+      "type":"pressure"
+    },
+    "mb":{
+      "text":"Millibar (mb)",
+      "label":"mb",
+      "type":"pressure"
+    },
+    "psi":{
+      "text":"Pound per square inch",
+      "label":"psi",
+      "type":"pressure"
+    },
+    "mmHg":{
+      "text":"Millimetre of Mercury",
+      "label":"mmHg",
+      "type":"pressure"
+    },
+    "K":{
+      "text":"Kelvin Degrees",
+      "label":"°K",
+      "type":"temperature"
+    },
+    "C":{
+      "text":"Celsius Degrees",
+      "label":"°C",
+      "type":"temperature"
+    },
+    "F":{
+      "text":"Fahrenheit Degrees",
+      "label":"°F",
+      "type":"temperature"
+    },
+    "kmh":{
+      "text":"Kilometers per Hour",
+      "label":"Km/h",
+      "type":"speed"
+    },
+    "ms":{
+      "text":"Meters per Second",
+      "label":"m/s",
+      "type":"speed"
+    },
+    "mph":{
+      "text":"Miles per Hour",
+      "label":"mph",
+      "type":"speed"
+    },
+    "kn":{
+      "text":"Knots",
+      "label":"kn",
+      "type":"speed"
+    },
+    "km":{
+      "text":"Kilometers",
+      "label":"km",
+      "type":"distance"
+    },
+    "m":{
+      "text":"Meters",
+      "label":"m",
+      "type":"distance/depth"
+    },
+    "ml":{
+      "text":"Miles",
+      "label":"ml",
+      "type":"distance"
+    },
+    "nm":{
+      "text":"Nautical Miles",
+      "label":"nm",
+      "type":"distance"
+    },
+    "ftm":{
+      "text":"Fathoms",
+      "label":"ftm",
+      "type":"depth"
+    },
+    "ft":{
+      "text":"Feet",
+      "label":"ft",
+      "type":"depth"
+    },
+    "mt": {
+      "text": "Meters",
+      "label": "m",
+      "type": "depth"
+    },
+    "rft":{
+      "text":"Feet",
+      "label":"ft",
+      "type":"range"
+    },
+    "rm": {
+      "text": "Meters",
+      "label": "m",
+      "type": "range"
+    }
+  },
+  "measures":{
+    "airPressure":{
+      "text":"Air Pressure",
+      "type":"pressure"
+    },
+    "airTemperature":{
+      "text":"Air Temperature",
+      "type":"temperature"
+    },
+    "waterTemperature":{
+      "text":"Water Temperature",
+      "type":"temperature"
+    },
+    "vesselSpeed":{
+      "text":"Vessel Speed",
+      "type":"speed"
+    },
+    "windSpeed":{
+      "text":"Wind Speed",
+      "type":"speed"
+    },
+    "distance":{
+      "text":"Distance",
+      "type":"distance"
+    },
+    "range":{
+      "text":"Range",
+      "type":"range"
+    },
+    "depth":{
+      "text":"Depth",
+      "type":"depth"
+    }
+  }
+}

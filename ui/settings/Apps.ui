@@ -1,0 +1,663 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>fairwindsk::ui::settings::Apps</class>
+ <widget class="QWidget" name="Apps">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1200</width>
+    <height>760</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Applications</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_Main">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QSplitter" name="splitter_Main">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <widget class="QWidget" name="widget_LeftPane">
+      <layout class="QVBoxLayout" name="verticalLayout_LeftPane">
+       <property name="spacing">
+        <number>6</number>
+       </property>
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QGroupBox" name="groupBox_AvailableApps">
+         <property name="flat">
+          <bool>true</bool>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QGroupBox#groupBox_AvailableApps { border: none; margin-top: 0px; padding-top: 0px; }</string>
+         </property>
+         <property name="title">
+          <string/>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_AvailableApps">
+          <property name="spacing">
+           <number>4</number>
+          </property>
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QWidget" name="widget_AvailableAppsHost" native="true"/>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_AvailableAppButtons">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <spacer name="horizontalSpacer_Available">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupBox_PageTree">
+         <property name="flat">
+          <bool>true</bool>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">QGroupBox#groupBox_PageTree { border: none; margin-top: 0px; padding-top: 0px; }</string>
+         </property>
+         <property name="title">
+          <string/>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_PageTree">
+          <property name="spacing">
+           <number>4</number>
+          </property>
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QWidget" name="widget_PageTreeHost" native="true"/>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_PageButtons">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QToolButton" name="toolButton_MoveNodeLeft">
+              <property name="toolTip">
+               <string>Move page out of current parent</string>
+              </property>
+              <property name="icon">
+               <iconset>
+                <normaloff>:/resources/svg/OpenBridge/arrow-left-google.svg</normaloff>:/resources/svg/OpenBridge/arrow-left-google.svg</iconset>
+              </property>
+              <property name="iconSize">
+               <size>
+                <width>24</width>
+                <height>24</height>
+               </size>
+              </property>
+              <property name="toolButtonStyle">
+               <enum>Qt::ToolButtonIconOnly</enum>
+              </property>
+              <property name="text">
+               <string>Left</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QToolButton" name="toolButton_MoveNodeRight">
+              <property name="toolTip">
+               <string>Nest page under previous page</string>
+              </property>
+              <property name="icon">
+               <iconset>
+                <normaloff>:/resources/svg/OpenBridge/arrow-right-google.svg</normaloff>:/resources/svg/OpenBridge/arrow-right-google.svg</iconset>
+              </property>
+              <property name="iconSize">
+               <size>
+                <width>24</width>
+                <height>24</height>
+               </size>
+              </property>
+              <property name="toolButtonStyle">
+               <enum>Qt::ToolButtonIconOnly</enum>
+              </property>
+              <property name="text">
+               <string>Right</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QToolButton" name="toolButton_MoveNodeUp">
+              <property name="toolTip">
+               <string>Move page up</string>
+              </property>
+              <property name="icon">
+               <iconset>
+                <normaloff>:/resources/svg/OpenBridge/arrow-up-google.svg</normaloff>:/resources/svg/OpenBridge/arrow-up-google.svg</iconset>
+              </property>
+              <property name="iconSize">
+               <size>
+                <width>24</width>
+                <height>24</height>
+               </size>
+              </property>
+              <property name="toolButtonStyle">
+               <enum>Qt::ToolButtonIconOnly</enum>
+              </property>
+              <property name="text">
+               <string>Up</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QToolButton" name="toolButton_MoveNodeDown">
+              <property name="toolTip">
+               <string>Move page down</string>
+              </property>
+              <property name="icon">
+               <iconset>
+                <normaloff>:/resources/svg/OpenBridge/arrow-down-google.svg</normaloff>:/resources/svg/OpenBridge/arrow-down-google.svg</iconset>
+              </property>
+              <property name="iconSize">
+               <size>
+                <width>24</width>
+                <height>24</height>
+               </size>
+              </property>
+              <property name="toolButtonStyle">
+               <enum>Qt::ToolButtonIconOnly</enum>
+              </property>
+              <property name="text">
+               <string>Down</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="widget_RightPane">
+      <layout class="QVBoxLayout" name="verticalLayout_RightPane">
+       <item>
+        <widget class="QStackedWidget" name="stackedWidget_RightPane">
+         <property name="currentIndex">
+          <number>0</number>
+         </property>
+         <widget class="QWidget" name="page_Layout">
+         <layout class="QVBoxLayout" name="verticalLayout_LayoutPage">
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_PageHeader">
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_PageHeaderLeft">
+               <item>
+                <widget class="QLabel" name="label_PageIcon">
+                 <property name="minimumSize">
+                  <size>
+                   <width>32</width>
+                   <height>32</height>
+                  </size>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>32</width>
+                   <height>32</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string/>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_PageTitle">
+                 <property name="text">
+                  <string>Select a page</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_PageHeaderLeft">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_PageHeaderCenter">
+               <item>
+                <widget class="QToolButton" name="toolButton_AddPage">
+                 <property name="toolTip">
+                  <string>Add page</string>
+                 </property>
+                 <property name="icon">
+                  <iconset>
+                   <normaloff>:/resources/svg/OpenBridge/add-new-page.svg</normaloff>:/resources/svg/OpenBridge/add-new-page.svg</iconset>
+                 </property>
+                 <property name="iconSize">
+                  <size>
+                   <width>24</width>
+                   <height>24</height>
+                  </size>
+                 </property>
+                 <property name="toolButtonStyle">
+                  <enum>Qt::ToolButtonIconOnly</enum>
+                 </property>
+                 <property name="text">
+                  <string>Add Page</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QToolButton" name="toolButton_PageDetails">
+                 <property name="toolTip">
+                  <string>Page details</string>
+                 </property>
+                 <property name="icon">
+                  <iconset>
+                   <normaloff>:/resources/svg/OpenBridge/show-page-details.svg</normaloff>:/resources/svg/OpenBridge/show-page-details.svg</iconset>
+                 </property>
+                 <property name="iconSize">
+                  <size>
+                   <width>24</width>
+                   <height>24</height>
+                  </size>
+                 </property>
+                 <property name="toolButtonStyle">
+                  <enum>Qt::ToolButtonIconOnly</enum>
+                 </property>
+                 <property name="text">
+                  <string>Page Details</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QToolButton" name="toolButton_RemoveNode">
+                 <property name="toolTip">
+                  <string>Delete page or folder</string>
+                 </property>
+                 <property name="icon">
+                  <iconset>
+                   <normaloff>:/resources/svg/OpenBridge/delete-google.svg</normaloff>:/resources/svg/OpenBridge/delete-google.svg</iconset>
+                 </property>
+                 <property name="iconSize">
+                  <size>
+                   <width>24</width>
+                   <height>24</height>
+                  </size>
+                 </property>
+                 <property name="toolButtonStyle">
+                  <enum>Qt::ToolButtonIconOnly</enum>
+                 </property>
+                 <property name="text">
+                  <string>Delete</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QToolButton" name="toolButton_AddSelectedAppToPage">
+                 <property name="toolTip">
+                  <string>Add selected application to current page</string>
+                 </property>
+                 <property name="icon">
+                  <iconset>
+                   <normaloff>:/resources/svg/OpenBridge/add-selected-app-to-current-page.svg</normaloff>:/resources/svg/OpenBridge/add-selected-app-to-current-page.svg</iconset>
+                 </property>
+                 <property name="iconSize">
+                  <size>
+                   <width>24</width>
+                   <height>24</height>
+                  </size>
+                 </property>
+                 <property name="toolButtonStyle">
+                  <enum>Qt::ToolButtonIconOnly</enum>
+                 </property>
+                 <property name="text">
+                  <string>Add</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_PageHeaderRight">
+               <item>
+                <widget class="QToolButton" name="toolButton_SelectedSlotDetails">
+                 <property name="toolTip">
+                  <string>Application details</string>
+                 </property>
+                 <property name="icon">
+                  <iconset>
+                   <normaloff>:/resources/svg/OpenBridge/show-details-selected-app-on-current-page.svg</normaloff>:/resources/svg/OpenBridge/show-details-selected-app-on-current-page.svg</iconset>
+                 </property>
+                 <property name="iconSize">
+                  <size>
+                   <width>24</width>
+                   <height>24</height>
+                  </size>
+                 </property>
+                 <property name="toolButtonStyle">
+                  <enum>Qt::ToolButtonIconOnly</enum>
+                 </property>
+                 <property name="text">
+                  <string>Application Details</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+               <widget class="QToolButton" name="toolButton_ClearPageSlot">
+                 <property name="toolTip">
+                  <string>Remove application from page</string>
+                 </property>
+                 <property name="icon">
+                  <iconset>
+                   <normaloff>:/resources/svg/OpenBridge/remove-selected-app-from-page.svg</normaloff>:/resources/svg/OpenBridge/remove-selected-app-from-page.svg</iconset>
+                 </property>
+                 <property name="iconSize">
+                  <size>
+                   <width>24</width>
+                   <height>24</height>
+                  </size>
+                 </property>
+                 <property name="toolButtonStyle">
+                  <enum>Qt::ToolButtonIconOnly</enum>
+                 </property>
+                 <property name="text">
+                  <string>Remove Application</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+               <widget class="Line" name="line_PageHeaderSeparator">
+                 <property name="orientation">
+                  <enum>Qt::Vertical</enum>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QToolButton" name="toolButton_ClearCurrentPageApps">
+                 <property name="toolTip">
+                  <string>Remove all applications from current page</string>
+                 </property>
+                 <property name="icon">
+                  <iconset>
+                   <normaloff>:/resources/svg/OpenBridge/remove-all-apps-from-current-page.svg</normaloff>:/resources/svg/OpenBridge/remove-all-apps-from-current-page.svg</iconset>
+                 </property>
+                 <property name="iconSize">
+                  <size>
+                   <width>24</width>
+                   <height>24</height>
+                  </size>
+                 </property>
+                 <property name="toolButtonStyle">
+                  <enum>Qt::ToolButtonIconOnly</enum>
+                 </property>
+                 <property name="text">
+                  <string>Remove All Page Apps</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QToolButton" name="toolButton_ClearAllPagesApps">
+                 <property name="toolTip">
+                  <string>Remove all applications from all pages</string>
+                 </property>
+                 <property name="icon">
+                  <iconset>
+                   <normaloff>:/resources/svg/OpenBridge/remove-all-apps-from-all-pages.svg</normaloff>:/resources/svg/OpenBridge/remove-all-apps-from-all-pages.svg</iconset>
+                 </property>
+                 <property name="iconSize">
+                  <size>
+                   <width>24</width>
+                   <height>24</height>
+                  </size>
+                 </property>
+                 <property name="toolButtonStyle">
+                  <enum>Qt::ToolButtonIconOnly</enum>
+                 </property>
+                 <property name="text">
+                  <string>Remove All Apps</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+               <widget class="Line" name="line_PagePaletteSeparator">
+                 <property name="orientation">
+                  <enum>Qt::Vertical</enum>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QToolButton" name="toolButton_AddAllApps">
+                 <property name="toolTip">
+                  <string>Add all applications to current page</string>
+                 </property>
+                 <property name="icon">
+                  <iconset>
+                   <normaloff>:/resources/svg/OpenBridge/add-all-apps-to-current-page.svg</normaloff>:/resources/svg/OpenBridge/add-all-apps-to-current-page.svg</iconset>
+                 </property>
+                 <property name="iconSize">
+                  <size>
+                   <width>24</width>
+                   <height>24</height>
+                  </size>
+                 </property>
+                 <property name="toolButtonStyle">
+                  <enum>Qt::ToolButtonIconOnly</enum>
+                 </property>
+                 <property name="text">
+                  <string>Add All</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QToolButton" name="toolButton_Add">
+                 <property name="toolTip">
+                  <string>Add application</string>
+                 </property>
+                 <property name="icon">
+                  <iconset>
+                   <normaloff>:/resources/svg/OpenBridge/define-new-application-in-palette.svg</normaloff>:/resources/svg/OpenBridge/define-new-application-in-palette.svg</iconset>
+                 </property>
+                 <property name="iconSize">
+                  <size>
+                   <width>24</width>
+                   <height>24</height>
+                  </size>
+                 </property>
+                 <property name="toolButtonStyle">
+                  <enum>Qt::ToolButtonIconOnly</enum>
+                 </property>
+                 <property name="text">
+                  <string>Add</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QToolButton" name="toolButton_EditApp">
+                 <property name="toolTip">
+                  <string>Application details</string>
+                 </property>
+                 <property name="icon">
+                  <iconset>
+                   <normaloff>:/resources/svg/OpenBridge/show-details-selected-app-in-palette.svg</normaloff>:/resources/svg/OpenBridge/show-details-selected-app-in-palette.svg</iconset>
+                 </property>
+                 <property name="iconSize">
+                  <size>
+                   <width>24</width>
+                   <height>24</height>
+                  </size>
+                 </property>
+                 <property name="toolButtonStyle">
+                  <enum>Qt::ToolButtonIconOnly</enum>
+                 </property>
+                 <property name="text">
+                  <string>Details</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QToolButton" name="toolButton_Remove">
+                 <property name="toolTip">
+                  <string>Delete application</string>
+                 </property>
+                 <property name="icon">
+                  <iconset>
+                   <normaloff>:/resources/svg/OpenBridge/remove-selected-app-from-palette.svg</normaloff>:/resources/svg/OpenBridge/remove-selected-app-from-palette.svg</iconset>
+                 </property>
+                 <property name="iconSize">
+                  <size>
+                   <width>24</width>
+                   <height>24</height>
+                  </size>
+                 </property>
+                 <property name="toolButtonStyle">
+                  <enum>Qt::ToolButtonIconOnly</enum>
+                 </property>
+                 <property name="text">
+                  <string>Remove</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <widget class="QWidget" name="widget_PageGridHost" native="true"/>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QWidget" name="page_PageDetails">
+          <layout class="QVBoxLayout" name="verticalLayout_PageDetailsHost">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="QWidget" name="widget_PageDetailsHost" native="true"/>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QWidget" name="page_Details">
+          <layout class="QVBoxLayout" name="verticalLayout_AppDetailsHost">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="QWidget" name="widget_AppDetailsHost" native="true"/>
+           </item>
+          </layout>
+         </widget>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

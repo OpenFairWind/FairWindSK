@@ -1,0 +1,915 @@
+//
+// Created by Raffaele Montella on 27/03/21.
+//
+
+#include <QCryptographicHash>
+#include <utility>
+#include <QNetworkReply>
+#include <QEventLoop>
+#include <QNetworkRequest>
+#include <QPointer>
+#include <QTimer>
+#include <QUrl>
+#include <QCoreApplication>
+#include <QDateTime>
+#include <QDir>
+#include <QtCore/qjsonarray.h>
+#include <QPixmap>
+#include <QHash>
+#include <QFileInfo>
+#include <QFile>
+#include <QImageReader>
+#include <QPainter>
+#include <QSize>
+#include <QSet>
+#include <QSvgRenderer>
+#include <QtGlobal>
+#include <iostream>
+
+#include "AppItem.hpp"
+
+#include <QWidget>
+
+#include "FairWindSK.hpp"
+
+namespace fairwindsk {
+    namespace {
+        constexpr int kCatalogRequestTimeoutMs = 5000;
+        constexpr qint64 kCatalogRetryIntervalMs = 3000;
+
+        struct LegacyCatalog {
+            QHash<QString, QString> iconsByName;
+            QHash<QString, QString> displayNamesByName;
+            bool loaded = false;
+            qint64 lastAttemptMs = 0;
+        };
+
+        QString sharedIconCacheKey(const QString &signalKServerUrl,
+                                   const QString &appName,
+                                   const QString &appUrl,
+                                   const QString &appIcon) {
+            return QStringLiteral("%1|%2|%3|%4").arg(signalKServerUrl, appName, appUrl, appIcon);
+        }
+
+        QHash<QString, QPixmap> &sharedIconCache() {
+            static QHash<QString, QPixmap> cache;
+            return cache;
+        }
+
+        constexpr int kDefaultRenderedIconSize = 256;
+
+        bool payloadLooksLikeSvg(const QByteArray &payload) {
+            const QByteArray trimmed = payload.trimmed().left(256).toLower();
+            return trimmed.startsWith("<?xml") || trimmed.startsWith("<svg") || trimmed.contains("<svg");
+        }
+
+        QPixmap renderSvgPayload(const QByteArray &payload, const QSize &targetSize = QSize(kDefaultRenderedIconSize, kDefaultRenderedIconSize)) {
+            if (payload.isEmpty()) {
+                return {};
+            }
+
+            QSvgRenderer renderer(payload);
+            if (!renderer.isValid()) {
+                return {};
+            }
+
+            QSize renderSize = targetSize;
+            if (!renderSize.isValid() || renderSize.isEmpty()) {
+                renderSize = renderer.defaultSize();
+            }
+            if (!renderSize.isValid() || renderSize.isEmpty()) {
+                renderSize = QSize(kDefaultRenderedIconSize, kDefaultRenderedIconSize);
+            }
+
+            QPixmap pixmap(renderSize);
+            pixmap.fill(Qt::transparent);
+
+            QPainter painter(&pixmap);
+            renderer.render(&painter);
+            return pixmap;
+        }
+
+        QPixmap loadPixmapFromPayload(const QByteArray &payload, const QPixmap &fallback = QPixmap()) {
+            if (payload.isEmpty()) {
+                return fallback;
+            }
+
+            QPixmap pixmap;
+            if (pixmap.loadFromData(payload) && !pixmap.isNull()) {
+                return pixmap;
+            }
+
+            if (payloadLooksLikeSvg(payload)) {
+                const QPixmap svgPixmap = renderSvgPayload(payload, fallback.isNull() ? QSize() : fallback.size());
+                if (!svgPixmap.isNull()) {
+                    return svgPixmap;
+                }
+            }
+
+            return fallback;
+        }
+
+        QPixmap loadPixmapFromPath(const QString &path) {
+            if (path.trimmed().isEmpty()) {
+                return {};
+            }
+
+            QPixmap pixmap;
+            if (pixmap.load(path) && !pixmap.isNull()) {
+                return pixmap;
+            }
+
+            QFile file(path);
+            if (!file.open(QIODevice::ReadOnly)) {
+                return {};
+            }
+
+            return loadPixmapFromPayload(file.readAll());
+        }
+
+        QString normalizedLocalIconPath(const QString &iconReference) {
+            QString path = iconReference.trimmed();
+            if (path.startsWith(QStringLiteral("qrc:/"))) {
+                path = QStringLiteral(":") + path.mid(QStringLiteral("qrc:").size());
+            } else if (path.startsWith(QStringLiteral("file://"))) {
+                const QUrl fileUrl(path);
+                if (fileUrl.isValid() && fileUrl.scheme() == QStringLiteral("file") && fileUrl.host().isEmpty()) {
+                    path = fileUrl.toLocalFile();
+                } else {
+                    path = path.mid(QStringLiteral("file://").size());
+                }
+            }
+
+            return path;
+        }
+
+        void appendUniquePath(QStringList &paths, QSet<QString> &seen, const QString &path) {
+            const QString trimmed = path.trimmed();
+            if (trimmed.isEmpty() || seen.contains(trimmed)) {
+                return;
+            }
+
+            seen.insert(trimmed);
+            paths.append(trimmed);
+        }
+
+        QStringList localIconCandidatePaths(const QString &iconReference) {
+            const QString trimmed = iconReference.trimmed();
+            if (trimmed.isEmpty() ||
+                trimmed.startsWith(QStringLiteral("http://")) ||
+                trimmed.startsWith(QStringLiteral("https://"))) {
+                return {};
+            }
+
+            const QString localPath = normalizedLocalIconPath(trimmed);
+            QStringList paths;
+            QSet<QString> seen;
+            appendUniquePath(paths, seen, localPath);
+
+            const QFileInfo localInfo(localPath);
+            if (!localPath.startsWith(QStringLiteral(":/")) && !localInfo.isAbsolute()) {
+                appendUniquePath(paths, seen, QDir(QCoreApplication::applicationDirPath()).filePath(localPath));
+                appendUniquePath(paths, seen, QDir::current().filePath(localPath));
+            }
+
+            return paths;
+        }
+
+        QString remoteIconReference(const QString &iconReference) {
+            return normalizedLocalIconPath(iconReference);
+        }
+
+        QUrl normalizedDirectoryUrl(QUrl url) {
+            if (!url.isValid()) {
+                return {};
+            }
+
+            QString path = url.path();
+            if (path.isEmpty()) {
+                path = QStringLiteral("/");
+            }
+
+            if (!path.endsWith(QLatin1Char('/'))) {
+                path.append(QLatin1Char('/'));
+            }
+
+            url.setPath(path);
+            return url;
+        }
+
+        QList<QUrl> iconCandidateUrls(const QString &signalKServerUrl,
+                                      const QString &appName,
+                                      const QString &appUrl,
+                                      const QString &appIcon) {
+            QList<QUrl> candidateUrls;
+
+            const QUrl absoluteIconUrl(appIcon);
+            if (absoluteIconUrl.isValid() && !absoluteIconUrl.scheme().isEmpty()) {
+                candidateUrls.append(absoluteIconUrl);
+            }
+
+            const QUrl appBaseUrl = normalizedDirectoryUrl(QUrl(appUrl));
+            if (appBaseUrl.isValid()) {
+                candidateUrls.append(appBaseUrl.resolved(QUrl(appIcon)));
+            }
+
+            const QUrl serverBaseUrl = normalizedDirectoryUrl(QUrl(signalKServerUrl));
+            if (serverBaseUrl.isValid()) {
+                candidateUrls.append(serverBaseUrl.resolved(QUrl(appName + QLatin1Char('/') + appIcon)));
+                candidateUrls.append(serverBaseUrl.resolved(QUrl(QStringLiteral("plugins/") + appName + QLatin1Char('/') + appIcon)));
+                candidateUrls.append(serverBaseUrl.resolved(QUrl(QStringLiteral("plugins/") + appName + QStringLiteral("/public/") + appIcon)));
+            }
+
+            QList<QUrl> uniqueUrls;
+            QSet<QString> seen;
+            for (const auto &candidateUrl : candidateUrls) {
+                if (!candidateUrl.isValid() || candidateUrl.scheme().isEmpty()) {
+                    continue;
+                }
+
+                const QString key = candidateUrl.toString(QUrl::FullyEncoded);
+                if (seen.contains(key)) {
+                    continue;
+                }
+
+                seen.insert(key);
+                uniqueUrls.append(candidateUrl);
+            }
+
+            return uniqueUrls;
+        }
+
+        QByteArray performBlockingGet(const QUrl &url, int *statusCode = nullptr) {
+            if (statusCode) {
+                *statusCode = -1;
+            }
+            if (!url.isValid()) {
+                return {};
+            }
+
+            QNetworkAccessManager networkAccessManager;
+            QNetworkRequest request(url);
+            request.setTransferTimeout(kCatalogRequestTimeoutMs);
+
+            QPointer<QNetworkReply> reply = networkAccessManager.get(request);
+            if (!reply) {
+                return {};
+            }
+
+            QEventLoop loop;
+            QTimer timeoutTimer;
+            timeoutTimer.setSingleShot(true);
+            QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+            QObject::connect(&timeoutTimer, &QTimer::timeout, &loop, &QEventLoop::quit);
+            timeoutTimer.start(kCatalogRequestTimeoutMs);
+            loop.exec(QEventLoop::ExcludeUserInputEvents);
+
+            if (!reply) {
+                return {};
+            }
+
+            const bool timedOut = !reply->isFinished();
+            if (timedOut) {
+                reply->abort();
+            }
+
+            if (statusCode) {
+                *statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+            }
+
+            if (timedOut || !reply->isOpen() || reply->error() != QNetworkReply::NoError) {
+                reply->deleteLater();
+                return {};
+            }
+
+            const QByteArray payload = reply->readAll();
+            reply->deleteLater();
+            return payload;
+        }
+
+        nlohmann::json fetchJsonArray(const QUrl &url) {
+            if (!url.isValid()) {
+                return {};
+            }
+
+            int statusCode = -1;
+            const QByteArray payload = performBlockingGet(url, &statusCode);
+            if (statusCode < 200 || statusCode >= 300 || payload.isEmpty()) {
+                return {};
+            }
+
+            try {
+                return nlohmann::json::parse(payload.constData(), payload.constData() + payload.size());
+            } catch (const std::exception &) {
+                return {};
+            }
+        }
+
+        QString iconStringFromJson(const nlohmann::json &jsonApp) {
+            if (jsonApp.contains("signalk") && jsonApp["signalk"].is_object()) {
+                const auto &signalkJsonObject = jsonApp["signalk"];
+                if (signalkJsonObject.contains("appIcon") && signalkJsonObject["appIcon"].is_string()) {
+                    return QString::fromStdString(signalkJsonObject["appIcon"].get<std::string>());
+                }
+            }
+            if (jsonApp.contains("appIcon") && jsonApp["appIcon"].is_string()) {
+                return QString::fromStdString(jsonApp["appIcon"].get<std::string>());
+            }
+            if (jsonApp.contains("icon") && jsonApp["icon"].is_string()) {
+                return QString::fromStdString(jsonApp["icon"].get<std::string>());
+            }
+            return {};
+        }
+
+        const LegacyCatalog &legacyCatalogForServer(const QString &serverUrl) {
+            static QHash<QString, LegacyCatalog> cachedCatalogsByServer;
+            auto &catalog = cachedCatalogsByServer[serverUrl];
+
+            if (!serverUrl.isEmpty() && !catalog.loaded) {
+                const qint64 nowMs = QDateTime::currentMSecsSinceEpoch();
+                if (catalog.lastAttemptMs > 0 && nowMs - catalog.lastAttemptMs < kCatalogRetryIntervalMs) {
+                    return catalog;
+                }
+                catalog.lastAttemptMs = nowMs;
+
+                const auto legacyCatalog = fetchJsonArray(QUrl(serverUrl + "/skServer/webapps"));
+                if (legacyCatalog.is_array()) {
+                    catalog.loaded = true;
+                    catalog.iconsByName.clear();
+                    catalog.displayNamesByName.clear();
+                    for (const auto &appJson : legacyCatalog) {
+                        if (!appJson.is_object() || !appJson.contains("name") || !appJson["name"].is_string()) {
+                            continue;
+                        }
+                        const QString legacyName = QString::fromStdString(appJson["name"].get<std::string>());
+                        const QString legacyIcon = iconStringFromJson(appJson);
+                        if (!legacyName.isEmpty() && !legacyIcon.isEmpty()) {
+                            catalog.iconsByName.insert(legacyName, legacyIcon);
+                        }
+
+                        QString legacyDisplayName;
+                        if (appJson.contains("signalk") && appJson["signalk"].is_object()) {
+                            const auto &signalkJsonObject = appJson["signalk"];
+                            if (signalkJsonObject.contains("displayName") && signalkJsonObject["displayName"].is_string()) {
+                                legacyDisplayName = QString::fromStdString(signalkJsonObject["displayName"].get<std::string>());
+                            }
+                        }
+                        if (legacyDisplayName.isEmpty() && appJson.contains("displayName") && appJson["displayName"].is_string()) {
+                            legacyDisplayName = QString::fromStdString(appJson["displayName"].get<std::string>());
+                        }
+                        if (!legacyName.isEmpty() && !legacyDisplayName.isEmpty()) {
+                            catalog.displayNamesByName.insert(legacyName, legacyDisplayName);
+                        }
+                    }
+                }
+            }
+
+            return catalog;
+        }
+
+        QString iconFromLegacyCatalog(const QString &serverUrl, const QString &appName) {
+            if (serverUrl.isEmpty() || appName.isEmpty()) {
+                return {};
+            }
+
+            return legacyCatalogForServer(serverUrl).iconsByName.value(appName);
+        }
+
+        QString displayNameFromLegacyCatalog(const QString &serverUrl, const QString &appName) {
+            if (serverUrl.isEmpty() || appName.isEmpty()) {
+                return {};
+            }
+
+            return legacyCatalogForServer(serverUrl).displayNamesByName.value(appName);
+        }
+
+        QPixmap loadRemotePixmap(const QList<QUrl> &candidateUrls, const QPixmap &fallback, bool *loadedRemotely = nullptr) {
+            if (loadedRemotely) {
+                *loadedRemotely = false;
+            }
+
+            for (const auto &iconUrl : candidateUrls) {
+                if (!iconUrl.isValid() || iconUrl.scheme().isEmpty()) {
+                    continue;
+                }
+
+                int statusCode = -1;
+                const QByteArray payload = performBlockingGet(iconUrl, &statusCode);
+                if (statusCode < 200 || statusCode >= 300) {
+                    continue;
+                }
+
+                const QPixmap pixmap = loadPixmapFromPayload(payload, fallback);
+                if (!pixmap.isNull() && pixmap.cacheKey() != fallback.cacheKey()) {
+                    if (loadedRemotely) {
+                        *loadedRemotely = true;
+                    }
+                    return pixmap;
+                }
+            }
+
+            return fallback;
+        }
+
+        QPixmap bundledFallbackIcon(const QString &appName, const QString &displayName, const QString &appUrl) {
+            const QString combined = (appName + " " + displayName + " " + appUrl).toLower();
+            QString resourcePath = QStringLiteral(":/resources/images/icons/webapp-256x256.png");
+
+            if (combined.contains(QStringLiteral("youtube"))) {
+                resourcePath = QStringLiteral(":/resources/images/icons/youtube_icon.png");
+            } else if (combined.contains(QStringLiteral("server-admin-ui")) ||
+                       combined.contains(QStringLiteral("signalk server")) ||
+                       combined.contains(QStringLiteral("signalk admin"))) {
+                resourcePath = QStringLiteral(":/resources/images/icons/signalkserver_icon.png");
+            } else if (combined.contains(QStringLiteral("http:///")) ||
+                       combined.contains(QStringLiteral("https:///")) ||
+                       combined.contains(QStringLiteral("signalk browser"))) {
+                resourcePath = QStringLiteral(":/resources/images/icons/signalkbrowser_icon.png");
+            } else if (combined.startsWith(QStringLiteral("http://")) ||
+                       combined.startsWith(QStringLiteral("https://"))) {
+                resourcePath = QStringLiteral(":/resources/images/icons/web_icon.png");
+            }
+
+            return QPixmap::fromImage(QImage(resourcePath));
+        }
+
+        QPixmap bundledIconByFileName(const QString &iconPath) {
+            const QString fileName = QFileInfo(iconPath).fileName().toLower();
+            const QString directResourcePath = QStringLiteral(":/resources/images/icons/") + fileName;
+            QPixmap pixmap = QPixmap::fromImage(QImage(directResourcePath));
+            if (!pixmap.isNull()) {
+                return pixmap;
+            }
+
+            QString resourcePath;
+            if (fileName == QStringLiteral("signalk_icon.png")) {
+                resourcePath = QStringLiteral(":/resources/images/icons/signalkbrowser_icon.png");
+            }
+
+            return resourcePath.isEmpty() ? QPixmap() : QPixmap::fromImage(QImage(resourcePath));
+        }
+
+        QPixmap loadLocalIconPixmap(const QString &iconReference) {
+            for (const QString &path : localIconCandidatePaths(iconReference)) {
+                const QPixmap pixmap = loadPixmapFromPath(path);
+                if (!pixmap.isNull()) {
+                    return pixmap;
+                }
+            }
+
+            return bundledIconByFileName(normalizedLocalIconPath(iconReference));
+        }
+
+        QPixmap defaultIconPixmap() {
+            return QPixmap::fromImage(QImage(QStringLiteral(":/resources/images/icons/webapp-256x256.png")));
+        }
+
+        QPixmap appFallbackIcon(const QString &appName, const QString &displayName, const QString &appUrl) {
+            QPixmap pixmap = bundledFallbackIcon(appName, displayName, appUrl);
+            return pixmap.isNull() ? defaultIconPixmap() : pixmap;
+        }
+    }
+
+    AppItem::AppItem() = default;
+
+/*
+ * Public Constructor
+ */
+    AppItem::AppItem(nlohmann::json jsonApp) {
+
+        // Get the app's infos and store them for future usage
+        m_jsonApp = std::move(jsonApp);
+
+    }
+
+/*
+     * setOrder
+     * Sets the app's order
+     */
+    void AppItem::setOrder(int order) {
+
+        // Set the order value
+        m_jsonApp["fairwind"]["order"] = order;
+
+    }
+
+    void AppItem::update(const nlohmann::json& jsonApp) {
+
+        //m_jsonApp.update(jsonApp);
+        m_jsonApp.update(jsonApp, true);
+        m_hasCachedIcon = false;
+        m_cachedIcon = QPixmap();
+    }
+
+
+    /*
+     * getOrder
+     * Returns the app's order
+     */
+    int AppItem::getOrder() {
+        int result = 0;
+
+        if (m_jsonApp.contains("fairwind") && m_jsonApp["fairwind"].is_object()) {
+            auto fairwindJsonObject = m_jsonApp["fairwind"];
+            if (fairwindJsonObject.contains("order") && fairwindJsonObject["order"].is_number_integer()) {
+                result = fairwindJsonObject["order"].get<int>();
+            }
+        }
+        return result;
+    }
+
+    /*
+     * setActive
+     * Sets the app's active state
+     */
+    void AppItem::setActive(bool active) {
+
+        // Set the active value
+        m_jsonApp["fairwind"]["active"] = active;
+    }
+
+    /*
+     * getActive
+     * Returns the app's active state
+     */
+    bool AppItem::getActive() {
+        bool result = false;
+        if (m_jsonApp.contains("fairwind") && m_jsonApp["fairwind"].is_object()) {
+            auto fairwindJsonObject = m_jsonApp["fairwind"];
+            if (fairwindJsonObject.contains("active") && fairwindJsonObject["active"].is_boolean()) {
+                result = fairwindJsonObject["active"].get<bool>();
+            }
+        }
+        return result;
+    }
+
+    /*
+     * getName
+     * Returns the app's name
+     */
+    QString AppItem::getName() {
+        std::string name;
+        if (m_jsonApp.contains("name") && m_jsonApp["name"].is_string()) {
+            name = m_jsonApp["name"].get<std::string>();
+        }
+        return QString::fromStdString(name);
+    }
+
+    /*
+     * getDesc
+     * Returns the app's description
+     */
+    QString AppItem::getDescription() {
+        std::string desc;
+        if (m_jsonApp.contains("description") && m_jsonApp["description"].is_string()) {
+            desc = m_jsonApp["description"].get<std::string>();
+        }
+        return QString::fromStdString(desc);
+    }
+
+    /*
+     * getIcon
+     * Returns the app's icon
+     */
+    QPixmap AppItem::getIcon(const bool allowRemoteFetch) {
+        if (m_hasCachedIcon && !m_cachedIcon.isNull()) {
+            return m_cachedIcon;
+        }
+
+        const QString appName = getName();
+        const QString displayName = getDisplayName(false);
+        const QString appUrl = getUrl();
+        QPixmap pixmap = appFallbackIcon(appName, displayName, appUrl);
+        QString appIcon = getAppIcon();
+        const auto signalKServerUrl = FairWindSK::getInstance()->getConfiguration()->getSignalKServerUrl();
+
+        if (appIcon.isEmpty() && allowRemoteFetch) {
+            appIcon = iconFromLegacyCatalog(signalKServerUrl, getName());
+        }
+
+        if (!appIcon.isEmpty()) {
+            const QPixmap localPixmap = loadLocalIconPixmap(appIcon);
+            if (!localPixmap.isNull()) {
+                m_cachedIcon = localPixmap;
+                m_hasCachedIcon = true;
+                return m_cachedIcon;
+            }
+        }
+
+        const QString iconCacheKey = sharedIconCacheKey(signalKServerUrl, appName, appUrl, appIcon);
+        if (!iconCacheKey.isEmpty()) {
+            const auto cacheIt = sharedIconCache().constFind(iconCacheKey);
+            if (cacheIt != sharedIconCache().constEnd() && !cacheIt.value().isNull()) {
+                m_cachedIcon = cacheIt.value();
+                m_hasCachedIcon = true;
+                return m_cachedIcon;
+            }
+        }
+
+        if (appIcon.isEmpty()) {
+            m_cachedIcon = pixmap;
+            m_hasCachedIcon = !allowRemoteFetch || signalKServerUrl.isEmpty();
+            return pixmap;
+        }
+
+        if (!allowRemoteFetch) {
+            m_cachedIcon = pixmap;
+            m_hasCachedIcon = true;
+            return m_cachedIcon;
+        }
+
+        bool loadedRemotely = false;
+        m_cachedIcon = loadRemotePixmap(iconCandidateUrls(signalKServerUrl,
+                                                          appName,
+                                                          appUrl,
+                                                          remoteIconReference(appIcon)),
+                                        pixmap,
+                                        &loadedRemotely);
+        if (loadedRemotely && !m_cachedIcon.isNull() && !iconCacheKey.isEmpty()) {
+            sharedIconCache().insert(iconCacheKey, m_cachedIcon);
+        }
+        if (m_cachedIcon.isNull()) {
+            m_cachedIcon = pixmap;
+        }
+        m_hasCachedIcon = loadedRemotely;
+        return m_cachedIcon;
+    }
+
+    /*
+     * getHash
+     * Returns the app's generated hash
+     */
+    QString AppItem::getDisplayName(const bool allowRemoteFetch) {
+        QString displayName = getName();
+        if (m_jsonApp.contains("displayName") && m_jsonApp["displayName"].is_string()) {
+            displayName = QString::fromStdString(m_jsonApp["displayName"].get<std::string>());
+        }
+        if (m_jsonApp.contains("signalk") &&  m_jsonApp["signalk"].is_object()) {
+            auto signalkJsonObject = m_jsonApp["signalk"];
+            if (signalkJsonObject.contains("displayName") && signalkJsonObject["displayName"].is_string()) {
+                displayName = QString::fromStdString(signalkJsonObject["displayName"].get<std::string>());
+            }
+        }
+        if (allowRemoteFetch && (displayName.isEmpty() || displayName == getName())) {
+            const auto signalKServerUrl = FairWindSK::getInstance()->getConfiguration()->getSignalKServerUrl();
+            const auto legacyDisplayName = displayNameFromLegacyCatalog(signalKServerUrl, getName());
+            if (!legacyDisplayName.isEmpty()) {
+                displayName = legacyDisplayName;
+            }
+        }
+        return displayName;
+    }
+
+    /*
+     * getVersion
+     * Returns the app's version
+     */
+    QString AppItem::getVersion() {
+        std::string version;
+        if (m_jsonApp.contains("version") && m_jsonApp["version"].is_string()) {
+            version = m_jsonApp["version"].get<std::string>();
+        }
+        return QString::fromStdString(version);
+    }
+
+    /*
+     * getAuthor
+     * Returns the app's author
+     */
+    QString AppItem::getAuthor() {
+        std::string author;
+        if (m_jsonApp.contains("author") && m_jsonApp["author"].is_string()) {
+            author =  m_jsonApp["author"].get<std::string>();
+        }
+        return QString::fromStdString(author);
+    }
+
+    /*
+     * getContributors
+     * Returns the app's contributors
+     */
+    QVector<QString> AppItem::getContributors() {
+        QVector<QString> contributors;
+        if (m_jsonApp.contains("contributors") && m_jsonApp["contributors"].is_array()) {
+            auto contributorsJsonArray = m_jsonApp["contributors"];
+            for (const auto& jsonItem: contributorsJsonArray) {
+                if (jsonItem.is_string() && !jsonItem.get<std::string>().empty()) {
+                    contributors.append(QString::fromStdString(jsonItem.get<std::string>()));
+                }
+
+            }
+        }
+        return contributors;
+    }
+
+    /*
+     * getCopyright
+     * Returns the app's copyright
+     */
+    QString AppItem::getCopyright() {
+        QString copyright;
+        if (m_jsonApp.contains("copyright") && m_jsonApp["copyright"].is_string()) {
+            copyright = QString::fromStdString(m_jsonApp["copyright"].get<std::string>());
+        }
+        return copyright;
+    }
+
+    /*
+     * getCopyright
+     * Returns the app's vendor
+     */
+    QString AppItem::getVendor() {
+        QString vendor;
+        if (m_jsonApp.contains("vendor") && m_jsonApp["vendor"].is_string()) {
+            vendor = QString::fromStdString(m_jsonApp["vendor"].get<std::string>());
+        }
+        return vendor;
+    }
+
+    /*
+     * getLicense
+     * Returns the app's license
+     */
+    QString AppItem::getLicense() {
+        QString license;
+        if (m_jsonApp.contains("license") && m_jsonApp["license"].is_string()) {
+            license = QString::fromStdString(m_jsonApp["license"].get<std::string>());
+        }
+        return license;
+    }
+
+    /*
+     * getLicense
+     * Returns the app's license
+     */
+    QString AppItem::getUrl() {
+
+
+        QString url;
+
+        if (m_jsonApp.contains("location") && m_jsonApp["location"].is_string()) {
+            url = QString::fromStdString(m_jsonApp["location"].get<std::string>());
+        }
+
+        if (url.isEmpty()) {
+            url = getName();
+        }
+
+        if (url.startsWith("http:///")) {
+
+            // Create the url string substituting the placeholder with the server url
+            url.replace("http:///", FairWindSK::getInstance()->getConfiguration()->getSignalKServerUrl());
+
+        } else if (url.startsWith("https:///")) {
+
+            // Create the url string substituting the placeholder with the server url
+            url.replace("https:///", FairWindSK::getInstance()->getConfiguration()->getSignalKServerUrl());
+
+        } if (url.startsWith("http://") || url.startsWith("https://")) {
+
+
+
+        } else {
+            const auto serverUrl = FairWindSK::getInstance()->getConfiguration()->getSignalKServerUrl();
+            url = QUrl(serverUrl + "/").resolved(QUrl(url)).toString();
+        }
+        return url;
+    }
+
+    void AppItem::setWidget(QWidget *pWidget) {
+        m_pWidget = pWidget;
+    }
+
+    QWidget *AppItem::getWidget() {
+        return m_pWidget;
+    }
+
+    bool AppItem::operator<(const AppItem &o) const {
+        return m_jsonApp["fairwind"]["order"].get<int>() < o.m_jsonApp["fairwind"]["order"].get<int>();
+    }
+
+    QStringList AppItem::getArguments() {
+        QStringList result;
+        if (m_jsonApp.contains("fairwind") && m_jsonApp["fairwind"].is_object()) {
+            auto fairWindJsonObject = m_jsonApp["fairwind"];
+
+            if (fairWindJsonObject.contains("arguments") && fairWindJsonObject["arguments"].is_array()) {
+                auto argumentsJsonArray = fairWindJsonObject["arguments"];
+                for (const auto& argument: argumentsJsonArray) {
+                    if (argument.is_string()) {
+                        result.append(QString::fromStdString(argument.get<std::string>()));
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    QString AppItem::getAppIcon() {
+        return iconStringFromJson(m_jsonApp);
+    }
+
+    double AppItem::getZoomPercent() const {
+        if (m_jsonApp.contains("fairwind") && m_jsonApp["fairwind"].is_object()) {
+            const auto &fairwindJsonObject = m_jsonApp["fairwind"];
+            if (fairwindJsonObject.contains("zoomPercent") && fairwindJsonObject["zoomPercent"].is_number()) {
+                return fairwindJsonObject["zoomPercent"].get<double>();
+            }
+        }
+        return 100.0;
+    }
+
+    void AppItem::setZoomPercent(double zoomPercent) {
+        const double normalizedZoom = qBound(25.0, zoomPercent, 400.0);
+        m_jsonApp["fairwind"]["zoomPercent"] = normalizedZoom;
+    }
+
+    void AppItem::setName(const QString& name) {
+        // Set the name value
+        m_jsonApp["name"] = name.toStdString();
+    }
+
+    void AppItem::setDescription(const QString& description) {
+        // Set the name value
+        m_jsonApp["description"] = description.toStdString();
+    }
+
+    void AppItem::setAppIcon(const QString& appIcon) {
+        // Set the name value
+        m_jsonApp["signalk"]["appIcon"] = appIcon.toStdString();
+        m_hasCachedIcon = false;
+        m_cachedIcon = QPixmap();
+    }
+
+    void AppItem::setSettingsUrl(const QString& settingsUrl) {
+        // Set the name value
+        m_jsonApp["fairwind"]["settings"] = settingsUrl.toStdString();
+    }
+
+    void AppItem::setAboutUrl(const QString& aboutUrl) {
+        // Set the name value
+        m_jsonApp["fairwind"]["about"] = aboutUrl.toStdString();
+    }
+
+    void AppItem::setHelpUrl(const QString& helpUrl) {
+        // Set the name value
+        m_jsonApp["fairwind"]["help"] = helpUrl.toStdString();
+    }
+
+    QString AppItem::getSettingsUrl(const QString& pluginUrl) {
+        QString result = "";
+        if (m_jsonApp.contains("fairwind") && m_jsonApp["fairwind"].is_object()) {
+            auto fairwindJsonObject = m_jsonApp["fairwind"];
+            if (fairwindJsonObject.contains("settings") && fairwindJsonObject["settings"].is_string()) {
+                result = QString::fromStdString(fairwindJsonObject["settings"].get<std::string>());
+            }
+        }
+        if (result.isEmpty()) {
+            result = getName();
+        }
+        if (result.startsWith("file://")) {
+            result = result.replace("file://","");
+        } else if (!result.startsWith("http://") && !result.startsWith("https://")) {
+            result = pluginUrl + result;
+        }
+        return result;
+    }
+
+    QString AppItem::getAboutUrl(const QString& pluginUrl) {
+        QString result = "";
+        if (m_jsonApp.contains("fairwind") && m_jsonApp["fairwind"].is_object()) {
+            auto fairwindJsonObject = m_jsonApp["fairwind"];
+            if (fairwindJsonObject.contains("about") && fairwindJsonObject["about"].is_string()) {
+                result = QString::fromStdString(fairwindJsonObject["about"].get<std::string>());
+            }
+        }
+        return result;
+    }
+
+    QString AppItem::getHelpUrl(const QString& pluginUrl) {
+        QString result = "";
+        if (m_jsonApp.contains("fairwind") && m_jsonApp["fairwind"].is_object()) {
+            auto fairwindJsonObject = m_jsonApp["fairwind"];
+            if (fairwindJsonObject.contains("help") && fairwindJsonObject["help"].is_string()) {
+                result = QString::fromStdString(fairwindJsonObject["help"].get<std::string>());
+            }
+        }
+        return result;
+    }
+
+    void AppItem::setDisplayName(const QString& displayName) {
+        // Set the name value
+        m_jsonApp["signalk"]["displayName"] = displayName.toStdString();
+    }
+
+    nlohmann::json AppItem::asJson() {
+        return m_jsonApp;
+    }
+
+    /*
+     * ~AppItem
+     * AppItem's destructor
+     */
+    AppItem::~AppItem() {
+    }
+}
