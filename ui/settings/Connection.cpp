@@ -791,6 +791,7 @@ namespace fairwindsk::ui::settings {
         }
         addServerUrlOption(QStringLiteral("http://localhost:3000"));
         addServerUrlOption(QStringLiteral("https://demo.signalk.org"));
+        addServerUrlOption(QStringLiteral("http://92.168.1.115:3000"));
 
         // Load persisted token/href state.
         const QSettings settings(Configuration::settingsFilename(), QSettings::IniFormat);

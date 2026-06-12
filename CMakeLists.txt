@@ -3,6 +3,9 @@ project(FairWindSK VERSION 0.1.0 LANGUAGES CXX)
 
 include(CTest)
 
+# ==========================================
+# 1. LOGICA DI VERSIONAMENTO (GIT)
+# ==========================================
 execute_process(
         COMMAND git -C ${CMAKE_SOURCE_DIR} describe --tags --always --dirty
         OUTPUT_VARIABLE FAIRWINDSK_GIT_VERSION
@@ -18,6 +21,7 @@ execute_process(
         OUTPUT_VARIABLE FAIRWINDSK_GIT_BRANCH
         OUTPUT_STRIP_TRAILING_WHITESPACE
         ERROR_QUIET)
+
 if(FAIRWINDSK_GIT_COMMIT_COUNT MATCHES "^[0-9]+$")
     math(EXPR FAIRWINDSK_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")
     math(EXPR FAIRWINDSK_VERSION_MINOR "${FAIRWINDSK_GIT_COMMIT_COUNT} / 100")
@@ -26,6 +30,7 @@ if(FAIRWINDSK_GIT_COMMIT_COUNT MATCHES "^[0-9]+$")
 else()
     set(FAIRWINDSK_SEMVER ${PROJECT_VERSION})
 endif()
+
 if(NOT FAIRWINDSK_GIT_VERSION)
     set(FAIRWINDSK_GIT_VERSION ${FAIRWINDSK_SEMVER})
 endif()
@@ -36,6 +41,9 @@ string(TIMESTAMP FAIRWINDSK_BUILD_YEAR "%Y")
 
 include(GNUInstallDirs)
 
+# ==========================================
+# 2. CONFIGURAZIONE TARGET E COMPILATORE
+# ==========================================
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
@@ -43,84 +51,56 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-configure_file(${CMAKE_SOURCE_DIR}/cmake/fairwindsk.desktop.in
-        ${CMAKE_CURRENT_BINARY_DIR}/fairwindsk.desktop
-        @ONLY)
-configure_file(${CMAKE_SOURCE_DIR}/cmake/fairwindsk-startup.desktop.in
-        ${CMAKE_CURRENT_BINARY_DIR}/fairwindsk-startup.desktop
-        @ONLY)
-configure_file(${CMAKE_SOURCE_DIR}/cmake/InstallRaspberryDesktopIntegration.cmake.in
-        ${CMAKE_CURRENT_BINARY_DIR}/InstallRaspberryDesktopIntegration.cmake
-        @ONLY)
-
+# Definiamo la piattaforma mobile
 set(FAIRWINDSK_MOBILE FALSE)
 if(ANDROID OR IOS)
     set(FAIRWINDSK_MOBILE TRUE)
 endif()
 
+# SE SIAMO SU WINDOWS MA CON MIN GW, EMETTIAMO UN MESSAGGIO BLOCCANTE CHIARO
+if(MINGW AND NOT FAIRWINDSK_MOBILE)
+    message(FATAL_ERROR "Compilatore MinGW rilevato su ambiente Windows Desktop. L'architettura Desktop di FairWindSK richiede nativamente il modulo Qt WebEngine (Chromium), non supportato da MinGW. Selezionare il Kit Android per compilare la versione mobile del progetto.")
+endif()
+
+# ==========================================
+# 3. RICERCA COMPONENTI QT6
+# ==========================================
 find_package(Qt6 REQUIRED COMPONENTS
-        Core
-        Gui
-        Widgets
-        Qml
-        Concurrent
-        Network
-        WebSockets
-        Xml
-        Svg
-        Positioning
-        VirtualKeyboard
-        LinguistTools
+        Core Gui Widgets Qml Concurrent Network WebSockets Xml Svg Positioning VirtualKeyboard LinguistTools
 )
 
 if(FAIRWINDSK_MOBILE)
-    find_package(Qt6 REQUIRED COMPONENTS
-            Quick
-            QuickWidgets
-            WebView
-    )
+    find_package(Qt6 REQUIRED COMPONENTS Quick QuickWidgets WebView)
 else()
-    find_package(Qt6 REQUIRED COMPONENTS WebEngineWidgets)
+    find_package(Qt6 REQUIRED COMPONENTS WebEngineWidgets PrintSupport)
 endif()
 
+# ==========================================
+# 4. PATH DIPENDENZE ESTERNE
+# ==========================================
 set(EXTERNAL_INSTALL_LOCATION ${CMAKE_BINARY_DIR}/external)
 include_directories(SYSTEM ${EXTERNAL_INSTALL_LOCATION}/include)
 link_directories(${EXTERNAL_INSTALL_LOCATION}/lib)
 
 set(FAIRWINDSK_LINK_LIBRARIES
-        Qt::Core
-        Qt::Gui
-        Qt::Concurrent
-        Qt::Widgets
-        Qt::Qml
-        Qt::Network
-        Qt::WebSockets
-        Qt::Xml
-        Qt::Svg
-        Qt::Positioning
-        Qt::VirtualKeyboard
+        Qt::Core Qt::Gui Qt::Concurrent Qt::Widgets Qt::Qml Qt::Network Qt::WebSockets Qt::Xml Qt::Svg Qt::Positioning Qt::VirtualKeyboard
 )
 
 if(FAIRWINDSK_MOBILE)
-    list(APPEND FAIRWINDSK_LINK_LIBRARIES
-            Qt::Quick
-            Qt::QuickWidgets
-            Qt::WebView)
+    list(APPEND FAIRWINDSK_LINK_LIBRARIES Qt::Quick Qt::QuickWidgets Qt::WebView)
 else()
-    list(APPEND FAIRWINDSK_LINK_LIBRARIES Qt::WebEngineWidgets)
+    list(APPEND FAIRWINDSK_LINK_LIBRARIES Qt::WebEngineWidgets Qt::PrintSupport)
 endif()
 
 set(FAIRWINDSK_POST_BUILD_COMMANDS)
-
 set(FAIRWINDSK_EXTERNAL_DEPENDENCIES)
 
 include(ExternalProject)
 
+# nlohmann_json
 find_package(nlohmann_json CONFIG QUIET)
 if(NOT nlohmann_json_FOUND)
-    find_path(NLOHMANN_JSON_SYSTEM_INCLUDE_DIR
-            NAMES nlohmann/json.hpp
-            PATH_SUFFIXES include)
+    find_path(NLOHMANN_JSON_SYSTEM_INCLUDE_DIR NAMES nlohmann/json.hpp PATH_SUFFIXES include)
     if(NLOHMANN_JSON_SYSTEM_INCLUDE_DIR)
         add_library(nlohmann_json INTERFACE)
         add_library(nlohmann_json::nlohmann_json ALIAS nlohmann_json)
@@ -130,19 +110,7 @@ if(NOT nlohmann_json_FOUND)
         set(NLOHMANN_JSON_HEADER ${NLOHMANN_JSON_INCLUDE_DIR}/nlohmann/json.hpp)
         file(MAKE_DIRECTORY ${NLOHMANN_JSON_INCLUDE_DIR}/nlohmann)
         if(NOT EXISTS ${NLOHMANN_JSON_HEADER})
-            file(DOWNLOAD
-                    https://raw.githubusercontent.com/nlohmann/json/v3.11.3/single_include/nlohmann/json.hpp
-                    ${NLOHMANN_JSON_HEADER}
-                    SHOW_PROGRESS
-                    TIMEOUT 120
-                    INACTIVITY_TIMEOUT 30
-                    STATUS NLOHMANN_JSON_DOWNLOAD_STATUS
-                    LOG NLOHMANN_JSON_DOWNLOAD_LOG)
-            list(GET NLOHMANN_JSON_DOWNLOAD_STATUS 0 NLOHMANN_JSON_DOWNLOAD_CODE)
-            list(GET NLOHMANN_JSON_DOWNLOAD_STATUS 1 NLOHMANN_JSON_DOWNLOAD_MESSAGE)
-            if(NOT NLOHMANN_JSON_DOWNLOAD_CODE EQUAL 0)
-                message(FATAL_ERROR "Failed to download nlohmann/json.hpp: ${NLOHMANN_JSON_DOWNLOAD_MESSAGE}\n${NLOHMANN_JSON_DOWNLOAD_LOG}")
-            endif()
+            file(DOWNLOAD https://raw.githubusercontent.com/nlohmann/json/v3.11.3/single_include/nlohmann/json.hpp ${NLOHMANN_JSON_HEADER} TIMEOUT 120)
         endif()
         add_library(nlohmann_json INTERFACE)
         add_library(nlohmann_json::nlohmann_json ALIAS nlohmann_json)
@@ -151,10 +119,8 @@ if(NOT nlohmann_json_FOUND)
 endif()
 list(APPEND FAIRWINDSK_LINK_LIBRARIES nlohmann_json::nlohmann_json)
 
+# Sotto-progetti esterni (Esclusi su Mobile per velocizzare e ripulire i pacchetti)
 if(NOT FAIRWINDSK_MOBILE)
-    find_package(Qt6 REQUIRED COMPONENTS PrintSupport)
-    list(APPEND FAIRWINDSK_LINK_LIBRARIES Qt::PrintSupport)
-
     ExternalProject_Add(QtZeroConf
             GIT_REPOSITORY https://github.com/OpenFairWind/QtZeroConf.git
             GIT_TAG f7744716dff7fad22ca9edd4e3182477afe43b8d
@@ -162,79 +128,30 @@ if(NOT FAIRWINDSK_MOBILE)
             TIMEOUT 360
     )
 
-    if(APPLE)
-        ExternalProject_Add_Step(QtZeroConf sanitize_install_script
-                COMMAND ${CMAKE_COMMAND}
-                -DINPUT=${CMAKE_BINARY_DIR}/QtZeroConf-prefix/src/QtZeroConf-build/cmake_install.cmake
-                -P ${CMAKE_SOURCE_DIR}/cmake/SanitizeAppleInstallScript.cmake
-                DEPENDEES configure
-                DEPENDERS install
-        )
-    endif()
-
     if(WIN32)
         set(LIBQTZEROCONF ${EXTERNAL_INSTALL_LOCATION}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_IMPORT_LIBRARY_PREFIX}QtZeroConf${CMAKE_IMPORT_LIBRARY_SUFFIX})
         set(RUNTIMEQTZEROCONF ${EXTERNAL_INSTALL_LOCATION}/${CMAKE_INSTALL_BINDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}QtZeroConf${CMAKE_SHARED_LIBRARY_SUFFIX})
-    else()
-        set(LIBQTZEROCONF ${EXTERNAL_INSTALL_LOCATION}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}QtZeroConf${CMAKE_SHARED_LIBRARY_SUFFIX})
     endif()
 
     ExternalProject_Add(qhotkey
             GIT_REPOSITORY https://github.com/Skycoder42/QHotkey.git
             GIT_TAG 1.5.0
-            CMAKE_ARGS -DBUILD_SHARED_LIBS=on -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION} -DQT_DEFAULT_MAJOR_VERSION=6 -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_INSTALL_REMOVE_ENVIRONMENT_RPATH=FALSE
+            CMAKE_ARGS -DBUILD_SHARED_LIBS=on -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION} -DQT_DEFAULT_MAJOR_VERSION=6 -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_INSTALL_REMOVE_ENVIRONMENT_RPATH=FALSE -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}
             TIMEOUT 360
     )
-
-    if(APPLE)
-        ExternalProject_Add_Step(qhotkey sanitize_install_script
-                COMMAND ${CMAKE_COMMAND}
-                -DINPUT=${CMAKE_BINARY_DIR}/qhotkey-prefix/src/qhotkey-build/cmake_install.cmake
-                -P ${CMAKE_SOURCE_DIR}/cmake/SanitizeAppleInstallScript.cmake
-                DEPENDEES configure
-                DEPENDERS install
-        )
-    endif()
 
     if(WIN32)
         set(LIBQHOTKEY ${EXTERNAL_INSTALL_LOCATION}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_IMPORT_LIBRARY_PREFIX}qhotkey${CMAKE_IMPORT_LIBRARY_SUFFIX})
         set(RUNTIMEQHOTKEY ${EXTERNAL_INSTALL_LOCATION}/${CMAKE_INSTALL_BINDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}qhotkey${CMAKE_SHARED_LIBRARY_SUFFIX})
-    else()
-        set(LIBQHOTKEY ${EXTERNAL_INSTALL_LOCATION}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}qhotkey${CMAKE_SHARED_LIBRARY_SUFFIX})
     endif()
 
     list(APPEND FAIRWINDSK_EXTERNAL_DEPENDENCIES QtZeroConf qhotkey)
     list(APPEND FAIRWINDSK_LINK_LIBRARIES ${LIBQTZEROCONF} ${LIBQHOTKEY})
-
-    if(WIN32)
-        list(APPEND FAIRWINDSK_POST_BUILD_COMMANDS
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different ${RUNTIMEQTZEROCONF} $<TARGET_FILE_DIR:${PROJECT_NAME}>
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different ${RUNTIMEQHOTKEY} $<TARGET_FILE_DIR:${PROJECT_NAME}>)
-    endif()
-
-    if(APPLE AND TARGET Qt6::PrintSupport)
-        get_target_property(_qt_print_support_libs Qt6::PrintSupport INTERFACE_LINK_LIBRARIES)
-        set(_qt_print_support_resolved "${_qt_print_support_libs}")
-        set(_missing_cups_libraries "")
-        foreach(_lib IN LISTS _qt_print_support_libs)
-            if(_lib MATCHES "libcups\\.(tbd|dylib)$" AND NOT EXISTS "${_lib}")
-                list(APPEND _missing_cups_libraries "${_lib}")
-            endif()
-        endforeach()
-        if(_missing_cups_libraries)
-            find_library(CUPS_LIBRARY NAMES cups)
-            if(CUPS_LIBRARY)
-                list(REMOVE_ITEM _qt_print_support_resolved ${_missing_cups_libraries})
-                list(APPEND _qt_print_support_resolved ${CUPS_LIBRARY})
-                set_target_properties(Qt6::PrintSupport PROPERTIES INTERFACE_LINK_LIBRARIES "${_qt_print_support_resolved}")
-                message(STATUS "Replaced missing Qt6::PrintSupport CUPS link with: ${CUPS_LIBRARY}")
-            else()
-                message(WARNING "Qt6::PrintSupport references missing CUPS library (${_missing_cups_libraries}) and no replacement could be found.")
-            endif()
-        endif()
-    endif()
 endif()
 
+# ==========================================
+# 5. ELENCO FILE SORGENTI
+# ==========================================
 set(FAIRWINDSK_SOURCES
         main.cpp
         Units.cpp Units.hpp
@@ -321,102 +238,35 @@ if(NOT FAIRWINDSK_MOBILE)
     )
 endif()
 
-qt_add_executable(${PROJECT_NAME}
-        MANUAL_FINALIZATION
-        ${FAIRWINDSK_SOURCES}
-)
+# ==========================================
+# 6. TARGET EXECUTABLE & CORES
+# ==========================================
+qt_add_executable(${PROJECT_NAME} MANUAL_FINALIZATION ${FAIRWINDSK_SOURCES})
 
-qt_add_translations(${PROJECT_NAME}
-        TS_FILES
-            resources/i18n/fairwindsk_it.ts
-        RESOURCE_PREFIX
-            /resources/i18n
-)
+qt_add_translations(${PROJECT_NAME} TS_FILES resources/i18n/fairwindsk_it.ts RESOURCE_PREFIX /resources/i18n)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
-        MACOSX_BUNDLE TRUE
-        WIN32_EXECUTABLE TRUE
-        MACOSX_BUNDLE_BUNDLE_NAME "FairWindSK"
-        MACOSX_BUNDLE_GUI_IDENTIFIER "org.openfairwind.fairwindsk"
-        MACOSX_BUNDLE_BUNDLE_VERSION ${FAIRWINDSK_SEMVER}
-        MACOSX_BUNDLE_SHORT_VERSION_STRING ${FAIRWINDSK_SEMVER}
+        MACOSX_BUNDLE TRUE WIN32_EXECUTABLE TRUE MACOSX_BUNDLE_BUNDLE_NAME "FairWindSK"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "org.openfairwind.fairwindsk" MACOSX_BUNDLE_BUNDLE_VERSION ${FAIRWINDSK_SEMVER} MACOSX_BUNDLE_SHORT_VERSION_STRING ${FAIRWINDSK_SEMVER}
 )
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
-        FAIRWINDSK_VERSION="${FAIRWINDSK_SEMVER}"
-        FAIRWINDSK_BUILD_YEAR="${FAIRWINDSK_BUILD_YEAR}"
-        FAIRWINDSK_GIT_BRANCH="${FAIRWINDSK_GIT_BRANCH}")
+        FAIRWINDSK_VERSION="${FAIRWINDSK_SEMVER}" FAIRWINDSK_BUILD_YEAR="${FAIRWINDSK_BUILD_YEAR}" FAIRWINDSK_GIT_BRANCH="${FAIRWINDSK_GIT_BRANCH}"
+)
 
 if(ANDROID)
-    set_property(TARGET ${PROJECT_NAME} PROPERTY QT_ANDROID_PACKAGE_NAME "org.openfairwind.fairwindsk")
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        QT_ANDROID_PACKAGE_NAME "org.openfairwind.fairwindsk"
+        QT_ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android"
+    )
 endif()
-
 foreach(_dependency IN LISTS FAIRWINDSK_EXTERNAL_DEPENDENCIES)
     add_dependencies(${PROJECT_NAME} ${_dependency})
 endforeach()
 
 target_link_libraries(${PROJECT_NAME} PRIVATE ${FAIRWINDSK_LINK_LIBRARIES})
 
-if(NOT WIN32 AND NOT FAIRWINDSK_MOBILE)
-    set(_FAIRWINDSK_EXTERNAL_LIB_DIR "${EXTERNAL_INSTALL_LOCATION}/${CMAKE_INSTALL_LIBDIR}")
-    set_target_properties(${PROJECT_NAME} PROPERTIES BUILD_RPATH "${_FAIRWINDSK_EXTERNAL_LIB_DIR}")
-    if(APPLE)
-        set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "@executable_path/../Frameworks;@loader_path/../Frameworks")
-    else()
-        set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN;$ORIGIN/../lib")
-    endif()
-endif()
-
-if(NOT FAIRWINDSK_MOBILE)
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_SOURCE_DIR}/resources/images/icons $<TARGET_FILE_DIR:${PROJECT_NAME}>/icons/
-            ${FAIRWINDSK_POST_BUILD_COMMANDS})
-endif()
-
-install(TARGETS ${PROJECT_NAME}
-        BUNDLE DESTINATION .
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
-
-if(NOT FAIRWINDSK_MOBILE)
-    if(NOT APPLE)
-        install(DIRECTORY ${CMAKE_SOURCE_DIR}/resources/images/icons/
-                DESTINATION ${CMAKE_INSTALL_BINDIR}/icons)
-    endif()
-endif()
-
-if(NOT FAIRWINDSK_MOBILE)
-    if(WIN32)
-        install(FILES ${RUNTIMEQTZEROCONF} ${RUNTIMEQHOTKEY}
-                DESTINATION ${CMAKE_INSTALL_BINDIR})
-    elseif(APPLE)
-        install(FILES ${LIBQTZEROCONF} ${LIBQHOTKEY}
-                DESTINATION ${PROJECT_NAME}.app/Contents/Frameworks)
-    else()
-        install(FILES ${LIBQTZEROCONF} ${LIBQHOTKEY}
-                DESTINATION ${CMAKE_INSTALL_LIBDIR})
-    endif()
-endif()
-
-if(UNIX AND NOT APPLE AND NOT FAIRWINDSK_MOBILE)
-    install(PROGRAMS ${CMAKE_SOURCE_DIR}/extras/fairwindsk-startup
-            DESTINATION ${CMAKE_INSTALL_BINDIR})
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/fairwindsk.desktop
-            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
-    install(FILES ${CMAKE_SOURCE_DIR}/resources/images/icons/signalkbrowser_icon.png
-            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/256x256/apps
-            RENAME fairwindsk.png)
-    install(SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/InstallRaspberryDesktopIntegration.cmake)
-endif()
-
+# ==========================================
+# 7. INSTALLAZIONE E FINALIZE
+# ==========================================
 qt_finalize_executable(${PROJECT_NAME})
-
-if(BUILD_TESTING)
-    add_test(NAME units_reentrancy_self_test
-            COMMAND $<TARGET_FILE:${PROJECT_NAME}> --self-test-units-reentrancy)
-    add_test(NAME directory_safety_self_test
-            COMMAND $<TARGET_FILE:${PROJECT_NAME}> --self-test-directory-safety)
-    add_test(NAME configuration_import_self_test
-            COMMAND $<TARGET_FILE:${PROJECT_NAME}> --self-test-configuration-import)
-endif()

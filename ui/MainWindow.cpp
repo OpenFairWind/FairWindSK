@@ -1176,6 +1176,7 @@ namespace fairwindsk::ui {
     }
 
     void MainWindow::setSize() {
+	
 
         // Get the FairWind singleton
         const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
@@ -1280,23 +1281,26 @@ namespace fairwindsk::ui {
                 showFullScreen();
             }
 
-        } else {
-            applyWindowHints(false, false);
-            clearWindowState();
-            const auto left = fairWindSK->getConfiguration()->getWindowLeft();
-            const auto top = fairWindSK->getConfiguration()->getWindowTop();
-            const auto width = fairWindSK->getConfiguration()->getWindowWidth();
-            const auto height = fairWindSK->getConfiguration()->getWindowHeight();
-            move(left,top);
-            resize(width, height);
-            lockWindowSize(width, height);
-
-            // Show windowed
-            show();
-            raiseAndActivate();
-        }
-    }
-
+	} else {
+	#if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
+       		unlockWindowSize();
+        	showFullScreen();
+        	return;
+	#else
+        	applyWindowHints(false, false);
+        	clearWindowState();
+        	const auto left = fairWindSK->getConfiguration()->getWindowLeft();
+        	const auto top = fairWindSK->getConfiguration()->getWindowTop();
+        	const auto width = fairWindSK->getConfiguration()->getWindowWidth();
+        	const auto height = fairWindSK->getConfiguration()->getWindowHeight();
+        	move(left,top);
+        	resize(width, height);
+        	lockWindowSize(width, height);
+        	show();
+        	raiseAndActivate();
+	#endif
+    		}
+	}
     void MainWindow::applyRuntimeConfiguration() {
         const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
         if (!fairWindSK || fairwindsk::runtime::isShutdownRequested()) {

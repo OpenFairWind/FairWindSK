@@ -10,7 +10,7 @@
         "launcherColumns": 3,
         "coordinateFormat": "dm_symbols_decimal",
         "autopilot": "",
-        "windowMode": "windowed",
+        "windowMode": "fullscreen",
         "windowWidth": 1024,
         "windowHeight": 600,
         "windowTop": 20,
