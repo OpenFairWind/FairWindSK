@@ -789,8 +789,10 @@ namespace fairwindsk::ui::settings {
             const QSignalBlocker blocker(m_comboBox);
             m_comboBox->setCurrentText(configuredServerUrl);
         }
-        addServerUrlOption(QStringLiteral("http://localhost:3000"));
-        addServerUrlOption(QStringLiteral("https://demo.signalk.org"));
+        addServerUrlOption(QStringLiteral("http://10.0.2.2:3000"));
+        addServerUrlOption(QStringLiteral("[http://demo.signalk.org](https://demo.signalk.org)"));
+
+        addServerUrlOption(QStringLiteral("http://demo.signalk.org"));
         addServerUrlOption(QStringLiteral("http://92.168.1.115:3000"));
 
         // Load persisted token/href state.
