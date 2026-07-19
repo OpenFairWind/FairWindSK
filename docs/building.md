@@ -281,6 +281,20 @@ Enable Developer Options and USB debugging, authorize the computer, and install 
 "$FAIRWINDSK_ANDROID_SDK/platform-tools/adb" install -r /absolute/path/to/FairWindSK.apk
 ```
 
+### Optional Android Home app
+
+FairWindSK advertises its existing single-window MFD shell as an optional Android Home app. Installing or updating the APK does not replace the current launcher automatically, and FairWindSK remains available as a normal application. To opt in, open the device's system settings, find **Default apps > Home app** (the wording varies by Android vendor), and select **FairWindSK**. Android may instead show the Home-app chooser the next time the system Home action is used.
+
+Stage 1 provides the Home-screen role only. FairWindSK continues to launch its configured Signal K and web applications; it does not yet enumerate or launch arbitrary installed Android applications.
+
+Before selecting FairWindSK on a dedicated helm display, confirm that its Signal K connection and launcher layout are usable. To return to the device launcher, open Android system settings from the notification shade and select the previous app under **Default apps > Home app**. During development, the Home-app settings page can also be opened with:
+
+```bash
+"$FAIRWINDSK_ANDROID_SDK/platform-tools/adb" shell am start -a android.settings.HOME_SETTINGS
+```
+
+The Home role is declared in a separate intent filter from the ordinary application-launcher role. This preserves standard icon launches and lets Android, rather than FairWindSK, manage the user's default-Home choice.
+
 For Play Store delivery, configure release signing outside the repository and build an Android App Bundle:
 
 ```bash
@@ -311,6 +325,7 @@ Use the Signal K server's LAN address in FairWindSK; `localhost` on Android refe
 - The soft keyboard resizes the window instead of covering operational controls.
 - Desktop Linux startup fallbacks are excluded explicitly from Android even on toolchains that define Linux compatibility macros.
 - The Android TLS helper is pinned to a commit so clean builds are reproducible.
+- FairWindSK is eligible to be selected as the Android Home app, but installation never selects it automatically.
 
 - Desktop-only integrations such as `QHotkey`, Zeroconf browser discovery, and the shared `QWebEngineProfile` cookie path remain disabled on Android. Native `file://` launcher apps are blocked on every target by the single-window model.
 - Embedded previews and web apps still load inside the application, but advanced desktop WebEngine-specific hooks are intentionally not compiled into the Android target.
@@ -329,6 +344,7 @@ An APK cross-build validates compilation and packaging, but it cannot validate W
 8. POB, Apps, MyData, Settings, alarms, and installed autopilot integration preserve the single-window MFD workflow.
 9. Rotation attempts do not disturb landscape layout and Android back navigation does not accidentally exit an operational dialog.
 10. The release-signed APK installs both cleanly and as an update over the previous release.
+11. FairWindSK appears in the Android Home-app chooser, remains launchable from another launcher, and returning to the previous Home app works without clearing FairWindSK data.
 
 ## iOS / iPadOS
 

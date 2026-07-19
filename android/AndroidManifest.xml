@@ -33,6 +33,12 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Offer FairWindSK as an optional Android Home app without replacing the normal launcher entry. -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.HOME"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
             <meta-data android:name="android.app.lib_name" android:value="FairWindSK"/>
             <meta-data android:name="android.app.arguments" android:value=""/>
         </activity>
