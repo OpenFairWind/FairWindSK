@@ -226,6 +226,32 @@ namespace {
         object.insert(key, applyJsonValuePath(object.value(key), segments, index + 1, newValue));
         return object;
     }
+
+    QStringList normalizedResourcePathParts(const QString &path) {
+        QStringList parts = path.split('.', Qt::SkipEmptyParts);
+        if (!parts.isEmpty() && parts.first() == QStringLiteral("resources")) {
+            parts.removeFirst();
+        }
+        return parts;
+    }
+
+    bool resourceMapFromValue(const QJsonValue &value, QMap<QString, QJsonObject> *resources) {
+        if (!resources || !value.isObject()) {
+            return false;
+        }
+
+        QMap<QString, QJsonObject> nextResources;
+        const QJsonObject object = value.toObject();
+        for (auto it = object.begin(); it != object.end(); ++it) {
+            if (!it.value().isObject()) {
+                return false;
+            }
+            nextResources.insert(it.key(), it.value().toObject());
+        }
+
+        *resources = nextResources;
+        return true;
+    }
 }
 
 namespace fairwindsk::ui::mydata {
@@ -284,12 +310,20 @@ namespace fairwindsk::ui::mydata {
         : QAbstractTableModel(parent),
           m_kind(kind) {
         const auto client = fairwindsk::FairWindSK::getInstance()->getSignalKClient();
-        m_subscriptionPath = collection() + ".*";
-        client->subscribeStream(
-            "resources",
-            m_subscriptionPath,
-            this,
-            SLOT(onResourceUpdate(QJsonObject)));
+        const QString currentCollection = collection();
+        m_subscriptionPaths = {currentCollection, currentCollection + QStringLiteral(".*")};
+        for (const auto &path : m_subscriptionPaths) {
+            client->subscribeStream(
+                "resources",
+                path,
+                this,
+                SLOT(onResourceUpdate(QJsonObject)));
+        }
+        connect(client, &fairwindsk::signalk::Client::resourcesChanged, this, [this](const QString &changedCollection) {
+            if (changedCollection == collection()) {
+                reload(true);
+            }
+        });
         connect(client, &fairwindsk::signalk::Client::serverStateResynchronized, this, [this](const bool recoveredFromDisconnect) {
             if (recoveredFromDisconnect) {
                 reload(true);
@@ -301,7 +335,10 @@ namespace fairwindsk::ui::mydata {
     }
 
     ResourceModel::~ResourceModel() {
-        fairwindsk::FairWindSK::getInstance()->getSignalKClient()->removeSubscription(m_subscriptionPath, this);
+        const auto client = fairwindsk::FairWindSK::getInstance()->getSignalKClient();
+        for (const auto &path : m_subscriptionPaths) {
+            client->removeSubscription(path, this);
+        }
         m_reloadInProgress = false;
         m_reloadPending = false;
     }
@@ -497,21 +534,18 @@ namespace fairwindsk::ui::mydata {
     QString ResourceModel::createResource(const QJsonObject &resource) {
         const auto client = fairwindsk::FairWindSK::getInstance()->getSignalKClient();
         const QJsonObject response = client->createResource(collection(), resource);
-        reload(true);
         return upsertedResourceId(response, resource);
     }
 
     bool ResourceModel::updateResource(const QString &id, const QJsonObject &resource) {
         const auto client = fairwindsk::FairWindSK::getInstance()->getSignalKClient();
         client->putResource(collection(), id, resource);
-        reload(true);
         return m_resources.contains(id);
     }
 
     bool ResourceModel::deleteResource(const QString &id) {
         const auto client = fairwindsk::FairWindSK::getInstance()->getSignalKClient();
         client->deleteResource(collection(), id);
-        reload(true);
         return !m_resources.contains(id);
     }
 
@@ -595,7 +629,7 @@ namespace fairwindsk::ui::mydata {
     void ResourceModel::onResourceUpdate(const QJsonObject &update) {
         QMap<QString, QJsonObject> nextResources = m_resources;
         bool changed = false;
-        const QString collectionPrefix = collection() + ".";
+        const QString currentCollection = collection();
 
         const QJsonArray updates = update["updates"].toArray();
         for (const auto &updateItem : updates) {
@@ -603,18 +637,31 @@ namespace fairwindsk::ui::mydata {
             for (const auto &valueItem : values) {
                 const QJsonObject valueObject = valueItem.toObject();
                 const QString path = valueObject["path"].toString();
-                if (!path.startsWith(collectionPrefix)) {
+                const QStringList parts = normalizedResourcePathParts(path);
+                if (parts.isEmpty() || parts.first() != currentCollection) {
                     continue;
                 }
 
-                const QStringList parts = path.split('.', Qt::SkipEmptyParts);
-                if (parts.size() < 2) {
+                const QJsonValue value = valueObject.value("value");
+                if (parts.size() == 1) {
+                    if (value.isNull() || value.isUndefined()) {
+                        if (!nextResources.isEmpty()) {
+                            nextResources.clear();
+                            changed = true;
+                        }
+                        continue;
+                    }
+
+                    QMap<QString, QJsonObject> replacementResources;
+                    if (resourceMapFromValue(value, &replacementResources) && nextResources != replacementResources) {
+                        nextResources = replacementResources;
+                        changed = true;
+                    }
                     continue;
                 }
 
                 const QString resourceId = parts.at(1);
                 const QStringList nestedPath = parts.mid(2);
-                const QJsonValue value = valueObject.value("value");
 
                 if (nestedPath.isEmpty()) {
                     if (value.isNull() || value.isUndefined()) {

@@ -9,6 +9,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QString>
+#include <QStringList>
 
 namespace fairwindsk::ui::mydata {
 
@@ -59,7 +60,7 @@ namespace fairwindsk::ui::mydata {
         QMap<QString, QJsonObject> m_resources;
         bool m_reloadInProgress = false;
         bool m_reloadPending = false;
-        QString m_subscriptionPath;
+        QStringList m_subscriptionPaths;
     };
 }
 
