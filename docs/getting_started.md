@@ -22,6 +22,8 @@ cmake --install build
 
 Platform-specific dependencies, Qt kit selection, Windows deployment, Raspberry Pi notes, and the current desktop/mobile caveats are documented in [building.md](./building.md).
 
+The repository also ships generated owner manuals in `manuals/FairWindSK_Owners_Manual_EN.pdf` and `manuals/FairWindSK_Owners_Manual_IT.pdf` for onboard or offline reference.
+
 ## First run and configuration bootstrap
 
 1. Launch the binary. On first run the app reads `fairwindsk.ini` from the per-user FairWindSK configuration directory to determine the configuration file path and debug flag. If no path is stored, it defaults to `fairwindsk.json` in that same directory.
@@ -46,3 +48,4 @@ Platform-specific dependencies, Qt kit selection, Windows deployment, Raspberry 
 - Enable debug logging by setting `debug=true` in `fairwindsk.ini` before launching. Logs include connection attempts and application discovery details.
 - For diagnostics, the **Settings > System** tab lets you choose the FairWindSK log level, keep per-run message logs in a persistent directory, and configure the diagnostics email destination used after an unclean shutdown.
 - Check that your platform has Qt WebEngine acceleration enabled; `QWebEngineSettings::Accelerated2dCanvasEnabled` is turned on by default at runtime.
+- On Android, verify that the generated package includes the project manifest from `android/AndroidManifest.xml`; it requests network and location access, uses a landscape no-action-bar activity, allows cleartext traffic for local Signal K servers, and enables hardware acceleration for embedded web content.

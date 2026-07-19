@@ -5,6 +5,7 @@
 - [Building FairWindSK](./building.md)
 - [Developing guide](./developing_guide.md)
 - [FairWindSK user guide](./fairwindsk_user_guide.md)
+- [Bundled owner manuals](../manuals/)
 - [Architecture overview](./architecture.md)
 - [UI shell definition](./ui_shell.md)
 - [Configuration guide](./configuring.md)

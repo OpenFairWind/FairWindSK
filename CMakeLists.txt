@@ -128,9 +128,21 @@ if(NOT FAIRWINDSK_MOBILE)
             TIMEOUT 360
     )
 
+    if(APPLE)
+        ExternalProject_Add_Step(QtZeroConf sanitize_install_script
+                COMMAND ${CMAKE_COMMAND}
+                -DINPUT=${CMAKE_BINARY_DIR}/QtZeroConf-prefix/src/QtZeroConf-build/cmake_install.cmake
+                -P ${CMAKE_SOURCE_DIR}/cmake/SanitizeAppleInstallScript.cmake
+                DEPENDEES configure
+                DEPENDERS install
+        )
+    endif()
+
     if(WIN32)
         set(LIBQTZEROCONF ${EXTERNAL_INSTALL_LOCATION}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_IMPORT_LIBRARY_PREFIX}QtZeroConf${CMAKE_IMPORT_LIBRARY_SUFFIX})
         set(RUNTIMEQTZEROCONF ${EXTERNAL_INSTALL_LOCATION}/${CMAKE_INSTALL_BINDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}QtZeroConf${CMAKE_SHARED_LIBRARY_SUFFIX})
+    else()
+        set(LIBQTZEROCONF ${EXTERNAL_INSTALL_LOCATION}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}QtZeroConf${CMAKE_SHARED_LIBRARY_SUFFIX})
     endif()
 
     ExternalProject_Add(qhotkey
@@ -140,13 +152,31 @@ if(NOT FAIRWINDSK_MOBILE)
             TIMEOUT 360
     )
 
+    if(APPLE)
+        ExternalProject_Add_Step(qhotkey sanitize_install_script
+                COMMAND ${CMAKE_COMMAND}
+                -DINPUT=${CMAKE_BINARY_DIR}/qhotkey-prefix/src/qhotkey-build/cmake_install.cmake
+                -P ${CMAKE_SOURCE_DIR}/cmake/SanitizeAppleInstallScript.cmake
+                DEPENDEES configure
+                DEPENDERS install
+        )
+    endif()
+
     if(WIN32)
         set(LIBQHOTKEY ${EXTERNAL_INSTALL_LOCATION}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_IMPORT_LIBRARY_PREFIX}qhotkey${CMAKE_IMPORT_LIBRARY_SUFFIX})
         set(RUNTIMEQHOTKEY ${EXTERNAL_INSTALL_LOCATION}/${CMAKE_INSTALL_BINDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}qhotkey${CMAKE_SHARED_LIBRARY_SUFFIX})
+    else()
+        set(LIBQHOTKEY ${EXTERNAL_INSTALL_LOCATION}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}qhotkey${CMAKE_SHARED_LIBRARY_SUFFIX})
     endif()
 
     list(APPEND FAIRWINDSK_EXTERNAL_DEPENDENCIES QtZeroConf qhotkey)
     list(APPEND FAIRWINDSK_LINK_LIBRARIES ${LIBQTZEROCONF} ${LIBQHOTKEY})
+
+    if(WIN32)
+        list(APPEND FAIRWINDSK_POST_BUILD_COMMANDS
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different ${RUNTIMEQTZEROCONF} $<TARGET_FILE_DIR:${PROJECT_NAME}>
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different ${RUNTIMEQHOTKEY} $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+    endif()
 endif()
 
 # ==========================================
@@ -281,6 +311,23 @@ endforeach()
 target_link_libraries(${PROJECT_NAME} PRIVATE ${FAIRWINDSK_LINK_LIBRARIES})
 if(FAIRWINDSK_MOBILE)
     target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::WebView)
+endif()
+
+if(NOT WIN32 AND NOT FAIRWINDSK_MOBILE)
+    set(_FAIRWINDSK_EXTERNAL_LIB_DIR "${EXTERNAL_INSTALL_LOCATION}/${CMAKE_INSTALL_LIBDIR}")
+    set_target_properties(${PROJECT_NAME} PROPERTIES BUILD_RPATH "${_FAIRWINDSK_EXTERNAL_LIB_DIR}")
+    if(APPLE)
+        set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "@executable_path/../Frameworks;@loader_path/../Frameworks")
+    else()
+        set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN;$ORIGIN/../lib")
+    endif()
+endif()
+
+if(NOT FAIRWINDSK_MOBILE)
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_SOURCE_DIR}/resources/images/icons $<TARGET_FILE_DIR:${PROJECT_NAME}>/icons/
+            ${FAIRWINDSK_POST_BUILD_COMMANDS})
 endif()
 # ==========================================
 # 7. INSTALLAZIONE E FINALIZE

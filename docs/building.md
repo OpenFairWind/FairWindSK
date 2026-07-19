@@ -247,6 +247,7 @@ cd FairWindSK
 8. Let Qt Creator configure the project. The mobile configuration should:
    - use `Qt::WebView`, `Qt::Quick`, and `Qt::QuickWidgets`
    - skip desktop-only dependencies such as `QtZeroConf`, `QHotkey`, `PrintSupport`, and `QtWebEngineWidgets`
+   - use the checked-in Android package metadata from `android/AndroidManifest.xml`
 9. Build the application from Qt Creator with `Build` -> `Build Project`.
 10. Connect an Android device with developer mode enabled, or start an Android emulator.
 11. Deploy with `Build` -> `Run`, or use `Projects` -> `Run` to select the target device first.
@@ -269,6 +270,8 @@ Qt Creator is still the recommended path for packaging and deployment because it
 
 Notes:
 
+- The checked-in Android manifest keeps FairWindSK in a single landscape activity, requests network/location permissions needed for onboard Signal K usage, allows cleartext traffic for local vessel servers, and enables hardware acceleration for the Qt WebView content.
+- Android packaging pulls in KDAB's `android_openssl` helper from CMake so HTTPS-enabled Signal K endpoints can load the required OpenSSL runtime libraries in the APK.
 - Desktop-only integrations such as `QHotkey`, Zeroconf browser discovery, and the shared `QWebEngineProfile` cookie path remain disabled on Android. Native `file://` launcher apps are blocked on every target by the single-window model.
 - Embedded previews and web apps still load inside the application, but advanced desktop WebEngine-specific hooks are intentionally not compiled into the Android target.
 
