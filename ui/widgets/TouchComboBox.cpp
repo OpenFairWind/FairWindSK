@@ -458,7 +458,8 @@ namespace fairwindsk::ui::widgets {
                 m_editorInLayout = true;
             }
             m_editor->setReadOnly(!editable);
-            m_editor->setFocusPolicy(editable ? Qt::StrongFocus : Qt::NoFocus);
+            // Editable marine controls summon the soft keyboard only after an intentional touch.
+            m_editor->setFocusPolicy(editable ? Qt::ClickFocus : Qt::NoFocus);
             m_editor->setAttribute(Qt::WA_InputMethodEnabled, editable);
             m_editor->setEnabled(isEnabled() && editable);
             m_editor->setVisible(editable);

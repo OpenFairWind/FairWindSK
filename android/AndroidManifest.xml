@@ -38,7 +38,7 @@
             android:label="FairWindSK"
             android:launchMode="singleTop"
             android:screenOrientation="landscape"
-            android:windowSoftInputMode="adjustResize"
+            android:windowSoftInputMode="adjustNothing"
             android:theme="@style/FairWindSKTheme"
             android:exported="true">
             <intent-filter>

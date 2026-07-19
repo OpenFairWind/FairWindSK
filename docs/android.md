@@ -281,6 +281,7 @@ Common failures:
 - **Qt component not found:** install the missing module for both the host and Android kit of the same Qt version.
 - **GLES/EGL missing:** confirm the NDK toolchain is being chainloaded rather than the host compiler.
 - **APK installs only on newer Android:** inspect `sdkVersion` with `aapt2`; FairWindSK's minimum must remain 33.
+- **Keyboard opens unexpectedly or the Qt surface flickers:** use the shipped `adjustNothing` soft-input mode, keep editable touch controls on explicit-click focus, and confirm that no device overlay has replaced those manifest settings.
 - **Signature mismatch on update:** uninstall the differently signed development build or sign with the same protected release key. Uninstalling clears application data.
 - **Signal K unavailable:** use the server's LAN address; Android `localhost` refers to the Android device.
 
