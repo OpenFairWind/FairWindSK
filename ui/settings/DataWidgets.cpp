@@ -1,6 +1,7 @@
 #include "DataWidgets.hpp"
 
 #include <QAbstractItemView>
+#include <QColor>
 #include <QEvent>
 #include <QFormLayout>
 #include <QFrame>
@@ -11,6 +12,7 @@
 #include <QListWidget>
 #include <QListWidgetItem>
 #include <QMessageBox>
+#include <QPalette>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QScroller>
@@ -24,6 +26,7 @@
 #include "BarSettingsUi.hpp"
 #include "ui/IconUtils.hpp"
 #include "ui/layout/BarLayout.hpp"
+#include "ui/widgets/TouchCheckBox.hpp"
 #include "ui/widgets/TouchIconBrowser.hpp"
 #include "ui/widgets/TouchComboBox.hpp"
 #include "ui/widgets/TouchSpinBox.hpp"
@@ -151,13 +154,29 @@ namespace fairwindsk::ui::settings {
 
         m_typeComboBox = new widgets::TouchComboBox(editorWidget);
         for (const auto kind : {widgets::DataWidgetKind::Numeric,
-                                widgets::DataWidgetKind::Gauge,
                                 widgets::DataWidgetKind::Position,
+                                widgets::DataWidgetKind::PositionRows,
                                 widgets::DataWidgetKind::DateTime,
                                 widgets::DataWidgetKind::Waypoint}) {
             m_typeComboBox->addItem(widgets::dataWidgetKindLabel(kind), widgets::dataWidgetKindId(kind));
         }
         formLayout->addRow(tr("Type"), m_typeComboBox);
+
+        m_visualizationComboBox = new widgets::TouchComboBox(editorWidget);
+        for (const auto mode : {widgets::DataWidgetVisualizationMode::Text,
+                                widgets::DataWidgetVisualizationMode::Gauge}) {
+            m_visualizationComboBox->addItem(widgets::dataWidgetVisualizationModeLabel(mode),
+                                             widgets::dataWidgetVisualizationModeId(mode));
+        }
+        formLayout->addRow(tr("Visualization Mode"), m_visualizationComboBox);
+
+        m_showIconCheckBox = new widgets::TouchCheckBox(editorWidget);
+        m_showIconCheckBox->setText(tr("Show icon"));
+        formLayout->addRow(tr("Default Icon"), m_showIconCheckBox);
+
+        m_showTextCheckBox = new widgets::TouchCheckBox(editorWidget);
+        m_showTextCheckBox->setText(tr("Show text"));
+        formLayout->addRow(tr("Default Text"), m_showTextCheckBox);
 
         m_signalKPathEdit = new QLineEdit(editorWidget);
         m_signalKPathEdit->setPlaceholderText(tr("Signal K path"));
@@ -190,6 +209,51 @@ namespace fairwindsk::ui::settings {
         m_minPeriodSpinBox->setSuffix(tr(" ms"));
         formLayout->addRow(tr("Minimum Period"), m_minPeriodSpinBox);
 
+        m_valueTextSizeSpinBox = new widgets::TouchSpinBox(editorWidget);
+        m_valueTextSizeSpinBox->setRange(8, 48);
+        m_valueTextSizeSpinBox->setDecimals(0);
+        m_valueTextSizeSpinBox->setSingleStep(1);
+        m_valueTextSizeSpinBox->setSuffix(tr(" pt"));
+        formLayout->addRow(tr("Value Text Size"), m_valueTextSizeSpinBox);
+
+        formLayout->addRow(tr("Value Text Color"),
+                           createColorControl(editorWidget,
+                                              &m_valueTextColorButton,
+                                              &m_clearValueTextColorButton,
+                                              tr("Choose value text color")));
+
+        m_labelTextSizeSpinBox = new widgets::TouchSpinBox(editorWidget);
+        m_labelTextSizeSpinBox->setRange(8, 48);
+        m_labelTextSizeSpinBox->setDecimals(0);
+        m_labelTextSizeSpinBox->setSingleStep(1);
+        m_labelTextSizeSpinBox->setSuffix(tr(" pt"));
+        formLayout->addRow(tr("Label Text Size"), m_labelTextSizeSpinBox);
+
+        formLayout->addRow(tr("Label Text Color"),
+                           createColorControl(editorWidget,
+                                              &m_labelTextColorButton,
+                                              &m_clearLabelTextColorButton,
+                                              tr("Choose label text color")));
+
+        m_trendTextSizeSpinBox = new widgets::TouchSpinBox(editorWidget);
+        m_trendTextSizeSpinBox->setRange(8, 48);
+        m_trendTextSizeSpinBox->setDecimals(0);
+        m_trendTextSizeSpinBox->setSingleStep(1);
+        m_trendTextSizeSpinBox->setSuffix(tr(" pt"));
+        formLayout->addRow(tr("Trend Text Size"), m_trendTextSizeSpinBox);
+
+        formLayout->addRow(tr("Trend Increasing Color"),
+                           createColorControl(editorWidget,
+                                              &m_trendIncreasingColorButton,
+                                              &m_clearTrendIncreasingColorButton,
+                                              tr("Choose increasing trend color")));
+
+        formLayout->addRow(tr("Trend Decreasing Color"),
+                           createColorControl(editorWidget,
+                                              &m_trendDecreasingColorButton,
+                                              &m_clearTrendDecreasingColorButton,
+                                              tr("Choose decreasing trend color")));
+
         m_minimumSpinBox = new widgets::TouchSpinBox(editorWidget);
         m_minimumSpinBox->setRange(-1000000000.0, 1000000000.0);
         m_minimumSpinBox->setDecimals(3);
@@ -215,12 +279,18 @@ namespace fairwindsk::ui::settings {
             m_nameEdit,
             m_iconEdit,
             m_typeComboBox,
+            m_visualizationComboBox,
+            m_showIconCheckBox,
+            m_showTextCheckBox,
             m_signalKPathEdit,
             m_sourceUnitEdit,
             m_defaultUnitEdit,
             m_updatePolicyComboBox,
             m_periodSpinBox,
             m_minPeriodSpinBox,
+            m_valueTextSizeSpinBox,
+            m_labelTextSizeSpinBox,
+            m_trendTextSizeSpinBox,
             m_minimumSpinBox,
             m_maximumSpinBox,
             m_dateTimeFormatEdit
@@ -237,12 +307,18 @@ namespace fairwindsk::ui::settings {
         connect(m_nameEdit, &QLineEdit::editingFinished, this, &DataWidgets::onEditorChanged);
         connect(m_iconEdit, &QLineEdit::editingFinished, this, &DataWidgets::onEditorChanged);
         connect(m_typeComboBox, qOverload<int>(&widgets::TouchComboBox::currentIndexChanged), this, &DataWidgets::onEditorChanged);
+        connect(m_visualizationComboBox, qOverload<int>(&widgets::TouchComboBox::currentIndexChanged), this, &DataWidgets::onEditorChanged);
+        connect(m_showIconCheckBox, &widgets::TouchCheckBox::toggled, this, &DataWidgets::onEditorChanged);
+        connect(m_showTextCheckBox, &widgets::TouchCheckBox::toggled, this, &DataWidgets::onEditorChanged);
         connect(m_signalKPathEdit, &QLineEdit::editingFinished, this, &DataWidgets::onEditorChanged);
         connect(m_sourceUnitEdit, &QLineEdit::editingFinished, this, &DataWidgets::onEditorChanged);
         connect(m_defaultUnitEdit, &QLineEdit::editingFinished, this, &DataWidgets::onEditorChanged);
         connect(m_updatePolicyComboBox, qOverload<int>(&widgets::TouchComboBox::currentIndexChanged), this, &DataWidgets::onEditorChanged);
         connect(m_periodSpinBox, qOverload<int>(&widgets::TouchSpinBox::valueChanged), this, &DataWidgets::onEditorChanged);
         connect(m_minPeriodSpinBox, qOverload<int>(&widgets::TouchSpinBox::valueChanged), this, &DataWidgets::onEditorChanged);
+        connect(m_valueTextSizeSpinBox, qOverload<int>(&widgets::TouchSpinBox::valueChanged), this, &DataWidgets::onEditorChanged);
+        connect(m_labelTextSizeSpinBox, qOverload<int>(&widgets::TouchSpinBox::valueChanged), this, &DataWidgets::onEditorChanged);
+        connect(m_trendTextSizeSpinBox, qOverload<int>(&widgets::TouchSpinBox::valueChanged), this, &DataWidgets::onEditorChanged);
         connect(m_minimumSpinBox, qOverload<double>(&widgets::TouchSpinBox::valueChanged), this, &DataWidgets::onEditorChanged);
         connect(m_maximumSpinBox, qOverload<double>(&widgets::TouchSpinBox::valueChanged), this, &DataWidgets::onEditorChanged);
         connect(m_dateTimeFormatEdit, &QLineEdit::editingFinished, this, &DataWidgets::onEditorChanged);
@@ -281,6 +357,18 @@ namespace fairwindsk::ui::settings {
             fairwindsk::ui::BottomBarButtonChrome::Accent,
             QSize(24, 24),
             kControlHeight);
+        for (auto *button : {m_clearValueTextColorButton,
+                             m_clearLabelTextColorButton,
+                             m_clearTrendIncreasingColorButton,
+                             m_clearTrendDecreasingColorButton}) {
+            fairwindsk::ui::applyBottomBarToolButtonChrome(
+                button,
+                chrome,
+                fairwindsk::ui::BottomBarButtonChrome::Flat,
+                QSize(24, 24),
+                kControlHeight);
+        }
+        updateColorButtons();
     }
 
     void DataWidgets::changeEvent(QEvent *event) {
@@ -336,12 +424,26 @@ namespace fairwindsk::ui::settings {
             m_iconEdit,
             m_chooseIconButton,
             m_typeComboBox,
+            m_visualizationComboBox,
+            m_showIconCheckBox,
+            m_showTextCheckBox,
             m_signalKPathEdit,
             m_sourceUnitEdit,
             m_defaultUnitEdit,
             m_updatePolicyComboBox,
             m_periodSpinBox,
             m_minPeriodSpinBox,
+            m_valueTextSizeSpinBox,
+            m_labelTextSizeSpinBox,
+            m_trendTextSizeSpinBox,
+            m_valueTextColorButton,
+            m_labelTextColorButton,
+            m_trendIncreasingColorButton,
+            m_trendDecreasingColorButton,
+            m_clearValueTextColorButton,
+            m_clearLabelTextColorButton,
+            m_clearTrendIncreasingColorButton,
+            m_clearTrendDecreasingColorButton,
             m_minimumSpinBox,
             m_maximumSpinBox,
             m_dateTimeFormatEdit
@@ -362,12 +464,18 @@ namespace fairwindsk::ui::settings {
         const QSignalBlocker nameBlocker(m_nameEdit);
         const QSignalBlocker iconBlocker(m_iconEdit);
         const QSignalBlocker typeBlocker(m_typeComboBox);
+        const QSignalBlocker visualizationBlocker(m_visualizationComboBox);
+        const QSignalBlocker showIconBlocker(m_showIconCheckBox);
+        const QSignalBlocker showTextBlocker(m_showTextCheckBox);
         const QSignalBlocker pathBlocker(m_signalKPathEdit);
         const QSignalBlocker sourceUnitBlocker(m_sourceUnitEdit);
         const QSignalBlocker defaultUnitBlocker(m_defaultUnitEdit);
         const QSignalBlocker policyBlocker(m_updatePolicyComboBox);
         const QSignalBlocker periodBlocker(m_periodSpinBox);
         const QSignalBlocker minPeriodBlocker(m_minPeriodSpinBox);
+        const QSignalBlocker valueSizeBlocker(m_valueTextSizeSpinBox);
+        const QSignalBlocker labelSizeBlocker(m_labelTextSizeSpinBox);
+        const QSignalBlocker trendSizeBlocker(m_trendTextSizeSpinBox);
         const QSignalBlocker minimumBlocker(m_minimumSpinBox);
         const QSignalBlocker maximumBlocker(m_maximumSpinBox);
         const QSignalBlocker dateBlocker(m_dateTimeFormatEdit);
@@ -375,8 +483,18 @@ namespace fairwindsk::ui::settings {
         m_idValueLabel->setText(definition.id);
         m_nameEdit->setText(definition.name);
         m_iconEdit->setText(definition.icon);
-        const int typeIndex = m_typeComboBox->findData(widgets::dataWidgetKindId(definition.kind));
+        const auto editorKind = definition.kind == widgets::DataWidgetKind::Gauge
+                                    ? widgets::DataWidgetKind::Numeric
+                                    : definition.kind;
+        const int typeIndex = m_typeComboBox->findData(widgets::dataWidgetKindId(editorKind));
         m_typeComboBox->setCurrentIndex(typeIndex >= 0 ? typeIndex : 0);
+        const auto visualizationMode = definition.kind == widgets::DataWidgetKind::Gauge
+                                           ? widgets::DataWidgetVisualizationMode::Gauge
+                                           : definition.visualizationMode;
+        const int visualizationIndex = m_visualizationComboBox->findData(widgets::dataWidgetVisualizationModeId(visualizationMode));
+        m_visualizationComboBox->setCurrentIndex(visualizationIndex >= 0 ? visualizationIndex : 0);
+        m_showIconCheckBox->setChecked(definition.showIcon);
+        m_showTextCheckBox->setChecked(definition.showText);
         m_signalKPathEdit->setText(definition.signalKPath);
         m_sourceUnitEdit->setText(definition.sourceUnit);
         m_defaultUnitEdit->setText(definition.defaultUnit);
@@ -384,6 +502,13 @@ namespace fairwindsk::ui::settings {
         m_updatePolicyComboBox->setCurrentIndex(policyIndex >= 0 ? policyIndex : 0);
         m_periodSpinBox->setValue(definition.period);
         m_minPeriodSpinBox->setValue(definition.minPeriod);
+        m_valueTextSizeSpinBox->setValue(definition.valueTextSize > 0 ? definition.valueTextSize : 11);
+        m_labelTextSizeSpinBox->setValue(definition.labelTextSize > 0 ? definition.labelTextSize : 10);
+        m_trendTextSizeSpinBox->setValue(definition.trendTextSize > 0 ? definition.trendTextSize : 10);
+        setColorButtonValue(m_valueTextColorButton, definition.valueTextColor);
+        setColorButtonValue(m_labelTextColorButton, definition.labelTextColor);
+        setColorButtonValue(m_trendIncreasingColorButton, definition.trendIncreasingColor);
+        setColorButtonValue(m_trendDecreasingColorButton, definition.trendDecreasingColor);
         m_minimumSpinBox->setValue(definition.minimum);
         m_maximumSpinBox->setValue(definition.maximum);
         m_dateTimeFormatEdit->setText(definition.dateTimeFormat);
@@ -391,6 +516,7 @@ namespace fairwindsk::ui::settings {
         m_populating = false;
         setEditorEnabled(!definition.id.isEmpty());
         updateIconPreview();
+        updateColorButtons();
     }
 
     widgets::DataWidgetDefinition DataWidgets::editorDefinition() const {
@@ -405,12 +531,22 @@ namespace fairwindsk::ui::settings {
         }
         definition.icon = widgets::TouchIconBrowser::normalizedIconStoragePath(m_iconEdit->text().trimmed());
         definition.kind = widgets::dataWidgetKindFromId(m_typeComboBox->currentData().toString());
+        definition.visualizationMode = widgets::dataWidgetVisualizationModeFromId(m_visualizationComboBox->currentData().toString());
+        definition.showIcon = m_showIconCheckBox->isChecked();
+        definition.showText = m_showTextCheckBox->isChecked();
         definition.signalKPath = m_signalKPathEdit->text().trimmed();
         definition.sourceUnit = m_sourceUnitEdit->text().trimmed();
         definition.defaultUnit = m_defaultUnitEdit->text().trimmed();
         definition.updatePolicy = m_updatePolicyComboBox->currentData().toString();
         definition.period = qRound(m_periodSpinBox->value());
         definition.minPeriod = qRound(m_minPeriodSpinBox->value());
+        definition.valueTextSize = qRound(m_valueTextSizeSpinBox->value());
+        definition.labelTextSize = qRound(m_labelTextSizeSpinBox->value());
+        definition.trendTextSize = qRound(m_trendTextSizeSpinBox->value());
+        definition.valueTextColor = colorButtonValue(m_valueTextColorButton);
+        definition.labelTextColor = colorButtonValue(m_labelTextColorButton);
+        definition.trendIncreasingColor = colorButtonValue(m_trendIncreasingColorButton);
+        definition.trendDecreasingColor = colorButtonValue(m_trendDecreasingColorButton);
         definition.minimum = m_minimumSpinBox->value();
         definition.maximum = m_maximumSpinBox->value();
         if (definition.maximum <= definition.minimum) {
@@ -466,6 +602,7 @@ namespace fairwindsk::ui::settings {
                                  : QStringLiteral("%1\n%2").arg(definition.name, definition.signalKPath));
         }
         updateIconPreview();
+        updateColorButtons();
         m_settings->markDirty(FairWindSK::RuntimeUi | FairWindSK::RuntimeSignalKPaths, 0);
     }
 
@@ -482,6 +619,143 @@ namespace fairwindsk::ui::settings {
         } else {
             m_iconPreview->setText(QString());
             m_iconPreview->setPixmap(pixmap);
+        }
+    }
+
+    QWidget *DataWidgets::createColorControl(QWidget *parent,
+                                             QPushButton **button,
+                                             QToolButton **clearButton,
+                                             const QString &tooltip) {
+        auto *host = new QWidget(parent);
+        auto *layout = new QHBoxLayout(host);
+        layout->setContentsMargins(0, 0, 0, 0);
+        layout->setSpacing(8);
+
+        auto *colorButton = new QPushButton(host);
+        colorButton->setToolTip(tooltip);
+        colorButton->setMinimumHeight(kControlHeight);
+        colorButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        layout->addWidget(colorButton, 1);
+
+        auto *resetButton = new QToolButton(host);
+        resetButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/delete-google.svg")));
+        resetButton->setToolTip(tr("Use theme color"));
+        resetButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
+        resetButton->setMinimumSize(QSize(kControlHeight, kControlHeight));
+        layout->addWidget(resetButton, 0);
+
+        if (button) {
+            *button = colorButton;
+        }
+        if (clearButton) {
+            *clearButton = resetButton;
+        }
+
+        connect(colorButton, &QPushButton::clicked, this, [this, colorButton]() {
+            chooseColor(colorButton, colorButton->toolTip());
+        });
+        connect(resetButton, &QToolButton::clicked, this, [this, colorButton]() {
+            clearColor(colorButton);
+        });
+
+        return host;
+    }
+
+    void DataWidgets::chooseColor(QPushButton *button, const QString &title) {
+        if (!button || !button->isEnabled()) {
+            return;
+        }
+
+        QColor initial(colorButtonValue(button));
+        if (!initial.isValid()) {
+            initial = palette().color(QPalette::WindowText);
+        }
+
+        bool accepted = false;
+        const QColor chosen = drawer::getColor(this, title, initial, &accepted, false);
+        if (!accepted || !chosen.isValid()) {
+            return;
+        }
+
+        setColorButtonValue(button, chosen.name(QColor::HexRgb));
+        persistEditor();
+    }
+
+    void DataWidgets::clearColor(QPushButton *button) {
+        if (!button || !button->isEnabled()) {
+            return;
+        }
+
+        setColorButtonValue(button, QString());
+        persistEditor();
+    }
+
+    QString DataWidgets::colorButtonValue(const QPushButton *button) const {
+        return button ? button->property("fwDataWidgetColor").toString() : QString();
+    }
+
+    void DataWidgets::setColorButtonValue(QPushButton *button, const QString &color) {
+        if (!button) {
+            return;
+        }
+
+        const QColor parsed(color.trimmed());
+        button->setProperty("fwDataWidgetColor", parsed.isValid() ? parsed.name(QColor::HexRgb) : QString());
+    }
+
+    void DataWidgets::updateColorButtons() {
+        auto *fairWindSK = FairWindSK::getInstance();
+        const auto *configuration = m_settings ? m_settings->getConfiguration() : (fairWindSK ? fairWindSK->getConfiguration() : nullptr);
+        const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
+        const auto chrome = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), false);
+
+        for (auto *button : {m_valueTextColorButton,
+                             m_labelTextColorButton,
+                             m_trendIncreasingColorButton,
+                             m_trendDecreasingColorButton}) {
+            if (!button) {
+                continue;
+            }
+
+            const QColor color(colorButtonValue(button));
+            if (color.isValid()) {
+                const QColor textColor = fairwindsk::ui::bestContrastingColor(color, {Qt::white, Qt::black});
+                button->setText(color.name(QColor::HexRgb).toUpper());
+                button->setStyleSheet(QStringLiteral(
+                    "QPushButton {"
+                    " min-height: %1px;"
+                    " border-radius: 8px;"
+                    " border: 1px solid %2;"
+                    " background: %3;"
+                    " color: %4;"
+                    " font-weight: 700;"
+                    " padding: 0 14px;"
+                    "}"
+                    "QPushButton:pressed { background: %5; }")
+                                          .arg(QString::number(kControlHeight),
+                                               chrome.border.name(),
+                                               color.name(),
+                                               textColor.name(),
+                                               color.darker(115).name()));
+            } else {
+                button->setText(tr("Theme"));
+                button->setStyleSheet(QStringLiteral(
+                    "QPushButton {"
+                    " min-height: %1px;"
+                    " border-radius: 8px;"
+                    " border: 1px solid %2;"
+                    " background: %3;"
+                    " color: %4;"
+                    " font-weight: 700;"
+                    " padding: 0 14px;"
+                    "}"
+                    "QPushButton:pressed { background: %5; }")
+                                          .arg(QString::number(kControlHeight),
+                                               chrome.border.name(),
+                                               fairwindsk::ui::comfortAlpha(chrome.buttonBackground, 28).name(QColor::HexArgb),
+                                               chrome.text.name(),
+                                               fairwindsk::ui::comfortAlpha(chrome.hoverBackground, 92).name(QColor::HexArgb)));
+            }
         }
     }
 
@@ -504,9 +778,15 @@ namespace fairwindsk::ui::settings {
         definition.id = widgets::uniqueDataWidgetId(root, definition.name);
         definition.icon = QStringLiteral(":/resources/svg/OpenBridge/lcd-sog.svg");
         definition.kind = widgets::DataWidgetKind::Numeric;
+        definition.visualizationMode = widgets::DataWidgetVisualizationMode::Text;
         definition.updatePolicy = QStringLiteral("instant");
         definition.period = 1000;
         definition.minPeriod = 200;
+        definition.valueTextSize = 11;
+        definition.labelTextSize = 10;
+        definition.trendTextSize = 10;
+        definition.showIcon = false;
+        definition.showText = true;
         definition.minimum = 0.0;
         definition.maximum = 100.0;
         widgets::upsertDataWidgetDefinition(root, definition);

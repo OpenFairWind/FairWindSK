@@ -291,7 +291,8 @@ namespace fairwindsk::ui::settings {
             entry.widgetId = definition.id;
             entry.instanceId = definition.id;
             entry.expandHorizontally = defaultExpandHorizontally(definition.id);
-            entry.showIcon = !definition.dataWidget;
+            entry.showIcon = definition.dataWidget ? definition.showIcon : true;
+            entry.showText = definition.showText;
             paletteEntries.append(entry);
         }
         m_paletteWidget->setEntries(paletteEntries);
@@ -399,7 +400,8 @@ namespace fairwindsk::ui::settings {
             entry.instanceId = definition.id;
             entry.enabled = false;
             entry.expandHorizontally = defaultExpandHorizontally(definition.id);
-            entry.showIcon = !definition.dataWidget;
+            entry.showIcon = definition.dataWidget ? definition.showIcon : true;
+            entry.showText = definition.showText;
             entries.append(entry);
         }
 
@@ -615,7 +617,16 @@ namespace fairwindsk::ui::settings {
         entry.instanceId = widgetId;
         entry.enabled = true;
         entry.expandHorizontally = defaultExpandHorizontally(widgetId);
-        entry.showIcon = !isDataWidgetEntry(entry);
+        const auto definitions = layout::widgetDefinitions(m_settings->getConfiguration()->getRoot());
+        const auto it = std::find_if(definitions.cbegin(), definitions.cend(), [&entry](const layout::WidgetDefinition &definition) {
+            return definition.id == entry.widgetId;
+        });
+        if (it != definitions.cend()) {
+            entry.showIcon = it->dataWidget ? it->showIcon : true;
+            entry.showText = it->showText;
+        } else {
+            entry.showIcon = !isDataWidgetEntry(entry);
+        }
         m_listWidget->addOrSelectEntry(entry);
     }
 

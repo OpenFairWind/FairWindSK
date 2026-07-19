@@ -177,6 +177,25 @@
             "expandVertically": false
         },
         {
+            "id": "position_rows",
+            "name": "Position Rows",
+            "icon": ":/resources/svg/OpenBridge/lcd-position.svg",
+            "type": "position-rows",
+            "visualizationMode": "text",
+            "signalKPath": "navigation.position",
+            "sourceUnit": "",
+            "defaultUnit": "",
+            "updatePolicy": "instant",
+            "period": 1000,
+            "minPeriod": 200,
+            "showIcon": false,
+            "showText": true,
+            "defaultTopEnabled": false,
+            "defaultBottomEnabled": false,
+            "expandHorizontally": true,
+            "expandVertically": true
+        },
+        {
             "id": "cog",
             "name": "COG",
             "icon": ":/resources/svg/OpenBridge/lcd-cog.svg",

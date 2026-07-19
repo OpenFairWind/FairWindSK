@@ -12,8 +12,10 @@ class QListWidget;
 class QListWidgetItem;
 class QPushButton;
 class QToolButton;
+class QWidget;
 
 namespace fairwindsk::ui::widgets {
+    class TouchCheckBox;
     class TouchComboBox;
     class TouchSpinBox;
 }
@@ -51,6 +53,15 @@ namespace fairwindsk::ui::settings {
         QListWidgetItem *itemForId(const QString &id) const;
         void persistEditor();
         void updateIconPreview();
+        QWidget *createColorControl(QWidget *parent,
+                                    QPushButton **button,
+                                    QToolButton **clearButton,
+                                    const QString &tooltip);
+        void chooseColor(QPushButton *button, const QString &title);
+        void clearColor(QPushButton *button);
+        QString colorButtonValue(const QPushButton *button) const;
+        void setColorButtonValue(QPushButton *button, const QString &color);
+        void updateColorButtons();
 
         Settings *m_settings = nullptr;
         bool m_populating = false;
@@ -61,12 +72,26 @@ namespace fairwindsk::ui::settings {
         QLineEdit *m_iconEdit = nullptr;
         QToolButton *m_chooseIconButton = nullptr;
         fairwindsk::ui::widgets::TouchComboBox *m_typeComboBox = nullptr;
+        fairwindsk::ui::widgets::TouchComboBox *m_visualizationComboBox = nullptr;
+        fairwindsk::ui::widgets::TouchCheckBox *m_showIconCheckBox = nullptr;
+        fairwindsk::ui::widgets::TouchCheckBox *m_showTextCheckBox = nullptr;
         QLineEdit *m_signalKPathEdit = nullptr;
         QLineEdit *m_sourceUnitEdit = nullptr;
         QLineEdit *m_defaultUnitEdit = nullptr;
         fairwindsk::ui::widgets::TouchComboBox *m_updatePolicyComboBox = nullptr;
         fairwindsk::ui::widgets::TouchSpinBox *m_periodSpinBox = nullptr;
         fairwindsk::ui::widgets::TouchSpinBox *m_minPeriodSpinBox = nullptr;
+        fairwindsk::ui::widgets::TouchSpinBox *m_valueTextSizeSpinBox = nullptr;
+        fairwindsk::ui::widgets::TouchSpinBox *m_labelTextSizeSpinBox = nullptr;
+        fairwindsk::ui::widgets::TouchSpinBox *m_trendTextSizeSpinBox = nullptr;
+        QPushButton *m_valueTextColorButton = nullptr;
+        QPushButton *m_labelTextColorButton = nullptr;
+        QPushButton *m_trendIncreasingColorButton = nullptr;
+        QPushButton *m_trendDecreasingColorButton = nullptr;
+        QToolButton *m_clearValueTextColorButton = nullptr;
+        QToolButton *m_clearLabelTextColorButton = nullptr;
+        QToolButton *m_clearTrendIncreasingColorButton = nullptr;
+        QToolButton *m_clearTrendDecreasingColorButton = nullptr;
         fairwindsk::ui::widgets::TouchSpinBox *m_minimumSpinBox = nullptr;
         fairwindsk::ui::widgets::TouchSpinBox *m_maximumSpinBox = nullptr;
         QLineEdit *m_dateTimeFormatEdit = nullptr;

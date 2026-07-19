@@ -449,6 +449,7 @@ namespace fairwindsk::ui::mydata {
 
             for (int column = 0; column < values.size(); ++column) {
                 auto *item = new QTableWidgetItem(values.at(column));
+                item->setData(Qt::UserRole, m_model->resourceIdAtRow(row));
                 item->setFlags(item->flags() & ~Qt::ItemIsEditable);
                 const QVariant alignment = m_model->data(m_model->index(row, column), Qt::TextAlignmentRole);
                 if (alignment.isValid()) {
@@ -462,8 +463,8 @@ namespace fairwindsk::ui::mydata {
         m_tableWidget->sortByColumn(0, Qt::AscendingOrder);
 
         if (!selectedId.isEmpty()) {
-            for (int row = 0; row < m_visibleResourceIds.size(); ++row) {
-                if (m_visibleResourceIds.at(row) == selectedId) {
+            for (int row = 0; row < m_tableWidget->rowCount(); ++row) {
+                if (resourceIdForVisibleRow(row) == selectedId) {
                     m_tableWidget->selectRow(row);
                     break;
                 }
@@ -564,8 +565,8 @@ namespace fairwindsk::ui::mydata {
 
         rebuildTable();
         if (!firstImportedId.isEmpty()) {
-            for (int row = 0; row < m_visibleResourceIds.size(); ++row) {
-                if (m_visibleResourceIds.at(row) == firstImportedId) {
+            for (int row = 0; row < m_tableWidget->rowCount(); ++row) {
+                if (resourceIdForVisibleRow(row) == firstImportedId) {
                     m_tableWidget->selectRow(row);
                     break;
                 }
@@ -693,8 +694,8 @@ namespace fairwindsk::ui::mydata {
 
         rebuildTable();
         if (!resultingId.isEmpty()) {
-            for (int row = 0; row < m_visibleResourceIds.size(); ++row) {
-                if (m_visibleResourceIds.at(row) == resultingId) {
+            for (int row = 0; row < m_tableWidget->rowCount(); ++row) {
+                if (resourceIdForVisibleRow(row) == resultingId) {
                     m_tableWidget->selectRow(row);
                     break;
                 }
@@ -717,6 +718,15 @@ namespace fairwindsk::ui::mydata {
     }
 
     QString ResourceCollectionPageBase::resourceIdForVisibleRow(const int row) const {
+        if (m_tableWidget && row >= 0 && row < m_tableWidget->rowCount()) {
+            if (auto *item = m_tableWidget->item(row, 0)) {
+                const QString resourceId = item->data(Qt::UserRole).toString();
+                if (!resourceId.isEmpty()) {
+                    return resourceId;
+                }
+            }
+        }
+
         if (row < 0 || row >= m_visibleResourceIds.size()) {
             return {};
         }

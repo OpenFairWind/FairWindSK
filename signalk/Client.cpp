@@ -1600,17 +1600,22 @@ namespace fairwindsk::signalk {
         jsonDocument.setObject(payload);
         const auto response = finishReply(m_NetworkAccessManager.post(createJsonRequest(resourceUrl(collection, QString(), query)),
                                                                       jsonDocument.toJson()));
-        return QJsonDocument::fromJson(response).object();
+        const QJsonObject object = QJsonDocument::fromJson(response).object();
+        emit resourcesChanged(collection);
+        return object;
     }
 
     QJsonObject Client::putResource(const QString &collection, const QString &id, const QJsonObject &payload) {
         QJsonObject mutablePayload = payload;
-        return signalkPut(resourceUrl(collection, id), mutablePayload);
+        const QJsonObject response = signalkPut(resourceUrl(collection, id), mutablePayload);
+        emit resourcesChanged(collection);
+        return response;
     }
 
     bool Client::deleteResource(const QString &collection, const QString &id) {
         QJsonObject payload;
         signalkDelete(resourceUrl(collection, id), payload);
+        emit resourcesChanged(collection);
         return true;
     }
 

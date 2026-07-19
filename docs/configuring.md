@@ -98,17 +98,31 @@ Top Bar and Bottom Bar instrument readouts are defined by the `dataWidgets` arra
       "signalKPath": "navigation.speedOverGround",
       "sourceUnit": "ms-1",
       "defaultUnit": "kn",
+      "visualizationMode": "text",
       "updatePolicy": "instant",
       "period": 1000,
-      "minPeriod": 200
+      "minPeriod": 200,
+      "valueTextSize": 11,
+      "valueTextColor": "",
+      "labelTextSize": 10,
+      "labelTextColor": "",
+      "trendTextSize": 10,
+      "trendIncreasingColor": "",
+      "trendDecreasingColor": "",
+      "showIcon": false,
+      "showText": true
     }
   ]
 }
 ```
 
-Supported display types are `numerical`, `gauge`, `position`, `datetime`, and `waypoint`. `period`, `minPeriod`, and `updatePolicy` are passed through to the Signal K websocket subscription; FairWindSK sends `instant` by default and also supports `fixed` for servers that require a fixed cadence. The **Settings > Widgets** tab edits these definitions, while **Settings > Top Bar** and **Settings > Bottom Bar** place enabled widgets into `barLayouts.top` and `barLayouts.bottom`.
+Supported data types are `numerical`, `gauge`, `position`, `position-rows`, `datetime`, and `waypoint`. `position-rows` reads the same Signal K position object as `position`, but renders latitude and longitude on separate rows for a more readable MFD bar layout. For numeric values, `visualizationMode` can be `text` or `gauge`; the legacy `type: "gauge"` form is still accepted for compatibility.
 
-Each bar-layout entry stores the item kind (`widget`, `separator`, or `stretch`), the widget id when applicable, ordering, width/height expansion, and display toggles for icon, text, units, and trend. Signal K data widgets can be shown on both the Top Bar and Bottom Bar at the same time; each visible instance subscribes independently. Numeric and gauge data widgets render as two-line MFD readouts: the header line contains text and/or the optional icon, while the value line contains the optional trend marker, converted value, and display unit. Existing bar entries that do not specify an icon toggle treat data widgets as text-only by default. Fixed shell widgets are available from both bar editors and can be moved between the Top Bar and Bottom Bar, including the open-app strip, MyData, POB, Autopilot, Home, Anchor, Alarms, Settings, Signal K box, Clock and Status, and the compact Status indicator.
+The text styling fields let each data widget set value text size/color, label text size/color, trend marker size, and separate increasing/decreasing trend colors. Empty color strings use the active comfort preset. `showIcon` and `showText` are the widget defaults used when the widget is first placed on a bar or when an older bar entry does not specify per-entry display toggles.
+
+`period`, `minPeriod`, and `updatePolicy` are passed through to the Signal K websocket subscription; FairWindSK sends `instant` by default and also supports `fixed` for servers that require a fixed cadence. The **Settings > Widgets** tab edits these definitions, while **Settings > Top Bar** and **Settings > Bottom Bar** place enabled widgets into `barLayouts.top` and `barLayouts.bottom`.
+
+Each bar-layout entry stores the item kind (`widget`, `separator`, or `stretch`), the widget id when applicable, ordering, width/height expansion, and display toggles for icon, text, units, and trend. Signal K data widgets can be shown on both the Top Bar and Bottom Bar at the same time; each visible instance subscribes independently. Numeric and gauge data widgets render as MFD readouts: the header line contains text and/or the optional icon, while the value line contains the optional trend marker, converted value, display unit, and compact native Qt gauge when gauge mode is selected. The compact bar gauge is implemented with native Qt painting to keep the desktop, Raspberry Pi, Android, and iOS dependency surface stable; [Qwt](https://qwt.sourceforge.io/index.html) remains the preferred external Qt Widgets gauge family if FairWindSK later adds larger standalone dial or compass instruments. Fixed shell widgets are available from both bar editors and can be moved between the Top Bar and Bottom Bar, including the open-app strip, MyData, POB, Autopilot, Home, Anchor, Alarms, Settings, Signal K box, Clock and Status, and the compact Status indicator.
 
 If an older configuration does not contain `dataWidgets`, FairWindSK derives the standard Position, COG, SOG, HDG, STW, DPT, waypoint, route, and VMG widgets from the legacy `signalk` paths so existing installs keep showing data.
 

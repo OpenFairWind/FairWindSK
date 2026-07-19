@@ -143,6 +143,7 @@ namespace fairwindsk::signalk {
                                           const QString &statusText);
         void serverMessageChanged(const QString &message);
         void serverStateResynchronized(bool recoveredFromDisconnect);
+        void resourcesChanged(const QString &collection);
 
     private slots:
         void onConnected();
