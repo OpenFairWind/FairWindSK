@@ -259,13 +259,29 @@ if(ANDROID)
         QT_ANDROID_PACKAGE_NAME "org.openfairwind.fairwindsk"
         QT_ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android"
     )
+
+    # --- INIZIO INTEGRAZIONE OPENSSL PER ANDROID ---
+    include(FetchContent)
+    FetchContent_Declare(
+        android_openssl
+        DOWNLOAD_EXTRACT_TIMESTAMP true
+        URL https://github.com/KDAB/android_openssl/archive/refs/heads/master.zip
+    )
+    FetchContent_MakeAvailable(android_openssl)
+    include(${android_openssl_SOURCE_DIR}/android_openssl.cmake)
+
+    # Usiamo la variabile del target corretto
+    add_android_openssl_libraries(${PROJECT_NAME})
+    # --- FINE INTEGRAZIONE OPENSSL ---
 endif()
 foreach(_dependency IN LISTS FAIRWINDSK_EXTERNAL_DEPENDENCIES)
     add_dependencies(${PROJECT_NAME} ${_dependency})
 endforeach()
 
 target_link_libraries(${PROJECT_NAME} PRIVATE ${FAIRWINDSK_LINK_LIBRARIES})
-
+if(FAIRWINDSK_MOBILE)
+    target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::WebView)
+endif()
 # ==========================================
 # 7. INSTALLAZIONE E FINALIZE
 # ==========================================

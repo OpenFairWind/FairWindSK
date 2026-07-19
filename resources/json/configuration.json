@@ -21,27 +21,87 @@
     "comfortViewBackgrounds": {},
     "apps": [
         {
-            "description": "Signal K Server",
+            "description": "App Dock",
             "fairwind": {
                 "active": true,
-                "order": 1000
+                "order": 10
             },
-            "name": "http:///",
+            "name": "https://demo.signalk.org/app-dock/",
             "signalk": {
-                "appIcon": "file://icons/signalkserver_icon.png",
-                "displayName": "Signal K"
+                "appIcon": "file://icons/appdock_icon.png",
+                "displayName": "App Dock"
+            }
+        },
+        {
+            "description": "Freeboard-SK",
+            "fairwind": {
+                "active": true,
+                "order": 20
+            },
+            "name": "https://demo.signalk.org/@signalk/freeboard-sk/",
+            "signalk": {
+                "appIcon": "file://icons/freeboard_icon.png",
+                "displayName": "Freeboard-SK"
+            }
+        },
+        {
+            "description": "Instrumentpanel",
+            "fairwind": {
+                "active": true,
+                "order": 30
+            },
+            "name": "https://demo.signalk.org/@signalk/instrumentpanel",
+            "signalk": {
+                "appIcon": "file://icons/instrumentpanel_icon.png",
+                "displayName": "Instrumentpanel"
+            }
+        },
+        {
+            "description": "Admin UI",
+            "fairwind": {
+                "active": true,
+                "order": 40
+            },
+            "name": "https://demo.signalk.org/@signalk/server-admin-ui/",
+            "signalk": {
+                "appIcon": "file://icons/adminui_icon.png",
+                "displayName": "Admin UI"
+            }
+        },
+        {
+            "description": "KIP Instrument MFD",
+            "fairwind": {
+                "active": true,
+                "order": 50
+            },
+            "name": "https://demo.signalk.org/@mxtommy/kip/",
+            "signalk": {
+                "appIcon": "file://icons/kip_icon.png",
+                "displayName": "KIP"
             }
         },
         {
             "description": "Youtube web application",
             "fairwind": {
                 "active": true,
-                "order": 970
+                "order": 60
             },
             "name": "https://youtube.com",
             "signalk": {
                 "appIcon": "file://icons/youtube_icon.png",
                 "displayName": "Youtube"
+            }
+        },
+        {
+            "description": "Signal K Server",
+            "fairwind": {
+                "active": true,
+                "order": 70
+            },
+            "name": "http:///",
+            "signalk": {
+                "appIcon": "file://icons/signalkserver_icon.png",
+                "displayName": "Signal K"
             }
         }
     ],
@@ -121,7 +181,7 @@
             "name": "COG",
             "icon": ":/resources/svg/OpenBridge/lcd-cog.svg",
             "type": "numerical",
-            "signalKPath": "navigation.courseOverGroundTrue",
+            "signalKPath": "vessels.self.navigation.courseOverGroundTrue",
             "sourceUnit": "rad",
             "defaultUnit": "deg",
             "updatePolicy": "instant",
@@ -135,7 +195,7 @@
             "name": "SOG",
             "icon": ":/resources/svg/OpenBridge/lcd-sog.svg",
             "type": "numerical",
-            "signalKPath": "navigation.speedOverGround",
+            "signalKPath": "vessels.self.navigation.speedOverGround",
             "sourceUnit": "ms-1",
             "defaultUnit": "kn",
             "updatePolicy": "instant",

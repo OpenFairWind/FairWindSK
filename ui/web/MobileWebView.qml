@@ -133,13 +133,14 @@ Item {
 
     WebView {
         id: webView
-        anchors {
+        /*anchors {
             fill: parent
             leftMargin: root.safeAreaLeft
             topMargin: root.safeAreaTop
             rightMargin: root.safeAreaRight
             bottomMargin: Math.max(root.safeAreaBottom, root.keyboardVisible ? root.keyboardInset : 0)
-        }
+        }*/
+        anchors.fill: parent
         focus: true
 
         onLoadingChanged: function(loadRequest) {
@@ -164,5 +165,6 @@ Item {
             root.webFocusChanged(activeFocus)
             root.textInputActiveChanged(root.keyboardVisible && activeFocus)
         }
+
     }
 }

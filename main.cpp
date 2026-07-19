@@ -11,6 +11,7 @@
 #include <QTimer>
 #include <QTranslator>
 
+
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
 #include <QWebEngineProfile>
 #include <QWebEngineSettings>
@@ -277,6 +278,7 @@ int main(int argc, char *argv[]) {
     if (hasArgument(argc, argv, "--self-test-configuration-import")) {
         return runConfigurationImportSelfTest(argc, argv);
     }
+
 
 
     // The translator

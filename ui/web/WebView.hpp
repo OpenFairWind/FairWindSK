@@ -15,7 +15,8 @@
 #include "FairWindSK.hpp"
 
 class QWebEngineView;
-class QQuickWidget;
+class QWebView;
+class QWebViewLoadingInfo;
 
 namespace fairwindsk::ui::web {
 
@@ -71,11 +72,8 @@ namespace fairwindsk::ui::web {
         void handleMobileLoadStarted();
         void handleMobileLoadProgressChanged(int progress);
         void handleMobileLoadFinished(bool ok);
-        void handleMobileCurrentUrlNotified(const QString &url);
+        void handleMobileCurrentUrlNotified(const QUrl &url);
         void handleMobileTitleChanged(const QString &title);
-        void handleMobileFocusChanged(bool focused);
-        void handleMobileTextInputChanged(bool active);
-        void handleMobileViewportChanged(qreal width, qreal height, bool keyboardVisible);
 #endif
         void handleConnectivityChanged(bool restHealthy, bool streamHealthy, const QString &statusText);
         void handleServerStateResynchronized(bool recoveredFromDisconnect);
@@ -118,12 +116,8 @@ namespace fairwindsk::ui::web {
         QWebEngineView *m_desktopView = nullptr;
         class WebPage *m_webPage = nullptr;
 #else
-        QQuickWidget *m_quickView = nullptr;
-        QObject *m_quickRoot = nullptr;
+        QWebView *m_mobileView = nullptr;
         QUrl m_currentUrl;
-        bool m_canGoBack = false;
-        bool m_canGoForward = false;
-        QRect m_mobileViewport;
 #endif
     };
 }
