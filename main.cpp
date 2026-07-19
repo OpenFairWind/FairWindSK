@@ -11,6 +11,7 @@
 #include <QTimer>
 #include <QTranslator>
 
+
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
 #include <QWebEngineProfile>
 #include <QWebEngineSettings>
@@ -26,6 +27,8 @@
 #include "ui/MainWindow.hpp"
 #include "ui/mydata/Files.hpp"
 #include "ui/settings/System.hpp"
+#include <QScreen>
+#include <QGuiApplication>
 
 #include <algorithm>
 
@@ -276,6 +279,8 @@ int main(int argc, char *argv[]) {
         return runConfigurationImportSelfTest(argc, argv);
     }
 
+
+
     // The translator
     QTranslator translator;
 
@@ -319,6 +324,10 @@ int main(int argc, char *argv[]) {
             << "QTWEBENGINE_CHROMIUM_FLAGS=" << qEnvironmentVariable("QTWEBENGINE_CHROMIUM_FLAGS");
 #endif
 
+    // Disattiva completamente l'ingrandimento automatico High-DPI di Qt
+    // costringendo il framework a mappare l'interfaccia 1:1 sui pixel reali.
+    qputenv("QT_AUTO_SCREEN_SCALE_FACTOR", "0");
+    qputenv("QT_ENABLE_HIGHDPI_SCALING", "0");
     // The QT application
     QApplication app(argc, argv);
     qInfo() << "QApplication created";
@@ -345,6 +354,7 @@ int main(int argc, char *argv[]) {
     // Create a new MainWindow object
     fairwindsk::ui::MainWindow w;
     qInfo() << "MainWindow created";
+
 
  #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
     if (auto *profile = fairWindSK->getWebEngineProfile()) {

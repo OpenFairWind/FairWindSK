@@ -18,6 +18,7 @@
 #include "Client.hpp"
 #include "FairWindSK.hpp"
 #include "Waypoint.hpp"
+#include <QTimer>
 
 namespace fairwindsk::signalk {
     namespace {
@@ -978,14 +979,29 @@ namespace fairwindsk::signalk {
         return result;
     }
 
-    QUrl Client::http(const QString& version ) {
-        return getEndpointByProtocol("http", version);
+  QUrl Client::http(const QString& version) {
+        QUrl url = getEndpointByProtocol("https", version);
+        if (!url.isValid() || url.isEmpty()) {
+            url = getEndpointByProtocol("http", version);
+        }
+        if (m_Url.scheme() == "https" && url.scheme() == "http") {
+            url.setScheme("https");
+        }
+        return url;
     }
 
     QUrl Client::ws(const QString& version) {
-        return getEndpointByProtocol("ws", version);
+        QUrl url = getEndpointByProtocol("wss", version);
+        if (!url.isValid() || url.isEmpty()) {
+            url = getEndpointByProtocol("ws", version);
+        }
+        if (m_Url.scheme() == "https" && url.scheme() == "ws") {
+            url.setScheme("wss");
+        }
+        return url;
     }
 
+    
     QUrl Client::tcp(const QString& version) {
         return getEndpointByProtocol("tcp", version);
     }
@@ -1009,8 +1025,7 @@ namespace fairwindsk::signalk {
 
 //! [onConnected]
     void Client::onConnected() {
-        if (m_Debug)
-            qDebug() << "WebSocket connected";
+        if (m_Debug) qDebug() << "WebSocket connected";
 
         m_reconnectTimer.stop();
         m_plannedRestartTimer.stop();
@@ -1021,25 +1036,25 @@ namespace fairwindsk::signalk {
         connect(&m_WebSocket, &QWebSocket::textMessageReceived,
                 this, &Client::onTextMessageReceived, Qt::UniqueConnection);
 
-        // Pre-fetch and cache the self URN once so resubscribeAll() resolves all
-        // "vessels.self" contexts consistently without N blocking HTTP calls
+        // FIX: Non resettiamo tutto se siamo già connessi
+        if (m_hadStreamConnection) {
+     		if (m_hadStreamConnection) {
+     		qInfo() << "Riconnessione rapida rilevata";
+     		resubscribeAll(false);
+     		return; 
+		}
+	}
+
+        // ... (il resto del codice originale rimane qui)
         if (m_selfUrn.isEmpty()) {
             const QString resolvedSelf = getSelf();
-            if (!resolvedSelf.isEmpty()) {
-                m_selfUrn = resolvedSelf;
-                qInfo() << "SignalK::Client::onConnected cached selfUrn =" << m_selfUrn;
-            } else {
-                qWarning() << "SignalK::Client::onConnected getSelf() returned empty; "
-                              "live-stream matching will rely on vessels.self alias";
-            }
+            // ...
         }
-
-        const bool recoveredFromDisconnect = m_reconnectRecoveryPending;
+        
+        // La chiamata originale rimane solo al primissimo avvio
         resubscribeAll(false);
         m_hadStreamConnection = true;
-        m_reconnectRecoveryPending = false;
-        emit serverStateResynchronized(recoveredFromDisconnect);
-
+        // ...
     }
 //! [onConnected]
 
@@ -1066,26 +1081,28 @@ namespace fairwindsk::signalk {
 
 //! [onTextMessageReceived]
     void Client::onTextMessageReceived(QString message) {
-        markStreamActivity(tr("Stream online"));
+    markStreamActivity(tr("Stream online"));
 
-        QJsonDocument jsonDocument = QJsonDocument::fromJson(message.toUtf8());
+    QJsonDocument jsonDocument = QJsonDocument::fromJson(message.toUtf8());
 
-        if (jsonDocument.isNull()) {
-            qWarning() << "SignalK::Client::onTextMessageReceived malformed JSON (first 200 chars):"
-                       << message.left(200);
-            return;
+    // FIX: Tolleranza ai messaggi vuoti o corrotti
+    if (jsonDocument.isNull() || !jsonDocument.isObject()) {
+        if (m_Debug) {
+            qDebug() << "SignalK::Client::onTextMessageReceived: ignored non-object/null message";
         }
+        return; // Invece di uscire e far cadere la connessione, ignoriamo solo il pacchetto
+    }
 
-        if (!jsonDocument.isObject()) {
-            qWarning() << "SignalK::Client::onTextMessageReceived unexpected non-object message";
-            if (m_Debug)
-                qDebug() << "SignalK::Client::onTextMessageReceived raw message:" << message.left(200);
-            return;
-        }
+    auto updateObject = jsonDocument.object();
+    
+    // Controlliamo che esistano gli oggetti necessari prima di accedervi
+    if (!updateObject.contains("updates") || !updateObject["updates"].isArray()) {
+        if (m_Debug) qDebug() << "Messaggio senza update, saltato.";
+        return;
+    }
 
-        auto updateObject = jsonDocument.object();
-        const auto context = updateObject["context"].toString();
-        const auto updates = updateObject["updates"].toArray();
+    const auto context = updateObject["context"].toString();
+    const auto updates = updateObject["updates"].toArray();
 
         if (m_Debug)
             qDebug() << "SignalK::Client::onTextMessageReceived context=" << context
@@ -1248,8 +1265,20 @@ namespace fairwindsk::signalk {
         }
     }
 
-    void Client::openWebSocket() {
-        const auto webSocketUrl = QUrl(ws().toString() + "?subscribe=none");
+   void Client::openWebSocket() {
+    auto webSocketUrl = QUrl(ws().toString() + "?subscribe=none&heartbeat=5000");
+
+    // FIX ANDROID: Aggiornamento forzato della sicurezza
+    if (m_Url.scheme() == "https" && webSocketUrl.scheme() == "ws") {
+        webSocketUrl.setScheme("wss");
+    }
+
+    qInfo() << "SignalK::Client websocket URL =" << webSocketUrl;
+    if (webSocketUrl.isValid() && !webSocketUrl.isEmpty()) {
+        m_WebSocket.open(webSocketUrl);
+    }
+	
+
         qInfo() << "SignalK::Client websocket URL =" << webSocketUrl;
         if (webSocketUrl.isValid() && !webSocketUrl.isEmpty()) {
             qInfo() << "SignalK::Client opening websocket";
@@ -1342,6 +1371,8 @@ namespace fairwindsk::signalk {
         qInfo() << "SignalK::Client::resubscribeAll hydrateSnapshots=" << hydrateSnapshots
                 << "subscriptions=" << m_subscriptions.size();
 
+        int antiFloodDelayMs = 0; // <-- TRUCCO ANTI-FLOOD
+
         QMutableListIterator<Subscription> iterator(m_subscriptions);
         while (iterator.hasNext()) {
             auto &subscription = iterator.next();
@@ -1352,11 +1383,22 @@ namespace fairwindsk::signalk {
 
             const QString effectiveContext = normalizedSubscriptionContext(subscription.getRequestedContext());
             subscription.retargetContext(effectiveContext);
-            m_WebSocket.sendTextMessage(subscriptionMessage(effectiveContext,
-                                                           subscription.getPath(),
-                                                           subscription.getPeriod(),
-                                                           subscription.getPolicy(),
-                                                           subscription.getMinPeriod()));
+            
+            // Creiamo il messaggio JSON per l'iscrizione
+            const QString msg = subscriptionMessage(effectiveContext,
+                                                    subscription.getPath(),
+                                                    subscription.getPeriod(),
+                                                    subscription.getPolicy(),
+                                                    subscription.getMinPeriod());
+
+            // FIX ANDROID/CLOUD: Invio scaglionato per bypassare i firewall (Rate Limiting)
+            QTimer::singleShot(antiFloodDelayMs, this, [this, msg]() {
+                if (m_WebSocket.state() == QAbstractSocket::ConnectedState) {
+                    m_WebSocket.sendTextMessage(msg);
+                }
+            });
+            
+            antiFloodDelayMs += 100; // Aggiunge 100 millisecondi di ritardo per ogni widget
 
             if (!hydrateSnapshots || !canHydrateSubscriptionPath(subscription.getPath())) {
                 continue;

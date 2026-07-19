@@ -1,7 +1,5 @@
-<!DOCTYPE RCC><RCC version="1.0">
-    <qresource>
-
-        <!-- JSON files -->
+<RCC>
+    <qresource prefix="/">
         <file>resources/json/configuration.json</file>
         <file>resources/json/units.json</file>
         <file>resources/json/signalk.json</file>
@@ -11,20 +9,14 @@
         <file>resources/stylesheets/sunset.qss</file>
         <file>resources/stylesheets/dusk.qss</file>
         <file>resources/stylesheets/night.qss</file>
-
-        <!-- Authors' pictures -->
         <file>resources/images/about/rmontella_64x64.png</file>
         <file>resources/images/about/gmellone_64x64.png</file>
         <file>resources/images/about/cgdevita_64x64.png</file>
         <file>resources/images/about/ddiluccio_64x64.png</file>
         <file>resources/images/about/aciaramella_64x64.png</file>
         <file>resources/images/about/fizzo_64x64.png</file>
-
-        <!-- Splash logo -->
         <file>resources/images/other/carbon_base.png</file>
         <file>resources/images/other/splash_logo.png</file>
-
-        <!-- Generic UI icons from OpenBridge -->
         <file>resources/svg/OpenBridge/unfold-less-google.svg</file>
         <file>resources/svg/OpenBridge/up-iec.svg</file>
         <file>resources/svg/OpenBridge/down-iec.svg</file>
@@ -71,8 +63,6 @@
         <file>resources/svg/OpenBridge/lcd-vmg.svg</file>
         <file>resources/svg/OpenBridge/lcd-wpt.svg</file>
         <file>resources/svg/OpenBridge/lcd-xte.svg</file>
-
-        <!-- Bottom Apps icons from OpenBridge -->
         <file>resources/svg/OpenBridge/database.svg</file>
         <file>resources/svg/OpenBridge/command-autopilot.svg</file>
         <file>resources/svg/OpenBridge/applications.svg</file>
@@ -86,24 +76,18 @@
         <file>resources/svg/OpenBridge/anchor-reset.svg</file>
         <file>resources/svg/OpenBridge/anchor-up.svg</file>
         <file>resources/svg/OpenBridge/alarm-pob.svg</file>
-
-        <!-- Alarms and alerts icons from OpenBridge -->
         <file>resources/svg/OpenBridge/alarm-abandon.svg</file>
         <file>resources/svg/OpenBridge/alarm-adrift.svg</file>
         <file>resources/svg/OpenBridge/alarm-aground.svg</file>
         <file>resources/svg/OpenBridge/alarm-fire.svg</file>
         <file>resources/svg/OpenBridge/alarm-piracy.svg</file>
         <file>resources/svg/OpenBridge/alarm-sinking.svg</file>
-
-        <!-- Navigation bar icons from OpenBridge -->
         <file>resources/svg/OpenBridge/arrow-left-google.svg</file>
         <file>resources/svg/OpenBridge/arrow-right-google.svg</file>
         <file>resources/svg/OpenBridge/close-google.svg</file>
         <file>resources/svg/OpenBridge/refresh-google.svg</file>
         <file>resources/svg/OpenBridge/home.svg</file>
         <file>resources/svg/OpenBridge/configure.svg</file>
-
-        <!-- Launcher icons from OpenBridge -->
         <file>resources/svg/OpenBridge/chevron-double-left-google.svg</file>
         <file>resources/svg/OpenBridge/chevron-double-right-google.svg</file>
         <file>resources/svg/OpenBridge/add-all-apps-to-current-page.svg</file>
@@ -117,16 +101,12 @@
         <file>resources/svg/OpenBridge/show-details-selected-app-in-palette.svg</file>
         <file>resources/svg/OpenBridge/show-details-selected-app-on-current-page.svg</file>
         <file>resources/svg/OpenBridge/show-page-details.svg</file>
-
-        <!-- Anchor bitmap icons -->
         <file>resources/images/bottombar/anchor_drop.png</file>
         <file>resources/images/bottombar/anchor_raise.png</file>
         <file>resources/images/bottombar/anchor_up.png</file>
         <file>resources/images/bottombar/anchor_down.png</file>
         <file>resources/images/bottombar/anchor_reset.png</file>
         <file>resources/images/bottombar/anchor_release.png</file>
-
-        <!-- Alarms bitmap icons -->
         <file>resources/images/bottombar/alarm_alarm.png</file>
         <file>resources/images/bottombar/alarm_abandon.png</file>
         <file>resources/images/bottombar/alarm_adrift.png</file>
@@ -135,12 +115,8 @@
         <file>resources/images/bottombar/alarm_mob.png</file>
         <file>resources/images/bottombar/alarm_piracy.png</file>
         <file>resources/images/bottombar/alarm_sinking.png</file>
-
-        <!-- FairWindSK icon -->
         <file>resources/images/mainwindow/fairwind_icon.png</file>
         <file>resources/images/widgets/throbber_ajax_loader_metal_512.gif</file>
-
-        <!-- Launcher icon -->
         <file>resources/images/icons/apps_icon.png</file>
         <file>resources/images/icons/webapp-256x256.png</file>
         <file>resources/images/icons/chart_icon.png</file>
@@ -165,8 +141,6 @@
         <file>resources/images/icons/spotify_icon.png</file>
         <file>resources/images/icons/radar_icon.png</file>
         <file>resources/images/icons/netflix_icon.png</file>
-
-        <!-- Mydata icons -->
         <file>resources/svg/OpenBridge/edit-google.svg</file>
         <file>resources/svg/OpenBridge/info.svg</file>
         <file>resources/svg/OpenBridge/filter.svg</file>
@@ -188,31 +162,24 @@
         <file>resources/vendor/openlayers/ol.js</file>
         <file>resources/vendor/openlayers/ol.css</file>
         <file>ui/web/MobileWebView.qml</file>
-
         <file>resources/svg/sort-alphabet-ascending-svgrepo-com.svg</file>
         <file>resources/svg/descending-alphabet-sort-svgrepo-com.svg</file>
         <file>resources/svg/export-content-svgrepo-com.svg</file>
         <file>resources/svg/import-content-svgrepo-com.svg</file>
-
         <file>resources/svg/case-sensitive-svgrepo-com.svg</file>
         <file>resources/svg/gui-view-hide-svgrepo-com.svg</file>
         <file>resources/svg/gui-view-show-svgrepo-com.svg</file>
         <file>resources/svg/rename-svgrepo-com.svg</file>
-
         <file>resources/svg/aspect-ratio-svgrepo-com.svg</file>
         <file>resources/svg/zoom-fit-curve-svgrepo-com.svg</file>
         <file>resources/svg/zoom-fit-svgrepo-com.svg</file>
         <file>resources/svg/zoom-in-svgrepo-com.svg</file>
         <file>resources/svg/zoom-out-svgrepo-com.svg</file>
-
-        <!-- Cut, copy, and paste -->
         <file>resources/svg/OpenBridge/content-cut-google.svg</file>
         <file>resources/svg/OpenBridge/content-copy-google.svg</file>
         <file>resources/svg/OpenBridge/content-paste-google.svg</file>
-
         <file>resources/svg/OpenBridge/chart-aton-iec.svg</file>
         <file>resources/svg/OpenBridge/whale.svg</file>
         <file>resources/svg/OpenBridge/waypoint-optional-iec.svg</file>
-
     </qresource>
 </RCC>

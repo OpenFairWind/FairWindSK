@@ -8,6 +8,7 @@
 #include <QJsonDocument>
 #include <QVBoxLayout>
 #include <QtGlobal>
+#include <QQuickView>
 
 #include "Localization.hpp"
 #include "ui/IconUtils.hpp"
@@ -33,17 +34,15 @@
 #include "ui_CertificateErrorDialog.h"
 #include "ui_PasswordDialog.h"
 #else
-#include <QQuickItem>
-#include <QQuickWidget>
-#include <QQmlContext>
-#include <QMetaObject>
-#include <QVariant>
+#include <QWebView>
+#include <QWebViewLoadingInfo>
+#include <QWidget>
 #endif
 
 namespace fairwindsk::ui::web {
     namespace {
         constexpr int kHostedAppLoadTimeoutMs = 15000;
-        constexpr int kHostedAppAuthLoopWindowMs = 15000;
+        constexpr int kHostedAppAuthLoopWindowMs = 45000;
         constexpr int kHostedAppAuthLoopThreshold = 3;
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
 #if QT_VERSION < QT_VERSION_CHECK(6, 8, 0)
@@ -240,9 +239,7 @@ namespace fairwindsk::ui::web {
             m_desktopView->setUrl(url);
         }
 #else
-        if (m_quickRoot) {
-            QMetaObject::invokeMethod(m_quickRoot, "loadUrl", Q_ARG(QVariant, url.toString()));
-        }
+        if (m_mobileView) m_mobileView->setUrl(url);
 #endif
     }
 
@@ -250,14 +247,7 @@ namespace fairwindsk::ui::web {
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         return m_desktopView ? m_desktopView->url() : QUrl();
 #else
-        if (m_quickRoot) {
-            const QVariant value = m_quickRoot->property("currentUrl");
-            if (value.canConvert<QUrl>()) {
-                return value.toUrl();
-            }
-            return QUrl::fromUserInput(value.toString());
-        }
-        return m_currentUrl;
+        return m_mobileView ? m_mobileView->url() : m_currentUrl;
 #endif
     }
 
@@ -268,10 +258,7 @@ namespace fairwindsk::ui::web {
             m_desktopView->setHtml(html, baseUrl);
         }
 #else
-        Q_UNUSED(baseUrl);
-        if (m_quickRoot) {
-            QMetaObject::invokeMethod(m_quickRoot, "setHtmlContent", Q_ARG(QVariant, html), Q_ARG(QVariant, baseUrl.toString()));
-        }
+        if (m_mobileView) m_mobileView->loadHtml(html, baseUrl);
 #endif
     }
 
@@ -288,9 +275,7 @@ namespace fairwindsk::ui::web {
             m_desktopView->reload();
         }
 #else
-        if (m_quickRoot) {
-            QMetaObject::invokeMethod(m_quickRoot, "reloadPage");
-        }
+        if (m_mobileView) m_mobileView->reload();
 #endif
     }
 
@@ -300,9 +285,7 @@ namespace fairwindsk::ui::web {
             m_desktopView->stop();
         }
 #else
-        if (m_quickRoot) {
-            QMetaObject::invokeMethod(m_quickRoot, "stopLoading");
-        }
+        if (m_mobileView) m_mobileView->stop();
 #endif
     }
 
@@ -312,9 +295,7 @@ namespace fairwindsk::ui::web {
             m_desktopView->back();
         }
 #else
-        if (m_quickRoot) {
-            QMetaObject::invokeMethod(m_quickRoot, "goBack");
-        }
+        if (m_mobileView) m_mobileView->goBack();
 #endif
     }
 
@@ -324,9 +305,7 @@ namespace fairwindsk::ui::web {
             m_desktopView->forward();
         }
 #else
-        if (m_quickRoot) {
-            QMetaObject::invokeMethod(m_quickRoot, "goForward");
-        }
+        if (m_mobileView) m_mobileView->goForward();
 #endif
     }
 
@@ -334,7 +313,7 @@ namespace fairwindsk::ui::web {
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         return m_desktopView && m_desktopView->history() && m_desktopView->history()->canGoBack();
 #else
-        return m_quickRoot ? m_quickRoot->property("canGoBack").toBool() : m_canGoBack;
+        return m_mobileView ? m_mobileView->canGoBack() : false;
 #endif
     }
 
@@ -342,7 +321,7 @@ namespace fairwindsk::ui::web {
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         return m_desktopView && m_desktopView->history() && m_desktopView->history()->canGoForward();
 #else
-        return m_quickRoot ? m_quickRoot->property("canGoForward").toBool() : m_canGoForward;
+        return m_mobileView ? m_mobileView->canGoForward() : false;
 #endif
     }
 
@@ -352,9 +331,7 @@ namespace fairwindsk::ui::web {
             m_desktopView->page()->runJavaScript(script);
         }
 #else
-        if (m_quickRoot) {
-            QMetaObject::invokeMethod(m_quickRoot, "runScript", Q_ARG(QVariant, script));
-        }
+        if (m_mobileView) m_mobileView->runJavaScript(script);
 #endif
     }
 
@@ -371,28 +348,17 @@ namespace fairwindsk::ui::web {
 #if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
         m_mobileWebContentFocused = false;
         m_mobileTextInputActive = false;
-        if (m_quickRoot) {
-            QMetaObject::invokeMethod(m_quickRoot, "releaseWebFocus");
-        }
 #endif
     }
-
     void WebView::applyMobileShellMetrics(const QMargins &safeAreaMargins,
                                           const int keyboardInset,
                                           const bool keyboardVisible,
                                           const bool compactMode) {
 #if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
-        if (m_quickRoot) {
-            QMetaObject::invokeMethod(m_quickRoot,
-                                      "applyShellMetrics",
-                                      Q_ARG(QVariant, safeAreaMargins.left()),
-                                      Q_ARG(QVariant, safeAreaMargins.top()),
-                                      Q_ARG(QVariant, safeAreaMargins.right()),
-                                      Q_ARG(QVariant, safeAreaMargins.bottom()),
-                                      Q_ARG(QVariant, keyboardInset),
-                                      Q_ARG(QVariant, keyboardVisible),
-                                      Q_ARG(QVariant, compactMode));
-        }
+        Q_UNUSED(safeAreaMargins);
+        Q_UNUSED(keyboardInset);
+        Q_UNUSED(keyboardVisible);
+        Q_UNUSED(compactMode);
 #else
         Q_UNUSED(safeAreaMargins);
         Q_UNUSED(keyboardInset);
@@ -422,9 +388,7 @@ namespace fairwindsk::ui::web {
             m_desktopView->setZoomFactor(m_zoomPercent / 100.0);
         }
 #else
-        if (m_quickRoot) {
-            QMetaObject::invokeMethod(m_quickRoot, "runScript", Q_ARG(QVariant, zoomScript(m_zoomPercent)));
-        }
+        if (m_mobileView) m_mobileView->runJavaScript(zoomScript(m_zoomPercent));
 #endif
     }
 
@@ -434,13 +398,7 @@ namespace fairwindsk::ui::web {
             m_desktopView->page()->runJavaScript(webLocalizationScript());
         }
 #else
-        if (m_quickRoot) {
-            const QLocale locale = activeWebLocale();
-            QMetaObject::invokeMethod(m_quickRoot,
-                                      "applyLocalization",
-                                      Q_ARG(QVariant, fairwindsk::localization::languageTag(locale)),
-                                      Q_ARG(QVariant, fairwindsk::localization::cultureName(locale)));
-        }
+        if (m_mobileView) m_mobileView->runJavaScript(webLocalizationScript());
 #endif
     }
 
@@ -865,29 +823,26 @@ namespace fairwindsk::ui::web {
     }
 #else
     void WebView::initializeMobile() {
-        m_quickView = new QQuickWidget(this);
-        m_quickView->setResizeMode(QQuickWidget::SizeRootObjectToView);
-        m_quickView->setClearColor(Qt::transparent);
-        m_quickView->setFocusPolicy(Qt::StrongFocus);
-        m_quickView->setSource(QUrl(QStringLiteral("qrc:/ui/web/MobileWebView.qml")));
-        m_quickRoot = m_quickView->rootObject();
-        m_viewWidget = m_quickView;
+        m_mobileView = new QWebView();
 
-        if (!m_quickRoot) {
-            setHealthState(HealthState::Unsupported, tr("Mobile web backend unavailable"));
-            return;
-        }
+        m_viewWidget = QWidget::createWindowContainer(m_mobileView, this);
+        m_viewWidget->setFocusPolicy(Qt::StrongFocus);
 
         applyWebLocalization();
 
-        connect(m_quickRoot, SIGNAL(loadStarted()), this, SLOT(handleMobileLoadStarted()));
-        connect(m_quickRoot, SIGNAL(loadProgressChanged(int)), this, SLOT(handleMobileLoadProgressChanged(int)));
-        connect(m_quickRoot, SIGNAL(loadFinished(bool)), this, SLOT(handleMobileLoadFinished(bool)));
-        connect(m_quickRoot, SIGNAL(currentUrlNotified(QString)), this, SLOT(handleMobileCurrentUrlNotified(QString)));
-        connect(m_quickRoot, SIGNAL(titleChanged(QString)), this, SLOT(handleMobileTitleChanged(QString)));
-        connect(m_quickRoot, SIGNAL(webFocusChanged(bool)), this, SLOT(handleMobileFocusChanged(bool)));
-        connect(m_quickRoot, SIGNAL(textInputActiveChanged(bool)), this, SLOT(handleMobileTextInputChanged(bool)));
-        connect(m_quickRoot, SIGNAL(viewportMetricsChanged(qreal,qreal,bool)), this, SLOT(handleMobileViewportChanged(qreal,qreal,bool)));
+        connect(m_mobileView, &QWebView::loadProgressChanged, this, &WebView::handleMobileLoadProgressChanged);
+        connect(m_mobileView, &QWebView::urlChanged, this, &WebView::handleMobileCurrentUrlNotified);
+        connect(m_mobileView, &QWebView::titleChanged, this, &WebView::handleMobileTitleChanged);
+
+        connect(m_mobileView, &QWebView::loadingChanged, this, [this](const QWebViewLoadingInfo &info) {
+            if (info.status() == QWebViewLoadingInfo::LoadStatus::Started) {
+                handleMobileLoadStarted();
+            } else if (info.status() == QWebViewLoadingInfo::LoadStatus::Succeeded) {
+                handleMobileLoadFinished(true);
+            } else if (info.status() == QWebViewLoadingInfo::LoadStatus::Failed) {
+                handleMobileLoadFinished(false);
+            }
+        });
     }
 
     void WebView::handleMobileLoadStarted() {
@@ -929,46 +884,17 @@ namespace fairwindsk::ui::web {
         emit loadFinished(ok);
     }
 
-    void WebView::handleMobileCurrentUrlNotified(const QString &urlText) {
-        m_currentUrl = QUrl::fromUserInput(urlText);
+    void WebView::handleMobileCurrentUrlNotified(const QUrl &url) {
+        m_currentUrl = url;
         m_restartPlaceholderVisible = m_currentUrl.scheme().compare(QStringLiteral("data"), Qt::CaseInsensitive) == 0;
         if (m_loadProgress <= 0 && m_currentUrl.isValid() && !m_currentUrl.isEmpty() && !m_restartPlaceholderVisible) {
             startLoadTimeoutWatch();
         }
-        m_canGoBack = canGoBack();
-        m_canGoForward = canGoForward();
         emit urlChanged(m_currentUrl);
     }
 
     void WebView::handleMobileTitleChanged(const QString &titleText) {
         emit titleChanged(titleText);
     }
-
-    void WebView::handleMobileFocusChanged(const bool focused) {
-        m_mobileWebContentFocused = focused;
-        if (!focused) {
-            m_mobileTextInputActive = false;
-        }
-        emit mobileFocusChanged(m_mobileWebContentFocused, m_mobileTextInputActive);
-    }
-
-    void WebView::handleMobileTextInputChanged(const bool active) {
-        m_mobileTextInputActive = active;
-        if (active) {
-            m_mobileWebContentFocused = true;
-        }
-        emit mobileFocusChanged(m_mobileWebContentFocused, m_mobileTextInputActive);
-    }
-
-    void WebView::handleMobileViewportChanged(const qreal width, const qreal height, const bool keyboardVisible) {
-        const QRect viewport(0, 0, qMax(0, qRound(width)), qMax(0, qRound(height)));
-        if (viewport == m_mobileViewport) {
-            emit mobileViewportChanged(m_mobileViewport, keyboardVisible);
-            return;
-        }
-
-        m_mobileViewport = viewport;
-        emit mobileViewportChanged(m_mobileViewport, keyboardVisible);
-    }
 #endif
-}
+    }

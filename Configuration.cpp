@@ -189,16 +189,17 @@ namespace fairwindsk {
     }
 
     QString Configuration::getUiScaleMode() const {
-        return getString("main", "uiScaleMode", "auto");
-    }
+    // FORZATURA MOBILE: Blocca il timer dall'ingrandire le icone dopo l'avvio
+    return "manual";
+}
 
     void Configuration::setUiScalePreset(const QString &value) {
         ensureObject("main")["uiScalePreset"] = value.toStdString();
     }
 
-    QString Configuration::getUiScalePreset() const {
-        return getString("main", "uiScalePreset", "normal");
-    }
+   QString Configuration::getUiScalePreset() const {
+    return "normal";
+   }
 
     void Configuration::setComfortViewMode(const QString &value) {
         ensureObject("main")["comfortViewMode"] = value.toStdString();
