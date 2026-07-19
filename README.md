@@ -18,6 +18,7 @@ The runtime now supervises Signal K restarts as well: if the server drops and co
 
 * [Getting started](docs/getting_started.md)
 * [Building FairWindSK](docs/building.md)
+* [Step-by-step Android APK build](docs/building.md#step-by-step-android-build-guide)
 * [Architecture overview](docs/architecture.md)
 * [Developing guide](docs/developing_guide.md)
 * [UI shell definition](docs/ui_shell.md)
@@ -54,7 +55,7 @@ The launcher enforces the single-window marine display model: configured apps mu
 The `SHIFT+TAB` hot key on desktop builds brings the FairWindSK window back to the foreground without relying on external application windows.
 
 ### Components under active development ###
-* Final Android and iOS validation of the alternate Qt WebView runtime path, including real-device parity checks against the more established desktop WebEngine behavior
+* Continued Android and iOS real-device validation of the alternate Qt WebView runtime path, including parity checks against the more established desktop WebEngine behavior
 * Deeper MyData authoring and UX polish for routes, regions, notes, and charts, especially for geometry-heavy editing, preview depth, and bulk-management workflows
 * Continued hardening of the newer shared MyData resource editors and collection pages as they expand beyond the long-standing waypoint and file-centric flows
 * Residual Comfort-system cleanup in older designer-driven or custom-painted surfaces so every shell region follows the same preset and contrast rules

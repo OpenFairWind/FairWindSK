@@ -218,59 +218,117 @@ Notes:
 
 ## Android
 
-Android builds use the mobile web implementation based on `Qt::WebView` hosted inside `QQuickWidget` containers, while the surrounding application shell stays widget-based.
+Android builds use the native Qt WebView backend while the surrounding application shell stays widget-based and inside one landscape MFD window. The recommended first target is a 64-bit ARM (`arm64-v8a`) APK.
 
 ### Step-by-step Android build guide
 
-1. Install the Android toolchain prerequisites:
-   - Qt 6 with the Android kit you plan to use
-   - Android Studio or the Android command-line SDK tools
-   - A matching Android NDK supported by your Qt release
-   - CMake and Ninja
-   - Java JDK, if it is not already provided by Android Studio
-2. Open Android Studio once and install:
-   - an Android SDK platform
-   - Android SDK Platform-Tools
-   - Android SDK Build-Tools
-   - the NDK version recommended by your Qt kit
-3. In Qt Maintenance Tool, install the Android Qt components that match your desktop host and target ABI.
-4. In Qt Creator, go to `Preferences` -> `Devices` -> `Android` and verify that the SDK, NDK, JDK, and platform paths are detected correctly.
-5. Clone the repository:
+1. Install Qt Creator and an Android Qt kit. In the Qt Maintenance Tool, select Android arm64-v8a plus Qt WebView, Virtual Keyboard, Positioning, WebSockets, and SVG for the same Qt release.
+2. In Qt Creator, open **Preferences > Devices > Android**. Install or select its recommended JDK, Android SDK, Android NDK, SDK Platform-Tools, and SDK Build-Tools. Accept the SDK licenses and resolve every error shown on that page. Do not mix an NDK from a different Qt release.
+3. Clone the repository:
 
 ```bash
 git clone https://github.com/OpenFairWind/FairWindSK.git
 cd FairWindSK
 ```
 
-6. Open `FairWindSK/CMakeLists.txt` in Qt Creator as a CMake project.
-7. When Qt Creator asks for kits, select an Android kit such as `Android Qt 6.x.x Clang arm64-v8a`.
-8. Let Qt Creator configure the project. The mobile configuration should:
-   - use `Qt::WebView`, `Qt::Quick`, and `Qt::QuickWidgets`
-   - skip desktop-only dependencies such as `QtZeroConf`, `QHotkey`, `PrintSupport`, and `QtWebEngineWidgets`
-9. Build the application from Qt Creator with `Build` -> `Build Project`.
-10. Connect an Android device with developer mode enabled, or start an Android emulator.
-11. Deploy with `Build` -> `Run`, or use `Projects` -> `Run` to select the target device first.
-12. On first launch, confirm that embedded web content opens inside the app and that the main widget shell scales correctly on the device.
+4. Open `CMakeLists.txt` in Qt Creator and select a kit such as **Android Qt 6.x.x Clang arm64-v8a**.
+5. Build with **Build > Build Project**. The mobile configuration uses Qt WebView, Quick, and Quick Widgets and excludes Qt WebEngine, Print Support, QtZeroConf, and QHotkey.
+6. Connect an authorized USB-debugging device or start an emulator, select it under **Projects > Run**, and use **Build > Run**. Qt Creator builds, debug-signs, installs, and launches the APK.
+7. For a shareable artifact, use Qt Creator's **Build APK** packaging action, then inspect the build directory for the generated APK. A debug APK is only for testing; configure a protected release keystore in Qt Creator before distributing a release build.
 
-### Optional command-line Android configure example
+### Command-line APK build
 
-If you prefer configuring outside Qt Creator, use the Android kit paths supplied by your Qt installation and Android SDK:
+Use the exact SDK, NDK, JDK, and Qt kit paths shown by Qt Creator. These example environment-variable names avoid modifying system-owned variables:
 
 ```bash
-cmake -S . -B build-android -G Ninja \
-  -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK/build/cmake/android.toolchain.cmake" \
-  -DANDROID_ABI=arm64-v8a \
-  -DANDROID_PLATFORM=android-24 \
-  -DCMAKE_PREFIX_PATH="/path/to/Qt/6.x.x/android_arm64_v8a"
-cmake --build build-android --parallel
+export FAIRWINDSK_QT_ANDROID=/path/to/Qt/6.8.3/android_arm64_v8a
+export FAIRWINDSK_ANDROID_SDK=/path/to/Android/Sdk
+export FAIRWINDSK_ANDROID_NDK=/path/to/Android/Sdk/ndk/26.1.10909125
+export FAIRWINDSK_JAVA_HOME=/path/to/jdk-17
+export PATH="$FAIRWINDSK_JAVA_HOME/bin:$PATH"
 ```
 
-Qt Creator is still the recommended path for packaging and deployment because it manages the Android manifest, APK signing flow, and device deployment more smoothly.
+Verify the selected tools:
 
-Notes:
+```bash
+"$FAIRWINDSK_JAVA_HOME/bin/java" -version
+"$FAIRWINDSK_ANDROID_SDK/platform-tools/adb" version
+"$FAIRWINDSK_QT_ANDROID/bin/qt-cmake" --version
+```
+
+Configure, compile, and package a Release APK in a dedicated build directory:
+
+```bash
+"$FAIRWINDSK_QT_ANDROID/bin/qt-cmake" \
+    -S . \
+    -B build-android-arm64 \
+    -DANDROID_ABI=arm64-v8a \
+    -DANDROID_SDK_ROOT="$FAIRWINDSK_ANDROID_SDK" \
+    -DANDROID_NDK="$FAIRWINDSK_ANDROID_NDK" \
+    -DCMAKE_BUILD_TYPE=Release
+
+cmake --build build-android-arm64 --parallel
+cmake --build build-android-arm64 --target apk
+find build-android-arm64 -type f -name '*.apk' -print
+```
+
+The first clean build fetches the pinned Android OpenSSL packaging helper and the `nlohmann/json` fallback when it is not installed. The exact APK subdirectory varies between Qt releases, so use the reported `find` result rather than assuming a fixed path.
+
+Enable Developer Options and USB debugging, authorize the computer, and install the reported APK:
+
+```bash
+"$FAIRWINDSK_ANDROID_SDK/platform-tools/adb" devices
+"$FAIRWINDSK_ANDROID_SDK/platform-tools/adb" install -r /absolute/path/to/FairWindSK.apk
+```
+
+For Play Store delivery, configure release signing outside the repository and build an Android App Bundle:
+
+```bash
+cmake --build build-android-arm64 --target aab
+```
+
+Never commit a keystore or signing passwords. Retain the same protected release key for all future upgrades.
+
+### Runtime logging and connectivity
+
+Clear old logs, reproduce a problem, and collect the Android log:
+
+```bash
+"$FAIRWINDSK_ANDROID_SDK/platform-tools/adb" logcat -c
+"$FAIRWINDSK_ANDROID_SDK/platform-tools/adb" logcat | grep -i -E 'fairwindsk|qt|chromium'
+```
+
+Use the Signal K server's LAN address in FairWindSK; `localhost` on Android refers to the Android device, not the development computer. Cleartext `http://` and `ws://` remain enabled for trusted vessel LANs, but TLS with a trusted certificate is preferred and an unauthenticated Signal K server must never be exposed to an untrusted network.
+
+### Packaging and permission notes
+
+- Package identifier: `org.openfairwind.fairwindsk`.
+- The version name follows the CMake/Git version and the monotonically increasing Android version code follows the Git commit count.
+- Adaptive and legacy launcher icons are generated from the FairWindSK logo.
+- Application backup is disabled because configuration can reference private vessel endpoints and authentication state.
+- The obsolete broad external-storage permission is not requested. Android file access must use Qt-supported app storage or a document-picker/scoped-storage workflow.
+- Location hardware is optional, allowing installation on tablets without GPS; Android still controls runtime permission grants.
+- The soft keyboard resizes the window instead of covering operational controls.
+- Desktop Linux startup fallbacks are excluded explicitly from Android even on toolchains that define Linux compatibility macros.
+- The Android TLS helper is pinned to a commit so clean builds are reproducible.
 
 - Desktop-only integrations such as `QHotkey`, Zeroconf browser discovery, and the shared `QWebEngineProfile` cookie path remain disabled on Android. Native `file://` launcher apps are blocked on every target by the single-window model.
 - Embedded previews and web apps still load inside the application, but advanced desktop WebEngine-specific hooks are intentionally not compiled into the Android target.
+
+### Physical-device MFD checklist
+
+An APK cross-build validates compilation and packaging, but it cannot validate WebView, keyboard, safe-area, GPS, Wi-Fi, or helm-distance behavior. Before distribution, test at least one physical tablet and a representative phone or emulator:
+
+1. The FairWindSK logo is sharp in the launcher, recent-apps view, and Android settings.
+2. FairWindSK remains one landscape window and hosted apps never open an external browser.
+3. Top and Bottom Bars remain readable, stable, and finger-friendly at normal helm distance.
+4. Drawers and the virtual keyboard do not obscure primary actions.
+5. Signal K REST, websocket, web apps, and reconnect after Wi-Fi interruption work on the vessel LAN.
+6. `default`, `dawn`, `day`, `sunset`, `dusk`, and `night` presets retain high contrast and hierarchy.
+7. English and Italian shell text and hosted-web locale remain consistent, readable, and touch-friendly.
+8. POB, Apps, MyData, Settings, alarms, and installed autopilot integration preserve the single-window MFD workflow.
+9. Rotation attempts do not disturb landscape layout and Android back navigation does not accidentally exit an operational dialog.
+10. The release-signed APK installs both cleanly and as an update over the previous release.
 
 ## iOS / iPadOS
 

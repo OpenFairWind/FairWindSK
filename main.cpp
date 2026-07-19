@@ -32,7 +32,7 @@
 
 #include <algorithm>
 
-#if defined(Q_OS_LINUX)
+#if defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
 namespace {
     bool hasOwnerOnlyPermissions(const QFileInfo &fileInfo) {
         const QFileDevice::Permissions permissions = fileInfo.permissions();
@@ -312,7 +312,7 @@ int main(int argc, char *argv[]) {
     qInfo() << "Qt WebView initialized for mobile build";
 #endif
 
-#if defined(Q_OS_LINUX)
+#if defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
     configureLinuxRuntimeDirectory();
     configureLinuxQtPlatformFallback();
     configureLinuxWebEngineFallback();
