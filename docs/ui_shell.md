@@ -5,6 +5,10 @@ Use these names consistently in code comments, pull requests, bug reports, and c
 
 These definitions are intentionally platform-neutral and apply to macOS, Windows, Linux, Raspberry Pi OS, Android, and iOS unless a platform-specific limitation is called out elsewhere.
 
+On Android 13/API 33 and newer, FairWindSK may optionally be selected as the system Home app. Native Android activities launched from a FairWindSK tile run in Android's task model rather than inside the Application Area; returning to FairWindSK restores its launcher surface. This is the sole native-application exception to the otherwise single-window embedded-content policy.
+
+While FairWindSK is the selected Home app, missing hardware Back, Home, and App Switch keys are replaced by touch-friendly Bottom Bar controls. The recent-application control opens an in-window Bottom Bar strip populated only by native activities launched through FairWindSK, preserving the single-window shell and avoiding privileged Android system-recents APIs.
+
 ## UI shell overview
 
 ```text

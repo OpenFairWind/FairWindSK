@@ -222,6 +222,8 @@ FairWindSK currently supports:
 
 Desktop targets use Qt WebEngine Widgets.
 Android and iOS use a mobile-safe Qt WebView path.
+
+Android support uses Android 13/API 33 as its minimum runtime. The optional Home role and installed-application integration query only `MAIN + LAUNCHER` activities, avoiding broad package visibility, and selected native activities join the same launcher-page model as Signal K applications.
 This allows a common shell model across:
 
 - helm-adjacent Raspberry Pi screens

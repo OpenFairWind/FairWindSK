@@ -1,6 +1,6 @@
 # Getting started with FairWindSK
 
-FairWindSK is a Qt6 shell that launches and supervises Signal K web applications, plus a handful of native bars (autopilot, anchor, person overboard, alarms, and status overlays). The application is written in C++17, uses Qt WebEngine Widgets on desktop builds and a Qt WebView based alternative on Android/iOS, and connects directly to a running Signal K server to discover installed web apps.
+FairWindSK is a Qt6 shell that launches and supervises Signal K web applications, plus a handful of native bars (autopilot, anchor, person overboard, alarms, and status overlays). The application is written in C++17, uses Qt WebEngine Widgets on desktop builds and a Qt WebView based alternative on Android/iOS, and connects directly to a running Signal K server to discover installed web apps. Android builds support Android 13/API 33 and newer and can optionally serve as the device Home app.
 
 ## Prerequisites
 
@@ -30,6 +30,8 @@ Platform-specific dependencies, Qt kit selection, Windows deployment, Raspberry 
 4. FairWindSK connects to the server, negotiates a token if available, and persists the token in `fairwindsk.ini` for subsequent launches.
 5. Discovered Signal K web applications are merged into the local configuration, preserving local overrides (ordering, activation state, and custom icons). Web apps appear on all targets; native `file://` app entries are blocked by single-window mode.
 6. If the Signal K server restarts later, FairWindSK now attempts to recover automatically by rediscovering the server, reconnecting the websocket stream, restoring subscriptions, and refreshing server-backed resources.
+
+On Android, open **Settings > Android**. Tap an application icon to launch it immediately, or use its separate high-contrast checkbox to make it available under **Settings > Applications** for placement beside Signal K apps. Android entries are removed from launcher slots when deselected. Selecting FairWindSK as the system Home app remains optional and is performed from Android's **Default apps > Home app** settings. When no corresponding hardware keys exist, launcher mode supplies soft Back, FairWindSK Home, and recently launched Android-app controls in the Bottom Bar. See [the Android guide](android.md).
 
 ## Running the desktop
 

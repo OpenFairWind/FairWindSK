@@ -12,13 +12,15 @@ open-source and open-data.
 FairWindSK is a browser with steroids designed to host SK applications.
 It is written in C++ 17 and QT6.
 It now has a single CMake-based cross-platform build path: desktop targets keep the existing Qt WebEngine Widgets implementation, while Android and iOS use a mobile-safe Qt WebView based alternative behind the same source interfaces.
+
+Android 13 (API 33) is the minimum supported Android runtime. The Android build can optionally be selected as the device Home app without changing the default automatically. Its Android-only settings page discovers installed launchable applications, lets the operator choose which ones join the shared FairWindSK application palette, and places them on the same marine-MFD launcher pages as Signal K web applications.
 The runtime now supervises Signal K restarts as well: if the server drops and comes back, FairWindSK re-discovers the server, reconnects the websocket stream, restores subscriptions, and refreshes server-backed resources so the UI stays consistent with the restarted backend.
 
 ## Documentation
 
 * [Getting started](docs/getting_started.md)
 * [Building FairWindSK](docs/building.md)
-* [Step-by-step Android APK build](docs/building.md#step-by-step-android-build-guide)
+* [Android environment, APK build, signing, deployment, and launcher guide](docs/android.md)
 * [Architecture overview](docs/architecture.md)
 * [Developing guide](docs/developing_guide.md)
 * [UI shell definition](docs/ui_shell.md)
@@ -35,6 +37,7 @@ The runtime now supervises Signal K restarts as well: if the server drops and co
 * Signal K discovery, authentication, REST/websocket connectivity, web-app discovery, and hosted application lifecycle management
 * Automatic Signal K restart recovery, including rediscovery, reconnect, subscription restore, health reporting, and refresh of server-backed UI state
 * The desktop launcher with application tiles, OpenBridge-style page/application management actions, and local desktop app support on desktop targets
+* An opt-in Android Home/launcher role with scoped installed-app discovery, separate marine-MFD selection and launch controls under **Settings > Android**, explicit native activity launching, and conditional soft Back/Home/Recents controls on Android 13/API 33 and newer
 * Core settings flows for main preferences, comfort presets, connection parameters, Signal K path mapping, units, applications, and system/configuration management
 * Comfort preset management for `Default`, `Dawn`, `Day`, `Sunset`, `Dusk`, and `Night`, including QSS editing, configurable palette items, and theme image support
 * Shared touch-first UI building blocks and drawer-hosted dialogs, including touch combo boxes, check boxes, spin boxes, file browsers, icon browsers, color pickers, and scroll surfaces
@@ -64,11 +67,13 @@ The `SHIFT+TAB` hot key on desktop builds brings the FairWindSK window back to t
 # Building
 
 The full platform guide now lives in [docs/building.md](docs/building.md).
+Complete Android host setup and signed-APK instructions live in [docs/android.md](docs/android.md).
 
 Quick summary:
 
 - macOS, Linux, Raspberry Pi OS, and Windows keep the desktop Qt WebEngine Widgets implementation.
 - Android and iOS now build through an alternate mobile web layer based on Qt WebView and QQuickWidget hosts.
+- Android packaging declares API 33 as its minimum SDK. Package discovery uses only `MAIN + LAUNCHER` visibility rather than the broad `QUERY_ALL_PACKAGES` permission, and installation leaves the existing default Home app unchanged.
 - Desktop targets download `nlohmann/json`, `QtZeroConf`, and `QHotkey` during the first clean build.
 - On Linux desktop installs, `cmake --install build` now also installs the FairWindSK desktop launcher. On Raspberry Pi OS installs it additionally enables the system autostart entry, and when OpenPlotter is detected it performs a best-effort copy into the OpenPlotter menu directories.
 

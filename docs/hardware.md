@@ -34,7 +34,7 @@ Minimum display guidance:
 
 ## Operating system and Qt
 
-FairWindSK uses the CMake Qt 6 build. Desktop builds require Qt 6 with Qt WebEngine. Android and iOS builds use Qt WebView instead of Qt WebEngine.
+FairWindSK uses the CMake Qt 6 build. Desktop builds require Qt 6 with Qt WebEngine. Android and iOS builds use Qt WebView instead of Qt WebEngine. Android devices must run Android 13/API 33 or newer; test launcher deployments on a representative API 33 tablet or emulator before helm use.
 
 Recommended onboard software base:
 

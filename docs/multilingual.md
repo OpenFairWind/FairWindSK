@@ -196,6 +196,7 @@ At minimum, verify the following after adding or changing a language:
 - Text remains readable in `default`, `dawn`, `day`, `sunset`, `dusk`, and `night`.
 - Native shell and embedded web content use the same locale.
 - macOS, Windows, Linux, Raspberry Pi OS, Android, and iOS impact is reviewed, or unsupported platforms are explicitly called out.
+- On the Android 13/API 33 baseline, the Android-only settings page, installed-application labels, status text, disabled action states, and launcher tiles remain readable and touch-friendly in English and Italian across every comfort preset.
 
 ## Contributor notes
 

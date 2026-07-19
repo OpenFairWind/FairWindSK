@@ -10,7 +10,7 @@ FairWindSK uses a single Qt/CMake codebase across desktop and mobile builds. Des
 | Linux | Supported | Full desktop feature set. |
 | Raspberry Pi OS | Supported | Same desktop feature set, plus kiosk/autostart helpers in `extras/`. |
 | Windows | Supported | Full desktop feature set, with `windeployqt` recommended after building. |
-| Android | Supported | Uses the alternate Qt WebView based mobile implementation instead of Qt WebEngine Widgets. |
+| Android | Supported | Android 13 / API 33 minimum; uses the alternate Qt WebView based mobile implementation instead of Qt WebEngine Widgets. |
 | iOS | Supported | Uses the alternate Qt WebView based mobile implementation instead of Qt WebEngine Widgets. |
 
 ## Common desktop requirements
@@ -218,12 +218,14 @@ Notes:
 
 ## Android
 
-Android builds use the native Qt WebView backend while the surrounding application shell stays widget-based and inside one landscape MFD window. The recommended first target is a 64-bit ARM (`arm64-v8a`) APK.
+Android builds use the native Qt WebView backend while the surrounding application shell stays widget-based and inside one landscape MFD window. Android 13 / API 33 is the minimum supported runtime, enforced by `QT_ANDROID_MIN_SDK_VERSION`. Building with a newer compile or target SDK remains supported as long as runtime code retains API 33-compatible paths. The recommended first target is a 64-bit ARM (`arm64-v8a`) APK.
+
+The authoritative Linux, Windows, and macOS environment setup, command-line build, release-keystore, alignment, signing, verification, installation, launcher-operation, and troubleshooting workflow is [Android build, signing, and launcher guide](android.md). The abbreviated workflow below remains a quick reference.
 
 ### Step-by-step Android build guide
 
 1. Install Qt Creator and an Android Qt kit. In the Qt Maintenance Tool, select Android arm64-v8a plus Qt WebView, Virtual Keyboard, Positioning, WebSockets, and SVG for the same Qt release.
-2. In Qt Creator, open **Preferences > Devices > Android**. Install or select its recommended JDK, Android SDK, Android NDK, SDK Platform-Tools, and SDK Build-Tools. Accept the SDK licenses and resolve every error shown on that page. Do not mix an NDK from a different Qt release.
+2. In Qt Creator, open **Preferences > Devices > Android**. Install or select JDK 17, the Android SDK Platform for API 33 or newer, SDK Platform-Tools, SDK Build-Tools, and the NDK recommended by the selected Qt release. Accept the SDK licenses and resolve every error shown on that page. Do not mix an NDK from a different Qt release.
 3. Clone the repository:
 
 ```bash
@@ -272,6 +274,14 @@ cmake --build build-android-arm64 --target apk
 find build-android-arm64 -type f -name '*.apk' -print
 ```
 
+`CMakeLists.txt` fixes the APK minimum SDK at 33. After packaging, verify that the generated manifest retained that contract:
+
+```bash
+"$FAIRWINDSK_ANDROID_SDK/build-tools/34.0.0/aapt2" dump badging /absolute/path/to/FairWindSK.apk | grep -E "sdkVersion|targetSdkVersion"
+```
+
+The exact Build-Tools directory may differ. `sdkVersion` must report `33`; `targetSdkVersion` may be newer.
+
 The first clean build fetches the pinned Android OpenSSL packaging helper and the `nlohmann/json` fallback when it is not installed. The exact APK subdirectory varies between Qt releases, so use the reported `find` result rather than assuming a fixed path.
 
 Enable Developer Options and USB debugging, authorize the computer, and install the reported APK:
@@ -285,7 +295,11 @@ Enable Developer Options and USB debugging, authorize the computer, and install 
 
 FairWindSK advertises its existing single-window MFD shell as an optional Android Home app. Installing or updating the APK does not replace the current launcher automatically, and FairWindSK remains available as a normal application. To opt in, open the device's system settings, find **Default apps > Home app** (the wording varies by Android vendor), and select **FairWindSK**. Android may instead show the Home-app chooser the next time the system Home action is used.
 
-Stage 1 provides the Home-screen role only. FairWindSK continues to launch its configured Signal K and web applications; it does not yet enumerate or launch arbitrary installed Android applications.
+The Android build also exposes **Settings > Android** after the System page. Each row keeps the native application icon, name, and high-contrast marine checkbox in separate touch regions. Tapping the icon launches the native application immediately; the checkbox controls whether it appears in **Settings > Applications** for assignment to launcher pages. Deselecting an Android application removes it from the available palette and from any launcher-page slots that referenced it.
+
+When FairWindSK is selected as Home and Android reports the corresponding hardware navigation keys absent, the Bottom Bar adds soft Back, FairWindSK Home, and Recents controls. Recents is a single-window strip of native applications launched through FairWindSK rather than Android's privileged system-recents surface.
+
+Android application icons and package metadata are discovered through `PackageManager`. Package visibility is limited to activities advertising `MAIN + LAUNCHER`; FairWindSK does not request the broad `QUERY_ALL_PACKAGES` permission. Selecting an Android tile starts its explicit activity through Android's task manager. FairWindSK remains beneath that task and returns to its launcher state when the operator comes back.
 
 Before selecting FairWindSK on a dedicated helm display, confirm that its Signal K connection and launcher layout are usable. To return to the device launcher, open Android system settings from the notification shade and select the previous app under **Default apps > Home app**. During development, the Home-app settings page can also be opened with:
 
@@ -317,6 +331,7 @@ Use the Signal K server's LAN address in FairWindSK; `localhost` on Android refe
 ### Packaging and permission notes
 
 - Package identifier: `org.openfairwind.fairwindsk`.
+- Minimum supported runtime: Android 13 / API 33. Newer compile and target SDKs must preserve API 33 runtime compatibility.
 - The version name follows the CMake/Git version and the monotonically increasing Android version code follows the Git commit count.
 - Adaptive and legacy launcher icons are generated from the FairWindSK logo.
 - Application backup is disabled because configuration can reference private vessel endpoints and authentication state.
@@ -332,7 +347,7 @@ Use the Signal K server's LAN address in FairWindSK; `localhost` on Android refe
 
 ### Physical-device MFD checklist
 
-An APK cross-build validates compilation and packaging, but it cannot validate WebView, keyboard, safe-area, GPS, Wi-Fi, or helm-distance behavior. Before distribution, test at least one physical tablet and a representative phone or emulator:
+An APK cross-build validates compilation and packaging, but it cannot validate WebView, keyboard, safe-area, GPS, Wi-Fi, or helm-distance behavior. Before distribution, test at least one Android 13/API 33 device or emulator plus a device using the current target API:
 
 1. The FairWindSK logo is sharp in the launcher, recent-apps view, and Android settings.
 2. FairWindSK remains one landscape window and hosted apps never open an external browser.
@@ -345,6 +360,9 @@ An APK cross-build validates compilation and packaging, but it cannot validate W
 9. Rotation attempts do not disturb landscape layout and Android back navigation does not accidentally exit an operational dialog.
 10. The release-signed APK installs both cleanly and as an update over the previous release.
 11. FairWindSK appears in the Android Home-app chooser, remains launchable from another launcher, and returning to the previous Home app works without clearing FairWindSK data.
+12. Settings > Android lists installed launchable apps with readable 48-pixel icons and finger-friendly selection rows; selected apps appear in Settings > Applications and can be placed on any launcher page.
+13. Selecting an Android app in Settings > Applications disables web-only edit/remove actions while preserving coherent page-assignment actions, with visibly distinct disabled states in every comfort preset.
+14. Launching an Android tile opens the correct native activity, and Back/Home returns to a stable FairWindSK launcher without duplicating its Qt activity.
 
 ## iOS / iPadOS
 

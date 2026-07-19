@@ -209,6 +209,8 @@ set(FAIRWINDSK_SOURCES
         ui/settings/SignalK.cpp ui/settings/SignalK.hpp ui/settings/SignalK.ui
         ui/settings/Units.cpp ui/settings/Units.hpp ui/settings/Units.ui
         ui/settings/System.cpp ui/settings/System.hpp ui/settings/System.ui
+        ui/settings/AndroidApps.cpp ui/settings/AndroidApps.hpp
+        platform/android/AndroidApplicationBridge.cpp platform/android/AndroidApplicationBridge.hpp
         Configuration.cpp Configuration.hpp
         ui/bottombar/POBBar.cpp ui/bottombar/POBBar.hpp ui/bottombar/POBBar.ui
         ui/bottombar/AlarmsBar.cpp ui/bottombar/AlarmsBar.hpp ui/bottombar/AlarmsBar.ui
@@ -266,6 +268,7 @@ if(ANDROID)
         QT_ANDROID_APP_NAME "FairWindSK"
         QT_ANDROID_PACKAGE_NAME "org.openfairwind.fairwindsk"
         QT_ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android"
+        QT_ANDROID_MIN_SDK_VERSION 33
         QT_ANDROID_VERSION_CODE "${FAIRWINDSK_ANDROID_VERSION_CODE}"
         QT_ANDROID_VERSION_NAME "${FAIRWINDSK_SEMVER}"
     )

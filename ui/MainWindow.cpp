@@ -37,6 +37,9 @@
 #include "ui/mydata/MyData.hpp"
 #include "ui/DrawerDialogHost.hpp"
 #include "runtime/DiagnosticsSupport.hpp"
+#if defined(Q_OS_ANDROID)
+#include "platform/android/AndroidApplicationBridge.hpp"
+#endif
 
 namespace fairwindsk::ui {
     namespace {
@@ -870,6 +873,34 @@ namespace fairwindsk::ui {
                                                        QStringLiteral("launch_failed"),
                                                        hash);
             m_currentAppStatusSummary.clear();
+            showLauncher();
+            return;
+        }
+
+        // Android applications leave FairWindSK through Android's task manager and return to its launcher state.
+        if (appItem->isAndroidApplication()) {
+#if defined(Q_OS_ANDROID)
+            const bool launched = platform::android::AndroidApplicationBridge::launchApplication(
+                appItem->getAndroidPackage(),
+                appItem->getAndroidActivity());
+            fairwindsk::runtime::recordUserInteraction(
+                QStringLiteral("apps"),
+                launched ? QStringLiteral("launch_android") : QStringLiteral("launch_android_failed"),
+                resolvedHash,
+                QJsonObject{{QStringLiteral("package"), appItem->getAndroidPackage()}});
+            if (!launched) {
+                drawer::warning(this,
+                                tr("Android application"),
+                                tr("The selected Android application could not be started. It may have been removed or disabled."));
+            }
+#else
+            drawer::warning(this,
+                            tr("Android application"),
+                            tr("Android applications can only be started from an Android build of FairWindSK."));
+#endif
+            if (ownsFallbackAppItem) {
+                appItem->deleteLater();
+            }
             showLauncher();
             return;
         }

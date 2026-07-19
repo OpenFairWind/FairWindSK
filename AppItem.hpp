@@ -56,6 +56,9 @@ namespace fairwindsk {
             QString getAuthor();
             QVector<QString> getContributors();
             QString getUrl();
+            bool isAndroidApplication() const;
+            QString getAndroidPackage() const;
+            QString getAndroidActivity() const;
             QPixmap getIcon(bool allowRemoteFetch = false);
             QString getAppIcon();
             void setAppIcon(const QString& appIcon);

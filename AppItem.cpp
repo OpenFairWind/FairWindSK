@@ -743,7 +743,10 @@ namespace fairwindsk {
      * Returns the app's license
      */
     QString AppItem::getUrl() {
-
+        // Native Android activities do not have a web URL.
+        if (isAndroidApplication()) {
+            return {};
+        }
 
         QString url;
 
@@ -774,6 +777,35 @@ namespace fairwindsk {
             url = QUrl(serverUrl + "/").resolved(QUrl(url)).toString();
         }
         return url;
+    }
+
+    bool AppItem::isAndroidApplication() const {
+        if (!m_jsonApp.contains("fairwind") || !m_jsonApp["fairwind"].is_object()) {
+            return false;
+        }
+        const auto &fairwindJsonObject = m_jsonApp["fairwind"];
+        return fairwindJsonObject.contains("source") && fairwindJsonObject["source"].is_string() &&
+               fairwindJsonObject["source"].get<std::string>() == "android";
+    }
+
+    QString AppItem::getAndroidPackage() const {
+        if (!isAndroidApplication()) {
+            return {};
+        }
+        const auto &fairwindJsonObject = m_jsonApp["fairwind"];
+        return fairwindJsonObject.contains("androidPackage") && fairwindJsonObject["androidPackage"].is_string()
+                   ? QString::fromStdString(fairwindJsonObject["androidPackage"].get<std::string>())
+                   : QString();
+    }
+
+    QString AppItem::getAndroidActivity() const {
+        if (!isAndroidApplication()) {
+            return {};
+        }
+        const auto &fairwindJsonObject = m_jsonApp["fairwind"];
+        return fairwindJsonObject.contains("androidActivity") && fairwindJsonObject["androidActivity"].is_string()
+                   ? QString::fromStdString(fairwindJsonObject["androidActivity"].get<std::string>())
+                   : QString();
     }
 
     void AppItem::setWidget(QWidget *pWidget) {

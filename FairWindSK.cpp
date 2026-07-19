@@ -1460,7 +1460,9 @@ namespace fairwindsk {
                 continue;
             }
 
-            if (appName.startsWith("http://") || appName.startsWith("https://") || appName.startsWith("file://")) {
+            AppItem configuredCandidate(app);
+            if (appName.startsWith("http://") || appName.startsWith("https://") || appName.startsWith("file://") ||
+                configuredCandidate.isAndroidApplication()) {
                 auto *appItem = new AppItem(app);
                 if (appItem->getOrder() == 0) {
                     appItem->setOrder(count);

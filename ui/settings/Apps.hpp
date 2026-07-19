@@ -126,6 +126,8 @@ namespace fairwindsk::ui::settings {
         void saveAppsDetails();
         void savePageDetails();
         QString uniqueAppName(const QString &baseName) const;
+        bool isAndroidApplication(const QString &appName) const;
+        bool currentAvailableApplicationIsAndroid() const;
         void refreshAvailableAppActionButtons() const;
         void refreshPageTreeActionButtons() const;
         void rebuildAvailableAppsList();

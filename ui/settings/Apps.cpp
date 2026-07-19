@@ -887,10 +887,26 @@ namespace fairwindsk::ui::settings {
         return candidate;
     }
 
+    bool Apps::isAndroidApplication(const QString &appName) const {
+        const int appIndex = m_settings->getConfiguration()->findApp(appName);
+        if (appIndex == -1) {
+            return false;
+        }
+        AppItem appItem(m_settings->getConfiguration()->getRoot()["apps"].at(appIndex));
+        return appItem.isAndroidApplication();
+    }
+
+    bool Apps::currentAvailableApplicationIsAndroid() const {
+        const auto *item = m_availableAppsList ? m_availableAppsList->currentItem() : nullptr;
+        return item && isAndroidApplication(item->data(Qt::UserRole).toString());
+    }
+
     void Apps::refreshAvailableAppActionButtons() const {
         const bool hasSelection = m_availableAppsList && m_availableAppsList->currentItem();
-        ui->toolButton_Remove->setEnabled(hasSelection);
-        ui->toolButton_EditApp->setEnabled(hasSelection);
+        const bool androidApplicationSelected = currentAvailableApplicationIsAndroid();
+        // Android records are managed by the Android page; only placement actions remain available here.
+        ui->toolButton_Remove->setEnabled(hasSelection && !androidApplicationSelected);
+        ui->toolButton_EditApp->setEnabled(hasSelection && !androidApplicationSelected);
         ui->toolButton_AddSelectedAppToPage->setEnabled(hasSelection && !selectedPageId().isEmpty());
         ui->toolButton_AddAllApps->setEnabled(!selectedPageId().isEmpty() && m_availableAppsList && m_availableAppsList->count() > 0);
     }
@@ -917,11 +933,13 @@ namespace fairwindsk::ui::settings {
 
     void Apps::refreshDetailActionButtons() const {
         const bool hasDetail = !m_currentDetailAppName.isEmpty();
-        m_appDetailsWidget->ui->lineEdit_Apps_Name->setEnabled(hasDetail);
-        m_appDetailsWidget->ui->lineEdit_Apps_Description->setEnabled(hasDetail);
-        m_appDetailsWidget->ui->lineEdit_Apps_DisplayName->setEnabled(hasDetail);
-        m_appDetailsWidget->ui->pushButton_Apps_Name_Browse->setEnabled(hasDetail);
-        m_appDetailsWidget->ui->pushButton_Apps_AppIcon_Browse->setEnabled(hasDetail);
+        const bool editableAppDetail = hasDetail && !isAndroidApplication(m_currentDetailAppName);
+        m_appDetailsWidget->ui->lineEdit_Apps_Name->setEnabled(editableAppDetail);
+        m_appDetailsWidget->ui->lineEdit_Apps_Description->setEnabled(editableAppDetail);
+        m_appDetailsWidget->ui->lineEdit_Apps_DisplayName->setEnabled(editableAppDetail);
+        m_appDetailsWidget->ui->spinBox_Apps_ZoomPercent->setEnabled(editableAppDetail);
+        m_appDetailsWidget->ui->pushButton_Apps_Name_Browse->setEnabled(editableAppDetail);
+        m_appDetailsWidget->ui->pushButton_Apps_AppIcon_Browse->setEnabled(editableAppDetail);
         const bool hasPageDetail = !m_currentDetailPageId.isEmpty();
         m_pageDetailsWidget->ui->lineEdit_Page_Name->setEnabled(hasPageDetail);
         m_pageDetailsWidget->ui->pushButton_Page_Icon_Browse->setEnabled(hasPageDetail);
@@ -1115,15 +1133,16 @@ namespace fairwindsk::ui::settings {
         m_appDetailsWidget->ui->label_Apps_Icon->setPixmap(pixmap);
 
         ui->stackedWidget_RightPane->setCurrentWidget(ui->page_Details);
-        m_appDetailsWidget->ui->lineEdit_Apps_Name->setEnabled(true);
+        const bool editable = !appItem.isAndroidApplication();
+        m_appDetailsWidget->ui->lineEdit_Apps_Name->setEnabled(editable);
         m_appDetailsWidget->ui->lineEdit_Apps_Name->setReadOnly(false);
-        m_appDetailsWidget->ui->lineEdit_Apps_Description->setEnabled(true);
+        m_appDetailsWidget->ui->lineEdit_Apps_Description->setEnabled(editable);
         m_appDetailsWidget->ui->lineEdit_Apps_Description->setReadOnly(false);
-        m_appDetailsWidget->ui->lineEdit_Apps_DisplayName->setEnabled(true);
+        m_appDetailsWidget->ui->lineEdit_Apps_DisplayName->setEnabled(editable);
         m_appDetailsWidget->ui->lineEdit_Apps_DisplayName->setReadOnly(false);
-        m_appDetailsWidget->ui->spinBox_Apps_ZoomPercent->setEnabled(true);
-        m_appDetailsWidget->ui->pushButton_Apps_Name_Browse->setEnabled(true);
-        m_appDetailsWidget->ui->pushButton_Apps_AppIcon_Browse->setEnabled(true);
+        m_appDetailsWidget->ui->spinBox_Apps_ZoomPercent->setEnabled(editable);
+        m_appDetailsWidget->ui->pushButton_Apps_Name_Browse->setEnabled(editable);
+        m_appDetailsWidget->ui->pushButton_Apps_AppIcon_Browse->setEnabled(editable);
         m_appDetailsWidget->hideIconPicker();
         refreshDetailActionButtons();
     }
