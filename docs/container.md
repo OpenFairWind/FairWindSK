@@ -136,7 +136,16 @@ docker run --rm fairwindsk-linux \
   bash -lc 'uname -m; readelf -h /build/FairWindSK | sed -n "/Class:/p;/Machine:/p"; ! ldd /build/FairWindSK | grep "not found"'
 ```
 
-The current CMake project enables CTest but does not register automated tests. `ctest --test-dir /build --output-on-failure` therefore reports `No tests were found`; use the startup smoke test above as the minimum container runtime check.
+Run the registered headless desktop suite after the image build:
+
+```bash
+docker run --rm fairwindsk-linux \
+  ctest --test-dir /build --output-on-failure
+```
+
+The CTest suite validates core parsers, models, configuration helpers, Signal K
+value objects, and the built-in safety regressions. Keep the startup smoke test
+above as a separate check of Qt WebEngine initialization and the full MFD shell.
 
 ## Platform validation limits
 

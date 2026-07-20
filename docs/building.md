@@ -71,6 +71,18 @@ cmake --build build --parallel
 cmake --install build
 ```
 
+Run the headless desktop test suite after building:
+
+```bash
+ctest --test-dir build --output-on-failure
+```
+
+The suite covers coordinate conversion, property-list parsing, Signal K value
+objects and subscriptions, data-widget configuration, persistent configuration,
+unit-conversion re-entrancy, directory safety, and configuration import. CMake
+registers these tests for desktop kits only because Android and iOS executables
+require a device or simulator rather than the host CTest runner.
+
 Run from the build tree:
 
 - macOS: `open build/FairWindSK.app`

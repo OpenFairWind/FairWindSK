@@ -77,6 +77,12 @@ else()
     find_package(Qt6 REQUIRED COMPONENTS WebEngineWidgets PrintSupport)
 endif()
 
+# Build host-runnable unit tests only for desktop kits. Mobile binaries require a
+# device or simulator and therefore cannot be executed directly by host CTest.
+if(BUILD_TESTING AND NOT FAIRWINDSK_MOBILE)
+    find_package(Qt6 REQUIRED COMPONENTS Test)
+endif()
+
 # Qt 6.8.3's native arm64 host tools abort on some Apple Silicon hosts with an
 # incorrect NEON feature check. Their universal x86_64 slices work under Rosetta
 # while continuing to generate arm64 Android and x86_64 Simulator target output.
@@ -339,6 +345,51 @@ target_link_libraries(${PROJECT_NAME} PRIVATE ${FAIRWINDSK_LINK_LIBRARIES})
 if(FAIRWINDSK_MOBILE)
     target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::WebView)
 endif()
+
+# Keep test executables independent from the application target so CTest can run
+# them headlessly on every supported desktop platform, including Windows.
+if(BUILD_TESTING AND NOT FAIRWINDSK_MOBILE)
+    function(fairwindsk_add_unit_test target_name test_name)
+        qt_add_executable(${target_name} ${ARGN})
+        target_link_libraries(${target_name} PRIVATE Qt6::Core Qt6::Test)
+        add_test(NAME ${test_name} COMMAND ${target_name})
+    endfunction()
+
+    fairwindsk_add_unit_test(FairWindSKGeoCoordinateUtilsTest GeoCoordinateUtils
+            tests/GeoCoordinateUtilsTest.cpp
+            ui/GeoCoordinateUtils.cpp ui/GeoCoordinateUtils.hpp)
+    target_link_libraries(FairWindSKGeoCoordinateUtilsTest PRIVATE Qt6::Positioning)
+
+    fairwindsk_add_unit_test(FairWindSKPListTest PList
+            tests/PListTest.cpp
+            PList.cpp PList.hpp)
+    target_link_libraries(FairWindSKPListTest PRIVATE Qt6::Xml)
+
+    fairwindsk_add_unit_test(FairWindSKSignalKValueObjectsTest SignalKValueObjects
+            tests/SignalKValueObjectsTest.cpp
+            signalk/Waypoint.cpp signalk/Waypoint.hpp
+            signalk/Subscription.cpp signalk/Subscription.hpp)
+    target_link_libraries(FairWindSKSignalKValueObjectsTest PRIVATE Qt6::Positioning)
+
+    fairwindsk_add_unit_test(FairWindSKDataWidgetConfigTest DataWidgetConfig
+            tests/DataWidgetConfigTest.cpp
+            ui/widgets/DataWidgetConfig.cpp ui/widgets/DataWidgetConfig.hpp)
+    target_link_libraries(FairWindSKDataWidgetConfigTest PRIVATE Qt6::Gui nlohmann_json::nlohmann_json)
+
+    fairwindsk_add_unit_test(FairWindSKConfigurationTest Configuration
+            tests/ConfigurationTest.cpp
+            Configuration.cpp Configuration.hpp
+            Localization.cpp Localization.hpp)
+    target_link_libraries(FairWindSKConfigurationTest PRIVATE Qt6::Gui nlohmann_json::nlohmann_json)
+
+    add_test(NAME UnitsReentrancy
+            COMMAND $<TARGET_FILE:${PROJECT_NAME}> --self-test-units-reentrancy)
+    add_test(NAME DirectorySafety
+            COMMAND $<TARGET_FILE:${PROJECT_NAME}> --self-test-directory-safety)
+    add_test(NAME ConfigurationImport
+            COMMAND $<TARGET_FILE:${PROJECT_NAME}> --self-test-configuration-import)
+endif()
+
 # ==========================================
 # 7. INSTALLAZIONE E FINALIZE
 # ==========================================
