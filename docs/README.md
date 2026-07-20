@@ -3,6 +3,7 @@
 - [Getting started](./getting_started.md)
 - [Hardware requirements](./hardware.md)
 - [Building FairWindSK](./building.md)
+- [Building and running FairWindSK in a container](./container.md)
 - [Developing guide](./developing_guide.md)
 - [FairWindSK user guide](./fairwindsk_user_guide.md)
 - [Architecture overview](./architecture.md)

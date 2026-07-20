@@ -20,6 +20,7 @@ The runtime now supervises Signal K restarts as well: if the server drops and co
 
 * [Getting started](docs/getting_started.md)
 * [Building FairWindSK](docs/building.md)
+* [Building and running FairWindSK in a container](docs/container.md)
 * [Android environment, APK build, signing, deployment, and launcher guide](docs/android.md)
 * [iOS environment, iPad Simulator build, deployment, and debugging guide](docs/ios.md)
 * [Architecture overview](docs/architecture.md)

@@ -144,6 +144,7 @@ Notes:
 - `cmake --install build` installs the executable to `${CMAKE_INSTALL_BINDIR}`, the bundled icon directory to `${CMAKE_INSTALL_BINDIR}/icons`, and the desktop helper libraries to `${CMAKE_INSTALL_LIBDIR}`.
 - On Linux desktop targets, `cmake --install build` also installs a `fairwindsk.desktop` launcher and a `fairwindsk.png` menu icon into the standard XDG applications/icon locations under the chosen prefix.
 - For packaging, use your normal Linux deployment workflow and include the Qt runtime plus the desktop dependencies built under `build/external/lib`.
+- To compile and smoke-test the Linux desktop build in Docker, including the Ubuntu 24.04 Qt package workarounds, see [Building and running FairWindSK in a container](container.md).
 
 ## Raspberry Pi OS
 
