@@ -1020,7 +1020,7 @@ namespace fairwindsk::ui {
                                                        QStringLiteral("launch"),
                                                        resolvedHash,
                                                        QJsonObject{
-                                                           {QStringLiteral("displayName"), appItem->getDisplayName(true)},
+                                                           {QStringLiteral("displayName"), appItem->getDisplayName(false)},
                                                            {QStringLiteral("kind"), appItem->getName().startsWith("file://")
                                                                                         ? QStringLiteral("native")
                                                                                        : QStringLiteral("web")}

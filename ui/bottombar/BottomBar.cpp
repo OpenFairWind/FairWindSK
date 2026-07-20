@@ -905,14 +905,14 @@ namespace fairwindsk::ui::bottombar {
             QString displayName;
             QPixmap pixmap;
             if (appItem) {
-                displayName = appItem->getDisplayName(true);
-                pixmap = appItem->getIcon(true);
+                displayName = appItem->getDisplayName(false);
+                pixmap = appItem->getIcon(false);
             } else {
                 const int idx = fairWindSK->getConfiguration()->findApp(name);
                 if (idx != -1) {
                     fairwindsk::AppItem configApp(fairWindSK->getConfiguration()->getRoot()["apps"].at(idx));
-                    displayName = configApp.getDisplayName(true);
-                    pixmap = configApp.getIcon(true);
+                    displayName = configApp.getDisplayName(false);
+                    pixmap = configApp.getIcon(false);
                     resolvedHash = configApp.getName();
                 }
             }

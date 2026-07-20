@@ -27,6 +27,9 @@ Availability of these bars depends on the configured plugin identifiers (`applic
 
 - The settings pane reads from `fairwindsk.json` to manage the application list, ordering, and activation. Server-discovered apps are merged with local overrides, and changes are saved back to the configuration.
 - The **Settings > Widgets** page defines reusable Signal K data widgets. The **Settings > Top Bar** and **Settings > Bottom Bar** pages share the same compact WYSIWYG editor with a live horizontal preview, a full-width widget palette, swipe scrolling with a slim high-contrast position indicator, drag-and-drop placement, explicit left/right ordering buttons, per-item width/height expansion controls, and icon/text/unit/trend display toggles saved in `barLayouts.top` and `barLayouts.bottom`.
+- Optional Top Bar context and compact status widgets are rendered only when their configured layout entries are enabled. A disabled status entry therefore cannot place its connection badge over the fixed FairWindSK button.
+- Deferred launcher icon refreshes use guarded tile references so starting an embedded web application cannot race a launcher rebuild or leave the Qt event loop referencing a deleted tile.
+- Launcher and settings surfaces render local or fallback application icons immediately and never perform synchronous remote icon downloads on the UI thread. **Settings > Applications** remains usable with cached configuration while Signal K discovery runs asynchronously and displays a high-contrast indeterminate progress strip until the registry update completes.
 - Unit selection, window sizing, and virtual keyboard toggles are reflected in the `main` and `units` sections of the configuration.
 - The **System** tab now includes touch-friendly diagnostics controls for:
   - logging level (`No logging`, `Critical`, `Warning`, `Info`, `Debug`, `Full`)

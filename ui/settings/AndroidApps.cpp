@@ -156,7 +156,8 @@ namespace fairwindsk::ui::settings {
         }
 
         // Rebuild the shared runtime registry so the launcher changes without restarting FairWindSK.
-        m_settings->markDirty(FairWindSK::RuntimeApps, 0);
+        // Let the checked state paint before the asynchronous registry refresh begins.
+        m_settings->markDirty(FairWindSK::RuntimeApps, 50);
     }
 
     void AndroidApps::removeApplicationFromLauncherPages(const QString &appName) {
