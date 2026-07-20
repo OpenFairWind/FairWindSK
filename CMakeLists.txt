@@ -77,6 +77,44 @@ else()
     find_package(Qt6 REQUIRED COMPONENTS WebEngineWidgets PrintSupport)
 endif()
 
+# Qt 6.8.3's native arm64 host tools abort on some Apple Silicon hosts with an
+# incorrect NEON feature check. Their universal x86_64 slices work under Rosetta
+# while continuing to generate arm64 Android and x86_64 Simulator target output.
+if(ANDROID AND CMAKE_HOST_APPLE AND CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$"
+        AND Qt6_VERSION VERSION_EQUAL "6.8.3")
+    set(FAIRWINDSK_ORIGINAL_QT_HOST_PATH "${QT_HOST_PATH}")
+    set(FAIRWINDSK_ROSETTA_QT_HOST_PATH "${CMAKE_BINARY_DIR}/fairwindsk-qt-host")
+    file(MAKE_DIRECTORY "${FAIRWINDSK_ROSETTA_QT_HOST_PATH}/bin")
+    file(WRITE "${FAIRWINDSK_ROSETTA_QT_HOST_PATH}/bin/androiddeployqt"
+        "#!/bin/sh\nexec /usr/bin/arch -x86_64 \"${QT_HOST_PATH}/${QT6_HOST_INFO_BINDIR}/androiddeployqt\" \"$@\"\n")
+    file(CHMOD "${FAIRWINDSK_ROSETTA_QT_HOST_PATH}/bin/androiddeployqt"
+        PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+
+    function(fairwindsk_use_rosetta_qt_tool target_name)
+        if(NOT TARGET ${target_name})
+            return()
+        endif()
+        get_target_property(tool_path ${target_name} IMPORTED_LOCATION)
+        if(NOT tool_path)
+            return()
+        endif()
+        string(REPLACE "Qt6::" "" tool_name "${target_name}")
+        set(wrapper_path "${CMAKE_BINARY_DIR}/fairwindsk-${tool_name}")
+        file(WRITE "${wrapper_path}"
+            "#!/bin/sh\nexec /usr/bin/arch -x86_64 \"${tool_path}\" \"$@\"\n")
+        file(CHMOD "${wrapper_path}"
+            PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+        set_property(TARGET ${target_name} PROPERTY IMPORTED_LOCATION "${wrapper_path}")
+    endfunction()
+
+    foreach(tool_target IN ITEMS
+            Qt6::moc Qt6::uic Qt6::rcc Qt6::lrelease Qt6::lupdate
+            Qt6::qmlimportscanner Qt6::qmlcachegen Qt6::qmltyperegistrar
+            Qt6::androiddeployqt)
+        fairwindsk_use_rosetta_qt_tool(${tool_target})
+    endforeach()
+endif()
+
 # ==========================================
 # 4. PATH DIPENDENZE ESTERNE
 # ==========================================
@@ -258,6 +296,13 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
         MACOSX_BUNDLE_GUI_IDENTIFIER "org.openfairwind.fairwindsk" MACOSX_BUNDLE_BUNDLE_VERSION ${FAIRWINDSK_SEMVER} MACOSX_BUNDLE_SHORT_VERSION_STRING ${FAIRWINDSK_SEMVER}
 )
 
+if(IOS)
+    # Keep the marine MFD shell in its intended wide layout on both iPhone and iPadOS.
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/apple/Info.plist.in"
+    )
+endif()
+
 target_compile_definitions(${PROJECT_NAME} PRIVATE
         FAIRWINDSK_VERSION="${FAIRWINDSK_SEMVER}" FAIRWINDSK_BUILD_YEAR="${FAIRWINDSK_BUILD_YEAR}" FAIRWINDSK_GIT_BRANCH="${FAIRWINDSK_GIT_BRANCH}"
 )
@@ -297,4 +342,11 @@ endif()
 # ==========================================
 # 7. INSTALLAZIONE E FINALIZE
 # ==========================================
+if(FAIRWINDSK_ROSETTA_QT_HOST_PATH)
+    # Qt's Android finalizer constructs androiddeployqt directly from QT_HOST_PATH.
+    set(QT_HOST_PATH "${FAIRWINDSK_ROSETTA_QT_HOST_PATH}")
+endif()
 qt_finalize_executable(${PROJECT_NAME})
+if(FAIRWINDSK_ORIGINAL_QT_HOST_PATH)
+    set(QT_HOST_PATH "${FAIRWINDSK_ORIGINAL_QT_HOST_PATH}")
+endif()

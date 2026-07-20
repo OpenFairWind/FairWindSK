@@ -137,6 +137,8 @@ ANDROID_SDK_ROOT="$FAIRWINDSK_ANDROID_SDK" \
 cmake --build build-android-arm64 --parallel
 ```
 
+On an Apple Silicon host using Qt 6.8.3, FairWindSK automatically runs Qt's universal host-side build tools through their x86_64 slices under Rosetta. This avoids the erroneous `This Qt build requires the following features: neon` abort from `moc`, `uic`, `qmlimportscanner`, and `androiddeployqt` while the application itself remains an `arm64-v8a` Android binary. Install Rosetta before configuring this kit; later Qt versions are left untouched.
+
 PowerShell:
 
 ```powershell
@@ -243,11 +245,11 @@ Test installed-app refresh, icon/name layout, checkbox selection, selection pers
 
 ## 8. Optional Home/launcher operation
 
-Open Android **Settings > Apps > Default apps > Home app** and select FairWindSK. Vendor wording differs. FairWindSK remains a normal launchable application and never selects itself automatically.
+In FairWindSK, open **Settings > Android** and use **Start FairWindSK as the Android launcher**. Android then displays its system-owned Home-app confirmation. Clear the control to open Android's Home settings and select another Home application, returning FairWindSK to regular-application operation. Vendor wording differs. Android always requires the operator to confirm the default Home application; FairWindSK cannot change it silently and remains available from the ordinary application launcher.
 
 When FairWindSK is the current Home app and Android reports Back, Home, or App Switch hardware keys absent, the Bottom Bar displays corresponding soft controls. Home returns to FairWindSK's launcher. Recents opens a single-window strip of Android applications previously launched through FairWindSK; this avoids privileged system-recents APIs unavailable to ordinary applications.
 
-Select applications under **Settings > Android**. The app icon launches the native activity immediately; the separate high-contrast checkbox controls whether it is available for assignment to FairWindSK launcher pages.
+Installed applications are discovered in the background so slow package and icon providers cannot block scrolling or touch input. The app icon launches the native activity immediately; the separate high-contrast checkbox controls whether it is available for assignment to FairWindSK launcher pages.
 
 To recover another Home app during development:
 

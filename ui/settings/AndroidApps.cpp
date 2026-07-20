@@ -2,12 +2,17 @@
 
 #include <algorithm>
 #include <QAbstractItemView>
+#include <QApplication>
+#include <QEvent>
+#include <QFutureWatcher>
 #include <QLabel>
 #include <QHBoxLayout>
 #include <QListWidget>
 #include <QPushButton>
 #include <QToolButton>
 #include <QVBoxLayout>
+#include <QShowEvent>
+#include <QtConcurrentRun>
 
 #include "AppItem.hpp"
 #include "FairWindSK.hpp"
@@ -43,6 +48,12 @@ namespace fairwindsk::ui::settings {
         descriptionLabel->setWordWrap(true);
         layout->addWidget(descriptionLabel);
 
+        m_launcherModeCheckBox = new widgets::TouchCheckBox(this);
+        m_launcherModeCheckBox->setText(tr("Start FairWindSK as the Android launcher"));
+        m_launcherModeCheckBox->setToolTip(
+            tr("Choose whether Android starts FairWindSK as its Home launcher or as a regular application."));
+        layout->addWidget(m_launcherModeCheckBox);
+
         m_refreshButton = new QPushButton(tr("Refresh installed applications"), this);
         m_refreshButton->setMinimumHeight(48);
         layout->addWidget(m_refreshButton);
@@ -58,14 +69,59 @@ namespace fairwindsk::ui::settings {
         m_applicationsList->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
         layout->addWidget(m_applicationsList, 1);
 
+        m_discoveryWatcher = new QFutureWatcher<nlohmann::json>(this);
         connect(m_refreshButton, &QPushButton::clicked, this, &AndroidApps::refreshApplications);
+        connect(m_launcherModeCheckBox, &widgets::TouchCheckBox::toggled, this,
+                [this](const bool launcherMode) {
+                    if (m_rebuilding) {
+                        return;
+                    }
+                    platform::android::AndroidApplicationBridge::requestLauncherMode(launcherMode);
+                    m_statusLabel->setText(
+                        launcherMode
+                            ? tr("Confirm FairWindSK as the Home application in the Android system dialog.")
+                            : tr("Select another Home application in Android settings to use FairWindSK as a regular application."));
+                    refreshLauncherMode();
+                });
+        connect(m_discoveryWatcher, &QFutureWatcher<nlohmann::json>::finished, this,
+                [this]() {
+                    m_discoveredApplications = m_discoveryWatcher->result();
+                    m_refreshButton->setEnabled(true);
+                    rebuildList();
+                });
+        qApp->installEventFilter(this);
+        refreshLauncherMode();
         refreshApplications();
     }
 
     void AndroidApps::refreshApplications() {
-        // Refresh package metadata explicitly so installs and removals are reflected on demand.
-        m_discoveredApplications = platform::android::AndroidApplicationBridge::launchableApplications();
-        rebuildList();
+        // Package labels and icons can be slow on physical devices, so never block Qt's touch event loop.
+        if (m_discoveryWatcher->isRunning()) {
+            return;
+        }
+        m_refreshButton->setEnabled(false);
+        m_statusLabel->setText(tr("Loading installed Android applications…"));
+        m_discoveryWatcher->setFuture(QtConcurrent::run([]() {
+            return platform::android::AndroidApplicationBridge::launchableApplications();
+        }));
+    }
+
+    void AndroidApps::showEvent(QShowEvent *event) {
+        QWidget::showEvent(event);
+        refreshLauncherMode();
+    }
+
+    bool AndroidApps::eventFilter(QObject *watched, QEvent *event) {
+        if (watched == qApp && event && event->type() == QEvent::ApplicationActivate && isVisible()) {
+            refreshLauncherMode();
+        }
+        return QWidget::eventFilter(watched, event);
+    }
+
+    void AndroidApps::refreshLauncherMode() {
+        m_rebuilding = true;
+        m_launcherModeCheckBox->setChecked(platform::android::AndroidApplicationBridge::isDefaultLauncher());
+        m_rebuilding = false;
     }
 
     void AndroidApps::rebuildList() {

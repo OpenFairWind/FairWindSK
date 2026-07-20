@@ -12,6 +12,7 @@ namespace fairwindsk::platform::android {
         static nlohmann::json recentApplications();
         static bool launchApplication(const QString &packageName, const QString &activityName);
         static bool isDefaultLauncher();
+        static void requestLauncherMode(bool launcherMode);
         static bool hasHardwareNavigationKey(int keyCode);
         static void requestSystemBack();
     };

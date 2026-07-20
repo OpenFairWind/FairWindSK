@@ -154,6 +154,8 @@ No Apple Developer Program membership or provisioning profile is required for an
 
 Use the iOS kit's `qt-cmake`; it loads Qt's iOS toolchain. `QT_HOST_PATH` points to the matching macOS installation so CMake can run host tools such as `moc`, `rcc`, and `lrelease`.
 
+Use a CMake release supported by the installed Qt and Xcode combination. CMake 4.4 may report an unknown AppleClang compiler with Xcode 26; CMake 3.31 is verified for this workflow.
+
 Qt 6.8's official prebuilt iOS kit uses x86_64 simulator libraries. Configure x86_64 on both Intel and Apple Silicon Macs; Apple Silicon executes this target through Rosetta:
 
 ```bash
@@ -329,6 +331,7 @@ Qt Creator's **Application Output**, **Issues**, and **Debugger** panes are the 
 - **Qt component not found:** add the missing module to the iOS installation and ensure `QT_HOST_PATH` names the same Qt version's macOS installation.
 - **A macOS executable is produced:** configure with the iOS kit's `qt-cmake`, `iphonesimulator`, and a clean build directory.
 - **No C++ compiler is detected:** finish Xcode first-launch setup, verify `xcrun --sdk iphonesimulator clang++`, and confirm that the active developer directory points to the intended Xcode.
+- **CMake reports `No known features for CXX compiler`:** CMake 4.4 does not identify AppleClang correctly with this Xcode 26 setup. Configure the clean simulator directory with CMake 3.31.
 - **CoreSimulator is out of date:** install all compatible macOS and Xcode updates, restart the Mac, and reinstall or update the simulator runtime.
 - **No Rosetta iPad destination appears on Apple Silicon:** install Rosetta, install Xcode's universal iOS platform component, and enable Rosetta destinations under **Product > Destination > Destination Architectures**.
 - **The requested simulator architecture is unavailable:** Qt 6.8's prebuilt simulator libraries use x86_64. Inspect the selected Qt release's documentation and frameworks with `lipo -info` rather than assuming the Mac's native architecture.
@@ -337,9 +340,11 @@ Qt Creator's **Application Output**, **Issues**, and **Debugger** panes are the 
 - **Installation rejects the bundle:** confirm that it was built for `iphonesimulator`, not `iphoneos`, and that its architecture matches the host simulator.
 - **FairWindSK launches to a blank web area:** verify the Signal K URL in Simulator Safari, then inspect FairWindSK logs and confirm that Qt WebView is installed in the iOS kit.
 - **Build works for Simulator but not a device:** physical devices require signing, a development team, a provisioning profile, and an iOS deployment target supported by the device.
-- **Layout is clipped:** test both orientations and multiple iPad sizes, then treat safe-area, touch-target, and MFD layout defects as release blockers.
+- **Layout is clipped:** test both supported landscape directions and multiple iPad sizes, then treat safe-area, touch-target, and MFD layout defects as release blockers.
 
 ## 15. Physical iPad and release notes
+
+FairWindSK declares only `UIInterfaceOrientationLandscapeLeft` and `UIInterfaceOrientationLandscapeRight` for both iPhone and iPadOS. The operating system therefore keeps the single-window marine MFD shell in landscape on simulator and physical devices.
 
 The simulator is suitable for build validation and most UI workflows, but it does not reproduce all device behavior. Physical-device deployment requires:
 
@@ -356,7 +361,7 @@ For App Store or TestFlight distribution, create an Xcode archive from a clean R
 - Build from a clean, reviewed commit.
 - Confirm `git diff --check` and relevant desktop/Android regression builds.
 - Build both the iPhoneOS device target and the iOS Simulator target.
-- Run on representative small and large iPad simulators in portrait and landscape.
+- Run on representative small and large iPad simulators and verify that rotation remains locked to both supported landscape directions.
 - Repeat touch and MFD validation on a physical iPad.
 - Test every comfort preset and every shipped language.
 - Verify the Signal K connection and embedded WebView navigation.

@@ -76,6 +76,18 @@ namespace fairwindsk::platform::android {
 #endif
     }
 
+    void AndroidApplicationBridge::requestLauncherMode(const bool launcherMode) {
+#if defined(Q_OS_ANDROID)
+        QJniObject::callStaticMethod<void>(
+            "org/openfairwind/fairwindsk/FairWindSKActivity",
+            "requestHomeApplicationMode",
+            "(Z)V",
+            static_cast<jboolean>(launcherMode));
+#else
+        Q_UNUSED(launcherMode);
+#endif
+    }
+
     bool AndroidApplicationBridge::hasHardwareNavigationKey(const int keyCode) {
 #if defined(Q_OS_ANDROID)
         return QJniObject::callStaticMethod<jboolean>(

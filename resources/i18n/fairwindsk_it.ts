@@ -4501,6 +4501,26 @@ Ultimo aggiornamento live %1</translation>
         <translation>Seleziona le applicazioni Android installate che saranno disponibili in Impostazioni &gt; Applicazioni e assegnabili alle pagine del launcher.</translation>
     </message>
     <message>
+        <source>Start FairWindSK as the Android launcher</source>
+        <translation>Avvia FairWindSK come launcher Android</translation>
+    </message>
+    <message>
+        <source>Choose whether Android starts FairWindSK as its Home launcher or as a regular application.</source>
+        <translation>Scegli se Android deve avviare FairWindSK come launcher Home o come applicazione normale.</translation>
+    </message>
+    <message>
+        <source>Confirm FairWindSK as the Home application in the Android system dialog.</source>
+        <translation>Conferma FairWindSK come applicazione Home nella finestra di sistema Android.</translation>
+    </message>
+    <message>
+        <source>Select another Home application in Android settings to use FairWindSK as a regular application.</source>
+        <translation>Seleziona un'altra applicazione Home nelle impostazioni Android per usare FairWindSK come applicazione normale.</translation>
+    </message>
+    <message>
+        <source>Loading installed Android applications…</source>
+        <translation>Caricamento delle applicazioni Android installate…</translation>
+    </message>
+    <message>
         <location filename="../../ui/settings/AndroidApps.cpp" line="46"/>
         <source>Refresh installed applications</source>
         <translation>Aggiorna applicazioni installate</translation>

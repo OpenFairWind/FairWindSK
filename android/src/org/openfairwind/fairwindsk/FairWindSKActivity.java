@@ -10,6 +10,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.InputDevice;
 
 import org.json.JSONArray;
@@ -193,6 +194,30 @@ public class FairWindSKActivity extends QtActivity {
             PackageManager.ResolveInfoFlags.of(PackageManager.MATCH_DEFAULT_ONLY));
         return resolvedHome != null && resolvedHome.activityInfo != null
             && activity.getPackageName().equals(resolvedHome.activityInfo.packageName);
+    }
+
+    public static void requestHomeApplicationMode(boolean launcherMode) {
+        final FairWindSKActivity activity = instance;
+        if (activity == null) {
+            return;
+        }
+
+        activity.runOnUiThread(() -> {
+            try {
+                final RoleManager roleManager = activity.getSystemService(RoleManager.class);
+                if (launcherMode && roleManager != null && roleManager.isRoleAvailable(RoleManager.ROLE_HOME)
+                    && !roleManager.isRoleHeld(RoleManager.ROLE_HOME)) {
+                    activity.startActivity(roleManager.createRequestRoleIntent(RoleManager.ROLE_HOME));
+                    return;
+                }
+
+                // Android requires the operator to choose another Home app; an app cannot silently release this role.
+                activity.startActivity(new Intent(Settings.ACTION_HOME_SETTINGS));
+            } catch (Exception ignored) {
+                // Vendor builds without the standard role UI fall back to the Default apps settings screen.
+                activity.startActivity(new Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS));
+            }
+        });
     }
 
     public static boolean hasHardwareNavigationKey(int keyCode) {
