@@ -368,6 +368,8 @@ An APK cross-build validates compilation and packaging, but it cannot validate W
 
 iOS and iPadOS builds use the same alternate mobile web implementation as Android: `Qt::WebView` inside `QQuickWidget` hosts, with the rest of the widget shell preserved.
 
+The authoritative macOS environment setup, Qt Creator and command-line build, iPad Simulator deployment, validation, debugging, and troubleshooting workflow is [iOS and iPadOS build and simulator guide](ios.md). The abbreviated workflow below remains a quick reference.
+
 ### Step-by-step iOS / iPadOS build guide
 
 1. Use a macOS machine with:
@@ -401,18 +403,19 @@ cd FairWindSK
 
 ### Optional command-line iOS configure example
 
-Command-line iOS builds are possible, but Qt Creator remains the recommended workflow because Apple signing, simulator/device selection, and bundle deployment are easier there. A typical configure pattern is:
+Command-line iOS builds are possible, but Qt Creator remains the recommended workflow because Apple signing, simulator/device selection, and bundle deployment are easier there. Use the `qt-cmake` executable from the iOS kit so that Qt's iOS toolchain is loaded, and provide the matching desktop Qt installation for host tools such as `moc`, `rcc`, and `lrelease`:
 
 ```bash
-cmake -S . -B build-ios -G Ninja \
-  -DCMAKE_SYSTEM_NAME=iOS \
+/path/to/Qt/6.x.x/ios/bin/qt-cmake -S . -B build-ios -G Xcode \
+  -DQT_HOST_PATH="/path/to/Qt/6.x.x/macos" \
   -DCMAKE_OSX_SYSROOT=iphoneos \
-  -DCMAKE_OSX_ARCHITECTURES=arm64 \
-  -DCMAKE_PREFIX_PATH="/path/to/Qt/6.x.x/ios"
-cmake --build build-ios --parallel
+  -DCMAKE_OSX_ARCHITECTURES=arm64
+cmake --build build-ios --config Release --parallel
 ```
 
-For simulator-only builds, use the simulator SDK and matching architecture values instead of `iphoneos`.
+For a compile-only local check that does not deploy the application, add `-DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO` to the configure command and `-- -sdk iphoneos CODE_SIGNING_ALLOWED=NO` to the build command. Device deployment still requires a valid Apple development team and provisioning profile. For simulator builds, follow [the iOS guide](ios.md): Qt 6.8's prebuilt kit requires the x86_64 simulator architecture and Rosetta on Apple Silicon.
+
+The iPhoneOS device target was locally configured, compiled, linked, and bundle-validated on macOS with Qt 6.8.3, Xcode 26.6, and the iPhoneOS 26.5 SDK. The resulting unsigned application contained an arm64 Mach-O executable and declared support for both iPhone and iPad device families.
 
 Notes:
 

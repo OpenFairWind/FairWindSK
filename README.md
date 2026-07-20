@@ -21,6 +21,7 @@ The runtime now supervises Signal K restarts as well: if the server drops and co
 * [Getting started](docs/getting_started.md)
 * [Building FairWindSK](docs/building.md)
 * [Android environment, APK build, signing, deployment, and launcher guide](docs/android.md)
+* [iOS environment, iPad Simulator build, deployment, and debugging guide](docs/ios.md)
 * [Architecture overview](docs/architecture.md)
 * [Developing guide](docs/developing_guide.md)
 * [UI shell definition](docs/ui_shell.md)
@@ -68,6 +69,7 @@ The `SHIFT+TAB` hot key on desktop builds brings the FairWindSK window back to t
 
 The full platform guide now lives in [docs/building.md](docs/building.md).
 Complete Android host setup and signed-APK instructions live in [docs/android.md](docs/android.md).
+Complete iOS host setup and iPad Simulator instructions live in [docs/ios.md](docs/ios.md).
 
 Quick summary:
 
