@@ -1,6 +1,6 @@
 # Building and running FairWindSK in a container
 
-FairWindSK can be compiled and smoke-tested in a Linux container. This is useful for checking the Linux desktop build from a non-Linux host and for reproducing compiler or dependency issues in a clean environment.
+FairWindSK can be compiled and smoke-tested in a Linux container. This is useful for checking the Linux desktop flavor from a non-Linux host and for reproducing compiler or dependency issues in a clean environment. The shared flavor matrix and completion rules are maintained in [building.md](building.md).
 
 FairWindSK is a Qt desktop GUI with Qt WebEngine, not a web service. A container therefore needs either a virtual X display for automated startup checks or access to a host X server for interactive use. The container does not replace the normal native installation described in [Building FairWindSK](building.md).
 
@@ -149,4 +149,4 @@ above as a separate check of Qt WebEngine initialization and the full MFD shell.
 
 ## Platform validation limits
 
-The container validates only the Linux desktop Qt WebEngine path for its selected CPU architecture. It does not build or validate Windows, macOS, Raspberry Pi OS hardware integration, Android, or iOS. It also cannot establish GUI conformance by itself. GUI changes still require interactive checks for finger-friendly targets, pressed and focus states, helm-distance readability, stable single-window behavior, and all `default`, `dawn`, `day`, `sunset`, `dusk`, and `night` comfort presets on representative hardware.
+The container validates only the Linux desktop Qt WebEngine path for its selected CPU architecture. It does not build or validate Windows, native macOS, Raspberry Pi OS hardware integration, Android, or iOS/iPadOS. It also cannot establish GUI conformance by itself. GUI changes still require interactive checks for finger-friendly targets, pressed and focus states, helm-distance readability, stable single-window behavior, translations, and all `default`, `dawn`, `day`, `sunset`, `dusk`, and `night` comfort presets on representative hardware. Follow the relevant flavor guide linked from [building.md](building.md) before claiming support.

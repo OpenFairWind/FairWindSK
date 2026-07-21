@@ -2,7 +2,7 @@
 
 FairWindSK supports Android 13/API 33 and newer. Android builds use Qt WebView rather than Qt WebEngine and may optionally be selected as the device Home application. Installation never changes the current Home application automatically.
 
-This guide covers Linux, Windows, and macOS hosts, command-line and Qt Creator builds, APK signing, API verification, emulator/device deployment, and recovery from launcher configuration mistakes.
+This guide covers Linux, Windows, and macOS hosts, command-line and Qt Creator builds, APK signing, API verification, emulator/device deployment, and recovery from launcher configuration mistakes. See [building.md](building.md) for the shared cross-platform contract and [macos.md](macos.md) when the host Mac also needs a native desktop Qt environment.
 
 ## 1. Required components
 
@@ -66,10 +66,10 @@ Typical paths are `C:\Qt\6.8.3\msvc2022_64`, `C:\Qt\6.8.3\android_arm64_v8a`, an
 
 ## 3. Verify the toolchain
 
-Clone the Android branch:
+Clone the current shared desktop/mobile development branch (or select a release tag for a published release):
 
 ```bash
-git clone --branch android https://github.com/OpenFairWind/FairWindSK.git
+git clone --branch mobile https://github.com/OpenFairWind/FairWindSK.git
 cd FairWindSK
 ```
 

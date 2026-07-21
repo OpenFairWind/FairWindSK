@@ -10,17 +10,14 @@ FairWindSK is a Qt6 shell that launches and supervises Signal K web applications
 
 ## Building from source
 
-The project uses a conventional CMake workflow across the supported targets:
+Clone the source, then select the dedicated instructions for the target flavor:
 
 ```bash
-git clone https://github.com/OpenFairWind/FairWindSK.git
+git clone --branch mobile https://github.com/OpenFairWind/FairWindSK.git
 cd FairWindSK
-cmake -S . -B build
-cmake --build build --parallel
-cmake --install build
 ```
 
-Platform-specific dependencies, Qt kit selection, Windows deployment, Raspberry Pi notes, and the current desktop/mobile caveats are documented in [building.md](./building.md).
+The [cross-platform build overview](building.md) links to the authoritative [macOS](macos.md), [Android](android.md), [iOS/iPadOS](ios.md), and [container](container.md) guides and contains the Linux, Raspberry Pi OS, and Windows workflows. A generic host CMake command is valid only after the correct platform Qt kit and dependencies are selected.
 
 ## First run and configuration bootstrap
 
@@ -47,4 +44,4 @@ On Android, open **Settings > Android**. Use the launcher-mode touch checkbox to
 - If no applications appear, verify the `connection.server` URL and that the Signal K server exposes `/signalk/v1/apps/list` or the legacy `/skServer/webapps` endpoint.
 - Enable debug logging by setting `debug=true` in `fairwindsk.ini` before launching. Logs include connection attempts and application discovery details.
 - For diagnostics, the **Settings > System** tab lets you choose the FairWindSK log level, keep per-run message logs in a persistent directory, and configure the diagnostics email destination used after an unclean shutdown.
-- Check that your platform has Qt WebEngine acceleration enabled; `QWebEngineSettings::Accelerated2dCanvasEnabled` is turned on by default at runtime.
+- On desktop, check that Qt WebEngine acceleration is available; `QWebEngineSettings::Accelerated2dCanvasEnabled` is turned on by default. Android and iOS/iPadOS use Qt WebView instead, so inspect the platform WebView logs and guide.

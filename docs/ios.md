@@ -2,7 +2,7 @@
 
 FairWindSK supports iOS and iPadOS through Qt's mobile WebView implementation. The native Qt Widgets shell remains single-window, while embedded Signal K applications use `Qt::WebView` and `QQuickWidget` instead of the desktop-only Qt WebEngine stack.
 
-This guide is the authoritative macOS environment setup, Qt Creator build, command-line build, iPad Simulator deployment, debugging, and troubleshooting workflow for FairWindSK on Apple mobile platforms.
+This guide is the authoritative Qt Creator build, command-line build, simulator/device deployment, debugging, and troubleshooting workflow for FairWindSK on Apple mobile platforms. Prepare the Mac and its desktop Qt host tools with [the macOS build guide](macos.md), then add the matching Qt iOS kit as described here. See [building.md](building.md) for the cross-platform contract.
 
 ## 1. Required components
 
@@ -98,11 +98,11 @@ brew install git cmake ninja
 Clone the repository and enter it:
 
 ```bash
-git clone --branch android https://github.com/OpenFairWind/FairWindSK.git
+git clone --branch mobile https://github.com/OpenFairWind/FairWindSK.git
 cd FairWindSK
 ```
 
-The branch name reflects the current project development branch; it contains the shared desktop, Android, and iOS codebase.
+Use a release tag instead when building a published release. The `mobile` branch contains the current shared desktop, Android, and iOS codebase.
 
 Define task-specific paths for subsequent command-line examples:
 

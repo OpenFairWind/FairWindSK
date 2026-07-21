@@ -1,5 +1,6 @@
 # FairWindSK
-A QT-based browser designed to be a companion of the Signal K server
+
+A touch-first, cross-platform marine Multi-Functional Display and Signal K application host.
 
 # Introduction
 FairWindSK is part of DYNAMO research projects (now supported by the DataX4Sea project, a research grant from
@@ -9,9 +10,7 @@ The final goal of all the DYNAMO projects is data crowdsourcing for coastal envi
 forecasting (numerical) and prediction (AI) models. All results of projects funded by public institutions are
 open-source and open-data.
 
-FairWindSK is a browser with steroids designed to host SK applications.
-It is written in C++ 17 and QT6.
-It now has a single CMake-based cross-platform build path: desktop targets keep the existing Qt WebEngine Widgets implementation, while Android and iOS use a mobile-safe Qt WebView based alternative behind the same source interfaces.
+FairWindSK is written in C++17 and Qt 6. It combines a native marine instrument shell, vessel operations, configuration and data-management tools, and embedded Signal K web applications in one landscape window. Desktop targets use Qt WebEngine Widgets; Android and iOS/iPadOS use Qt WebView behind the same application-host interfaces.
 
 Android 13 (API 33) is the minimum supported Android runtime. The Android build can optionally be selected as the device Home app without changing the default automatically. Its Android-only settings page discovers installed launchable applications, lets the operator choose which ones join the shared FairWindSK application palette, and places them on the same marine-MFD launcher pages as Signal K web applications.
 The runtime now supervises Signal K restarts as well: if the server drops and comes back, FairWindSK re-discovers the server, reconnects the websocket stream, restores subscriptions, and refreshes server-backed resources so the UI stays consistent with the restarted backend.
@@ -20,6 +19,7 @@ The runtime now supervises Signal K restarts as well: if the server drops and co
 
 * [Getting started](docs/getting_started.md)
 * [Building FairWindSK](docs/building.md)
+* [Building FairWindSK on macOS](docs/macos.md)
 * [Building and running FairWindSK in a container](docs/container.md)
 * [Android environment, APK build, signing, deployment, and launcher guide](docs/android.md)
 * [iOS environment, iPad Simulator build, deployment, and debugging guide](docs/ios.md)
@@ -33,33 +33,64 @@ The runtime now supervises Signal K restarts as well: if the server drops and co
 
 ![The FairWindSK desktop](images/fairwindsk-desktop.png)
 
-### Stable components ###
-* The desktop Qt/CMake build path for macOS, Linux, Raspberry Pi OS, and Windows, with a shared source structure that also keeps Android and iOS targets in the tree
-* The main FairWindSK shell: Top Bar, Application Area, Bottom Bar, Bottom Bar horizontal drawer, and Application Area vertical drawer
-* Signal K discovery, authentication, REST/websocket connectivity, web-app discovery, and hosted application lifecycle management
-* Automatic Signal K restart recovery, including rediscovery, reconnect, subscription restore, health reporting, and refresh of server-backed UI state
-* The desktop launcher with application tiles, OpenBridge-style page/application management actions, and local desktop app support on desktop targets
-* An opt-in Android Home/launcher role with scoped installed-app discovery, separate marine-MFD selection and launch controls under **Settings > Android**, explicit native activity launching, and conditional soft Back/Home/Recents controls on Android 13/API 33 and newer
-* Core settings flows for main preferences, comfort presets, connection parameters, Signal K path mapping, units, applications, and system/configuration management
-* Comfort preset management for `Default`, `Dawn`, `Day`, `Sunset`, `Dusk`, and `Night`, including QSS editing, configurable palette items, and theme image support
-* Shared touch-first UI building blocks and drawer-hosted dialogs, including touch combo boxes, check boxes, spin boxes, file browsers, icon browsers, color pickers, and scroll surfaces
-* Qt virtual keyboard integration for touch-oriented deployments
-* Touch-oriented diagnostics with per-run logs, crash-report bundle handling, lightweight interaction history, and in-app diagnostics exploration through the shared Bottom Bar drawer
-* Native vessel-operation surfaces for POB (Person Over Board), autopilot, anchor, alarms, and Signal K server status
-* Mature MyData workflows for waypoints, historical track samples, local/remote file browsing and search, and file viewing for images, PDF, and text content
-* The shared MyData resource infrastructure used to list, import, export, edit, and refresh Signal K resources through common models and dialogs
-* Embedded geographic preview support for waypoints and GeoJSON-shaped resources, including Freeboard-assisted focusing when the supporting app is available
+## Available features
 
-Those bars relay on SK web apps invoking their APIs or access the Signal K APIs directly. 
+### Marine MFD shell and instruments
 
-Applications are SK Web Apps hosted by the SK server, but they can also be other web applications manually configured
-by providing the URL.
+* A single-window, landscape shell composed of the Top Bar, Application Area, Bottom Bar, horizontal action drawer, and vertical application drawer
+* Configurable live navigation instruments including position, COG, SOG, heading, speed through water, depth, waypoint, bearing, distance, time-to-go, ETA, cross-track error, and velocity made good
+* Clear live, stale, missing, connection, and Signal K health states
+* Touch-first controls, Qt Virtual Keyboard integration, high-contrast OpenBridge-inspired presentation, and readable helm-distance layouts
+* Six comfort presets: `Default`, `Dawn`, `Day`, `Sunset`, `Dusk`, and `Night`, with editable palettes, styles, and theme images
+* Multilingual native and embedded-web locale coordination, with English fallback for unsupported locales
+
+### Signal K connectivity and applications
+
+* Signal K discovery, manual server selection, authentication, REST requests, websocket subscriptions, and connection health reporting
+* Automatic recovery after network interruption or Signal K restart, including rediscovery, websocket reconnect, subscription restoration, and server-backed UI refresh
+* Discovery of Signal K web applications and their artwork, plus manually configured web URLs
+* An embedded application host that keeps web apps inside FairWindSK rather than opening external browser windows
+* A paged and nested launcher with application tiles, touch-friendly page assignment, app editing, icon selection, and an Apps action that always returns home
+* Responsive asynchronous mobile loading for server-provided applications, units, resources, tracks, and system diagnostics
+
+### Navigation, safety, and vessel control
+
+* Person Over Board support for multiple incidents, last-known position, bearing, range, elapsed time, Signal K MOB notification, incident waypoint creation, destination selection, and cancellation
+* Anchor monitoring and alarm access from the shared operational shell
+* Signal K alarm and notification presentation
+* Autopilot controls when a compatible Signal K autopilot plugin and APIs are available: next waypoint, wind-vane mode, tack, gybe, port/starboard trim by 1° or 10°, route selection, dodge, and auto mode
+
+### MyData
+
+* Signal K `Waypoints`, `Routes`, `Regions`, `Notes`, `Charts`, and `Tracks`
+* Shared resource listing, creation/editing, import, export, deletion, and refresh workflows
+* Historical track retrieval and geographic previews for waypoints and GeoJSON-shaped resources
+* Freeboard-SK-assisted map focus when that application is available
+* Local and remote file browsing, searching, and viewing of images, PDF documents, and text content
+
+### Configuration and diagnostics
+
+* Settings for general behavior, Signal K connection, paths, units, applications, launcher pages, comfort presets, language, system information, and configuration import/export
+* Server-provided unit preferences and conversion support without blocking mobile touch interaction
+* Per-run logs, crash-report bundles, interaction history, and an in-app diagnostics explorer
+* Persistent configuration with safe import and platform-appropriate application data storage
+
+### Platform integration
+
+* Native desktop builds for macOS, Linux, Raspberry Pi OS, and Windows
+* Android 13/API 33 and newer, including an optional Android Home role that is never selected automatically
+* Android discovery of installed `MAIN + LAUNCHER` activities, selection into the shared application palette, explicit native launching, and conditional soft Back/Home/Recents controls
+* iOS and iPadOS device and simulator builds with the FairWindSK application identity and mobile WebView backend
+* Raspberry Pi OS kiosk/autostart helpers and OpenPlotter-aware installation
+* Linux container compilation, CTest, and headless Qt WebEngine startup checks
+
+Applications are normally Signal K web apps hosted by the connected server, but any compatible web application can be configured by URL.
 
 The launcher enforces the single-window marine display model: configured apps must run as embedded web views, and native `file://` applications are blocked instead of being launched as external windows.
 
 The `SHIFT+TAB` hot key on desktop builds brings the FairWindSK window back to the foreground without relying on external application windows.
 
-### Components under active development ###
+## Areas under active development
 * Continued Android and iOS real-device validation of the alternate Qt WebView runtime path, including parity checks against the more established desktop WebEngine behavior
 * Deeper MyData authoring and UX polish for routes, regions, notes, and charts, especially for geometry-heavy editing, preview depth, and bulk-management workflows
 * Continued hardening of the newer shared MyData resource editors and collection pages as they expand beyond the long-standing waypoint and file-centric flows
@@ -71,13 +102,14 @@ The `SHIFT+TAB` hot key on desktop builds brings the FairWindSK window back to t
 The full platform guide now lives in [docs/building.md](docs/building.md).
 Complete Android host setup and signed-APK instructions live in [docs/android.md](docs/android.md).
 Complete iOS host setup and iPad Simulator instructions live in [docs/ios.md](docs/ios.md).
+Complete native macOS environment, build, test, installation, and packaging instructions live in [docs/macos.md](docs/macos.md).
 
 Quick summary:
 
 - macOS, Linux, Raspberry Pi OS, and Windows keep the desktop Qt WebEngine Widgets implementation.
 - Android and iOS now build through an alternate mobile web layer based on Qt WebView and QQuickWidget hosts.
 - Android packaging declares API 33 as its minimum SDK. Package discovery uses only `MAIN + LAUNCHER` visibility rather than the broad `QUERY_ALL_PACKAGES` permission, and installation leaves the existing default Home app unchanged.
-- Desktop targets download `nlohmann/json`, `QtZeroConf`, and `QHotkey` during the first clean build.
+- Desktop targets use pinned `QtZeroConf` and `QHotkey` dependencies and download them during the first clean build. CMake downloads the pinned `nlohmann/json` fallback only when a system package is unavailable.
 - On Linux desktop installs, `cmake --install build` now also installs the FairWindSK desktop launcher. On Raspberry Pi OS installs it additionally enables the system autostart entry, and when OpenPlotter is detected it performs a best-effort copy into the OpenPlotter menu directories.
 
 Generic workflow:
