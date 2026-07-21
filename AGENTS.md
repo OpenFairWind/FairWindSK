@@ -11,6 +11,7 @@ These instructions apply to the entire repository.
 - Line-by-line pedagogical comments.
 
 ## Build & testing
+- Maintain coherent behavior and keep every FairWindSK flavor fully working across Linux, Windows, macOS, Raspberry Pi OS, Android, and iOS/iPadOS; platform-specific changes must preserve equivalent behavior on all other supported flavors.
 - Use the CMake build (`cmake -S . -B build` then `cmake --build build`) when you need to compile locally; desktop builds require Qt6 with QtWebEngine, while Android and iOS builds require Qt6 with Qt WebView instead of QtWebEngine.
 - Treat Android 13 / API 33 as the minimum supported Android runtime. Android changes must compile with APIs available in 33; guard newer APIs with runtime SDK checks and preserve an API 33 fallback.
 - Build Android with a Qt 6 Android kit, JDK 17, and an Android SDK platform at least API 33. A newer compile/target SDK is allowed, but it must not raise `QT_ANDROID_MIN_SDK_VERSION` above 33 without an explicit compatibility decision and matching documentation update.

@@ -635,6 +635,29 @@ namespace fairwindsk {
         return m_cachedIcon;
     }
 
+    void AppItem::setCachedIcon(const QPixmap& icon) {
+        // Ignore invalid downloads so the existing touch-friendly fallback remains visible.
+        if (icon.isNull()) {
+            return;
+        }
+
+        // Cache the decoded image so every launcher surface can reuse it without network I/O.
+        m_cachedIcon = icon;
+        m_hasCachedIcon = true;
+    }
+
+    bool AppItem::setCachedIconData(const QByteArray& iconData) {
+        // Decode both raster artwork and SVG artwork through the shared icon decoder.
+        const QPixmap icon = loadPixmapFromPayload(iconData);
+        if (icon.isNull()) {
+            return false;
+        }
+
+        // Store the decoded artwork on the live application object used by the launcher.
+        setCachedIcon(icon);
+        return true;
+    }
+
     /*
      * getHash
      * Returns the app's generated hash

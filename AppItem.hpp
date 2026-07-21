@@ -6,6 +6,7 @@
 #define APPITEM_HPP
 
 #include <QObject>
+#include <QByteArray>
 #include <QMap>
 #include <QImage>
 #include <QPixmap>
@@ -60,6 +61,8 @@ namespace fairwindsk {
             QString getAndroidPackage() const;
             QString getAndroidActivity() const;
             QPixmap getIcon(bool allowRemoteFetch = false);
+            void setCachedIcon(const QPixmap& icon);
+            bool setCachedIconData(const QByteArray& iconData);
             QString getAppIcon();
             void setAppIcon(const QString& appIcon);
             double getZoomPercent() const;

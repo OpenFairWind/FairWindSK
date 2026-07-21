@@ -366,5 +366,6 @@ For App Store or TestFlight distribution, create an Xcode archive from a clean R
 - Test every comfort preset and every shipped language.
 - Verify the Signal K connection and embedded WebView navigation.
 - Verify application identity, version, deployment target, architectures, signing, and entitlements.
+- Confirm the generated asset catalog shows the FairWindSK marine logo on the iPadOS Home screen.
 - Preserve signing assets securely outside the repository.
 - Record the Qt, Xcode, SDK, simulator-runtime, macOS, and tested-device versions in release notes.

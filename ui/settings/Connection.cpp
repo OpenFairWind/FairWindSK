@@ -497,6 +497,19 @@ namespace fairwindsk::ui::settings {
         return m_settings && m_settings->getConfiguration()->getSignalKConnectionEnabled();
     }
 
+    bool Connection::connectionEstablished() const {
+        auto *fairWindSK = FairWindSK::getInstance();
+        const auto *client = fairWindSK ? fairWindSK->getSignalKClient() : nullptr;
+        if (!client) {
+            return false;
+        }
+
+        const auto state = client->connectionHealthState();
+        return state == signalk::Client::ConnectionHealthState::Live ||
+               state == signalk::Client::ConnectionHealthState::Stale ||
+               state == signalk::Client::ConnectionHealthState::Degraded;
+    }
+
     void Connection::setConnectionEnabled(const bool enabled) {
         if (!m_settings || !m_settings->getConfiguration()) {
             return;
@@ -517,9 +530,12 @@ namespace fairwindsk::ui::settings {
             return;
         }
 
-        const bool enabled = connectionEnabled();
-        m_connectButton->setText(enabled ? tr("Pause") : tr("Connect"));
-        m_connectButton->setToolTip(enabled
+        const bool connected = connectionEstablished();
+        m_connectButton->setText(connected ? tr("Pause") : tr("Connect"));
+        m_connectButton->setIcon(QIcon(connected
+                                           ? QStringLiteral(":/resources/svg/OpenBridge/close-google.svg")
+                                           : QStringLiteral(":/resources/svg/OpenBridge/refresh-google.svg")));
+        m_connectButton->setToolTip(connected
                                         ? tr("Pause the Signal K connection without clearing the selected URL")
                                         : tr("Connect to the Signal K server using the selected URL"));
         m_connectButton->setAccessibleName(m_connectButton->text());
@@ -782,6 +798,15 @@ namespace fairwindsk::ui::settings {
 
         m_networkAccessManager = new QNetworkAccessManager(this);
 
+        // Keep the action label and icon aligned with real connectivity, not only configuration intent.
+        if (auto *client = FairWindSK::getInstance()->getSignalKClient()) {
+            connect(client, &signalk::Client::connectionHealthStateChanged, this,
+                    [this](const signalk::Client::ConnectionHealthState,
+                           const QString &,
+                           const QDateTime &,
+                           const QString &) { updateConnectionToggle(); });
+        }
+
         // Populate combo with the configured URL and defaults.
         const QString configuredServerUrl = m_settings->getConfiguration()->getSignalKServerUrl();
         addServerUrlOption(configuredServerUrl);
@@ -881,14 +906,20 @@ namespace fairwindsk::ui::settings {
      */
     void Connection::onToggleConnection() {
         commitSignalKServerUrl(false);
-        const bool nextEnabled = !connectionEnabled();
+        const bool nextEnabled = !connectionEstablished();
         if (nextEnabled && !currentSignalKServerUrl().isValid()) {
             appendMessage(tr("Please provide a valid Signal K server URL before starting the connection."));
             updateConnectionToggle();
             return;
         }
 
-        setConnectionEnabled(nextEnabled);
+        if (nextEnabled && connectionEnabled()) {
+            // Retry an enabled but disconnected connection immediately.
+            updateConnectionToggle();
+            m_settings->markDirty(FairWindSK::RuntimeSignalKConnection, 0);
+        } else {
+            setConnectionEnabled(nextEnabled);
+        }
         m_stateText = nextEnabled ? tr("Starting") : tr("Paused");
         updateStatusLabel();
         appendMessage(nextEnabled

@@ -459,6 +459,11 @@ namespace fairwindsk {
         if (!m_attemptedDisplayUnitsPaths.contains(path)) {
             m_attemptedDisplayUnitsPaths.insert(path);
 
+#if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
+            // Mobile event dispatchers do not support the nested event loop used by getPathMeta().
+            // Keep the UI responsive and use the local/category unit definitions on mobile.
+            return {};
+#else
             const auto fairWindSK = FairWindSK::getInstance();
             const auto client = fairWindSK ? fairWindSK->getSignalKClient() : nullptr;
             if (client && !client->url().isEmpty()) {
@@ -484,6 +489,7 @@ namespace fairwindsk {
                     }
                 }
             }
+#endif
         }
 
         return {};

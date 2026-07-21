@@ -313,7 +313,8 @@ namespace fairwindsk::ui::launcher {
 
             if (liveApp) {
                 AppItem presentationApp = mergedLauncherAppItem(liveApp, configuredAppJson);
-                return qMakePair(presentationApp.getDisplayName(false), presentationApp.getIcon(false));
+                // Preserve the live object's asynchronously downloaded pixmap cache.
+                return qMakePair(presentationApp.getDisplayName(false), liveApp->getIcon(false));
             }
 
             if (configuredAppJson) {
@@ -422,7 +423,8 @@ namespace fairwindsk::ui::launcher {
                                     entry.appId = slot;
                                     entry.title = presentationApp.getDisplayName(false);
                                     entry.description = presentationApp.getDescription();
-                                    entry.pixmap = presentationApp.getIcon(false);
+                                    // Presentation metadata is merged, while artwork belongs to the live catalog object.
+                                    entry.pixmap = app->getIcon(false);
                                 } else {
                                     if (idx != -1) {
                                         AppItem configApp(configuration->getRoot()["apps"].at(idx));
@@ -641,6 +643,9 @@ namespace fairwindsk::ui::launcher {
                 updateScrollButtons();
             });
             connect(ui->scrollArea->horizontalScrollBar(), &QScrollBar::rangeChanged, this, [this]() { updateScrollButtons(); });
+            // Repaint tile artwork as soon as each asynchronous Signal K icon download completes.
+            connect(fairwindsk::FairWindSK::getInstance(), &fairwindsk::FairWindSK::appIconReady,
+                    this, [this](const QString &) { refreshDeferredIcons(); });
             refreshFromConfiguration();
         }
 

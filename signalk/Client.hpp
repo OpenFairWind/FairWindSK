@@ -231,7 +231,6 @@ namespace fairwindsk::signalk {
         bool m_lastStreamHealthyEmitted = false;
         bool m_lastServerHealthyEmitted = false;
         ConnectionHealthState m_lastConnectionHealthStateEmitted = ConnectionHealthState::Disconnected;
-        QDateTime m_lastStreamActivityEmitted;
         QString m_lastConnectivitySummaryEmitted;
         QTimer m_plannedRestartTimer;
     };

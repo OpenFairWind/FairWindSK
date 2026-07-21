@@ -216,8 +216,8 @@ namespace fairwindsk::signalk {
             m_lastStreamHealthyEmitted == m_streamHealthy &&
             m_lastServerHealthyEmitted == serverHealthy &&
             m_lastConnectionHealthStateEmitted == state &&
-            m_lastStreamActivityEmitted == m_lastStreamActivity &&
             m_lastConnectivitySummaryEmitted == summary) {
+            // Activity timestamps change for every delta, but they do not represent a health-state change.
             return;
         }
 
@@ -226,7 +226,6 @@ namespace fairwindsk::signalk {
         m_lastStreamHealthyEmitted = m_streamHealthy;
         m_lastServerHealthyEmitted = serverHealthy;
         m_lastConnectionHealthStateEmitted = state;
-        m_lastStreamActivityEmitted = m_lastStreamActivity;
         m_lastConnectivitySummaryEmitted = summary;
 
         emit serverHealthChanged(serverHealthy, summary);
