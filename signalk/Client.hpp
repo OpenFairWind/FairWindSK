@@ -15,6 +15,7 @@
 #include <QDateTime>
 #include <QTimer>
 #include <QVariantMap>
+#include <functional>
 
 #include "Waypoint.hpp"
 #include "Subscription.hpp"
@@ -95,6 +96,10 @@ namespace fairwindsk::signalk {
         Waypoint getWaypointByHref(const QString &href);
         QMap<QString, Waypoint> getWaypoints();
         QMap<QString, QJsonObject> getResources(const QString &collection, const QVariantMap &query = {});
+        void getResourcesAsync(const QString &collection,
+                               QObject *context,
+                               std::function<void(const QMap<QString, QJsonObject> &, const QString &)> completion,
+                               const QVariantMap &query = {});
         QJsonObject getResource(const QString &collection, const QString &id, const QVariantMap &query = {});
         QJsonObject createResource(const QString &collection, const QJsonObject &payload, const QVariantMap &query = {});
         QJsonObject putResource(const QString &collection, const QString &id, const QJsonObject &payload);
@@ -102,6 +107,13 @@ namespace fairwindsk::signalk {
         bool navigateToWaypoint(const QString &href);
         QJsonArray getHistoryPaths(const QVariantMap &query = {});
         QJsonObject getHistoryValues(const QStringList &paths, const QVariantMap &query = {});
+        void getHistoryValuesAsync(const QStringList &paths,
+                                   const QVariantMap &query,
+                                   QObject *context,
+                                   std::function<void(const QJsonDocument &, const QString &)> completion);
+        void getJsonAsync(const QUrl &url,
+                          QObject *context,
+                          std::function<void(const QJsonDocument &, const QString &)> completion);
         QJsonObject getUnitPreferencesActive();
         QJsonObject getUnitPreferencesConfig();
         QJsonDocument getUnitPreferencesPresets();

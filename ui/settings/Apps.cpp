@@ -647,6 +647,11 @@ namespace fairwindsk::ui::settings {
                         refreshPageTreeActionButtons();
                     });
                 });
+        connect(fairWindSK, &FairWindSK::appIconReady, this, [this](const QString &) {
+            // Repaint the palette and page slots from the live catalog cache as each icon arrives.
+            rebuildAvailableAppsList();
+            rebuildPageEditor();
+        });
         updateAppsLoadingState(fairWindSK->appsState(), fairWindSK->appsStateText());
 
         m_availableAppsList = new AvailableAppsListWidget(this);
@@ -1044,7 +1049,12 @@ namespace fairwindsk::ui::settings {
 
         for (const auto &jsonApp : jsonApps) {
             AppItem appItem(jsonApp);
-            auto *item = new QListWidgetItem(QIcon(appItem.getIcon(false)), appItem.getDisplayName(false));
+            const QString appName = appItem.getName();
+            auto *fairWindSK = FairWindSK::getInstance();
+            const QString liveHash = fairWindSK ? fairWindSK->getAppHashById(appName) : QString();
+            AppItem *liveApp = fairWindSK && !liveHash.isEmpty() ? fairWindSK->getAppItemByHash(liveHash) : nullptr;
+            const QPixmap icon = liveApp ? liveApp->getIcon(false) : appItem.getIcon(false);
+            auto *item = new QListWidgetItem(QIcon(icon), appItem.getDisplayName(false));
             item->setData(Qt::UserRole, appItem.getName());
             item->setToolTip(appItem.getDescription());
             item->setFlags((item->flags() | Qt::ItemIsDragEnabled | Qt::ItemIsSelectable | Qt::ItemIsEnabled) & ~Qt::ItemIsUserCheckable);
@@ -1190,7 +1200,10 @@ namespace fairwindsk::ui::settings {
         m_appDetailsWidget->ui->spinBox_Apps_ZoomPercent->setValue(appItem.getZoomPercent());
         m_appDetailsWidget->setAppIconPath(appItem.getAppIcon());
 
-        QPixmap pixmap = appItem.getIcon(false);
+        auto *fairWindSK = FairWindSK::getInstance();
+        const QString liveHash = fairWindSK ? fairWindSK->getAppHashById(appName) : QString();
+        AppItem *liveApp = fairWindSK && !liveHash.isEmpty() ? fairWindSK->getAppItemByHash(liveHash) : nullptr;
+        QPixmap pixmap = liveApp ? liveApp->getIcon(false) : appItem.getIcon(false);
         if (!pixmap.isNull()) {
             pixmap = pixmap.scaled(128, 128, Qt::KeepAspectRatio, Qt::SmoothTransformation);
         }
@@ -2021,7 +2034,10 @@ namespace fairwindsk::ui::settings {
         }
 
         AppItem appItem(m_settings->getConfiguration()->getRoot()["apps"].at(idx));
-        return qMakePair(appItem.getDisplayName(false), appItem.getIcon(false));
+        auto *fairWindSK = FairWindSK::getInstance();
+        const QString liveHash = fairWindSK ? fairWindSK->getAppHashById(appName) : QString();
+        AppItem *liveApp = fairWindSK && !liveHash.isEmpty() ? fairWindSK->getAppItemByHash(liveHash) : nullptr;
+        return qMakePair(appItem.getDisplayName(false), liveApp ? liveApp->getIcon(false) : appItem.getIcon(false));
     }
 
     QString Apps::selectedGridEntry() const {

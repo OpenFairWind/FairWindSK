@@ -56,6 +56,7 @@ namespace fairwindsk::ui::settings {
         void ensureRpiDiagnosticsWidgets();
         bool confirmAction(const QString &title, const QString &message, const QString &confirmText);
         void refreshRpiDiagnostics();
+        void applyRpiDiagnostics(const QJsonObject &rpiRoot);
         double fetchSignalKRpiMetric(const QJsonObject &root, const QString &path, bool *available = nullptr) const;
         void setRpiMetricValue(const QString &path, const QString &text);
         void syncLoggingSettings();
@@ -92,6 +93,7 @@ namespace fairwindsk::ui::settings {
         QVBoxLayout *m_loggingDetailsLayout = nullptr;
         QDateTime m_lastRpiRefresh;
         bool m_hasRpiMetrics = false;
+        bool m_rpiRequestInFlight = false;
     };
 }
 

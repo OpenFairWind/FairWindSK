@@ -403,14 +403,22 @@ namespace fairwindsk::ui::mydata {
     }
 
     void HistoryTrackTab::onRefreshClicked() {
-        if (m_isShuttingDown || !m_model) {
+        if (m_isShuttingDown || !m_model || m_refreshInFlight) {
             return;
         }
 
-        QString message;
-        m_model->reload(currentDuration(), currentResolution(), &message);
-        updateStatus(message);
-        rebuildTable();
+        m_refreshInFlight = true;
+        m_refreshButton->setEnabled(false);
+        m_model->reloadAsync(currentDuration(), currentResolution(),
+                             [this](const bool, const QString &message) {
+            m_refreshInFlight = false;
+            if (m_isShuttingDown) {
+                return;
+            }
+            m_refreshButton->setEnabled(true);
+            updateStatus(message);
+            rebuildTable();
+        });
     }
 
     void HistoryTrackTab::onDurationChanged() {

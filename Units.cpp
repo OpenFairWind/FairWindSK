@@ -270,7 +270,29 @@ namespace fairwindsk {
             return;
         }
 
+#if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
+        // Mobile event dispatchers do not permit the nested event loops used by legacy synchronous REST helpers.
+        return;
+#else
         const auto activePreset = client->getUnitPreferencesActive();
+        const auto categoriesObject = client->getUnitPreferencesCategories();
+        const auto definitionsObject = client->getUnitPreferencesDefinitions();
+        const auto defaultCategoriesObject = client->getUnitPreferencesDefaultCategories();
+        applySignalKPreferences(activePreset, categoriesObject, definitionsObject, defaultCategoriesObject);
+#endif
+    }
+
+    void Units::applySignalKPreferences(const QJsonObject &activePreset,
+                                        const QJsonObject &categoriesObject,
+                                        const QJsonObject &definitionsObject,
+                                        const QJsonObject &defaultCategoriesObject) {
+        m_signalKActivePresetName.clear();
+        m_categoryDisplayUnits.clear();
+        m_definitionsByBaseUnit.clear();
+        m_pathPatternCategories.clear();
+        m_displayUnitsCache.clear();
+        m_attemptedDisplayUnitsPaths.clear();
+
         if (activePreset.contains("name") && activePreset["name"].isString()) {
             m_signalKActivePresetName = activePreset["name"].toString();
         }
@@ -288,7 +310,6 @@ namespace fairwindsk {
             }
         }
 
-        const auto categoriesObject = client->getUnitPreferencesCategories();
         if (categoriesObject.contains("categoryToBaseUnit") && categoriesObject["categoryToBaseUnit"].isObject()) {
             const auto categoryToBaseUnit = categoriesObject["categoryToBaseUnit"].toObject();
             for (auto categoryIt = categoryToBaseUnit.begin(); categoryIt != categoryToBaseUnit.end(); ++categoryIt) {
@@ -310,7 +331,6 @@ namespace fairwindsk {
             }
         }
 
-        const auto definitionsObject = client->getUnitPreferencesDefinitions();
         for (auto baseUnitIt = definitionsObject.begin(); baseUnitIt != definitionsObject.end(); ++baseUnitIt) {
             if (!baseUnitIt.value().isObject()) {
                 continue;
@@ -344,7 +364,6 @@ namespace fairwindsk {
             }
         }
 
-        const auto defaultCategoriesObject = client->getUnitPreferencesDefaultCategories();
         if (defaultCategoriesObject.contains("categories") && defaultCategoriesObject["categories"].isObject()) {
             const auto categories = defaultCategoriesObject["categories"].toObject();
             for (auto categoryIt = categories.begin(); categoryIt != categories.end(); ++categoryIt) {

@@ -258,6 +258,32 @@ namespace fairwindsk::ui::settings {
             return;
         }
 
+#if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
+        // Gather every unit-preference document without nesting an event loop on the mobile UI thread.
+        m_serverDocuments.clear();
+        const QMap<QString, QString> endpoints = {
+            {QStringLiteral("active"), QStringLiteral("/v1/unitpreferences/active")},
+            {QStringLiteral("categories"), QStringLiteral("/v1/unitpreferences/categories")},
+            {QStringLiteral("config"), QStringLiteral("/v1/unitpreferences/config")},
+            {QStringLiteral("defaults"), QStringLiteral("/v1/unitpreferences/default-categories")},
+            {QStringLiteral("definitions"), QStringLiteral("/v1/unitpreferences/definitions")},
+            {QStringLiteral("presets"), QStringLiteral("/v1/unitpreferences/presets")}
+        };
+        m_pendingServerRequests = endpoints.size();
+        for (auto it = endpoints.cbegin(); it != endpoints.cend(); ++it) {
+            const QString key = it.key();
+            signalKClient->getJsonAsync(QUrl(signalKClient->url().toString() + it.value()), this,
+                                        [this, key](const QJsonDocument &document, const QString &) {
+                m_serverDocuments.insert(key, document);
+                --m_pendingServerRequests;
+                if (m_pendingServerRequests == 0) {
+                    finishAsyncServerData();
+                }
+            });
+        }
+        return;
+#endif
+
         fairwindsk::Units::getInstance()->refreshSignalKPreferences();
 
         const auto configObject = signalKClient->getUnitPreferencesConfig();
@@ -302,6 +328,47 @@ namespace fairwindsk::ui::settings {
                 }
             }
         }
+    }
+
+    void Units::finishAsyncServerData() {
+        const QJsonObject activePresetObject = m_serverDocuments.value(QStringLiteral("active")).object();
+        fairwindsk::Units::getInstance()->applySignalKPreferences(
+            activePresetObject,
+            m_serverDocuments.value(QStringLiteral("categories")).object(),
+            m_serverDocuments.value(QStringLiteral("definitions")).object(),
+            m_serverDocuments.value(QStringLiteral("defaults")).object());
+
+        const QJsonObject configObject = m_serverDocuments.value(QStringLiteral("config")).object();
+        m_serverActivePresetName = configObject.value(QStringLiteral("activePreset")).toString();
+        QString activePresetKey = activePresetObject.value(QStringLiteral("id")).toString(
+            activePresetObject.value(QStringLiteral("key")).toString());
+        if (activePresetKey.isEmpty()) {
+            activePresetKey = m_serverActivePresetName;
+        }
+        if (!activePresetKey.isEmpty()) {
+            m_presets.insert(activePresetKey, parsePresetInfo(activePresetKey, activePresetObject));
+        }
+
+        const QJsonDocument presetsDocument = m_serverDocuments.value(QStringLiteral("presets"));
+        if (presetsDocument.isObject()) {
+            const QJsonObject presetsObject = presetsDocument.object();
+            for (const QString &groupName : {QStringLiteral("builtIn"), QStringLiteral("custom")}) {
+                const QJsonArray presetArray = presetsObject.value(groupName).toArray();
+                for (const QJsonValue &presetValue : presetArray) {
+                    const QJsonObject presetObject = presetValue.toObject();
+                    const QString presetName = presetObject.value(QStringLiteral("name")).toString();
+                    if (presetName.isEmpty()) {
+                        continue;
+                    }
+                    auto info = m_presets.value(presetName);
+                    info.name = presetName;
+                    info.displayName = presetObject.value(QStringLiteral("displayName")).toString(presetName);
+                    m_presets.insert(presetName, info);
+                }
+            }
+        }
+
+        rebuildRows();
     }
 
     void Units::rebuildRows() {

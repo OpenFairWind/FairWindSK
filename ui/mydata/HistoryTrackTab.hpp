@@ -72,6 +72,7 @@ namespace fairwindsk::ui::mydata {
         QPushButton *m_refreshButton = nullptr;
         QTimer *m_refreshTimer = nullptr;
         bool m_isShuttingDown = false;
+        bool m_refreshInFlight = false;
     };
 }
 
