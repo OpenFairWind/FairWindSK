@@ -59,7 +59,6 @@ WORKDIR /src
 COPY . /src
 
 RUN cmake -S /src -B /build -G Ninja -DCMAKE_BUILD_TYPE=Release \
-    && cmake --build /build --target QtZeroConf qhotkey --parallel 2 \
     && cmake --build /build --parallel 2
 
 ENV QTWEBENGINE_DISABLE_SANDBOX=1
@@ -69,7 +68,9 @@ CMD ["/build/FairWindSK"]
 EOF
 ```
 
-The explicit `QtZeroConf` and `qhotkey` build step is currently required by clean Ninja builds. Their shared-library paths are consumed by the FairWindSK target before Ninja knows that the external projects create those files. Prebuilding the two targets satisfies those inputs before the main build graph is evaluated.
+QtZeroConf and QHotkey declare their installed libraries as CMake external-project
+byproducts. A clean Ninja build therefore downloads and builds them automatically
+before linking FairWindSK; no separate dependency build step is required.
 
 Ubuntu 24.04 may also omit `Qt6VirtualKeyboardConfigVersionImpl.cmake` even though the rest of the Qt Virtual Keyboard CMake package is installed. The image creates the empty compatibility file in the active multiarch Qt directory. Remove that workaround when the distribution package supplies the file.
 

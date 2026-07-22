@@ -157,9 +157,19 @@ if(NOT nlohmann_json_FOUND)
     else()
         set(NLOHMANN_JSON_INCLUDE_DIR ${CMAKE_BINARY_DIR}/third_party/nlohmann)
         set(NLOHMANN_JSON_HEADER ${NLOHMANN_JSON_INCLUDE_DIR}/nlohmann/json.hpp)
+        set(NLOHMANN_JSON_SHA256 9bea4c8066ef4a1c206b2be5a36302f8926f7fdc6087af5d20b417d0cf103ea6)
         file(MAKE_DIRECTORY ${NLOHMANN_JSON_INCLUDE_DIR}/nlohmann)
-        if(NOT EXISTS ${NLOHMANN_JSON_HEADER})
-            file(DOWNLOAD https://raw.githubusercontent.com/nlohmann/json/v3.11.3/single_include/nlohmann/json.hpp ${NLOHMANN_JSON_HEADER} TIMEOUT 120)
+        if(EXISTS ${NLOHMANN_JSON_HEADER})
+            file(SHA256 ${NLOHMANN_JSON_HEADER} NLOHMANN_JSON_ACTUAL_SHA256)
+        endif()
+        if(NOT NLOHMANN_JSON_ACTUAL_SHA256 STREQUAL NLOHMANN_JSON_SHA256)
+            file(DOWNLOAD
+                    https://raw.githubusercontent.com/nlohmann/json/v3.11.3/single_include/nlohmann/json.hpp
+                    ${NLOHMANN_JSON_HEADER}
+                    EXPECTED_HASH SHA256=${NLOHMANN_JSON_SHA256}
+                    TLS_VERIFY ON
+                    TIMEOUT 120
+            )
         endif()
         add_library(nlohmann_json INTERFACE)
         add_library(nlohmann_json::nlohmann_json ALIAS nlohmann_json)
@@ -191,12 +201,14 @@ if(NOT FAIRWINDSK_MOBILE)
                 GIT_REPOSITORY https://github.com/OpenFairWind/QtZeroConf.git
                 GIT_TAG f7744716dff7fad22ca9edd4e3182477afe43b8d
                 CMAKE_ARGS -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH} -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION} -DBUILD_SHARED_LIBS=ON -DCMAKE_POLICY_VERSION_MINIMUM=3.16 -DCMAKE_INSTALL_REMOVE_ENVIRONMENT_RPATH=FALSE "-DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}"
+                BUILD_BYPRODUCTS ${LIBQTZEROCONF}
                 TIMEOUT 360
         )
         ExternalProject_Add(qhotkey
                 GIT_REPOSITORY https://github.com/Skycoder42/QHotkey.git
                 GIT_TAG 1.5.0
                 CMAKE_ARGS -DBUILD_SHARED_LIBS=on -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION} -DQT_DEFAULT_MAJOR_VERSION=6 -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_INSTALL_REMOVE_ENVIRONMENT_RPATH=FALSE -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH} "-DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}"
+                BUILD_BYPRODUCTS ${LIBQHOTKEY}
                 TIMEOUT 360
         )
         list(APPEND FAIRWINDSK_EXTERNAL_DEPENDENCIES QtZeroConf qhotkey)
@@ -478,7 +490,10 @@ endif()
 # Let Qt collect the platform plug-ins, libraries, and frameworks needed by a
 # portable desktop installation. Run this after custom shared libraries have
 # been installed so macdeployqt and windeployqt can resolve every dependency.
-if(NOT FAIRWINDSK_MOBILE AND COMMAND qt_generate_deploy_app_script)
+# Qt 6.4 exposes this command with an older positional signature, while Qt 6.5
+# and newer accept OUTPUT_SCRIPT and can generate the portable package script.
+if(NOT FAIRWINDSK_MOBILE AND Qt6_VERSION VERSION_GREATER_EQUAL "6.5"
+        AND COMMAND qt_generate_deploy_app_script)
     qt_generate_deploy_app_script(
             TARGET ${PROJECT_NAME}
             OUTPUT_SCRIPT FAIRWINDSK_DEPLOY_SCRIPT

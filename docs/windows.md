@@ -93,13 +93,8 @@ cmake -S . -B build-windows-debug -G Ninja ^
 cmake --build build-windows --parallel
 ```
 
-If Ninja reports a missing `QtZeroConf` or `QHotkey` library on a first build,
-build those targets explicitly before resuming the full build:
-
-```cmd
-cmake --build build-windows --target QtZeroConf qhotkey --parallel
-cmake --build build-windows --parallel
-```
+Ninja automatically builds the pinned `QtZeroConf` and `QHotkey` external
+projects before linking FairWindSK on a clean build.
 
 > Do not treat skipped dependency downloads as a successful build. Restore
 > network access, remove the affected build directory, and reconfigure.
