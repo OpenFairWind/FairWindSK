@@ -20,7 +20,7 @@ jobs:
       version: ${{ steps.version.outputs.version }}
       tag: ${{ steps.version.outputs.tag }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - id: version
         shell: bash
         run: |
@@ -42,13 +42,15 @@ jobs:
     needs: validate
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install build dependencies
         run: |
           sudo apt-get update
           sudo apt-get install --yes cmake ninja-build g++ libgl1-mesa-dev libxkbcommon-x11-0 \
             qt6-base-dev qt6-declarative-dev qt6-positioning-dev qt6-svg-dev qt6-tools-dev \
             qt6-virtualkeyboard-dev qt6-webengine-dev qt6-websockets-dev
+          qt_vk_dir="/usr/lib/$(dpkg-architecture -qDEB_HOST_MULTIARCH)/cmake/Qt6VirtualKeyboard"
+          sudo touch "${qt_vk_dir}/Qt6VirtualKeyboardConfigVersionImpl.cmake"
       - name: Configure
         run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DBUILD_TESTING=OFF
       - name: Build package
@@ -69,12 +71,14 @@ jobs:
     steps:
       - name: Install checkout prerequisites
         run: apt-get update && apt-get install --yes git ca-certificates
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install build dependencies
         run: |
           apt-get install --yes cmake ninja-build g++ dpkg-dev libgl1-mesa-dev libxkbcommon-x11-0 \
             qt6-base-dev qt6-declarative-dev qt6-positioning-dev qt6-svg-dev qt6-tools-dev \
             qt6-virtualkeyboard-dev qt6-webengine-dev qt6-websockets-dev
+          qt_vk_dir="/usr/lib/$(dpkg-architecture -qDEB_HOST_MULTIARCH)/cmake/Qt6VirtualKeyboard"
+          touch "${qt_vk_dir}/Qt6VirtualKeyboardConfigVersionImpl.cmake"
       - name: Configure
         run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DBUILD_TESTING=OFF -DFAIRWINDSK_RASPBERRY_PI_OS=ON
       - name: Build package
@@ -92,12 +96,12 @@ jobs:
     needs: validate
     runs-on: windows-2025
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: jurplel/install-qt-action@v4
         with:
           version: "6.8.*"
           arch: win64_msvc2022_64
-          modules: qtpositioning qtsvg qtvirtualkeyboard qtwebengine qtwebsockets
+          modules: qtpositioning qtvirtualkeyboard qtwebengine qtwebsockets
           cache: true
       - name: Configure
         run: cmake -S . -B build -A x64 -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DBUILD_TESTING=OFF
@@ -117,11 +121,11 @@ jobs:
     needs: validate
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: jurplel/install-qt-action@v4
         with:
           version: "6.8.*"
-          modules: qtpositioning qtsvg qtvirtualkeyboard qtwebengine qtwebsockets
+          modules: qtpositioning qtvirtualkeyboard qtwebengine qtwebsockets
           cache: true
       - name: Configure
         run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DBUILD_TESTING=OFF
@@ -145,7 +149,7 @@ jobs:
       contents: write
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/download-artifact@v4
         with:
           path: dist

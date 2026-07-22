@@ -121,12 +121,8 @@ test -d build-macos/FairWindSK.app
 file build-macos/FairWindSK.app/Contents/MacOS/FairWindSK
 ```
 
-If a clean Ninja build reports an unavailable generated QtZeroConf or QHotkey library, build those pinned targets first and resume:
-
-```bash
-cmake --build build-macos --target QtZeroConf qhotkey --parallel
-cmake --build build-macos --parallel
-```
+Clean Ninja builds automatically build the pinned QtZeroConf and QHotkey external
+projects before linking FairWindSK.
 
 Do not treat skipped or unavailable desktop dependency downloads as a successful full desktop build. Restore network access or provide the required dependencies, then perform the complete build.
 
