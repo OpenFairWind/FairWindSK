@@ -58,9 +58,38 @@ translated-label fit, and the `default`, `dawn`, `day`, `sunset`, `dusk`, and
 ## Platform expectations
 
 Host-runnable Qt Test binaries are built for macOS, Windows, Linux, and Raspberry
-Pi OS desktop kits. Android and iOS builds do not run host CTest binaries; run the
-same non-visual cases with Qt's device test runner when mobile CI is introduced.
+Pi OS desktop kits. Android and iOS builds do not run host CTest binaries; the
+mobile CI jobs therefore compile the application and smoke-test Android startup,
+while device-side Qt Test coverage remains future work.
 Release verification still requires API 33 and current-target Android devices,
 an iOS/iPadOS simulator and physical device, and touch/MFD checks on every
 desktop flavor. Automated tests reduce that matrix; they do not claim platform
 coverage that CI has not executed.
+
+## Pull-request verification matrix
+
+The `Verify` GitHub Actions workflow keeps each FairWindSK flavor visible as a
+separate required check. A successful desktop build is not evidence that a
+mobile or Raspberry Pi flavor compiles.
+
+| Flavor | Required automated validation |
+| --- | --- |
+| Linux x86-64 | Build, unit tests, simulated Signal K integration tests, and Xvfb/WebEngine startup smoke test |
+| Windows MSVC x86-64 | Build and unit tests |
+| macOS arm64 | Build and unit tests |
+| Android API 33 | Configure and compile an arm64 APK while preserving API 33 as the minimum runtime |
+| Android current API | Configure and compile an x86-64 APK, install it in an emulator, launch it, and verify its process remains alive |
+| iOS Simulator | Configure and compile the unsigned x86-64 Simulator bundle |
+| Raspberry Pi ARM64 | ARM64 architecture build; scheduled physical-device validation remains required |
+
+Independent mandatory checks cover formatting, clang-tidy policy, CMake
+configuration, translation completeness, newly added unwrapped Qt strings, JSON
+schemas, documentation links, dependency review, secret scanning, and
+release-candidate artifact generation. Configure branch protection to require
+every `Verify` job before merge.
+
+Translation completeness has a reviewed debt ceiling in the workflow. It may
+decrease without coordination, but an increase fails CI. Emulator and headless
+smoke tests verify startup, not marine-MFD usability. GUI changes still require
+touch-target, pressed/focus-state, translated-label fit, single-window, and all
+comfort-preset checks on representative hardware.

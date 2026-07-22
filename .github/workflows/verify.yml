@@ -1,0 +1,254 @@
+name: Verify
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  BUILD_TYPE: Release
+  QT_VERSION: "6.8.*"
+  ANDROID_CURRENT_API: "36"
+
+jobs:
+  quality:
+    name: Quality / ${{ matrix.check }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        check: [clang-format, clang-tidy, cmake, translations, missing-tr, json-schema, docs-links]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install common quality tools
+        run: sudo apt-get update && sudo apt-get install --yes clang-format clang-tidy cmake ninja-build python3-pip
+      - name: Install Qt for CMake, clang-tidy, and translation validation
+        if: matrix.check == 'cmake' || matrix.check == 'clang-tidy' || matrix.check == 'translations'
+        run: |
+          sudo apt-get install --yes libgl1-mesa-dev libxkbcommon-x11-0 qt6-base-dev qt6-declarative-dev \
+            qt6-positioning-dev qt6-svg-dev qt6-tools-dev qt6-virtualkeyboard-dev qt6-webengine-dev qt6-websockets-dev
+      - name: clang-format
+        if: matrix.check == 'clang-format'
+        env:
+          FAIRWINDSK_DIFF_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: python3 scripts/ci/static_checks.py clang-format
+      - name: clang-tidy
+        if: matrix.check == 'clang-tidy'
+        env:
+          FAIRWINDSK_DIFF_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          cmake -S . -B build-tidy -G Ninja -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+          python3 scripts/ci/static_checks.py clang-tidy --build-directory build-tidy
+      - name: CMake configuration validation
+        if: matrix.check == 'cmake'
+        run: cmake -S . -B build-config -G Ninja -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
+      - name: Translation completeness
+        if: matrix.check == 'translations'
+        run: |
+          python3 scripts/ci/static_checks.py translations --maximum-unfinished 330
+          lrelease resources/i18n/fairwindsk_it.ts -qm /tmp/fairwindsk_it.qm
+      - name: Missing tr() checks
+        if: matrix.check == 'missing-tr'
+        env:
+          FAIRWINDSK_DIFF_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: python3 scripts/ci/static_checks.py missing-tr
+      - name: JSON schema validation
+        if: matrix.check == 'json-schema'
+        run: |
+          python3 -m pip install --break-system-packages check-jsonschema
+          check-jsonschema --schemafile schemas/configuration.schema.json resources/json/configuration.json
+          check-jsonschema --schemafile schemas/signalk.schema.json resources/json/signalk.json
+          check-jsonschema --schemafile schemas/units.schema.json resources/json/units.json
+      - name: Documentation link checks
+        if: matrix.check == 'docs-links'
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: --no-progress --offline './**/*.md'
+          fail: true
+
+  security:
+    name: Security / ${{ matrix.check }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        check: [dependencies, secrets]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Dependency review
+        if: matrix.check == 'dependencies' && github.event_name == 'pull_request'
+        uses: actions/dependency-review-action@v4
+      - name: Dependency review (non-PR inventory)
+        if: matrix.check == 'dependencies' && github.event_name != 'pull_request'
+        run: python3 scripts/ci/static_checks.py dependencies
+      - name: Secret scan
+        if: matrix.check == 'secrets'
+        uses: gitleaks/gitleaks-action@v2
+
+  linux:
+    name: Linux x86-64 / build, tests, headless smoke
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes cmake ninja-build g++ dbus-x11 xvfb libgl1-mesa-dev libxkbcommon-x11-0 \
+            qt6-base-dev qt6-declarative-dev qt6-positioning-dev qt6-svg-dev qt6-tools-dev \
+            qt6-virtualkeyboard-dev qt6-webengine-dev qt6-websockets-dev
+      - name: Configure and build
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DBUILD_TESTING=ON
+          cmake --build build --target QtZeroConf qhotkey --parallel 2
+          cmake --build build --parallel 2
+      - name: Unit tests
+        run: ctest --test-dir build -L unit --output-on-failure
+      - name: Integration tests
+        run: ctest --test-dir build -L component --output-on-failure
+      - name: Headless smoke test
+        run: timeout 20s dbus-run-session -- xvfb-run -a -s '-screen 0 1280x800x24' build/FairWindSK || test $? -eq 124
+        env:
+          QTWEBENGINE_DISABLE_SANDBOX: "1"
+          LIBGL_ALWAYS_SOFTWARE: "1"
+
+  desktop:
+    name: ${{ matrix.name }} / build and unit tests
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows MSVC x86-64
+            os: windows-2025
+            arch: win64_msvc2022_64
+          - name: macOS arm64
+            os: macos-15
+            arch: clang_64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          arch: ${{ matrix.arch }}
+          modules: qtpositioning qtsvg qtvirtualkeyboard qtwebengine qtwebsockets
+          cache: true
+      - name: Configure
+        run: cmake -S . -B build -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+      - name: Build
+        run: |
+          cmake --build build --config ${{ env.BUILD_TYPE }} --target QtZeroConf qhotkey --parallel 2
+          cmake --build build --config ${{ env.BUILD_TYPE }} --parallel 2
+      - name: Unit tests
+        run: ctest --test-dir build -C ${{ env.BUILD_TYPE }} -L unit --output-on-failure
+
+  android:
+    name: Android API ${{ matrix.api }} / ${{ matrix.validation }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - api: 33
+            qt_arch: android_arm64_v8a
+            abi: arm64-v8a
+            validation: configure and APK
+          - api: 36
+            qt_arch: android_x86_64
+            abi: x86_64
+            validation: configure, APK, emulator smoke
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v3
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          target: android
+          arch: ${{ matrix.qt_arch }}
+          modules: qtpositioning qtsvg qtvirtualkeyboard qtwebsockets qtwebview
+          cache: true
+      - name: Install Android platform
+        run: sdkmanager 'platform-tools' 'platforms;android-${{ matrix.api }}' 'build-tools;35.0.0' 'ndk;26.1.10909125'
+      - name: Configure and compile APK
+        shell: bash
+        run: |
+          "${QT_ROOT_DIR}/bin/qt-cmake" -S . -B build -G Ninja \
+            -DANDROID_ABI=${{ matrix.abi }} -DANDROID_PLATFORM=android-${{ matrix.api }} \
+            -DANDROID_SDK_ROOT=${ANDROID_SDK_ROOT} -DANDROID_NDK_ROOT=${ANDROID_SDK_ROOT}/ndk/26.1.10909125 \
+            -DQT_CHAINLOAD_TOOLCHAIN_FILE=${ANDROID_SDK_ROOT}/ndk/26.1.10909125/build/cmake/android.toolchain.cmake \
+            -DQT_HOST_PATH=${QT_HOST_PATH} -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
+          cmake --build build --parallel 2
+          find build -type f -name '*.apk' -print -quit | grep .
+      - name: Emulator smoke test
+        if: matrix.api == 36
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          arch: x86_64
+          script: bash scripts/ci/android_smoke.sh build
+
+  ios:
+    name: iOS simulator / configure and compile
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          target: ios
+          modules: qtpositioning qtsvg qtvirtualkeyboard qtwebsockets qtwebview
+          cache: true
+      - name: Configure and compile simulator bundle
+        run: |
+          "${QT_ROOT_DIR}/bin/qt-cmake" -S . -B build-ios -G Xcode \
+            -DQT_HOST_PATH="${QT_HOST_PATH}" -DCMAKE_OSX_SYSROOT=iphonesimulator \
+            -DCMAKE_OSX_ARCHITECTURES=x86_64 -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO
+          cmake --build build-ios --config Release --parallel 2 -- -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO
+
+  raspberry-pi:
+    name: Raspberry Pi ARM64 / architecture build
+    runs-on: ubuntu-24.04-arm
+    container: debian:bookworm
+    steps:
+      - run: apt-get update && apt-get install --yes git ca-certificates cmake ninja-build g++ libgl1-mesa-dev libxkbcommon-x11-0 qt6-base-dev qt6-declarative-dev qt6-positioning-dev qt6-svg-dev qt6-tools-dev qt6-virtualkeyboard-dev qt6-webengine-dev qt6-websockets-dev
+      - uses: actions/checkout@v4
+      - run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DBUILD_TESTING=OFF -DFAIRWINDSK_RASPBERRY_PI_OS=ON
+      - run: cmake --build build --target QtZeroConf qhotkey --parallel 2 && cmake --build build --parallel 2
+
+  artifacts:
+    name: Release artifact generation
+    needs: [linux, desktop, android, ios, raspberry-pi]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes cmake ninja-build g++ libgl1-mesa-dev libxkbcommon-x11-0 \
+            qt6-base-dev qt6-declarative-dev qt6-positioning-dev qt6-svg-dev qt6-tools-dev \
+            qt6-virtualkeyboard-dev qt6-webengine-dev qt6-websockets-dev
+      - name: Generate package
+        run: |
+          cmake -S . -B build -G Ninja -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
+          cmake --build build --target QtZeroConf qhotkey --parallel 2
+          cmake --build build --target package --parallel 2
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-candidate-linux-x86-64
+          path: build/FairWindSK-*.tar.gz
+          if-no-files-found: error
