@@ -1,0 +1,175 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  validate:
+    name: Validate semantic version
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: version
+        shell: bash
+        run: |
+          version="$(tr -d '[:space:]' < VERSION.txt)"
+          tag="v${version}"
+          if [[ ! "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+            echo "VERSION.txt is not valid SemVer: ${version}" >&2
+            exit 1
+          fi
+          if [[ "${GITHUB_REF_TYPE}" == "tag" && "${GITHUB_REF_NAME}" != "${tag}" ]]; then
+            echo "Tag ${GITHUB_REF_NAME} does not match VERSION.txt (${tag})" >&2
+            exit 1
+          fi
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+          echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
+
+  linux-x86-64:
+    name: Linux x86-64 package
+    needs: validate
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes cmake ninja-build g++ libgl1-mesa-dev libxkbcommon-x11-0 \
+            qt6-base-dev qt6-declarative-dev qt6-positioning-dev qt6-svg-dev qt6-tools-dev \
+            qt6-virtualkeyboard-dev qt6-webengine-dev qt6-websockets-dev
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DBUILD_TESTING=OFF
+      - name: Build package
+        run: cmake --build build --config ${BUILD_TYPE} --target package --parallel 2
+      - name: Normalize package name
+        run: mv build/FairWindSK-*.tar.gz "FairWindSK-${{ needs.validate.outputs.version }}-linux-x86_64.tar.gz"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-x86-64
+          path: FairWindSK-*.tar.gz
+          if-no-files-found: error
+
+  raspberry-pi-os:
+    name: Raspberry Pi OS 64-bit package
+    needs: validate
+    runs-on: ubuntu-24.04-arm
+    container: debian:bookworm
+    steps:
+      - name: Install checkout prerequisites
+        run: apt-get update && apt-get install --yes git ca-certificates
+      - uses: actions/checkout@v4
+      - name: Install build dependencies
+        run: |
+          apt-get install --yes cmake ninja-build g++ dpkg-dev libgl1-mesa-dev libxkbcommon-x11-0 \
+            qt6-base-dev qt6-declarative-dev qt6-positioning-dev qt6-svg-dev qt6-tools-dev \
+            qt6-virtualkeyboard-dev qt6-webengine-dev qt6-websockets-dev
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DBUILD_TESTING=OFF -DFAIRWINDSK_RASPBERRY_PI_OS=ON
+      - name: Build package
+        run: cmake --build build --config ${BUILD_TYPE} --target package --parallel 2
+      - name: Normalize package name
+        run: mv build/FairWindSK-*.deb "FairWindSK-${{ needs.validate.outputs.version }}-raspberry-pi-os-arm64.deb"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: raspberry-pi-os-arm64
+          path: FairWindSK-*.deb
+          if-no-files-found: error
+
+  windows:
+    name: Windows x86-64 package
+    needs: validate
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: "6.8.*"
+          arch: win64_msvc2022_64
+          modules: qtpositioning qtsvg qtvirtualkeyboard qtwebengine qtwebsockets
+          cache: true
+      - name: Configure
+        run: cmake -S . -B build -A x64 -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DBUILD_TESTING=OFF
+      - name: Build package
+        run: cmake --build build --config ${{ env.BUILD_TYPE }} --target package --parallel 2
+      - name: Normalize package name
+        shell: pwsh
+        run: Move-Item (Get-ChildItem build/FairWindSK-*.zip).FullName "FairWindSK-${{ needs.validate.outputs.version }}-windows-x86_64.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-x86-64
+          path: FairWindSK-*.zip
+          if-no-files-found: error
+
+  macos:
+    name: macOS arm64 package
+    needs: validate
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: "6.8.*"
+          modules: qtpositioning qtsvg qtvirtualkeyboard qtwebengine qtwebsockets
+          cache: true
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DBUILD_TESTING=OFF
+      - name: Build package
+        run: cmake --build build --config ${BUILD_TYPE} --target package --parallel 2
+      - name: Normalize package name
+        run: mv build/FairWindSK-*.dmg "FairWindSK-${{ needs.validate.outputs.version }}-macos-arm64.dmg"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-arm64
+          path: FairWindSK-*.dmg
+          if-no-files-found: error
+
+  publish:
+    name: Sign manifest and publish release
+    if: github.ref_type == 'tag'
+    needs: [validate, linux-x86-64, raspberry-pi-os, windows, macos]
+    runs-on: ubuntu-24.04
+    environment: release
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Create manifest and checksums
+        run: |
+          python3 scripts/release/create-manifest.py \
+            --version "${{ needs.validate.outputs.version }}" \
+            --tag "${{ needs.validate.outputs.tag }}" \
+            --commit "${GITHUB_SHA}" \
+            --artifacts dist \
+            --output dist/release-manifest.json
+      - uses: sigstore/cosign-installer@v3.9.2
+      - name: Sign release manifest with GitHub OIDC
+        run: |
+          cosign sign-blob --yes \
+            --output-signature dist/release-manifest.sig \
+            --output-certificate dist/release-manifest.pem \
+            dist/release-manifest.json
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: FairWindSK ${{ needs.validate.outputs.tag }}
+          body_path: CHANGELOG.md
+          prerelease: ${{ contains(needs.validate.outputs.version, '-') }}
+          files: dist/*
+          fail_on_unmatched_files: true

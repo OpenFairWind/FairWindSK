@@ -1,5 +1,13 @@
 cmake_minimum_required(VERSION 3.16)
-project(FairWindSK VERSION 0.1.0 LANGUAGES CXX)
+
+# Keep the public SemVer string in one plain-text file so CMake, CI, and release
+# tooling cannot silently disagree about the version being shipped.
+file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION.txt" FAIRWINDSK_SEMVER LIMIT_COUNT 1)
+if(NOT FAIRWINDSK_SEMVER MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?$")
+    message(FATAL_ERROR "VERSION.txt must contain a valid semantic version")
+endif()
+string(REGEX MATCH "^[0-9]+\\.[0-9]+\\.[0-9]+" FAIRWINDSK_PROJECT_VERSION "${FAIRWINDSK_SEMVER}")
+project(FairWindSK VERSION ${FAIRWINDSK_PROJECT_VERSION} LANGUAGES CXX)
 
 include(CTest)
 
@@ -23,13 +31,8 @@ execute_process(
         ERROR_QUIET)
 
 if(FAIRWINDSK_GIT_COMMIT_COUNT MATCHES "^[0-9]+$")
-    math(EXPR FAIRWINDSK_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")
-    math(EXPR FAIRWINDSK_VERSION_MINOR "${FAIRWINDSK_GIT_COMMIT_COUNT} / 100")
-    math(EXPR FAIRWINDSK_VERSION_PATCH "${FAIRWINDSK_GIT_COMMIT_COUNT} % 100")
-    set(FAIRWINDSK_SEMVER "${FAIRWINDSK_VERSION_MAJOR}.${FAIRWINDSK_VERSION_MINOR}.${FAIRWINDSK_VERSION_PATCH}")
     math(EXPR FAIRWINDSK_ANDROID_VERSION_CODE "${FAIRWINDSK_GIT_COMMIT_COUNT} + 1")
 else()
-    set(FAIRWINDSK_SEMVER ${PROJECT_VERSION})
     set(FAIRWINDSK_ANDROID_VERSION_CODE 1)
 endif()
 
@@ -187,13 +190,13 @@ if(NOT FAIRWINDSK_MOBILE)
         ExternalProject_Add(QtZeroConf
                 GIT_REPOSITORY https://github.com/OpenFairWind/QtZeroConf.git
                 GIT_TAG f7744716dff7fad22ca9edd4e3182477afe43b8d
-                CMAKE_ARGS -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH} -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION} -DBUILD_SHARED_LIBS=ON -DCMAKE_POLICY_VERSION_MINIMUM=3.16 -DCMAKE_INSTALL_REMOVE_ENVIRONMENT_RPATH=FALSE
+                CMAKE_ARGS -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH} -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION} -DBUILD_SHARED_LIBS=ON -DCMAKE_POLICY_VERSION_MINIMUM=3.16 -DCMAKE_INSTALL_REMOVE_ENVIRONMENT_RPATH=FALSE "-DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}"
                 TIMEOUT 360
         )
         ExternalProject_Add(qhotkey
                 GIT_REPOSITORY https://github.com/Skycoder42/QHotkey.git
                 GIT_TAG 1.5.0
-                CMAKE_ARGS -DBUILD_SHARED_LIBS=on -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION} -DQT_DEFAULT_MAJOR_VERSION=6 -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_INSTALL_REMOVE_ENVIRONMENT_RPATH=FALSE -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}
+                CMAKE_ARGS -DBUILD_SHARED_LIBS=on -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION} -DQT_DEFAULT_MAJOR_VERSION=6 -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_INSTALL_REMOVE_ENVIRONMENT_RPATH=FALSE -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH} "-DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}"
                 TIMEOUT 360
         )
         list(APPEND FAIRWINDSK_EXTERNAL_DEPENDENCIES QtZeroConf qhotkey)
@@ -303,6 +306,12 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
         MACOSX_BUNDLE TRUE WIN32_EXECUTABLE TRUE MACOSX_BUNDLE_BUNDLE_NAME "FairWindSK"
         MACOSX_BUNDLE_GUI_IDENTIFIER "org.openfairwind.fairwindsk" MACOSX_BUNDLE_BUNDLE_VERSION ${FAIRWINDSK_SEMVER} MACOSX_BUNDLE_SHORT_VERSION_STRING ${FAIRWINDSK_SEMVER}
 )
+
+if(UNIX AND NOT APPLE AND NOT FAIRWINDSK_MOBILE)
+    # Resolve the two bundled project libraries relative to the installed
+    # executable without relying on a machine-specific global library path.
+    set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN/../${CMAKE_INSTALL_LIBDIR}")
+endif()
 
 if(IOS)
     # Keep the marine MFD shell in its intended wide layout on both iPhone and iPadOS.
@@ -426,6 +435,12 @@ if(NOT FAIRWINDSK_MOBILE)
     if(WIN32)
         install(FILES ${RUNTIMEQTZEROCONF} ${RUNTIMEQHOTKEY}
                 DESTINATION ${CMAKE_INSTALL_BINDIR})
+    elseif(APPLE)
+        # Place non-Qt shared libraries where macdeployqt can discover and fix
+        # their install names before the application bundle becomes a DMG.
+        install(DIRECTORY "${EXTERNAL_INSTALL_LOCATION}/${CMAKE_INSTALL_LIBDIR}/"
+                DESTINATION FairWindSK.app/Contents/Frameworks
+                FILES_MATCHING PATTERN "*.dylib" PATTERN "cmake" EXCLUDE)
     elseif(UNIX AND NOT APPLE)
         install(FILES ${LIBQTZEROCONF} ${LIBQHOTKEY}
                 DESTINATION ${CMAKE_INSTALL_LIBDIR})
@@ -445,3 +460,37 @@ if(NOT FAIRWINDSK_MOBILE)
         install(SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/InstallRaspberryDesktopIntegration.cmake")
     endif()
 endif()
+
+# Let Qt collect the platform plug-ins, libraries, and frameworks needed by a
+# portable desktop installation. Run this after custom shared libraries have
+# been installed so macdeployqt and windeployqt can resolve every dependency.
+if(NOT FAIRWINDSK_MOBILE AND COMMAND qt_generate_deploy_app_script)
+    qt_generate_deploy_app_script(
+            TARGET ${PROJECT_NAME}
+            OUTPUT_SCRIPT FAIRWINDSK_DEPLOY_SCRIPT
+            NO_UNSUPPORTED_PLATFORM_ERROR
+    )
+    install(SCRIPT ${FAIRWINDSK_DEPLOY_SCRIPT})
+endif()
+
+# CPack provides consistent archive names while retaining native macOS DMG and
+# Debian package formats where they improve the installation experience.
+set(CPACK_PACKAGE_NAME "FairWindSK")
+set(CPACK_PACKAGE_VENDOR "OpenFairWind")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Marine multi-functional display for Signal K")
+set(CPACK_PACKAGE_VERSION "${FAIRWINDSK_SEMVER}")
+set(CPACK_PACKAGE_FILE_NAME "FairWindSK-${FAIRWINDSK_SEMVER}-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+if(WIN32)
+    set(CPACK_GENERATOR "ZIP")
+elseif(APPLE)
+    set(CPACK_GENERATOR "DragNDrop")
+elseif(FAIRWINDSK_RASPBERRY_PI_OS)
+    set(CPACK_GENERATOR "DEB")
+    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "OpenFairWind")
+    set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "arm64")
+    set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+else()
+    set(CPACK_GENERATOR "TGZ")
+endif()
+include(CPack)
