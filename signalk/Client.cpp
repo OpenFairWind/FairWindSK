@@ -320,7 +320,15 @@ namespace fairwindsk::signalk {
 
         // Connect the on disconnected event
         connect(&m_WebSocket, &QWebSocket::disconnected, this, &Client::onDisconnected, Qt::UniqueConnection);
-        connect(&m_WebSocket, &QWebSocket::errorOccurred, this, [this](QAbstractSocket::SocketError error) {
+        // Qt 6.5 renamed the WebSocket error signal to match QAbstractSocket.
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+        const auto webSocketErrorSignal = &QWebSocket::errorOccurred;
+#else
+        // Raspberry Pi OS Bookworm ships Qt 6.4 with the original overloaded signal name.
+        const auto webSocketErrorSignal = qOverload<QAbstractSocket::SocketError>(&QWebSocket::error);
+#endif
+        // Log transport failures through the signal exposed by the selected Qt version.
+        connect(&m_WebSocket, webSocketErrorSignal, this, [this](QAbstractSocket::SocketError error) {
             qWarning() << "SignalK::Client websocket error" << error << m_WebSocket.errorString();
         });
 
