@@ -68,7 +68,7 @@ endif()
 # 3. RICERCA COMPONENTI QT6
 # ==========================================
 find_package(Qt6 REQUIRED COMPONENTS
-        Core Gui Widgets Qml Concurrent Network WebSockets Xml Svg Positioning VirtualKeyboard LinguistTools
+        Core Gui Widgets Qml Concurrent Network WebSockets Xml Svg SvgWidgets Positioning VirtualKeyboard LinguistTools
 )
 
 if(FAIRWINDSK_MOBILE)
@@ -129,7 +129,7 @@ include_directories(SYSTEM ${EXTERNAL_INSTALL_LOCATION}/include)
 link_directories(${EXTERNAL_INSTALL_LOCATION}/lib)
 
 set(FAIRWINDSK_LINK_LIBRARIES
-        Qt::Core Qt::Gui Qt::Concurrent Qt::Widgets Qt::Qml Qt::Network Qt::WebSockets Qt::Xml Qt::Svg Qt::Positioning Qt::VirtualKeyboard
+        Qt::Core Qt::Gui Qt::Concurrent Qt::Widgets Qt::Qml Qt::Network Qt::WebSockets Qt::Xml Qt::Svg Qt::SvgWidgets Qt::Positioning Qt::VirtualKeyboard
 )
 
 if(FAIRWINDSK_MOBILE)
@@ -322,6 +322,10 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 )
 
 if(ANDROID)
+    if(COMMAND qt_policy)
+        qt_policy(SET QTP0002 OLD)
+    endif()
+
     set_target_properties(${PROJECT_NAME} PROPERTIES
         QT_ANDROID_APP_ICON "@mipmap/ic_launcher"
         QT_ANDROID_APP_NAME "FairWindSK"

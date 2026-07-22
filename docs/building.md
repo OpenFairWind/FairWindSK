@@ -105,27 +105,51 @@ Build with the Linux commands above. Installation uses the Linux layout and addi
 
 ## Windows
 
-Install Visual Studio 2022/Build Tools with C++, CMake, Ninja, Git, and a matching Qt 6 MSVC desktop kit. From an x64 Native Tools prompt:
+Windows builds use the standard Qt WebEngine Widgets stack, fully supporting the desktop feature set. We recommend using Qt Creator for the smoothest configuration and build experience, though command-line builds are fully supported.
 
-```powershell
-git clone --branch mobile https://github.com/OpenFairWind/FairWindSK.git
-cd FairWindSK
-cmake -S . -B build-windows -G Ninja `
-  -DCMAKE_BUILD_TYPE=Release `
-  -DCMAKE_INSTALL_PREFIX="$PWD\stage-windows" `
-  -DCMAKE_PREFIX_PATH="C:\Qt\6.x.x\msvc2022_64"
-cmake --build build-windows --parallel
-ctest --test-dir build-windows --output-on-failure
-cmake --install build-windows
+### Step-by-step Windows build guide
+
+1. Install the Windows toolchain prerequisites:
+   - Qt 6 with a desktop kit (e.g., MSVC 2022 64-bit)
+   - A C++17 compiler (Visual Studio Build Tools for MSVC)
+   - CMake and Ninja
+   - Git
+
+2. Clone the repository:
+```cmd
+   git clone https://github.com/OpenFairWind/FairWindSK.git
+   cd FairWindSK
 ```
 
-Deploy Qt beside the executable before distribution:
+3. Open Qt Creator and select `File` → `Open File or Project...`, then choose `FairWindSK/CMakeLists.txt`.
+4. When Qt Creator asks for kits, select your installed Windows desktop kit (e.g., `Desktop Qt 6.x.x MSVC2022 64bit`).
+5. Let Qt Creator configure the project automatically. If the build environment becomes out of sync, right-click the project root, select `Clear CMake Configuration`, then `Run CMake`.
+6. Build with `Build` → `Build Project`.
+7. Run the application by clicking the Run button.
 
-```powershell
-C:\Qt\6.x.x\msvc2022_64\bin\windeployqt.exe build-windows\FairWindSK.exe
+### Optional command-line build
+
+Open an "x64 Native Tools Command Prompt for VS 2022" and run:
+
+```cmd
+cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH="C:\Qt\6.x.x\msvc2022_64"
+cmake --build build --parallel
+cmake --install build
+build\FairWindSK.exe
 ```
 
-The CMake build copies the desktop helper DLLs beside FairWindSK. Validate the packaged tree on a clean Windows system or VM, including WebEngine, virtual keyboard, translations, networking, and the single-window launcher.
+Deploy the Qt runtime for redistribution:
+
+```cmd
+windeployqt build\FairWindSK.exe
+```
+
+### Notes
+
+- The CMake build handles `QtZeroConf` and `QHotkey` as desktop-only dependencies and copies their DLLs next to the executable after the build.
+- `cmake --install build` installs `FairWindSK.exe`, the bundled icon directory under `bin\icons`, and the desktop helper DLLs into the same `bin` directory.
+- Local `file://` launcher entries remain readable for compatibility, but single-window mode blocks them from launching external native applications on Windows.
+- On high-DPI displays or with Windows display scaling enabled (e.g., 125% or 150%), UI elements adapt dynamically. If bottom bar widgets appear clipped, use Qt Layouts with `QSizePolicy` set to `Expanding` rather than hardcoded fixed heights.
 
 ## Android
 

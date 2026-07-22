@@ -1,5 +1,7 @@
 #include "GeoCoordinateEditorWidget.hpp"
-
+#include <QGuiApplication>
+#include <QInputMethod>
+#include <QTimer>
 #include "GeoCoordinateUtils.hpp"
 #include "ui/widgets/TouchComboBox.hpp"
 #include "ui_GeoCoordinateEditorWidget.h"
@@ -19,8 +21,24 @@ namespace fairwindsk::ui {
                 qOverload<int>(&fairwindsk::ui::widgets::TouchComboBox::currentIndexChanged),
                 this,
                 &GeoCoordinateEditorWidget::onFormatChanged);
-    }
+        // AGGIUNTA PER IL FIX DEFINITIVO DELLA TASTIERA ANDROID
+        // Creiamo una funzione (lambda) che forza la chiusura della tastiera a livello di OS
+        // e rimuove il focus in modo "asincrono" per non far arrabbiare Android.
+        // FIX RADICALE: Intercettiamo l'evento di focus in uscita su tutti i campi di input
+        auto forceCloseKeyboard = [](QWidget *widget) {
+            if (widget) {
+                widget->clearFocus();
+            }
+            if (auto *inputMethod = QGuiApplication::inputMethod()) {
+                inputMethod->hide();
+            }
+        };
 
+        // Quando clicchi fuori o premi invio su qualsiasi casella delle coordinate
+        connect(ui->lineEditLatitude, &QLineEdit::editingFinished, this, [=]() { forceCloseKeyboard(ui->lineEditLatitude); });
+        connect(ui->lineEditLongitude, &QLineEdit::editingFinished, this, [=]() { forceCloseKeyboard(ui->lineEditLongitude); });
+        connect(ui->lineEditAltitude, &QLineEdit::editingFinished, this, [=]() { forceCloseKeyboard(ui->lineEditAltitude); });
+    }
     GeoCoordinateEditorWidget::~GeoCoordinateEditorWidget() {
         delete ui;
     }

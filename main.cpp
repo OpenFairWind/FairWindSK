@@ -291,7 +291,9 @@ int main(int argc, char *argv[]) {
     QString startupConfigurationPath;
     const bool useVirtualKeyboard = shouldEnableVirtualKeyboardAtStartup(&startupConfigurationPath);
     if (useVirtualKeyboard) {
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
         qputenv("QT_IM_MODULE", QByteArrayLiteral("qtvirtualkeyboard"));
+#endif
     }
 
     fairwindsk::runtime::initializeDiagnostics();
@@ -328,6 +330,8 @@ int main(int argc, char *argv[]) {
     // costringendo il framework a mappare l'interfaccia 1:1 sui pixel reali.
     qputenv("QT_AUTO_SCREEN_SCALE_FACTOR", "0");
     qputenv("QT_ENABLE_HIGHDPI_SCALING", "0");
+
+    qputenv("QTWEBENGINE_CHROMIUM_FLAGS", "--disable-gpu");
     // The QT application
     QApplication app(argc, argv);
     qInfo() << "QApplication created";
