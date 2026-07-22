@@ -468,8 +468,10 @@ if(NOT FAIRWINDSK_MOBILE)
                 DESTINATION FairWindSK.app/Contents/Frameworks
                 FILES_MATCHING PATTERN "*.dylib" PATTERN "cmake" EXCLUDE)
     elseif(UNIX AND NOT APPLE)
-        install(FILES ${LIBQTZEROCONF} ${LIBQHOTKEY}
-                DESTINATION ${CMAKE_INSTALL_LIBDIR})
+        # Install each shared library's versioned payload together with its linker symlinks.
+        install(DIRECTORY "${EXTERNAL_INSTALL_LOCATION}/${CMAKE_INSTALL_LIBDIR}/"
+                DESTINATION ${CMAKE_INSTALL_LIBDIR}
+                FILES_MATCHING PATTERN "*.so*")
 
         configure_file(cmake/fairwindsk.desktop.in fairwindsk.desktop @ONLY)
         configure_file(cmake/fairwindsk-startup.desktop.in fairwindsk-startup.desktop @ONLY)
