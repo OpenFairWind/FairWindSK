@@ -16,6 +16,7 @@
 #include <QUrlQuery>
 
 #include "Client.hpp"
+#include "ProtocolUtils.hpp"
 #include "FairWindSK.hpp"
 #include "Waypoint.hpp"
 #include <QTimer>
@@ -1082,32 +1083,24 @@ namespace fairwindsk::signalk {
 
 //! [onTextMessageReceived]
     void Client::onTextMessageReceived(QString message) {
-    markStreamActivity(tr("Stream online"));
+        const DeltaParseResult parsedDelta = parseDelta(message.toUtf8());
 
-    QJsonDocument jsonDocument = QJsonDocument::fromJson(message.toUtf8());
-
-    // FIX: Tolleranza ai messaggi vuoti o corrotti
-    if (jsonDocument.isNull() || !jsonDocument.isObject()) {
-        if (m_Debug) {
-            qDebug() << "SignalK::Client::onTextMessageReceived: ignored non-object/null message";
+        // Keep malformed traffic isolated from connection state and subscriptions.
+        if (!parsedDelta.validEnvelope) {
+            if (m_Debug) {
+                qDebug() << "SignalK::Client::onTextMessageReceived: ignored non-object/null message";
+            }
+            return;
         }
-        return; // Invece di uscire e far cadere la connessione, ignoriamo solo il pacchetto
-    }
 
-    auto updateObject = jsonDocument.object();
-    
-    // Controlliamo che esistano gli oggetti necessari prima di accedervi
-    if (!updateObject.contains("updates") || !updateObject["updates"].isArray()) {
-        if (m_Debug) qDebug() << "Messaggio senza update, saltato.";
-        return;
-    }
+        // Only a structurally valid delta proves that the data stream is healthy.
+        markStreamActivity(tr("Stream online"));
 
-    const auto context = updateObject["context"].toString();
-    const auto updates = updateObject["updates"].toArray();
+        const QString context = parsedDelta.values.isEmpty() ? QString() : parsedDelta.values.first().context;
 
         if (m_Debug)
             qDebug() << "SignalK::Client::onTextMessageReceived context=" << context
-                     << "updates=" << updates.size();
+                     << "values=" << parsedDelta.values.size();
 
         // Determine once per message whether context is the self vessel.
         // If m_selfUrn is not yet cached, fall back to the discovery-document self field
@@ -1120,39 +1113,31 @@ namespace fairwindsk::signalk {
             qInfo() << "SignalK::Client::onTextMessageReceived cached selfUrn from live message =" << m_selfUrn;
         }
 
-        for (auto updateItem: updates) {
-            auto values = updateItem.toObject()["values"].toArray();
-            for (auto valueItem: values) {
-                const auto valueObj = valueItem.toObject();
-                const QString path = valueObj[QStringLiteral("path")].toString();
-                if (path.isEmpty()) {
-                    continue;
-                }
-                const QString fullPath = context + "." + path;
+        for (const DeltaValue &deltaValue : parsedDelta.values) {
+            const QString path = deltaValue.path;
+            const QString fullPath = context + "." + path;
 
                 // Build a single-path delta so slots receive exactly the one value they
                 // subscribed for; passing the full batched update would cause
                 // getDoubleFromUpdateByPath("") to average all numeric values in the message
-                const QJsonValue value = valueObj[QStringLiteral("value")];
-                const QJsonObject perPathUpdate = buildDeltaUpdate(context, path, value);
+            const QJsonObject perPathUpdate = buildDeltaUpdate(context, path, deltaValue.value);
 
                 // If the server sends updates with the actual vessel URN but some subscriptions
                 // still hold the "vessels.self" context (getSelf failed at startup), build an
                 // alias path so those subscriptions can still match.
-                const QString selfAliasPath = isSelfContext
-                    ? QStringLiteral("vessels.self.") + path
-                    : QString();
+            const QString selfAliasPath = isSelfContext
+                ? QStringLiteral("vessels.self.") + path
+                : QString();
 
-                if (m_Debug)
-                    qDebug() << "SignalK::Client::onTextMessageReceived dispatching"
-                             << fullPath
-                             << (isSelfContext ? "(+ vessels.self alias)" : "");
+            if (m_Debug)
+                qDebug() << "SignalK::Client::onTextMessageReceived dispatching"
+                         << fullPath
+                         << (isSelfContext ? "(+ vessels.self alias)" : "");
 
-                for (auto subscription: m_subscriptions) {
-                    subscription.match(fullPath, perPathUpdate);
-                    if (!selfAliasPath.isEmpty()) {
-                        subscription.match(selfAliasPath, perPathUpdate);
-                    }
+            for (auto subscription: m_subscriptions) {
+                subscription.match(fullPath, perPathUpdate);
+                if (!selfAliasPath.isEmpty()) {
+                    subscription.match(selfAliasPath, perPathUpdate);
                 }
             }
         }
@@ -1164,7 +1149,7 @@ namespace fairwindsk::signalk {
             return;
         }
 
-        if (m_lastStreamActivity.msecsTo(QDateTime::currentDateTimeUtc()) > kStreamTimeoutMs) {
+        if (isDataStale(m_lastStreamActivity, QDateTime::currentDateTimeUtc(), kStreamTimeoutMs)) {
             setStreamHealth(false, tr("Data stale"));
             emit serverMessageChanged(tr("Using cached Signal K data"));
         }

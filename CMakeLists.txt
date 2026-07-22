@@ -216,6 +216,7 @@ set(FAIRWINDSK_SOURCES
         signalk/Note.cpp signalk/Note.hpp
         signalk/Waypoint.cpp signalk/Waypoint.hpp
         signalk/Subscription.cpp signalk/Subscription.hpp
+        signalk/ProtocolUtils.cpp signalk/ProtocolUtils.hpp
         signalk/Client.cpp signalk/Client.hpp
         runtime/DiagnosticsSupport.cpp runtime/DiagnosticsSupport.hpp
         ui/layout/BarLayout.cpp ui/layout/BarLayout.hpp
@@ -392,6 +393,14 @@ if(BUILD_TESTING AND NOT FAIRWINDSK_MOBILE)
             signalk/Subscription.cpp signalk/Subscription.hpp)
     target_link_libraries(FairWindSKSignalKValueObjectsTest PRIVATE Qt6::Positioning)
 
+    fairwindsk_add_unit_test(FairWindSKSignalKProtocolTest SignalKProtocol
+            tests/SignalKProtocolTest.cpp
+            signalk/ProtocolUtils.cpp signalk/ProtocolUtils.hpp)
+
+    fairwindsk_add_unit_test(FairWindSKSimulatedSignalKServiceTest SimulatedSignalKService
+            tests/SimulatedSignalKServiceTest.cpp
+            tests/support/SimulatedSignalKService.cpp tests/support/SimulatedSignalKService.hpp)
+    target_link_libraries(FairWindSKSimulatedSignalKServiceTest PRIVATE Qt6::Network Qt6::WebSockets Qt6::Widgets)
     fairwindsk_add_unit_test(FairWindSKDataWidgetConfigTest DataWidgetConfig
             tests/DataWidgetConfigTest.cpp
             ui/widgets/DataWidgetConfig.cpp ui/widgets/DataWidgetConfig.hpp)
@@ -409,6 +418,11 @@ if(BUILD_TESTING AND NOT FAIRWINDSK_MOBILE)
             COMMAND $<TARGET_FILE:${PROJECT_NAME}> --self-test-directory-safety)
     add_test(NAME ConfigurationImport
             COMMAND $<TARGET_FILE:${PROJECT_NAME}> --self-test-configuration-import)
+
+    set_tests_properties(GeoCoordinateUtils PList SignalKValueObjects SignalKProtocol
+            DataWidgetConfig Configuration UnitsReentrancy DirectorySafety ConfigurationImport
+            PROPERTIES LABELS "unit")
+    set_tests_properties(SimulatedSignalKService PROPERTIES LABELS "component;signalk")
 endif()
 
 # ==========================================
