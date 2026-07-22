@@ -413,3 +413,35 @@ qt_finalize_executable(${PROJECT_NAME})
 if(FAIRWINDSK_ORIGINAL_QT_HOST_PATH)
     set(QT_HOST_PATH "${FAIRWINDSK_ORIGINAL_QT_HOST_PATH}")
 endif()
+
+# ==========================================
+# 8. INSTALLATION
+# ==========================================
+install(TARGETS ${PROJECT_NAME}
+        BUNDLE DESTINATION .
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+if(NOT FAIRWINDSK_MOBILE)
+    if(WIN32)
+        install(FILES ${RUNTIMEQTZEROCONF} ${RUNTIMEQHOTKEY}
+                DESTINATION ${CMAKE_INSTALL_BINDIR})
+    elseif(UNIX AND NOT APPLE)
+        install(FILES ${LIBQTZEROCONF} ${LIBQHOTKEY}
+                DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
+        configure_file(cmake/fairwindsk.desktop.in fairwindsk.desktop @ONLY)
+        configure_file(cmake/fairwindsk-startup.desktop.in fairwindsk-startup.desktop @ONLY)
+        configure_file(cmake/InstallRaspberryDesktopIntegration.cmake.in
+                InstallRaspberryDesktopIntegration.cmake @ONLY)
+
+        install(PROGRAMS extras/fairwindsk-startup
+                DESTINATION ${CMAKE_INSTALL_BINDIR})
+        install(FILES "${CMAKE_CURRENT_BINARY_DIR}/fairwindsk.desktop"
+                DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
+        install(FILES resources/images/mainwindow/fairwind_icon.png
+                DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/256x256/apps
+                RENAME fairwindsk.png)
+        install(SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/InstallRaspberryDesktopIntegration.cmake")
+    endif()
+endif()

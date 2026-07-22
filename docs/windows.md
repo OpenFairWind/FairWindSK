@@ -1,7 +1,10 @@
 # Building FairWindSK on Windows
 
-This guide covers setting up a native Windows build environment, compiling,
-testing, and running FairWindSK. The desktop flavor uses Qt WebEngine Widgets.
+This is the authoritative step-by-step guide for creating a native Windows
+build environment, compiling, testing, running, staging, and packaging
+FairWindSK. The Windows desktop flavor uses Qt WebEngine Widgets; Android builds
+hosted on Windows use a separate Qt Android kit and are covered in
+[android.md](android.md).
 
 ---
 
@@ -13,8 +16,9 @@ Use mutually compatible versions of every component:
 - Git, CMake ≥ 3.16, and Ninja
 - Qt 6 (6.7.x or later recommended; 6.8.x LTS preferred)
 - MSVC 2022 64-bit compiler (Visual Studio 2022 Build Tools or full IDE)
-- Qt modules: Core, Gui, Widgets, Concurrent, Network, WebSockets, Xml, Svg,
-  Positioning, WebEngineWidgets, VirtualKeyboard, PrintSupport, LinguistTools
+- Qt modules: Core, Gui, Widgets, Qml, Concurrent, Network, WebSockets, Xml,
+  Svg, SvgWidgets, Positioning, WebEngineWidgets, VirtualKeyboard,
+  PrintSupport, and LinguistTools
 - Internet access during the first clean build (downloads QtZeroConf and QHotkey)
 
 > **Note:** MinGW is not supported for the desktop build. Qt WebEngine requires
@@ -102,7 +106,57 @@ cmake --build build-windows --parallel
 
 ---
 
-## 6. Qt Creator workflow
+## 6. Run the tests
+
+Run the host-runnable unit and application self-tests:
+
+```cmd
+ctest --test-dir build-windows --output-on-failure
+```
+
+These tests cover core and regression behavior. They do not replace interactive
+validation of Qt WebEngine, Signal K connectivity, touch targets, the
+single-window marine-MFD layout, or every comfort preset.
+
+---
+
+## 7. Run from the build tree
+
+The desktop helper DLLs are generated under `build-windows\external\bin`.
+Temporarily add that directory to `PATH` before starting an unstaged build:
+
+```cmd
+set PATH=%CD%\build-windows\external\bin;%PATH%
+build-windows\FairWindSK.exe
+```
+
+Configure the Signal K endpoint in **Settings > Connection**. Confirm that web
+applications remain embedded in the single FairWindSK window.
+
+---
+
+## 8. Stage and package
+
+Stage the executable and the QtZeroConf/QHotkey helper DLLs without writing to
+system installation directories:
+
+```cmd
+cmake --install build-windows --prefix stage-windows
+```
+
+The staged executable is `stage-windows\bin\FairWindSK.exe`. Add the Qt runtime
+and plugins before moving the staged directory to another computer:
+
+```cmd
+windeployqt --release --compiler-runtime stage-windows\bin\FairWindSK.exe
+```
+
+`windeployqt` is a packaging step, not a substitute for CTest or the runtime
+validation checklist below.
+
+---
+
+## 9. Qt Creator workflow
 
 1. Launch Qt Creator and select `File → Open File or Project...`.
 2. Choose the top-level `CMakeLists.txt` from your cloned repository.
@@ -110,7 +164,9 @@ cmake --build build-windows --parallel
 4. Set a dedicated build directory (e.g., `build-qtcreator-debug`).
 5. Select **Debug** or **Release** and click **Configure Project**.
 6. Build with `Build → Build Project`.
-7. Run the application via the Run button and confirm:
+7. Add `build-qtcreator-debug\external\bin` to the run environment's `PATH`, or
+   run the staged application after building.
+8. Run the application via the Run button and confirm:
    - The application opens as a single window.
    - Embedded web apps do not escape into external browser windows.
 
@@ -119,7 +175,7 @@ Qt Creator, select **Clear CMake Configuration**, then **Run CMake**.
 
 ---
 
-## 7. Troubleshooting
+## 10. Troubleshooting
 
 ### Qt WebEngine is missing
 
@@ -134,11 +190,12 @@ If the directory is missing, rerun the Qt Online Installer and install the
 
 ### A downloaded dependency fails
 
-- Confirm Git and HTTPS access to GitHub from your machine.
-- Remove only the affected build directory and reconfigure:
+Confirm Git and HTTPS access to GitHub from your machine. Remove only the
+affected disposable build directory, then reconfigure it:
+
 ```cmd
-  rmdir /s /q build-windows
-  cmake -S . -B build-windows -G Ninja ...
+rmdir /s /q build-windows
+cmake -S . -B build-windows -G Ninja ...
 ```
 
 ### Embedded content is blank
@@ -153,9 +210,16 @@ If the directory is missing, rerun the Qt Online Installer and install the
 Ensure you are running from an **"x64 Native Tools Command Prompt for VS 2022"**
 or that you have called `vcvars64.bat` before invoking CMake.
 
+### A helper DLL is missing at startup
+
+For a build-tree run, add the build's `external\bin` directory to `PATH`. For a
+staged or packaged run, confirm that `QtZeroConf.dll` and `qhotkey.dll` are next
+to `FairWindSK.exe`. Re-run `cmake --install` before `windeployqt` if either
+helper is absent.
+
 ---
 
-## 8. Windows validation checklist
+## 11. Windows validation checklist
 
 Before marking a Windows change as complete, verify all of the following:
 
@@ -170,5 +234,14 @@ Before marking a Windows change as complete, verify all of the following:
    (where configured) remain responsive.
 5. Touch targets and text remain readable at helm distance in all comfort
    presets: `default`, `dawn`, `day`, `sunset`, `dusk`, and `night`.
-6. Shipped translations (English, Italian, and others) fit without clipping at
-   all supported comfort presets and screen sizes.
+6. English and Italian text fit without clipping at all supported comfort
+   presets and screen sizes.
+7. The staged package starts on a clean Windows test environment and contains
+   the MSVC runtime, required Qt plugins, `QtZeroConf.dll`, and `qhotkey.dll`.
+8. Relevant behavior remains coherent with macOS, Linux, Raspberry Pi OS,
+   Android, and iOS/iPadOS; platform-specific differences are documented.
+
+## Related guides
+
+- [Cross-platform build overview](building.md)
+- [Android builds hosted on Windows](android.md)

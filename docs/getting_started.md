@@ -17,7 +17,7 @@ git clone --branch mobile https://github.com/OpenFairWind/FairWindSK.git
 cd FairWindSK
 ```
 
-The [cross-platform build overview](building.md) links to the authoritative [macOS](macos.md), [Android](android.md), [iOS/iPadOS](ios.md), and [container](container.md) guides and contains the Linux, Raspberry Pi OS, and Windows workflows. A generic host CMake command is valid only after the correct platform Qt kit and dependencies are selected.
+The [cross-platform build overview](building.md) links to the authoritative [macOS](macos.md), [Windows](windows.md), [Linux](linux.md), [Raspberry Pi OS](raspberrypi.md), [Android](android.md), [iOS/iPadOS](ios.md), and [container](container.md) guides. A generic host CMake command is valid only after the correct platform Qt kit and dependencies are selected.
 
 ## First run and configuration bootstrap
 
@@ -33,7 +33,7 @@ On Android, open **Settings > Android**. Use the launcher-mode touch checkbox to
 ## Running the desktop
 
 - Start the application normally from the build output folder or after installing it into your system path. On Raspberry Pi OS the project includes a sample autostart entry in `extras/fairwindsk-startup.desktop` and a helper script in `extras/fairwindsk-startup`. The helper follows the same per-user Qt configuration directory used by the application, applies the virtual keyboard environment only when `main.virtualKeyboard` is enabled, and only relaunches FairWindSK when the application exits with code `1`. Direct launches now read the same startup setting too, but changing `main.virtualKeyboard` still requires an application restart.
-- `cmake --install build` now installs the desktop app together with the bundled icon directory and desktop helper libraries, so the installed target keeps the same local-app icon lookup behavior as the build-tree run.
+- `cmake --install build` installs the desktop application. Linux installs also include the helper libraries, startup helper, application-menu entry, and hicolor application icon; Windows installs include the two helper DLLs beside the executable. On macOS, run `macdeployqt` as described in the packaging guide before distributing the staged bundle.
 - On Raspberry Pi OS, `cmake --install build` now also installs the system autostart entry automatically. If OpenPlotter is present on the target, the install performs a best-effort addition of the FairWindSK launcher icon to the OpenPlotter menu.
 - The main window appears directly and then performs deferred Signal K startup, app loading, and page prewarming inside the single-window shell.
 - Use the tiles to launch apps. On desktop targets, `SHIFT+TAB` brings the FairWindSK window back to the foreground when a web app takes full focus.

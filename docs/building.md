@@ -7,9 +7,9 @@ FairWindSK has one C++17/Qt 6 source tree and six supported operating-system fla
 | Flavor | Host/target | Embedded web backend | Authoritative instructions |
 | --- | --- | --- | --- |
 | macOS | macOS desktop | Qt WebEngine Widgets | [macOS](macos.md) |
-| Linux | Linux desktop | Qt WebEngine Widgets | [Linux below](#linux) |
-| Raspberry Pi OS | Linux ARM desktop/MFD | Qt WebEngine Widgets | [Raspberry Pi OS below](#raspberry-pi-os) |
-| Windows | Windows desktop | Qt WebEngine Widgets | [Windows below](#windows) |
+| Linux | Linux desktop | Qt WebEngine Widgets | [Linux](linux.md) |
+| Raspberry Pi OS | Linux ARM desktop/MFD | Qt WebEngine Widgets | [Raspberry Pi OS](raspberrypi.md) |
+| Windows | Windows desktop | Qt WebEngine Widgets | [Windows](windows.md) |
 | Android | Android 13/API 33 or newer | Qt WebView in QQuickWidget | [Android](android.md) |
 | iOS/iPadOS | Apple mobile devices/simulator | Qt WebView in QQuickWidget | [iOS/iPadOS](ios.md) |
 | Linux container | Docker Linux desktop check | Qt WebEngine Widgets | [Container](container.md) |
@@ -20,7 +20,7 @@ All flavors preserve the single-window, touch-first marine Multi-Functional Disp
 
 - Use an out-of-source build directory dedicated to one platform, architecture, Qt kit, generator, and build type.
 - Use CMake 3.16 or newer and a compiler with C++17 support.
-- Desktop kits require Qt Core, Gui, Widgets, Concurrent, Network, WebSockets, Xml, Svg, Positioning, WebEngine Widgets, Virtual Keyboard, and Print Support.
+- Desktop kits require Qt Core, Gui, Widgets, Qml, Concurrent, Network, WebSockets, Xml, Svg, SvgWidgets, Positioning, WebEngine Widgets, Virtual Keyboard, Print Support, and LinguistTools.
 - Mobile kits require Qt Core, Gui, Widgets, Qml, Quick, Quick Widgets, WebView, Concurrent, Network, WebSockets, Xml, Svg, Positioning, and Virtual Keyboard.
 - Desktop builds include pinned QtZeroConf and QHotkey helpers. They may also download the pinned `nlohmann/json` fallback when a system package is unavailable.
 - Mobile builds exclude Qt WebEngine Widgets, Print Support, QtZeroConf, and QHotkey.
@@ -51,105 +51,28 @@ Follow [Building FairWindSK on macOS](macos.md) for Xcode tools, Homebrew or Qt 
 
 ## Linux
 
-Install the desktop dependencies on Debian/Ubuntu:
-
-```bash
-sudo apt update
-sudo apt install build-essential cmake ninja-build git \
-  nlohmann-json3-dev libavahi-compat-libdnssd-dev libnss-mdns avahi-utils \
-  qt6-base-dev qt6-base-dev-tools qt6-webengine-dev qt6-webengine-dev-tools \
-  qt6-websockets-dev qt6-positioning-dev libqt6svg6-dev \
-  qt6-virtualkeyboard-dev libqt6printsupport6
-```
-
-Configure, build, test, and run:
-
-```bash
-cmake -S . -B build-linux -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build build-linux --parallel
-ctest --test-dir build-linux --output-on-failure
-./build-linux/FairWindSK
-```
-
-Install to a staging prefix before packaging:
-
-```bash
-cmake -S . -B build-linux -DCMAKE_INSTALL_PREFIX="$PWD/stage-linux"
-cmake --install build-linux
-```
-
-The install includes the executable, icon resources, desktop helper libraries, and XDG launcher metadata. Package the matching Qt runtime and the helper libraries under the build/install library directory. Use [container.md](container.md) for a reproducible Ubuntu compile and headless startup check.
+Follow the dedicated [Linux guide](linux.md) for distribution packages, native
+configuration, compilation, CTest, build-tree execution, staging, installation,
+desktop integration, troubleshooting, and validation. Use the separate
+[container guide](container.md) only for reproducible Linux compile and headless
+startup checks.
 
 ## Raspberry Pi OS
 
-Raspberry Pi OS follows the Linux desktop path. Bookworm installations commonly need:
-
-```bash
-sudo apt update
-sudo apt install build-essential cmake ninja-build git nlohmann-json3-dev \
-  libnss-mdns avahi-utils libavahi-compat-libdnssd-dev libxkbcommon-dev \
-  qt6-base-dev qt6-base-dev-tools qt6-webengine-dev qt6-webengine-dev-tools \
-  qt6-websockets-dev qt6-positioning-dev libqt6svg6-dev \
-  qt6-virtualkeyboard-dev libqt6virtualkeyboard6 qt6-virtualkeyboard-plugin \
-  qml6-module-qt-labs-folderlistmodel qml6-module-qtquick-window \
-  qml6-module-qtquick-layouts qml6-module-qtqml-workerscript
-```
-
-If the distribution omits `Qt6VirtualKeyboardConfigVersionImpl.cmake` while providing the rest of the package:
-
-```bash
-sudo touch /usr/lib/aarch64-linux-gnu/cmake/Qt6VirtualKeyboard/Qt6VirtualKeyboardConfigVersionImpl.cmake
-```
-
-Build with the Linux commands above. Installation uses the Linux layout and additionally installs the Raspberry Pi startup integration. The helpers in `extras/` support kiosk/autostart operation and OpenPlotter integration. Validate on actual Raspberry Pi display hardware: a cross-build or container cannot confirm DRM geometry, panel policy, GPU/WebEngine operation, touch behavior, or helm readability.
+Raspberry Pi OS follows the Linux desktop Qt WebEngine path but has additional
+ARM rendering, constrained-build, touch-display, autostart, and OpenPlotter
+requirements. Follow the dedicated [Raspberry Pi OS guide](raspberrypi.md) for
+64-bit system preparation, package installation, native compilation, CTest,
+Signal K configuration, kiosk operation, system installation, troubleshooting,
+and the physical-device validation checklist.
 
 ## Windows
 
-Windows builds use the standard Qt WebEngine Widgets stack, fully supporting the desktop feature set. We recommend using Qt Creator for the smoothest configuration and build experience, though command-line builds are fully supported.
-
-### Step-by-step Windows build guide
-
-1. Install the Windows toolchain prerequisites:
-   - Qt 6 with a desktop kit (e.g., MSVC 2022 64-bit)
-   - A C++17 compiler (Visual Studio Build Tools for MSVC)
-   - CMake and Ninja
-   - Git
-
-2. Clone the repository:
-```cmd
-   git clone https://github.com/OpenFairWind/FairWindSK.git
-   cd FairWindSK
-```
-
-3. Open Qt Creator and select `File` → `Open File or Project...`, then choose `FairWindSK/CMakeLists.txt`.
-4. When Qt Creator asks for kits, select your installed Windows desktop kit (e.g., `Desktop Qt 6.x.x MSVC2022 64bit`).
-5. Let Qt Creator configure the project automatically. If the build environment becomes out of sync, right-click the project root, select `Clear CMake Configuration`, then `Run CMake`.
-6. Build with `Build` → `Build Project`.
-7. Run the application by clicking the Run button.
-
-### Optional command-line build
-
-Open an "x64 Native Tools Command Prompt for VS 2022" and run:
-
-```cmd
-cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH="C:\Qt\6.x.x\msvc2022_64"
-cmake --build build --parallel
-cmake --install build
-build\FairWindSK.exe
-```
-
-Deploy the Qt runtime for redistribution:
-
-```cmd
-windeployqt build\FairWindSK.exe
-```
-
-### Notes
-
-- The CMake build handles `QtZeroConf` and `QHotkey` as desktop-only dependencies and copies their DLLs next to the executable after the build.
-- `cmake --install build` installs `FairWindSK.exe`, the bundled icon directory under `bin\icons`, and the desktop helper DLLs into the same `bin` directory.
-- Local `file://` launcher entries remain readable for compatibility, but single-window mode blocks them from launching external native applications on Windows.
-- On high-DPI displays or with Windows display scaling enabled (e.g., 125% or 150%), UI elements adapt dynamically. If bottom bar widgets appear clipped, use Qt Layouts with `QSizePolicy` set to `Expanding` rather than hardcoded fixed heights.
+Windows uses the desktop Qt WebEngine Widgets path and requires the MSVC 2022
+64-bit Qt kit; MinGW is intentionally rejected at configure time. Follow the
+dedicated [Windows build guide](windows.md) for prerequisites, Qt Creator and
+command-line workflows, tests, deployment with `windeployqt`, troubleshooting,
+and the platform validation checklist.
 
 ## Android
 

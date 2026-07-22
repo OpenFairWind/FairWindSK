@@ -172,9 +172,9 @@ namespace fairwindsk {
                     return QStringLiteral("AllowPersistentCookies");
                 case QWebEngineProfile::ForcePersistentCookies:
                     return QStringLiteral("ForcePersistentCookies");
+                default:
+                    return QStringLiteral("Unknown");
             }
-
-            return QStringLiteral("Unknown");
         }
 #endif
 

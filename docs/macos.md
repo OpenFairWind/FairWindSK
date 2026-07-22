@@ -10,7 +10,7 @@ This is the authoritative step-by-step guide for creating a native macOS build e
 - CMake 3.16 or newer
 - Ninja (recommended) or another CMake generator
 - A C++17 compiler from Xcode
-- Qt 6 for macOS with Core, Gui, Widgets, Concurrent, Network, WebSockets, Xml, Svg, Positioning, WebEngine Widgets, Virtual Keyboard, and Print Support
+- Qt 6 for macOS with Core, Gui, Widgets, Qml, Concurrent, Network, WebSockets, Xml, Svg, SvgWidgets, Positioning, WebEngine Widgets, Virtual Keyboard, Print Support, and LinguistTools
 - Internet access for the first clean build of pinned desktop helper dependencies
 
 Use one architecture consistently. A native Apple Silicon toolchain produces `arm64`; an Intel Mac produces `x86_64`. Universal packaging requires building both architectures with compatible Qt libraries and is outside the normal single-architecture workflow.
@@ -162,7 +162,7 @@ cmake --install build-macos
 find stage-macos -maxdepth 3 -name 'FairWindSK.app' -print
 ```
 
-The install step preserves the application bundle, icons, and desktop helper libraries. Use a clean staging directory for each packaging check.
+The install step preserves the application bundle and its embedded resources. It does not make the bundle redistributable by itself: use a clean staging directory for each packaging check, then run `macdeployqt` so Qt and the linked desktop helper libraries are copied into the distribution bundle.
 
 ## 11. Bundle the Qt runtime
 

@@ -20,6 +20,9 @@ The runtime now supervises Signal K restarts as well: if the server drops and co
 * [Getting started](docs/getting_started.md)
 * [Building FairWindSK](docs/building.md)
 * [Building FairWindSK on macOS](docs/macos.md)
+* [Building FairWindSK on Windows](docs/windows.md)
+* [Building and running FairWindSK on Linux](docs/linux.md)
+* [Building and running FairWindSK on Raspberry Pi OS](docs/raspberrypi.md)
 * [Building and running FairWindSK in a container](docs/container.md)
 * [Android environment, APK build, signing, deployment, and launcher guide](docs/android.md)
 * [iOS environment, iPad Simulator build, deployment, and debugging guide](docs/ios.md)
@@ -103,6 +106,9 @@ The full platform guide now lives in [docs/building.md](docs/building.md).
 Complete Android host setup and signed-APK instructions live in [docs/android.md](docs/android.md).
 Complete iOS host setup and iPad Simulator instructions live in [docs/ios.md](docs/ios.md).
 Complete native macOS environment, build, test, installation, and packaging instructions live in [docs/macos.md](docs/macos.md).
+Complete native Windows environment, MSVC build, test, staging, and deployment instructions live in [docs/windows.md](docs/windows.md).
+Complete native Linux dependency, build, test, installation, and validation instructions live in [docs/linux.md](docs/linux.md).
+Complete Raspberry Pi OS preparation, native build, configuration, kiosk/autostart, OpenPlotter, and validation instructions live in [docs/raspberrypi.md](docs/raspberrypi.md).
 
 Quick summary:
 
@@ -122,7 +128,7 @@ cmake --build build --parallel
 cmake --install build
 ```
 
-For platform-specific package lists, Qt kit selection, Windows deployment, Raspberry Pi notes, and the current desktop/mobile feature notes, see [docs/building.md](docs/building.md).
+For the supported-flavor matrix and direct links to every authoritative platform guide, see [docs/building.md](docs/building.md).
 
 # Signal K server on Docker
 
