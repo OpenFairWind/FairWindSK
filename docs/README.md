@@ -11,6 +11,7 @@
 - [Android build, signing, and launcher guide](./android.md)
 - [iOS and iPadOS build and simulator guide](./ios.md)
 - [Developing guide](./developing_guide.md)
+- [Automated testing](./testing.md)
 - [Versioning and releases](./releasing.md)
 - [FairWindSK user guide](./fairwindsk_user_guide.md)
 - [Architecture overview](./architecture.md)
