@@ -13,9 +13,11 @@ FairWindSK is a Qt6 shell that launches and supervises Signal K web applications
 Clone the source, then select the dedicated instructions for the target flavor:
 
 ```bash
-git clone --branch mobile https://github.com/OpenFairWind/FairWindSK.git
+git clone --branch main https://github.com/OpenFairWind/FairWindSK.git
 cd FairWindSK
 ```
+
+Use `--branch <release-tag>` instead when reproducing a published release.
 
 The [cross-platform build overview](building.md) links to the authoritative [macOS](macos.md), [Windows](windows.md), [Linux](linux.md), [Raspberry Pi OS](raspberrypi.md), [Android](android.md), [iOS/iPadOS](ios.md), and [container](container.md) guides. A generic host CMake command is valid only after the correct platform Qt kit and dependencies are selected.
 

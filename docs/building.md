@@ -30,11 +30,13 @@ All flavors preserve the single-window, touch-first marine Multi-Functional Disp
 ## Common repository workflow
 
 ```bash
-git clone --branch mobile https://github.com/OpenFairWind/FairWindSK.git
+git clone --branch main https://github.com/OpenFairWind/FairWindSK.git
 cd FairWindSK
 ```
 
-Use a release tag instead of `mobile` when building a published release. Then follow the platform-specific guide. The generic desktop sequence is:
+The `main` branch is the current integrated source line. To build a published
+release, replace `--branch main` with `--branch <release-tag>`. Then follow the
+platform-specific guide. The generic desktop sequence is:
 
 ```bash
 cmake -S . -B build

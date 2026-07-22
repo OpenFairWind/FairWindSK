@@ -98,11 +98,12 @@ brew install git cmake ninja
 Clone the repository and enter it:
 
 ```bash
-git clone --branch mobile https://github.com/OpenFairWind/FairWindSK.git
+git clone --branch main https://github.com/OpenFairWind/FairWindSK.git
 cd FairWindSK
 ```
 
-Use a release tag instead when building a published release. The `mobile` branch contains the current shared desktop, Android, and iOS codebase.
+Use `--branch <release-tag>` instead when building a published release. The
+`main` branch contains the current integrated desktop, Android, and iOS codebase.
 
 Define task-specific paths for subsequent command-line examples:
 

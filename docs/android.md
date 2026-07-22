@@ -66,10 +66,11 @@ Typical paths are `C:\Qt\6.8.3\msvc2022_64`, `C:\Qt\6.8.3\android_arm64_v8a`, an
 
 ## 3. Verify the toolchain
 
-Clone the current shared desktop/mobile development branch (or select a release tag for a published release):
+Clone the current integrated source line (or select a release tag for a
+published release):
 
 ```bash
-git clone --branch mobile https://github.com/OpenFairWind/FairWindSK.git
+git clone --branch main https://github.com/OpenFairWind/FairWindSK.git
 cd FairWindSK
 ```
 

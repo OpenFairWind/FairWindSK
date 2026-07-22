@@ -13,17 +13,19 @@ Use this guide when you need to:
 - change the shell behavior without breaking marine electronics usability expectations
 - prepare changes that must compile across desktop and mobile targets
 
-## Start from the development branch
+## Start from the main branch
 
-FairWindSK active work happens on the `development` branch.
-Before you begin coding, switch to it and update your local checkout:
+FairWindSK integration and documentation are maintained on `main`. Before you
+begin coding, switch to it and update your local checkout:
 
 ```bash
-git checkout development
+git checkout main
 git pull
 ```
 
-If you are creating a feature branch, create it from the updated `development` branch rather than from `main` or an older local branch.
+Create feature branches from the updated `main` branch. When reproducing a
+published release, check out its explicit release tag instead and avoid mixing
+later `main` changes into that verification build.
 
 ## Recommended reading order
 

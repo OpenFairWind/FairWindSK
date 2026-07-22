@@ -49,12 +49,12 @@ steps. This ensures the MSVC environment is correctly loaded.
 ## 3. Clone FairWindSK
 
 ```cmd
-git clone --branch mobile https://github.com/OpenFairWind/FairWindSK.git
+git clone --branch main https://github.com/OpenFairWind/FairWindSK.git
 cd FairWindSK
 ```
 
-The `mobile` branch contains the current shared desktop and mobile development
-line. Use a different branch name if targeting a specific release.
+The `main` branch contains the current integrated desktop and mobile source.
+Replace `--branch main` with a release tag when reproducing a published release.
 
 ---
 

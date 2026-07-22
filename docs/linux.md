@@ -35,14 +35,14 @@ contains every component listed above.
 ## 3. Clone and configure
 
 ```bash
-git clone --branch mobile https://github.com/OpenFairWind/FairWindSK.git
+git clone --branch main https://github.com/OpenFairWind/FairWindSK.git
 cd FairWindSK
 cmake -S . -B build-linux -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \
   -DBUILD_TESTING=ON
 ```
 
-Use a release tag instead of `mobile` for a published release. Pass
+Use `--branch <release-tag>` instead for a published release. Pass
 `-DCMAKE_PREFIX_PATH=/path/to/qt` when Qt is not discoverable through the
 distribution's standard CMake paths. Never reuse a build directory created for
 another Qt kit, architecture, platform, or build type.

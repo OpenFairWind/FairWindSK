@@ -95,11 +95,11 @@ installation.
 
 ## 4. Clone the source
 
-Clone the shared desktop/mobile development line, or substitute a release tag
-when building a published release:
+Clone the current integrated source line, or substitute a release tag when
+building a published release:
 
 ```bash
-git clone --branch mobile https://github.com/OpenFairWind/FairWindSK.git
+git clone --branch main https://github.com/OpenFairWind/FairWindSK.git
 cd FairWindSK
 ```
 

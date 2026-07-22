@@ -77,14 +77,14 @@ Alternatively, install a macOS desktop kit with the Qt Online Installer. Select 
 
 ## 5. Clone FairWindSK
 
-Clone the repository and select the branch you intend to build. `mobile` contains the current shared desktop and mobile development line:
+Clone the current integrated source line:
 
 ```bash
-git clone --branch mobile https://github.com/OpenFairWind/FairWindSK.git
+git clone --branch main https://github.com/OpenFairWind/FairWindSK.git
 cd FairWindSK
 ```
 
-For a released version, check out its release tag instead of a development branch.
+For a published version, replace `--branch main` with its release tag.
 
 ## 6. Configure a native macOS build
 

@@ -15,6 +15,7 @@
 - [Architecture overview](./architecture.md)
 - [UI shell definition](./ui_shell.md)
 - [Configuration guide](./configuring.md)
+- [Running a companion Signal K Server with Docker](./signalk-server-docker.md)
 - [Multilingual support](./multilingual.md)
 - [GUI overview](./gui.md)
 - [Typical use cases](./use_case.md)
