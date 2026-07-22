@@ -21,6 +21,9 @@
 #include "SignalK.hpp"
 #include "Apps.hpp"
 #include "System.hpp"
+#if defined(Q_OS_ANDROID)
+#include "AndroidApps.hpp"
+#endif
 
 
 #include "ui_Settings.h"
@@ -140,17 +143,22 @@ namespace fairwindsk::ui::settings {
         // Remove tabs if present
         removeTabs();
 
-        m_tabPages = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
-        for (const auto &tabTitle : {tr("Main"),
-                                     tr("Top Bar"),
-                                     tr("Bottom Bar"),
-                                     tr("Widgets"),
-                                     tr("Comfort"),
-                                     tr("Connection"),
-                                     tr("Signal K"),
-                                     tr("Units"),
-                                     tr("Applications"),
-                                     tr("System")}) {
+        QStringList tabTitles = {tr("Main"),
+                                 tr("Top Bar"),
+                                 tr("Bottom Bar"),
+                                 tr("Widgets"),
+                                 tr("Comfort"),
+                                 tr("Connection"),
+                                 tr("Signal K"),
+                                 tr("Units"),
+                                 tr("Applications"),
+                                 tr("System")};
+#if defined(Q_OS_ANDROID)
+        // Keep the platform-specific selector after System and omit it from every other build.
+        tabTitles.append(tr("Android"));
+#endif
+        m_tabPages.resize(tabTitles.size());
+        for (const auto &tabTitle : tabTitles) {
             auto *container = new QWidget(ui->tabWidget);
             auto *layout = new QVBoxLayout(container);
             layout->setContentsMargins(0, 0, 0, 0);
@@ -187,6 +195,10 @@ namespace fairwindsk::ui::settings {
                 return new Apps(this);
             case 9:
                 return new System(this);
+#if defined(Q_OS_ANDROID)
+            case 10:
+                return new AndroidApps(this);
+#endif
             default:
                 return new QWidget(this);
         }

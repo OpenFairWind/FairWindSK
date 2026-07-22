@@ -31,6 +31,9 @@
 #include "ui/widgets/DataWidget.hpp"
 #include "ui/widgets/DataWidgetConfig.hpp"
 #include "ui/widgets/SignalKStatusIconsWidget.hpp"
+#if defined(Q_OS_ANDROID)
+#include "platform/android/AndroidApplicationBridge.hpp"
+#endif
 
 namespace fairwindsk::ui::bottombar {
     namespace {
@@ -307,7 +310,7 @@ namespace fairwindsk::ui::bottombar {
     }
 
     bool BottomBar::isTransientPanelVisible() const {
-        const QList<QWidget *> panels = {m_POBBar, m_AutopilotBar, m_AnchorBar, m_AlarmsBar};
+        const QList<QWidget *> panels = {m_POBBar, m_AutopilotBar, m_AnchorBar, m_AlarmsBar, m_androidRecentsPanel};
         return std::any_of(
             panels.cbegin(),
             panels.cend(),
@@ -395,7 +398,65 @@ namespace fairwindsk::ui::bottombar {
         auto *starboardLayout = new QVBoxLayout(ui->widget_Starboard);
         starboardLayout->setContentsMargins(0, 0, 0, 0);
         starboardLayout->setSpacing(0);
-        starboardLayout->addWidget(m_signalKServerBox);
+        auto *starboardRow = new QHBoxLayout();
+        starboardRow->setContentsMargins(0, 0, 0, 0);
+        starboardRow->setSpacing(4);
+        starboardLayout->addLayout(starboardRow);
+
+#if defined(Q_OS_ANDROID)
+        m_androidNavigationWidget = new QWidget(this);
+        m_androidNavigationWidget->setFixedSize(176, 56);
+        auto *androidNavigationLayout = new QHBoxLayout(m_androidNavigationWidget);
+        androidNavigationLayout->setContentsMargins(0, 0, 0, 0);
+        androidNavigationLayout->setSpacing(4);
+
+        const auto createAndroidNavigationButton = [this, androidNavigationLayout](
+                                                       const QString &icon,
+                                                       const QString &toolTip) {
+            auto *button = new QToolButton(m_androidNavigationWidget);
+            button->setIcon(QIcon(icon));
+            button->setIconSize(QSize(32, 32));
+            button->setFixedSize(56, 56);
+            button->setAutoRaise(true);
+            button->setToolTip(toolTip);
+            button->setAccessibleName(toolTip);
+            androidNavigationLayout->addWidget(button);
+            return button;
+        };
+
+        m_androidBackButton = createAndroidNavigationButton(
+            QStringLiteral(":/resources/svg/OpenBridge/arrow-left-google.svg"), tr("Android Back"));
+        m_androidHomeButton = createAndroidNavigationButton(
+            QStringLiteral(":/resources/svg/OpenBridge/home.svg"), tr("FairWindSK Home"));
+        m_androidRecentsButton = createAndroidNavigationButton(
+            QStringLiteral(":/resources/svg/OpenBridge/layout-open-apps.svg"), tr("Recent Android applications"));
+        const int starboardIndex = ui->horizontalLayoutButtons->indexOf(ui->widget_Starboard);
+        if (starboardIndex >= 0) {
+            ui->horizontalLayoutButtons->insertWidget(starboardIndex, m_androidNavigationWidget);
+        }
+
+        m_androidRecentsPanel = new QWidget(this);
+        m_androidRecentsLayout = new QHBoxLayout(m_androidRecentsPanel);
+        m_androidRecentsLayout->setContentsMargins(8, 4, 8, 4);
+        m_androidRecentsLayout->setSpacing(8);
+        m_androidRecentsPanel->hide();
+        ui->gridLayout->addWidget(m_androidRecentsPanel, 4, 0);
+
+        connect(m_androidBackButton, &QToolButton::clicked, this, []() {
+            platform::android::AndroidApplicationBridge::requestSystemBack();
+        });
+        connect(m_androidHomeButton, &QToolButton::clicked, this, &BottomBar::apps_clicked);
+        connect(m_androidRecentsButton, &QToolButton::clicked, this, &BottomBar::showAndroidRecentApplications);
+
+        auto *navigationRefreshTimer = new QTimer(this);
+        navigationRefreshTimer->setInterval(2000);
+        connect(navigationRefreshTimer, &QTimer::timeout, this, &BottomBar::updateAndroidLauncherNavigation);
+        navigationRefreshTimer->start();
+        updateAndroidLauncherNavigation();
+        applyNavigationButtonIcons();
+#endif
+        // Keep launcher controls at the visible leading edge if the status box has a wide minimum size.
+        starboardRow->addWidget(m_signalKServerBox, 1);
 
         // Add the POB bar to the layout
         ui->gridLayout->addWidget(m_POBBar,0,0);
@@ -444,6 +505,91 @@ namespace fairwindsk::ui::bottombar {
 
         updateHealthChrome();
         rebuildLayout();
+    }
+
+    void BottomBar::updateAndroidLauncherNavigation() {
+#if defined(Q_OS_ANDROID)
+        if (!m_androidNavigationWidget) {
+            return;
+        }
+
+        const bool launcherActive = platform::android::AndroidApplicationBridge::isDefaultLauncher();
+        const bool showBack = launcherActive
+            && !platform::android::AndroidApplicationBridge::hasHardwareNavigationKey(4);
+        const bool showHome = launcherActive
+            && !platform::android::AndroidApplicationBridge::hasHardwareNavigationKey(3);
+        const bool showRecents = launcherActive
+            && !platform::android::AndroidApplicationBridge::hasHardwareNavigationKey(187);
+        m_androidBackButton->setVisible(showBack);
+        m_androidHomeButton->setVisible(showHome);
+        m_androidRecentsButton->setVisible(showRecents);
+        m_androidNavigationWidget->setVisible(showBack || showHome || showRecents);
+#endif
+    }
+
+    void BottomBar::showAndroidRecentApplications() {
+#if defined(Q_OS_ANDROID)
+        rebuildAndroidRecentApplications();
+        setRegularBarVisible(false);
+        m_androidRecentsPanel->show();
+#endif
+    }
+
+    void BottomBar::rebuildAndroidRecentApplications() {
+#if defined(Q_OS_ANDROID)
+        if (!m_androidRecentsLayout) {
+            return;
+        }
+        while (auto *item = m_androidRecentsLayout->takeAt(0)) {
+            if (item->widget()) {
+                item->widget()->deleteLater();
+            }
+            delete item;
+        }
+
+        const auto recentApplications = platform::android::AndroidApplicationBridge::recentApplications();
+        if (recentApplications.empty()) {
+            auto *emptyLabel = new QLabel(tr("No Android applications have been launched from FairWindSK yet."), m_androidRecentsPanel);
+            emptyLabel->setAlignment(Qt::AlignCenter);
+            m_androidRecentsLayout->addWidget(emptyLabel, 1);
+        } else {
+            for (const auto &application : recentApplications) {
+                if (!application.is_object()) {
+                    continue;
+                }
+                const QString packageName = QString::fromStdString(application.value("package", std::string()));
+                const QString activityName = QString::fromStdString(application.value("activity", std::string()));
+                const QString displayName = QString::fromStdString(application.value("displayName", std::string()));
+                const QString iconPath = QString::fromStdString(application.value("icon", std::string()));
+                auto *button = new QToolButton(m_androidRecentsPanel);
+                button->setText(displayName);
+                button->setIcon(QIcon(iconPath));
+                button->setIconSize(QSize(40, 40));
+                button->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+                button->setMinimumSize(88, kBottomBarButtonHeight);
+                button->setToolTip(tr("Return to %1").arg(displayName));
+                m_androidRecentsLayout->addWidget(button);
+                connect(button, &QToolButton::clicked, this, [this, packageName, activityName]() {
+                    platform::android::AndroidApplicationBridge::launchApplication(packageName, activityName);
+                    m_androidRecentsPanel->hide();
+                    restoreRegularBarVisibility();
+                });
+            }
+            m_androidRecentsLayout->addStretch(1);
+        }
+
+        auto *closeButton = new QToolButton(m_androidRecentsPanel);
+        closeButton->setIcon(QIcon(QStringLiteral(":/resources/svg/OpenBridge/arrow-right-google.svg")));
+        closeButton->setIconSize(QSize(36, 36));
+        closeButton->setFixedSize(64, 64);
+        closeButton->setToolTip(tr("Close recent Android applications"));
+        closeButton->setAccessibleName(tr("Close recent Android applications"));
+        m_androidRecentsLayout->addWidget(closeButton);
+        connect(closeButton, &QToolButton::clicked, this, [this]() {
+            m_androidRecentsPanel->hide();
+            restoreRegularBarVisibility();
+        });
+#endif
     }
 
     /*
@@ -574,6 +720,21 @@ namespace fairwindsk::ui::bottombar {
                 QSize(m_iconSize, m_iconSize),
                 kBottomBarButtonHeight);
         }
+#if defined(Q_OS_ANDROID)
+        const QList<QToolButton *> androidNavigationButtons = {
+            m_androidBackButton,
+            m_androidHomeButton,
+            m_androidRecentsButton
+        };
+        for (auto *button : androidNavigationButtons) {
+            fairwindsk::ui::applyBottomBarToolButtonChrome(
+                button,
+                colors,
+                fairwindsk::ui::BottomBarButtonChrome::Flat,
+                QSize(32, 32),
+                56);
+        }
+#endif
         const_cast<BottomBar *>(this)->updateHealthChrome();
     }
 
@@ -744,14 +905,14 @@ namespace fairwindsk::ui::bottombar {
             QString displayName;
             QPixmap pixmap;
             if (appItem) {
-                displayName = appItem->getDisplayName(true);
-                pixmap = appItem->getIcon(true);
+                displayName = appItem->getDisplayName(false);
+                pixmap = appItem->getIcon(false);
             } else {
                 const int idx = fairWindSK->getConfiguration()->findApp(name);
                 if (idx != -1) {
                     fairwindsk::AppItem configApp(fairWindSK->getConfiguration()->getRoot()["apps"].at(idx));
-                    displayName = configApp.getDisplayName(true);
-                    pixmap = configApp.getIcon(true);
+                    displayName = configApp.getDisplayName(false);
+                    pixmap = configApp.getIcon(false);
                     resolvedHash = configApp.getName();
                 }
             }
@@ -925,7 +1086,7 @@ namespace fairwindsk::ui::bottombar {
             setRegularBarVisible(false);
         } else {
             panel->setVisible(false);
-            const QList<QWidget *> panels = {m_POBBar, m_AutopilotBar, m_AnchorBar, m_AlarmsBar};
+            const QList<QWidget *> panels = {m_POBBar, m_AutopilotBar, m_AnchorBar, m_AlarmsBar, m_androidRecentsPanel};
             const bool anotherPanelVisible = std::any_of(
                 panels.cbegin(),
                 panels.cend(),
@@ -942,7 +1103,7 @@ namespace fairwindsk::ui::bottombar {
     }
 
     bool BottomBar::isTransientPanelWidget(const QWidget *widget) const {
-        const QList<QWidget *> panels = {m_POBBar, m_AutopilotBar, m_AnchorBar, m_AlarmsBar};
+        const QList<QWidget *> panels = {m_POBBar, m_AutopilotBar, m_AnchorBar, m_AlarmsBar, m_androidRecentsPanel};
         return std::any_of(
             panels.cbegin(),
             panels.cend(),
@@ -952,7 +1113,7 @@ namespace fairwindsk::ui::bottombar {
     }
 
     void BottomBar::hideTransientPanels(QWidget *except) const {
-        const QList<QWidget *> panels = {m_POBBar, m_AutopilotBar, m_AnchorBar, m_AlarmsBar};
+        const QList<QWidget *> panels = {m_POBBar, m_AutopilotBar, m_AnchorBar, m_AlarmsBar, m_androidRecentsPanel};
         for (auto *panel : panels) {
             if (panel && panel != except) {
                 panel->setVisible(false);

@@ -116,6 +116,9 @@ namespace fairwindsk::ui::bottombar {
         bool isTransientPanelWidget(const QWidget *widget) const;
         void updateTransientPanelHeight(QWidget *panel) const;
         void updateHealthChrome();
+        void updateAndroidLauncherNavigation();
+        void showAndroidRecentApplications();
+        void rebuildAndroidRecentApplications();
         void rebuildLayout();
         void applyEntryPresentation(const fairwindsk::ui::layout::LayoutEntry &entry,
                                     QWidget *widget) const;
@@ -145,6 +148,12 @@ namespace fairwindsk::ui::bottombar {
         AnchorBar *m_AnchorBar = nullptr;
 
         widgets::SignalKServerBox *m_signalKServerBox = nullptr;
+        QWidget *m_androidNavigationWidget = nullptr;
+        QWidget *m_androidRecentsPanel = nullptr;
+        QToolButton *m_androidBackButton = nullptr;
+        QToolButton *m_androidHomeButton = nullptr;
+        QToolButton *m_androidRecentsButton = nullptr;
+        QHBoxLayout *m_androidRecentsLayout = nullptr;
 
         int m_iconSize;
         QMap<QString, QToolButton *> m_buttons;

@@ -443,6 +443,10 @@ FairWindSK has one codebase and multiple build/runtime targets.
 - mobile-safe web backend through `Qt::WebView`
 - surrounding shell remains widget-based
 - no desktop-only hotkey/Zeroconf/WebEngine-only integrations
+- Android 13/API 33 is the minimum runtime; newer APIs require runtime guards and an API 33 fallback
+- `FairWindSKActivity` provides scoped `MAIN + LAUNCHER` package discovery, private icon caching, and explicit native-activity launching
+- `Settings > Android` controls which typed Android `AppItem` records join the shared Applications palette and launcher-page layout
+- the Home intent is opt-in and remains separate from the ordinary application-launcher intent
 
 ### iOS
 
@@ -458,6 +462,7 @@ For any non-trivial change, review impact in these dimensions:
 | --- | --- |
 | Build split | Does this rely on desktop-only Qt modules or APIs? |
 | Web backend | Does this assume `QWebEngineView` when mobile uses `Qt::WebView`? |
+| Android API | Does it run on API 33, avoid broad package visibility, and guard any newer API? |
 | Touch behavior | Is the control comfortably usable on Raspberry Pi touch displays and tablets? |
 | Drawer behavior | Does modal content fit between the Top Bar and Bottom Bar? |
 | Comfort presets | Are colors and states mapped through the Comfort system? |

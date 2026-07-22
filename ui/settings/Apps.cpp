@@ -19,6 +19,7 @@
 #include <QMimeData>
 #include <QPainter>
 #include <QPainterPath>
+#include <QProgressBar>
 #include <QSignalBlocker>
 #include <QScroller>
 #include <QStyledItemDelegate>
@@ -163,7 +164,7 @@ namespace fairwindsk::ui::settings {
                 if (leftItem.getOrder() != rightItem.getOrder()) {
                     return leftItem.getOrder() < rightItem.getOrder();
                 }
-                return QString::compare(leftItem.getDisplayName(true), rightItem.getDisplayName(true), Qt::CaseInsensitive) < 0;
+                return QString::compare(leftItem.getDisplayName(false), rightItem.getDisplayName(false), Qt::CaseInsensitive) < 0;
             });
 
             for (const auto &jsonApp : jsonApps) {
@@ -590,6 +591,22 @@ namespace fairwindsk::ui::settings {
     Apps::Apps(Settings *settings, QWidget *parent) : QWidget(parent), ui(new Ui::Apps), m_settings(settings) {
         ui->setupUi(this);
 
+        // Present Signal K discovery as an explicit MFD operation instead of an unresponsive blank page.
+        m_loadingPanel = new QWidget(this);
+        auto *loadingLayout = new QHBoxLayout(m_loadingPanel);
+        loadingLayout->setContentsMargins(12, 8, 12, 8);
+        loadingLayout->setSpacing(12);
+        m_loadingLabel = new QLabel(m_loadingPanel);
+        m_loadingLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        loadingLayout->addWidget(m_loadingLabel, 1);
+        m_loadingProgressBar = new QProgressBar(m_loadingPanel);
+        m_loadingProgressBar->setRange(0, 0);
+        m_loadingProgressBar->setTextVisible(false);
+        m_loadingProgressBar->setMinimumHeight(18);
+        m_loadingProgressBar->setMaximumWidth(360);
+        loadingLayout->addWidget(m_loadingProgressBar);
+        ui->verticalLayout_Main->insertWidget(0, m_loadingPanel);
+
         ui->splitter_Main->setStretchFactor(0, 1);
         ui->splitter_Main->setStretchFactor(1, 2);
         ui->verticalLayout_LeftPane->setStretch(0, 3);
@@ -600,6 +617,42 @@ namespace fairwindsk::ui::settings {
         fairwindsk::ui::applySectionTitleLabelStyle(ui->label_PageTitle, configuration, preset, palette(), 18.0);
         ui->label_PageTitle->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
         ui->label_PageIcon->setAlignment(Qt::AlignCenter);
+
+        const auto chrome = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, palette(), false);
+        m_loadingPanel->setStyleSheet(QStringLiteral(
+            "QWidget { background: %1; color: %2; border: 1px solid %3; border-radius: 8px; }"
+            "QLabel { background: transparent; border: none; font-weight: 600; }"
+            "QProgressBar { background: %4; border: 1px solid %3; border-radius: 8px; }"
+            "QProgressBar::chunk { background: %5; border-radius: 7px; }")
+            .arg(fairwindsk::ui::comfortAlpha(chrome.buttonBackground, 30).name(QColor::HexArgb),
+                 chrome.text.name(),
+                 chrome.border.name(),
+                 chrome.window.name(),
+                 chrome.accentTop.name()));
+
+        connect(fairWindSK, &FairWindSK::appsStateChanged, this,
+                [this](const FairWindSK::AppsState state, const QString &stateText) {
+                    updateAppsLoadingState(state, stateText);
+                    if (state == FairWindSK::AppsState::Loading) {
+                        return;
+                    }
+
+                    // Adopt the completed asynchronous registry without starting a second server request.
+                    QTimer::singleShot(0, this, [this]() {
+                        synchronizeAvailableApps(false, false);
+                        rebuildAvailableAppsList();
+                        rebuildPageTree();
+                        rebuildPageEditor();
+                        refreshAvailableAppActionButtons();
+                        refreshPageTreeActionButtons();
+                    });
+                });
+        connect(fairWindSK, &FairWindSK::appIconReady, this, [this](const QString &) {
+            // Repaint the palette and page slots from the live catalog cache as each icon arrives.
+            rebuildAvailableAppsList();
+            rebuildPageEditor();
+        });
+        updateAppsLoadingState(fairWindSK->appsState(), fairWindSK->appsStateText());
 
         m_availableAppsList = new AvailableAppsListWidget(this);
         auto *availableAppsLayout = new QVBoxLayout(ui->widget_AvailableAppsHost);
@@ -745,13 +798,29 @@ namespace fairwindsk::ui::settings {
     }
 
     void Apps::refreshFromConfiguration() {
-        synchronizeAvailableApps(false);
+        auto *fairWindSK = fairwindsk::FairWindSK::getInstance();
+        const bool requestRefresh = fairWindSK && fairWindSK->appsState() != FairWindSK::AppsState::Loading;
+        synchronizeAvailableApps(false, requestRefresh);
         ensureLauncherLayout();
         normalizeLauncherLayout();
         rebuildAvailableAppsList();
         rebuildPageTree();
         rebuildPageEditor();
         retintToolButtons();
+        if (fairWindSK) {
+            updateAppsLoadingState(fairWindSK->appsState(), fairWindSK->appsStateText());
+        }
+    }
+
+    void Apps::updateAppsLoadingState(const FairWindSK::AppsState state, const QString &stateText) {
+        if (!m_loadingPanel || !m_loadingLabel || !m_loadingProgressBar) {
+            return;
+        }
+
+        const bool loading = state == FairWindSK::AppsState::Loading;
+        m_loadingLabel->setText(stateText);
+        m_loadingProgressBar->setVisible(loading);
+        m_loadingPanel->setVisible(loading);
     }
 
     void Apps::changeEvent(QEvent *event) {
@@ -887,10 +956,26 @@ namespace fairwindsk::ui::settings {
         return candidate;
     }
 
+    bool Apps::isAndroidApplication(const QString &appName) const {
+        const int appIndex = m_settings->getConfiguration()->findApp(appName);
+        if (appIndex == -1) {
+            return false;
+        }
+        AppItem appItem(m_settings->getConfiguration()->getRoot()["apps"].at(appIndex));
+        return appItem.isAndroidApplication();
+    }
+
+    bool Apps::currentAvailableApplicationIsAndroid() const {
+        const auto *item = m_availableAppsList ? m_availableAppsList->currentItem() : nullptr;
+        return item && isAndroidApplication(item->data(Qt::UserRole).toString());
+    }
+
     void Apps::refreshAvailableAppActionButtons() const {
         const bool hasSelection = m_availableAppsList && m_availableAppsList->currentItem();
-        ui->toolButton_Remove->setEnabled(hasSelection);
-        ui->toolButton_EditApp->setEnabled(hasSelection);
+        const bool androidApplicationSelected = currentAvailableApplicationIsAndroid();
+        // Android records are managed by the Android page; only placement actions remain available here.
+        ui->toolButton_Remove->setEnabled(hasSelection && !androidApplicationSelected);
+        ui->toolButton_EditApp->setEnabled(hasSelection && !androidApplicationSelected);
         ui->toolButton_AddSelectedAppToPage->setEnabled(hasSelection && !selectedPageId().isEmpty());
         ui->toolButton_AddAllApps->setEnabled(!selectedPageId().isEmpty() && m_availableAppsList && m_availableAppsList->count() > 0);
     }
@@ -917,11 +1002,13 @@ namespace fairwindsk::ui::settings {
 
     void Apps::refreshDetailActionButtons() const {
         const bool hasDetail = !m_currentDetailAppName.isEmpty();
-        m_appDetailsWidget->ui->lineEdit_Apps_Name->setEnabled(hasDetail);
-        m_appDetailsWidget->ui->lineEdit_Apps_Description->setEnabled(hasDetail);
-        m_appDetailsWidget->ui->lineEdit_Apps_DisplayName->setEnabled(hasDetail);
-        m_appDetailsWidget->ui->pushButton_Apps_Name_Browse->setEnabled(hasDetail);
-        m_appDetailsWidget->ui->pushButton_Apps_AppIcon_Browse->setEnabled(hasDetail);
+        const bool editableAppDetail = hasDetail && !isAndroidApplication(m_currentDetailAppName);
+        m_appDetailsWidget->ui->lineEdit_Apps_Name->setEnabled(editableAppDetail);
+        m_appDetailsWidget->ui->lineEdit_Apps_Description->setEnabled(editableAppDetail);
+        m_appDetailsWidget->ui->lineEdit_Apps_DisplayName->setEnabled(editableAppDetail);
+        m_appDetailsWidget->ui->spinBox_Apps_ZoomPercent->setEnabled(editableAppDetail);
+        m_appDetailsWidget->ui->pushButton_Apps_Name_Browse->setEnabled(editableAppDetail);
+        m_appDetailsWidget->ui->pushButton_Apps_AppIcon_Browse->setEnabled(editableAppDetail);
         const bool hasPageDetail = !m_currentDetailPageId.isEmpty();
         m_pageDetailsWidget->ui->lineEdit_Page_Name->setEnabled(hasPageDetail);
         m_pageDetailsWidget->ui->pushButton_Page_Icon_Browse->setEnabled(hasPageDetail);
@@ -957,12 +1044,17 @@ namespace fairwindsk::ui::settings {
             if (leftItem.getOrder() != rightItem.getOrder()) {
                 return leftItem.getOrder() < rightItem.getOrder();
             }
-            return QString::compare(leftItem.getDisplayName(true), rightItem.getDisplayName(true), Qt::CaseInsensitive) < 0;
+            return QString::compare(leftItem.getDisplayName(false), rightItem.getDisplayName(false), Qt::CaseInsensitive) < 0;
         });
 
         for (const auto &jsonApp : jsonApps) {
             AppItem appItem(jsonApp);
-            auto *item = new QListWidgetItem(QIcon(appItem.getIcon(true)), appItem.getDisplayName(true));
+            const QString appName = appItem.getName();
+            auto *fairWindSK = FairWindSK::getInstance();
+            const QString liveHash = fairWindSK ? fairWindSK->getAppHashById(appName) : QString();
+            AppItem *liveApp = fairWindSK && !liveHash.isEmpty() ? fairWindSK->getAppItemByHash(liveHash) : nullptr;
+            const QPixmap icon = liveApp ? liveApp->getIcon(false) : appItem.getIcon(false);
+            auto *item = new QListWidgetItem(QIcon(icon), appItem.getDisplayName(false));
             item->setData(Qt::UserRole, appItem.getName());
             item->setToolTip(appItem.getDescription());
             item->setFlags((item->flags() | Qt::ItemIsDragEnabled | Qt::ItemIsSelectable | Qt::ItemIsEnabled) & ~Qt::ItemIsUserCheckable);
@@ -1104,26 +1196,30 @@ namespace fairwindsk::ui::settings {
         m_appDetailsWidget->ui->label_Apps_Vendor_Text->setText(appItem.getVendor());
         m_appDetailsWidget->ui->lineEdit_Apps_Name->setText(appItem.getName());
         m_appDetailsWidget->ui->lineEdit_Apps_Description->setText(appItem.getDescription());
-        m_appDetailsWidget->ui->lineEdit_Apps_DisplayName->setText(appItem.getDisplayName(true));
+        m_appDetailsWidget->ui->lineEdit_Apps_DisplayName->setText(appItem.getDisplayName(false));
         m_appDetailsWidget->ui->spinBox_Apps_ZoomPercent->setValue(appItem.getZoomPercent());
         m_appDetailsWidget->setAppIconPath(appItem.getAppIcon());
 
-        QPixmap pixmap = appItem.getIcon(true);
+        auto *fairWindSK = FairWindSK::getInstance();
+        const QString liveHash = fairWindSK ? fairWindSK->getAppHashById(appName) : QString();
+        AppItem *liveApp = fairWindSK && !liveHash.isEmpty() ? fairWindSK->getAppItemByHash(liveHash) : nullptr;
+        QPixmap pixmap = liveApp ? liveApp->getIcon(false) : appItem.getIcon(false);
         if (!pixmap.isNull()) {
             pixmap = pixmap.scaled(128, 128, Qt::KeepAspectRatio, Qt::SmoothTransformation);
         }
         m_appDetailsWidget->ui->label_Apps_Icon->setPixmap(pixmap);
 
         ui->stackedWidget_RightPane->setCurrentWidget(ui->page_Details);
-        m_appDetailsWidget->ui->lineEdit_Apps_Name->setEnabled(true);
+        const bool editable = !appItem.isAndroidApplication();
+        m_appDetailsWidget->ui->lineEdit_Apps_Name->setEnabled(editable);
         m_appDetailsWidget->ui->lineEdit_Apps_Name->setReadOnly(false);
-        m_appDetailsWidget->ui->lineEdit_Apps_Description->setEnabled(true);
+        m_appDetailsWidget->ui->lineEdit_Apps_Description->setEnabled(editable);
         m_appDetailsWidget->ui->lineEdit_Apps_Description->setReadOnly(false);
-        m_appDetailsWidget->ui->lineEdit_Apps_DisplayName->setEnabled(true);
+        m_appDetailsWidget->ui->lineEdit_Apps_DisplayName->setEnabled(editable);
         m_appDetailsWidget->ui->lineEdit_Apps_DisplayName->setReadOnly(false);
-        m_appDetailsWidget->ui->spinBox_Apps_ZoomPercent->setEnabled(true);
-        m_appDetailsWidget->ui->pushButton_Apps_Name_Browse->setEnabled(true);
-        m_appDetailsWidget->ui->pushButton_Apps_AppIcon_Browse->setEnabled(true);
+        m_appDetailsWidget->ui->spinBox_Apps_ZoomPercent->setEnabled(editable);
+        m_appDetailsWidget->ui->pushButton_Apps_Name_Browse->setEnabled(editable);
+        m_appDetailsWidget->ui->pushButton_Apps_AppIcon_Browse->setEnabled(editable);
         m_appDetailsWidget->hideIconPicker();
         refreshDetailActionButtons();
     }
@@ -1424,7 +1520,7 @@ namespace fairwindsk::ui::settings {
         }
     }
 
-    bool Apps::synchronizeAvailableApps(const bool showErrors) {
+    bool Apps::synchronizeAvailableApps(const bool showErrors, const bool requestRefresh) {
         auto *fairWind = FairWindSK::getInstance();
         if (!fairWind) {
             return false;
@@ -1436,7 +1532,8 @@ namespace fairwindsk::ui::settings {
         const QString preservedSelection = m_selectedPageNodeId;
         const QString preservedDetail = m_currentDetailAppName;
 
-        if (!fairWind->loadApps()) {
+        const bool hasRegistry = requestRefresh ? fairWind->loadApps() : !fairWind->getAppsHashes().isEmpty();
+        if (!hasRegistry && fairWind->appsState() != FairWindSK::AppsState::Loading) {
             if (showErrors) {
                 drawer::warning(this, tr("Applications"), tr("Unable to synchronize applications from the server."));
             }
@@ -1937,7 +2034,10 @@ namespace fairwindsk::ui::settings {
         }
 
         AppItem appItem(m_settings->getConfiguration()->getRoot()["apps"].at(idx));
-        return qMakePair(appItem.getDisplayName(true), appItem.getIcon(true));
+        auto *fairWindSK = FairWindSK::getInstance();
+        const QString liveHash = fairWindSK ? fairWindSK->getAppHashById(appName) : QString();
+        AppItem *liveApp = fairWindSK && !liveHash.isEmpty() ? fairWindSK->getAppItemByHash(liveHash) : nullptr;
+        return qMakePair(appItem.getDisplayName(false), liveApp ? liveApp->getIcon(false) : appItem.getIcon(false));
     }
 
     QString Apps::selectedGridEntry() const {
@@ -2104,7 +2204,7 @@ namespace fairwindsk::ui::settings {
                 if (leftItem.getOrder() != rightItem.getOrder()) {
                     return leftItem.getOrder() < rightItem.getOrder();
                 }
-                return QString::compare(leftItem.getDisplayName(true), rightItem.getDisplayName(true), Qt::CaseInsensitive) < 0;
+                return QString::compare(leftItem.getDisplayName(false), rightItem.getDisplayName(false), Qt::CaseInsensitive) < 0;
             });
 
             for (const auto &jsonApp : jsonApps) {

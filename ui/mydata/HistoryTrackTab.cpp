@@ -325,6 +325,8 @@ namespace fairwindsk::ui::mydata {
         m_tableWidget->setSortingEnabled(!kUseSafeTextOnlyToolbarOnThisPlatform);
         m_tableWidget->verticalHeader()->setVisible(false);
         m_tableWidget->verticalHeader()->setDefaultSectionSize(kTouchRowHeight);
+        // Create the model-backed sections before assigning per-column resize modes.
+        m_tableWidget->setColumnCount(m_model->columnCount());
         m_tableWidget->horizontalHeader()->setStretchLastSection(true);
         if (kUseSafeTextOnlyToolbarOnThisPlatform) {
             m_tableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
@@ -401,14 +403,22 @@ namespace fairwindsk::ui::mydata {
     }
 
     void HistoryTrackTab::onRefreshClicked() {
-        if (m_isShuttingDown || !m_model) {
+        if (m_isShuttingDown || !m_model || m_refreshInFlight) {
             return;
         }
 
-        QString message;
-        m_model->reload(currentDuration(), currentResolution(), &message);
-        updateStatus(message);
-        rebuildTable();
+        m_refreshInFlight = true;
+        m_refreshButton->setEnabled(false);
+        m_model->reloadAsync(currentDuration(), currentResolution(),
+                             [this](const bool, const QString &message) {
+            m_refreshInFlight = false;
+            if (m_isShuttingDown) {
+                return;
+            }
+            m_refreshButton->setEnabled(true);
+            updateStatus(message);
+            rebuildTable();
+        });
     }
 
     void HistoryTrackTab::onDurationChanged() {

@@ -504,31 +504,20 @@ namespace fairwindsk::ui::mydata {
         }
 
         m_reloadInProgress = true;
-        const QPointer<ResourceModel> guard(this);
         const auto client = fairwindsk::FairWindSK::getInstance()->getSignalKClient();
         const QString currentCollection = collection();
-        const auto resources = client->getResources(currentCollection);
-        if (!guard) {
-            return;
-        }
-        const QStringList ids = sortedResourceIds(resources);
-
-        if (!force && ids == m_ids && resources == m_resources) {
+        client->getResourcesAsync(currentCollection, this,
+                                  [this, force](const QMap<QString, QJsonObject> &resources, const QString &error) {
+            const QStringList ids = sortedResourceIds(resources);
+            if (error.isEmpty() && (force || ids != m_ids || resources != m_resources)) {
+                applyResources(resources);
+            }
             m_reloadInProgress = false;
             if (m_reloadPending) {
                 m_reloadPending = false;
                 reload(true);
             }
-            return;
-        }
-
-        applyResources(resources);
-        m_reloadInProgress = false;
-
-        if (m_reloadPending) {
-            m_reloadPending = false;
-            reload(true);
-        }
+        });
     }
 
     QString ResourceModel::createResource(const QJsonObject &resource) {

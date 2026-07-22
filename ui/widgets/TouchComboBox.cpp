@@ -4,6 +4,7 @@
 
 #include "TouchComboBox.hpp"
 
+#include <QApplication>
 #include <QEvent>
 #include <QFrame>
 #include <QFontMetrics>
@@ -291,6 +292,9 @@ namespace fairwindsk::ui::widgets {
         applyTouchStyle();
         setEditable(false);
         updateDisplay();
+
+        // Diciamo all'applicazione di avvisare questo componente ad ogni tocco sullo schermo
+        qApp->installEventFilter(this);
     }
 
     TouchComboBox::~TouchComboBox() {
@@ -458,7 +462,8 @@ namespace fairwindsk::ui::widgets {
                 m_editorInLayout = true;
             }
             m_editor->setReadOnly(!editable);
-            m_editor->setFocusPolicy(editable ? Qt::StrongFocus : Qt::NoFocus);
+            // Editable marine controls summon the soft keyboard only after an intentional touch.
+            m_editor->setFocusPolicy(editable ? Qt::ClickFocus : Qt::NoFocus);
             m_editor->setAttribute(Qt::WA_InputMethodEnabled, editable);
             m_editor->setEnabled(isEnabled() && editable);
             m_editor->setVisible(editable);
@@ -600,9 +605,21 @@ namespace fairwindsk::ui::widgets {
             ui->pushButtonPopup->setDown(false);
         }
 
+        // FIX STRUTTURALE: Chiusura forzata se l'utente clicca fuori dal menù a tendina
+        if (m_popup && m_popup->isVisible() && event->type() == QEvent::MouseButtonPress) {
+            auto *mouseEvent = static_cast<QMouseEvent *>(event);
+
+            // Verifichiamo se il tocco è avvenuto FUORI dall'area del popup e FUORI dal bottone di apertura
+            const bool clickedOutsidePopup = !m_popup->rect().contains(m_popup->mapFromGlobal(mouseEvent->globalPosition().toPoint()));
+            const bool clickedOutsideButton = !ui->pushButtonPopup->rect().contains(ui->pushButtonPopup->mapFromGlobal(mouseEvent->globalPosition().toPoint()));
+
+            if (clickedOutsidePopup && clickedOutsideButton) {
+                m_popup->hide();
+            }
+        }
+
         return QWidget::eventFilter(watched, event);
     }
-
     void TouchComboBox::resizeEvent(QResizeEvent *event) {
         QWidget::resizeEvent(event);
         if (m_editor && m_iconLabel) {

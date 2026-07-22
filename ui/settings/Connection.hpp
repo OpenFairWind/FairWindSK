@@ -72,6 +72,7 @@ namespace fairwindsk::ui::settings {
         void commitSignalKServerUrl(bool restartWhenActive);
         void addServerUrlOption(const QString &serverUrl) const;
         bool connectionEnabled() const;
+        bool connectionEstablished() const;
         void setConnectionEnabled(bool enabled);
         void updateConnectionToggle();
         void setStatusTexts(const QString &state,

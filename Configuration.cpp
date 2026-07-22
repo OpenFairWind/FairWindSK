@@ -78,10 +78,19 @@ namespace fairwindsk {
         }
 
         QSaveFile file(filename);
-        if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-            const QByteArray data = QByteArray::fromStdString(m_jsonData.dump(2));
-            file.write(data);
-            file.commit();
+        if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+            qWarning() << "Unable to open configuration for writing" << filename << file.errorString();
+            return;
+        }
+
+        const QByteArray data = QByteArray::fromStdString(m_jsonData.dump(2));
+        if (file.write(data) != data.size()) {
+            qWarning() << "Unable to write complete configuration" << filename << file.errorString();
+            file.cancelWriting();
+            return;
+        }
+        if (!file.commit()) {
+            qWarning() << "Unable to commit configuration" << filename << file.errorString();
         }
     }
 

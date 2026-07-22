@@ -1,39 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="org.openfairwind.fairwindsk"
     android:installLocation="auto"
-    android:versionCode="1"
-    android:versionName="1.0">
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    android:versionCode="-- %%INSERT_VERSION_CODE%% --"
+    android:versionName="-- %%INSERT_VERSION_NAME%% --">
+    <!-- Network access is required for Signal K REST, websocket, and hosted apps. -->
     <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <!-- Position permissions remain user-controlled and support vessel-aware apps. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-feature android:name="android.hardware.location" android:required="false"/>
+    <uses-feature android:name="android.hardware.location.gps" android:required="false"/>
+    <!-- Permit Android 11+ discovery of launcher activities without broad package visibility. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN"/>
+            <category android:name="android.intent.category.LAUNCHER"/>
+        </intent>
+        <!-- Permit checking whether FairWindSK is the operator-selected Home handler. -->
+        <intent>
+            <action android:name="android.intent.action.MAIN"/>
+            <category android:name="android.intent.category.HOME"/>
+        </intent>
+    </queries>
     <supports-screens android:anyDensity="true" android:largeScreens="true" android:normalScreens="true" android:smallScreens="true"/>
     <application android:name="org.qtproject.qt.android.bindings.QtApplication"
-        android:usesCleartextTraffic="true"    
+        android:usesCleartextTraffic="true"
         android:hardwareAccelerated="true"
         android:label="FairWindSK"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:enableOnBackInvokedCallback="false"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:fullBackupOnly="false">
-        <activity android:name="org.qtproject.qt.android.bindings.QtActivity"
+        <activity android:name="org.openfairwind.fairwindsk.FairWindSKActivity"
             android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|layoutDirection|locale|fontScale|keyboard|keyboardHidden|navigation|mcc|mnc|density"
             android:label="FairWindSK"
             android:launchMode="singleTop"
             android:screenOrientation="landscape"
-	    android:windowSoftInputMode="adjustPan"
-            android:theme="@android:style/Theme.DeviceDefault.NoActionBar"
+            android:windowSoftInputMode="adjustNothing"
+            android:theme="@style/FairWindSKTheme"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <!-- Offer FairWindSK as an optional Android Home app without replacing the normal launcher entry. -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.HOME"/>
+                <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
             <meta-data android:name="android.app.lib_name" android:value="FairWindSK"/>
             <meta-data android:name="android.app.arguments" android:value=""/>
         </activity>
         <provider android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.qtprovider"
-	   
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS"

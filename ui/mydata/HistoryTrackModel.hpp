@@ -9,6 +9,7 @@
 #include <QDateTime>
 #include <QGeoCoordinate>
 #include <QJsonDocument>
+#include <functional>
 
 namespace fairwindsk::ui::mydata {
 
@@ -29,6 +30,9 @@ namespace fairwindsk::ui::mydata {
         QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
 
         bool reload(const QString &duration, const QString &resolution, QString *message = nullptr);
+        void reloadAsync(const QString &duration,
+                         const QString &resolution,
+                         std::function<void(bool, const QString &)> completion);
         bool importDocument(const QJsonDocument &document, QString *message = nullptr);
         QJsonDocument exportDocument() const;
         bool hasPoints() const;

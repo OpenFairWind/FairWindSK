@@ -26,7 +26,10 @@ Availability of these bars depends on the configured plugin identifiers (`applic
 ## Settings and configuration UI
 
 - The settings pane reads from `fairwindsk.json` to manage the application list, ordering, and activation. Server-discovered apps are merged with local overrides, and changes are saved back to the configuration.
-- The **Settings > Widgets** page defines reusable Signal K data widgets. The **Settings > Top Bar** and **Settings > Bottom Bar** pages share the same WYSIWYG editor with a live horizontal preview, a full-width widget palette, drag-and-drop placement, explicit left/right ordering buttons, per-item width/height expansion controls, and icon/text/unit/trend display toggles saved in `barLayouts.top` and `barLayouts.bottom`.
+- The **Settings > Widgets** page defines reusable Signal K data widgets. The **Settings > Top Bar** and **Settings > Bottom Bar** pages share the same compact WYSIWYG editor with a live horizontal preview, a full-width widget palette, swipe scrolling with a slim high-contrast position indicator, drag-and-drop placement, explicit left/right ordering buttons, per-item width/height expansion controls, and icon/text/unit/trend display toggles saved in `barLayouts.top` and `barLayouts.bottom`.
+- Optional Top Bar context and compact status widgets are rendered only when their configured layout entries are enabled. A disabled status entry therefore cannot place its connection badge over the fixed FairWindSK button.
+- Deferred launcher icon refreshes use guarded tile references so starting an embedded web application cannot race a launcher rebuild or leave the Qt event loop referencing a deleted tile.
+- Launcher and settings surfaces render local or fallback application icons immediately and never perform synchronous remote icon downloads on the UI thread. **Settings > Applications** remains usable with cached configuration while Signal K discovery runs asynchronously and displays a high-contrast indeterminate progress strip until the registry update completes.
 - Unit selection, window sizing, and virtual keyboard toggles are reflected in the `main` and `units` sections of the configuration.
 - The **System** tab now includes touch-friendly diagnostics controls for:
   - logging level (`No logging`, `Critical`, `Warning`, `Info`, `Debug`, `Full`)
@@ -40,6 +43,8 @@ Availability of these bars depends on the configured plugin identifiers (`applic
 - The **My Data > Waypoints** details page reuses the embedded Signal K web view to show the waypoint on Freeboard-SK whenever the `@signalk/freeboard-sk` app is active on the connected server.
 - The **My Data > Files** page now keeps directory actions, search results, rename/create flows, and copy/move/paste behavior aligned so the same operations work more consistently from both the browser and search views.
 - The **Settings > Apps** layout now groups the right-pane toolbar into page actions and application palette actions, uses bundled marine-style SVG icons for the launcher-management buttons, includes bulk clear actions for removing applications from the current page or from every page, and lets operators tune each web app's zoom level (default `100%`) from the application details view.
+- On Android 13/API 33 and newer, **Settings > Android** appears after System. Every installed-app row separates a tappable launch icon, readable application name, and high-contrast marine checkbox. Checked native apps join the existing Applications palette and can be assigned alongside Signal K apps. Selecting a native Android entry leaves page-placement actions available while visibly disabling web-only edit, browse, zoom, and palette-removal actions.
+- In optional Android Home mode, soft Back, FairWindSK Home, and Recents controls appear only for navigation keys Android reports missing. Recents stays inside the Bottom Bar and contains native applications previously launched through FairWindSK.
 
 ## Startup and status messages
 

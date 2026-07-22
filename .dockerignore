@@ -1,0 +1,18 @@
+# Keep local version-control metadata out of the Linux build context.
+.git
+
+# Keep editor-specific state out of the reproducible container build.
+.idea
+.vscode
+
+# Exclude CMake build trees and generated dependency output.
+build
+build-*
+cmake-build-*
+
+# Exclude common host-generated files that are not source inputs.
+.DS_Store
+*.user
+
+# Runtime diagnostics are mounted separately when they need to be retained.
+container-logs

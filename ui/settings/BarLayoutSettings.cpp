@@ -46,6 +46,8 @@ namespace fairwindsk::ui::settings {
         auto *rootLayout = new QVBoxLayout(this);
         rootLayout->setContentsMargins(8, 8, 8, 8);
         rootLayout->setSpacing(8);
+        // Keep the fixed marine controls grouped at the top instead of distributing spare height between rows.
+        rootLayout->setAlignment(Qt::AlignTop);
 
         m_previewFrame = new QFrame(this);
         m_previewFrame->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);

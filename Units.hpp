@@ -53,6 +53,10 @@ namespace fairwindsk {
         void clearLocalUnitOverride(const QString &category);
         void syncLocalUnitsFromServer();
         void refreshSignalKPreferences();
+        void applySignalKPreferences(const QJsonObject &activePreset,
+                                     const QJsonObject &categoriesObject,
+                                     const QJsonObject &definitionsObject,
+                                     const QJsonObject &defaultCategoriesObject);
         nlohmann::json &getUnits();
 
     private:

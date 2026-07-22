@@ -17,6 +17,7 @@
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPainterPath>
+#include <QPointer>
 #include <QScrollBar>
 #include <QStringList>
 #include <QTimer>
@@ -75,8 +76,8 @@ namespace fairwindsk::ui::launcher {
                 if (left.first->getOrder() != right.first->getOrder()) {
                     return left.first->getOrder() < right.first->getOrder();
                 }
-                const int displayNameCompare = QString::compare(left.first->getDisplayName(true),
-                                                                right.first->getDisplayName(true),
+                const int displayNameCompare = QString::compare(left.first->getDisplayName(false),
+                                                                right.first->getDisplayName(false),
                                                                 Qt::CaseInsensitive);
                 if (displayNameCompare != 0) {
                     return displayNameCompare < 0;
@@ -312,12 +313,13 @@ namespace fairwindsk::ui::launcher {
 
             if (liveApp) {
                 AppItem presentationApp = mergedLauncherAppItem(liveApp, configuredAppJson);
-                return qMakePair(presentationApp.getDisplayName(true), presentationApp.getIcon(true));
+                // Preserve the live object's asynchronously downloaded pixmap cache.
+                return qMakePair(presentationApp.getDisplayName(false), liveApp->getIcon(false));
             }
 
             if (configuredAppJson) {
                 AppItem configApp(*configuredAppJson);
-                return qMakePair(configApp.getDisplayName(true), configApp.getIcon(true));
+                return qMakePair(configApp.getDisplayName(false), configApp.getIcon(false));
             }
 
             if (!appId.trimmed().isEmpty()) {
@@ -419,18 +421,19 @@ namespace fairwindsk::ui::launcher {
                                     entry.app = app;
                                     entry.id = appLookupKey;
                                     entry.appId = slot;
-                                    entry.title = presentationApp.getDisplayName(true);
+                                    entry.title = presentationApp.getDisplayName(false);
                                     entry.description = presentationApp.getDescription();
-                                    entry.pixmap = presentationApp.getIcon(true);
+                                    // Presentation metadata is merged, while artwork belongs to the live catalog object.
+                                    entry.pixmap = app->getIcon(false);
                                 } else {
                                     if (idx != -1) {
                                         AppItem configApp(configuration->getRoot()["apps"].at(idx));
                                         entry.kind = TileKind::App;
                                         entry.id = appLookupKey.isEmpty() ? configApp.getName() : appLookupKey;
                                         entry.appId = configApp.getName();
-                                        entry.title = configApp.getDisplayName(true);
+                                        entry.title = configApp.getDisplayName(false);
                                         entry.description = configApp.getDescription();
-                                        entry.pixmap = configApp.getIcon(true);
+                                        entry.pixmap = configApp.getIcon(false);
                                     }
                                 }
                                 entries.append(entry);
@@ -449,9 +452,9 @@ namespace fairwindsk::ui::launcher {
                         entry.app = item.first;
                         entry.id = item.second;
                         entry.appId = item.first->getName();
-                        entry.title = item.first->getDisplayName(true);
+                        entry.title = item.first->getDisplayName(false);
                         entry.description = item.first->getDescription();
-                        entry.pixmap = item.first->getIcon(true);
+                        entry.pixmap = item.first->getIcon(false);
                     }
                     entries.append(entry);
                 }
@@ -640,6 +643,9 @@ namespace fairwindsk::ui::launcher {
                 updateScrollButtons();
             });
             connect(ui->scrollArea->horizontalScrollBar(), &QScrollBar::rangeChanged, this, [this]() { updateScrollButtons(); });
+            // Repaint tile artwork as soon as each asynchronous Signal K icon download completes.
+            connect(fairwindsk::FairWindSK::getInstance(), &fairwindsk::FairWindSK::appIconReady,
+                    this, [this](const QString &) { refreshDeferredIcons(); });
             refreshFromConfiguration();
         }
 
@@ -761,24 +767,34 @@ namespace fairwindsk::ui::launcher {
         m_iconRefreshScheduled = false;
 
         const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
-        for (auto *tileWidget : m_tiles) {
-            auto *tile = dynamic_cast<AppTile *>(tileWidget);
+        // Snapshot guarded pointers because icon resolution can re-enter Qt and rebuild the launcher tiles.
+        QList<QPointer<QWidget>> guardedTiles;
+        guardedTiles.reserve(m_tiles.size());
+        for (auto *tileWidget : std::as_const(m_tiles)) {
+            guardedTiles.append(QPointer<QWidget>(tileWidget));
+        }
+
+        for (const auto &tileWidget : std::as_const(guardedTiles)) {
+            auto *tile = dynamic_cast<AppTile *>(tileWidget.data());
             if (!tile) {
                 continue;
             }
 
+            // Capture every tile value before resolving an icon, which may process Android UI callbacks.
             const QString hash = tile->appHash();
             const QString appId = tile->appId();
+            const QString description = tile->description();
             if (hash.isEmpty() && appId.isEmpty()) {
                 continue;
             }
 
+            QPointer<AppTile> guardedTile(tile);
             const auto presentation = resolveLauncherAppPresentation(appId, hash);
-            if (presentation.second.isNull()) {
+            if (!guardedTile || presentation.second.isNull()) {
                 continue;
             }
 
-            tile->setAppData(hash, appId, TileKind::App, presentation.first, tile->description(), presentation.second);
+            guardedTile->setAppData(hash, appId, TileKind::App, presentation.first, description, presentation.second);
         }
     }
 

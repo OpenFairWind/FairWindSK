@@ -745,7 +745,7 @@ namespace fairwindsk::ui::settings {
 
     void System::refreshRpiDiagnostics() {
         ensureRpiDiagnosticsWidgets();
-        if (!m_rpiGroupBox) {
+        if (!m_rpiGroupBox || m_rpiRequestInFlight) {
             return;
         }
 
@@ -756,11 +756,20 @@ namespace fairwindsk::ui::settings {
         m_lastRpiRefresh = now;
 
         auto *client = FairWindSK::getInstance()->getSignalKClient();
-        QJsonObject rpiRoot;
         if (client && !client->url().isEmpty() && client->isRestHealthy()) {
             const QUrl rootUrl(client->url().toString() + QString::fromLatin1(kRpiApiRoot));
-            rpiRoot = client->signalkGet(rootUrl);
+            m_rpiRequestInFlight = true;
+            client->getJsonAsync(rootUrl, this, [this](const QJsonDocument &document, const QString &) {
+                m_rpiRequestInFlight = false;
+                applyRpiDiagnostics(document.object());
+            });
+            return;
         }
+
+        applyRpiDiagnostics({});
+    }
+
+    void System::applyRpiDiagnostics(const QJsonObject &rpiRoot) {
 
         bool hasAnyMetric = false;
 

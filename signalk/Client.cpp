@@ -216,8 +216,8 @@ namespace fairwindsk::signalk {
             m_lastStreamHealthyEmitted == m_streamHealthy &&
             m_lastServerHealthyEmitted == serverHealthy &&
             m_lastConnectionHealthStateEmitted == state &&
-            m_lastStreamActivityEmitted == m_lastStreamActivity &&
             m_lastConnectivitySummaryEmitted == summary) {
+            // Activity timestamps change for every delta, but they do not represent a health-state change.
             return;
         }
 
@@ -226,7 +226,6 @@ namespace fairwindsk::signalk {
         m_lastStreamHealthyEmitted = m_streamHealthy;
         m_lastServerHealthyEmitted = serverHealthy;
         m_lastConnectionHealthStateEmitted = state;
-        m_lastStreamActivityEmitted = m_lastStreamActivity;
         m_lastConnectivitySummaryEmitted = summary;
 
         emit serverHealthChanged(serverHealthy, summary);
@@ -320,7 +319,7 @@ namespace fairwindsk::signalk {
 
         // Connect the on disconnected event
         connect(&m_WebSocket, &QWebSocket::disconnected, this, &Client::onDisconnected, Qt::UniqueConnection);
-        connect(&m_WebSocket, qOverload<QAbstractSocket::SocketError>(&QWebSocket::error), this, [this](QAbstractSocket::SocketError error) {
+        connect(&m_WebSocket, &QWebSocket::errorOccurred, this, [this](QAbstractSocket::SocketError error) {
             qWarning() << "SignalK::Client websocket error" << error << m_WebSocket.errorString();
         });
 
@@ -861,7 +860,9 @@ namespace fairwindsk::signalk {
  */
     QByteArray Client::httpGet(const QUrl& url) {
         beginRequest(QStringLiteral("GET"), url);
-        auto *reply = m_NetworkAccessManager.get(createJsonRequest(url));
+        QNetworkRequest request = createJsonRequest(url);
+        request.setTransferTimeout(kRequestTimeoutMs);
+        auto *reply = m_NetworkAccessManager.get(request);
         bool success = false;
         QString message;
         int httpStatus = 0;
@@ -1522,6 +1523,30 @@ namespace fairwindsk::signalk {
         return QJsonDocument::fromJson(data);
     }
 
+    void Client::getJsonAsync(const QUrl &url,
+                              QObject *context,
+                              std::function<void(const QJsonDocument &, const QString &)> completion) {
+        if (!url.isValid() || !context || !completion) {
+            return;
+        }
+
+        beginRequest(QStringLiteral("GET"), url);
+        auto *reply = m_NetworkAccessManager.get(createJsonRequest(url));
+        QPointer<QObject> guardedContext(context);
+        connect(reply, &QNetworkReply::finished, this,
+                [this, reply, guardedContext, completion = std::move(completion), url]() mutable {
+            const QScopedPointer<QNetworkReply, QScopedPointerDeleteLater> guard(reply);
+            const int statusCode = guard->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+            const bool success = guard->error() == QNetworkReply::NoError && statusCode >= 200 && statusCode < 300;
+            const QString message = success ? QString() : guard->errorString();
+            const QJsonDocument document = success ? QJsonDocument::fromJson(guard->readAll()) : QJsonDocument();
+            endRequest(success, url, statusCode, message);
+            if (guardedContext) {
+                completion(document, message);
+            }
+        });
+    }
+
     QUrl Client::withQuery(const QUrl &url, const QVariantMap &query) const {
         if (query.isEmpty()) {
             return url;
@@ -1591,6 +1616,25 @@ namespace fairwindsk::signalk {
         return result;
     }
 
+    void Client::getResourcesAsync(const QString &collection,
+                                   QObject *context,
+                                   std::function<void(const QMap<QString, QJsonObject> &, const QString &)> completion,
+                                   const QVariantMap &query) {
+        getJsonAsync(resourceUrl(collection, QString(), query), context,
+                     [completion = std::move(completion)](const QJsonDocument &document, const QString &error) mutable {
+            QMap<QString, QJsonObject> resources;
+            const QJsonObject object = document.object();
+            for (auto it = object.begin(); it != object.end(); ++it) {
+                if (it.value().isObject()) {
+                    resources.insert(it.key(), it.value().toObject());
+                }
+            }
+            if (completion) {
+                completion(resources, error);
+            }
+        });
+    }
+
     QJsonObject Client::getResource(const QString &collection, const QString &id, const QVariantMap &query) {
         return getJsonDocument(resourceUrl(collection, id, query)).object();
     }
@@ -1642,6 +1686,17 @@ namespace fairwindsk::signalk {
         }
 
         return getJsonDocument(historyUrl("values", effectiveQuery)).object();
+    }
+
+    void Client::getHistoryValuesAsync(const QStringList &paths,
+                                       const QVariantMap &query,
+                                       QObject *context,
+                                       std::function<void(const QJsonDocument &, const QString &)> completion) {
+        QVariantMap effectiveQuery = query;
+        if (!paths.isEmpty()) {
+            effectiveQuery["paths"] = paths.join(",");
+        }
+        getJsonAsync(historyUrl("values", effectiveQuery), context, std::move(completion));
     }
 
     QJsonObject Client::getUnitPreferencesActive() {
