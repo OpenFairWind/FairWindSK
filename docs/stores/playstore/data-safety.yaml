@@ -1,0 +1,28 @@
+status: "REVIEW AGAINST THE SIGNED RELEASE BUILD BEFORE SUBMISSION"
+developer_collection:
+  developer_operated_backend: false
+  advertising_sdk: false
+  analytics_sdk: false
+  sale_of_data: false
+device_processing:
+  approximate_location: true
+  precise_location: true
+  app_activity: true
+  files_and_documents: true
+  identifiers_or_credentials: true
+purpose:
+  app_functionality: true
+  account_management: false
+  analytics: false
+  advertising_or_marketing: false
+  fraud_prevention_security_compliance: false
+sharing:
+  operator_selected_signalk_server: true
+  operator_selected_web_apps: true
+  developer: false
+transport_security: "Depends on the operator-selected endpoint; document the release default."
+deletion_request_mechanism: "Local data can be cleared through Android settings; remote data is controlled by the selected server."
+notes:
+  - "Google's Data safety definitions may treat transmission to an operator-selected server or embedded third-party app as collection or sharing."
+  - "Re-audit Qt, WebView, and every bundled SDK in the final Android App Bundle."
+

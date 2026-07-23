@@ -1,0 +1,19 @@
+app_name: FairWindSK
+package_name: org.openfairwind.fairwindsk
+default_language: en-US
+app_or_game: APP
+category: MAPS_AND_NAVIGATION
+tags:
+  - sailing
+  - navigation
+  - weather
+contact:
+  email: TODO(PUBLISHER)
+  phone: TODO(PUBLISHER)
+  website: https://github.com/OpenFairWind/FairWindSK
+privacy_policy_url: https://github.com/OpenFairWind/FairWindSK/blob/main/docs/stores/privacy-policy.md
+contains_ads: false
+pricing: FREE
+countries_and_regions: TODO(PUBLISHER)
+external_marketing: TODO(PUBLISHER)
+

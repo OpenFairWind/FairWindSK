@@ -16,6 +16,7 @@ are documented in [manual/README.md](manual/README.md).
 - [Developing guide](./developing_guide.md)
 - [Automated testing](./testing.md)
 - [Versioning and releases](./releasing.md)
+- [App Store and Google Play publishing package](./stores/README.md)
 - [FairWindSK user guide](./fairwindsk_user_guide.md)
 - [Architecture overview](./architecture.md)
 - [UI shell definition](./ui_shell.md)

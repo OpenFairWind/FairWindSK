@@ -1,0 +1,22 @@
+contact:
+  first_name: TODO(PUBLISHER)
+  last_name: TODO(PUBLISHER)
+  email: TODO(PUBLISHER)
+  phone: TODO(PUBLISHER)
+sign_in_required: true
+demo_account:
+  username: TODO(PUBLISHER)
+  password: TODO(PUBLISHER)
+review_notes: |
+  FairWindSK connects to an operator-selected Signal K server. Provide a stable
+  review server and credentials above, or include a deterministic offline demo
+  configuration in the submitted build.
+
+  Verify the launcher, instruments, Settings, MyData, and Person Over Board
+  workflow. Autopilot controls appear only when a compatible Signal K autopilot
+  plugin and APIs are available.
+
+  FairWindSK is not a certified navigation, collision-avoidance, or lifesaving
+  device. Location access supports vessel position workflows.
+attachment: TODO(PUBLISHER)
+

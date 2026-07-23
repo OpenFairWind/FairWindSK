@@ -1,0 +1,9 @@
+all_functionality_available_without_special_access: false
+instructions: |
+  Provide a stable Signal K review server, credentials, and an importable
+  FairWindSK configuration. Include steps for the launcher, instruments,
+  Settings, MyData, and Person Over Board workflow.
+username: TODO(PUBLISHER)
+password: TODO(PUBLISHER)
+additional_access_information: TODO(PUBLISHER)
+
