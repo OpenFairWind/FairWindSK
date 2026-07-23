@@ -31,6 +31,7 @@ These instructions apply to the entire repository.
 
 ## Documentation & resources
 - Update user-facing strings or documentation when behavior changes; keep resource paths (e.g., `resources.qrc`) consistent if assets move.
+- Keep both LaTeX owner manuals under `docs/manual/english` and `docs/manual/italian` synchronized with every relevant code and documentation change, including their automatically captured application screenshots.
 - Update existing Markdown documentation under `docs/` and add new Markdown files when a change introduces a substantial workflow, feature, or maintenance improvement that should be captured for future contributors or users.
 
 ## Multilingual support

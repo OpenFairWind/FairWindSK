@@ -1,0 +1,788 @@
+% ============================================================
+%  PART IV  --  My Data
+% ============================================================
+\part{My Data}
+
+% ── Chapter 12: My Data Overview ──────────────────────────────
+\chapter{My Data --- Overview}
+\label{ch:mydata}
+
+My Data is FairWindSK's built-in resource manager.
+It provides a dedicated, touch-optimised interface for all navigational data stored on the Signal~K
+server: waypoints, routes, regions, notes, charts, track history, and files.
+
+Open My Data by tapping the \key{My Data} icon (≡) in the Bottom Bar, or by tapping its tile on the
+launcher.
+
+\screenshot{mydata-main-tabs}{My Data --- tab bar showing all seven tabs}{}
+
+\begin{notebox}
+All resources in My Data are stored on the Signal~K server, not on the FairWindSK device.
+They are accessible from any device connected to the same Signal~K server simultaneously.
+\end{notebox}
+
+\section{My Data Tab Overview}
+
+My Data is organised into seven tabs.
+Each tab loads lazily --- it is created only the first time it is tapped, keeping startup fast.
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{C{0.7cm} L{2.8cm} L{10.2cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} Tab} &
+{\sffamily\bfseries\color{white} Name} &
+{\sffamily\bfseries\color{white} Contents} \\
+\midrule
+0 & Waypoints & Named positions: anchorages, hazards, marinas, fishing marks, race marks. \\
+1 & Routes & Ordered sequences of waypoints forming planned passages. \\
+2 & Regions & Geographic boundary areas --- SAR search regions, exclusion zones, anchorage limits. \\
+3 & Notes & Free-text annotations attached to positions. \\
+4 & Charts & Chart tile source catalogue for installed chart providers. \\
+5 & Tracks & Historical GPS track --- the vessel's recorded position history. \\
+6 & Files & Direct filesystem browser for files accessible through Signal~K. \\
+\bottomrule
+\end{longtable}
+
+\section{The Common Toolbar}
+
+Tabs 0--4 (Waypoints, Routes, Regions, Notes, Charts) share a common interface layout:
+
+\begin{itemize}
+  \item A \textbf{title label} showing the resource type.
+  \item A \textbf{search field} for real-time filtering of the list. Searching is case-insensitive and checks all visible columns simultaneously.
+  \item A \textbf{scrollable table} showing all resources from the Signal~K server. Rows are 64\,px tall for comfortable touch selection. Alternating row colours aid readability. Column headers are clickable for sorting.
+  \item A \textbf{toolbar} of icon buttons:
+\end{itemize}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3cm} L{10.7cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} Button} &
+{\sffamily\bfseries\color{white} Action} \\
+\midrule
+Open ($\rightarrow$) & Opens the selected resource --- shows its details, opens an embedded map preview (Waypoints), or views the attachment (Notes). Accent-coloured; primary action. \\
+Edit (✏) & Opens the resource editor drawer for the selected resource. \\
+New (+) & Opens the resource editor drawer to create a new resource. \\
+Delete (🗑) & Deletes the selected resource after confirmation. Cannot be undone. \\
+Import & Imports resources from a GeoJSON or JSON file. File picker opens in the Bottom Bar drawer. \\
+Export & Exports the selected resource (or all resources if none selected) to a GeoJSON file. \\
+Refresh & Forces a reload of all resources from the Signal~K server. \\
+\bottomrule
+\end{longtable}
+
+\begin{notebox}
+On Raspberry Pi OS (ARM Linux), the toolbar uses text-only buttons to avoid icon rendering
+issues on that platform.
+The button layout and functionality are identical; only the visual presentation differs.
+\end{notebox}
+
+% ── Chapter 13: Waypoints ─────────────────────────────────────
+\chapter{Waypoints}
+\label{ch:waypoints}
+
+Waypoints are named positions stored on the Signal~K server.
+They are used for anchorages, hazards, marinas, fuel stops, fishing marks, race marks, and any
+other position you want to record and navigate to.
+
+\screenshot{mydata-waypoints-list}{My Data --- Waypoints tab, list view with name, description, type, lat/lon, timestamp}{}
+
+\section{Waypoints Table Columns}
+
+The waypoints table shows six columns:
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{2.4cm} L{11.3cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} Column} &
+{\sffamily\bfseries\color{white} Description} \\
+\midrule
+Name & Display name of the waypoint, taken from the \code{name} field or from \code{feature.properties.name} in the GeoJSON resource. \\
+Description & Free-text description of the waypoint. \\
+Type & The waypoint type tag, e.g.\ \code{alarm-mob} (POB waypoints created by FairWindSK), \code{anchor}, \code{marina}, or any custom type. POB waypoints are visually distinguishable by their type. \\
+Latitude & Latitude in your configured coordinate format (right-aligned). \\
+Longitude & Longitude in your configured coordinate format (right-aligned). \\
+Timestamp & ISO 8601 creation or last-update timestamp. \\
+\bottomrule
+\end{longtable}
+
+\section{Searching Waypoints}
+
+The search field above the table filters waypoints by any visible column.
+Type part of a name, description, type, or coordinate value.
+The table updates in real time as you type.
+
+\section{Creating a Waypoint}
+
+Tap \key{New} to open the Waypoint Editor drawer.
+
+
+\subsection{Editor Fields}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3cm} L{10.7cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} Field} &
+{\sffamily\bfseries\color{white} Description} \\
+\midrule
+Name & The display name shown in the table, Top Bar waypoint widget, and chart plotter. \\
+Description & Free-text notes about this position. \\
+Type & Optional type tag. Leave blank for a generic waypoint. Use \code{anchor} for anchoring positions, \code{hazard} for obstructions, etc. \\
+Latitude & Degrees with decimal minutes or decimal degrees, depending on the active coordinate format. Range: $-90$ to $+90$. \\
+Longitude & Range: $-180$ to $+180$. \\
+Altitude & Altitude in metres (optional). Leave as 0 if not relevant. \\
+\bottomrule
+\end{longtable}
+
+After filling in the fields, tap \key{OK} in the editor.
+The waypoint is created immediately on the Signal~K server and appears in the table.
+
+\section{Editing a Waypoint}
+
+Select a waypoint in the table, then tap \key{Edit}.
+The same editor drawer opens with the existing values pre-filled.
+Modify any field and tap \key{OK}.
+The change is written immediately to Signal~K.
+
+\section{Deleting a Waypoint}
+
+Select a waypoint and tap \key{Delete}.
+A confirmation drawer appears.
+Tap \key{Delete} to confirm.
+The waypoint is removed from the Signal~K server permanently.
+
+\begin{warningbox}
+Deletion cannot be undone.
+POB waypoints (type \code{alarm-mob}) should generally be retained for accident reporting and debrief,
+not deleted.
+\end{warningbox}
+
+\section{Opening a Waypoint --- the Detail View}
+
+Select a waypoint and tap \key{Open} (or double-tap the row).
+The Waypoint Detail view opens.
+
+
+The detail view shows:
+
+\begin{itemize}
+  \item Full name, description, type, and formatted coordinates.
+  \item An embedded Freeboard-SK map preview centred on the waypoint's position, if Freeboard-SK is installed on the connected Signal~K server. The map uses a JavaScript function to compute the view bounding box from the waypoint coordinates and zoom level.
+  \item A \key{Navigate} button to set the waypoint as the active navigation destination.
+\end{itemize}
+
+\begin{notebox}
+The embedded Freeboard-SK preview is disabled on Raspberry Pi OS (ARM Linux) builds to avoid
+performance issues with simultaneous WebEngine instances on that platform.
+Coordinates and descriptions are always shown in text form regardless.
+\end{notebox}
+
+\section{Navigating to a Waypoint}
+
+From the detail view, tap \key{Navigate}.
+FairWindSK calls \path{navigateToWaypoint} on the Signal~K client, which writes the waypoint's
+resource path (e.g.\ \path{/resources/waypoints/\{uuid\}}) as the active navigation destination on
+Signal~K.
+Immediately:
+
+\begin{itemize}
+  \item The Top Bar BTW, DTW, TTG, and ETA widgets begin showing values relative to this waypoint.
+  \item Freeboard-SK and any other navigation application subscribed to \skpath{navigation.course} show the destination.
+  \item The POB bearing and distance displays (when the POB bar is active) use this same destination.
+\end{itemize}
+
+\section{Importing Waypoints}
+
+Tap \key{Import}. A file picker opens in the Bottom Bar drawer.
+Select a GeoJSON file containing \code{Feature} objects with \code{Point} geometry.
+
+FairWindSK:
+\begin{enumerate}
+  \item Reads the GeoJSON file.
+  \item Extracts each \code{Point} feature as a waypoint.
+  \item Creates or updates each waypoint on the Signal~K server (update if a matching UUID is found; create if not).
+  \item Reports the count of imported waypoints in an informational drawer.
+  \item Selects the first imported waypoint in the table.
+\end{enumerate}
+
+The import file filter accepts \code{.geojson} and \code{.json} files.
+
+\section{Exporting Waypoints}
+
+Tap \key{Export}. If a waypoint is selected, only that waypoint is exported.
+If nothing is selected, all waypoints are exported.
+A file-save picker opens. Choose a filename and location.
+The output is a valid GeoJSON \code{FeatureCollection} with \code{Point} geometry features.
+
+% ── Chapter 14: Routes ────────────────────────────────────────
+\chapter{Routes}
+\label{ch:routes}
+
+Routes are ordered sequences of waypoints forming planned passages.
+They are typically created in a chart plotter (Freeboard-SK) and stored on the Signal~K server.
+
+\screenshot{mydata-routes-list}{My Data --- Routes tab, list view with name, geometry type, point count, timestamp}{}
+
+\section{Routes Table Columns}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{2.4cm} L{11.3cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} Column} &
+{\sffamily\bfseries\color{white} Description} \\
+\midrule
+Name & Display name of the route. \\
+Description & Free-text description or summary. \\
+Geometry & The GeoJSON geometry type --- typically \code{LineString} for simple routes, \code{MultiLineString} for multi-leg routes with gaps, or \code{sar-spiral} / \code{sar-parallel} for SAR patterns created by the POB feature. \\
+Points & The number of coordinate points in the route geometry. Displayed centred. \\
+Timestamp & ISO 8601 creation or last-update timestamp. \\
+\bottomrule
+\end{longtable}
+
+\section{Opening a Route --- the Detail View}
+
+Select a route and tap \key{Open}.
+
+
+The detail view shows:
+\begin{itemize}
+  \item Name, description, geometry type, and point count.
+  \item A GeoJSON geometry preview if available.
+  \item An \key{Activate} button to set the route's first waypoint as the active navigation destination.
+\end{itemize}
+
+\section{Creating and Editing Routes}
+
+\subsection{Creating a Route}
+
+Tap \key{New}. The Route Editor drawer opens.
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3cm} L{10.7cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} Field} &
+{\sffamily\bfseries\color{white} Description} \\
+\midrule
+Name & Display name of the route. \\
+Description & Free-text notes. \\
+Coordinates (JSON) & The GeoJSON coordinate array for the route geometry. Enter as a JSON array of \code{[longitude, latitude]} pairs. \\
+Geometry (JSON) & Advanced: edit the full GeoJSON geometry object if needed. \\
+Properties (JSON) & Advanced: additional GeoJSON feature properties. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Activating a Route}
+
+From the route detail view, tap \key{Activate}.
+FairWindSK sets the first waypoint of the route as the active Signal~K navigation destination.
+The Autopilot Route mode (Chapter~\ref{ch:autopilot}) will then follow the active route automatically.
+
+\section{Importing and Exporting Routes}
+
+Import and export use the same GeoJSON \code{FeatureCollection} format as Waypoints.
+The geometry type in the GeoJSON determines how the route is stored on Signal~K.
+
+\begin{tipbox}
+SAR search routes created by the POB feature (Chapter~\ref{ch:pob}) appear in the Routes tab
+automatically after creation.
+They have geometry types \code{sar-spiral} and \code{sar-parallel} and can be exported as GeoJSON
+for voyage records.
+\end{tipbox}
+
+% ── Chapter 15: Regions ───────────────────────────────────────
+\chapter{Regions}
+\label{ch:regions}
+
+Regions are geographic boundary areas defined as GeoJSON polygons.
+They are used for SAR search areas (automatically created by the POB feature), marine protected area
+boundaries, exclusion zones, anchorage limits, and fishing grounds.
+
+\screenshot{mydata-regions-list}{My Data --- Regions tab, list view with name, geometry type, timestamp}{}
+
+\section{Regions Table Columns}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{2.4cm} L{11.3cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} Column} &
+{\sffamily\bfseries\color{white} Description} \\
+\midrule
+Name & Display name of the region. \\
+Description & Free-text description. \\
+Geometry & The GeoJSON geometry type --- typically \code{Polygon} or \code{MultiPolygon}. SAR regions use \code{Polygon}. \\
+Timestamp & ISO 8601 creation or last-update timestamp. \\
+\bottomrule
+\end{longtable}
+
+\section{Creating a Region}
+
+Tap \key{New}. The Region Editor drawer opens.
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3cm} L{10.7cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} Field} &
+{\sffamily\bfseries\color{white} Description} \\
+\midrule
+Name & Display name. \\
+Description & Free-text notes. \\
+Coordinates (JSON) & The GeoJSON coordinate array for the polygon. Polygons require an outer ring (first and last coordinate identical to close the ring). \\
+Geometry (JSON) & Advanced: full GeoJSON geometry object. \\
+Properties (JSON) & Advanced: additional GeoJSON feature properties. \\
+\bottomrule
+\end{longtable}
+
+\begin{notebox}
+SAR search areas created by the POB feature appear in the Regions tab automatically.
+Their \code{properties} include the \code{pobUuid} linking them to the originating POB incident.
+\end{notebox}
+
+% ── Chapter 16: Notes ─────────────────────────────────────────
+\chapter{Notes}
+\label{ch:notes}
+
+Notes are free-text annotations attached to geographic positions.
+They function as sticky notes on the chart --- useful for recording pilotage tips, local hazards not
+on the chart, marina details, or crew observations.
+
+\screenshot{mydata-notes-list}{My Data --- Notes tab, list view with title, description, href, MIME type, timestamp}{}
+
+\section{Notes Table Columns}
+
+Notes have a distinct column set reflecting their attachment-oriented nature:
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{2.4cm} L{11.3cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} Column} &
+{\sffamily\bfseries\color{white} Description} \\
+\midrule
+Title & The display name of the note (the first column is labelled \textit{Title} for notes, not \textit{Name}, to reflect the note-taking context). \\
+Description & Summary text. For imported text files, this is set to the first 120 characters of the file content. \\
+Href & An optional file path or URL linking the note to an attachment --- a PDF pilot book page, an image, a text file. When present, tapping \key{Open} opens the attachment directly in the built-in viewer. \\
+MIME Type & The MIME type of the attachment, e.g.\ \code{application/pdf}, \code{image/jpeg}, \code{text/plain}. Used to route the file to the correct viewer. \\
+Timestamp & ISO 8601 creation or last-update timestamp. \\
+\bottomrule
+\end{longtable}
+
+\section{Creating a Note}
+
+Tap \key{New}. The Note Editor drawer opens.
+
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3cm} L{10.7cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} Field} &
+{\sffamily\bfseries\color{white} Description} \\
+\midrule
+Title & The note title (displayed in the \textit{Title} column). \\
+Description & Main text content of the note. \\
+Href & Optional path or URL to an attachment file. Enter an absolute path (e.g.\ \path{/home/pi/charts/harbour.pdf}) or a URL. \\
+MIME Type & Optional MIME type for the attachment. FairWindSK uses this to select the correct viewer. If left blank, FairWindSK detects the type from the file extension. \\
+Has position & Check this box to attach a geographic position to the note. \\
+Latitude & Latitude when \textit{Has position} is checked. \\
+Longitude & Longitude when \textit{Has position} is checked. \\
+\bottomrule
+\end{longtable}
+
+\section{Opening a Note}
+
+\subsection{Notes Without an Attachment}
+
+Tapping \key{Open} opens the note editor in read-only mode, showing the title, description, and position.
+
+\subsection{Notes With an Attachment (href set)}
+
+Tapping \key{Open} immediately opens the attachment:
+
+\begin{itemize}
+  \item \textbf{Local file that exists:} opens in the built-in FileViewer (PDF, image, or text viewer depending on the MIME type).
+  \item \textbf{HTTP/HTTPS URL:} opens in an embedded web view inside the Bottom Bar horizontal drawer.
+  \item \textbf{Local directory path:} shows a message directing you to use My Data~> Files to browse the folder (single-window model prevents opening a separate file manager).
+\end{itemize}
+
+\section{Importing Notes}
+
+The Notes tab accepts a broader set of import file types than other tabs.
+In addition to GeoJSON/JSON:
+
+\begin{itemize}
+  \item \textbf{Text files} (\code{.txt}, \code{.md}, \code{.html}): FairWindSK creates a note with the filename as the title and the first 120 characters of the file content as the description, setting the \code{href} to the absolute file path and detecting the MIME type automatically.
+  \item \textbf{Images} (\code{.jpg}, \code{.jpeg}, \code{.png}): Creates a note with the filename as title and sets the \code{href} and \code{mimeType} accordingly.
+  \item \textbf{PDF files}: Creates a note pointing to the PDF file via \code{href}.
+\end{itemize}
+
+The import filter text reads: \textit{Notes and attachments (*.geojson *.json *.txt *.md *.markdown *.html *.htm *.pdf *.jpg *.jpeg *.png)}.
+
+% ── Chapter 17: Charts ────────────────────────────────────────
+\chapter{Charts}
+\label{ch:charts}
+
+The Charts tab lists available chart tile sources registered on the Signal~K server.
+It manages the chart source catalogue --- not the actual chart display, which happens inside
+Freeboard-SK or another chart plotter running in the Application Area.
+
+\screenshot{mydata-charts-list}{My Data --- Charts tab, list view with name, format, identifier, URL, timestamp}{}
+
+\section{Charts Table Columns}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{2.4cm} L{11.3cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} Column} &
+{\sffamily\bfseries\color{white} Description} \\
+\midrule
+Name & Display name of the chart source. \\
+Description & Free-text description. \\
+Format & The chart tile format. Supported formats include: \code{mbtiles} (MBTiles SQLite database), \code{kap} (BSB/KAP raster charts), \code{gemf} (GEMF tile archive), \code{tilemapresource} (TileMapResource XML), \code{package} (ZIP chart package). \\
+Identifier & The chart identifier used by Signal~K and chart plotters to reference this source. \\
+Chart URL & The local filesystem path or URL where the chart tiles are served. \\
+Timestamp & ISO 8601 registration timestamp. \\
+\bottomrule
+\end{longtable}
+
+\section{Adding a Chart Source}
+
+Tap \key{New}. The Chart Editor drawer opens.
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3cm} L{10.7cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} Field} &
+{\sffamily\bfseries\color{white} Description} \\
+\midrule
+Name & Display name for this chart source. \\
+Description & Free-text description. \\
+Identifier & Unique identifier string used by chart plotters to reference this source. \\
+Chart format & The format of the chart tiles. FairWindSK detects the format from the file extension when importing. \\
+Chart URL & Path or URL to the chart tiles. For MBTiles, this is the absolute path to the \code{.mbtiles} file. \\
+Tilemap URL & For \code{tilemapresource} format only: the path to the \code{tilemapresource.xml} file. The Chart URL is then set to the directory containing it. \\
+Chart region & Optional: a GeoJSON bounding box or geometry describing the geographic coverage of this chart. \\
+Chart scale & Optional: the chart scale denominator (e.g.\ \code{50000} for 1:50,000). \\
+Chart layers & Optional: comma-separated list of layer names for tile sources that support multiple layers. \\
+Chart bounds & Optional: GeoJSON coordinates describing the chart bounds. \\
+\bottomrule
+\end{longtable}
+
+\section{Importing a Chart Source}
+
+Tap \key{Import}. Select a chart file.
+FairWindSK detects the chart format from the file extension and constructs a chart resource object
+automatically.
+For \code{tilemapresource.xml} files, FairWindSK sets both the tile URL (the directory) and the
+tilemap URL (the XML file path).
+
+The import creates or updates the chart record on the Signal~K server.
+
+\section{Exporting the Chart Catalogue}
+
+Tap \key{Export}. The chart catalogue is exported as a JSON manifest document with structure:
+
+\begin{lstlisting}
+{
+  "type": "FairWindSKChartPackage",
+  "charts": [ { ... }, { ... } ]
+}
+\end{lstlisting}
+
+This manifest can be imported on another FairWindSK installation to replicate the chart catalogue
+configuration (it describes chart sources, not the chart tile data itself).
+
+% ── Chapter 18: Tracks ────────────────────────────────────────
+\chapter{Tracks --- History}
+\label{ch:tracks}
+
+The Tracks tab shows the historical GPS track of the vessel --- the recorded sequence of position
+fixes over time.
+Tracks are generated automatically by Signal~K when the tracks plugin is enabled.
+
+\screenshot{mydata-tracks-list}{My Data --- Tracks tab, table of track points with time, lat/lon, altitude}{}
+
+\section{Track Table Columns}
+
+The track table shows individual position fixes (points) in chronological order:
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{2.4cm} L{11.3cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} Column} &
+{\sffamily\bfseries\color{white} Description} \\
+\midrule
+Time & The timestamp of the position fix, formatted in local time using the system locale. \\
+Latitude & Latitude to 6 decimal places. \\
+Longitude & Longitude to 6 decimal places. \\
+Altitude & Altitude in metres (if available from the GPS fix; otherwise shown as 0). \\
+\bottomrule
+\end{longtable}
+
+\section{Live Track Recording}
+
+If Signal~K is actively providing position updates, new track points are appended to the table in
+real time.
+The table scrolls to show the most recent point automatically.
+
+\section{Viewing a Track Point}
+
+Select a row and tap \key{Open}. A read-only dialog opens showing the timestamp, latitude, longitude,
+and altitude for that point in full detail.
+
+\subsection{Editing a Track Point}
+
+Select a row and tap \key{Edit}. The Track Point Editor opens.
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3cm} L{10.7cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} Field} &
+{\sffamily\bfseries\color{white} Description} \\
+\midrule
+Timestamp & Date and time of the fix. Uses a date/time picker with up/down arrows. \\
+Latitude & Latitude (8 decimal places, range $-90$ to $+90$). \\
+Longitude & Longitude (8 decimal places, range $-180$ to $+180$). \\
+Altitude & Altitude in metres. \\
+\bottomrule
+\end{longtable}
+
+\section{Adding a Track Point Manually}
+
+Tap \key{New}. The same editor opens with default values (current time and position 0,0).
+Enter the correct values and tap \key{OK}.
+The point is inserted into the track in chronological order.
+
+\section{Deleting a Track Point}
+
+Select a row and tap \key{Delete}. Confirm when prompted. The point is removed from the track.
+
+\section{Exporting the Track}
+
+Tap \key{Export} to save the complete track as a GeoJSON \code{LineString} or
+\code{FeatureCollection}:
+
+\begin{lstlisting}
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [[lon, lat, alt], ...]
+      }
+    }
+  ]
+}
+\end{lstlisting}
+
+The default export filename is \path{tracks-history.geojson}.
+
+\begin{tipbox}
+Export the track after every passage and store it with the voyage logbook.
+The GeoJSON file can be imported into most GIS tools, chart plotters, and voyage-planning software
+for review and analysis.
+\end{tipbox}
+
+\section{Importing a Track}
+
+Tap \key{Import} and select a GeoJSON file containing a \code{LineString} geometry.
+FairWindSK extracts each coordinate in the line as a track point with a synthetic timestamp,
+appending them to the current track in order.
+
+\section{Uses of the Track Tab}
+
+\begin{itemize}
+  \item \textbf{Passage review:} compare the actual track against the planned route. Identify deviations, traffic avoidance manoeuvres, and current effects.
+  \item \textbf{Anchorage assessment:} see the swing circle after anchoring overnight.
+  \item \textbf{Safety investigation:} reconstruct the vessel's path before and during an incident for formal reporting.
+  \item \textbf{Logbook cross-reference:} correlate positions at specific times with logbook entries.
+\end{itemize}
+
+% ── Chapter 19: Files ─────────────────────────────────────────
+\chapter{Files}
+\label{ch:files}
+
+The Files tab is a direct filesystem browser for files and directories accessible on the device
+running FairWindSK.
+It provides navigation, search, viewing, and file management operations (copy, cut, paste, rename,
+delete, new folder) without leaving the FairWindSK interface.
+
+\screenshot{mydata-files-browser}{My Data --- Files tab, directory browser with toolbar}{}
+
+\section{Interface Layout}
+
+The Files tab is divided into three areas:
+
+\begin{itemize}
+  \item \textbf{Toolbar} at the top: navigation and action buttons, path bar, and search field.
+  \item \textbf{File list} in the centre: the current directory contents as a tree view with columns for Name, Size, and Date. Row height is 58\,px for comfortable touch selection. Alternating row colours aid readability.
+  \item \textbf{Actions row} below the toolbar: file operation buttons that appear when items are selected.
+\end{itemize}
+
+\section{Navigation}
+
+\subsection{Directory Navigation}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3cm} L{10.7cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} Action} &
+{\sffamily\bfseries\color{white} How to trigger} \\
+\midrule
+Enter a folder & Double-tap a folder row in the file list, or select and tap \key{Open}. \\
+Go up one level & Tap \key{↑} (Up) button in the toolbar. \\
+Navigate by path & Tap the path bar at the top of the toolbar, type an absolute path, and press Return. \\
+Go home & Tap \key{Home} button. Returns to the home directory of the running user. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Column Sorting}
+
+Tap any column header to sort by that column.
+The sort direction toggles between ascending and descending on subsequent taps.
+The default sort is by Name, ascending.
+
+\section{Searching Files}
+
+\subsection{Basic Search}
+
+Tap \key{Search} or press Return in the search field.
+FairWindSK recursively searches the current directory tree for files and subdirectories whose names
+contain the search text.
+
+Results are shown in a flat list in the file view.
+Tap a result to select it; double-tap to open.
+The search continues to the root of the browsed directory tree.
+
+
+\subsection{Search Options}
+
+Tap \key{Options} (or the filter button) to expand the search options:
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3.5cm} L{10.2cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} Option} &
+{\sffamily\bfseries\color{white} Description} \\
+\midrule
+Case Sensitive & When enabled, the search matches the exact capitalisation of the search text. Default: off (case-insensitive). \\
+Search Hidden & When enabled, hidden files and directories (names beginning with \code{.}) are included in search results. Default: off. \\
+Search System & When enabled, system files and directories (e.g.\ \code{/proc}, \code{/sys} on Linux) are included. Default: off. \\
+\bottomrule
+\end{longtable}
+
+The search options button label updates to show a compact summary of active options (e.g.\
+\textit{Options: case, hidden}).
+
+\section{File Actions}
+
+\subsection{Opening Files}
+
+Select a file and tap \key{Open}, or double-tap the row.
+
+FairWindSK detects the file type using MIME type detection and routes it to the appropriate viewer:
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{4cm} L{9.7cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} File type} &
+{\sffamily\bfseries\color{white} Viewer} \\
+\midrule
+Images (\code{.jpg}, \code{.jpeg}, \code{.png}, \code{.gif}) & Built-in image viewer with pinch-to-zoom and pan. \\
+PDF (\code{.pdf}) & Built-in PDF viewer, page by page. \\
+Text files (\code{.txt}, \code{.md}, \code{.log}, \code{.html}) & Built-in text viewer, formatted as plain text or HTML. \\
+Other file types & A message is shown; the file cannot be previewed but can be managed. \\
+\bottomrule
+\end{longtable}
+
+Directories open in the directory browser (navigating into them) rather than in a viewer.
+Attempting to open a directory path from a Notes href shows a message directing you to use the Files
+tab to browse it instead (single-window model constraint).
+
+
+\subsection{Renaming Files and Folders}
+
+Select an item and tap \key{Rename}.
+An input dialog opens in the Bottom Bar horizontal drawer.
+Enter the new name and tap \key{OK}.
+The file or directory is renamed on the filesystem immediately.
+
+\subsection{Creating a New Folder}
+
+Tap \key{New Folder}.
+An input dialog opens.
+Enter the folder name and tap \key{OK}.
+The new folder is created in the current directory.
+
+\subsection{Copy, Cut, and Paste}
+
+\begin{enumerate}
+  \item Select one or more files or folders.
+  \item Tap \key{Copy} to mark them for copying, or \key{Cut} to mark them for moving.
+  \item Navigate to the destination directory.
+  \item Tap \key{Paste}.
+\end{enumerate}
+
+FairWindSK performs safety checks before paste operations:
+
+\begin{itemize}
+  \item Copying a directory into itself or one of its subdirectories is blocked.
+  \item Pasting into the source directory of a cut operation shows a warning.
+  \item The self-paste safety check runs a self-test at startup to verify the detection logic is working correctly.
+\end{itemize}
+
+Directory copy and move operations are recursive --- the entire subtree is copied or moved.
+
+\subsection{Deleting Files and Folders}
+
+Select one or more items and tap \key{Delete}.
+A confirmation dialog opens in the Bottom Bar horizontal drawer.
+Confirm to delete.
+
+\begin{warningbox}
+File deletion is permanent.
+There is no recycle bin or undo for file operations.
+Take particular care when deleting directories --- all contents are deleted recursively.
+\end{warningbox}
+
+\section{File List Columns}
+
+The file list shows three columns:
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{2cm} L{11.7cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} Column} &
+{\sffamily\bfseries\color{white} Description} \\
+\midrule
+Name & Filename or directory name, with an icon indicating the file type (folder, image, document, etc.). \\
+Size & File size in human-readable units (B, KB, MB, GB). Directories show the size of their immediate contents. \\
+Date & Last modification timestamp. The \textit{Type} column (column index 2) is hidden by default. \\
+\bottomrule
+\end{longtable}
+
+\section{Practical Uses of the Files Tab}
+
+\begin{itemize}
+  \item Browse pilot book excerpts stored as PDFs on the Raspberry Pi.
+  \item View passage planning images (harbour photos, aerial views, approach charts).
+  \item Access voyage log files or NMEA recordings.
+  \item Manage chart tile archives before registering them in the Charts tab.
+  \item Review diagnostic log files generated by FairWindSK (see Chapter~\ref{ch:settings-system}).
+\end{itemize}

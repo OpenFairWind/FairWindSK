@@ -1,0 +1,59 @@
+name: Manuals
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "docs/**"
+      - "ui/**"
+      - "resources/i18n/**"
+      - "main.cpp"
+      - "scripts/manual/**"
+      - ".github/workflows/manuals.yml"
+  push:
+    branches: [main, master]
+    paths:
+      - "docs/**"
+      - "ui/**"
+      - "resources/i18n/**"
+      - "main.cpp"
+      - "scripts/manual/**"
+      - ".github/workflows/manuals.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: English and Italian PDFs
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install application and manual dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes cmake ninja-build g++ dbus-x11 xvfb xauth fonts-dejavu \
+            libgl1-mesa-dev libxkbcommon-x11-0 qt6-base-dev qt6-declarative-dev \
+            qt6-positioning-dev qt6-svg-dev qt6-tools-dev qt6-virtualkeyboard-dev \
+            qt6-webengine-dev qt6-websockets-dev texlive-xetex texlive-latex-extra \
+            texlive-fonts-recommended poppler-utils
+      - name: Build FairWindSK
+        run: |
+          cmake -S . -B build-manual -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
+          cmake --build build-manual --target QtZeroConf qhotkey --parallel 2
+          cmake --build build-manual --parallel 2
+      - name: Capture screenshots and build manuals
+        env:
+          QTWEBENGINE_DISABLE_SANDBOX: "1"
+          LIBGL_ALWAYS_SOFTWARE: "1"
+        run: xvfb-run -a -s '-screen 0 1280x800x24' scripts/manual/build_manuals.sh --build-dir build-manual
+      - name: Upload manuals
+        uses: actions/upload-artifact@v4
+        with:
+          name: fairwindsk-owner-manuals
+          path: |
+            docs/manual/english/fairwindsk-manual.pdf
+            docs/manual/italian/fairwindsk-manuale.pdf
+          if-no-files-found: error

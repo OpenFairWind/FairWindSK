@@ -1,0 +1,459 @@
+\part{Impostazioni}
+
+\chapter{Impostazioni --- Panoramica}
+\label{ch:impostazioni}
+
+Apri Impostazioni toccando \iconlabel{settings-iec}{Impostazioni} nella Barra Inferiore.
+Su desktop e iOS la configurazione è organizzata su dieci schede. Android aggiunge
+un'undicesima scheda \textbf{Android} dopo Sistema.
+Le modifiche hanno effetto immediato salvo dove è indicato un riavvio.
+
+\screenshot{settings-overview}{Pannello Impostazioni con le schede previste per la piattaforma}{}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{C{0.6cm}L{3.2cm}L{6.4cm}L{3.5cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries N. &
+\color{white}\sffamily\bfseries Scheda &
+\color{white}\sffamily\bfseries Funzione principale &
+\color{white}\sffamily\bfseries Riavvio? \\
+\midrule
+0 & Principale      & Modalità finestra, lingua, scala UI, preset comfort, griglia launcher, formato coordinate & Solo lingua e tastiera virtuale \\
+1 & Barra Superiore & Layout drag-and-drop della striscia strumenti Barra Superiore & No \\
+2 & Barra Inferiore & Layout drag-and-drop della striscia azioni Barra Inferiore & No \\
+3 & Widget          & Definisci e modifica le definizioni dei widget dati riutilizzabili & No \\
+4 & Comfort         & Seleziona e personalizza i preset di comfort visivo & No \\
+5 & Connessione     & URL server Signal~K, token di autenticazione, rilevamento mDNS & No \\
+6 & Signal~K        & Mappa nomi semantici ai percorsi Signal~K effettivi & No \\
+7 & Unità           & Scegli le unità di misura per categoria & No \\
+8 & Applicazioni    & Gestisci il launcher: pagine, tile, cartelle, dettagli app & No \\
+9 & Sistema         & Diagnostica, log, prestazioni, gestione configurazione & No (alcune azioni riavviano) \\
+10 & Android        & Ruolo Home facoltativo, selezione app native, controlli di navigazione software & No (solo Android) \\
+\bottomrule
+\end{longtable}
+
+Su Android, la scheda Android elenca solo le attività avviabili
+\code{MAIN + LAUNCHER}. La selezione aggiunge un'app alla palette Applicazioni
+condivisa senza richiedere la visibilità generale dei pacchetti. Identità, icona,
+pacchetto e attività sono gestiti da Android; deselezionando un'app si eliminano
+anche i suoi riferimenti dalle pagine del launcher. L'installazione non imposta mai
+automaticamente FairWindSK come app Home predefinita. I controlli software Indietro,
+Home e Recenti appaiono solo quando Android segnala l'assenza dei corrispondenti tasti
+hardware; Recenti include soltanto le attività native avviate tramite FairWindSK.
+
+\chapter{Impostazioni --- Principale}
+\label{ch:impostazioni-principale}
+\settingstab{0}{Principale}
+
+La scheda Principale controlla il comportamento fondamentale: modalità di visualizzazione
+della finestra, lingua, scala elementi UI, preset comfort attivo, dimensioni della griglia
+launcher e formato delle coordinate.
+
+\screenshot{settings-main}{Impostazioni --- Scheda Principale: modalità finestra, lingua, scala UI, preset comfort, griglia launcher, formato coordinate}{}
+
+\section{Modalità Finestra}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{2.4cm}L{5.6cm}L{5.7cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Modalità &
+\color{white}\sffamily\bfseries Comportamento &
+\color{white}\sffamily\bfseries Note \\
+\midrule
+Finestra      & Finestra desktop ridimensionabile alla posizione e dimensione configurate. &
+  Per sviluppo, test e configurazioni multi-monitor. \\
+Centrata      & Finestra centrata della larghezza e altezza configurate. &
+  Modalità a finestra preferita senza posizione esatta. \\
+Massimizzata  & Area di lavoro desktop completa. &
+  Su Raspberry~Pi~OS, usa direttamente la geometria dell'area di lavoro dello schermo. \\
+Schermo intero & Finestra kiosk senza bordi, sempre in primo piano. &
+  Consigliata per display di plancia dedicati.
+  Su labwc, imposta \code{autohide=true} in \code{wf-panel-pi.ini} se il pannello
+  si sovrappone a FairWindSK. \\
+\bottomrule
+\end{longtable}
+
+\section{Lingua}
+
+FairWindSK include due lingue dell'interfaccia completamente supportate.
+L'impostazione della lingua influisce su tutto il testo nativo della shell e
+sull'intestazione \code{Accept-Language} inviata ai contenuti web incorporati.
+
+\begin{itemize}
+  \item \textbf{Predefinita di sistema} --- segue la localizzazione del sistema operativo
+        quando FairWindSK la supporta; usa l'inglese come fallback.
+  \item \textbf{English} --- forza l'inglese indipendentemente dalla localizzazione OS.
+  \item \textbf{Italiano} --- forza l'italiano. Tutto il testo nativo della shell
+        viene visualizzato in italiano.
+\end{itemize}
+
+\begin{warningbox}
+È richiesto un riavvio dopo aver cambiato la lingua.
+FairWindSK mostra un cassetto informativo quando la lingua viene modificata.
+Senza riavvio, i widget Qt nativi e la vista web incorporata potrebbero usare
+lingue diverse.
+\end{warningbox}
+
+\section{Scala Preset UI}
+
+Quattro preset: Piccola, Normale (predefinita), Grande, Molto Grande.
+Quando \key{Dimensionamento UI automatico} è selezionato, FairWindSK sceglie il preset
+in base alla risoluzione e ai DPI del display.
+
+\section{Preset Comfort e Cambio Automatico}
+
+Seleziona il preset comfort attivo direttamente dalla scheda Principale.
+Quando \key{Vista comfort automatica} è abilitata, FairWindSK cambia preset automaticamente
+usando i dati di posizione del sole Signal~K (\skpath{environment.sun}).
+Entrambe le condizioni devono essere soddisfatte per la modalità automatica:
+
+\begin{enumerate}
+  \item Il percorso \skpath{environment.sun} deve essere configurato nella scheda Signal~K.
+  \item Il server Signal~K deve essere connesso e fornire valori su quel percorso.
+\end{enumerate}
+
+\section{Griglia Launcher}
+
+Due spin box impostano il numero di righe e colonne di tile app per pagina del launcher.
+Meno righe e colonne = tile più grandi, più facili da toccare.
+Di più = più app visibili per pagina.
+
+\section{Formato Coordinate}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3.2cm}L{4.8cm}L{5.7cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Formato &
+\color{white}\sffamily\bfseries Esempio &
+\color{white}\sffamily\bfseries Quando usarlo \\
+\midrule
+GG.GGGGG\textdegree{} & 40.65341\textdegree{} N & File GPS, software di cartografia digitale. \\
+GG\textdegree{}MM.MMM' & 40\textdegree{}39.205' N & Formato nautico standard. Consigliato per la maggior parte dei navigatori. \\
+GG\textdegree{}MM'SS.S'' & 40\textdegree{}39'12.3'' N & Formato tradizionale di navigazione astronomica. \\
+\bottomrule
+\end{longtable}
+
+\section{Tastiera Virtuale}
+
+Abilita la tastiera virtuale Qt per i deployment solo touch. Richiede un riavvio.
+Su Raspberry~Pi~OS, lo script di avvio applica automaticamente la variabile d'ambiente corretta.
+
+\chapter{Impostazioni --- Editor Barre}
+\label{ch:impostazioni-barre}
+\settingstab{1}{Barra Superiore} \settingstab{2}{Barra Inferiore}
+
+Le schede~1 e~2 usano lo stesso editor drag-and-drop visivo --- uno per ciascuna barra.
+
+\screenshot{settings-topbar-editor}{Impostazioni --- Editor Barra Superiore: striscia anteprima in tempo reale, barra degli strumenti e palette widget}{}
+
+\section{Striscia Anteprima in Tempo Reale}
+
+L'anteprima in alto mostra una simulazione a larghezza completa della barra.
+Tocca qualsiasi elemento nell'anteprima per selezionarlo.
+
+\section{Pulsanti della Barra degli Strumenti di Modifica}
+
+Le icone sono gli asset esatti definiti in \code{BarLayoutSettings.cpp}.
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{C{1.5cm}L{4.4cm}L{8.3cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Icona &
+\color{white}\sffamily\bfseries Pulsante &
+\color{white}\sffamily\bfseries Azione \\
+\midrule
+\iconlg{layout-horizontal-minimize} & Minimizza larghezza  & Il widget usa solo lo spazio richiesto dal contenuto. \\
+\iconlg{layout-horizontal-maximize} & Massimizza larghezza & Il widget si espande per riempire tutto lo spazio disponibile. \\
+\iconlg{layout-vertical-minimize}   & Minimizza altezza    & Il widget usa l'altezza normale della barra. \\
+\iconlg{layout-vertical-maximize}   & Massimizza altezza   & Il widget usa l'intera altezza della barra. \\
+\iconlg{arrow-left-google}          & Sposta a sinistra    & Sposta il widget selezionato di una posizione a sinistra. \\
+\iconlg{arrow-right-google}         & Sposta a destra      & Sposta il widget selezionato di una posizione a destra. \\
+\iconlg{delete-google}              & Rimuovi selezionato  & Rimanda il widget selezionato alla palette. \\
+\iconlg{refresh-google}             & Ripristina pred.     & Ripristina il layout predefinito della barra. \\
+\bottomrule
+\end{longtable}
+
+\section{Interruttori di Visualizzazione}
+
+Con un widget selezionato, quattro caselle di controllo gestiscono cosa viene mostrato:
+\key{Mostra Icona}, \key{Mostra Testo} (etichetta), \key{Mostra Unità}, \key{Mostra Tendenza}.
+
+\chapter{Impostazioni --- Widget}
+\label{ch:impostazioni-widget}
+\settingstab{3}{Widget}
+
+La scheda Widget gestisce la libreria delle definizioni dei widget dati usati da entrambe le barre.
+
+\section{Campi di Definizione Widget}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3.0cm}L{10.7cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Campo &
+\color{white}\sffamily\bfseries Scopo \\
+\midrule
+id              & Identificatore univoco usato internamente e nelle voci di layout barra. \\
+name            & Etichetta leggibile mostrata nelle barre e in questo editor. \\
+icon            & Percorso icona SVG opzionale. \\
+type            & Formato di rendering: \code{numerical}, \code{gauge}, \code{position},
+                  \code{datetime} o \code{waypoint}. \\
+signalKPath     & Percorso dati Signal~K completo separato da punti. \\
+sourceUnit      & Unità in cui Signal~K fornisce il valore (es.\ \code{m/s}, \code{rad}). \\
+defaultUnit     & Unità di visualizzazione (es.\ \code{kn}, \code{deg}). \\
+updatePolicy    & \code{instant} (predefinita) o \code{fixed}. \\
+period          & Periodo di aggiornamento target in ms (predefinito 1000). \\
+minPeriod       & Periodo minimo di aggiornamento in ms (predefinito 200). \\
+\bottomrule
+\end{longtable}
+
+\chapter{Impostazioni --- Comfort}
+\label{ch:impostazioni-comfort}
+\settingstab{4}{Comfort}
+
+La scheda Comfort è l'editor di tema visivo per tutti e sei i preset comfort integrati.
+
+\section{I Sei Preset Comfort}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{C{1.5cm}L{2.2cm}L{4.0cm}L{6.0cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Icona &
+\color{white}\sffamily\bfseries Preset &
+\color{white}\sffamily\bfseries Condizioni &
+\color{white}\sffamily\bfseries Caratteristiche chiave \\
+\midrule
+\iconlg{comfort-default} & Predefinita  & Fallback generale    & Contrasto bilanciato. Usabile nella maggior parte delle condizioni. \\
+\iconlg{comfort-dawn}    & Alba         & Intorno all'alba     & Toni caldi, luminosità leggermente ridotta. \\
+\iconlg{comfort-day}     & Giorno       & Luce diurna piena    & Massima luminosità e contrasto. Per navigazione in mare aperto. \\
+\iconlg{comfort-sunset}  & Tramonto     & Intorno al tramonto  & Più caldo, luminosità di transizione. \\
+\iconlg{comfort-dusk}    & Crepuscolo   & Crepuscolo           & Luminosità ridotta; inizia la preservazione della visione notturna. \\
+\iconlg{comfort-night}   & Notte        & Buio completo        & Luminosità minima, sfondo scuro, icone in rosso.
+  Preserva la visione notturna. Gli allarmi rimangono ad alto contrasto. \\
+\bottomrule
+\end{longtable}
+
+\section{Proprietà Colore Override}
+
+Dieci proprietà colore personalizzabili per preset: Sfondo finestra, Testo, Sfondo pulsante,
+Testo pulsante, Bordo, Accent, Testo accent, Icona, Traccia barra di scorrimento,
+Cursore barra di scorrimento.
+
+\begin{warningbox}
+Non configurare mai un preset che renda difficile leggere il testo degli allarmi,
+le informazioni POB o le letture critiche per la sicurezza.
+La leggibilità in tutte le condizioni ha la precedenza sull'estetica.
+\end{warningbox}
+
+\chapter{Impostazioni --- Connessione}
+\label{ch:impostazioni-connessione}
+\settingstab{5}{Connessione}
+
+\screenshot{settings-connection}{Impostazioni --- Scheda Connessione: campo URL server, riga stato, pulsanti azione e log console}{}
+
+\section{Campo URL Server}
+
+Una combo box editabile con l'URL configurato e URL di default pre-popolati.
+FairWindSK normalizza l'URL: aggiunge \code{http://} se manca lo schema,
+rimuove le barre finali e valida che vengano accettati solo gli schemi
+\code{http://} o \code{https://}.
+
+\section{Pulsanti di Azione}
+
+\subsection{Connetti e Pausa}
+
+Attiva/disattiva la connessione Signal~K.
+\key{Connetti} avvia la connessione; \key{Pausa} la sospende senza cancellare l'URL.
+
+\subsection{Richiedi Token}
+
+Avvia il flusso di autenticazione Signal~K in lettura/scrittura:
+
+\begin{enumerate}
+  \item FairWindSK invia una nuova richiesta di accesso a \skpath{/signalk/v1/access/requests}.
+  \item Con risposta HTTP~202 + \code{PENDING}, FairWindSK apre l'interfaccia admin Signal~K
+        nel cassetto della Barra Inferiore, navigata alla pagina Sicurezza~> Richieste di Accesso.
+  \item FairWindSK interroga l'href ogni secondo fino alla risoluzione.
+  \item Con \code{COMPLETED} e \code{APPROVED}, il token viene memorizzato in
+        \code{fairwindsk.ini} e iniettato come cookie \code{JAUTHENTICATION} nel browser incorporato.
+\end{enumerate}
+
+\subsection{Annulla}
+
+Interrompe la richiesta token in corso e cancella l'href in attesa.
+
+\subsection{Rimuovi Token}
+
+Rimuove il token memorizzato da memoria, \code{fairwindsk.ini} e cookie store del browser.
+Attiva una riconnessione in modalità pubblica (non autenticata).
+
+\section{Rilevamento mDNS Automatico}
+
+Su piattaforme desktop, FairWindSK scansiona la rete locale per server Signal~K tramite
+mDNS/Zeroconf su quattro tipi di servizio.
+I server rilevati vengono aggiunti automaticamente alla combo URL.
+mDNS è disabilitato su Android e iOS.
+
+\chapter{Impostazioni --- Percorsi Signal K}
+\label{ch:impostazioni-signalk}
+\settingstab{6}{Percorsi Signal K}
+
+Mappa i nomi semantici usati internamente da FairWindSK ai percorsi dati Signal~K
+effettivi sul tuo server. Modifica qualsiasi campo per cambiare dove FairWindSK
+legge o scrive quel valore.
+
+\section{Mappature Chiave dei Percorsi}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3.0cm}L{5.6cm}L{5.1cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Chiave &
+\color{white}\sffamily\bfseries Percorso Signal~K predefinito &
+\color{white}\sffamily\bfseries Funzione \\
+\midrule
+\code{pos}              & \skpath{navigation.position}                        & Widget posizione Barra Superiore \\
+\code{sog}              & \skpath{navigation.speedOverGround}                 & Widget SOG Barra Superiore \\
+\code{dpt}              & \skpath{environment.depth.belowTransducer}          & Widget profondità Barra Superiore \\
+\code{notifications.pob}& \skpath{notifications.mob}                          & Allarme POB \\
+\code{anchor.radius}    & \skpath{navigation.anchor.currentRadius}            & Guardia Ancora \\
+\code{anchor.actions.drop} & \skpath{plugins.anchoralarm.dropAnchor}         & Pulsante Cala Ancora \\
+\code{environment.sun}  & \skpath{environment.sun}                            & Cambio preset comfort automatico \\
+\code{autopilot.state}  & \skpath{steering.autopilot.state}                   & Barra Autopilota \\
+\bottomrule
+\end{longtable}
+
+\chapter{Impostazioni --- Unità}
+\label{ch:impostazioni-unita}
+\settingstab{7}{Unità}
+
+FairWindSK legge le preferenze di unità dal server Signal~K connesso.
+La scheda Unità mostra il nome del preset corrente del server e una riga per categoria
+di misura. Ogni riga ha tre colonne: etichetta categoria, combo box di override (la tua
+preferenza locale) e valore attuale del server (sola lettura).
+
+\chapter{Impostazioni --- Applicazioni}
+\label{ch:impostazioni-applicazioni}
+\settingstab{8}{Applicazioni}
+
+Un editor a due pannelli: il pannello sinistro gestisce le pagine e le cartelle del launcher;
+il pannello destro è la palette delle applicazioni.
+
+\section{Azioni Pagina (pannello sinistro)}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{C{1.5cm}L{4.0cm}L{8.2cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Icona &
+\color{white}\sffamily\bfseries Azione &
+\color{white}\sffamily\bfseries Funzione \\
+\midrule
+\iconlg{add-new-page}                    & Aggiungi pagina       & Crea una nuova pagina launcher vuota. \\
+\iconlg{show-page-details}               & Dettagli pagina       & Apre il cassetto dettagli pagina (nome, icona). \\
+\iconlg{add-all-apps-to-current-page}    & Assegna tutte le app  & Aggiunge tutte le app della palette alla pagina corrente. \\
+\iconlg{remove-all-apps-from-current-page}& Pulisci pagina       & Rimuove tutte le tile dalla pagina corrente. \\
+\iconlg{remove-all-apps-from-all-pages}  & Pulisci tutte le pag. & Rimuove tutte le tile da ogni pagina. \\
+\bottomrule
+\end{longtable}
+
+\section{Azioni Palette (pannello destro)}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{C{1.5cm}L{4.0cm}L{8.2cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Icona &
+\color{white}\sffamily\bfseries Azione &
+\color{white}\sffamily\bfseries Funzione \\
+\midrule
+\iconlg{define-new-application-in-palette}  & Crea app      & Apre il cassetto Dettagli Applicazione per creare una nuova app. \\
+\iconlg{show-details-selected-app-in-palette} & Dettagli app & Apre il cassetto per modificare l'app selezionata. \\
+\iconlg{remove-selected-app-from-palette}   & Rimuovi app   & Rimuove permanentemente l'app selezionata dalla palette. \\
+\iconlg{add-selected-app-to-current-page}   & Aggiungi a pag. & Aggiunge l'app della palette alla pagina launcher corrente. \\
+\bottomrule
+\end{longtable}
+
+\chapter{Impostazioni --- Sistema}
+\label{ch:impostazioni-sistema}
+\settingstab{9}{Sistema}
+
+La scheda Sistema è divisa in due pannelli: \textbf{Prestazioni} (sinistra) e
+\textbf{Diagnostica e Log} (destra).
+
+\section{Pannello Prestazioni}
+
+\begin{itemize}
+  \item \textbf{Memoria processo} --- RAM residente usata da FairWindSK.
+  \item \textbf{Memoria totale} --- RAM installata nel dispositivo.
+  \item \textbf{Barra utilizzo memoria} --- memoria processo come percentuale del totale.
+  \item \textbf{Carico CPU} --- una riga di barre di avanzamento, una per core CPU,
+        aggiornate ogni secondo.
+  \item \textbf{Indirizzi di rete} --- indirizzi IPv4 di tutte le interfacce attive
+        non-loopback, aggiornati ogni 10 secondi.
+  \item \textbf{Diagnostica Raspberry Pi} --- quando il plugin
+        \code{signalk-server-raspberrypi} è installato: temperatura CPU, temperatura GPU,
+        utilizzo CPU, utilizzo memoria, utilizzo SD.
+\end{itemize}
+
+\section{Pannello Diagnostica e Log}
+
+\subsection{Livello di Log}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{2.6cm}L{4.6cm}L{6.5cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Livello &
+\color{white}\sffamily\bfseries Messaggi inclusi &
+\color{white}\sffamily\bfseries Quando usarlo \\
+\midrule
+Nessun log (pred.) & Nessun messaggio. & Funzionamento normale. Minimizza le scritture sulla SD su Raspberry~Pi. \\
+Critico       & Solo errori fatali. & Log minimo con rilevamento crash. \\
+Avviso        & Critico + anomalie non fatali. & Test di installazione iniziale. \\
+Info          & Avviso + eventi del ciclo di vita. & Messa in servizio. \\
+Debug         & Info + stato interno dettagliato. & Risoluzione problemi. Overhead significativo. \\
+Completo      & Tutto + tracciamento verboso. & Solo per sviluppatori. Overhead molto elevato. \\
+\bottomrule
+\end{longtable}
+
+\section{Pulsanti di Gestione Configurazione}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3.6cm}L{10.1cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Pulsante &
+\color{white}\sffamily\bfseries Azione \\
+\midrule
+Reimposta         & Scarta le modifiche non salvate e ricarica la configurazione attiva. \\
+Ripristina pred.  & Sostituisce le impostazioni con i valori predefiniti integrati. Richiede conferma. \\
+Importa           & Importa un file \code{fairwindsk.json} dal filesystem. \\
+Esporta           & Copia il \code{fairwindsk.json} corrente in una posizione scelta. \\
+\bottomrule
+\end{longtable}
+
+\begin{warningbox}
+\key{Ripristina Predefiniti} è irreversibile senza un backup.
+Esporta prima la configurazione se potresti volerla ripristinare.
+\end{warningbox}
+
+\section{Pulsanti di Controllo Sistema}
+
+\begin{itemize}
+  \item \key{Riavvia FairWindSK} --- salva le impostazioni e chiude FairWindSK con codice
+        di uscita~1. Lo script di avvio di Raspberry~Pi~OS riavvia su codice di uscita~1.
+  \item \key{Esci da FairWindSK} --- salva e chiude normalmente (codice~0).
+        Lo script di avvio \textbf{non} riavvia dopo un'uscita normale.
+\end{itemize}
+
+\begin{warningbox}
+Uscire da FairWindSK su un display di plancia dedicato lascia lo schermo vuoto.
+Assicurati che un altro membro dell'equipaggio mantenga la guardia prima di uscire
+dall'applicazione di visualizzazione.
+\end{warningbox}

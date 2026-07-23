@@ -2,5 +2,7 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/build-android-api33-debug/_deps/android_openssl-src" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/build-android-api33/_deps/android_openssl-src" vcs="Git" />
   </component>
 </project>

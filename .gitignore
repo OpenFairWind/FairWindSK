@@ -53,3 +53,8 @@ compile_commands.json
 *creator.user*
 
 *_qmlcache.qrc
+docs/manual/**/*.aux
+docs/manual/**/*.log
+docs/manual/**/*.out
+docs/manual/**/*.toc
+docs/manual/**/*.pdf

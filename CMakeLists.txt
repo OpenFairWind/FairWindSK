@@ -231,6 +231,7 @@ set(FAIRWINDSK_SOURCES
         signalk/ProtocolUtils.cpp signalk/ProtocolUtils.hpp
         signalk/Client.cpp signalk/Client.hpp
         runtime/DiagnosticsSupport.cpp runtime/DiagnosticsSupport.hpp
+        runtime/ManualScreenshotCapture.cpp runtime/ManualScreenshotCapture.hpp
         ui/layout/BarLayout.cpp ui/layout/BarLayout.hpp
         ui/layout/BarRuntime.cpp ui/layout/BarRuntime.hpp
         ui/settings/Settings.cpp ui/settings/Settings.hpp ui/settings/Settings.ui

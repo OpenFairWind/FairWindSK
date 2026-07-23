@@ -1,0 +1,949 @@
+% ============================================================
+%  APPENDIX A --- Installation
+% ============================================================
+\chapter{Installation}
+\label{app:installation}
+
+This appendix covers every supported deployment scenario for FairWindSK,
+from a first-time source build on a developer laptop to a fully automatic
+kiosk boot on a dedicated helm display.
+Each scenario lists hardware or platform requirements, exact commands,
+and post-install verification steps.
+
+\begin{notebox}
+All scenarios assume a running Signal~K server somewhere on the boat's
+Wi-Fi network.
+FairWindSK is a display shell, not a data server.
+Install and configure Signal~K before installing FairWindSK.
+\end{notebox}
+
+% ── A.1  Prerequisites ───────────────────────────────────────
+\section{Prerequisites}
+\label{app:prerequisites}
+
+\subsection{Common prerequisites for all desktop platforms}
+
+\begin{itemize}
+  \item CMake 3.16 or newer
+  \item A C++17-capable compiler supported by the chosen Qt~6 kit
+  \item Git
+  \item Internet access during the first build
+        (CMake downloads \code{nlohmann/json}, \code{QtZeroConf}, and \code{QHotkey}
+        automatically; subsequent builds use the cached copies)
+\end{itemize}
+
+\subsection{Required Qt 6 modules --- desktop}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{4.5cm}L{9.2cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Module &
+\color{white}\sffamily\bfseries Purpose \\
+\midrule
+\code{Core}            & Qt base classes and event loop. \\
+\code{Gui}             & 2D graphics and font handling. \\
+\code{Widgets}         & Widget toolkit used throughout the shell. \\
+\code{Concurrent}      & Thread pool for background tasks. \\
+\code{Network}         & HTTP/REST client and TLS. \\
+\code{WebSockets}      & Signal~K WebSocket stream. \\
+\code{Xml}             & Configuration and resource parsing. \\
+\code{Svg}             & OpenBridge icon rendering. \\
+\code{Positioning}     & GPS location APIs (desktop fallback). \\
+\code{WebEngineWidgets}& Embedded browser for hosted Signal~K web apps. \\
+\code{VirtualKeyboard} & On-screen keyboard for touchscreen deployments. \\
+\code{PrintSupport}    & PDF generation (crash reports). \\
+\bottomrule
+\end{longtable}
+
+\subsection{Required Qt 6 modules --- Android and iOS}
+
+Mobile builds replace \code{WebEngineWidgets} with a lighter web layer and
+drop desktop-only dependencies:
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{4.5cm}L{9.2cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Module &
+\color{white}\sffamily\bfseries Replaces or adds \\
+\midrule
+\code{Qml}         & QML runtime for WebView hosting. \\
+\code{Quick}       & Qt Quick scene graph. \\
+\code{QuickWidgets}& \code{QQuickWidget} bridge between widget and QML worlds. \\
+\code{WebView}     & Replaces \code{WebEngineWidgets}. Uses the platform's native browser engine. \\
+\bottomrule
+\end{longtable}
+
+Mobile builds do \emph{not} include \code{QtZeroConf}, \code{QHotkey},
+\code{PrintSupport}, or \code{WebEngineWidgets}.
+
+% ── A.2  Generic desktop build ───────────────────────────────
+\section{Generic Desktop Build (all platforms)}
+\label{app:generic}
+
+This is the baseline procedure that applies to every desktop platform
+before platform-specific steps are added.
+
+\begin{enumerate}
+  \item Clone the repository:
+\begin{lstlisting}
+git clone https://github.com/OpenFairWind/FairWindSK.git
+cd FairWindSK
+\end{lstlisting}
+
+  \item Configure:
+\begin{lstlisting}
+cmake -S . -B build
+\end{lstlisting}
+
+  \item Build (parallel across all CPU cores):
+\begin{lstlisting}
+cmake --build build --parallel
+\end{lstlisting}
+
+  \item Install to the default prefix:
+\begin{lstlisting}
+cmake --install build
+\end{lstlisting}
+
+  \item Override the install prefix if needed:
+\begin{lstlisting}
+cmake -S . -B build -DCMAKE_INSTALL_PREFIX=/desired/prefix
+cmake --build build --parallel
+cmake --install build
+\end{lstlisting}
+
+  \item If Qt is installed outside the default search path, pass
+        \code{-DCMAKE\_PREFIX\_PATH} during configure:
+\begin{lstlisting}
+cmake -S . -B build -DCMAKE_PREFIX_PATH=/path/to/Qt/6.x.x/gcc_64
+\end{lstlisting}
+\end{enumerate}
+
+\begin{tipbox}
+If internet access is restricted during the build, install
+\code{nlohmann\_json} from your package manager first.
+CMake will use the system header instead of downloading it.
+On Debian/Ubuntu: \code{sudo apt install nlohmann-json3-dev}.
+On macOS with Homebrew: \code{brew install nlohmann-json}.
+\end{tipbox}
+
+% ── A.3  macOS ───────────────────────────────────────────────
+\section{macOS Installation}
+\label{app:macos}
+
+\subsection{Requirements}
+
+\begin{itemize}
+  \item macOS 12 Monterey or newer (recommended)
+  \item Xcode command line tools: \code{xcode-select --install}
+  \item Qt~6 desktop kit (via Qt Online Installer or Homebrew)
+  \item CMake and Ninja (via Homebrew or Qt Maintenance Tool)
+\end{itemize}
+
+\subsection{Install with Homebrew}
+
+\begin{lstlisting}
+brew install qt cmake ninja nlohmann-json
+cmake -S . -B build -G Ninja \
+  -DCMAKE_PREFIX_PATH="$(brew --prefix qt)"
+cmake --build build --parallel
+\end{lstlisting}
+
+\subsection{Run from the build tree}
+
+\begin{lstlisting}
+open build/FairWindSK.app
+\end{lstlisting}
+
+\subsection{Install to the system}
+
+\begin{lstlisting}
+cmake --install build
+# Installs to /usr/local by default:
+open /usr/local/FairWindSK.app
+\end{lstlisting}
+
+\subsection{Redistribute (deploy Qt runtime)}
+
+For distribution outside the build tree, use Apple's deployment tool:
+
+\begin{lstlisting}
+macdeployqt build/FairWindSK.app
+\end{lstlisting}
+
+This bundles all Qt frameworks inside the \code{.app} so the app runs
+on machines without Qt installed.
+
+\subsection{Post-install verification}
+
+\begin{enumerate}
+  \item Launch FairWindSK.
+  \item Open \ui{Settings~> Connection}.
+        Enter your Signal~K server address and tap \key{Connect}.
+  \item Confirm the status changes to \textit{Live} and apps appear on the launcher.
+\end{enumerate}
+
+% ── A.4  Linux desktop ───────────────────────────────────────
+\section{Linux Desktop Installation}
+\label{app:linux}
+
+\subsection{Requirements (Debian / Ubuntu)}
+
+\begin{lstlisting}
+sudo apt update
+sudo apt install \
+  build-essential cmake ninja-build git \
+  nlohmann-json3-dev \
+  qt6-base-dev qt6-base-dev-tools \
+  qt6-webengine-dev qt6-webengine-dev-tools \
+  qt6-websockets-dev qt6-positioning-dev \
+  libqt6svg6-dev qt6-virtualkeyboard-dev \
+  qt6-base-private-dev libqt6printsupport6 \
+  libavahi-compat-libdnssd-dev libnss-mdns avahi-utils
+\end{lstlisting}
+
+\subsection{Build and run}
+
+\begin{lstlisting}
+cmake -S . -B build -G Ninja
+cmake --build build --parallel
+./build/FairWindSK
+\end{lstlisting}
+
+\subsection{System install}
+
+\begin{lstlisting}
+sudo cmake --install build
+\end{lstlisting}
+
+\code{cmake --install} on a Linux desktop target:
+
+\begin{itemize}
+  \item Installs the \code{FairWindSK} binary to
+        \code{\$\{CMAKE\_INSTALL\_BINDIR\}} (default \code{/usr/local/bin}).
+  \item Installs the bundled icon directory alongside the binary.
+  \item Installs the desktop-only helper libraries to
+        \code{\$\{CMAKE\_INSTALL\_LIBDIR\}}.
+  \item Installs the \code{fairwindsk.desktop} launcher file to the standard
+        XDG applications directory.
+  \item Installs the \code{fairwindsk.png} menu icon to
+        \code{/usr/local/share/icons/hicolor/256x256/apps/}.
+\end{itemize}
+
+After installation, FairWindSK appears in the applications menu.
+Run it from the menu or with:
+
+\begin{lstlisting}
+FairWindSK
+\end{lstlisting}
+
+\subsection{Packaging}
+
+Include the Qt runtime and the external dependencies built under
+\code{build/external/lib} in your package.
+The build-tree rpath means the binary runs from \code{build/} without
+\code{LD\_LIBRARY\_PATH}, but a packaged install needs those libraries in
+the system library path or bundled beside the binary.
+
+% ── A.5  Raspberry Pi OS --- nav station ───────────────────────
+\section{Raspberry Pi OS --- Navigation Station}
+\label{app:rpi-station}
+
+This scenario installs FairWindSK on a Raspberry~Pi used as a normal
+desktop navigation station --- screen, keyboard, and mouse attached,
+running the Raspberry~Pi~OS desktop.
+
+\subsection{Requirements}
+
+Raspberry Pi~4 or~5 with Raspberry~Pi~OS Bookworm (64-bit recommended),
+and a stable internet connection for the initial package download.
+
+\subsection{Install build dependencies}
+
+\begin{lstlisting}
+sudo apt update
+sudo apt install \
+  build-essential cmake ninja-build git \
+  nlohmann-json3-dev \
+  qml6-module-qt-labs-folderlistmodel \
+  qml6-module-qtquick-window \
+  qml6-module-qtquick-layouts \
+  qml6-module-qtqml-workerscript \
+  libnss-mdns avahi-utils \
+  libavahi-compat-libdnssd-dev libxkbcommon-dev \
+  qt6-base-dev qt6-base-dev-tools \
+  qt6-webengine-dev qt6-webengine-dev-tools \
+  qt6-websockets-dev qt6-positioning-dev \
+  libqt6svg6-dev \
+  qt6-virtualkeyboard-dev \
+  libqt6virtualkeyboard6 \
+  qt6-virtualkeyboard-plugin
+\end{lstlisting}
+
+\begin{notebox}
+If the build fails with a missing
+\code{Qt6VirtualKeyboardConfigVersionImpl.cmake}, apply the known
+workaround:
+\begin{lstlisting}
+sudo touch /usr/lib/aarch64-linux-gnu/cmake/Qt6VirtualKeyboard/\
+Qt6VirtualKeyboardConfigVersionImpl.cmake
+\end{lstlisting}
+Then re-run \code{cmake}.
+\end{notebox}
+
+\subsection{Build and install}
+
+\begin{lstlisting}
+git clone https://github.com/OpenFairWind/FairWindSK.git
+cd FairWindSK
+cmake -S . -B build -G Ninja
+cmake --build build --parallel
+sudo cmake --install build
+\end{lstlisting}
+
+FairWindSK appears in the application menu under
+\textit{Navigation} or \textit{Internet}.
+
+\subsection{OpenPlotter integration}
+
+If OpenPlotter is detected during \code{cmake --install}, FairWindSK
+also copies its launcher icon into the OpenPlotter menu directories.
+No extra steps are required.
+
+% ── A.6  Raspberry Pi OS --- kiosk helm display ────────────────
+\section{Raspberry Pi OS --- Kiosk Helm Display}
+\label{app:rpi-kiosk}
+
+This is the recommended scenario for a dedicated helm display:
+a Raspberry~Pi~4 or~5 with a touchscreen, running FairWindSK automatically
+at boot with no keyboard and no desktop menu visible.
+
+\subsection{Overview}
+
+\begin{enumerate}
+  \item Install FairWindSK as in Section~\ref{app:rpi-station}.
+  \item Configure FairWindSK for full-screen kiosk mode.
+  \item Install the \code{fairwindsk-startup} helper to manage autostart.
+  \item (Optional) Configure the desktop panel to auto-hide.
+  \item Reboot and verify.
+\end{enumerate}
+
+\subsection{Step 1 --- Build and install}
+
+Follow Section~\ref{app:rpi-station}.
+On Raspberry~Pi~OS, \code{cmake --install} automatically installs the
+\code{fairwindsk-startup.desktop} autostart entry to
+\code{/etc/xdg/autostart/}.
+FairWindSK will start automatically on the next login.
+
+\subsection{Step 2 --- Configure full-screen kiosk mode}
+
+Open \ui{Settings~> Main} and set \key{Window Mode} to
+\textbf{Full Screen}.
+This requests a frameless, always-on-top window that covers the entire
+screen with no title bar or window decorations.
+
+Alternatively, edit \code{fairwindsk.json} directly:
+
+\begin{lstlisting}
+{
+  "main": {
+    "windowMode": "fullscreen"
+  }
+}
+\end{lstlisting}
+
+\subsection{Step 3 --- Install the startup helper}
+
+The \code{fairwindsk-startup} Python script manages the FairWindSK
+process lifecycle.
+It is installed by \code{cmake --install} alongside the binary.
+
+What \code{fairwindsk-startup} does at each boot:
+
+\begin{enumerate}
+  \item Reads \code{fairwindsk.ini} to find the configuration path.
+  \item Reads \code{fairwindsk.json} to check the \code{virtualKeyboard}
+        flag and sets \code{QT\_IM\_MODULE=qtvirtualkeyboard} accordingly.
+  \item Waits up to 45 seconds for the Signal~K web-app catalogue
+        endpoint to respond (\code{/signalk/v1/apps/list} or the legacy
+        \code{/skServer/webapps}).
+        This ensures plugin icons and artwork are available before
+        FairWindSK starts.
+  \item Launches FairWindSK.
+  \item If FairWindSK exits with code~1 (the \textit{Restart} button in
+        \ui{Settings~> System}), the helper relaunches it immediately.
+  \item If FairWindSK exits with code~0 (the \textit{Quit} button or
+        a clean shutdown), the helper exits cleanly.
+\end{enumerate}
+
+\begin{warningbox}
+Use \key{Restart FairWindSK} in \ui{Settings~> System} (exit code~1)
+to relaunch after configuration changes.
+\key{Quit FairWindSK} (exit code~0) leaves the display blank
+without a restart.
+\end{warningbox}
+
+\subsection{Step 4 --- Hide the desktop panel (labwc / Bookworm)}
+
+On Raspberry~Pi~OS Bookworm with the labwc compositor, the taskbar
+panel can overlay the full-screen FairWindSK window.
+To prevent this, configure the panel to auto-hide:
+
+\begin{lstlisting}
+# Edit the panel configuration file
+nano ~/.config/wf-panel-pi.ini
+\end{lstlisting}
+
+Add or change:
+
+\begin{lstlisting}
+[panel]
+autohide = true
+\end{lstlisting}
+
+Save the file and reboot.
+
+\subsection{Step 5 --- Enable virtual keyboard (touchscreen only)}
+
+If the helm display has no physical keyboard, enable the Qt virtual
+keyboard:
+
+\begin{enumerate}
+  \item Open \ui{Settings~> Main}.
+  \item Tick \key{Virtual Keyboard}.
+  \item Tap \key{Restart FairWindSK} in \ui{Settings~> System}.
+\end{enumerate}
+
+The startup helper reads the setting at each boot and sets the
+environment variable automatically.
+
+\subsection{Step 6 --- Verify the kiosk boot}
+
+\begin{enumerate}
+  \item Reboot the Raspberry~Pi.
+  \item Verify FairWindSK starts automatically (allow up to 60 seconds
+        for Signal~K and FairWindSK to start together).
+  \item Confirm the display is full-screen with no title bar.
+  \item Confirm the status shows \textit{Live}.
+  \item Confirm apps appear on the launcher.
+\end{enumerate}
+
+\begin{tipbox}
+On a Raspberry~Pi~4 with a class~A2 microSD card, FairWindSK
+typically becomes interactive in under 30 seconds from power-on,
+assuming Signal~K starts quickly.
+Use a fast card (\textgreater{}90~MB/s read) to minimise boot time.
+\end{tipbox}
+
+% ── A.7  Windows ─────────────────────────────────────────────
+\section{Windows Installation}
+\label{app:windows}
+
+\subsection{Requirements}
+
+\begin{itemize}
+  \item Windows~10 or~11 (64-bit)
+  \item Qt~6 desktop kit for MSVC
+        (installed via the Qt Online Installer)
+  \item Visual Studio Build Tools 2022 or Visual Studio Community 2022
+  \item CMake and Ninja
+        (bundled with Qt or installed separately)
+\end{itemize}
+
+\subsection{Build and install}
+
+Open a Developer Command Prompt with the MSVC environment loaded,
+then:
+
+\begin{lstlisting}
+git clone https://github.com/OpenFairWind/FairWindSK.git
+cd FairWindSK
+cmake -S . -B build -G Ninja ^
+  -DCMAKE_PREFIX_PATH="C:\Qt\6.x.x\msvc2022_64"
+cmake --build build --parallel
+cmake --install build
+\end{lstlisting}
+
+\subsection{Deploy the Qt runtime}
+
+After a successful build, deploy the Qt runtime DLLs beside the
+executable:
+
+\begin{lstlisting}
+windeployqt build\FairWindSK.exe
+\end{lstlisting}
+
+\code{cmake --install} installs the executable, the bundled icon
+directory under \code{bin\textbackslash icons}, and the desktop-only
+helper DLLs into the same \code{bin} directory.
+
+\subsection{Run}
+
+\begin{lstlisting}
+build\FairWindSK.exe
+\end{lstlisting}
+
+\begin{notebox}
+\code{file://} launcher entries are retained in configuration for
+compatibility but are blocked by the single-window model on Windows.
+Use \code{http://} or \code{https://} URLs for all applications.
+\end{notebox}
+
+% ── A.8  Android ─────────────────────────────────────────────
+\section{Android Installation}
+\label{app:android}
+
+Android builds use the Qt WebView mobile implementation.
+Qt Creator is the recommended workflow for Android because it manages
+the SDK, NDK, APK signing, and device deployment.
+
+\subsection{Requirements}
+
+\begin{itemize}
+  \item A macOS, Linux, or Windows build host
+  \item Qt~6 with the Android kit for your target ABI
+        (arm64-v8a is recommended for modern devices)
+  \item Android Studio (for the SDK, NDK, and emulator)
+  \item Java JDK (bundled with Android Studio or installed separately)
+  \item CMake and Ninja
+\end{itemize}
+
+\subsection{Step-by-step build guide}
+
+\begin{enumerate}
+  \item Open Android Studio and install:
+        an Android SDK platform, SDK Platform-Tools, SDK Build-Tools,
+        and the NDK version recommended by your Qt release.
+  \item In the Qt Maintenance Tool, install the Android Qt components
+        that match your host and target ABI.
+  \item In Qt Creator, go to
+        \ui{Preferences~> Devices~> Android} and verify that the SDK,
+        NDK, JDK, and platform paths are all detected correctly.
+  \item Clone the repository:
+\begin{lstlisting}
+git clone https://github.com/OpenFairWind/FairWindSK.git
+\end{lstlisting}
+  \item Open \code{FairWindSK/CMakeLists.txt} in Qt Creator.
+  \item Select an Android kit (e.g.\ \textit{Android Qt~6.x.x Clang arm64-v8a}).
+  \item Let Qt Creator configure the project.
+        The mobile configuration uses \code{Qt::WebView},
+        \code{Qt::Quick}, and \code{Qt::QuickWidgets},
+        and skips desktop-only dependencies.
+  \item Build with \ui{Build~> Build Project}.
+  \item Connect an Android device with developer mode enabled,
+        or start an Android emulator.
+  \item Deploy with \ui{Build~> Run}.
+\end{enumerate}
+
+\subsection{Command-line configure (advanced)}
+
+\begin{lstlisting}
+cmake -S . -B build-android -G Ninja \
+  -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK/build/cmake/android.toolchain.cmake" \
+  -DANDROID_ABI=arm64-v8a \
+  -DANDROID_PLATFORM=android-24 \
+  -DCMAKE_PREFIX_PATH="/path/to/Qt/6.x.x/android_arm64_v8a"
+cmake --build build-android --parallel
+\end{lstlisting}
+
+Qt Creator is still recommended for packaging and device deployment.
+
+\subsection{Android feature differences}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{5.2cm}L{8.5cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Feature &
+\color{white}\sffamily\bfseries Android status \\
+\midrule
+Hosted web apps          & Supported via Qt WebView. \\
+Signal~K stream          & Supported (WebSockets). \\
+mDNS server discovery    & Not available (disabled on Android). \\
+Global hotkey SHIFT+TAB  & Not available (desktop-only, uses QHotkey). \\
+Virtual keyboard         & Uses Android system keyboard; Qt Virtual Keyboard setting has no effect. \\
+File printing / PDF      & Not available (PrintSupport not included). \\
+QWebEngine cookies       & Not used; mobile path uses a separate mechanism. \\
+\code{file://} apps      & Blocked by the single-window model on all targets. \\
+\bottomrule
+\end{longtable}
+
+% ── A.9  iOS and iPadOS ──────────────────────────────────────
+\section{iOS and iPadOS Installation}
+\label{app:ios}
+
+iOS and iPadOS builds use the same mobile web implementation as Android.
+Qt Creator with an Apple developer account is required for device deployment.
+
+\subsection{Requirements}
+
+\begin{itemize}
+  \item A macOS build host
+  \item Xcode and Xcode command line tools
+  \item Qt~6 with the iOS kit
+  \item CMake and Ninja
+  \item An Apple developer account and provisioning profile
+        (for device deployment; not needed for the Simulator)
+\end{itemize}
+
+\subsection{Step-by-step build guide}
+
+\begin{enumerate}
+  \item Open Xcode at least once and accept the license agreement.
+  \item In the Qt Maintenance Tool, install the iOS Qt components
+        that match your desktop Qt release.
+  \item Clone the repository:
+\begin{lstlisting}
+git clone https://github.com/OpenFairWind/FairWindSK.git
+\end{lstlisting}
+  \item Open \code{FairWindSK/CMakeLists.txt} in Qt Creator.
+  \item Select an iOS kit (e.g.\ \textit{Qt~6.x.x for iOS}).
+  \item Build with \ui{Build~> Build Project}.
+  \item To run on the Simulator: choose an iOS Simulator run target
+        and select \ui{Build~> Run}.
+  \item To run on a device: connect the iPhone or iPad, select the
+        physical device in the run target chooser, verify signing settings
+        when prompted, and run from Qt Creator.
+\end{enumerate}
+
+\subsection{Command-line configure (advanced)}
+
+\begin{lstlisting}
+cmake -S . -B build-ios -G Ninja \
+  -DCMAKE_SYSTEM_NAME=iOS \
+  -DCMAKE_OSX_SYSROOT=iphoneos \
+  -DCMAKE_OSX_ARCHITECTURES=arm64 \
+  -DCMAKE_PREFIX_PATH="/path/to/Qt/6.x.x/ios"
+cmake --build build-ios --parallel
+\end{lstlisting}
+
+Use \code{iphonesimulator} and \code{x86\_64} (or \code{arm64} on
+Apple Silicon hosts) for Simulator builds.
+
+\subsection{iOS feature differences}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{5.2cm}L{8.5cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Feature &
+\color{white}\sffamily\bfseries iOS / iPadOS status \\
+\midrule
+Hosted web apps          & Supported via Qt WebView (WKWebView). \\
+Signal~K stream          & Supported (WebSockets). \\
+mDNS server discovery    & Not available. Enter the server URL manually. \\
+Global hotkey SHIFT+TAB  & Not available. \\
+Virtual keyboard         & Uses iOS system keyboard. \\
+File printing / PDF      & Not available. \\
+\code{file://} apps      & Blocked by the single-window model on all targets. \\
+\bottomrule
+\end{longtable}
+
+% ── A.10  Signal K Server on Docker ──────────────────────────
+\section{Signal K Server on Docker}
+\label{app:signalk-docker}
+
+If you do not already have a Signal~K server, Docker is the fastest
+way to get one running.
+This section documents the Docker deployment from the
+FairWindSK project repository.
+
+\subsection{Docker image}
+
+\begin{lstlisting}
+cr.signalk.io/signalk/signalk-server:latest
+\end{lstlisting}
+
+Supported architectures: \code{linux/amd64}, \code{linux/arm/v7},
+\code{linux/arm64} (covers all Raspberry~Pi~4 and~5 configurations).
+
+\subsection{Quick start with demo NMEA data}
+
+\begin{lstlisting}
+mkdir $HOME/.signalk
+docker run --init -it --rm \
+  --name signalk-server \
+  --publish 3000:3000 \
+  -v $HOME/.signalk:/home/node/.signalk \
+  cr.signalk.io/signalk/signalk-server \
+  --sample-nmea0183-data
+\end{lstlisting}
+
+This runs Signal~K on port~3000 with simulated NMEA~0183 data.
+Use it to test FairWindSK without real instruments.
+
+\subsection{Production deployment}
+
+\begin{lstlisting}
+docker run -d --init \
+  --name signalk-server \
+  -p 3000:3000 \
+  -v $HOME/.signalk:/home/node/.signalk \
+  cr.signalk.io/signalk/signalk-server
+\end{lstlisting}
+
+\begin{itemize}
+  \item The \code{-d} flag runs the container as a background daemon.
+  \item The \code{-v} flag mounts the configuration directory so
+        Signal~K settings, plugins, and data persist across container
+        restarts.
+  \item On first access, the Signal~K admin web UI at
+        \code{http://localhost:3000} prompts you to create admin credentials.
+\end{itemize}
+
+\subsection{Updating Signal K}
+
+\begin{lstlisting}
+docker pull cr.signalk.io/signalk/signalk-server:latest
+docker stop signalk-server
+docker rm signalk-server
+# Re-run the production docker run command above
+\end{lstlisting}
+
+\subsection{Directory structure inside the container}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{4.8cm}L{8.9cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Path &
+\color{white}\sffamily\bfseries Contents \\
+\midrule
+\code{/home/node/signalk}  & Signal~K server files (read-only inside container). \\
+\code{/home/node/.signalk} & Settings files, plugins, and data.
+                              \textbf{Mount this to the host.} \\
+\bottomrule
+\end{longtable}
+
+% ── A.11  First-Run Configuration ────────────────────────────
+\section{First-Run Configuration}
+\label{app:firstrun}
+
+After installation on any platform, follow these steps on the first launch.
+
+\subsection{Configuration file locations}
+
+FairWindSK stores its configuration in two files in the per-user
+Qt configuration directory:
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3.6cm}L{10.1cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries File &
+\color{white}\sffamily\bfseries Contents \\
+\midrule
+\code{fairwindsk.json}  &
+  All user-visible settings: connection URL, bar layouts, app catalogue,
+  widget definitions, comfort presets, units, and Signal~K path mappings.
+  Human-readable JSON.
+  Safe to back up, transfer, and version-control. \\
+\code{fairwindsk.ini}   &
+  Qt-managed settings: path to \code{fairwindsk.json}, the debug flag,
+  and the authentication token.
+  The token is kept here intentionally so it is never included in a
+  configuration export. \\
+\bottomrule
+\end{longtable}
+
+On first run, if \code{fairwindsk.json} does not exist, FairWindSK
+seeds it from the bundled defaults in
+\code{resources/json/configuration.json}.
+
+\subsection{Connect to Signal K}
+
+\begin{enumerate}
+  \item Open \ui{Settings~> Connection}.
+  \item Enter the Signal~K server address,
+        e.g.\ \code{http://192.168.1.100:3000}.
+        If you are running Signal~K on the same device,
+        use \code{http://localhost:3000}.
+  \item Tap \key{Connect}.
+  \item Wait for the status to change to \textit{Live}.
+  \item If the server requires authentication,
+        tap \key{Request Token} and approve the request in the
+        Signal~K admin interface.
+\end{enumerate}
+
+\subsection{Authenticate (optional)}
+
+If the Signal~K server has security enabled:
+
+\begin{enumerate}
+  \item Tap \key{Request Token} in \ui{Settings~> Connection}.
+  \item FairWindSK opens the Signal~K admin interface in the
+        Bottom~Bar drawer, navigated to
+        \ui{Security~> Access Requests}.
+  \item Approve the request as an admin user.
+  \item FairWindSK stores the token automatically and reconnects.
+\end{enumerate}
+
+\subsection{Essential first-time settings}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{4.0cm}L{9.7cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Setting &
+\color{white}\sffamily\bfseries Where and what to set \\
+\midrule
+Units &
+  \ui{Settings~> Units}.
+  Choose knots (speed), nautical miles (distance), and metres or feet (depth). \\
+Coordinate format &
+  \ui{Settings~> Main}.
+  Choose DD°MM.MMM' for standard nautical use. \\
+Window mode &
+  \ui{Settings~> Main}.
+  Choose Full~Screen for a dedicated helm display;
+  Windowed or Centred for a navigation station. \\
+Comfort preset &
+  \ui{Settings~> Comfort}.
+  Set Day for initial testing; change to Night for the night watch. \\
+Launcher apps &
+  \ui{Settings~> Applications}.
+  Arrange your chart plotter, instruments, and other apps on page~1. \\
+Virtual keyboard &
+  \ui{Settings~> Main} (touchscreen only).
+  Tick, then restart FairWindSK. \\
+\bottomrule
+\end{longtable}
+
+% ── A.12  Configuration file reference ───────────────────────
+\section{Key Configuration Fields}
+\label{app:config}
+
+Advanced users and system integrators can edit \code{fairwindsk.json}
+directly.
+This section covers the most useful fields.
+
+\subsection{Connection}
+
+\begin{lstlisting}
+{
+  "connection": {
+    "server": "http://your-signalk-host:3000"
+  }
+}
+\end{lstlisting}
+
+\subsection{Window mode}
+
+\begin{lstlisting}
+{
+  "main": {
+    "windowMode": "fullscreen",
+    "language": "en",
+    "virtualKeyboard": false
+  }
+}
+\end{lstlisting}
+
+Valid values for \code{windowMode}: \code{windowed}, \code{centered},
+\code{maximized}, \code{fullscreen}.
+Valid values for \code{language}: \code{system}, \code{en}, \code{it}.
+
+\subsection{Units}
+
+\begin{lstlisting}
+{
+  "units": {
+    "vesselSpeed": "kn",
+    "windSpeed":   "kn",
+    "distance":    "nm",
+    "depth":       "mt"
+  }
+}
+\end{lstlisting}
+
+\subsection{Signal K path overrides}
+
+\begin{lstlisting}
+{
+  "signalk": {
+    "sog": "navigation.speedOverGround",
+    "dpt": "environment.depth.belowTransducer",
+    "notifications.pob": "notifications.mob"
+  }
+}
+\end{lstlisting}
+
+\subsection{Diagnostics}
+
+\begin{lstlisting}
+{
+  "diagnostics": {
+    "logLevel":          "off",
+    "persistentLogs":    true,
+    "interactionHistory": true,
+    "email": "your-email@example.com"
+  }
+}
+\end{lstlisting}
+
+Valid log levels: \code{off}, \code{critical}, \code{warning},
+\code{info}, \code{debug}, \code{full}.
+
+% ── A.13  Troubleshooting installation ───────────────────────
+\section{Troubleshooting Installation Problems}
+\label{app:troubleshooting-install}
+
+\subsection{FairWindSK does not start after installation}
+
+\begin{enumerate}
+  \item Run the binary from a terminal to see error output:
+        \code{FairWindSK} (Linux/macOS) or
+        \code{build\textbackslash FairWindSK.exe} (Windows).
+  \item Check that Qt WebEngine libraries are available.
+        On Linux, run \code{ldd build/FairWindSK | grep "not found"}.
+  \item On Raspberry~Pi, check for the virtual keyboard CMake workaround
+        (Section~\ref{app:rpi-station}).
+\end{enumerate}
+
+\subsection{No applications appear on the launcher}
+
+\begin{enumerate}
+  \item Verify the Signal~K server address in
+        \ui{Settings~> Connection}.
+  \item Confirm the server exposes
+        \code{/signalk/v1/apps/list} or \code{/skServer/webapps}.
+  \item Check the Signal~K App Store --- at least one web app must be
+        installed on the server for it to appear in FairWindSK.
+  \item Enable debug logging: add \code{debug=true} to
+        \code{fairwindsk.ini} and relaunch.
+        Logs include connection attempts and app discovery details.
+\end{enumerate}
+
+\subsection{Build fails with missing Qt module}
+
+\begin{enumerate}
+  \item Verify the Qt version: \code{qmake6 --version} or
+        \code{cmake --find-package -DNAME=Qt6 -DCOMPILER\_ID=GNU \ldots}
+  \item Check that all required packages are installed
+        (Sections~\ref{app:linux} and~\ref{app:rpi-station}).
+  \item If \code{CMAKE\_PREFIX\_PATH} is needed, pass it explicitly:
+        \code{cmake -S . -B build -DCMAKE\_PREFIX\_PATH=/path/to/Qt/6.x.x/...}
+\end{enumerate}
+
+\subsection{FairWindSK does not autostart on Raspberry Pi}
+
+\begin{enumerate}
+  \item Verify the autostart file was installed:
+\begin{lstlisting}
+ls /etc/xdg/autostart/fairwindsk-startup.desktop
+\end{lstlisting}
+  \item Verify the \code{fairwindsk-startup} script is executable
+        and in PATH:
+\begin{lstlisting}
+which fairwindsk-startup
+\end{lstlisting}
+  \item Run the startup helper manually from a terminal to check for errors:
+\begin{lstlisting}
+fairwindsk-startup
+\end{lstlisting}
+  \item Ensure the desktop session supports XDG autostart
+        (the default Raspberry~Pi~OS desktop does).
+\end{enumerate}

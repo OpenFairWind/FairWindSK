@@ -1,0 +1,321 @@
+\part{L'Interfaccia}
+
+\chapter{Schermata Principale}
+
+FairWindSK mantiene sempre visibili tre zone della shell, indipendentemente dall'applicazione
+attiva. Questi nomi sono usati in modo uniforme in questo manuale, nel codice sorgente del
+progetto e in tutta la documentazione per i collaboratori.
+
+\section{Le Tre Zone}
+
+\begin{center}
+\begin{tcolorbox}[enhanced,colback=LtBlue,colframe=Navy,boxrule=1.5pt,arc=4pt,
+  top=7pt,bottom=5pt,left=12pt,right=12pt,width=0.96\textwidth]
+  {\sffamily\bfseries\color{Navy}BARRA SUPERIORE --- sempre visibile}\\[3pt]
+  {\small\icon{lcd-app}~Icona app \quad
+         \icon{layout-signalk}~Widget dati \quad
+         Nome app \quad
+         \icon{lcd-clock}~Data/ora \quad
+         Icone di stato}
+\end{tcolorbox}
+\vspace{2pt}
+\begin{tcolorbox}[enhanced,colback=white,colframe=Navy,boxrule=1.5pt,arc=4pt,
+  top=26pt,bottom=26pt,left=12pt,right=12pt,width=0.96\textwidth]
+  \centering
+  {\large\sffamily\bfseries\color{MidGray}AREA APPLICAZIONI}\\[4pt]
+  {\small\sffamily\color{MidGray}\itshape
+    Launcher \textbar{} Plotter \textbar{} Strumenti \textbar{}
+    Impostazioni \textbar{} MyData \textbar{} Applicazioni web Signal~K}
+\end{tcolorbox}
+\vspace{2pt}
+\begin{tcolorbox}[enhanced,colback=LtBlue,colframe=Navy,boxrule=1.5pt,arc=4pt,
+  top=7pt,bottom=5pt,left=12pt,right=12pt,width=0.96\textwidth]
+  {\sffamily\bfseries\color{Navy}BARRA INFERIORE --- sempre visibile}\\[3pt]
+  {\small
+    Striscia app aperte \quad
+    \icon{applications}~App \quad
+    \icon{alarm-pob}~POB \quad
+    \icon{command-autopilot}~Autopilota \quad
+    \icon{anchor-iec}~Ancora \quad
+    \icon{alarm-general}~Allarmi \quad
+    \icon{database}~MyData \quad
+    \icon{settings-iec}~Impostazioni \quad
+    \icon{layout-signalk}~Stato}
+\end{tcolorbox}
+\end{center}
+
+\screenshot{screen-layout-overview}{Schema schermata: Barra Superiore, Area Applicazioni, Barra Inferiore}{}
+
+\section{L'Area Applicazioni}
+
+L'Area Applicazioni è lo spazio di lavoro principale tra le barre. Qui FairWindSK mostra:
+
+\begin{itemize}
+  \item le pagine del launcher
+  \item app di carteggio e navigazione
+  \item Impostazioni
+  \item MyData
+  \item applicazioni web Signal~K incorporate
+\end{itemize}
+
+\section{Cassetti (Drawer)}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{4.0cm}L{9.7cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Cassetto &
+\color{white}\sffamily\bfseries Descrizione \\
+\midrule
+Cassetto orizzontale Barra Inferiore &
+  Dialogo modale che si apre verso l'alto dalla Barra Inferiore.
+  Usato per dialoghi modali web, conferme, selettori file e pannelli di impostazioni.
+  Un solo dialogo alla volta; dialoghi aggiuntivi vengono accodati.
+  Può estendersi verso l'alto fino a coprire temporaneamente l'Area Applicazioni. \\
+Cassetto verticale Area Applicazioni &
+  Pannello non modale che si apre verso sinistra dal bordo destro dell'Area Applicazioni.
+  Usato per menu contestuali o palette di strumenti.
+  L'Area Applicazioni rimane interattiva dietro di esso. \\
+\bottomrule
+\end{longtable}
+
+\section{Modello a Finestra Singola}
+
+FairWindSK applica un modello a finestra singola su tutte le piattaforme.
+
+Android costituisce l'eccezione intenzionale per le applicazioni native selezionate.
+Da Android 13/API 33, FairWindSK può essere scelto facoltativamente come app Home e
+può avviare esplicitamente le attività selezionate in \ui{Impostazioni~> Android}.
+Le attività native lasciano temporaneamente la finestra FairWindSK e vi ritornano
+tramite Indietro o Home; i contenuti FairWindSK e Signal~K restano nel modello a
+finestra singola.
+Nessun contenuto FairWindSK apre una seconda finestra; fuori dall'eccezione Android
+descritta sopra, non viene avviata alcuna applicazione nativa esterna.
+Le voci del launcher con schema \code{file://} sono bloccate.
+
+Su piattaforme desktop (Linux, macOS, Windows, Raspberry~Pi~OS), premi \key{SHIFT+TAB}
+per riportare FairWindSK in primo piano se un'applicazione web ospitata ha acquisito
+il focus completo.
+
+\chapter{La Barra Superiore}
+\label{ch:barrasuperiore}
+
+La Barra Superiore è sempre visibile.
+Il suo scopo: fornire un controllo di fiducia in due secondi in qualsiasi momento.
+Usala per rispondere a: \textit{Cosa sta succedendo adesso, e i dati sono ancora affidabili?}
+
+\screenshot{topbar-overview}{Barra Superiore: posizione, SOG, DPT, BTW, ETA e icone di stato}{}
+
+\section{Elementi Fissi della Barra Superiore}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{C{1.5cm}L{2.8cm}L{9.4cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Icona &
+\color{white}\sffamily\bfseries Elemento &
+\color{white}\sffamily\bfseries Funzione \\
+\midrule
+\iconlg{lcd-app}       & Icona app    &
+  Icona dell'applicazione corrente.
+  Toccarla apre il cassetto verticale dell'Area Applicazioni. \\
+---                     & Nome app     &
+  Nome dell'applicazione attualmente attiva. \\
+\iconlg{lcd-clock}     & Data/ora     &
+  Data e ora corrente del dispositivo. \\
+\iconlg{layout-signalk}& Icone stato  &
+  Indicatori di salute REST e stream. \\
+\bottomrule
+\end{longtable}
+
+\section{Widget Dati --- Riferimento Completo}
+
+Ogni widget si abbona a un percorso Signal~K configurato in
+\ui{Impostazioni~> Percorsi Signal~K}.
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{C{1.4cm}C{1.1cm}L{4.4cm}L{3.0cm}L{3.8cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Icona &
+\color{white}\sffamily\bfseries Chiave &
+\color{white}\sffamily\bfseries Percorso Signal~K predefinito &
+\color{white}\sffamily\bfseries Visualizza &
+\color{white}\sffamily\bfseries Rilevanza operativa \\
+\midrule
+\iconlg{lcd-position} & \code{pos} & \skpath{navigation.position}                              & Lat / Lon             & Conferma fix GPS \\
+\iconlg{lcd-cog}      & \code{cog} & \skpath{navigation.courseOverGroundTrue}                  & COG (\textdegree{}V)  & Rotta reale sul fondale \\
+\iconlg{lcd-sog}      & \code{sog} & \skpath{navigation.speedOverGround}                       & SOG (nd)              & Velocità reale per ETA \\
+\iconlg{lcd-hdg}      & \code{hdg} & \skpath{navigation.headingTrue}                           & Prua (\textdegree{}V) & Dove punta la prua \\
+\iconlg{lcd-stw}      & \code{stw} & \skpath{navigation.speedThroughWater}                     & STW (nd)              & Assetto vele, deduzione corrente \\
+\iconlg{lcd-dpt}      & \code{dpt} & \skpath{environment.depth.belowTransducer}                & Profondità            & Critico in acque basse \\
+\iconlg{lcd-btw}      & \code{btw} & \skpath{navigation.course.calcValues.bearingTrue}         & Rilevamento WPT       & Rotta da seguire \\
+\iconlg{lcd-dtg}      & \code{dtg} & \skpath{navigation.course.calcValues.distance}            & Distanza da percorrere & Progresso traversata \\
+\iconlg{lcd-ttg}      & \code{ttg} & \skpath{navigation.course.calcValues.timeToGo}            & Tempo rimanente       & Pianificazione ETA \\
+\iconlg{lcd-eta}      & \code{eta} & \skpath{navigation.course.calcValues.estimatedTimeOfArrival} & Ora stim.\ di arrivo & Notifica equipaggio \\
+\iconlg{lcd-xte}      & \code{xte} & \skpath{navigation.course.calcValues.crossTrackError}     & Errore di rotta       & Rispetto del percorso \\
+\iconlg{lcd-vmg}      & \code{vmg} & \skpath{performance.velocityMadeGood}                     & Velocità eff.\ progresso & Efficienza reale di vela \\
+\iconlg{lcd-wpt}      & \code{wpt} & \skpath{navigation.course.nextPoint}                      & Nome waypoint attivo  & Consapevolezza di rotta \\
+\bottomrule
+\end{longtable}
+
+\begin{warningbox}
+Profondità mancante \textbf{non} significa profondità zero.
+Un valore mancante significa che la misura non è disponibile --- trattala come
+completamente sconosciuta.
+Se la profondità diventa obsoleta o mancante in acque basse o ristrette, verifica
+immediatamente e adegua di conseguenza velocità e margine di manovra.
+\end{warningbox}
+
+\section{Configurazione della Barra Superiore}
+
+Apri \ui{Impostazioni~> Barra Superiore}.
+In alto appare un'anteprima in tempo reale della barra; sotto si trova la palette dei widget.
+Usa i pulsanti \iconlg{arrow-left-google}~sposta-sinistra e \iconlg{arrow-right-google}~sposta-destra
+per riposizionare i widget.
+Attiva/disattiva \key{Mostra Icona}, \key{Mostra Testo}, \key{Mostra Unità} e \key{Mostra Tendenza}
+per ogni widget.
+Tocca \iconlg{refresh-google}~\key{Ripristina Predefiniti} per ripristinare il layout predefinito.
+
+\begin{tipbox}
+In condizioni difficili, una Barra Superiore con 3--4 widget chiave (posizione, SOG, DPT, BTW)
+è più sicura di dodici elementi.
+Aggiungi widget solo se aggiungono consapevolezza situazionale reale nella fase di navigazione corrente.
+\end{tipbox}
+
+\chapter{La Barra Inferiore}
+\label{ch:barrainferiore}
+
+La Barra Inferiore è la striscia di azioni permanente in fondo a ogni schermata.
+La sua stabilità spaziale è intenzionale: il pulsante \iconlg{applications}~App è sempre
+nello stesso posto, il pulsante \iconlg{alarm-pob}~POB è sempre a portata di mano.
+La memoria muscolare è sicurezza.
+
+\screenshot{bottombar-overview}{Barra Inferiore: striscia app aperte, icone principali, stato Signal~K}{}
+
+\section{Aree della Barra Inferiore}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3.6cm}L{10.1cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Area &
+\color{white}\sffamily\bfseries Descrizione \\
+\midrule
+Striscia app web aperte &
+  Riga scorrevole di piccole icone app a sinistra, una per applicazione caricata.
+  Tocca un'icona per passare immediatamente a quella app.
+  L'applicazione attiva è evidenziata. \\
+Icone principali &
+  Il gruppo centrale di sette icone fisse. Stabile spazialmente in tutte le schermate. \\
+Area stato Signal~K &
+  Sul lato destro. Indicatori compatti di salute stream e REST, nome server,
+  timestamp ultimo aggiornamento e stato della connessione.
+  Toccare apre un cassetto di dettaglio. \\
+\bottomrule
+\end{longtable}
+
+\section{Riferimento Icone Principali}
+
+Queste sono le icone esatte definite in \code{BottomBar.ui}.
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{C{1.4cm}L{2.4cm}L{5.4cm}L{4.5cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Icona &
+\color{white}\sffamily\bfseries Etichetta &
+\color{white}\sffamily\bfseries Funzione &
+\color{white}\sffamily\bfseries Note \\
+\midrule
+\iconlg{applications}     & App         &
+  Apre il launcher. Nasconde l'app corrente e mostra la griglia tile. &
+  Uso come via di fuga sicura da qualsiasi schermata bloccata o confusa. \\
+\iconlg{alarm-pob}        & POB         &
+  Persona in mare. Un tocco avvia l'emergenza. &
+  Sempre visibile. Mai disabilitato. \\
+\iconlg{command-autopilot}& Autopilota  &
+  Apre la barra Autopilota. &
+  Grigio/inattivo se non viene rilevato nessun plugin compatibile. \\
+\iconlg{anchor-iec}       & Ancora      &
+  Apre la barra Guardia Ancora. &
+  Grigio/inattivo se non viene rilevato nessun plugin ancora. \\
+\iconlg{alarm-general}    & Allarmi     &
+  Apre la barra Allarmi. Evidenziato quando un allarme è attivo. &
+  Colore accent quando attivo; attira l'attenzione su tutti i preset. \\
+\iconlg{database}         & MyData      &
+  Apre il gestore risorse (Cap.~\ref{ch:mydata}). & \\
+\iconlg{settings-iec}     & Impostazioni &
+  Apre tutte le configurazioni (Cap.~\ref{ch:impostazioni}). & \\
+\bottomrule
+\end{longtable}
+
+\section{Barre Operative Sovrapposte}
+
+Toccando \iconlg{alarm-pob}~POB, \iconlg{command-autopilot}~Autopilota,
+\iconlg{anchor-iec}~Ancora, o \iconlg{alarm-general}~Allarmi si sostituisce la Barra
+Inferiore normale con una barra operativa dedicata.
+L'Area Applicazioni continua a funzionare in background.
+Tocca \iconlg{close-google}~chiudi (icona più a destra) per tornare alla Barra Inferiore
+normale senza modificare lo stato operativo.
+
+\begin{warningbox}
+Le barre operative non sono modali.
+I dati continuano ad aggiornarsi.
+Il plotter e tutte le applicazioni rimangono attivi in background durante l'uso delle barre operative.
+\end{warningbox}
+
+\chapter{Il Launcher e la Gestione delle Applicazioni}
+\label{ch:launcher}
+
+Il launcher è la posizione di partenza sicura della shell.
+Usalo per tornare alle tile app, passare da un'attività all'altra, uscire da un'app bloccata
+o riorientarti dopo un flusso confuso.
+Quando la schermata corrente smette di sembrare chiara o affidabile, tocca
+\iconlg{applications}~\key{App} per tornare qui.
+
+\screenshot{launcher-overview}{Schermata principale del launcher: griglia tile, indicatore pagina, Barra Inferiore}{}
+
+\section{Aprire un'Applicazione}
+
+\begin{enumerate}
+  \item Tocca \iconlabel{applications}{App} nella Barra Inferiore.
+  \item Se necessario, scorri tra le pagine.
+  \item Tocca la tile dell'applicazione desiderata.
+  \item Attendi che si carichi nell'Area Applicazioni.
+\end{enumerate}
+
+Se un'app non si presenta correttamente, evita tocchi ripetuti rapidi.
+Attendi brevemente, riprova una volta se la shell lo propone, poi torna al launcher
+se l'app sembra ancora anomala.
+
+\section{Passare tra Applicazioni Aperte}
+
+Usa la striscia app aperte nella Barra Inferiore per passare tra le applicazioni caricate
+con un singolo tocco.
+
+\section{Aggiungere un'Applicazione Personalizzata}
+
+\begin{enumerate}
+  \item Apri \ui{Impostazioni~> Applicazioni}.
+  \item Tocca \iconlabel{define-new-application-in-palette}{Crea app}.
+  \item Inserisci un nome visualizzato e l'URL completo (\code{http://} o \code{https://}).
+  \item Imposta facoltativamente un percorso icona personalizzato e il livello di zoom.
+  \item Tocca \key{Salva}.
+\end{enumerate}
+
+\section{Ripristinare un'Applicazione Bloccata o Vuota}
+
+\begin{enumerate}
+  \item Attendi brevemente. Riprova una volta se la shell offre un'azione di ripresa.
+  \item Tocca \iconlabel{applications}{App} per tornare al launcher.
+  \item Controlla la salute della shell e lo stato della connessione.
+  \item Riapri l'app solo dopo aver confermato che la shell stessa è integra.
+\end{enumerate}
+
+\begin{tipbox}
+Un'applicazione in errore non significa che FairWindSK abbia smesso di funzionare.
+La shell, i widget dati e le barre operative (POB, ancora, autopilota) continuano
+a funzionare indipendentemente da ogni singola applicazione.
+Un'app degradata non è la stessa cosa di uno stato dell'imbarcazione degradato.
+\end{tipbox}

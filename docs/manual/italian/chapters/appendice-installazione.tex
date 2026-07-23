@@ -1,0 +1,335 @@
+\chapter{Installazione}
+\label{app:installazione}
+
+Questa appendice copre ogni scenario di deployment supportato per FairWindSK,
+dalla prima compilazione su un laptop di sviluppo all'avvio automatico kiosk su
+un display di plancia dedicato.
+
+\begin{notebox}
+Tutti gli scenari presuppongono un server Signal~K in esecuzione da qualche parte
+sulla rete di bordo.
+Installa e configura Signal~K prima di installare FairWindSK.
+\end{notebox}
+
+\section{Prerequisiti}
+\label{app:prerequisiti}
+
+\subsection{Prerequisiti comuni per tutte le piattaforme desktop}
+
+\begin{itemize}
+  \item CMake 3.16 o successivo
+  \item Un compilatore compatibile C++17 supportato dal kit Qt~6 scelto
+  \item Git
+  \item Accesso a Internet durante la prima compilazione
+        (CMake scarica \code{nlohmann/json}, \code{QtZeroConf} e \code{QHotkey})
+\end{itemize}
+
+\subsection{Moduli Qt 6 richiesti --- Desktop}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{4.5cm}L{9.2cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Modulo &
+\color{white}\sffamily\bfseries Scopo \\
+\midrule
+\code{Core}            & Classi base Qt e ciclo eventi. \\
+\code{Gui}             & Grafica 2D e gestione font. \\
+\code{Widgets}         & Toolkit widget usato in tutta la shell. \\
+\code{Concurrent}      & Thread pool per task in background. \\
+\code{Network}         & Client HTTP/REST e TLS. \\
+\code{WebSockets}      & Stream WebSocket Signal~K. \\
+\code{Xml}             & Parsing configurazione e risorse. \\
+\code{Svg}             & Rendering icone OpenBridge. \\
+\code{Positioning}     & API posizione GPS. \\
+\code{WebEngineWidgets}& Browser incorporato per app web Signal~K. \\
+\code{VirtualKeyboard} & Tastiera a schermo per deployment touch. \\
+\code{PrintSupport}    & Generazione PDF (report diagnostici). \\
+\bottomrule
+\end{longtable}
+
+\subsection{Moduli Qt 6 richiesti --- Android e iOS}
+
+Le build mobile sostituiscono \code{WebEngineWidgets} con un livello web più leggero:
+\code{Qml}, \code{Quick}, \code{QuickWidgets}, \code{WebView}.
+Non includono \code{QtZeroConf}, \code{QHotkey}, \code{PrintSupport} o \code{WebEngineWidgets}.
+
+\section{Build Desktop Generica (tutte le piattaforme)}
+\label{app:generica}
+
+\begin{lstlisting}
+git clone https://github.com/OpenFairWind/FairWindSK.git
+cd FairWindSK
+cmake -S . -B build
+cmake --build build --parallel
+cmake --install build
+\end{lstlisting}
+
+\begin{tipbox}
+Se l'accesso a Internet è limitato durante la build, installa prima
+\code{nlohmann\_json} dal gestore pacchetti.
+Su Debian/Ubuntu: \code{sudo apt install nlohmann-json3-dev}.
+Su macOS con Homebrew: \code{brew install nlohmann-json}.
+\end{tipbox}
+
+\section{Installazione su macOS}
+\label{app:macos}
+
+\begin{lstlisting}
+brew install qt cmake ninja nlohmann-json
+cmake -S . -B build -G Ninja \
+  -DCMAKE_PREFIX_PATH="$(brew --prefix qt)"
+cmake --build build --parallel
+open build/FairWindSK.app
+\end{lstlisting}
+
+Per la distribuzione fuori dall'albero di build, usa \code{macdeployqt}:
+
+\begin{lstlisting}
+macdeployqt build/FairWindSK.app
+\end{lstlisting}
+
+\section{Installazione su Linux Desktop}
+\label{app:linux}
+
+\begin{lstlisting}
+sudo apt update
+sudo apt install \
+  build-essential cmake ninja-build git \
+  nlohmann-json3-dev \
+  qt6-base-dev qt6-base-dev-tools \
+  qt6-webengine-dev qt6-webengine-dev-tools \
+  qt6-websockets-dev qt6-positioning-dev \
+  libqt6svg6-dev qt6-virtualkeyboard-dev \
+  qt6-base-private-dev libqt6printsupport6 \
+  libavahi-compat-libdnssd-dev libnss-mdns avahi-utils
+
+cmake -S . -B build -G Ninja
+cmake --build build --parallel
+sudo cmake --install build
+\end{lstlisting}
+
+\section{Raspberry Pi OS --- Postazione Nautica}
+\label{app:rpi-postazione}
+
+\begin{lstlisting}
+sudo apt update
+sudo apt install \
+  build-essential cmake ninja-build git \
+  nlohmann-json3-dev \
+  qml6-module-qt-labs-folderlistmodel \
+  qml6-module-qtquick-window \
+  qml6-module-qtquick-layouts \
+  qml6-module-qtqml-workerscript \
+  libnss-mdns avahi-utils \
+  libavahi-compat-libdnssd-dev libxkbcommon-dev \
+  qt6-base-dev qt6-base-dev-tools \
+  qt6-webengine-dev qt6-webengine-dev-tools \
+  qt6-websockets-dev qt6-positioning-dev \
+  libqt6svg6-dev \
+  qt6-virtualkeyboard-dev \
+  libqt6virtualkeyboard6 \
+  qt6-virtualkeyboard-plugin
+
+cmake -S . -B build -G Ninja
+cmake --build build --parallel
+sudo cmake --install build
+\end{lstlisting}
+
+\begin{notebox}
+Se la build fallisce con \code{Qt6VirtualKeyboardConfigVersionImpl.cmake} mancante,
+applica la soluzione nota:
+\begin{lstlisting}
+sudo touch /usr/lib/aarch64-linux-gnu/cmake/Qt6VirtualKeyboard/\
+Qt6VirtualKeyboardConfigVersionImpl.cmake
+\end{lstlisting}
+Poi riesegui \code{cmake}.
+\end{notebox}
+
+\section{Raspberry Pi OS --- Display di Plancia Kiosk}
+\label{app:rpi-kiosk}
+
+Questo è lo scenario consigliato per un display di plancia dedicato:
+Raspberry~Pi~4 o~5 con touchscreen, FairWindSK che si avvia automaticamente all'avvio
+in modalità kiosk.
+
+\subsection{Panoramica}
+
+\begin{enumerate}
+  \item Installa FairWindSK come nella Sez.~\ref{app:rpi-postazione}.
+  \item Configura la modalità schermo intero in \ui{Impostazioni~> Principale}.
+  \item Lo script \code{fairwindsk-startup} gestisce l'avvio automatico.
+  \item (Facoltativo) Configura il pannello desktop per l'auto-hide.
+  \item Abilita la tastiera virtuale (solo touchscreen).
+  \item Riavvia e verifica.
+\end{enumerate}
+
+\subsection{Cosa fa fairwindsk-startup}
+
+\begin{enumerate}
+  \item Legge \code{fairwindsk.ini} per trovare il percorso di configurazione.
+  \item Controlla il flag \code{virtualKeyboard} e imposta \code{QT\_IM\_MODULE}
+        di conseguenza.
+  \item Attende fino a 45 secondi che l'endpoint del catalogo app Signal~K risponda.
+  \item Avvia FairWindSK.
+  \item Se FairWindSK esce con codice~1 (pulsante \textit{Riavvia} in
+        \ui{Impostazioni~> Sistema}), lo helper lo riavvia immediatamente.
+  \item Se FairWindSK esce con codice~0 (pulsante \textit{Esci}),
+        lo helper si chiude normalmente.
+\end{enumerate}
+
+\subsection{Nascondere il pannello desktop (labwc / Bookworm)}
+
+\begin{lstlisting}
+nano ~/.config/wf-panel-pi.ini
+\end{lstlisting}
+
+Aggiungi o modifica:
+
+\begin{lstlisting}
+[panel]
+autohide = true
+\end{lstlisting}
+
+Salva il file e riavvia.
+
+\section{Installazione su Windows}
+\label{app:windows}
+
+\begin{lstlisting}
+git clone https://github.com/OpenFairWind/FairWindSK.git
+cd FairWindSK
+cmake -S . -B build -G Ninja ^
+  -DCMAKE_PREFIX_PATH="C:\Qt\6.x.x\msvc2022_64"
+cmake --build build --parallel
+cmake --install build
+windeployqt build\FairWindSK.exe
+build\FairWindSK.exe
+\end{lstlisting}
+
+\section{Installazione su Android}
+\label{app:android}
+
+Le build Android usano l'implementazione web mobile Qt WebView.
+Qt Creator è il flusso di lavoro consigliato.
+
+\begin{enumerate}
+  \item Apri Android Studio e installa SDK, NDK e Build-Tools.
+  \item In Qt Maintenance Tool, installa i componenti Qt Android.
+  \item In Qt Creator, vai a \ui{Preferenze~> Dispositivi~> Android} e verifica
+        i percorsi SDK, NDK, JDK e piattaforma.
+  \item Clona il repository e apri \code{CMakeLists.txt} in Qt Creator.
+  \item Seleziona un kit Android (es.\ \textit{Android Qt~6.x.x Clang arm64-v8a}).
+  \item Build con \ui{Build~> Compila progetto}.
+  \item Collega un dispositivo Android con modalità sviluppatore abilitata o avvia
+        un emulatore.
+  \item Esegui con \ui{Build~> Esegui}.
+\end{enumerate}
+
+\subsection{Differenze funzionali su Android}
+
+mDNS non disponibile; tasto SHIFT+TAB non disponibile; usa tastiera di sistema Android;
+stampa PDF non disponibile; \code{file://} bloccato dal modello a finestra singola.
+
+\section{Installazione su iOS e iPadOS}
+\label{app:ios}
+
+Le build iOS usano la stessa implementazione mobile di Android.
+
+\begin{enumerate}
+  \item Usa un Mac con Xcode, strumenti da riga di comando Xcode e kit iOS Qt.
+  \item Clona il repository e apri \code{CMakeLists.txt} in Qt Creator.
+  \item Seleziona un kit iOS.
+  \item Build con \ui{Build~> Compila progetto}.
+  \item Per il Simulator: scegli un target Simulator e premi Esegui.
+  \item Per il dispositivo fisico: collega iPhone/iPad, verifica le impostazioni
+        di firma, esegui da Qt Creator.
+\end{enumerate}
+
+\section{Configurazione al Primo Avvio}
+\label{app:primo-avvio}
+
+\subsection{Posizioni dei file di configurazione}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3.6cm}L{10.1cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries File &
+\color{white}\sffamily\bfseries Contenuto \\
+\midrule
+\code{fairwindsk.json}  &
+  Tutte le impostazioni visibili all'utente: URL connessione, layout barre, catalogo app,
+  definizioni widget, preset comfort, unità e mappature percorsi Signal~K. JSON leggibile. \\
+\code{fairwindsk.ini}   &
+  Impostazioni gestite da Qt: percorso a \code{fairwindsk.json}, flag debug e token
+  di autenticazione. Il token è tenuto qui intenzionalmente per non essere mai incluso
+  in un'esportazione di configurazione. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Connessione a Signal K}
+
+\begin{enumerate}
+  \item Apri \ui{Impostazioni~> Connessione}.
+  \item Inserisci l'indirizzo del server Signal~K,
+        ad es.\ \code{http://192.168.1.100:3000}.
+  \item Tocca \key{Connetti}. Attendi che lo stato diventi \textit{Live}.
+  \item Se il server richiede autenticazione, tocca \key{Richiedi Token} e approva
+        la richiesta nell'interfaccia admin Signal~K.
+\end{enumerate}
+
+\subsection{Impostazioni essenziali iniziali}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{4.0cm}L{9.7cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Impostazione &
+\color{white}\sffamily\bfseries Dove e cosa impostare \\
+\midrule
+Unità            & \ui{Impostazioni~> Unità}: nodi (velocità), miglia nautiche (distanza), m o piedi (profondità). \\
+Formato coord.   & \ui{Impostazioni~> Principale}: GG\textdegree{}MM.MMM' per uso nautico standard. \\
+Modalità finestra & \ui{Impostazioni~> Principale}: Schermo Intero per display dedicato; Finestra o Centrata per postazione. \\
+Preset comfort   & \ui{Impostazioni~> Comfort}: Giorno per i test iniziali; cambia in Notte per la guardia. \\
+App launcher     & \ui{Impostazioni~> Applicazioni}: organizza plotter, strumenti e altre app nella pagina~1. \\
+Tastiera virtuale & \ui{Impostazioni~> Principale} (solo touch): spunta, poi riavvia FairWindSK. \\
+\bottomrule
+\end{longtable}
+
+\section{Risoluzione Problemi di Installazione}
+\label{app:problemi-installazione}
+
+\subsection{FairWindSK non si avvia dopo l'installazione}
+
+\begin{enumerate}
+  \item Esegui il binario da un terminale per vedere l'output degli errori:
+        \code{FairWindSK} (Linux/macOS) o \code{build\textbackslash FairWindSK.exe} (Windows).
+  \item Controlla che le librerie Qt WebEngine siano disponibili.
+        Su Linux: \code{ldd build/FairWindSK | grep "not found"}.
+  \item Su Raspberry~Pi, controlla la soluzione CMake per la tastiera virtuale
+        (Sez.~\ref{app:rpi-postazione}).
+\end{enumerate}
+
+\subsection{Nessuna applicazione appare nel launcher}
+
+\begin{enumerate}
+  \item Verifica l'indirizzo del server Signal~K in \ui{Impostazioni~> Connessione}.
+  \item Conferma che il server esponga \code{/signalk/v1/apps/list} o \code{/skServer/webapps}.
+  \item Almeno un'app web deve essere installata sul server.
+  \item Abilita il log debug: aggiungi \code{debug=true} a \code{fairwindsk.ini}
+        e riavvia FairWindSK.
+\end{enumerate}
+
+\subsection{FairWindSK non si avvia automaticamente su Raspberry Pi}
+
+\begin{enumerate}
+  \item Verifica che il file di autoavvio sia installato:
+        \code{ls /etc/xdg/autostart/fairwindsk-startup.desktop}
+  \item Verifica che lo script \code{fairwindsk-startup} sia eseguibile e nel PATH:
+        \code{which fairwindsk-startup}
+  \item Esegui lo script di avvio manualmente da un terminale per controllare gli errori:
+        \code{fairwindsk-startup}
+  \item Assicurati che la sessione desktop supporti XDG autostart
+        (il desktop predefinito di Raspberry~Pi~OS lo fa).
+\end{enumerate}

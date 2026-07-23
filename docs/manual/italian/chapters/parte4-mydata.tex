@@ -1,0 +1,223 @@
+\part{MyData}
+
+\chapter{MyData --- Panoramica}
+\label{ch:mydata}
+
+MyData è il gestore risorse integrato di FairWindSK.
+Fornisce un'interfaccia ottimizzata per il tocco per tutte le risorse nautiche archiviate
+sul server Signal~K: waypoint, rotte, regioni, note, carte, tracce storiche e file.
+
+Apri MyData toccando \iconlabel{database}{MyData} nella Barra Inferiore.
+
+\screenshot{mydata-main-tabs}{MyData --- barra delle schede con le sette schede visibili}{}
+
+\begin{notebox}
+Tutte le risorse in MyData sono archiviate sul server Signal~K, non sul dispositivo
+FairWindSK. Sono accessibili da qualsiasi dispositivo connesso allo stesso server
+Signal~K simultaneamente.
+\end{notebox}
+
+\section{Panoramica delle Schede MyData}
+
+MyData è organizzato in sette schede. Ogni scheda si carica in modo pigro --- viene
+creata solo al primo tocco, mantenendo veloce l'avvio.
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{C{0.7cm}L{2.8cm}L{10.2cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries N. &
+\color{white}\sffamily\bfseries Nome &
+\color{white}\sffamily\bfseries Contenuto \\
+\midrule
+0 & Waypoint & Posizioni nominate: ancoraggio, ostacoli, marine, punti pesca, boe di regata. \\
+1 & Rotte    & Sequenze ordinate di waypoint che formano traversate pianificate. \\
+2 & Regioni  & Aree geografiche di confine --- zone di ricerca SAR, zone di esclusione, limiti di ancoraggio. \\
+3 & Note     & Annotazioni di testo libero associate a posizioni. \\
+4 & Carte    & Catalogo sorgenti tile nautiche per i fornitori di carte installati. \\
+5 & Tracce   & Traccia GPS storica --- la sequenza registrata delle posizioni dell'imbarcazione. \\
+6 & File     & Browser diretto del filesystem per i file accessibili tramite Signal~K. \\
+\bottomrule
+\end{longtable}
+
+\section{La Barra degli Strumenti Comune}
+
+Le schede 0--4 (Waypoint, Rotte, Regioni, Note, Carte) condividono un layout comune:
+una tabella scorrevole con le risorse dal server Signal~K e una barra degli strumenti
+con i pulsanti icona:
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{2.8cm}L{10.9cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Pulsante &
+\color{white}\sffamily\bfseries Azione \\
+\midrule
+\iconlg{arrow-right-google}~Apri & Apre la risorsa selezionata --- mostra i dettagli o l'anteprima. \\
+\iconlg{edit-google}~Modifica     & Apre il cassetto editor per la risorsa selezionata. \\
+\iconlg{widget-add-google}~Nuovo  & Apre il cassetto editor per creare una nuova risorsa. \\
+\iconlg{delete-google}~Elimina    & Elimina la risorsa selezionata dopo conferma. Irreversibile. \\
+\iconlg{route-import-iec}~Importa & Importa da file GeoJSON o JSON. \\
+\iconlg{file-export-google}~Esporta & Esporta in file GeoJSON. \\
+\iconlg{refresh-google}~Aggiorna  & Forza il ricaricamento di tutte le risorse dal server Signal~K. \\
+\bottomrule
+\end{longtable}
+
+\chapter{Waypoint}
+\label{ch:waypoint}
+
+I waypoint sono posizioni nominate archiviate sul server Signal~K: ancoraggi, ostacoli,
+marine, punti di rifornimento, punti pesca, boe di regata e qualsiasi altra posizione
+che si voglia registrare e verso cui navigare.
+
+\screenshot{mydata-waypoints-list}{MyData --- scheda Waypoint, vista elenco}{}
+
+\section{Colonne della Tabella Waypoint}
+
+Nome, Descrizione, Tipo (es.\ \code{alarm-mob} per i waypoint POB), Latitudine, Longitudine,
+Timestamp.
+
+\section{Creazione di un Waypoint}
+
+Tocca \key{Nuovo}. Si apre il cassetto Editor Waypoint con i campi: Nome, Descrizione, Tipo,
+Latitudine, Longitudine, Altitudine.
+
+\section{Navigare verso un Waypoint}
+
+Dalla vista dettaglio, tocca \key{Naviga}.
+FairWindSK imposta il waypoint come destinazione di navigazione attiva su Signal~K.
+Immediatamente i widget BTW, DTG, TTG ed ETA nella Barra Superiore mostrano valori
+relativi a questo waypoint.
+
+\chapter{Rotte}
+\label{ch:rotte}
+
+Le rotte sono sequenze ordinate di waypoint che formano traversate pianificate.
+
+\screenshot{mydata-routes-list}{MyData --- scheda Rotte, vista elenco}{}
+
+\section{Colonne della Tabella Rotte}
+
+Nome, Descrizione, Geometria (es.\ \code{LineString}, \code{sar-spiral}, \code{sar-parallel}),
+Punti, Timestamp.
+
+\begin{tipbox}
+I percorsi di ricerca SAR creati dalla funzione POB appaiono automaticamente nella
+scheda Rotte. Hanno tipi di geometria \code{sar-spiral} e \code{sar-parallel} e possono
+essere esportati come GeoJSON per i registri di viaggio.
+\end{tipbox}
+
+\chapter{Regioni}
+\label{ch:regioni}
+
+Le regioni sono aree di confine geografiche definite come poligoni GeoJSON.
+Vengono usate per aree di ricerca SAR (create automaticamente dalla funzione POB),
+zone marine protette, zone di esclusione, limiti di ancoraggio e zone di pesca.
+
+\section{Colonne della Tabella Regioni}
+
+Nome, Descrizione, Geometria, Timestamp.
+
+\chapter{Note}
+\label{ch:note}
+
+Le note sono annotazioni di testo libero associate a posizioni geografiche.
+Funzionano come post-it sulla carta --- utili per registrare consigli di pilotaggio,
+ostacoli locali non in carta, dettagli di marine o osservazioni dell'equipaggio.
+
+\screenshot{mydata-notes-list}{MyData --- scheda Note, vista elenco con titolo, descrizione, href, tipo MIME}{}
+
+\section{Colonne della Tabella Note}
+
+Titolo, Descrizione (per i file di testo importati: i primi 120 caratteri del contenuto),
+Href (percorso file o URL dell'allegato), Tipo MIME, Timestamp.
+
+\section{Importazione Note}
+
+La scheda Note accetta un insieme più ampio di tipi di file di importazione:
+file GeoJSON/JSON, file di testo (\code{.txt}, \code{.md}, \code{.html}), immagini
+(\code{.jpg}, \code{.jpeg}, \code{.png}) e file PDF.
+Per i file non-GeoJSON, FairWindSK crea automaticamente una nota con il nome del file
+come titolo e l'href impostato sul percorso assoluto del file.
+
+\chapter{Carte}
+\label{ch:carte}
+
+La scheda Carte elenca le sorgenti di tile nautici disponibili registrate sul server Signal~K.
+
+\screenshot{mydata-charts-list}{MyData --- scheda Carte, vista elenco}{}
+
+\section{Colonne della Tabella Carte}
+
+Nome, Descrizione, Formato (\code{mbtiles}, \code{kap}, \code{gemf},
+\code{tilemapresource}, \code{package}), Identificatore, URL Carta, Timestamp.
+
+\chapter{Tracce --- Storico}
+\label{ch:tracce}
+
+La scheda Tracce mostra la traccia GPS storica dell'imbarcazione.
+
+\screenshot{mydata-tracks-list}{MyData --- scheda Tracce, tabella dei punti traccia con ora, lat/lon, altitudine}{}
+
+\section{Colonne della Tabella Tracce}
+
+Ora (timestamp formattato in ora locale), Latitudine, Longitudine, Altitudine.
+
+\section{Esportazione della Traccia}
+
+Tocca \key{Esporta} per salvare la traccia completa come GeoJSON \code{LineString}.
+Il nome file predefinito è \code{tracks-history.geojson}.
+
+\begin{tipbox}
+Esporta la traccia dopo ogni traversata e archivial con il giornale di bordo.
+Il file GeoJSON può essere importato nella maggior parte degli strumenti GIS,
+plotter e software di pianificazione di viaggio.
+\end{tipbox}
+
+\chapter{File}
+\label{ch:file}
+
+La scheda File è un browser diretto del filesystem per i file e le directory
+accessibili sul dispositivo che esegue FairWindSK.
+
+\screenshot{mydata-files-browser}{MyData --- scheda File, browser directory con barra degli strumenti}{}
+
+\section{Navigazione e Ricerca}
+
+Naviga tra le cartelle toccando due volte le righe directory.
+Usa il pulsante \iconlg{home}~Home per tornare alla home directory.
+Usa \iconlg{arrow-up-google}~Su per salire di un livello.
+
+Per la ricerca, tocca \iconlg{search}~Cerca. Le opzioni includono:
+\textbf{Distinzione maiuscole/minuscole}, \textbf{Cerca nascosti} e \textbf{Cerca di sistema}.
+
+\section{Azioni sui File}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3.6cm}L{10.1cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Azione &
+\color{white}\sffamily\bfseries Descrizione \\
+\midrule
+\iconlg{arrow-right-google}~Apri &
+  Immagini: visore immagini. PDF: visore PDF. File di testo: visore testo. \\
+\iconlg{widget-add-google}~Nuova cartella &
+  Crea una nuova cartella nella directory corrente. \\
+\iconlg{content-copy-google}~Copia &
+  Segna gli elementi selezionati per la copia. \\
+\iconlg{content-cut-google}~Taglia &
+  Segna gli elementi selezionati per lo spostamento. \\
+\iconlg{content-paste-google}~Incolla &
+  Incolla nella cartella corrente. \\
+\iconlg{delete-google}~Elimina &
+  Elimina gli elementi selezionati dopo conferma. Permanente --- nessun cestino. \\
+\bottomrule
+\end{longtable}
+
+\begin{warningbox}
+L'eliminazione dei file è permanente.
+Non esiste cestino né funzione annulla per le operazioni sui file.
+Prestare particolare attenzione all'eliminazione di directory --- tutto il contenuto
+viene eliminato ricorsivamente.
+\end{warningbox}

@@ -1,5 +1,8 @@
 # FairWindSK documentation
 
+The bilingual LaTeX owner manuals and their reproducible PDF build instructions
+are documented in [manual/README.md](manual/README.md).
+
 - [Getting started](./getting_started.md)
 - [Hardware requirements](./hardware.md)
 - [Building FairWindSK](./building.md)
