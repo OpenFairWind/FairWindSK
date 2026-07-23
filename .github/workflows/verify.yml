@@ -15,7 +15,7 @@ permissions:
 
 env:
   BUILD_TYPE: Release
-  QT_VERSION: "6.8.*"
+  QT_VERSION: "6.8.3"
   ANDROID_CURRENT_API: "36"
 
 jobs:
@@ -27,7 +27,7 @@ jobs:
       matrix:
         check: [clang-format, clang-tidy, cmake, translations, missing-tr, json-schema, docs-links]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Install common quality tools
@@ -36,7 +36,8 @@ jobs:
         if: matrix.check == 'cmake' || matrix.check == 'clang-tidy' || matrix.check == 'translations'
         run: |
           sudo apt-get install --yes libgl1-mesa-dev libxkbcommon-x11-0 qt6-base-dev qt6-declarative-dev \
-            qt6-positioning-dev qt6-svg-dev qt6-tools-dev qt6-virtualkeyboard-dev qt6-webengine-dev qt6-websockets-dev
+            qt6-positioning-dev qt6-svg-dev qt6-tools-dev qt6-virtualkeyboard-dev qt6-webengine-dev \
+            qt6-websockets-dev nlohmann-json3-dev
       - name: clang-format
         if: matrix.check == 'clang-format'
         env:
@@ -56,7 +57,7 @@ jobs:
         if: matrix.check == 'translations'
         run: |
           python3 scripts/ci/static_checks.py translations --maximum-unfinished 330
-          lrelease resources/i18n/fairwindsk_it.ts -qm /tmp/fairwindsk_it.qm
+          /usr/lib/qt6/bin/lrelease resources/i18n/fairwindsk_it.ts -qm /tmp/fairwindsk_it.qm
       - name: Missing tr() checks
         if: matrix.check == 'missing-tr'
         env:
@@ -84,7 +85,7 @@ jobs:
       matrix:
         check: [dependencies, secrets]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Dependency review
@@ -95,19 +96,21 @@ jobs:
         run: python3 scripts/ci/static_checks.py dependencies
       - name: Secret scan
         if: matrix.check == 'secrets'
-        uses: gitleaks/gitleaks-action@v2
+        uses: docker://zricethezav/gitleaks:v8.28.0
+        with:
+          args: detect --source=/github/workspace --no-banner --redact
 
   linux:
     name: Linux x86-64 / build, tests, headless smoke
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install --yes cmake ninja-build g++ dbus-x11 xvfb libgl1-mesa-dev libxkbcommon-x11-0 \
             qt6-base-dev qt6-declarative-dev qt6-positioning-dev qt6-svg-dev qt6-tools-dev \
-            qt6-virtualkeyboard-dev qt6-webengine-dev qt6-websockets-dev
+            qt6-virtualkeyboard-dev qt6-webengine-dev qt6-websockets-dev nlohmann-json3-dev
       - name: Configure and build
         run: |
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DBUILD_TESTING=ON
@@ -137,7 +140,7 @@ jobs:
             arch: clang_64
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: jurplel/install-qt-action@v4
         with:
           version: ${{ env.QT_VERSION }}
@@ -169,7 +172,7 @@ jobs:
             abi: x86_64
             validation: configure, APK, emulator smoke
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -206,7 +209,7 @@ jobs:
     name: iOS simulator / configure and compile
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: jurplel/install-qt-action@v4
         with:
           version: ${{ env.QT_VERSION }}
@@ -225,8 +228,8 @@ jobs:
     runs-on: ubuntu-24.04-arm
     container: debian:bookworm
     steps:
-      - run: apt-get update && apt-get install --yes git ca-certificates cmake ninja-build g++ libgl1-mesa-dev libxkbcommon-x11-0 qt6-base-dev qt6-declarative-dev qt6-positioning-dev qt6-svg-dev qt6-tools-dev qt6-virtualkeyboard-dev qt6-webengine-dev qt6-websockets-dev
-      - uses: actions/checkout@v4
+      - run: apt-get update && apt-get install --yes git ca-certificates cmake ninja-build g++ libgl1-mesa-dev libxkbcommon-x11-0 nlohmann-json3-dev qt6-base-dev qt6-declarative-dev qt6-positioning-dev qt6-svg-dev qt6-tools-dev qt6-virtualkeyboard-dev qt6-webengine-dev qt6-websockets-dev
+      - uses: actions/checkout@v5
       - run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DBUILD_TESTING=OFF -DFAIRWINDSK_RASPBERRY_PI_OS=ON
       - run: cmake --build build --target QtZeroConf qhotkey --parallel 2 && cmake --build build --parallel 2
 
@@ -235,13 +238,13 @@ jobs:
     needs: [linux, desktop, android, ios, raspberry-pi]
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install --yes cmake ninja-build g++ libgl1-mesa-dev libxkbcommon-x11-0 \
             qt6-base-dev qt6-declarative-dev qt6-positioning-dev qt6-svg-dev qt6-tools-dev \
-            qt6-virtualkeyboard-dev qt6-webengine-dev qt6-websockets-dev
+            qt6-virtualkeyboard-dev qt6-webengine-dev qt6-websockets-dev nlohmann-json3-dev
       - name: Generate package
         run: |
           cmake -S . -B build -G Ninja -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
