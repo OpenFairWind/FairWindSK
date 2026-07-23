@@ -42,7 +42,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes cmake ninja-build g++ dbus-x11 xvfb xauth fonts-dejavu \
-            libgl1-mesa-dev libxkbcommon-x11-0 nlohmann-json3-dev poppler-utils \
+            libavahi-client-dev libgl1-mesa-dev libxkbcommon-x11-0 nlohmann-json3-dev poppler-utils \
             texlive-xetex texlive-latex-extra texlive-fonts-recommended
       - name: Build FairWindSK
         run: |
