@@ -11,6 +11,24 @@ Install Qt 6 and the normal FairWindSK desktop dependencies, XeLaTeX with the
 packages used by the manuals, DejaVu fonts, Poppler tools, Xvfb, and
 `xauth`. On Ubuntu the CI workflow is the authoritative dependency example.
 
+### macOS dependencies with Homebrew
+
+Install the non-privileged Homebrew TeX Live formula and the manual fonts:
+
+```bash
+brew install texlive poppler
+brew install --cask font-dejavu
+fc-cache -f "$HOME/Library/Fonts"
+```
+
+The `texlive` formula supplies XeLaTeX without the administrator-password prompt
+used by the BasicTeX package installer. Confirm the installation with
+`xelatex --version`. If XeLaTeX reports that DejaVu fonts cannot be found after
+installing them, rerun the `fc-cache` command from a normal terminal session.
+
+On macOS, build FairWindSK and run the manual script directly from the logged-in
+desktop session; Xvfb is only needed for headless Linux environments.
+
 Build FairWindSK and then run:
 
 ```bash
