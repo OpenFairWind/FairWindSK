@@ -344,6 +344,11 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
         FAIRWINDSK_VERSION="${FAIRWINDSK_SEMVER}" FAIRWINDSK_BUILD_YEAR="${FAIRWINDSK_BUILD_YEAR}" FAIRWINDSK_GIT_BRANCH="${FAIRWINDSK_GIT_BRANCH}"
 )
 
+if(WIN32 AND NOT FAIRWINDSK_MOBILE)
+    # Import QHotkey's exported Qt meta-object data from its shared Windows DLL.
+    target_compile_definitions(${PROJECT_NAME} PRIVATE QHOTKEY_SHARED)
+endif()
+
 if(ANDROID)
     if(COMMAND qt_policy)
         qt_policy(SET QTP0002 OLD)
