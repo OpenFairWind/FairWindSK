@@ -101,7 +101,7 @@ jobs:
         with:
           version: "6.8.3"
           arch: win64_msvc2022_64
-          modules: qtpositioning qtvirtualkeyboard qtwebengine qtwebsockets
+          modules: qtpositioning qtvirtualkeyboard qtwebchannel qtwebengine qtwebsockets
           cache: true
       - name: Configure
         run: cmake -S . -B build -A x64 -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DBUILD_TESTING=OFF
@@ -125,7 +125,7 @@ jobs:
       - uses: jurplel/install-qt-action@v4
         with:
           version: "6.8.3"
-          modules: qtpositioning qtvirtualkeyboard qtwebengine qtwebsockets
+          modules: qtpositioning qtvirtualkeyboard qtwebchannel qtwebengine qtwebsockets
           cache: true
       - name: Configure
         run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DBUILD_TESTING=OFF

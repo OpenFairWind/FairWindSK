@@ -36,7 +36,7 @@ jobs:
         with:
           version: "6.8.3"
           arch: linux_gcc_64
-          modules: qtpositioning qtvirtualkeyboard qtwebengine qtwebsockets
+          modules: qtpositioning qtvirtualkeyboard qtwebchannel qtwebengine qtwebsockets
           cache: true
       - name: Install application and manual dependencies
         run: |

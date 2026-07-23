@@ -32,12 +32,21 @@ jobs:
           fetch-depth: 0
       - name: Install common quality tools
         run: sudo apt-get update && sudo apt-get install --yes clang-format clang-tidy cmake ninja-build python3-pip
-      - name: Install Qt for CMake, clang-tidy, and translation validation
-        if: matrix.check == 'cmake' || matrix.check == 'clang-tidy' || matrix.check == 'translations'
+      - name: Install CMake and clang-tidy system dependencies
+        if: matrix.check == 'cmake' || matrix.check == 'clang-tidy'
         run: |
-          sudo apt-get install --yes libgl1-mesa-dev libxkbcommon-x11-0 qt6-base-dev qt6-declarative-dev \
-            qt6-positioning-dev qt6-svg-dev qt6-tools-dev qt6-virtualkeyboard-dev qt6-webengine-dev \
-            qt6-websockets-dev nlohmann-json3-dev
+          sudo apt-get install --yes libgl1-mesa-dev libxkbcommon-x11-0 nlohmann-json3-dev
+      - name: Install Qt for CMake and clang-tidy validation
+        if: matrix.check == 'cmake' || matrix.check == 'clang-tidy'
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          arch: linux_gcc_64
+          modules: qtpositioning qtvirtualkeyboard qtwebchannel qtwebengine qtwebsockets
+          cache: true
+      - name: Install Qt translation tools
+        if: matrix.check == 'translations'
+        run: sudo apt-get install --yes qt6-tools-dev
       - name: clang-format
         if: matrix.check == 'clang-format'
         env:
@@ -105,12 +114,17 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          arch: linux_gcc_64
+          modules: qtpositioning qtvirtualkeyboard qtwebchannel qtwebengine qtwebsockets
+          cache: true
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install --yes cmake ninja-build g++ dbus-x11 xvfb libgl1-mesa-dev libxkbcommon-x11-0 \
-            qt6-base-dev qt6-declarative-dev qt6-positioning-dev qt6-svg-dev qt6-tools-dev \
-            qt6-virtualkeyboard-dev qt6-webengine-dev qt6-websockets-dev nlohmann-json3-dev
+            nlohmann-json3-dev
       - name: Configure and build
         run: |
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DBUILD_TESTING=ON
@@ -145,7 +159,7 @@ jobs:
         with:
           version: ${{ env.QT_VERSION }}
           arch: ${{ matrix.arch }}
-          modules: qtpositioning qtsvg qtvirtualkeyboard qtwebengine qtwebsockets
+          modules: qtpositioning qtvirtualkeyboard qtwebchannel qtwebengine qtwebsockets
           cache: true
       - name: Configure
         run: cmake -S . -B build -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
@@ -183,7 +197,7 @@ jobs:
           version: ${{ env.QT_VERSION }}
           target: android
           arch: ${{ matrix.qt_arch }}
-          modules: qtpositioning qtsvg qtvirtualkeyboard qtwebsockets qtwebview
+          modules: qtpositioning qtvirtualkeyboard qtwebsockets qtwebview
           cache: true
       - name: Install Android platform
         run: sdkmanager 'platform-tools' 'platforms;android-${{ matrix.api }}' 'build-tools;35.0.0' 'ndk;26.1.10909125'
@@ -214,7 +228,7 @@ jobs:
         with:
           version: ${{ env.QT_VERSION }}
           target: ios
-          modules: qtpositioning qtsvg qtvirtualkeyboard qtwebsockets qtwebview
+          modules: qtpositioning qtvirtualkeyboard qtwebsockets qtwebview
           cache: true
       - name: Configure and compile simulator bundle
         run: |
@@ -229,6 +243,10 @@ jobs:
     container: debian:bookworm
     steps:
       - run: apt-get update && apt-get install --yes git ca-certificates cmake ninja-build g++ libgl1-mesa-dev libxkbcommon-x11-0 nlohmann-json3-dev qt6-base-dev qt6-declarative-dev qt6-positioning-dev qt6-svg-dev qt6-tools-dev qt6-virtualkeyboard-dev qt6-webengine-dev qt6-websockets-dev
+      - name: Apply Debian Qt Virtual Keyboard CMake compatibility workaround
+        run: |
+          qt_vk_dir="/usr/lib/$(dpkg-architecture -qDEB_HOST_MULTIARCH)/cmake/Qt6VirtualKeyboard"
+          touch "${qt_vk_dir}/Qt6VirtualKeyboardConfigVersionImpl.cmake"
       - uses: actions/checkout@v5
       - run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DBUILD_TESTING=OFF -DFAIRWINDSK_RASPBERRY_PI_OS=ON
       - run: cmake --build build --target QtZeroConf qhotkey --parallel 2 && cmake --build build --parallel 2
@@ -239,12 +257,17 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          arch: linux_gcc_64
+          modules: qtpositioning qtvirtualkeyboard qtwebchannel qtwebengine qtwebsockets
+          cache: true
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install --yes cmake ninja-build g++ libgl1-mesa-dev libxkbcommon-x11-0 \
-            qt6-base-dev qt6-declarative-dev qt6-positioning-dev qt6-svg-dev qt6-tools-dev \
-            qt6-virtualkeyboard-dev qt6-webengine-dev qt6-websockets-dev nlohmann-json3-dev
+            nlohmann-json3-dev
       - name: Generate package
         run: |
           cmake -S . -B build -G Ninja -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
