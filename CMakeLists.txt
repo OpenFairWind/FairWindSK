@@ -114,6 +114,12 @@ if(ANDROID AND CMAKE_HOST_APPLE AND CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "^(arm64
         file(CHMOD "${wrapper_path}"
             PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
         set_property(TARGET ${target_name} PROPERTY IMPORTED_LOCATION "${wrapper_path}")
+        # Override every imported configuration because config-specific locations
+        # take precedence over the generic location when CMake generates commands.
+        foreach(configuration IN ITEMS DEBUG RELEASE RELWITHDEBINFO MINSIZEREL)
+            set_property(TARGET ${target_name} PROPERTY
+                IMPORTED_LOCATION_${configuration} "${wrapper_path}")
+        endforeach()
     endfunction()
 
     foreach(tool_target IN ITEMS
@@ -460,6 +466,9 @@ endif()
 # ==========================================
 install(TARGETS ${PROJECT_NAME}
         BUNDLE DESTINATION .
+        # Android executables are CMake module libraries and require an explicit
+        # destination even though androiddeployqt creates the distributable APK.
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
