@@ -1,0 +1,389 @@
+\part{Operational Features}
+
+\chapter{Signal K et santé des données}
+\label{ch:datahealth}
+
+En mer, un nombre n'est utile que si vous savez s'il est encore frais.
+FairWindSK utilise trois états de données de manière constante dans toute l'interface
+la documentation opérationnelle.
+
+\section{États à valeur individuelle}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{2.2cm}L{5.4cm}L{6.1cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries State &
+\color{white}\sffamily\bfseries Meaning &
+\color{white}\sffamily\bfseries Recommended action \\
+\midrule
+\textbf{Live}    &
+Valeur reçue récemment et mise à jour normale.&
+  Use normally. Continue to glance at the Top Bar periodically. \\
+\textbf{Stale}   &
+Les mises à jour ont ralenti ou arrêté. Dernière valeur connue montrée, diminuée.
+Un avertissement, pas une vérité actuelle.&
+Traitez avec prudence. Vérification croisée avec des instruments indépendants.
+  Investigate if the state persists. \\
+\textbf{Missing} &
+Aucune valeur utilisable. Un tiret ou un détenteur de place est affiché.
+  \textbf{Missing is not zero.} It means unavailable. &
+Traitez comme totalement inconnu. Ne jamais utiliser en tant que sécurité par défaut.
+  Verify with another source. \\
+\bottomrule
+\end{longtable}
+
+\section{Liens entre les États de la santé}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3.2cm}L{4.8cm}L{5.7cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries State &
+\color{white}\sffamily\bfseries Meaning &
+\color{white}\sffamily\bfseries Response \\
+\midrule
+Vivre&En pleine santé.&
+  Continue normally. \\
+Connexion&Établir la connexion initiale.&
+  Wait 30--60 seconds. \\
+Reconnecter&Connexion perdue; récupération automatique en cours.&
+  Wait briefly. Usually resolves automatically. \\
+Stale&Connecté mais les mises à jour ralentissent ou retardent.&
+  Cross-check instruments. Investigate if it persists. \\
+REST dégradé&Demande/canal de réponse altéré.&
+  Settings pages may fail; monitor closely. \\
+Dégradation du flux&La circulation est altérée.&
+  Readouts may stop updating; treat as stale. \\
+Déconnecté&Pas de connexion.&
+  Check Signal~K server power and Wi-Fi. \\
+Chargement des applications&Catalogue d'applications en cours de recherche.&
+  Wait; apps appear when done. \\
+Apps statiques&Le catalogue des applications peut être obsolète.&
+  Apps still work; list may be incomplete. \\
+Avant-plan dégradé&L'application actuelle a un problème.&
+  Retry once; if still failing, return to launcher and check shell health. \\
+\bottomrule
+\end{longtable}
+
+\section{Quand agir immédiatement}
+
+Agir sans délai lorsque:
+
+\begin{itemize}
+  \item depth becomes stale or missing in shallow or restricted water
+  \item position or heading disappears during close-quarters navigation
+  \item a POB event occurs
+  \item an autopilot command does not match the vessel's actual response
+\end{itemize}
+
+Surveillez brièvement, puis recoupez la vérification lorsque :
+
+\begin{itemize}
+  \item the shell is reconnecting after a brief drop
+  \item app loading takes longer than expected
+  \item route guidance values stop updating
+  \item only one app looks degraded while the rest of the shell is healthy
+\end{itemize}
+
+\section{Cycle de récupération automatique}
+
+Lorsqu'une connexion est perdue, FairWindSK automatiquement:
+
+\begin{enumerate}
+  \item Detects the disconnection or degradation.
+  \item Performs a fresh Signal~K server discovery (handles endpoint changes after a restart).
+  \item Re-establishes the WebSocket stream.
+  \item Re-sends all active subscriptions.
+  \item Performs an immediate REST snapshot so widgets show current values right away.
+  \item Refreshes the app catalogue and all My~Data resource models.
+  \item Refreshes unit preferences from the server.
+\end{enumerate}
+
+Quand un redémarrage du serveur Signal~K est déclenché à partir de l'intérieur de FairWindSK (via le Signal~K
+admin web app), FairWindSK détecte le redémarrage prévu, arrête sa boucle de reconnect
+brièvement, puis reprend automatiquement la récupération.
+
+Après toute reconnexion ou redémarrage du serveur, attendez que la récupération complète et confirme
+qui retourne les données en direct avant de dépendre des valeurs critiques pour la sécurité.
+
+\begin{warningbox}
+Après une interruption de puissance, les récepteurs GPS et les instruments prennent le temps de ré-acquérir et
+calme-toi.
+Even after FairWindSK shows \textit{Live}, verify each safety-critical value before
+Je joue dessus.
+\end{warningbox}
+
+\chapter{Personne hors pension (POB)}
+\label{ch:pob}
+
+\begin{warningbox}
+Marquez immédiatement une personne par-dessus bord.
+Ne tardez pas parce que vous vous attendez à vous souvenir de la position plus tard.
+Marquez d'abord, puis continuez les actions de récupération.
+La fonction POB aide avec la référence de récupération.
+Il ne remplace pas la réponse immédiate de l'équipage, la surveillance, la maîtrise de la barre ou l'établissement
+procédures d'urgence.
+\end{warningbox}
+
+\section{Activation du POB}
+
+Tap \iconlabel{alarm-pob}{POB} in the Bottom Bar.
+Il est visible en permanence et jamais désactivé.
+Pratiquez le trouver dans l'obscurité et dans des conditions difficiles.
+
+Dans l'instant où vous appuyez sur POB, FairWindSK simultanément:
+
+\begin{itemize}
+  \item Captures the current GPS position as the incident position.
+  \item Creates a timestamped waypoint resource on Signal~K named
+        \code{POB HH:MM:SS} (UTC).
+  \item Sets that waypoint as the active navigation destination ---
+toutes les applications de navigation montrent immédiatement le roulement et la distance jusqu'au POB.
+  \item Raises the standard Signal~K \skpath{notifications.mob} alarm at emergency
+niveau, alerter tous les appareils connectés et les écrans.
+  \item Starts the elapsed-time clock counting up every second.
+  \item Subscribes to live bearing and distance from the vessel to the POB waypoint.
+  \item Replaces the normal Bottom Bar with the POB dialog.
+\end{itemize}
+
+\screenshot{pob-bar-active}{Barre POB: roulement, distance, temps écoulé, boutons de recherche SAR}{}
+
+\section{Contrôles et lectures des barres POB}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{C{1.4cm}L{3.0cm}L{9.3cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Icon &
+\color{white}\sffamily\bfseries Control &
+\color{white}\sffamily\bfseries Description \\
+\midrule
+---                      &Sélecteur de POB&
+Liste déroulante de tous les événements POB actifs.
+  Select an event to display its data. \\
+---                      &Dernière position connue&
+Latitude et longitude au moment où POB a été pressé,
+  in the configured coordinate format. \\
+---                      &Roulement&
+Port de boussole en direct du bateau au point de cheminement POB.
+  Updates continuously as the vessel manoeuvres. \\
+---                      &Distance&
+  Live distance from vessel to POB waypoint. Updates continuously. \\
+---                      &Temps écoulé&
+  HH:MM:SS counting up from the moment POB was pressed. \\
+---                      &Annuler&
+Annule l'incident sélectionné.
+  Removes the Signal~K alarm and navigation destination for that event. \\
+\iconlg{search-spiral}   & Spiral search    &
+  Generates a SAR spiral route centred on the POB position. \\
+\iconlg{search-parallel} & Parallel search  &
+  Generates a SAR parallel-track route centred on the POB position. \\
+\iconlg{close-google}    & Close dialog     &
+Retourne à la barre inférieure normale.
+  \textbf{The alarm and waypoint remain active on Signal~K.} \\
+\bottomrule
+\end{longtable}
+
+\begin{warningbox}
+Tapping \iconlg{close-google}~Close does \textbf{not} cancel the POB.
+L'alarme Signal~K et le point de cheminement restent actifs jusqu'à ce qu'ils soient explicitement annulés.
+Only the \key{Cancel} button removes a specific incident.
+\end{warningbox}
+
+\section{Patterns de recherche SAR}
+
+\subsection{Recherche en spirale}
+
+Tap \iconlabel{search-spiral}{Spiral}.
+FairWindSK creates a $500 \times 500$\,m SAR area region centred on the POB
+position and a spiral route starting at the POB and radiating outward in 50\,m
+espacer les jambes.
+La région et l'itinéraire sont enregistrés comme objets de ressources Signal~K et apparaissent
+immediately in \ui{My~Data~> Regions} and \ui{My~Data~> Routes}.
+
+\subsection{Recherche parallèle}
+
+Tap \iconlabel{search-parallel}{Parallel}.
+FairWindSK creates the same $500 \times 500$\,m area region and a
+creeping-line parallel-track route covering it in 60\,m-spaced parallel legs.
+
+\section{Annulation d'un POB}
+
+\begin{enumerate}
+  \item Select the incident in the POB selector (if multiple incidents are active).
+  \item Tap \key{Cancel}.
+  \item FairWindSK removes the Signal~K alarm and clears the navigation destination.
+  \item If no more active incidents remain, the POB dialog closes automatically.
+\end{enumerate}
+
+\begin{notebox}
+The POB waypoint is \textbf{not} deleted when cancelled.
+It is retained in \ui{My~Data~> Waypoints} with its timestamp and position for
+rapport d'accident et compte rendu post-incident.
+\end{notebox}
+
+\chapter{Commandes de pilotage automatique}
+\label{ch:autopilot}
+
+Tap \iconlabel{command-autopilot}{Autopilot} in the Bottom Bar to open the Autopilot
+barre, qui remplace la barre inférieure normale.
+L'icône du pilote automatique n'est active que lorsque le plugin de pilote automatique requis est installé et
+FairWindSK peut interagir avec elle.
+
+\begin{warningbox}
+Vérifiez toujours l'effet réel d'une commande de pilote automatique sur le vaisseau.
+Ne jamais supposer qu'un changement de mode a pris effet parce que vous avez tapé un contrôle.
+Soyez prêt à vous désengager ou à passer immédiatement à autre chose si la réponse est dangereuse ou
+inattendue.
+\end{warningbox}
+
+\screenshot{autopilot-bar}{Barre de pilotage automatique : boutons mode, commandes de compensation, indicateur de gouvernail}{}
+
+\section{Commandes de barres de pilotage automatique}
+
+Icons are the exact assets defined in \code{AutopilotBar.cpp}.
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{C{1.4cm}L{2.4cm}L{4.6cm}L{5.3cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Icon &
+\color{white}\sffamily\bfseries Control &
+\color{white}\sffamily\bfseries Signal~K action &
+\color{white}\sffamily\bfseries When to use \\
+\midrule
+\iconlg{close-google}                & Stand By    & Disengage         & Any time you want manual control. Verify the helm responds. \\
+\iconlg{command-autopilot}           & Auto        & Compass mode      & Open-water passages; holds current heading. \\
+\iconlg{up-iec}                      & Wind        & Wind-vane mode    & Upwind/downwind; holds wind angle. \\
+\iconlg{navigation-route}            & Route       & GPS route mode    & Following a waypoint route. \\
+\iconlg{spinbox-minus}               & $-1\textdegree$ port  & Trim $-1\textdegree$ & Fine adjustment to port. \\
+\iconlg{spinbox-plus}                & $+1\textdegree$ stbd  & Trim $+1\textdegree$ & Fine adjustment to starboard. \\
+\iconlg{chevron-double-left-google}  & $-10\textdegree$ port & Adjust $-10\textdegree$ & Larger correction to port. \\
+\iconlg{chevron-double-right-google} & $+10\textdegree$ stbd & Adjust $+10\textdegree$ & Larger correction to starboard. \\
+\iconlg{arrow-left-google}           & Tack port   & Tack to port      & Sailing upwind. \\
+\iconlg{arrow-right-google}          & Tack stbd   & Tack to starboard & Sailing upwind. \\
+\iconlg{chevron-double-left-google}  & Gybe port   & Gybe to port      & Light--moderate conditions; monitor. \\
+\iconlg{chevron-double-right-google} & Gybe stbd   & Gybe to starboard & Supervise at helm in strong winds. \\
+\iconlg{waypoint-optional-iec}       & Next WPT    & Advance route leg & Route navigation. \\
+\iconlg{alerts}                      & Dodge       & Obstacle avoidance & Lobster pot, vessel, hazard. \\
+\bottomrule
+\end{longtable}
+
+\section{Indicateur de rugissement}
+
+The Autopilot bar shows a \textbf{read-only} horizontal slider displaying current
+rudder deflection from $-30\textdegree$ (full port) to $+30\textdegree$ (full
+tribord).
+Cela reflète la position réelle du gouvernail signalée par le pilote ---
+pas un cap commandé.
+Utilisez-le pour confirmer que le pilote automatique répond aux commandes comme prévu.
+
+\chapter{Montre d'ancrage}
+\label{ch:anchor}
+
+Tap \iconlabel{anchor-iec}{Anchor} to open the Anchor Watch bar.
+
+\begin{warningbox}
+La montre électronique d'ancrage est une aide seulement.
+Dans un mouillage exposé, une détérioration du temps ou un sol de retenue médiocre,
+postez une montre humaine indépendamment de ce que tout appareil électronique montre.
+\end{warningbox}
+
+\screenshot{anchor-bar}{Barre de montre d'ancrage: position, profondeur, tige, rayon, commandes de ventlass}{}
+
+\section{Contrôles et lectures des barres d'ancrage}
+
+Icons are the exact assets defined in \code{AnchorBar.ui}.
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{C{1.4cm}L{3.0cm}L{9.3cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Icon &
+\color{white}\sffamily\bfseries Control &
+\color{white}\sffamily\bfseries Description \\
+\midrule
+\iconlg{anchor-drop}    & Drop        & Records GPS position as anchor point and starts monitoring. \\
+\iconlg{anchor-raise}   & Raise       & Stops monitoring and clears the anchor position. \\
+\iconlg{anchor-release} & Release     & Issues a release-rode command to an electric windlass. \\
+\iconlg{anchor-up}      & Up (hold)   & Continuous haul-in command to windlass. Release to stop. \\
+\iconlg{anchor-down}    & Down (hold) & Continuous let-out command to windlass. Release to stop. \\
+\iconlg{anchor-reset}   & Reset       & Resets anchor position to current GPS position. \\
+---                      & Radius slider & Maximum distance permitted before alarm. \\
+---                      & Set Radius  & Commits the radius and sends it to the anchor plugin. \\
+---                      & LAT / LON   & GPS coordinates of the recorded anchor position. \\
+---                      & Depth       & Current water depth from the depth sounder. \\
+---                      & Rode        & Length of rode deployed. \\
+---                      & Current radius / bearing & Live distance and bearing from vessel to anchor. \\
+---                      & Max radius  & Maximum distance reached since watch started. \\
+\bottomrule
+\end{longtable}
+
+\section{Réglage de la montre d'ancrage --- Étape par étape}
+
+\begin{enumerate}
+  \item Anchor normally and pay out your intended scope.
+  \item After the vessel has settled, tap \iconlg{anchor-iec} in the Bottom Bar.
+  \item Confirm the displayed GPS position is where the anchor is lying.
+  \item Tap \iconlg{anchor-drop}~\key{Drop}. FairWindSK records the position and starts monitoring.
+  \item Set the radius, allowing for scope, swing circle, GPS accuracy ($\pm3$--$10$\,m),
+et une marge de sécurité.
+  \item Tap \key{Set Radius} to commit.
+  \item Close the bar. Monitoring continues in the background.
+\end{enumerate}
+
+\chapter{Alarmes}
+\label{ch:alarms}
+
+Tap \iconlabel{alarm-general}{Alarms} to open the Alarms bar.
+Lorsqu'une alarme est active, l'icône est mise en surbrillance avec une coloration d'accent sur tous les
+Préréglages de confort --- conçus pour capter l'œil même pendant la veille nocturne.
+
+\screenshot{alarms-bar}{Barre d'alarmes: boutons d'urgence SOLAS et liste d'alarme active}{}
+
+\section{Boutons d'alarme d'urgence}
+
+Icons are the exact assets defined in \code{AlarmsBar.ui}.
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{C{1.4cm}L{1.8cm}L{3.8cm}L{6.7cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Icon &
+\color{white}\sffamily\bfseries Button &
+\color{white}\sffamily\bfseries Signal~K path &
+\color{white}\sffamily\bfseries Emergency type \\
+\midrule
+\iconlg{alarm-pob}     & POB     & \skpath{notifications.mob}     & Person / man overboard \\
+\iconlg{alarm-sinking} & Sinking & \skpath{notifications.sinking} & Vessel taking water or sinking \\
+\iconlg{alarm-fire}    & Fire    & \skpath{notifications.fire}    & Fire aboard \\
+\iconlg{alarm-piracy}  & Piracy  & \skpath{notifications.piracy}  & Piracy or armed attack \\
+\iconlg{alarm-abandon} & Abandon & \skpath{notifications.abandon} & Abandon ship \\
+\iconlg{alarm-adrift}  & Adrift  & \skpath{notifications.adrift}  & Vessel adrift and uncontrolled \\
+\bottomrule
+\end{longtable}
+
+\begin{warningbox}
+Activer une alarme à FairWindSK soulève une notification Signal~K à bord
+seulement.
+It does \textbf{not} contact coast guard, MRCC, or any external authority.
+Faire un appel de détresse DSC et/ou voix sur VHF Channel~16 en cas d'urgence réelle.
+\end{warningbox}
+
+\section{Priorité d'alarme et réponse}
+
+Gérer les alertes dans cet ordre :
+
+\begin{enumerate}
+  \item Safety-critical values first --- depth, position, heading.
+  \item Connection and shell health second.
+  \item App-specific problems third.
+\end{enumerate}
+
+\section{Liste des alarmes actives}
+
+Sous les boutons, la barre des alarmes énumère toutes les notifications Signal~K actuellement actives,
+montrant le chemin, l'état (urgence/alarme/alerte), le texte du message et l'horodatage.
+Il affiche également l'état actuel de la connexion Signal~K et la dernière mise à jour du flux
+horodatage --- un résumé de santé compact sans quitter la barre.

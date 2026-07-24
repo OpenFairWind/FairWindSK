@@ -226,7 +226,7 @@ Before calling a macOS change complete, verify:
 5. Settings, MyData, POB, alarms, anchor, and available autopilot controls remain responsive.
 6. Mouse, keyboard, touchscreen (when present), and the desktop foreground shortcut behave coherently.
 7. Touch targets and text remain readable at helm distance in `default`, `dawn`, `day`, `sunset`, `dusk`, and `night` presets.
-8. English, Italian, and other shipped translations fit without clipping.
+8. English, French, Spanish, and Italian translations fit without clipping.
 9. The packaged app contains the FairWindSK icon and all required Qt plugins and helper libraries.
 10. Relevant behavior remains coherent with Linux, Windows, Raspberry Pi OS, Android, and iOS/iPadOS; platform-specific differences are documented.
 

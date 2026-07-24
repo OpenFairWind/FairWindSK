@@ -8,6 +8,8 @@ FairWindSK currently ships with:
 
 - `system`: follow the operating-system language when it is supported
 - `en`: force English
+- `fr`: force French
+- `es`: force Spanish
 - `it`: force Italian
 
 Unsupported system languages and unsupported explicit selections currently fall back to English.
@@ -49,8 +51,10 @@ Typical places to check:
 
 ### 2. Update the translation source file
 
-FairWindSK currently keeps the Italian translation in:
+FairWindSK keeps its non-English translations in:
 
+- [resources/i18n/fairwindsk_fr.ts](../resources/i18n/fairwindsk_fr.ts)
+- [resources/i18n/fairwindsk_es.ts](../resources/i18n/fairwindsk_es.ts)
 - [resources/i18n/fairwindsk_it.ts](../resources/i18n/fairwindsk_it.ts)
 
 Update the `.ts` file with Qt Linguist or with the Qt translation tools available in your environment.
@@ -58,8 +62,8 @@ Update the `.ts` file with Qt Linguist or with the Qt translation tools availabl
 Typical workflow:
 
 ```bash
-lupdate . -ts resources/i18n/fairwindsk_it.ts
-linguist resources/i18n/fairwindsk_it.ts
+lupdate . -ts resources/i18n/fairwindsk_fr.ts resources/i18n/fairwindsk_es.ts resources/i18n/fairwindsk_it.ts
+linguist resources/i18n/fairwindsk_fr.ts
 ```
 
 Then rebuild so CMake regenerates the `.qm` resource through `qt_add_translations(...)`.
@@ -101,6 +105,7 @@ qt_add_translations(${PROJECT_NAME}
         TS_FILES
             resources/i18n/fairwindsk_it.ts
             resources/i18n/fairwindsk_fr.ts
+            resources/i18n/fairwindsk_es.ts
         RESOURCE_PREFIX
             /resources/i18n
 )
@@ -132,7 +137,7 @@ Update the language selector in [ui/settings/Main.cpp](../ui/settings/Main.cpp):
 Example pattern:
 
 ```cpp
-ui->comboBox_language->addItem(tr("French"), "fr");
+        ui->comboBox_language->addItem(tr("Français"), "fr");
 ```
 
 ### 5. Update configuration documentation
@@ -150,7 +155,7 @@ Generate or update the `.ts` file with Qt translation tools, then complete the t
 Typical command:
 
 ```bash
-lupdate . -ts resources/i18n/fairwindsk_fr.ts
+lupdate . -ts resources/i18n/fairwindsk_fr.ts resources/i18n/fairwindsk_es.ts resources/i18n/fairwindsk_it.ts
 ```
 
 Then translate the unfinished entries.
@@ -196,7 +201,7 @@ At minimum, verify the following after adding or changing a language:
 - Text remains readable in `default`, `dawn`, `day`, `sunset`, `dusk`, and `night`.
 - Native shell and embedded web content use the same locale.
 - macOS, Windows, Linux, Raspberry Pi OS, Android, and iOS impact is reviewed, or unsupported platforms are explicitly called out.
-- On the Android 13/API 33 baseline, the Android-only settings page, installed-application labels, status text, disabled action states, and launcher tiles remain readable and touch-friendly in English and Italian across every comfort preset.
+- On the Android 13/API 33 baseline, the Android-only settings page, installed-application labels, status text, disabled action states, and launcher tiles remain readable and touch-friendly in English, French, Spanish, and Italian across every comfort preset.
 
 ## Contributor notes
 

@@ -320,7 +320,14 @@ endif()
 # ==========================================
 qt_add_executable(${PROJECT_NAME} MANUAL_FINALIZATION ${FAIRWINDSK_SOURCES})
 
-qt_add_translations(${PROJECT_NAME} TS_FILES resources/i18n/fairwindsk_it.ts RESOURCE_PREFIX /resources/i18n)
+qt_add_translations(${PROJECT_NAME}
+        TS_FILES
+            resources/i18n/fairwindsk_es.ts
+            resources/i18n/fairwindsk_fr.ts
+            resources/i18n/fairwindsk_it.ts
+        RESOURCE_PREFIX
+            /resources/i18n
+)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
         MACOSX_BUNDLE TRUE WIN32_EXECUTABLE TRUE MACOSX_BUNDLE_BUNDLE_NAME "FairWindSK"

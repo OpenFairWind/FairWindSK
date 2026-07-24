@@ -122,7 +122,7 @@ Before calling a Linux change complete, verify:
 5. Mouse, keyboard, and representative touchscreen interaction remain usable.
 6. `default`, `dawn`, `day`, `sunset`, `dusk`, and `night` presets remain
    readable at helm distance.
-7. English and Italian interfaces fit without clipping.
+7. English, French, Spanish, and Italian interfaces fit without clipping.
 8. Relevant behavior remains coherent with macOS, Windows, Raspberry Pi OS,
    Android, and iOS/iPadOS.
 

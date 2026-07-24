@@ -1,0 +1,348 @@
+\part{The Interface}
+
+\chapter{Screen Layout}
+
+FairWindSK mantiene tres áreas visibles en todo momento.
+Estos nombres se utilizan consistentemente a lo largo de este manual, en el código fuente del proyecto,
+y en toda la documentación de los contribuyentes.
+
+\section{Las tres zonas}
+
+\begin{center}
+\begin{tcolorbox}[enhanced,colback=LtBlue,colframe=Navy,boxrule=1.5pt,arc=4pt,
+  top=7pt,bottom=5pt,left=12pt,right=12pt,width=0.96\textwidth]
+  {\sffamily\bfseries\color{Navy}TOP BAR --- always visible}\\[3pt]
+  {\small\icon{lcd-app}~App icon \quad
+         \icon{layout-signalk}~Data widgets \quad
+         App name \quad
+         \icon{lcd-clock}~Date/time \quad
+         Status icons}
+\end{tcolorbox}
+\vspace{2pt}
+\begin{tcolorbox}[enhanced,colback=white,colframe=Navy,boxrule=1.5pt,arc=4pt,
+  top=26pt,bottom=26pt,left=12pt,right=12pt,width=0.96\textwidth]
+  \centering
+  {\large\sffamily\bfseries\color{MidGray}APPLICATION AREA}\\[4pt]
+  {\small\sffamily\color{MidGray}\itshape
+    Launcher \textbar{} Chart plotter \textbar{} Instruments \textbar{}
+    Settings \textbar{} My~Data \textbar{} Signal~K web apps}
+\end{tcolorbox}
+\vspace{2pt}
+\begin{tcolorbox}[enhanced,colback=LtBlue,colframe=Navy,boxrule=1.5pt,arc=4pt,
+  top=7pt,bottom=5pt,left=12pt,right=12pt,width=0.96\textwidth]
+  {\sffamily\bfseries\color{Navy}BOTTOM BAR --- always visible}\\[3pt]
+  {\small
+    Open web apps strip \quad
+    \icon{applications}~Apps \quad
+    \icon{alarm-pob}~POB \quad
+    \icon{command-autopilot}~Autopilot \quad
+    \icon{anchor-iec}~Anchor \quad
+    \icon{alarm-general}~Alarms \quad
+    \icon{database}~My~Data \quad
+    \icon{settings-iec}~Settings \quad
+    \icon{layout-signalk}~Status}
+\end{tcolorbox}
+\end{center}
+
+\screenshot{screen-layout-overview}{Diseño de pantalla: Top Bar, Área de aplicación, Bottom Bar}{}
+
+\section{El área de aplicación}
+
+El Área de Aplicación es el principal espacio de trabajo entre las barras.
+Aquí es donde FairWindSK muestra:
+
+\begin{itemize}
+  \item launcher pages
+  \item chart and navigation apps
+  \item Settings
+  \item My~Data
+  \item embedded Signal~K web applications
+\end{itemize}
+
+La vista activa no debe superponer visualmente el Top Bar o Bottom Bar a menos que un
+El cajón formalmente definido está cubriéndolo temporalmente.
+
+\section{Dibujos}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{4.0cm}L{9.7cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Drawer &
+\color{white}\sffamily\bfseries Description \\
+\midrule
+Bottom Bar cajón horizontal&
+Modal diálogo abriendo hacia arriba desde el Bottom Bar.
+Utilizado para diálogos web modales, confirmaciones, recolectores de archivos y subpanels de configuración.
+Sólo un diálogo es visible a la vez; los diálogos adicionales apilan.
+Puede extenderse hacia arriba para cubrir temporalmente el Área de Aplicación.
+  The hosted UI must fit inside the drawer without requiring vertical scrolling. \\
+Cajón vertical del área de aplicación&
+Panel no modal que abre a la izquierda desde el borde derecho de la Zona de Aplicación.
+Utilizado por aplicaciones para menús contextuales o paletas de herramientas.
+  The Application Area remains interactive behind it. \\
+\bottomrule
+\end{longtable}
+
+\section{Modelo de una sola ventana}
+
+FairWindSK impone un diseño de una sola ventana en todas las plataformas.
+Ninguna aplicación abre una segunda ventana; no se lanza ninguna aplicación nativa externa.
+\code{file://} launcher entries are blocked.
+
+Android es la excepción de plataforma intencional para aplicaciones nativas seleccionadas.
+En Android 13/API 33 o más reciente, FairWindSK puede actuar opcionalmente como la aplicación Home y
+launch activities explicitly selected in \ui{Settings~> Android}. Those activities
+Deje temporalmente la ventana FairWindSK y vuelva a través de Android Back o Home;
+todo el contenido de FairWindSK y Signal~K sigue utilizando la concha de una sola ventana.
+
+En plataformas de escritorio (Linux, macOS, Windows, Raspberry~Pi~OS),
+press \key{SHIFT+TAB} to bring FairWindSK back to the foreground if a hosted web
+la aplicación se ha centrado plenamente.
+
+\chapter{El Top Bar}
+\label{ch:topbar}
+
+El Top Bar siempre es visible.
+Su propósito: proporcionar un cheque de confianza de dos segundos en cualquier momento.
+Use it to answer: \textit{What is happening right now, and is the data still
+trustworthy?}
+
+\screenshot{topbar-overview}{Top Bar: posicionamiento, SOG, DPT, BTW, ETA e iconos de estado}{}
+
+\section{Elementos de barra fija}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{C{1.5cm}L{2.8cm}L{9.4cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Icon &
+\color{white}\sffamily\bfseries Element &
+\color{white}\sffamily\bfseries Function \\
+\midrule
+\iconlg{lcd-app}       & App icon    &
+Icono de la aplicación actual.
+  Tapping opens the Application Area vertical drawer. \\
+---                     &Nombre de la aplicación&
+  Name of the currently active application. \\
+\iconlg{lcd-clock}     & Date / time &
+  Current device time and date. \\
+\iconlg{layout-signalk}& Status icons &
+  REST and stream health indicators. \\
+\bottomrule
+\end{longtable}
+
+\section{Data Widgets --- Referencia completa}
+
+Cada widget se suscribe a una ruta Signal~K configurada en
+\ui{Settings~> Signal~K Paths}.
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{C{1.4cm}C{1.1cm}L{4.4cm}L{3.0cm}L{3.8cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Icon &
+\color{white}\sffamily\bfseries Key &
+\color{white}\sffamily\bfseries Default Signal~K path &
+\color{white}\sffamily\bfseries Displays &
+\color{white}\sffamily\bfseries Operational significance \\
+\midrule
+\iconlg{lcd-position} & \code{pos} & \skpath{navigation.position}                              & Latitude / longitude      & GPS fix confirmation \\
+\iconlg{lcd-cog}      & \code{cog} & \skpath{navigation.courseOverGroundTrue}                  & COG (\textdegree{}T)      & Actual track over seabed \\
+\iconlg{lcd-sog}      & \code{sog} & \skpath{navigation.speedOverGround}                       & SOG (kn)                  & True speed for ETAs \\
+\iconlg{lcd-hdg}      & \code{hdg} & \skpath{navigation.headingTrue}                           & Heading (\textdegree{}T)  & Where the bow points \\
+\iconlg{lcd-stw}      & \code{stw} & \skpath{navigation.speedThroughWater}                     & STW (kn)                  & Sail trim, current deduction \\
+\iconlg{lcd-dpt}      & \code{dpt} & \skpath{environment.depth.belowTransducer}                & Depth below transducer    & Safety-critical in shoal water \\
+\iconlg{lcd-btw}      & \code{btw} & \skpath{navigation.course.calcValues.bearingTrue}         & Bearing to WPT            & Course to steer \\
+\iconlg{lcd-dtg}      & \code{dtg} & \skpath{navigation.course.calcValues.distance}            & Distance to go            & Passage progress \\
+\iconlg{lcd-ttg}      & \code{ttg} & \skpath{navigation.course.calcValues.timeToGo}            & Time to go                & ETA planning \\
+\iconlg{lcd-eta}      & \code{eta} & \skpath{navigation.course.calcValues.estimatedTimeOfArrival} & Estimated arrival      & Crew notification \\
+\iconlg{lcd-xte}      & \code{xte} & \skpath{navigation.course.calcValues.crossTrackError}     & Cross-track error         & Route compliance \\
+\iconlg{lcd-vmg}      & \code{vmg} & \skpath{performance.velocityMadeGood}                     & Velocity made good        & True sailing efficiency \\
+\iconlg{lcd-wpt}      & \code{wpt} & \skpath{navigation.course.nextPoint}                      & Active waypoint name       & Route awareness \\
+\bottomrule
+\end{longtable}
+
+\begin{warningbox}
+Missing depth is \textbf{not} zero depth.
+Perder significa que la medición no está disponible --- tratarlo como completamente desconocido.
+Si la profundidad se vuelve estancada o falta en agua poco profunda o restringida, verifique
+inmediatamente y ajustar la velocidad y el margen de maniobra en consecuencia.
+\end{warningbox}
+
+\section{Valores de navegación lectura correcta}
+
+\subsection{COG and SOG}
+
+El COG es el curso sobre el suelo; el SOG es la velocidad sobre el suelo.
+Estos muestran cómo el barco realmente se mueve sobre la tierra, que puede diferir de
+donde el arco está apuntando debido a la leeway y la corriente de marea.
+
+\subsection{Heading}
+
+La dirección te dice dónde se apunta el arco.
+Si el rumbo se vuelve estancado o desaparecido, dirigir conservadoramente y cruzar con un
+Compass de confianza.
+
+\subsection{Valores de ruta y punto de referencia}
+
+Cuando el enrutamiento es activo, BTW, DTG, TTG, ETA, XTE y VMG se actualizan continuamente.
+Si alguno de estos valores deja de actualizar, compruebe el gráfico y sus alrededores antes
+confiando en la guía de ruta.
+
+\section{Configuración de la barra superior}
+
+Open \ui{Settings~> Top Bar}.
+Una vista previa en vivo de la barra aparece en la parte superior; la paleta widget está debajo.
+Use the \iconlg{arrow-left-google}~move-left and \iconlg{arrow-right-google}~move-right
+botones para widgets de reposición.
+Toggle \key{Show Icon}, \key{Show Text}, \key{Show Units}, and \key{Show Trend}
+por widget.
+Tap \iconlg{refresh-google}~\key{Reset Defaults} to restore the built-in layout.
+
+\begin{tipbox}
+En condiciones ásperas, una barra superior inclinada con widgets de teclas 3--4 (posición, SOG, DPT, BTW)
+es más seguro que doce artículos.
+Añade widgets sólo si añaden una verdadera conciencia situacional en el pasaje actual
+fase.
+\end{tipbox}
+
+\chapter{El Bottom Bar}
+\label{ch:bottombar}
+
+El Bottom Bar es la tira de acción permanente en la parte inferior de cada pantalla.
+Its spatial stability is intentional: the \iconlg{applications}~Apps button is always
+in the same place, the \iconlg{alarm-pob}~POB button is always within reach.
+La memoria muscular es seguridad.
+
+\screenshot{bottombar-overview}{Bottom Bar: tira de aplicaciones abiertas, iconos principales, estado Signal~K}{}
+
+\section{Bottom Bar Regions}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3.6cm}L{10.1cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Region &
+\color{white}\sffamily\bfseries Description \\
+\midrule
+Banda de aplicaciones web abiertas&
+hilera de pequeños iconos de aplicaciones a la izquierda, uno por aplicación cargada.
+Toque cualquier icono para saltar a esa aplicación al instante.
+  The active application is highlighted. \\
+Principales iconos&
+El grupo central de siete iconos fijos.
+  Spatially stable across all screens and comfort presets. \\
+Zona de estado de Signal~K&
+Derecha. Flujo compacto e indicadores de salud REST que muestran el nombre del servidor,
+última actualización timetamp, y estado de conexión.
+  Tapping opens a status detail drawer. \\
+\bottomrule
+\end{longtable}
+
+\section{Referencia principal del icono}
+
+These are the exact icons defined in \code{BottomBar.ui}.
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{C{1.4cm}L{2.4cm}L{5.4cm}L{4.5cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Icon &
+\color{white}\sffamily\bfseries Label &
+\color{white}\sffamily\bfseries Function &
+\color{white}\sffamily\bfseries Notes \\
+\midrule
+\iconlg{applications}     & Apps      &
+Abre el lanzador. Oculta la aplicación actual y muestra la red de azulejos.&
+  Use as the safe escape hatch from any stuck or confusing screen. \\
+\iconlg{alarm-pob}        & POB       &
+Person Over Board. Un toque comienza la emergencia.&
+  Always visible. Never disabled. \\
+\iconlg{command-autopilot}& Autopilot &
+Abre la barra Autopilot.&
+  Grey/inactive if no compatible autopilot plugin is detected. \\
+\iconlg{anchor-iec}       & Anchor    &
+Abre la barra Anchor Watch.&
+  Grey/inactive if no anchor plugin is detected. \\
+\iconlg{alarm-general}    & Alarms    &
+Abre el bar Alarmas. Destacado cuando cualquier alarma está activa.&
+  Accent colour when active; draws the eye across all presets. \\
+\iconlg{database}         & My~Data   &
+  Opens the resource manager (Chapter~\ref{ch:mydata}). & \\
+\iconlg{settings-iec}     & Settings  &
+  Opens all configuration (Chapter~\ref{ch:settings}). & \\
+\bottomrule
+\end{longtable}
+
+\section{Bares de superposición operacional}
+
+Tapping \iconlg{alarm-pob}~POB, \iconlg{command-autopilot}~Autopilot,
+\iconlg{anchor-iec}~Anchor, or \iconlg{alarm-general}~Alarms replaces the normal Bottom
+Iconos de barra con una barra operativa dedicada.
+La zona de aplicación continúa corriendo detrás de la barra.
+Tap \iconlg{close-google}~close (rightmost icon) to return to the normal Bottom Bar
+sin cambiar ningún estado operativo.
+
+\begin{warningbox}
+Las barras de operaciones no son modales.
+Los datos siguen actualizando.
+El plotter gráfico y todas las aplicaciones permanecen en directo detrás de la barra operativa.
+\end{warningbox}
+
+\chapter{El lanzador y la gestión de aplicaciones}
+\label{ch:launcher}
+
+El lanzador es la posición segura de la cáscara.
+Úsalo para volver a los azulejos de aplicaciones, cambiar entre tareas, dejar una aplicación congelada o
+reorientarse después de un flujo de trabajo confuso.
+Cada vez que la pantalla actual deja de sentirse clara o confiable, toque
+\iconlg{applications}~\key{Apps} to return here.
+
+\screenshot{launcher-overview}{Pantalla de inicio de lanzamiento: cuadrícula de azulejos, indicador de página, Bottom Bar}{}
+
+\section{Apertura de una solicitud}
+
+\begin{enumerate}
+  \item Tap \iconlabel{applications}{Apps} in the Bottom Bar.
+  \item Navigate pages by swiping if needed.
+  \item Tap the tile for the application you want.
+  \item Wait for it to load in the Application Area.
+\end{enumerate}
+
+Si una aplicación no aparece correctamente, evite pulsaciones rápidas repetidas.
+Espere brevemente, vuelva a entrar una vez si el shell ofrece la opción, luego vuelva al lanzador
+si la aplicación todavía se ve mal.
+
+\section{Interruptor entre aplicaciones abiertas}
+
+Utilice la tira de aplicaciones abiertas en la barra de base para cambiar entre aplicaciones cargadas
+con un solo toque.
+La tira muestra un pequeño icono para cada aplicación cargada; la activa es
+resaltado.
+
+\section{Añadiendo una aplicación personalizada}
+
+\begin{enumerate}
+  \item Open \ui{Settings~> Applications}.
+  \item Tap \iconlabel{define-new-application-in-palette}{Create app}.
+  \item Enter a display name and the full URL (\code{http://} or \code{https://}).
+  \item Optionally set a custom icon path and zoom level.
+  \item Tap \key{Save}.
+\end{enumerate}
+
+\section{Recuperar una aplicación Stuck o Blank}
+
+\begin{enumerate}
+  \item Wait briefly. Retry once if the shell offers a retry action.
+  \item Tap \iconlabel{applications}{Apps} to return to the launcher.
+  \item Check shell health and connection state.
+  \item Reopen the app only after confirming the shell itself is healthy.
+\end{enumerate}
+
+\begin{tipbox}
+Una aplicación fallida no significa que FairWindSK haya fallado.
+La cáscara, los widgets de datos y las barras operativas (POB, ancla, piloto automático) continúan
+trabajar independientemente de cualquier aplicación individual.
+Una aplicación degradada no es la misma que un estado de buques degradados.
+\end{tipbox}

@@ -229,7 +229,7 @@ Before marking a Windows change as complete, verify all of the following:
    (where configured) remain responsive.
 5. Touch targets and text remain readable at helm distance in all comfort
    presets: `default`, `dawn`, `day`, `sunset`, `dusk`, and `night`.
-6. English and Italian text fit without clipping at all supported comfort
+6. English, French, Spanish, and Italian text fit without clipping at all supported comfort
    presets and screen sizes.
 7. The staged package starts on a clean Windows test environment and contains
    the MSVC runtime, required Qt plugins, `QtZeroConf.dll`, and `qhotkey.dll`.

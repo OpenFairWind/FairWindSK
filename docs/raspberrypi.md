@@ -258,7 +258,7 @@ distance:
 4. Check the Top Bar, Application Area, Bottom Bar, and drawers for clipping.
 5. Exercise `default`, `dawn`, `day`, `sunset`, `dusk`, and `night` comfort
    presets under representative ambient light.
-6. Check English and Italian text for clipping and sufficient contrast.
+6. Check English, French, Spanish, and Italian text for clipping and sufficient contrast.
 7. Confirm embedded applications never escape into external windows.
 
 Do not infer touch or MFD compliance from a remote desktop session alone.
@@ -315,7 +315,7 @@ Before calling a Raspberry Pi OS change complete, verify:
    available autopilot controls remain inside the single-window shell.
 5. Touch input, virtual keyboard, display rotation, fullscreen/maximized modes,
    and all comfort presets are usable on the physical display.
-6. English and Italian interfaces remain readable and unclipped.
+6. English, French, Spanish, and Italian interfaces remain readable and unclipped.
 7. Reboot, network-delay, and Signal K startup-order behavior are acceptable.
 8. OpenPlotter menu behavior is checked when OpenPlotter is part of the target.
 9. Relevant behavior remains coherent with Linux, macOS, Windows, Android, and

@@ -64,4 +64,6 @@ build_one() {
 }
 
 build_one "${repo_dir}/docs/manual/english" fairwindsk-manual.tex fairwindsk-manual.pdf
+build_one "${repo_dir}/docs/manual/french" fairwindsk-manuel.tex fairwindsk-manuel.pdf
+build_one "${repo_dir}/docs/manual/spanish" fairwindsk-manual.tex fairwindsk-manual.pdf
 build_one "${repo_dir}/docs/manual/italian" fairwindsk-manuale.tex fairwindsk-manuale.pdf

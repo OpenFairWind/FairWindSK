@@ -81,6 +81,8 @@ namespace fairwindsk::ui::settings {
 
         ui->comboBox_language->addItem(tr("System default"), "system");
         ui->comboBox_language->addItem(tr("English"), "en");
+        ui->comboBox_language->addItem(tr("Français"), "fr");
+        ui->comboBox_language->addItem(tr("Español"), "es");
         ui->comboBox_language->addItem(tr("Italiano"), "it");
         ui->comboBox_uiScalePreset->addItem(tr("Small"), "small");
         ui->comboBox_uiScalePreset->addItem(tr("Normal"), "normal");

@@ -66,6 +66,8 @@ jobs:
         if: matrix.check == 'translations'
         run: |
           python3 scripts/ci/static_checks.py translations --maximum-unfinished 330
+          /usr/lib/qt6/bin/lrelease resources/i18n/fairwindsk_es.ts -qm /tmp/fairwindsk_es.qm
+          /usr/lib/qt6/bin/lrelease resources/i18n/fairwindsk_fr.ts -qm /tmp/fairwindsk_fr.qm
           /usr/lib/qt6/bin/lrelease resources/i18n/fairwindsk_it.ts -qm /tmp/fairwindsk_it.qm
       - name: Missing tr() checks
         if: matrix.check == 'missing-tr'

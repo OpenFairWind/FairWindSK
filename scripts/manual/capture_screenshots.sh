@@ -16,16 +16,13 @@ if [[ ! -x "${executable}" ]]; then
 fi
 
 capture_language() {
-    local language="$1"
+    local locale="$1"
     local figures_dir="$2"
     mkdir -p "${figures_dir}"
-    if [[ "${language}" == it ]]; then
-        FAIRWINDSK_MANUAL_SCREENSHOT_DIR="${figures_dir}" LANG=it_IT.UTF-8 "${executable}"
-    else
-        FAIRWINDSK_MANUAL_SCREENSHOT_DIR="${figures_dir}" LANG=en_US.UTF-8 "${executable}"
-    fi
-
+    FAIRWINDSK_MANUAL_SCREENSHOT_DIR="${figures_dir}" LANG="${locale}.UTF-8" "${executable}"
 }
 
-capture_language en "${repo_dir}/docs/manual/english/figures"
-capture_language it "${repo_dir}/docs/manual/italian/figures"
+capture_language en_US "${repo_dir}/docs/manual/english/figures"
+capture_language fr_FR "${repo_dir}/docs/manual/french/figures"
+capture_language es_ES "${repo_dir}/docs/manual/spanish/figures"
+capture_language it_IT "${repo_dir}/docs/manual/italian/figures"

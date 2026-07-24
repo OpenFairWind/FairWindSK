@@ -131,7 +131,7 @@ If an older configuration does not contain `dataWidgets`, FairWindSK derives the
 ```jsonc
 {
   "main": {
-    "language": "system", // or "en", "it"
+    "language": "system", // or "en", "fr", "es", "it"
     "windowMode": "windowed", // "windowed", "centered", "maximized", or "fullscreen"
     "windowWidth": 1024,
     "windowHeight": 600,
@@ -143,7 +143,7 @@ If an older configuration does not contain `dataWidgets`, FairWindSK derives the
 }
 ```
 
-- `language`: Selects the application language. `system` follows the operating-system language when FairWindSK supports it and falls back to English for every unsupported language; `en` forces English; `it` forces Italian. Any other value is treated as English. Restart FairWindSK after changing it so all native widgets and embedded web views start with the same language and culture.
+- `language`: Selects the application language. `system` follows the operating-system language when FairWindSK supports it and falls back to English for every unsupported language; `en` forces English, `fr` French, `es` Spanish, and `it` Italian. Any other value is treated as English. Restart FairWindSK after changing it so all native widgets and embedded web views start with the same language and culture.
 - `windowMode`: Choose `windowed`, `centered`, `maximized`, or `fullscreen`. On Raspberry Pi OS Linux ARM builds, `maximized` uses the desktop work area directly instead of relying on the window manager's maximize geometry, while `fullscreen` requests a frameless topmost kiosk window.
 - `windowWidth/Height/Left/Top`: Window geometry when using `windowed` or `centered`; the settings UI constrains these values to the current screen work area.
 - `virtualKeyboard`: Enables the Qt virtual keyboard module if available. The setting is read during startup, so restart FairWindSK after changing it.

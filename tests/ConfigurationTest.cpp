@@ -31,6 +31,10 @@ void ConfigurationTest::readsAndWritesSettings() {
     QVERIFY(!configuration.getSignalKConnectionEnabled());
     QVERIFY(configuration.getVirtualKeyboard());
     QCOMPARE(configuration.getLanguage(), QStringLiteral("it"));
+    configuration.setLanguage(QStringLiteral("fr-FR"));
+    QCOMPARE(configuration.getLanguage(), QStringLiteral("fr"));
+    configuration.setLanguage(QStringLiteral("es_ES"));
+    QCOMPARE(configuration.getLanguage(), QStringLiteral("es"));
     QCOMPARE(configuration.getLauncherRows(), 4);
     QCOMPARE(configuration.getLauncherColumns(), 6);
     QCOMPARE(configuration.getCoordinateFormat(), QStringLiteral("decimal_degrees"));

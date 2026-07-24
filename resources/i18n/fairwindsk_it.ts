@@ -5868,6 +5868,16 @@ Ultimo aggiornamento live %1</translation>
     </message>
     <message>
         <location filename="../../ui/settings/Main.cpp" line="84"/>
+        <source>Français</source>
+        <translation>Francese</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/Main.cpp" line="85"/>
+        <source>Español</source>
+        <translation>Spagnolo</translation>
+    </message>
+    <message>
+        <location filename="../../ui/settings/Main.cpp" line="86"/>
         <source>Italiano</source>
         <translation>Italiano</translation>
     </message>
