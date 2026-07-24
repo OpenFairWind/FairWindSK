@@ -34,6 +34,7 @@ The runtime now supervises Signal K restarts as well: if the server drops and co
 * [GUI tour](docs/gui.md)
 * [Research contextualization](docs/research.md)
 * [Typical use cases](docs/use_case.md)
+* [Multilingual press kit, social assets, and printable brochures](docs/press/README.md)
 
 ![The FairWindSK desktop](images/fairwindsk-desktop.png)
 
