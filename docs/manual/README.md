@@ -42,11 +42,12 @@ application in its automated screenshot mode, exercises the launcher,
 Settings, MyData, and Bottom Bar panels, writes localized PNG files into each
 manual's `figures` directory, and then runs XeLaTeX three times per language.
 
-The outputs are `docs/manual/english/fairwindsk-manual.pdf`,
-`docs/manual/french/fairwindsk-manuel.pdf`,
-`docs/manual/spanish/fairwindsk-manual.pdf`, and
-`docs/manual/italian/fairwindsk-manuale.pdf`. These PDFs are generated artifacts
-and are not committed.
+The outputs are `docs/manual/english/fairwindsk_manual_en.pdf`,
+`docs/manual/french/fairwindsk_manual_fr.pdf`,
+`docs/manual/spanish/fairwindsk_manual_es.pdf`, and
+`docs/manual/italian/fairwindsk_manual_it.pdf`. These PDFs are committed with
+their matching localized figure sets so every manual is directly available from
+the repository.
 
 If screenshots are already current, use
 `scripts/manual/build_manuals.sh --skip-screenshots`. GitHub Actions also offers

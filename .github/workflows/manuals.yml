@@ -59,8 +59,8 @@ jobs:
         with:
           name: fairwindsk-owner-manuals
           path: |
-            docs/manual/english/fairwindsk-manual.pdf
-            docs/manual/french/fairwindsk-manuel.pdf
-            docs/manual/spanish/fairwindsk-manual.pdf
-            docs/manual/italian/fairwindsk-manuale.pdf
+            docs/manual/english/fairwindsk_manual_en.pdf
+            docs/manual/french/fairwindsk_manual_fr.pdf
+            docs/manual/spanish/fairwindsk_manual_es.pdf
+            docs/manual/italian/fairwindsk_manual_it.pdf
           if-no-files-found: error

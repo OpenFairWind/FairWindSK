@@ -36,6 +36,7 @@ build_one() {
     local git_date
     local build_date
     local build_year
+    local generated_file
 
     version="$(tr -d '[:space:]' < "${repo_dir}/VERSION.txt")"
     git_hash="$(git -C "${repo_dir}" rev-parse --short HEAD 2>/dev/null || printf unknown)"
@@ -43,6 +44,7 @@ build_one() {
     git_date="$(git -C "${repo_dir}" log -1 --format=%cs 2>/dev/null || printf unknown)"
     build_date="$(date +%Y-%m-%d)"
     build_year="$(date +%Y)"
+    generated_file="${source_file%.tex}.pdf"
 
     printf '%s\n' \
         '% AUTO-GENERATED - DO NOT EDIT' \
@@ -60,10 +62,13 @@ build_one() {
     for pass in 1 2 3; do
         (cd "${manual_dir}" && xelatex -halt-on-error -interaction=nonstopmode "${source_file}")
     done
+    if [[ "${generated_file}" != "${output_file}" ]]; then
+        mv -f "${manual_dir}/${generated_file}" "${manual_dir}/${output_file}"
+    fi
     pdfinfo "${manual_dir}/${output_file}" | grep -E '^(Pages|Page size|PDF version):'
 }
 
-build_one "${repo_dir}/docs/manual/english" fairwindsk-manual.tex fairwindsk-manual.pdf
-build_one "${repo_dir}/docs/manual/french" fairwindsk-manuel.tex fairwindsk-manuel.pdf
-build_one "${repo_dir}/docs/manual/spanish" fairwindsk-manual.tex fairwindsk-manual.pdf
-build_one "${repo_dir}/docs/manual/italian" fairwindsk-manuale.tex fairwindsk-manuale.pdf
+build_one "${repo_dir}/docs/manual/english" fairwindsk-manual.tex fairwindsk_manual_en.pdf
+build_one "${repo_dir}/docs/manual/french" fairwindsk-manuel.tex fairwindsk_manual_fr.pdf
+build_one "${repo_dir}/docs/manual/spanish" fairwindsk-manual.tex fairwindsk_manual_es.pdf
+build_one "${repo_dir}/docs/manual/italian" fairwindsk-manuale.tex fairwindsk_manual_it.pdf
