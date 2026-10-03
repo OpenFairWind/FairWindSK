@@ -5,6 +5,7 @@
 // You may need to build the project (run Qt uic code generator) to get "ui_AnchorBar.h" resolved
 
 
+#include <QSignalBlocker>
 #include <QPushButton>
 #include <QSlider>
 #include <QLabel>
@@ -133,6 +134,8 @@ namespace fairwindsk::ui::bottombar {
         connect(ui->toolButton_Raise, &QToolButton::clicked, this, &AnchorBar::onRaiseClicked);
         connect(ui->pushButton_SetRadius, &QPushButton::clicked, this, &AnchorBar::onSetRadiusClicked);
         connect(ui->horizontalSlider_CurrentRadius, &QSlider::valueChanged, this, &AnchorBar::onCurrentRadiusChanged);
+        // While dragging, the radius is sent once, when the handle is released.
+        connect(ui->horizontalSlider_CurrentRadius, &QSlider::sliderReleased, this, &AnchorBar::onCurrentRadiusChanged);
         connect(ui->toolButton_Drop, &QToolButton::clicked, this, &AnchorBar::onDropClicked);
         connect(ui->toolButton_Down, &QToolButton::pressed, this, &AnchorBar::onDownPressed);
         connect(ui->toolButton_Down, &QToolButton::released, this, &AnchorBar::onDownReleased);
@@ -338,12 +341,17 @@ namespace fairwindsk::ui::bottombar {
 
     void AnchorBar::onCurrentRadiusChanged() {
 
+        // A drag produces a value for every step: wait for the release instead of flooding the server.
+        if (ui->horizontalSlider_CurrentRadius->isSliderDown()) {
+            return;
+        }
+
         // Check if the Options object has the rsa key and if it is a string
         if (m_signalkPaths.contains("anchor.actions.radius") && m_signalkPaths["anchor.actions.radius"].is_string()) {
 
-            // Convert m/s to knots
+            // The slider shows range units (see updateCurrentRadius): convert from the same units.
             auto value = m_units->convert(
-                FairWindSK::getInstance()->getConfiguration()->getDepthUnits(),"m",
+                FairWindSK::getInstance()->getConfiguration()->getRangeUnits(),"m",
                 ui->horizontalSlider_CurrentRadius->value());
 
             // Get the FairWind singleton
@@ -628,7 +636,11 @@ namespace fairwindsk::ui::bottombar {
                 value,
                 "m",
                 FairWindSK::getInstance()->getConfiguration()->getRangeUnits());
-            ui->horizontalSlider_CurrentRadius->setValue(static_cast<int>(value));
+            // Showing the value reported by the server must not send it back as a new command.
+            {
+                const QSignalBlocker blocker(ui->horizontalSlider_CurrentRadius);
+                ui->horizontalSlider_CurrentRadius->setValue(static_cast<int>(value));
+            }
             text = m_units->formatSignalKValue(
                 QString::fromStdString(m_signalkPaths["anchor.radius"].get<std::string>()),
                 fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update),
@@ -659,7 +671,11 @@ namespace fairwindsk::ui::bottombar {
                 value,
                 "m",
                 FairWindSK::getInstance()->getConfiguration()->getRangeUnits());
-            ui->horizontalSlider_CurrentRadius->setMaximum(static_cast<int>(value));
+            // Changing the range can clamp the value; that is not an operator command either.
+            {
+                const QSignalBlocker blocker(ui->horizontalSlider_CurrentRadius);
+                ui->horizontalSlider_CurrentRadius->setMaximum(static_cast<int>(value));
+            }
             text = m_units->formatSignalKValue(
                 QString::fromStdString(m_signalkPaths["anchor.max"].get<std::string>()),
                 fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update),

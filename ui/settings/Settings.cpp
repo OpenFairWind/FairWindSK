@@ -34,7 +34,20 @@ namespace fairwindsk::ui::settings {
     }
 
     void Settings::applyConfiguration() {
+        // Applying can spin nested event loops (blocking Signal K requests). A change made in the
+        // meantime must wait its turn: re-entering here restarted the connection several times.
+        if (m_applyingConfiguration) {
+            if (m_applyTimer) {
+                m_applyTimer->start(kLiveApplyDelayMs);
+            }
+            return;
+        }
+        m_applyingConfiguration = true;
+
         const quint32 runtimeChanges = m_pendingRuntimeChanges == 0 ? FairWindSK::RuntimeAll : m_pendingRuntimeChanges;
+        // Take the pending flags now, so changes arriving while applying are kept for the next pass.
+        m_pendingRuntimeChanges = 0;
+        m_hasPendingUiChanges = false;
 
         // Get the configuration root element
         const auto configurationAsJson = m_configuration.getRoot();
@@ -46,8 +59,7 @@ namespace fairwindsk::ui::settings {
         // so a single write is enough.
         FairWindSK::getInstance()->getConfiguration()->save();
         FairWindSK::getInstance()->reconfigureRuntime(runtimeChanges);
-        m_hasPendingUiChanges = false;
-        m_pendingRuntimeChanges = 0;
+        m_applyingConfiguration = false;
     }
 
 

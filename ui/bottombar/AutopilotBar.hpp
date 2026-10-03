@@ -74,6 +74,8 @@ namespace fairwindsk::ui::bottombar {
         Units *m_units = nullptr;
         nlohmann::json m_signalkPaths;
         bool m_autopilotAvailable = false;
+        // Last pilot state read from the autopilot API.
+        QString m_lastApiState;
         QJsonObject m_lastRsaUpdate;
         QJsonObject m_lastStateUpdate;
         QJsonObject m_lastTargetHeadingUpdate;

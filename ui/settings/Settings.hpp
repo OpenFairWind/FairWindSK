@@ -74,6 +74,7 @@ namespace fairwindsk::ui::settings {
         QVector<QPointer<QWidget>> m_tabPages;
         bool m_rebuildingTabs = false;
         bool m_hasPendingUiChanges = false;
+        bool m_applyingConfiguration = false;
         QTimer *m_applyTimer = nullptr;
         quint32 m_pendingRuntimeChanges = 0;
 

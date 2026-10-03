@@ -263,6 +263,13 @@ namespace fairwindsk::signalk {
             }
         }
 
+        // With both channels up there is one thing to say. Otherwise the summary flipped between
+        // "REST online" and "Stream online" on every request and every delta, and each flip was
+        // broadcast as a health change to the whole interface.
+        if (m_restHealthy && m_streamHealthy) {
+            summary = tr("REST + Stream online");
+        }
+
         const ConnectionHealthState state = currentConnectionHealthState();
         const bool serverHealthy = m_restHealthy && m_streamHealthy;
         if (m_connectivityStateEmitted &&

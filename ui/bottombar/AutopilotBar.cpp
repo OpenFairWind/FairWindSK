@@ -55,6 +55,9 @@ namespace fairwindsk::ui::bottombar {
         m_slider->setRange(rudderMin, rudderMax);
         m_slider->setTickInterval(rudderStep);
         m_slider->setEnabled(false);
+        // The rudder slider is an indicator: it must never look or act like a control.
+        m_slider->setAttribute(Qt::WA_TransparentForMouseEvents, true);
+        m_slider->setFocusPolicy(Qt::NoFocus);
         m_slider->setTickPosition(QSlider::TicksBelow);
 
 
@@ -244,8 +247,14 @@ namespace fairwindsk::ui::bottombar {
     void AutopilotBar::updateState(const QJsonObject &update) {
         m_lastStateUpdate = update;
 
-        const QString value = fairwindsk::signalk::Client::getStringFromUpdateByPath(update);
-        const bool hasValue = !update.isEmpty() && !value.isEmpty();
+        QString value = fairwindsk::signalk::Client::getStringFromUpdateByPath(update);
+        bool hasValue = !update.isEmpty() && !value.isEmpty();
+        // Some pilots report their state only through the autopilot API: keep showing the state
+        // read there instead of falling back to "NO PILOT" when the stream has nothing to say.
+        if (!hasValue && m_autopilotAvailable && !m_lastApiState.isEmpty()) {
+            value = m_lastApiState;
+            hasValue = true;
+        }
         fairwindsk::ui::widgets::applySignalKMetricPresentation(
             ui->label_State,
             nullptr,
@@ -377,6 +386,9 @@ namespace fairwindsk::ui::bottombar {
         ui->toolButton_NextWPT->setEnabled(enabled);
         ui->toolButton_Wind->setEnabled(enabled);
         ui->toolButton_PTack->setEnabled(enabled);
+        // Gybe buttons command the pilot too: they follow the same availability.
+        ui->toolButton_PGybe->setEnabled(enabled);
+        ui->toolButton_SGybe->setEnabled(enabled);
         ui->toolButton_Minus10->setEnabled(enabled);
         ui->toolButton_Minus1->setEnabled(enabled);
         ui->toolButton_Plus1->setEnabled(enabled);
@@ -392,7 +404,8 @@ namespace fairwindsk::ui::bottombar {
         const auto client = fairWindSK->getSignalKClient();
         const auto result = client->signalkGet(autopilotUrl("options"));
 
-        m_autopilotAvailable = !result.isEmpty() && !result.contains("statusCode");
+        // Available only when the server really answered with the pilot options.
+        m_autopilotAvailable = client->lastRequestSucceeded() && !result.isEmpty() && !result.contains("statusCode");
         setAutopilotControlsEnabled(m_autopilotAvailable);
 
         if (!m_autopilotAvailable) {
@@ -484,6 +497,11 @@ namespace fairwindsk::ui::bottombar {
         // Get the Signal K client
         auto client = FairWindSK::getInstance()->getSignalKClient();
 
+        // Without a configured path there is nothing to command.
+        if (!m_signalkPaths.contains("autopilot.target.windAngle") || !m_signalkPaths["autopilot.target.windAngle"].is_string()) {
+            return {};
+        }
+
         // Get the path
         auto path = "vessels.self." + QString::fromStdString(m_signalkPaths["autopilot.target.windAngle"].get<std::string>());
 
@@ -513,6 +531,11 @@ namespace fairwindsk::ui::bottombar {
 
     void AutopilotBar::checkStateAndUpdateUI(QJsonObject result) {
 
+        // The command has just been sent: remember how it ended before any other request runs.
+        const auto commandClient = FairWindSK::getInstance()->getSignalKClient();
+        const bool commandAccepted = commandClient->lastRequestSucceeded();
+        const int commandStatus = commandClient->lastHttpStatus();
+
         // Check if the result has the status code
         if (result.contains("statusCode") && result["statusCode"].isDouble()) {
 
@@ -537,7 +560,8 @@ namespace fairwindsk::ui::bottombar {
                         if (result["value"].isString()) {
 
                             // Get the string and update the state
-                            ui->label_State->setText(result["value"].toString());
+                            m_lastApiState = result["value"].toString();
+                            ui->label_State->setText(m_lastApiState);
                         }
                     }
                 }
@@ -557,6 +581,12 @@ namespace fairwindsk::ui::bottombar {
         }
 
         refreshAutopilotOptions();
+
+        // A refusal without a structured reply (access denied, no answer) must still be visible
+        // on the pilot panel, where the operator is looking.
+        if (!commandAccepted && !result.contains("statusCode")) {
+            ui->label_State->setText(tr("Error: %1").arg(commandStatus));
+        }
     }
 
     AutopilotBar::~AutopilotBar() {

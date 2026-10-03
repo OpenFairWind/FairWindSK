@@ -101,6 +101,8 @@ namespace fairwindsk::ui::bottombar {
             return;
         }
 
+        // Remember the confirmed state, then make the button show exactly that.
+        m_alarmActive[apiKey] = active;
         m_alarmToolButtons[apiKey]->setChecked(active);
         applyComfortStyle();
         updateControlTooltips();
@@ -176,15 +178,25 @@ namespace fairwindsk::ui::bottombar {
         const auto client = FairWindSK::getInstance()->getSignalKClient();
         const auto notificationUrl = QUrl(client->server().toString() + "/signalk/v2/api/notifications/" + apiKey);
 
-        if (m_alarmToolButtons.value(apiKey)->isChecked()) {
-            client->signalkDelete(notificationUrl);
-            setAlarmState(apiKey, false);
+        if (!m_alarmToolButtons.contains(apiKey)) {
             return;
         }
 
-        QString payload = QString(R"({"message":"%1"})").arg(alarm.toUpper());
-        client->signalkPut(notificationUrl, payload);
-        setAlarmState(apiKey, true);
+        // The button is checkable, so by the time clicked() arrives it has already toggled
+        // itself: reading isChecked() here used to invert the action (pressing an idle alarm
+        // cancelled it instead of raising it). Decide from the state confirmed by the server.
+        const bool wasActive = m_alarmActive.value(apiKey, false);
+
+        if (wasActive) {
+            client->signalkDelete(notificationUrl);
+        } else {
+            QString payload = QString(R"({"message":"%1"})").arg(alarm.toUpper());
+            client->signalkPut(notificationUrl, payload);
+        }
+
+        // Only a request the server accepted changes the alarm; a refused one (for example
+        // without an access token) leaves the button as it was.
+        setAlarmState(apiKey, client->lastRequestSucceeded() ? !wasActive : wasActive);
     }
 
     void AlarmsBar::updateNotifications(const QJsonObject &update) {

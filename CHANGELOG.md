@@ -72,6 +72,20 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Connecting in public mode no longer posts an empty login to the server, and tokens are no longer
   written to the debug log.
 
+- **Alarms bar**: pressing an idle alarm now raises it and pressing an active one cancels it. The
+  action was inverted (the button had already toggled itself when its state was read), so alarms
+  could not be raised from the bar. A request the server refuses no longer shows the alarm as active.
+- **Anchor bar**: every radius value received from the server was sent straight back as a "set
+  radius" command, and dragging the slider sent one command per step. Received values are now only
+  displayed, a drag sends one command on release, and the value is converted from the units shown.
+- **Autopilot bar**: Gybe buttons follow pilot availability like the other controls, a refused
+  command is shown on the panel, the pilot state read from the autopilot API is kept when the
+  stream carries none, and the rudder indicator can no longer be dragged.
+- The connection summary no longer alternates between "REST online" and "Stream online" on every
+  request and delta, which broadcast a health change to the whole interface each time.
+- Settings no longer re-enters "apply" while a previous apply is still running, which restarted
+  the Signal K connection several times after Reset.
+
 ### Changed
 
 - Settings writes the configuration file once per change instead of up to four times, and the
