@@ -12,6 +12,7 @@ private slots:
     void savesAndLoadsAtomically();
     void rejectsInvalidDocuments();
     void copiesIndependently();
+    void findAppReturnsArrayIndex();
 };
 
 void ConfigurationTest::readsAndWritesSettings() {
@@ -90,6 +91,21 @@ void ConfigurationTest::copiesIndependently() {
 
     QCOMPARE(original.getSignalKServerUrl(), QStringLiteral("http://original"));
     QCOMPARE(copy.getSignalKServerUrl(), QStringLiteral("http://copy"));
+}
+
+void ConfigurationTest::findAppReturnsArrayIndex() {
+    fairwindsk::Configuration configuration;
+    // A stray non-object entry sits before the application being looked up.
+    configuration.setRoot(nlohmann::json{
+        {"apps", nlohmann::json::array({
+            nlohmann::json{{"name", "first"}},
+            "garbage",
+            nlohmann::json{{"name", "second"}}})}});
+
+    // The result is used with at(), so it must be the real array position.
+    QCOMPARE(configuration.findApp(QStringLiteral("first")), 0);
+    QCOMPARE(configuration.findApp(QStringLiteral("second")), 2);
+    QCOMPARE(configuration.findApp(QStringLiteral("missing")), -1);
 }
 
 QTEST_APPLESS_MAIN(ConfigurationTest)

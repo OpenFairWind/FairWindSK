@@ -1410,7 +1410,8 @@ namespace fairwindsk {
 
     bool FairWindSK::rebuildAppRegistry(const nlohmann::json *appsPayload) {
         auto &configurationJsonObject = m_configuration.getRoot();
-        if (!configurationJsonObject.contains("apps")) {
+        // A missing or hand-edited non-array "apps" entry would make every later array access throw.
+        if (!configurationJsonObject.contains("apps") || !configurationJsonObject["apps"].is_array()) {
             configurationJsonObject["apps"] = nlohmann::json::array();
         }
 
@@ -1431,11 +1432,14 @@ namespace fairwindsk {
                 }
 
                 if (appJsonObject.contains("keywords") && appJsonObject["keywords"].is_array()) {
-                    std::vector<std::string> keywords = appJsonObject["keywords"];
+                    // The payload comes from the network: skip non-string entries instead of
+                    // letting an implicit conversion throw out of the reply handler.
                     QStringList stringListKeywords;
-                    std::transform(keywords.begin(), keywords.end(), std::back_inserter(stringListKeywords), [](const std::string &value) {
-                        return QString::fromStdString(value);
-                    });
+                    for (const auto &keyword : appJsonObject["keywords"]) {
+                        if (keyword.is_string()) {
+                            stringListKeywords.append(QString::fromStdString(keyword.get<std::string>()));
+                        }
+                    }
                     if (!stringListKeywords.contains("signalk-webapp")) {
                         continue;
                     }
@@ -1451,6 +1455,8 @@ namespace fairwindsk {
                     m_configuration.getRoot()["apps"].push_back(appItem->asJson());
                 }
 
+                // A catalog listing the same application twice must not leak the first item.
+                delete m_mapHash2AppItem.value(appName, nullptr);
                 m_mapHash2AppItem[appName] = appItem;
                 m_mapAppId2Hash[appName] = appName;
                 count++;
@@ -1504,7 +1510,12 @@ namespace fairwindsk {
                     appItem->setOrder(count);
                     const int idx = m_configuration.findApp(appName);
                     if (idx != -1) {
-                        m_configuration.getRoot()["apps"].at(idx)["fairwind"]["order"] = count;
+                        auto &configuredApp = m_configuration.getRoot()["apps"].at(idx);
+                        // Repair a malformed "fairwind" block before writing into it.
+                        if (!configuredApp.contains("fairwind") || !configuredApp["fairwind"].is_object()) {
+                            configuredApp["fairwind"] = nlohmann::json::object();
+                        }
+                        configuredApp["fairwind"]["order"] = count;
                     }
                     count++;
                 }
@@ -1516,6 +1527,10 @@ namespace fairwindsk {
             const int idx = m_configuration.findApp(appName);
             if (idx != -1) {
                 auto &configuredApp = m_configuration.getRoot()["apps"].at(idx);
+                // Repair a malformed "fairwind" block before writing into it.
+                if (!configuredApp.contains("fairwind") || !configuredApp["fairwind"].is_object()) {
+                    configuredApp["fairwind"] = nlohmann::json::object();
+                }
                 configuredApp["fairwind"]["order"] = 10000 + count;
                 configuredApp["fairwind"]["active"] = false;
                 count++;

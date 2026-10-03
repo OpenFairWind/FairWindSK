@@ -7,6 +7,7 @@
 #include "Subscription.hpp"
 
 #include <QByteArray>
+#include <QStringList>
 
 namespace fairwindsk::signalk {
     Subscription::Subscription(const QString &requestedContext,
@@ -83,9 +84,23 @@ namespace fairwindsk::signalk {
     Subscription::~Subscription() = default;
 
     void Subscription::rebuildRegularExpression() {
-        auto fullPath = m_context + "." + m_path;
-        QString re = fullPath.replace(".", "[.]").replace(":", "[:]").replace("*", ".*");
-        m_regularExpression = QRegularExpression(re);
+        // Compose the dotted Signal K path the subscription listens to.
+        const QString fullPath = m_context + "." + m_path;
+
+        // Escape every literal fragment so characters such as ':' or '+' are never read as regex syntax.
+        QStringList fragments;
+        const auto literals = fullPath.split(QLatin1Char('*'));
+        for (const auto &literal : literals) {
+            fragments.append(QRegularExpression::escape(literal));
+        }
+
+        // The Signal K wildcard matches any run of characters.
+        const QString body = fragments.join(QStringLiteral(".*"));
+
+        // Match on whole path segments only: "speedThroughWater" must not capture
+        // "speedThroughWaterTransverse", while children of the subscribed node still match.
+        m_regularExpression = QRegularExpression(
+            QStringLiteral("(?:^|[.])") + body + QStringLiteral("(?:[.].*)?$"));
     }
 
     bool Subscription::match(const QString &fullPath, const QJsonObject& updateObject) {
