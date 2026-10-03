@@ -194,6 +194,11 @@ namespace fairwindsk::signalk {
     }
 
     bool Client::shouldSuppressServerMessage(const QUrl &url, const int httpStatus) const {
+        // A 404 on a read means the server has no value for that path (for example course data
+        // with no active route): that is "no data", not a fault to show on the helm display.
+        if (httpStatus == 404) {
+            return true;
+        }
         return httpStatus == 501 && url.path().startsWith(QStringLiteral("/signalk/v2/api/history"));
     }
 
@@ -324,8 +329,9 @@ namespace fairwindsk::signalk {
         // Reset websocket signal wiring before reconnecting.
         disconnect(&m_WebSocket, nullptr, this, nullptr);
         if (m_WebSocket.state() != QAbstractSocket::UnconnectedState) {
+            // abort() already tears the socket down; a following close() would try to write
+            // a close frame to the dead socket and only log "device not open".
             m_WebSocket.abort();
-            m_WebSocket.close();
         }
 
         // Connect the on connected event
@@ -405,15 +411,20 @@ namespace fairwindsk::signalk {
             qDebug() << "SignalKAPIClient::onInit(" << params << ")";
 
         if (m_Active) {
-            setRestHealth(false, tr("Connecting to Signal K"));
-            setStreamHealth(false, tr("Connecting to Signal K"));
+            // Drop both flags before notifying, so listeners never see a half-updated state.
+            m_restHealthy = false;
+            m_streamHealthy = false;
+            emitConnectivityState(tr("Connecting to Signal K"));
             emit serverMessageChanged(tr("Connecting to Signal K"));
             startAsyncReconnectDiscovery();
             result = true;
         }  else {
             qInfo() << "SignalK::Client::init skipped because client is inactive";
-            setRestHealth(false, tr("Signal K disabled"));
-            setStreamHealth(false, tr("Signal K disabled"));
+            // Drop both flags before notifying, so listeners never see a half-updated state.
+            m_restHealthy = false;
+            m_streamHealthy = false;
+            m_streamHealthTimer.stop();
+            emitConnectivityState(tr("Signal K disabled"));
             emit serverMessageChanged(tr("Signal K connection disabled"));
             if (m_Debug)
                     qDebug() << "Data connection not active!";
@@ -1041,13 +1052,14 @@ namespace fairwindsk::signalk {
                 auto jsonObjectVersion = jsonObjectEndponts[version].toObject();
                 if (jsonObjectVersion.contains("signalk-" + protocol) &&
                     jsonObjectVersion["signalk-" + protocol].isString()) {
-                    qInfo() << "SignalK::Client::getEndpointByProtocol" << protocol << version
-                            << "->" << jsonObjectVersion["signalk-" + protocol].toString();
                     return jsonObjectVersion["signalk-" + protocol].toString();
                 }
             }
         }
-        qWarning() << "SignalK::Client::getEndpointByProtocol missing endpoint for" << protocol << version;
+        // Not a warning: http()/ws() probe the secure variant first and fall back to the plain one.
+        if (m_Debug) {
+            qDebug() << "SignalK::Client::getEndpointByProtocol no endpoint for" << protocol << version;
+        }
         return {};
     }
 
@@ -1524,8 +1536,9 @@ namespace fairwindsk::signalk {
         emit serverMessageChanged(tr("Signal K restart requested"));
 
         if (m_WebSocket.state() != QAbstractSocket::UnconnectedState) {
+            // abort() already tears the socket down; a following close() would try to write
+            // a close frame to the dead socket and only log "device not open".
             m_WebSocket.abort();
-            m_WebSocket.close();
         }
 
         m_plannedRestartTimer.start(std::max(5000, gracePeriodMs));

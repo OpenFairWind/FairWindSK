@@ -753,9 +753,8 @@ namespace fairwindsk::ui::settings {
         connect(m_cancelButton, &QPushButton::clicked, this, &Connection::onCancelRequest);
         connect(m_removeTokenButton, &QPushButton::clicked, this, &Connection::onRemoveToken);
 
-        // Only commit the URL when the user selects an item from the dropdown.
-        // Typed URLs are added to the combo on connect so accidental keystrokes
-        // don't overwrite the saved server URL.
+        // Selecting or typing a server never changes the saved one by itself;
+        // the address is committed when the operator presses Connect.
         connect(m_comboBox,
                 qOverload<int>(&fairwindsk::ui::widgets::TouchComboBox::currentIndexChanged),
                 this,
@@ -907,11 +906,12 @@ namespace fairwindsk::ui::settings {
     /*
      * onUpdateSignalKServerUrl
      * Invoked when the user picks an item from the combo dropdown.
-     * Saves the selected URL to config without restarting the active connection;
-     * typed URLs are committed only when the Connect button is pressed.
+     * Picking a server only selects it: the configured server keeps describing the
+     * connection that is really in use until Connect (or Request token) is pressed,
+     * so the Connect/Pause button never claims a server that is not the live one.
      */
     void Connection::onUpdateSignalKServerUrl() {
-        commitSignalKServerUrl(false);
+        updateConnectionToggle();
     }
 
     /*

@@ -27,6 +27,13 @@ void DataWidgetConfigTest::providesLegacyDefaults() {
     QCOMPARE(speed.signalKPath, QStringLiteral("navigation.speedOverGround"));
     QCOMPARE(speed.sourceUnit, QStringLiteral("ms-1"));
     QCOMPARE(speed.defaultUnit, QStringLiteral("kn"));
+
+    // A stored path that repeats the own-vessel context is normalized on load.
+    const nlohmann::json prefixedRoot = {
+        {"dataWidgets", nlohmann::json::array({
+            nlohmann::json{{"id", "cog"}, {"name", "COG"}, {"signalKPath", "vessels.self.navigation.courseOverGroundTrue"}}})}};
+    QCOMPARE(fairwindsk::ui::widgets::dataWidgetDefinition(prefixedRoot, QStringLiteral("cog")).signalKPath,
+             QStringLiteral("navigation.courseOverGroundTrue"));
 }
 
 void DataWidgetConfigTest::normalizesStoredDefinitions() {

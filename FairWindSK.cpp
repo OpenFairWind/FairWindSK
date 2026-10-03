@@ -801,6 +801,9 @@ namespace fairwindsk {
             }
         }
 
+        // Applications missing from the server catalog are parked at this order and above.
+        constexpr int kMissingAppOrderBase = 10000;
+
         void ensureFairwindMetadata(nlohmann::json &appJsonObject, const int order) {
             if (!appJsonObject.contains("fairwind") || !appJsonObject["fairwind"].is_object()) {
                 appJsonObject["fairwind"] = nlohmann::json::object();
@@ -1483,7 +1486,21 @@ namespace fairwindsk {
                 const int idx = m_configuration.findApp(appName);
                 if (idx != -1) {
                     auto mergedJson = appItem->asJson();
+                    const int liveOrder = appItem->getOrder();
                     mergedJson.update(app, true);
+
+                    // An application parked as "missing" (inactive, order 10000+) while the server
+                    // catalog was unavailable is back in the catalog: put it on the launcher again.
+                    // Without this the stored "inactive" flag wins the merge forever.
+                    auto &mergedFairwind = mergedJson["fairwind"];
+                    if (mergedFairwind.is_object()
+                        && mergedFairwind.contains("active") && mergedFairwind["active"].is_boolean()
+                        && !mergedFairwind["active"].get<bool>()
+                        && mergedFairwind.contains("order") && mergedFairwind["order"].is_number_integer()
+                        && mergedFairwind["order"].get<int>() >= kMissingAppOrderBase) {
+                        mergedFairwind["active"] = true;
+                        mergedFairwind["order"] = liveOrder;
+                    }
                     m_configuration.getRoot()["apps"].at(idx) = mergedJson;
                     appItem->update(mergedJson);
                 }
@@ -1527,6 +1544,13 @@ namespace fairwindsk {
                 continue;
             }
 
+            // Only a catalog that was actually received can tell that an application is gone.
+            // The offline rebuild done at startup and before every refresh has no catalog, and
+            // parking everything there used to empty the launcher permanently.
+            if (!hadServerPayload) {
+                continue;
+            }
+
             const int idx = m_configuration.findApp(appName);
             if (idx != -1) {
                 auto &configuredApp = m_configuration.getRoot()["apps"].at(idx);
@@ -1534,7 +1558,7 @@ namespace fairwindsk {
                 if (!configuredApp.contains("fairwind") || !configuredApp["fairwind"].is_object()) {
                     configuredApp["fairwind"] = nlohmann::json::object();
                 }
-                configuredApp["fairwind"]["order"] = 10000 + count;
+                configuredApp["fairwind"]["order"] = kMissingAppOrderBase + count;
                 configuredApp["fairwind"]["active"] = false;
                 count++;
             }
@@ -1635,6 +1659,13 @@ namespace fairwindsk {
             const QString iconReference = appItem->getAppIcon().trimmed();
             QUrl appUrl(appItem->getUrl());
             if (iconReference.isEmpty() || !appUrl.isValid()) {
+                continue;
+            }
+
+            // Bundled icons (":/resources/..." or "qrc:") are local: asking the server for them
+            // only produces a 404 for every application on every refresh.
+            if (iconReference.startsWith(QLatin1Char(':')) || iconReference.startsWith(QStringLiteral("qrc:"))
+                || iconReference.startsWith(QStringLiteral("file:"))) {
                 continue;
             }
 

@@ -410,6 +410,11 @@ namespace fairwindsk::ui::settings {
 
         if (itemToSelect) {
             m_listWidget->setCurrentItem(itemToSelect);
+            // The list signals are blocked while it is rebuilt, so the selection handler does not
+            // run: fill the editor here. Otherwise it stays blank while a widget is selected, and
+            // the first touched field would save that blank form over the selected widget.
+            setEditorEnabled(true);
+            setEditorFromDefinition(definitionForId(itemToSelect->data(Qt::UserRole).toString()));
         } else {
             setEditorEnabled(false);
             setEditorFromDefinition({});

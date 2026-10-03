@@ -179,6 +179,9 @@ namespace fairwindsk::ui::settings {
         const int resolvedIndex = std::clamp(currentIndex, 0, ui->tabWidget->count() - 1);
         ensureTabCreated(resolvedIndex);
         ui->tabWidget->setCurrentIndex(resolvedIndex);
+        // removeTabs() detaches this handler while the tabs are torn down; without it the
+        // pages are never created again and every other tab stays blank after a rebuild.
+        connect(ui->tabWidget, &QTabWidget::currentChanged, this, &Settings::onTabChanged, Qt::UniqueConnection);
         m_rebuildingTabs = false;
     }
 

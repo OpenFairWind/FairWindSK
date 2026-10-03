@@ -39,6 +39,20 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
   Return) on a new address connects to it even while another server is live, and the address is
   remembered in `connection.servers` so it stays in the drop-down list after a restart.
 - **Settings > Comfort**: Reset All asks for confirmation.
+- **Launcher**: server applications are no longer parked as inactive before the catalog has been
+  received, which left the launcher empty after the first connection; applications parked that way
+  come back when the server lists them again.
+- **Top Bar**: the default COG and SOG widgets carried a `vessels.self.` prefix in their path and
+  never showed a value; the factory defaults are corrected and such paths are normalized on load.
+- **Settings > Widgets**: the editor is filled for the widget selected when the page opens. It
+  used to stay blank, and the first touched field saved that blank form over the widget.
+- **Settings**: tabs create their pages again after Reset, Restore Defaults or Import; the
+  tab-change handler was dropped during the rebuild, leaving every other tab blank.
+- **Settings > Connection**: picking a server from the list only selects it; the configured server
+  changes when Connect is pressed, so Connect/Pause always refers to the live connection.
+- Signal K client: a 404 on a read is treated as "no data" instead of an error shown in the status
+  area; bundled application icons are no longer requested from the server; the missing
+  `alerts.svg` resource is registered; the socket is no longer written to after being aborted.
 - **Settings > System**: Reset now undoes the changes made since Settings was opened; before, it
   had nothing to discard because every change is saved as it is made.
 
