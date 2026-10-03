@@ -2689,6 +2689,18 @@ Last live update %1</source>
     <context>
         <name>fairwindsk::signalk::Client</name>
         <message>
+            <source>Access token rejected: request a new token in Settings &gt; Connection</source>
+            <translation>Jeton d&apos;accès refusé : demandez un nouveau jeton dans Paramètres &gt; Connexion</translation>
+        </message>
+        <message>
+            <source>Access denied: request an access token in Settings &gt; Connection</source>
+            <translation>Accès refusé : demandez un jeton d&apos;accès dans Paramètres &gt; Connexion</translation>
+        </message>
+        <message>
+            <source>Access denied: the access token does not grant this permission</source>
+            <translation>Accès refusé : le jeton d&apos;accès n&apos;accorde pas cette autorisation</translation>
+        </message>
+        <message>
             <location filename="../../signalk/Client.cpp" line="100" />
             <source>Timeout while contacting %1</source>
             <translation>Temps d'arrêt en contactant %1</translation>

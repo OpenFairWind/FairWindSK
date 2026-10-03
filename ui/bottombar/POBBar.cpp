@@ -179,6 +179,17 @@ namespace fairwindsk::ui::bottombar {
                     SLOT(fairwindsk::ui::bottombar::POBBar::updatePOB)
                 ));
             }
+
+            // Follow the position on the stream: at the moment of a POB the last streamed fix is
+            // available at once, even if the REST interface is slow or unreachable.
+            const auto positionPath = configuredPath("pos");
+            if (!positionPath.isEmpty()) {
+                FairWindSK::getInstance()->getSignalKClient()->subscribeStream(
+                    QStringLiteral("vessels.self"),
+                    positionPath,
+                    this,
+                    SLOT(updateVesselPosition(QJsonObject)));
+            }
         }
 
         applyComfortStyle();
@@ -529,10 +540,27 @@ namespace fairwindsk::ui::bottombar {
         return m_pobValues.value(uuid).value(QStringLiteral("managedByFairWindSK")).toBool();
     }
 
+    void POBBar::updateVesselPosition(const QJsonObject &update) {
+        const auto path = configuredPath("pos");
+        const auto coordinate = fairwindsk::signalk::Client::getGeoCoordinateFromUpdateByPath(update, path);
+        // Keep only real fixes, together with the time they were received.
+        if (coordinate.isValid()) {
+            m_lastVesselPosition = coordinate;
+            m_lastVesselPositionTime = QDateTime::currentDateTimeUtc();
+        }
+    }
+
     QGeoCoordinate POBBar::currentVesselPosition() const {
         const auto path = configuredPath("pos");
         if (path.isEmpty()) {
             return {};
+        }
+
+        // A fix streamed in the last few seconds is as good as it gets and costs no request.
+        constexpr qint64 kFreshFixMs = 5000;
+        if (m_lastVesselPosition.isValid() && m_lastVesselPositionTime.isValid()
+            && m_lastVesselPositionTime.msecsTo(QDateTime::currentDateTimeUtc()) <= kFreshFixMs) {
+            return m_lastVesselPosition;
         }
 
         const auto jsonObject = FairWindSK::getInstance()->getSignalKClient()->signalkGet("vessels.self." + path + ".value");
@@ -545,6 +573,10 @@ namespace fairwindsk::ui::bottombar {
         }
         if (jsonObject.contains("altitude")) {
             coordinate.setAltitude(jsonObject["altitude"].toDouble());
+        }
+        // No answer from the server: an older streamed fix still beats losing the POB altogether.
+        if (!coordinate.isValid() && m_lastVesselPosition.isValid()) {
+            return m_lastVesselPosition;
         }
         return coordinate;
     }

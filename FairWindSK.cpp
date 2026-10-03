@@ -925,10 +925,21 @@ namespace fairwindsk {
                 return;
             }
 
-            if (fairwindsk::Configuration::getToken() != token) {
-                fairwindsk::Configuration::setToken(token);
+            // Keep the token tied to the server it works on.
+            const QString serverUrl = m_configuration.getSignalKServerUrl();
+            if (fairwindsk::Configuration::getToken(serverUrl) != token) {
+                fairwindsk::Configuration::setToken(token, serverUrl);
             }
             updateWebProfileCookie();
+            refreshRuntimeHealth();
+        });
+
+        // A token the server refuses (expired, revoked) is useless: forget it so the Connection
+        // page offers Request Token again, while the client carries on in public mode.
+        connect(&m_signalkClient, &signalk::Client::tokenRejected, this, [this]() {
+            if (!fairwindsk::Configuration::getToken(m_configuration.getSignalKServerUrl()).isEmpty()) {
+                fairwindsk::Configuration::clearToken();
+            }
             refreshRuntimeHealth();
         });
 
@@ -1273,7 +1284,7 @@ namespace fairwindsk {
         }
 
         const auto serverUrl = m_configuration.getSignalKServerUrl();
-        const auto token = fairwindsk::Configuration::getToken();
+        const auto token = fairwindsk::Configuration::getToken(serverUrl);
         if (serverUrl.isEmpty() || token.isEmpty()) {
             return;
         }
@@ -1333,7 +1344,8 @@ namespace fairwindsk {
 
             // Always pass the token so Client::init() resets m_Token even when
             // the token has been removed; an empty value clears the in-memory token.
-            params["token"] = fairwindsk::Configuration::getToken();
+            // Only the token issued by this server is offered to it.
+            params["token"] = fairwindsk::Configuration::getToken(signalKServerUrl);
 
             qInfo() << "FairWindSK::startSignalK starting non-blocking client initialization";
             result = m_signalkClient.init(params);

@@ -42,6 +42,8 @@ namespace fairwindsk::ui::bottombar {
         slots:
 
         void updatePOB(const QJsonObject& update);
+        // Tracks the streamed own-vessel position so a POB never depends on a REST round-trip.
+        void updateVesselPosition(const QJsonObject& update);
         void updateBearing(const QJsonObject& update);
         void updateDistance(const QJsonObject& update);
 
@@ -67,6 +69,8 @@ namespace fairwindsk::ui::bottombar {
         bool hasManagedPobs() const;
         bool isManagedPob(const QString &uuid) const;
         QGeoCoordinate currentVesselPosition() const;
+        QGeoCoordinate m_lastVesselPosition;
+        QDateTime m_lastVesselPositionTime;
         QGeoCoordinate currentPobCoordinate() const;
         QString currentPobLabel() const;
         QString createManagedPob();

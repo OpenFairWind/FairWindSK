@@ -56,6 +56,22 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - **Settings > System**: Reset now undoes the changes made since Settings was opened; before, it
   had nothing to discard because every change is saved as it is made.
 
+- **Access token**: the token is sent in the `Authorization` header (REST and stream) instead of
+  being copied into request bodies, where it was stored inside saved waypoints, routes and notes
+  and turned every read into a GET with a body. The stream is now authenticated too.
+- **Access token**: a token the server rejects (expired, revoked, issued by another server) is
+  detected, dropped and reported; the client continues in public mode and Request Token becomes
+  available again. A token is tied to the server that issued it and is never offered to another.
+- **Request Token** reuses one client id per installation instead of registering a new device on
+  the server for every request, and shows the server's explanation when a request is refused.
+- **Write operations** (waypoints, routes, regions, notes, course to waypoint): a refused or failed
+  write is reported as such instead of success, with a message pointing to Settings > Connection
+  when an access token is missing.
+- **POB** uses the position received on the stream, so marking a person overboard no longer depends
+  on a REST request answering at that moment.
+- Connecting in public mode no longer posts an empty login to the server, and tokens are no longer
+  written to the debug log.
+
 ### Changed
 
 - Settings writes the configuration file once per change instead of up to four times, and the

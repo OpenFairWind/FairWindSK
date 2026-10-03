@@ -151,6 +151,44 @@ namespace fairwindsk {
         settings.sync();
     }
 
+    namespace {
+        // Compare servers without being fooled by case or a trailing slash.
+        QString normalizedTokenServer(QString serverUrl) {
+            serverUrl = serverUrl.trimmed().toLower();
+            while (serverUrl.endsWith(QLatin1Char('/'))) {
+                serverUrl.chop(1);
+            }
+            return serverUrl;
+        }
+    }
+
+    QString Configuration::getToken(const QString &serverUrl) {
+        QSettings settings(settingsFilename(), QSettings::IniFormat);
+
+        // Tokens saved by earlier versions carry no server: keep honoring them.
+        const QString tokenServer = normalizedTokenServer(settings.value("tokenServer", "").toString());
+        if (!tokenServer.isEmpty() && tokenServer != normalizedTokenServer(serverUrl)) {
+            // Sending server A's token to server B only gets every request rejected.
+            return {};
+        }
+        return settings.value("token", "").toString();
+    }
+
+    void Configuration::setToken(const QString &token, const QString &serverUrl) {
+        QSettings settings(settingsFilename(), QSettings::IniFormat);
+        settings.setValue("token", token);
+        settings.setValue("tokenServer", normalizedTokenServer(serverUrl));
+        settings.sync();
+    }
+
+    void Configuration::clearToken() {
+        QSettings settings(settingsFilename(), QSettings::IniFormat);
+        settings.remove("token");
+        settings.remove("tokenServer");
+        settings.remove("expirationTime");
+        settings.sync();
+    }
+
     QString Configuration::settingsFilename() {
         return defaultSettingsFilename();
     }

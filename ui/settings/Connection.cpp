@@ -17,6 +17,7 @@
 #endif
 #include <QPushButton>
 #include <QSettings>
+#include <QShowEvent>
 #include <QSignalBlocker>
 #include <QTextEdit>
 #include <QUuid>
@@ -329,6 +330,7 @@ namespace fairwindsk::ui::settings {
         settings.remove("href");
         if (clearToken) {
             settings.remove("token");
+            settings.remove("tokenServer");
             settings.remove("expirationTime");
         }
         settings.sync();
@@ -341,7 +343,10 @@ namespace fairwindsk::ui::settings {
     void Connection::syncTokenUiState() {
         const QSettings settings(Configuration::settingsFilename(), QSettings::IniFormat);
         const QString href = settings.value("href", "").toString();
-        const QString token = settings.value("token", "").toString();
+        // Only a token issued by the configured server counts as "having a token".
+        const QString token = m_settings
+                                  ? Configuration::getToken(m_settings->getConfiguration()->getSignalKServerUrl())
+                                  : QString();
         const QString expirationTime = settings.value("expirationTime", "").toString();
 
         const bool hasPendingRequest = !href.isEmpty();
@@ -387,6 +392,7 @@ namespace fairwindsk::ui::settings {
             m_permissionText = tr("Denied");
             m_expirationText.clear();
             settings.remove("token");
+            settings.remove("tokenServer");
             settings.remove("expirationTime");
             settings.sync();
         } else if (permission == "APPROVED") {
@@ -402,8 +408,12 @@ namespace fairwindsk::ui::settings {
 
             if (accessRequest.contains("token") && accessRequest["token"].isString()) {
                 settings.setValue("token", accessRequest["token"].toString());
+                // Remember which server issued it, so it is never offered to another one.
+                settings.setValue("tokenServer",
+                                  m_settings->getConfiguration()->getSignalKServerUrl().trimmed().toLower());
             } else {
                 settings.remove("token");
+            settings.remove("tokenServer");
             }
 
             settings.sync();
@@ -412,6 +422,7 @@ namespace fairwindsk::ui::settings {
             m_permissionText = permission;
             m_expirationText.clear();
             settings.remove("token");
+            settings.remove("tokenServer");
             settings.remove("expirationTime");
             settings.sync();
         }
@@ -829,6 +840,10 @@ namespace fairwindsk::ui::settings {
                            const QString &,
                            const QDateTime &,
                            const QString &) { updateConnectionToggle(); });
+            // A token refused by the server is forgotten: offer Request Token again right away.
+            // Queued, so the settings file has been updated when the buttons are refreshed.
+            connect(client, &signalk::Client::tokenRejected, this, [this]() { syncTokenUiState(); },
+                    Qt::QueuedConnection);
         }
 
         // Populate combo with the configured URL and defaults.
@@ -890,6 +905,13 @@ namespace fairwindsk::ui::settings {
     // -------------------------------------------------------------------------
     // event override — refresh chrome on palette change
     // -------------------------------------------------------------------------
+
+    void Connection::showEvent(QShowEvent *event) {
+        QWidget::showEvent(event);
+        // The token can change while this page is hidden (rejected by the server, removed):
+        // bring the buttons back in line every time the page is shown.
+        syncTokenUiState();
+    }
 
     bool Connection::event(QEvent *event) {
         if (event && (event->type() == QEvent::PaletteChange ||
@@ -1010,7 +1032,15 @@ namespace fairwindsk::ui::settings {
         networkRequest.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
         networkRequest.setTransferTimeout(kTokenRequestTimeoutMs);
 
-        const QString clientId = QUuid::createUuid().toString(QUuid::WithoutBraces);
+        // The server identifies a device by its client id: keep one per installation, otherwise
+        // every request registers one more device in the server's access list.
+        QSettings clientSettings(Configuration::settingsFilename(), QSettings::IniFormat);
+        QString clientId = clientSettings.value("clientId", "").toString().trimmed();
+        if (clientId.isEmpty()) {
+            clientId = QUuid::createUuid().toString(QUuid::WithoutBraces);
+            clientSettings.setValue("clientId", clientId);
+            clientSettings.sync();
+        }
         const QJsonObject requestObject{
             {"clientId", clientId},
             {"description", "FairWindSK"}
@@ -1075,6 +1105,8 @@ namespace fairwindsk::ui::settings {
             m_stateText = tr("Login required");
             updateStatusLabel();
             syncTokenUiState();
+            // The server explains the refusal (for example a request already waiting for approval).
+            appendMessage(replyMessage(responsePayload, nullptr));
 
             if (signalKServerUrl.isValid()) {
                 showBrowserPage(buildSignalKUrl(signalKServerUrl, "/admin/#/login"));

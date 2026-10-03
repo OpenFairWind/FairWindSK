@@ -38,6 +38,7 @@ namespace fairwindsk::ui::settings {
 
     protected:
         bool event(QEvent *event) override;
+        void showEvent(QShowEvent *event) override;
 
     private slots:
         void onCheckRequestToken();

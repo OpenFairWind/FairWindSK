@@ -2689,6 +2689,18 @@ Last live update %1</source>
     <context>
         <name>fairwindsk::signalk::Client</name>
         <message>
+            <source>Access token rejected: request a new token in Settings &gt; Connection</source>
+            <translation>Token de acceso rechazado: solicite un nuevo token en Ajustes &gt; Conexión</translation>
+        </message>
+        <message>
+            <source>Access denied: request an access token in Settings &gt; Connection</source>
+            <translation>Acceso denegado: solicite un token de acceso en Ajustes &gt; Conexión</translation>
+        </message>
+        <message>
+            <source>Access denied: the access token does not grant this permission</source>
+            <translation>Acceso denegado: el token de acceso no concede este permiso</translation>
+        </message>
+        <message>
             <location filename="../../signalk/Client.cpp" line="100" />
             <source>Timeout while contacting %1</source>
             <translation>Timeout al contactar con %1</translation>

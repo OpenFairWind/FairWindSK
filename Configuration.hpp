@@ -45,6 +45,10 @@ namespace fairwindsk {
 
         static QString getToken();
         static void setToken(const QString& token);
+        // Access tokens belong to the server that issued them.
+        static QString getToken(const QString &serverUrl);
+        static void setToken(const QString &token, const QString &serverUrl);
+        static void clearToken();
         static QString settingsFilename();
 
         QString getAutopilotApp();
