@@ -88,6 +88,14 @@
 <context>
     <name>AlarmsBar</name>
     <message>
+        <source>Raise alarm</source>
+        <translation>Attiva allarme</translation>
+    </message>
+    <message>
+        <source>Raise the %1 alarm?</source>
+        <translation>Attivare l&apos;allarme %1?</translation>
+    </message>
+    <message>
         <location filename="../../ui/bottombar/AlarmsBar.ui" line="77"/>
         <source>Piracy</source>
         <translation>Pirateria</translation>
@@ -120,6 +128,14 @@
 </context>
 <context>
     <name>AnchorBar</name>
+    <message>
+        <source>Anchor</source>
+        <translation>Ancora</translation>
+    </message>
+    <message>
+        <source>The windlass did not confirm the stop command. Stop it with the manual control.</source>
+        <translation>Il salpa ancora non ha confermato il comando di arresto. Fermarlo con il comando manuale.</translation>
+    </message>
     <message>
         <location filename="../../ui/bottombar/AnchorBar.ui" line="77"/>
         <source>Drop</source>
@@ -2479,6 +2495,14 @@ Ultimo aggiornamento live %1</translation>
 <context>
     <name>fairwindsk::ui::bottombar::AlarmsBar</name>
     <message>
+        <source>Raise alarm</source>
+        <translation>Attiva allarme</translation>
+    </message>
+    <message>
+        <source>Raise the %1 alarm?</source>
+        <translation>Attivare l&apos;allarme %1?</translation>
+    </message>
+    <message>
         <location filename="../../ui/bottombar/AlarmsBar.cpp" line="20"/>
         <source>Connecting</source>
         <translation>Connessione</translation>
@@ -2558,6 +2582,14 @@ Ultimo aggiornamento live %1</translation>
 </context>
 <context>
     <name>fairwindsk::ui::bottombar::AnchorBar</name>
+    <message>
+        <source>Anchor</source>
+        <translation>Ancora</translation>
+    </message>
+    <message>
+        <source>The windlass did not confirm the stop command. Stop it with the manual control.</source>
+        <translation>Il salpa ancora non ha confermato il comando di arresto. Fermarlo con il comando manuale.</translation>
+    </message>
     <message>
         <location filename="../../ui/bottombar/AnchorBar.cpp" line="514"/>
         <source>Anchor position</source>

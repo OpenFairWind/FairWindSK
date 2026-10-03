@@ -86,6 +86,21 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Settings no longer re-enters "apply" while a previous apply is still running, which restarted
   the Signal K connection several times after Reset.
 
+- **Autopilot bar**: Auto, Wind and Route are offered when the pilot lists them as states (as the
+  Raymarine provider does) and are sent to the state endpoint; before, only the "modes" list was
+  read and these buttons were missing. The pilot's answer to a refused command stays on the panel
+  for a few seconds instead of being overwritten by the next stream update.
+- **Anchor bar**: every action reports the server's answer; panel signals are emitted only for
+  accepted commands, a refused radius returns the slider to the server's value, and a windlass
+  stop is repeated up to three times, with a warning if it is never confirmed.
+- **Alarms bar**: raising Abandon, Adrift, Fire, Piracy or Sinking asks for confirmation. POB stays
+  immediate and cancelling never asks.
+- **Units**: server unit preferences and per-path display units are fetched in the background.
+  They were fetched with blocking requests while widgets were being drawn, which froze the display
+  on a slow server and let connection handling and settings re-enter each other.
+- Requests are no longer issued before the server has been discovered (they went out without a
+  host), and background requests no longer overwrite the outcome of the last operator command.
+
 ### Changed
 
 - Settings writes the configuration file once per change instead of up to four times, and the

@@ -192,12 +192,17 @@ namespace fairwindsk::signalk {
         return true;
     }
 
-    void Client::endRequest(const bool success, const QUrl &url, const int httpStatus, const QString &message) {
+    void Client::endRequest(const bool success, const QUrl &url, const int httpStatus, const QString &message,
+                            const bool recordOutcome) {
         releaseRequest();
 
         // Remember the outcome so callers can tell a refused write from an accepted one.
-        m_lastRequestSucceeded = success && (httpStatus == 0 || (httpStatus >= 200 && httpStatus < 300));
-        m_lastHttpStatus = httpStatus;
+        // Background requests finish at arbitrary moments and must not overwrite the result
+        // of the command the operator has just issued.
+        if (recordOutcome) {
+            m_lastRequestSucceeded = success && (httpStatus == 0 || (httpStatus >= 200 && httpStatus < 300));
+            m_lastHttpStatus = httpStatus;
+        }
 
         // Permission problems deserve a message the operator can act on.
         if (httpStatus == 401 || httpStatus == 403) {
@@ -498,6 +503,10 @@ namespace fairwindsk::signalk {
 
         // Fallback: ask the REST API; ensure the path separator is present
         const QString baseUrl = http().toString();
+        // Before discovery there is no REST endpoint to ask.
+        if (baseUrl.isEmpty()) {
+            return {};
+        }
         const QString selfUrl = baseUrl.endsWith('/') ? baseUrl + QStringLiteral("self")
                                                       : baseUrl + QStringLiteral("/self");
         auto result = httpGet(QUrl(selfUrl));
@@ -584,6 +593,10 @@ namespace fairwindsk::signalk {
 
         // Build the URL; ensure a slash separates the base endpoint and the path
         const QString baseUrl = http().toString();
+        // Before discovery there is no REST endpoint: a request would go out without a host.
+        if (baseUrl.isEmpty()) {
+            return {};
+        }
         const auto url = QUrl(baseUrl.endsWith('/') ? baseUrl + processedPath
                                                     : baseUrl + '/' + processedPath);
 
@@ -691,6 +704,10 @@ namespace fairwindsk::signalk {
 
         // Build the URL; ensure a slash separates the base endpoint and the path
         const QString baseUrlPost = http().toString();
+        // Before discovery there is no REST endpoint: a request would go out without a host.
+        if (baseUrlPost.isEmpty()) {
+            return {};
+        }
         auto url = QUrl(baseUrlPost.endsWith('/') ? baseUrlPost + processedPath
                                                   : baseUrlPost + '/' + processedPath);
 
@@ -779,6 +796,10 @@ namespace fairwindsk::signalk {
         QString processedPath = path;
         processedPath = processedPath.replace(".","/");
         const QString baseUrlPut = http().toString();
+        // Before discovery there is no REST endpoint: a request would go out without a host.
+        if (baseUrlPut.isEmpty()) {
+            return {};
+        }
         auto url = QUrl(baseUrlPut.endsWith('/') ? baseUrlPut + processedPath
                                                  : baseUrlPut + '/' + processedPath);
         if (m_Debug)
@@ -868,6 +889,10 @@ namespace fairwindsk::signalk {
 
         // Create the URL object; ensure a slash separates the base endpoint and the path
         const QString baseUrlDel = http().toString();
+        // Before discovery there is no REST endpoint: a request would go out without a host.
+        if (baseUrlDel.isEmpty()) {
+            return {};
+        }
         const auto url = QUrl(baseUrlDel.endsWith('/') ? baseUrlDel + processedPath
                                                        : baseUrlDel + '/' + processedPath);
 
@@ -1416,7 +1441,7 @@ namespace fairwindsk::signalk {
             if (!success) {
                 setRestHealth(false, tr("Signal K offline"));
                 emit serverMessageChanged(tr("Signal K server not available"));
-                endRequest(false, guard->request().url(), httpStatus, message);
+                endRequest(false, guard->request().url(), httpStatus, message, false);
                 scheduleReconnect();
                 return;
             }
@@ -1424,7 +1449,7 @@ namespace fairwindsk::signalk {
             const QJsonDocument document = QJsonDocument::fromJson(guard->readAll());
             const QJsonObject discoveredServer = document.isObject() ? document.object() : QJsonObject{};
             const bool applied = applyDiscoveredServer(discoveredServer);
-            endRequest(applied, guard->request().url(), httpStatus, applied ? QString() : tr("Invalid Signal K discovery payload"));
+            endRequest(applied, guard->request().url(), httpStatus, applied ? QString() : tr("Invalid Signal K discovery payload"), false);
             if (!applied) {
                 setRestHealth(false, tr("Signal K offline"));
                 emit serverMessageChanged(tr("Signal K server not available"));
@@ -1639,7 +1664,7 @@ namespace fairwindsk::signalk {
             const bool success = guard->error() == QNetworkReply::NoError && statusCode >= 200 && statusCode < 300;
             const QString message = success ? QString() : guard->errorString();
             const QJsonDocument document = success ? QJsonDocument::fromJson(guard->readAll()) : QJsonDocument();
-            endRequest(success, url, statusCode, message);
+            endRequest(success, url, statusCode, message, false);
             if (guardedContext) {
                 completion(document, message);
             }

@@ -66,6 +66,9 @@ namespace fairwindsk::ui::bottombar {
         void changeEvent(QEvent *event) override;
         void applyComfortStyle() const;
         void updateUnitLabels() const;
+        // Sends one anchor/windlass action and reports whether the server accepted it.
+        bool sendAnchorAction(const char *actionKey, bool stopRequest = false, const QJsonObject &payload = {}, int attempts = 1);
+        void warnWindlassStopFailed();
 
         Ui::AnchorBar *ui;
         Units *m_units;

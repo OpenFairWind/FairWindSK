@@ -203,7 +203,7 @@ namespace fairwindsk::signalk {
         void releaseRequest();
         bool handleRejectedToken(int httpStatus, const QByteArray &body);
         void cancelPendingDiscovery();
-        void endRequest(bool success, const QUrl &url = {}, int httpStatus = 0, const QString &message = QString());
+        void endRequest(bool success, const QUrl &url = {}, int httpStatus = 0, const QString &message = QString(), bool recordOutcome = true);
         QString discoveryMessage() const;
         bool shouldSuppressServerMessage(const QUrl &url, int httpStatus) const;
         void setRestHealth(bool healthy, const QString &statusText = QString());

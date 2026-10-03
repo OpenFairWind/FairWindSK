@@ -6,6 +6,8 @@
 #include <QJsonObject>
 #include <QJsonArray>
 
+#include "ui/DrawerDialogHost.hpp"
+#include <QMessageBox>
 #include "AlarmsBar.hpp"
 
 #include "FairWindSK.hpp"
@@ -186,6 +188,22 @@ namespace fairwindsk::ui::bottombar {
         // itself: reading isChecked() here used to invert the action (pressing an idle alarm
         // cancelled it instead of raising it). Decide from the state confirmed by the server.
         const bool wasActive = m_alarmActive.value(apiKey, false);
+
+        // A distress alarm reaches every display on board: one stray touch must not raise it.
+        // POB is the exception, because seconds matter there; cancelling never asks.
+        if (!wasActive && apiKey != QStringLiteral("mob")) {
+            const auto answer = fairwindsk::ui::drawer::question(
+                this,
+                tr("Raise alarm"),
+                tr("Raise the %1 alarm?").arg(alarm.toUpper()),
+                QMessageBox::Yes | QMessageBox::No,
+                QMessageBox::No);
+            if (answer != QMessageBox::Yes) {
+                // Undo the toggle the button applied to itself on the touch.
+                setAlarmState(apiKey, wasActive);
+                return;
+            }
+        }
 
         if (wasActive) {
             client->signalkDelete(notificationUrl);

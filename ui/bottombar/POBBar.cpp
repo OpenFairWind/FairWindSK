@@ -127,6 +127,13 @@ namespace fairwindsk::ui::bottombar {
 
         // Get units converter instance
         m_units = Units::getInstance();
+        // Units resolve in the background: refresh labels and values when they arrive.
+        connect(m_units, &Units::displayUnitsChanged, this, [this]() {
+            // Only the unit-dependent parts: the full refresh would query the server again.
+            updateUnitLabels();
+            updateBearing(m_lastBearingUpdate);
+            updateDistance(m_lastDistanceUpdate);
+        });
 
         // Initialize the user interface
         ui->setupUi(this);
