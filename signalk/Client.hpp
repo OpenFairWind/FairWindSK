@@ -195,6 +195,8 @@ namespace fairwindsk::signalk {
         QByteArray httpPut(const QUrl& url, const QJsonObject& payload);
         QByteArray httpDelete(const QUrl& url, const QJsonObject& payload);
         void beginRequest(const QString &method, const QUrl &url);
+        void releaseRequest();
+        void cancelPendingDiscovery();
         void endRequest(bool success, const QUrl &url = {}, int httpStatus = 0, const QString &message = QString());
         QString discoveryMessage() const;
         bool shouldSuppressServerMessage(const QUrl &url, int httpStatus) const;
@@ -237,6 +239,7 @@ namespace fairwindsk::signalk {
         bool m_hadStreamConnection = false;
         bool m_reconnectRecoveryPending = false;
         bool m_reconnectAttemptInFlight = false;
+        quint64 m_discoveryGeneration = 0;
         bool m_plannedRestartInProgress = false;
         bool m_connectivityStateEmitted = false;
         bool m_lastRestHealthyEmitted = false;

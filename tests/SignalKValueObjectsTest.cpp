@@ -24,6 +24,8 @@ private slots:
     void waypointReadsGeoJsonProperties();
     void subscriptionMatchesAndInvokesReceiver();
     void subscriptionNormalizesPolicyAndContext();
+    void subscriptionMatchesWholePathSegments();
+    void subscriptionSurvivesReceiverDestruction();
 };
 
 void SignalKValueObjectsTest::waypointRoundTrip() {
@@ -88,6 +90,36 @@ void SignalKValueObjectsTest::subscriptionNormalizesPolicyAndContext() {
     subscription.retargetContext(QStringLiteral("vessels.new"));
     QVERIFY(subscription.getRegex().match(QStringLiteral("vessels.new.navigation.position")).hasMatch());
     QVERIFY(!subscription.getRegex().match(QStringLiteral("vessels.old.navigation.position")).hasMatch());
+}
+
+void SignalKValueObjectsTest::subscriptionMatchesWholePathSegments() {
+    UpdateReceiver receiver;
+    fairwindsk::signalk::Subscription subscription(
+        QStringLiteral("vessels.self"), QStringLiteral("vessels.urn:mrn:imo:mmsi:123"),
+        QStringLiteral("navigation.speedThroughWater"), &receiver, SLOT(acceptUpdate(QJsonObject)));
+    const QJsonObject update{{QStringLiteral("value"), 3.0}};
+
+    // The exact path and its children belong to the subscription.
+    QVERIFY(subscription.match(QStringLiteral("vessels.urn:mrn:imo:mmsi:123.navigation.speedThroughWater"), update));
+    QVERIFY(subscription.match(QStringLiteral("vessels.urn:mrn:imo:mmsi:123.navigation.speedThroughWater.meta"), update));
+    // A sibling path sharing the same textual prefix must not be delivered.
+    QVERIFY(!subscription.match(QStringLiteral("vessels.urn:mrn:imo:mmsi:123.navigation.speedThroughWaterTransverse"), update));
+    // The colon in the vessel URN is a literal, not a wildcard.
+    QVERIFY(!subscription.match(QStringLiteral("vessels.urnXmrn:imo:mmsi:123.navigation.speedThroughWater"), update));
+}
+
+void SignalKValueObjectsTest::subscriptionSurvivesReceiverDestruction() {
+    auto *receiver = new UpdateReceiver;
+    fairwindsk::signalk::Subscription subscription(
+        QStringLiteral("vessels.self"), QStringLiteral("vessels.self"),
+        QStringLiteral("navigation.position"), receiver, SLOT(acceptUpdate(QJsonObject)));
+    const fairwindsk::signalk::Subscription copy(subscription);
+    delete receiver;
+
+    // Both the original and its copies must notice that the receiver is gone.
+    QVERIFY(!subscription.getReceiver());
+    QVERIFY(!copy.getReceiver());
+    QVERIFY(!subscription.match(QStringLiteral("vessels.self.navigation.position"), QJsonObject{}));
 }
 
 QTEST_APPLESS_MAIN(SignalKValueObjectsTest)

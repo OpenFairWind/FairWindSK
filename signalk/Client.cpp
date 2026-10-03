@@ -154,10 +154,21 @@ namespace fairwindsk::signalk {
         }
     }
 
-    void Client::endRequest(const bool success, const QUrl &url, const int httpStatus, const QString &message) {
+    void Client::releaseRequest() {
+        // Balance beginRequest() and tell the UI how many requests are still running.
         m_activeRequests = std::max(0, m_activeRequests - 1);
         emit requestActivityChanged(m_activeRequests > 0);
         emit requestCountChanged(m_activeRequests);
+    }
+
+    void Client::cancelPendingDiscovery() {
+        // Any reply carrying an older generation is ignored when it finally completes.
+        ++m_discoveryGeneration;
+        m_reconnectAttemptInFlight = false;
+    }
+
+    void Client::endRequest(const bool success, const QUrl &url, const int httpStatus, const QString &message) {
+        releaseRequest();
 
         const bool suppressMessage = shouldSuppressServerMessage(url, httpStatus);
         if (success) {
@@ -303,6 +314,8 @@ namespace fairwindsk::signalk {
         qInfo() << "SignalK::Client::init entered";
         m_connectionParams = params;
         m_reconnectTimer.stop();
+        // Drop any discovery still in flight: its answer belongs to the previous settings.
+        cancelPendingDiscovery();
 
         // Get the FairWindSK instance
         auto fairWindSK = fairwindsk::FairWindSK::getInstance();
@@ -330,6 +343,11 @@ namespace fairwindsk::signalk {
         // Log transport failures through the signal exposed by the selected Qt version.
         connect(&m_WebSocket, webSocketErrorSignal, this, [this](QAbstractSocket::SocketError error) {
             qWarning() << "SignalK::Client websocket error" << error << m_WebSocket.errorString();
+            // Some failures (for example a refused handshake) never emit disconnected(),
+            // so make sure the recovery loop is armed; scheduleReconnect() ignores duplicates.
+            if (m_Active && !m_Url.isEmpty() && m_WebSocket.state() == QAbstractSocket::UnconnectedState) {
+                scheduleReconnect();
+            }
         });
 
         // Check if the url is present in parameters
@@ -1142,7 +1160,10 @@ namespace fairwindsk::signalk {
                          << fullPath
                          << (isSelfContext ? "(+ vessels.self alias)" : "");
 
-            for (auto subscription: m_subscriptions) {
+            // Receivers may subscribe or unsubscribe from inside their slot, so dispatch
+            // over a snapshot of the list instead of the live container.
+            const QList<Subscription> subscriptions = m_subscriptions;
+            for (auto subscription : subscriptions) {
                 subscription.match(fullPath, perPathUpdate);
                 if (!selfAliasPath.isEmpty()) {
                     subscription.match(selfAliasPath, perPathUpdate);
@@ -1259,28 +1280,29 @@ namespace fairwindsk::signalk {
         }
     }
 
-   void Client::openWebSocket() {
-    auto webSocketUrl = QUrl(ws().toString() + "?subscribe=none&heartbeat=5000");
+    void Client::openWebSocket() {
+        // Resolve the stream endpoint advertised by the discovery document.
+        QUrl webSocketUrl = ws();
 
-    // FIX ANDROID: Aggiornamento forzato della sicurezza
-    if (m_Url.scheme() == "https" && webSocketUrl.scheme() == "ws") {
-        webSocketUrl.setScheme("wss");
-    }
-
-    qInfo() << "SignalK::Client websocket URL =" << webSocketUrl;
-    if (webSocketUrl.isValid() && !webSocketUrl.isEmpty()) {
-        m_WebSocket.open(webSocketUrl);
-    }
-	
-
-        qInfo() << "SignalK::Client websocket URL =" << webSocketUrl;
-        if (webSocketUrl.isValid() && !webSocketUrl.isEmpty()) {
-            qInfo() << "SignalK::Client opening websocket";
-            m_WebSocket.open(webSocketUrl);
-            qInfo() << "SignalK::Client websocket open issued";
-        } else if (m_Debug) {
-            qDebug() << "No valid websocket endpoint available for" << m_Url;
+        // Without an endpoint there is nothing to open: retry discovery later instead of stalling.
+        if (!webSocketUrl.isValid() || webSocketUrl.isEmpty() || webSocketUrl.host().isEmpty()) {
+            qWarning() << "SignalK::Client no valid websocket endpoint available for" << m_Url;
+            setStreamHealth(false, tr("Stream disconnected"));
+            scheduleReconnect();
+            return;
         }
+
+        // A server reached through HTTPS must be streamed through a secure socket as well.
+        if (m_Url.scheme() == "https" && webSocketUrl.scheme() == "ws") {
+            webSocketUrl.setScheme("wss");
+        }
+
+        // Start silent and subscribe explicitly; the heartbeat keeps the stale-data watchdog fed.
+        webSocketUrl.setQuery(QStringLiteral("subscribe=none&heartbeat=5000"));
+
+        // Open the socket exactly once: a second open() would tear down the first handshake.
+        qInfo() << "SignalK::Client opening websocket" << webSocketUrl;
+        m_WebSocket.open(webSocketUrl);
     }
 
     void Client::scheduleReconnect(const int delayMs) {
@@ -1299,6 +1321,8 @@ namespace fairwindsk::signalk {
         }
 
         m_reconnectAttemptInFlight = true;
+        // Tag this attempt so a later init() or planned restart can invalidate it.
+        const quint64 generation = ++m_discoveryGeneration;
         emitConnectivityState(m_hadStreamConnection ? tr("Reconnecting to Signal K") : tr("Connecting to Signal K"));
         beginRequest(QStringLiteral("GET"), m_Url);
         auto *reply = m_NetworkAccessManager.get(createJsonRequest(m_Url));
@@ -1312,8 +1336,13 @@ namespace fairwindsk::signalk {
         });
         timeoutTimer->start(kRequestTimeoutMs);
 
-        connect(reply, &QNetworkReply::finished, this, [this, reply]() {
+        connect(reply, &QNetworkReply::finished, this, [this, reply, generation]() {
             const QScopedPointer<QNetworkReply, QScopedPointerDeleteLater> guard(reply);
+            // A superseded attempt must not touch the connection state of the current one.
+            if (generation != m_discoveryGeneration) {
+                releaseRequest();
+                return;
+            }
             m_reconnectAttemptInFlight = false;
 
             const bool success = guard->error() == QNetworkReply::NoError;
@@ -1365,11 +1394,14 @@ namespace fairwindsk::signalk {
         qInfo() << "SignalK::Client::resubscribeAll hydrateSnapshots=" << hydrateSnapshots
                 << "subscriptions=" << m_subscriptions.size();
 
-        int antiFloodDelayMs = 0; // <-- TRUCCO ANTI-FLOOD
+        // Delay between subscription frames, so rate-limiting proxies do not drop the burst.
+        int antiFloodDelayMs = 0;
 
+        // First pass: no blocking calls here, so the live list can be edited safely.
         QMutableListIterator<Subscription> iterator(m_subscriptions);
         while (iterator.hasNext()) {
             auto &subscription = iterator.next();
+            // Forget subscriptions whose receiver has been destroyed.
             if (!subscription.getReceiver()) {
                 iterator.remove();
                 continue;
@@ -1377,53 +1409,61 @@ namespace fairwindsk::signalk {
 
             const QString effectiveContext = normalizedSubscriptionContext(subscription.getRequestedContext());
             subscription.retargetContext(effectiveContext);
-            
-            // Creiamo il messaggio JSON per l'iscrizione
+
+            // Build the JSON subscription frame.
             const QString msg = subscriptionMessage(effectiveContext,
                                                     subscription.getPath(),
                                                     subscription.getPeriod(),
                                                     subscription.getPolicy(),
                                                     subscription.getMinPeriod());
 
-            // FIX ANDROID/CLOUD: Invio scaglionato per bypassare i firewall (Rate Limiting)
+            // Staggered send; skipped if the socket dropped in the meantime.
             QTimer::singleShot(antiFloodDelayMs, this, [this, msg]() {
                 if (m_WebSocket.state() == QAbstractSocket::ConnectedState) {
                     m_WebSocket.sendTextMessage(msg);
                 }
             });
-            
-            antiFloodDelayMs += 100; // Aggiunge 100 millisecondi di ritardo per ogni widget
 
-            if (!hydrateSnapshots || !canHydrateSubscriptionPath(subscription.getPath())) {
+            antiFloodDelayMs += 100;
+        }
+
+        if (!hydrateSnapshots) {
+            qInfo() << "SignalK::Client::resubscribeAll done";
+            return;
+        }
+
+        // Second pass: signalkGet() spins a nested event loop, during which receivers can
+        // subscribe, unsubscribe or be destroyed. Walk a snapshot so the live list may change.
+        const QList<Subscription> snapshotTargets = m_subscriptions;
+        for (Subscription subscription : snapshotTargets) {
+            // Stop hydrating as soon as the stream is gone: the next connection starts over.
+            if (m_WebSocket.state() != QAbstractSocket::ConnectedState) {
+                break;
+            }
+            if (!subscription.getReceiver() || !canHydrateSubscriptionPath(subscription.getPath())) {
                 continue;
             }
 
+            const QString effectiveContext = subscription.getContext();
             const QString fullPath = effectiveContext + "." + subscription.getPath();
             const QJsonObject snapshot = signalkGet(fullPath);
 
-            if (m_Debug) {
-                qDebug() << "SignalK::Client::resubscribeAll snapshot for" << fullPath
-                         << "isEmpty=" << snapshot.isEmpty()
-                         << "hasValue=" << snapshot.contains(QStringLiteral("value"));
+            // The receiver may have gone away or unsubscribed while the request was running.
+            if (!subscription.getReceiver()
+                || !hasSubscription(subscription.getRequestedContext(), subscription.getPath(), subscription.getReceiver())) {
+                continue;
             }
 
-            if (!snapshot.isEmpty()) {
-                const QJsonValue snapshotValue = deltaValueFromSnapshot(snapshot);
-
-                if (m_Debug) {
-                    qDebug() << "SignalK::Client::resubscribeAll snapshotValue type="
-                             << snapshotValue.type() << "for" << subscription.getPath();
-                }
-
-                const QJsonObject update = buildDeltaUpdate(effectiveContext, subscription.getPath(), snapshotValue);
-                const bool matched = subscription.match(fullPath, update);
-
-                if (m_Debug) {
-                    qDebug() << "SignalK::Client::resubscribeAll match result=" << matched
-                             << "for" << fullPath;
-                }
-            } else {
+            if (snapshot.isEmpty()) {
                 qInfo() << "SignalK::Client::resubscribeAll empty snapshot for" << fullPath;
+                continue;
+            }
+
+            const QJsonObject update = buildDeltaUpdate(effectiveContext, subscription.getPath(), deltaValueFromSnapshot(snapshot));
+            const bool matched = subscription.match(fullPath, update);
+
+            if (m_Debug) {
+                qDebug() << "SignalK::Client::resubscribeAll match result=" << matched << "for" << fullPath;
             }
         }
 
@@ -1476,9 +1516,8 @@ namespace fairwindsk::signalk {
         m_reconnectTimer.stop();
         m_streamHealthTimer.stop();
 
-        if (m_reconnectAttemptInFlight) {
-            m_reconnectAttemptInFlight = false;
-        }
+        // A discovery answered by the server that is about to restart is worthless.
+        cancelPendingDiscovery();
 
         setRestHealth(false, tr("Signal K restarting"));
         setStreamHealth(false, tr("Signal K restarting"));
@@ -1912,7 +1951,9 @@ namespace fairwindsk::signalk {
         QMutableListIterator<Subscription> i(m_subscriptions);
         while (i.hasNext()) {
             auto subscription = i.next();
-            if (subscription.checkReceiver(receiver)) {
+            // By the time destroyed() is emitted the guarded pointer is already null,
+            // so receiver-less entries are purged together with explicit matches.
+            if (subscription.checkReceiver(receiver) || !subscription.getReceiver()) {
                 i.remove();
             }
         }

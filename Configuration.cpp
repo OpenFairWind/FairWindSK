@@ -501,21 +501,20 @@ namespace fairwindsk {
         int result = -1;
 
         if (m_jsonData.contains("apps") && m_jsonData["apps"].is_array()) {
-            auto appsJsonArray = m_jsonData["apps"];
+            // Walk the array in place: copying it for every lookup is wasteful.
+            const auto &appsJsonArray = m_jsonData["apps"];
 
-            int idx=0;
-            for (auto app: appsJsonArray) {
-                if (app.is_object()) {
-
-                    if (app.contains("name") && app["name"].is_string()) {
-                        auto appName = QString::fromStdString(app["name"].get<std::string>());
-                        if (appName == name) {
-                            result = idx;
-                            break;
-                        }
+            // The index counts every array slot, because callers use it with at().
+            int idx = 0;
+            for (const auto &app : appsJsonArray) {
+                if (app.is_object() && app.contains("name") && app["name"].is_string()) {
+                    const auto appName = QString::fromStdString(app["name"].get<std::string>());
+                    if (appName == name) {
+                        result = idx;
+                        break;
                     }
-                    idx++;
                 }
+                idx++;
             }
         }
 
