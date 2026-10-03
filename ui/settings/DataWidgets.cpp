@@ -592,7 +592,19 @@ namespace fairwindsk::ui::settings {
         }
 
         auto &root = m_settings->getConfiguration()->getRoot();
+        // Compare the serialized configuration: leaving a field without changing it must not
+        // rewrite the file or disturb the running shell.
+        const nlohmann::json previousRoot = root;
+        const auto previous = definitionForId(definition.id);
         widgets::upsertDataWidgetDefinition(root, definition);
+        const bool changed = root != previousRoot;
+
+        // Only the fields that shape the stream subscription justify touching the Signal K client;
+        // names, colors and sizes are purely visual.
+        const bool subscriptionChanged = previous.signalKPath != definition.signalKPath
+                                         || previous.updatePolicy != definition.updatePolicy
+                                         || previous.period != definition.period
+                                         || previous.minPeriod != definition.minPeriod;
 
         if (auto *item = itemForId(definition.id)) {
             item->setText(definition.name);
@@ -603,7 +615,12 @@ namespace fairwindsk::ui::settings {
         }
         updateIconPreview();
         updateColorButtons();
-        m_settings->markDirty(FairWindSK::RuntimeUi | FairWindSK::RuntimeSignalKPaths, 0);
+        if (changed) {
+            m_settings->markDirty(subscriptionChanged
+                                      ? FairWindSK::RuntimeUi | FairWindSK::RuntimeSignalKPaths
+                                      : FairWindSK::RuntimeUi,
+                                  0);
+        }
     }
 
     void DataWidgets::updateIconPreview() {

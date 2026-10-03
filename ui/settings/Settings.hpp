@@ -56,7 +56,7 @@ namespace fairwindsk::ui::settings {
 
     private:
         void initTabs(int currentIndex);
-        void removeTabs();
+        void removeTabs(bool deleteImmediately);
         void applyConfiguration();
         void scheduleApplyConfiguration(int delayMs = 150);
         QWidget *createTabWidget(int index);

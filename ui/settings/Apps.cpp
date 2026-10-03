@@ -902,6 +902,12 @@ namespace fairwindsk::ui::settings {
         appJsonObject["name"] = newName.toStdString();
         appJsonObject["description"] = m_appDetailsWidget->ui->lineEdit_Apps_Description->text().trimmed().toStdString();
         appJsonObject["displayName"] = m_appDetailsWidget->ui->lineEdit_Apps_DisplayName->text().trimmed().toStdString();
+        // Hand-edited or legacy entries may carry non-object blocks: repair them before nesting.
+        for (const char *blockKey : {"signalk", "fairwind"}) {
+            if (!appJsonObject.contains(blockKey) || !appJsonObject[blockKey].is_object()) {
+                appJsonObject[blockKey] = nlohmann::json::object();
+            }
+        }
         appJsonObject["signalk"]["appIcon"] = m_appDetailsWidget->appIconPath().toStdString();
         appJsonObject["fairwind"]["zoomPercent"] = m_appDetailsWidget->ui->spinBox_Apps_ZoomPercent->value();
         m_settings->getConfiguration()->getRoot()["apps"].at(idx) = appJsonObject;
@@ -2163,7 +2169,12 @@ namespace fairwindsk::ui::settings {
         appItem.setOrder(m_availableAppsList->count() + 1);
         appItem.setActive(false);
 
-        m_settings->getConfiguration()->getRoot()["apps"].push_back(appItem.asJson());
+        auto &root = m_settings->getConfiguration()->getRoot();
+        // push_back() throws on anything but an array, so normalize the node first.
+        if (!root.contains("apps") || !root["apps"].is_array()) {
+            root["apps"] = nlohmann::json::array();
+        }
+        root["apps"].push_back(appItem.asJson());
         markSettingsDirty();
         rebuildAvailableAppsList();
 

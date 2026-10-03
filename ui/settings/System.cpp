@@ -234,6 +234,14 @@ namespace fairwindsk::ui::settings {
     }
 
     void System::refreshDiagnostics() {
+        // Keep sampling CPU counters so the next visible refresh has a fresh baseline,
+        // but skip the widget updates and network calls while the page is not shown.
+        if (m_diagnosticsPrimed && !isVisible()) {
+            m_previousCpuStats = sampleCpuStats();
+            return;
+        }
+        m_diagnosticsPrimed = true;
+
         const quint64 processMemory = processResidentMemoryBytes();
         const quint64 totalMemory = totalMemoryBytes();
         ui->label_ProcessMemoryValue->setText(formatBytes(processMemory));
@@ -704,9 +712,14 @@ namespace fairwindsk::ui::settings {
         }
 
         FairWindSK::getInstance()->getConfiguration()->load();
-        m_settings->resetFromCurrentConfiguration(6);
+        // Rebuilding the tabs schedules this page for deletion, so keep a parent that
+        // survives and stay on the tab the user is looking at.
+        Settings *settings = m_settings;
+        settings->resetFromCurrentConfiguration();
         FairWindSK::getInstance()->applyUiPreferences(FairWindSK::getInstance()->getConfiguration());
-        fairwindsk::ui::drawer::information(this, tr("System"), tr("Configuration imported successfully."));
+        // Imported settings must reach the running shell, not only the configuration file.
+        settings->markDirty(FairWindSK::RuntimeAll, 0);
+        fairwindsk::ui::drawer::information(settings, tr("System"), tr("Configuration imported successfully."));
     }
 
     void System::exportConfiguration() {
@@ -730,12 +743,16 @@ namespace fairwindsk::ui::settings {
             targetPath.append(QStringLiteral(".json"));
         }
 
-        if (QFileInfo::exists(targetPath) && !QFile::remove(targetPath)) {
-            fairwindsk::ui::drawer::warning(this, tr("System"), tr("Unable to overwrite the selected export file."));
-            return;
-        }
+        // The suggested name is the active file itself: exporting onto it must never
+        // remove it, and there is nothing to copy because it is already up to date.
+        const QFileInfo currentInfo(currentPath);
+        const QFileInfo targetInfo(targetPath);
+        const bool sameFile = targetInfo.exists()
+            ? targetInfo.canonicalFilePath() == currentInfo.canonicalFilePath()
+            : targetInfo.absoluteFilePath() == currentInfo.absoluteFilePath();
 
-        if (!QFile::copy(currentPath, targetPath)) {
+        // Write through a temporary file so a failed export leaves any existing target intact.
+        if (!sameFile && !replaceFileContentsAtomically(currentPath, targetPath)) {
             fairwindsk::ui::drawer::warning(this, tr("System"), tr("Unable to export the current configuration file."));
             return;
         }

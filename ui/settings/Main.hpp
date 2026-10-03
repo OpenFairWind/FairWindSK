@@ -6,6 +6,8 @@
 #define FAIRWINDSK_MAIN_HPP
 
 #include <QWidget>
+
+class QLineEdit;
 #include "Settings.hpp"
 
 namespace fairwindsk::ui::settings {
@@ -44,6 +46,7 @@ namespace fairwindsk::ui::settings {
         void updateComfortViewAvailability();
         void updateVirtualKeyboardHint() const;
         void applyUiPreview() const;
+        bool committedGeometryValue(QLineEdit *lineEdit, int minimum, int current, int *value) const;
 
         Ui::Main *ui;
 

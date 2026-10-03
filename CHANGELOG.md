@@ -19,6 +19,26 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
   receives `navigation.speedThroughWaterTransverse` updates.
 - Malformed application entries from the server catalog or from `fairwindsk.json` no longer abort
   the application registry rebuild, and `Configuration::findApp()` returns the real array index.
+- **Settings > System**: Reset, Restore Defaults and Import no longer destroy the page while its
+  own button handler is still running; Import stays on the System tab and applies the imported
+  configuration to the running shell.
+- **Settings > System**: exporting onto the active `fairwindsk.json` (the suggested name) no longer
+  deletes it, and a failed export leaves an existing target file intact.
+- **Settings > Main**: window position and size are applied when editing finishes, with a minimum
+  size of 480x320, instead of resizing the window to every half-typed value.
+- **Settings > Signal K**: path mappings missing from an older configuration file are listed and
+  can be filled in; entered paths are trimmed.
+- **Settings > Connection**: the access token is no longer written to the debug log, placeholder
+  server URLs were removed from the suggestions, and a pending access request that the server no
+  longer knows stops polling.
+- **Settings > Widgets**: leaving a field unchanged no longer rewrites the configuration, and only
+  path, policy or period changes restart the Signal K connection.
+- **Settings > Comfort**: Reset All asks for confirmation.
+
+### Changed
+
+- Settings writes the configuration file once per change instead of up to four times, and the
+  System diagnostics stop refreshing while the page is hidden.
 
 ## [0.1.0-alpha] - 2026-07-22
 

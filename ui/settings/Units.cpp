@@ -61,6 +61,10 @@ namespace fairwindsk::ui::settings {
     }
 
     void Units::syncLegacyUnitsForCategory(nlohmann::json &root, const QString &category, const QString &targetUnit) {
+        // Repair a missing or malformed "units" node before writing into it.
+        if (!root.contains("units") || !root["units"].is_object()) {
+            root["units"] = nlohmann::json::object();
+        }
         auto &units = root["units"];
 
         if (category == QStringLiteral("speed")) {
@@ -125,6 +129,15 @@ namespace fairwindsk::ui::settings {
 
     void Units::setLocalOverrideForCategory(const QString &category, const QString &targetUnit) {
         auto &root = m_settings->getConfiguration()->getRoot();
+        // Make sure both levels are objects, or the nested assignment below would throw.
+        const auto unitPreferencesKey = kUnitOverrideRoot.toStdString();
+        const auto overridesKey = kUnitOverrideNode.toStdString();
+        if (!root.contains(unitPreferencesKey) || !root[unitPreferencesKey].is_object()) {
+            root[unitPreferencesKey] = nlohmann::json::object();
+        }
+        if (!root[unitPreferencesKey].contains(overridesKey) || !root[unitPreferencesKey][overridesKey].is_object()) {
+            root[unitPreferencesKey][overridesKey] = nlohmann::json::object();
+        }
         root[kUnitOverrideRoot.toStdString()][kUnitOverrideNode.toStdString()][category.toStdString()] = targetUnit.toStdString();
         syncLegacyUnitsForCategory(root, category, targetUnit);
     }
@@ -142,6 +155,10 @@ namespace fairwindsk::ui::settings {
     }
 
     void Units::applyLocalOverride(const QString &category, const QString &serverTargetUnit, const QString &targetUnit) {
+        // Every branch below writes through the settings page.
+        if (!m_settings) {
+            return;
+        }
         if (targetUnit != serverTargetUnit) {
             setLocalOverrideForCategory(category, targetUnit);
         } else {
@@ -149,9 +166,7 @@ namespace fairwindsk::ui::settings {
             auto &root = m_settings->getConfiguration()->getRoot();
             syncLegacyUnitsForCategory(root, category, serverTargetUnit);
         }
-        if (m_settings) {
-            m_settings->markDirty(FairWindSK::RuntimeUnits, 0);
-        }
+        m_settings->markDirty(FairWindSK::RuntimeUnits, 0);
     }
 
     QString Units::canonicalUnitToken(const QString &value) {

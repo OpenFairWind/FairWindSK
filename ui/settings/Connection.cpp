@@ -814,11 +814,12 @@ namespace fairwindsk::ui::settings {
             const QSignalBlocker blocker(m_comboBox);
             m_comboBox->setCurrentText(configuredServerUrl);
         }
+#if defined(Q_OS_ANDROID)
+        // The Android emulator reaches a server running on the development host through this alias.
         addServerUrlOption(QStringLiteral("http://10.0.2.2:3000"));
-        addServerUrlOption(QStringLiteral("[http://demo.signalk.org](https://demo.signalk.org)"));
-
+#endif
+        // Public demo server: a safe starting point when no server has been discovered yet.
         addServerUrlOption(QStringLiteral("http://demo.signalk.org"));
-        addServerUrlOption(QStringLiteral("http://92.168.1.115:3000"));
 
         // Load persisted token/href state.
         const QSettings settings(Configuration::settingsFilename(), QSettings::IniFormat);
@@ -826,8 +827,9 @@ namespace fairwindsk::ui::settings {
         const QString expirationTime = settings.value("expirationTime", "").toString();
 
         if (FairWindSK::getInstance()->isDebug()) {
+            // Never write the access token itself to the log: it is a credential.
             qDebug() << "href:" << href
-                     << "token:" << settings.value("token", "").toString()
+                     << "token present:" << !settings.value("token", "").toString().isEmpty()
                      << "expirationTime:" << expirationTime;
         }
 
@@ -1094,6 +1096,13 @@ namespace fairwindsk::ui::settings {
             m_stateText = tr("Pending...");
             updateStatusLabel();
             syncTokenUiState();
+            return;
+        }
+
+        if (statusCode == 404) {
+            // The server no longer knows this request (for example after a restart):
+            // polling it forever would never complete, so close the flow.
+            finishTokenFlowWithError(tr("Request failed"), replyMessage(responsePayload, nullptr));
             return;
         }
 

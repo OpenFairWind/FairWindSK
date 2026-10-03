@@ -39,13 +39,11 @@ namespace fairwindsk::ui::settings {
         // Get the configuration root element
         const auto configurationAsJson = m_configuration.getRoot();
 
-        // Persist the edited local configuration snapshot first.
-        m_configuration.save();
-
         // Set the new configuration in the FairWindSK singleton instance
         FairWindSK::getInstance()->getConfiguration()->setRoot(configurationAsJson);
 
-        // Save the configuration permanently
+        // Save the configuration permanently; the edited copy shares the same file,
+        // so a single write is enough.
         FairWindSK::getInstance()->getConfiguration()->save();
         FairWindSK::getInstance()->reconfigureRuntime(runtimeChanges);
         m_hasPendingUiChanges = false;
@@ -106,7 +104,7 @@ namespace fairwindsk::ui::settings {
  * removeTabs
  * Remove all  tabs
  */
-    void Settings::removeTabs() {
+    void Settings::removeTabs(const bool deleteImmediately) {
         if (!ui || !ui->tabWidget) {
             m_tabPages.clear();
             return;
@@ -126,8 +124,16 @@ namespace fairwindsk::ui::settings {
             // Remove the tab
             ui->tabWidget->removeTab(0);
 
-            // Delete the object
-            delete tab;
+            if (deleteImmediately) {
+                // Tear-down path: the pages must not outlive the Settings members they point to.
+                delete tab;
+            } else {
+                // A rebuild is usually requested by a button living inside one of these pages
+                // (Reset, Restore Defaults, Import). Deleting the page while its own slot is
+                // still running would be a use-after-free, so let the event loop do it later.
+                tab->hide();
+                tab->deleteLater();
+            }
         }
 
         m_tabPages.clear();
@@ -140,8 +146,8 @@ namespace fairwindsk::ui::settings {
     void Settings::initTabs(const int currentIndex) {
         m_rebuildingTabs = true;
 
-        // Remove tabs if present
-        removeTabs();
+        // Remove tabs if present; deletion is deferred because a page may be the caller.
+        removeTabs(false);
 
         QStringList tabTitles = {tr("Main"),
                                  tr("Top Bar"),
@@ -283,10 +289,12 @@ namespace fairwindsk::ui::settings {
         m_pendingRuntimeChanges |= (runtimeChanges == 0 ? FairWindSK::RuntimeAll : runtimeChanges);
 
         const auto configurationAsJson = m_configuration.getRoot();
-        m_configuration.save();
         if (m_currentConfiguration) {
+            // Both configuration objects share one file: write it once through the live one.
             m_currentConfiguration->setRoot(configurationAsJson);
             m_currentConfiguration->save();
+        } else {
+            m_configuration.save();
         }
 
         scheduleApplyConfiguration(delayMs >= 0 ? delayMs : kLiveApplyDelayMs);
@@ -383,8 +391,8 @@ namespace fairwindsk::ui::settings {
             m_applyTimer->stop();
         }
 
-        // Remove the tabs
-        removeTabs();
+        // Remove the tabs right away: nothing is executing inside them during destruction.
+        removeTabs(true);
 
         // Check if the ui pointer is valid
         if (ui) {
