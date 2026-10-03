@@ -69,7 +69,8 @@ namespace fairwindsk::ui::settings {
         void clearPendingRequest(bool clearToken) const;
         void applyCompletedAccessRequest(const QJsonObject &accessRequest);
         void finishTokenFlowWithError(const QString &state, const QString &message);
-        void commitSignalKServerUrl(bool restartWhenActive);
+        bool commitSignalKServerUrl(bool restartWhenActive);
+        bool typedServerUrlDiffersFromConfigured() const;
         void addServerUrlOption(const QString &serverUrl) const;
         bool connectionEnabled() const;
         bool connectionEstablished() const;

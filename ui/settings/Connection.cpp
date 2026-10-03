@@ -439,9 +439,21 @@ namespace fairwindsk::ui::settings {
     // URL / connection management
     // -------------------------------------------------------------------------
 
-    void Connection::commitSignalKServerUrl(const bool restartWhenActive) {
+    bool Connection::typedServerUrlDiffersFromConfigured() const {
+        if (!m_comboBox || !m_settings) {
+            return false;
+        }
+        // Compare in normalized form so "host:3000" equals "http://host:3000".
+        const QString typed = normalizedSignalKServerUrlText(m_comboBox->currentText());
+        const QString configured = normalizedSignalKServerUrlText(m_settings->getConfiguration()->getSignalKServerUrl());
+        return typed != configured;
+    }
+
+    // Stores the address shown in the editor as the configured server.
+    // Returns true when the configured server actually changed.
+    bool Connection::commitSignalKServerUrl(const bool restartWhenActive) {
         if (!m_comboBox || !m_settings || m_committingServerUrl) {
-            return;
+            return false;
         }
 
         const QString normalized = normalizedSignalKServerUrlText(m_comboBox->currentText());
@@ -452,13 +464,13 @@ namespace fairwindsk::ui::settings {
                 m_settings->markDirty(FairWindSK::RuntimeSignalKConnection, 0);
             }
             updateConnectionToggle();
-            return;
+            return changed;
         }
 
         const QUrl signalKServerUrl = validatedSignalKServerUrl(normalized);
         if (!signalKServerUrl.isValid()) {
             updateConnectionToggle();
-            return;
+            return false;
         }
 
         m_committingServerUrl = true;
@@ -475,6 +487,7 @@ namespace fairwindsk::ui::settings {
             m_settings->markDirty(FairWindSK::RuntimeSignalKConnection, 400);
         }
         updateConnectionToggle();
+        return changed;
     }
 
     void Connection::addServerUrlOption(const QString &serverUrl) const {
@@ -530,7 +543,9 @@ namespace fairwindsk::ui::settings {
             return;
         }
 
-        const bool connected = connectionEstablished();
+        // A typed address that is not the configured one is always something to connect to,
+        // even while the previous server is still live.
+        const bool connected = connectionEstablished() && !typedServerUrlDiffersFromConfigured();
         m_connectButton->setText(connected ? tr("Pause") : tr("Connect"));
         m_connectButton->setIcon(QIcon(connected
                                            ? QStringLiteral(":/resources/svg/OpenBridge/close-google.svg")
@@ -745,6 +760,16 @@ namespace fairwindsk::ui::settings {
                 qOverload<int>(&fairwindsk::ui::widgets::TouchComboBox::currentIndexChanged),
                 this,
                 &Connection::onUpdateSignalKServerUrl);
+        // Keep the Connect/Pause label truthful while an address is being typed.
+        connect(m_comboBox, &fairwindsk::ui::widgets::TouchComboBox::editTextChanged, this,
+                [this](const QString &) { updateConnectionToggle(); });
+        // Return/Enter on a typed address connects to it, like pressing the button.
+        connect(m_comboBox, &fairwindsk::ui::widgets::TouchComboBox::editTextCommitted, this,
+                [this](const QString &) {
+                    if (typedServerUrlDiffersFromConfigured() || !connectionEstablished()) {
+                        onToggleConnection();
+                    }
+                });
     }
 
     // -------------------------------------------------------------------------
@@ -813,6 +838,10 @@ namespace fairwindsk::ui::settings {
         {
             const QSignalBlocker blocker(m_comboBox);
             m_comboBox->setCurrentText(configuredServerUrl);
+        }
+        // Addresses the operator connected to before stay available across restarts.
+        for (const QString &rememberedServerUrl : m_settings->getConfiguration()->getSignalKServerUrls()) {
+            addServerUrlOption(rememberedServerUrl);
         }
 #if defined(Q_OS_ANDROID)
         // The Android emulator reaches a server running on the development host through this alias.
@@ -907,16 +936,32 @@ namespace fairwindsk::ui::settings {
      * Commits (and adds to the combo) any URL the user typed before toggling.
      */
     void Connection::onToggleConnection() {
-        commitSignalKServerUrl(false);
-        const bool nextEnabled = !connectionEstablished();
-        if (nextEnabled && !currentSignalKServerUrl().isValid()) {
+        // Text that is not a usable address must never be mistaken for a Pause request.
+        const QString typedText = m_comboBox ? m_comboBox->currentText().trimmed() : QString();
+        if (!typedText.isEmpty() && !currentSignalKServerUrl().isValid()) {
+            showConsole();
             appendMessage(tr("Please provide a valid Signal K server URL before starting the connection."));
             updateConnectionToggle();
             return;
         }
 
+        // A newly entered address means "connect there", even if another server is live.
+        const bool serverChanged = commitSignalKServerUrl(false);
+        const bool nextEnabled = serverChanged || !connectionEstablished();
+        if (nextEnabled && !currentSignalKServerUrl().isValid()) {
+            showConsole();
+            appendMessage(tr("Please provide a valid Signal K server URL before starting the connection."));
+            updateConnectionToggle();
+            return;
+        }
+
+        if (nextEnabled) {
+            // Keep the address in the drop-down list for the next sessions.
+            m_settings->getConfiguration()->rememberSignalKServerUrl(currentSignalKServerUrl().toString());
+        }
+
         if (nextEnabled && connectionEnabled()) {
-            // Retry an enabled but disconnected connection immediately.
+            // Retry an enabled but disconnected connection, or move to the new server, immediately.
             updateConnectionToggle();
             m_settings->markDirty(FairWindSK::RuntimeSignalKConnection, 0);
         } else {
@@ -948,6 +993,7 @@ namespace fairwindsk::ui::settings {
         }
 
         m_settings->getConfiguration()->setSignalKServerUrl(signalKServerUrl.toString());
+        m_settings->getConfiguration()->rememberSignalKServerUrl(signalKServerUrl.toString());
         m_settings->getConfiguration()->setSignalKConnectionEnabled(true);
         m_settings->markDirty(FairWindSK::RuntimeSignalKConnection, 0);
         updateConnectionToggle();

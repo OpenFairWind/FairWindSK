@@ -449,9 +449,13 @@ if(BUILD_TESTING AND NOT FAIRWINDSK_MOBILE)
             COMMAND $<TARGET_FILE:${PROJECT_NAME}> --self-test-directory-safety)
     add_test(NAME ConfigurationImport
             COMMAND $<TARGET_FILE:${PROJECT_NAME}> --self-test-configuration-import)
+    add_test(NAME EditableCombo
+            COMMAND $<TARGET_FILE:${PROJECT_NAME}> --self-test-editable-combo)
+    # The widget self-test has no display on CI machines.
+    set_tests_properties(EditableCombo PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
     set_tests_properties(GeoCoordinateUtils PList SignalKValueObjects SignalKProtocol
-            DataWidgetConfig Configuration UnitsReentrancy DirectorySafety ConfigurationImport
+            DataWidgetConfig Configuration UnitsReentrancy DirectorySafety ConfigurationImport EditableCombo
             PROPERTIES LABELS "unit")
     set_tests_properties(SimulatedSignalKService PROPERTIES LABELS "component;signalk")
 endif()

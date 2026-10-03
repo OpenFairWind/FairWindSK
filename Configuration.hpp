@@ -37,6 +37,8 @@ namespace fairwindsk {
 
         QString getSignalKServerUrl();
         void setSignalKServerUrl(const QString& signalKServerUrl);
+        QStringList getSignalKServerUrls() const;
+        void rememberSignalKServerUrl(const QString &signalKServerUrl);
         bool getSignalKConnectionEnabled() const;
         void setSignalKConnectionEnabled(bool enabled);
         QString getSignalKPath(const QString &key) const;

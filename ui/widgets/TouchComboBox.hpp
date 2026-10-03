@@ -29,6 +29,8 @@ namespace fairwindsk::ui::widgets {
 
     public:
         explicit TouchComboBox(QWidget *parent = nullptr);
+        // Headless check of the editable behavior, run by CTest through the application binary.
+        static bool runEditableSelfTest(QString *failureReason = nullptr);
         ~TouchComboBox() override;
 
         void addItem(const QString &text, const QVariant &userData = QVariant());
@@ -57,6 +59,8 @@ namespace fairwindsk::ui::widgets {
         void currentTextChanged(const QString &text);
         void activated(int index);
         void editTextChanged(const QString &text);
+        // Emitted when the operator confirms typed text with Return/Enter.
+        void editTextCommitted(const QString &text);
 
     protected:
         bool event(QEvent *event) override;
@@ -84,6 +88,8 @@ namespace fairwindsk::ui::widgets {
         QLabel *m_iconLabel = nullptr;
         int m_currentIndex = -1;
         bool m_editable = false;
+        // True while the editor holds text typed by the operator rather than the selected item.
+        bool m_editorTextEdited = false;
         bool m_accentButton = false;
         bool m_editorInLayout = false;
         QString m_displayText;

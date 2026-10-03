@@ -33,6 +33,11 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
   longer knows stops polling.
 - **Settings > Widgets**: leaving a field unchanged no longer rewrites the configuration, and only
   path, policy or period changes restart the Signal K connection.
+- **Settings > Connection**: a host name, FQDN or IP address typed in the server field is now
+  actually used. Before, the field reported the selected list item instead of the typed text, and
+  a discovered server could overwrite the text while it was being typed. Pressing Connect (or
+  Return) on a new address connects to it even while another server is live, and the address is
+  remembered in `connection.servers` so it stays in the drop-down list after a restart.
 - **Settings > Comfort**: Reset All asks for confirmation.
 - **Settings > System**: Reset now undoes the changes made since Settings was opened; before, it
   had nothing to discard because every change is saved as it is made.
