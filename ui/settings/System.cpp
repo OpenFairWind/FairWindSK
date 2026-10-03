@@ -123,7 +123,7 @@ namespace fairwindsk::ui::settings {
         connect(ui->pushButton_Reset, &QPushButton::clicked, this, [this]() {
             if (!confirmAction(
                     tr("Reset Settings"),
-                    tr("This will discard the unsaved changes currently shown in Settings and reload the active configuration. FairWindSK will keep running."),
+                    tr("This will undo the changes made since Settings was opened and apply the restored configuration. FairWindSK will keep running."),
                     tr("Reset"))) {
                 return;
             }

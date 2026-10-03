@@ -1229,11 +1229,14 @@ namespace fairwindsk {
             applyWebProfileLocalization();
         }
 
-        if (runtimeChanges & (RuntimeUnits | RuntimeSignalKConnection | RuntimeSignalKPaths)) {
+        // Server unit preferences depend on the server and on the unit overrides, not on path mappings.
+        if (runtimeChanges & (RuntimeUnits | RuntimeSignalKConnection)) {
             Units::getInstance()->refreshSignalKPreferences();
         }
 
-        if (signalKSettingsChanged) {
+        // Only a connection change needs a new session. Remapped paths are picked up when the
+        // bars rebuild their widgets below, so the stream stays up while the operator edits them.
+        if (runtimeChanges & RuntimeSignalKConnection) {
             if (m_configuration.getSignalKConnectionEnabled() && !m_configuration.getSignalKServerUrl().isEmpty()) {
                 startSignalK();
             } else {

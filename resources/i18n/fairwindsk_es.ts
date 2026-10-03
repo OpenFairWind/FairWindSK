@@ -6863,8 +6863,8 @@ Last live update %1</source>
         </message>
         <message>
             <location filename="../../ui/settings/System.cpp" line="126" />
-            <source>This will discard the unsaved changes currently shown in Settings and reload the active configuration. FairWindSK will keep running.</source>
-            <translation>Esto descartará los cambios no guardados que se muestran actualmente en Ajustes y recargará la configuración activa. FairWindSK seguirá corriendo.</translation>
+            <source>This will undo the changes made since Settings was opened and apply the restored configuration. FairWindSK will keep running.</source>
+            <translation>Esto deshará los cambios realizados desde que se abrió Ajustes y aplicará la configuración restaurada. FairWindSK seguirá funcionando.</translation>
         </message>
         <message>
             <location filename="../../ui/settings/System.cpp" line="135" />

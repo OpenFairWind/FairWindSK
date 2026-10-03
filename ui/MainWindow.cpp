@@ -1145,6 +1145,8 @@ namespace fairwindsk::ui {
 
         const auto fallbackWidget = ui->stackedWidget_Center->currentWidget();
         ensureSettingsPage(fallbackWidget);
+        // Mark the undo point used by Settings > System > Reset.
+        m_settingsPage->beginEditSession();
         ui->stackedWidget_Center->setCurrentWidget(m_settingsPage);
         fairwindsk::runtime::recordUserInteraction(QStringLiteral("navigation"), QStringLiteral("open_settings"), QStringLiteral("Settings"));
         syncTopBarToCurrentPage();

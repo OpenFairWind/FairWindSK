@@ -34,11 +34,17 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - **Settings > Widgets**: leaving a field unchanged no longer rewrites the configuration, and only
   path, policy or period changes restart the Signal K connection.
 - **Settings > Comfort**: Reset All asks for confirmation.
+- **Settings > System**: Reset now undoes the changes made since Settings was opened; before, it
+  had nothing to discard because every change is saved as it is made.
 
 ### Changed
 
 - Settings writes the configuration file once per change instead of up to four times, and the
   System diagnostics stop refreshing while the page is hidden.
+- **Settings > Units** loads the server unit preferences asynchronously on every platform, so
+  opening the page no longer blocks the interface on a slow server.
+- Remapping Signal K paths or editing data widgets no longer restarts the Signal K connection;
+  only connection changes (server URL, pause/connect, token) open a new session.
 
 ## [0.1.0-alpha] - 2026-07-22
 

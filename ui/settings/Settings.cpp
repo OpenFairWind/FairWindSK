@@ -72,6 +72,9 @@ namespace fairwindsk::ui::settings {
         // Set the local configuration with the json object
         m_configuration.setRoot(configurationAsJson);
 
+        // Remember the configuration as it was when Settings opened, so Reset can go back to it.
+        m_sessionSnapshot = configurationAsJson;
+
         // Set the default tab
         auto currentIndex = 0;
 
@@ -347,9 +350,28 @@ namespace fairwindsk::ui::settings {
         emit layoutEditHighlightModeChanged(currentIndex == 1, currentIndex == 2);
     }
 
+    void Settings::beginEditSession() {
+        // Changes are saved as they are made, so the undo point is the state at opening time.
+        if (m_currentConfiguration) {
+            m_sessionSnapshot = m_currentConfiguration->getRoot();
+        }
+    }
+
     void Settings::resetToCurrentConfiguration() {
-        resetFromCurrentConfiguration(ui->tabWidget->currentIndex());
+        // Without a usable snapshot there is nothing to go back to: just reload the pages.
+        if (!m_sessionSnapshot.is_object()) {
+            resetFromCurrentConfiguration(ui->tabWidget->currentIndex());
+            FairWindSK::getInstance()->applyUiPreferences(&m_configuration);
+            return;
+        }
+
+        // Put back the configuration captured when Settings was opened.
+        m_configuration.setRoot(m_sessionSnapshot);
+        // Rebuild the pages so every control shows the restored values.
+        initTabs(ui->tabWidget->currentIndex());
+        // Preview the restored theme at once, then save and apply everything else.
         FairWindSK::getInstance()->applyUiPreferences(&m_configuration);
+        markDirty(FairWindSK::RuntimeAll, 0);
     }
 
     void Settings::restoreDefaultConfiguration() {

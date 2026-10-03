@@ -40,6 +40,7 @@ namespace fairwindsk::ui::settings {
         //QList<QString> getAppsHashes();
 
         Configuration *getConfiguration();
+        void beginEditSession();
         void resetToCurrentConfiguration();
         void restoreDefaultConfiguration();
         void restartApplication();
@@ -68,6 +69,7 @@ namespace fairwindsk::ui::settings {
 
         Configuration m_configuration;
         Configuration *m_currentConfiguration;
+        nlohmann::json m_sessionSnapshot;
         QWidget *m_currentWidget = nullptr;
         QVector<QPointer<QWidget>> m_tabPages;
         bool m_rebuildingTabs = false;
