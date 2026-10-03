@@ -1497,6 +1497,12 @@ namespace fairwindsk::signalk {
                 continue;
             }
 
+            // Only vessel data has a REST snapshot at this address; other contexts (such as
+            // "resources") are loaded by their own models and would just answer 404 here.
+            if (!subscription.getContext().startsWith(QStringLiteral("vessels"))) {
+                continue;
+            }
+
             const QString effectiveContext = subscription.getContext();
             const QString fullPath = effectiveContext + "." + subscription.getPath();
             const QJsonObject snapshot = signalkGet(fullPath);
