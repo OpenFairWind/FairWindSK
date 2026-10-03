@@ -1035,7 +1035,8 @@ namespace fairwindsk::signalk {
 
 //! [onConnected]
     void Client::onConnected() {
-        if (m_Debug) qDebug() << "WebSocket connected";
+        if (m_Debug)
+            qDebug() << "WebSocket connected";
 
         m_reconnectTimer.stop();
         m_plannedRestartTimer.stop();
@@ -1046,25 +1047,24 @@ namespace fairwindsk::signalk {
         connect(&m_WebSocket, &QWebSocket::textMessageReceived,
                 this, &Client::onTextMessageReceived, Qt::UniqueConnection);
 
-        // FIX: Non resettiamo tutto se siamo già connessi
-        if (m_hadStreamConnection) {
-     		if (m_hadStreamConnection) {
-     		qInfo() << "Riconnessione rapida rilevata";
-     		resubscribeAll(false);
-     		return; 
-		}
-	}
-
-        // ... (il resto del codice originale rimane qui)
+        // Pre-fetch and cache the self URN once so resubscribeAll() resolves all
+        // "vessels.self" contexts consistently without N blocking HTTP calls
         if (m_selfUrn.isEmpty()) {
             const QString resolvedSelf = getSelf();
-            // ...
+            if (!resolvedSelf.isEmpty()) {
+                m_selfUrn = resolvedSelf;
+                qInfo() << "SignalK::Client::onConnected cached selfUrn =" << m_selfUrn;
+            } else {
+                qWarning() << "SignalK::Client::onConnected getSelf() returned empty; "
+                              "live-stream matching will rely on vessels.self alias";
+            }
         }
-        
-        // La chiamata originale rimane solo al primissimo avvio
-        resubscribeAll(false);
+
+        const bool recoveredFromDisconnect = m_reconnectRecoveryPending;
+        resubscribeAll(true);
         m_hadStreamConnection = true;
-        // ...
+        m_reconnectRecoveryPending = false;
+        emit serverStateResynchronized(recoveredFromDisconnect);
     }
 //! [onConnected]
 
