@@ -19,6 +19,24 @@ namespace fairwindsk::ui::widgets {
         Missing
     };
 
+    inline QColor signalKMetricTextColor(const SignalKMetricState state,
+                                         const QColor &liveColor,
+                                         const QColor &staleColor,
+                                         const QColor &missingColor) {
+        // Keep the state-to-color decision centralized so a caller cannot accidentally repaint
+        // stale navigation data with the same color used for a live helm value.
+        switch (state) {
+            case SignalKMetricState::Live:
+                return liveColor;
+            case SignalKMetricState::Stale:
+                return staleColor;
+            case SignalKMetricState::Missing:
+                return missingColor;
+        }
+
+        return missingColor;
+    }
+
     inline SignalKMetricState signalKMetricState(const bool hasValue, const bool pathConfigured = true) {
         if (!pathConfigured || !hasValue) {
             return SignalKMetricState::Missing;
@@ -118,7 +136,11 @@ namespace fairwindsk::ui::widgets {
         const auto chrome = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, metricPalette, false);
         const auto status = fairwindsk::ui::resolveComfortStatusColors(configuration, preset, metricPalette);
 
-        QColor textColor = chrome.text;
+        const QColor textColor = signalKMetricTextColor(
+            state,
+            chrome.text,
+            status.warningFill,
+            chrome.disabledText);
         QFont font = valueLabel->font();
         const bool preserveBold = font.bold();
         font.setItalic(false);
@@ -128,11 +150,9 @@ namespace fairwindsk::ui::widgets {
             case SignalKMetricState::Live:
                 break;
             case SignalKMetricState::Stale:
-                textColor = status.warningFill;
                 font.setBold(true);
                 break;
             case SignalKMetricState::Missing:
-                textColor = chrome.disabledText;
                 font.setItalic(true);
                 break;
         }
@@ -174,7 +194,11 @@ namespace fairwindsk::ui::widgets {
         const auto chrome = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, metricPalette, false);
         const auto status = fairwindsk::ui::resolveComfortStatusColors(configuration, preset, metricPalette);
 
-        QColor textColor = chrome.text;
+        const QColor textColor = signalKMetricTextColor(
+            state,
+            chrome.text,
+            status.warningFill,
+            chrome.disabledText);
         QFont font = primaryLabel->font();
         const bool preserveBold = font.bold();
         font.setItalic(false);
@@ -184,11 +208,9 @@ namespace fairwindsk::ui::widgets {
             case SignalKMetricState::Live:
                 break;
             case SignalKMetricState::Stale:
-                textColor = status.warningFill;
                 font.setBold(true);
                 break;
             case SignalKMetricState::Missing:
-                textColor = chrome.disabledText;
                 font.setItalic(true);
                 break;
         }

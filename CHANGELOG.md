@@ -54,6 +54,8 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
   come back when the server lists them again.
 - **Top Bar**: the default COG and SOG widgets carried a `vessels.self.` prefix in their path and
   never showed a value; the factory defaults are corrected and such paths are normalized on load.
+- **Top Bar**: cached data widgets now retain the warning color while Signal K is stale,
+  reconnecting, degraded, or disconnected instead of being repainted with the live-value color.
 - **Settings > Widgets**: the editor is filled for the widget selected when the page opens. It
   used to stay blank, and the first touched field saved that blank form over the widget.
 - **Settings**: tabs create their pages again after Reset, Restore Defaults or Import; the

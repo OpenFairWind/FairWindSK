@@ -547,13 +547,14 @@ namespace fairwindsk::ui::widgets {
             }
         }
 
+        const auto metricState = fairwindsk::ui::widgets::signalKMetricState(hasValue, pathConfigured);
         fairwindsk::ui::widgets::applySignalKMetricPresentation(
             m_valueLabel,
             m_unitLabel,
             this,
             m_definition.name,
             text,
-            fairwindsk::ui::widgets::signalKMetricState(hasValue, pathConfigured),
+            metricState,
             pathConfigured,
             true);
 
@@ -572,9 +573,12 @@ namespace fairwindsk::ui::widgets {
         const QString preset = fairWindSK ? fairWindSK->getActiveComfortViewPreset(configuration) : QStringLiteral("default");
         const QPalette referencePalette = qApp ? qApp->palette() : palette();
         const auto chrome = fairwindsk::ui::resolveComfortChromeColors(configuration, preset, referencePalette, false);
-        const QColor valueTextColor = hasValue
-                                          ? colorOrFallback(m_definition.valueTextColor, chrome.text)
-                                          : chrome.disabledText;
+        const auto statusColors = fairwindsk::ui::resolveComfortStatusColors(configuration, preset, referencePalette);
+        const QColor valueTextColor = fairwindsk::ui::widgets::signalKMetricTextColor(
+            metricState,
+            colorOrFallback(m_definition.valueTextColor, chrome.text),
+            statusColors.warningFill,
+            chrome.disabledText);
         fairwindsk::ui::widgets::applySignalKMetricLabelColor(m_valueLabel, valueTextColor);
         fairwindsk::ui::widgets::applySignalKMetricLabelColor(m_unitLabel, valueTextColor);
         if (m_gauge) {
@@ -591,12 +595,13 @@ namespace fairwindsk::ui::widgets {
             const QString trend = trendText();
             m_trendLabel->setText(trend);
             if (!trend.isEmpty()) {
-                const auto statusColors = fairwindsk::ui::resolveComfortStatusColors(configuration, preset, referencePalette);
                 fairwindsk::ui::widgets::applySignalKMetricLabelColor(
                     m_trendLabel,
-                    m_trendDirection > 0
-                        ? colorOrFallback(m_definition.trendIncreasingColor, statusColors.healthyFill)
-                        : colorOrFallback(m_definition.trendDecreasingColor, statusColors.errorFill));
+                    metricState == fairwindsk::ui::widgets::SignalKMetricState::Live
+                        ? (m_trendDirection > 0
+                               ? colorOrFallback(m_definition.trendIncreasingColor, statusColors.healthyFill)
+                               : colorOrFallback(m_definition.trendDecreasingColor, statusColors.errorFill))
+                        : valueTextColor);
             }
             m_trendLabel->setVisible(m_showTrend && supportsTrend && hasValue && !trend.isEmpty());
         }

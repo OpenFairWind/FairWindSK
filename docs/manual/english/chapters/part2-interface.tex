@@ -108,6 +108,11 @@ Its purpose: provide a two-second confidence check at any moment.
 Use it to answer: \textit{What is happening right now, and is the data still
 trustworthy?}
 
+Live values use their configured data colour. If the Signal~K stream becomes stale,
+degraded, reconnecting, or disconnected, cached values remain visible but change to
+the warning colour; missing values use the subdued colour and show ``--''. Treat a
+warning-coloured value as historical until the stream returns to Live.
+
 \screenshot{topbar-overview}{Top Bar: position, SOG, DPT, BTW, ETA and status icons}{}
 
 \section{Fixed Top Bar Elements}

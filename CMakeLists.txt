@@ -443,6 +443,11 @@ if(BUILD_TESTING AND NOT FAIRWINDSK_MOBILE)
             ui/widgets/DataWidgetConfig.cpp ui/widgets/DataWidgetConfig.hpp)
     target_link_libraries(FairWindSKDataWidgetConfigTest PRIVATE Qt6::Gui nlohmann_json::nlohmann_json)
 
+    fairwindsk_add_unit_test(FairWindSKSignalKMetricStateTest SignalKMetricState
+            tests/SignalKMetricStateTest.cpp
+            ui/widgets/SignalKMetricState.hpp)
+    target_link_libraries(FairWindSKSignalKMetricStateTest PRIVATE ${FAIRWINDSK_LINK_LIBRARIES})
+
     fairwindsk_add_unit_test(FairWindSKConfigurationTest Configuration
             tests/ConfigurationTest.cpp
             Configuration.cpp Configuration.hpp
@@ -461,7 +466,7 @@ if(BUILD_TESTING AND NOT FAIRWINDSK_MOBILE)
     set_tests_properties(EditableCombo PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
     set_tests_properties(GeoCoordinateUtils PList SignalKValueObjects SignalKProtocol
-            DataWidgetConfig Configuration UnitsReentrancy DirectorySafety ConfigurationImport EditableCombo
+            DataWidgetConfig SignalKMetricState Configuration UnitsReentrancy DirectorySafety ConfigurationImport EditableCombo
             PROPERTIES LABELS "unit")
     set_tests_properties(SimulatedSignalKService PROPERTIES LABELS "component;signalk")
 endif()
