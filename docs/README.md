@@ -16,6 +16,7 @@ are documented in [manual/README.md](manual/README.md).
 - [Developing guide](./developing_guide.md)
 - [Automated testing](./testing.md)
 - [Versioning and releases](./releasing.md)
+- [HaLOS installation and operations](./halos.md)
 - [App Store and Google Play publishing package](./stores/README.md)
 - [FairWindSK user guide](./fairwindsk_user_guide.md)
 - [Bundled owner manuals](../manuals/)

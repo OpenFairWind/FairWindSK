@@ -1,0 +1,178 @@
+#!/usr/bin/env python3
+"""Perform idempotent per-user FairWindSK setup and HaLOS diagnostics."""
+
+import argparse
+import configparser
+import json
+import os
+import platform
+import shutil
+import subprocess
+import tempfile
+import urllib.error
+import urllib.request
+from pathlib import Path
+
+APP_NAME = "FairWindSK"
+DEFAULT_CONFIG = Path("/usr/share/fairwindsk/configuration.json")
+LOCAL_ENDPOINTS = ("http://127.0.0.1:3000", "http://localhost:3000")
+
+
+def log(message: str) -> None:
+    print(f"[fairwindsk-halos-setup] {message}", flush=True)
+
+
+def config_dir() -> Path:
+    return selected_settings_path().parent
+
+
+def candidate_settings_paths():
+    home = Path.home()
+    xdg = Path(os.environ.get("XDG_CONFIG_HOME", home / ".config")).expanduser()
+    return (
+        xdg / APP_NAME / "fairwindsk.ini",
+        xdg / "uniparthenope.it" / APP_NAME / "fairwindsk.ini",
+        home / APP_NAME / "fairwindsk.ini",
+        home / "fairwindsk.ini",
+    )
+
+
+def selected_settings_path() -> Path:
+    return next((path for path in candidate_settings_paths() if path.is_file()), candidate_settings_paths()[0])
+
+
+def config_path() -> Path:
+    settings = selected_settings_path()
+    parser = configparser.ConfigParser()
+    if settings.is_file():
+        parser.read(settings, encoding="utf-8")
+    configured = parser.get("General", "config", fallback="").strip()
+    if not configured:
+        return settings.parent / "fairwindsk.json"
+    selected = Path(configured).expanduser()
+    return selected if selected.is_absolute() else settings.parent / selected
+
+
+def marker_path() -> Path:
+    return config_path().parent / ".halos-setup-v1"
+
+
+def installed_package(name: str) -> bool:
+    result = subprocess.run(
+        ["dpkg-query", "-W", "-f=${db:Status-Abbrev}", name],
+        capture_output=True, text=True, check=False,
+    )
+    return result.returncode == 0 and result.stdout.startswith("ii ")
+
+
+def is_halos() -> bool:
+    if os.environ.get("FAIRWINDSK_TEST_HALOS") == "1":
+        return True
+    return installed_package("halos") or installed_package("halos-marine") or Path("/etc/halos").exists()
+
+
+def endpoint_ready(base_url: str) -> bool:
+    try:
+        request = urllib.request.Request(f"{base_url}/signalk", headers={"User-Agent": "fairwindsk-halos-setup/1.0"})
+        with urllib.request.urlopen(request, timeout=1) as response:
+            return 200 <= int(response.status) < 300
+    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, ValueError):
+        return False
+
+
+def merge(base: dict, overlay: dict) -> dict:
+    result = dict(base)
+    for key, value in overlay.items():
+        if isinstance(value, dict) and isinstance(result.get(key), dict):
+            result[key] = merge(result[key], value)
+        else:
+            result[key] = value
+    return result
+
+
+def atomic_write_json(destination: Path, value: dict) -> None:
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary_name = tempfile.mkstemp(prefix=f".{destination.name}.", dir=destination.parent)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+            json.dump(value, handle, indent=4, ensure_ascii=False)
+            handle.write("\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary_name, destination)
+    except BaseException:
+        try:
+            os.unlink(temporary_name)
+        except FileNotFoundError:
+            pass
+        raise
+
+
+def setup() -> int:
+    destination = config_path()
+    marker = marker_path()
+    if not is_halos():
+        log("HaLOS was not detected; setup skipped.")
+        return 0
+    if destination.exists():
+        log(f"Existing configuration preserved: {destination}")
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.touch(exist_ok=True)
+        return 0
+    source = Path(os.environ.get("FAIRWINDSK_DEFAULT_CONFIG", DEFAULT_CONFIG))
+    try:
+        base = json.loads(source.read_text(encoding="utf-8"))
+        overlay = {"main": {"windowMode": "fullscreen"}}
+        for endpoint in LOCAL_ENDPOINTS:
+            if endpoint_ready(endpoint):
+                overlay["connection"] = {"server": endpoint}
+                break
+        atomic_write_json(destination, merge(base, overlay))
+        marker.touch()
+        log(f"Created HaLOS configuration: {destination}")
+        return 0
+    except (OSError, json.JSONDecodeError, TypeError) as exc:
+        log(f"Unable to complete setup: {exc}")
+        return 1
+
+
+def safe_server() -> str:
+    try:
+        data = json.loads(config_path().read_text(encoding="utf-8"))
+        server = str(data.get("connection", {}).get("server", ""))
+        from urllib.parse import urlsplit, urlunsplit
+        parts = urlsplit(server)
+        host = parts.hostname or ""
+        port = f":{parts.port}" if parts.port else ""
+        return urlunsplit((parts.scheme, host + port, parts.path, "", "")) if server else "<not configured>"
+    except (OSError, json.JSONDecodeError, ValueError):
+        return "<unreadable>"
+
+
+def diagnose() -> int:
+    release = Path("/etc/os-release")
+    print(f"OS: {release.read_text(encoding='utf-8').strip() if release.exists() else platform.platform()}")
+    print(f"Architecture: {platform.machine()}")
+    print(f"HaLOS detected: {'yes' if is_halos() else 'no'}")
+    print(f"Graphical session: {'yes' if os.environ.get('DISPLAY') or os.environ.get('WAYLAND_DISPLAY') else 'no'}")
+    print(f"FairWindSK executable: {shutil.which(APP_NAME) or '<missing>'}")
+    print(f"Autostart: {'present' if Path('/etc/xdg/autostart/fairwindsk-startup.desktop').is_file() else 'missing'}")
+    print(f"Configuration: {config_path()}")
+    print(f"Signal K server: {safe_server()}")
+    for endpoint in LOCAL_ENDPOINTS:
+        print(f"Local endpoint {endpoint}: {'reachable' if endpoint_ready(endpoint) else 'unavailable'}")
+    print(f"Qt platform: {os.environ.get('QT_QPA_PLATFORM', '<automatic>')}")
+    package = subprocess.run(["dpkg-query", "-W", "-f=${Version}", "fairwindsk"], capture_output=True, text=True, check=False)
+    print(f"Package version: {package.stdout.strip() or '<not installed>'}")
+    return 1 if not shutil.which(APP_NAME) or not Path("/etc/xdg/autostart/fairwindsk-startup.desktop").is_file() else 0
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--diagnose", action="store_true")
+    arguments = parser.parse_args()
+    return diagnose() if arguments.diagnose else setup()
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

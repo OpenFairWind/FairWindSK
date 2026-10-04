@@ -8,6 +8,8 @@ import sys
 import time
 import urllib.error
 import urllib.request
+import urllib.parse
+import fcntl
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -20,10 +22,34 @@ RESTART_EXIT_CODE = 1
 SERVER_WAIT_TIMEOUT_SECONDS = 45
 SERVER_WAIT_INTERVAL_SECONDS = 2
 SERVER_SETTLE_DELAY_SECONDS = 2
+DEFAULTS_PATH = Path("/etc/default/fairwindsk")
 
 
 def log(message: str) -> None:
     print(f"[fairwindsk-startup] {message}", flush=True)
+
+
+def positive_number(value: str, default: int) -> int:
+    try:
+        number = int(value)
+        return number if number > 0 else default
+    except (TypeError, ValueError):
+        return default
+
+
+def startup_timings() -> tuple[int, int, int]:
+    values: Dict[str, str] = {}
+    path = Path(os.environ.get("FAIRWINDSK_DEFAULTS_PATH", DEFAULTS_PATH))
+    if path.is_file():
+        for line in path.read_text(encoding="utf-8").splitlines():
+            key, separator, value = line.partition("=")
+            if separator and key.strip().startswith("FAIRWINDSK_SERVER_"):
+                values[key.strip()] = value.strip().strip("\"'")
+    return (
+        positive_number(values.get("FAIRWINDSK_SERVER_WAIT_TIMEOUT", ""), SERVER_WAIT_TIMEOUT_SECONDS),
+        positive_number(values.get("FAIRWINDSK_SERVER_WAIT_INTERVAL", ""), SERVER_WAIT_INTERVAL_SECONDS),
+        positive_number(values.get("FAIRWINDSK_SERVER_SETTLE_DELAY", ""), SERVER_SETTLE_DELAY_SECONDS),
+    )
 
 
 def candidate_settings_paths() -> List[Path]:
@@ -128,8 +154,18 @@ def url_is_ready(url: str) -> bool:
             status_code = getattr(response, "status", response.getcode())
             return 200 <= int(status_code) < 300
     except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, ValueError) as exc:
-        log(f"Endpoint not ready yet: {url} ({exc})")
+        log(f"Endpoint not ready yet: {safe_url(url)} ({exc})")
         return False
+
+
+def safe_url(url: str) -> str:
+    try:
+        parts = urllib.parse.urlsplit(url)
+        host = parts.hostname or ""
+        port = f":{parts.port}" if parts.port else ""
+        return urllib.parse.urlunsplit((parts.scheme, host + port, parts.path, "", ""))
+    except ValueError:
+        return "<invalid URL>"
 
 
 def wait_for_signal_k_server(config_path: Path) -> None:
@@ -143,15 +179,17 @@ def wait_for_signal_k_server(config_path: Path) -> None:
         f"{server_url}/skServer/webapps",
     ]
 
-    deadline = time.monotonic() + SERVER_WAIT_TIMEOUT_SECONDS
+    timeout, interval, settle = startup_timings()
+    log(f"Waiting up to {timeout}s for configured Signal K server: {safe_url(server_url)}")
+    deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         if any(url_is_ready(url) for url in readiness_urls):
             log("Signal K application catalog is reachable.")
-            if SERVER_SETTLE_DELAY_SECONDS > 0:
-                log(f"Waiting {SERVER_SETTLE_DELAY_SECONDS}s for plugin static assets to settle.")
-                time.sleep(SERVER_SETTLE_DELAY_SECONDS)
+            if settle > 0:
+                log(f"Waiting {settle}s for plugin static assets to settle.")
+                time.sleep(settle)
             return
-        time.sleep(SERVER_WAIT_INTERVAL_SECONDS)
+        time.sleep(interval)
 
     log("Signal K application catalog did not become reachable before timeout; launching anyway.")
 
@@ -197,6 +235,22 @@ def run_once(env: Dict[str, str]) -> int:
 
 
 def main() -> int:
+    runtime_dir = Path(os.environ.get("XDG_RUNTIME_DIR", f"/tmp/fairwindsk-{os.getuid()}"))
+    runtime_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
+    lock_handle = (runtime_dir / "fairwindsk-startup.lock").open("w", encoding="utf-8")
+    try:
+        fcntl.flock(lock_handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        log("Another launcher instance is active; exiting.")
+        return 0
+
+    setup_helper = shutil.which("fairwindsk-halos-setup")
+    if setup_helper:
+        result = sp.run([setup_helper], check=False)
+        log(f"HaLOS setup helper exit code: {result.returncode}")
+    else:
+        log("HaLOS setup helper not installed; continuing.")
+
     attempt = 1
     while True:
         settings_path = find_settings_path()

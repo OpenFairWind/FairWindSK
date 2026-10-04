@@ -46,6 +46,16 @@ string(TIMESTAMP FAIRWINDSK_BUILD_YEAR "%Y")
 
 include(GNUInstallDirs)
 
+option(FAIRWINDSK_HALOS_PACKAGE "Build the HaLOS/Trixie ARM64 Debian package profile" OFF)
+if(FAIRWINDSK_HALOS_PACKAGE)
+    if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux" OR ANDROID OR IOS)
+        message(FATAL_ERROR "FAIRWINDSK_HALOS_PACKAGE requires a Linux desktop target")
+    endif()
+    if(NOT CMAKE_INSTALL_PREFIX STREQUAL "/usr")
+        message(FATAL_ERROR "HaLOS packages must be configured with -DCMAKE_INSTALL_PREFIX=/usr")
+    endif()
+endif()
+
 # ==========================================
 # 2. CONFIGURAZIONE TARGET E COMPILATORE
 # ==========================================
@@ -84,6 +94,12 @@ endif()
 # device or simulator and therefore cannot be executed directly by host CTest.
 if(BUILD_TESTING AND NOT FAIRWINDSK_MOBILE)
     find_package(Qt6 REQUIRED COMPONENTS Test)
+    if(UNIX AND NOT APPLE)
+        find_package(Python3 REQUIRED COMPONENTS Interpreter)
+        add_test(NAME HaLOSHelpers
+                COMMAND ${Python3_EXECUTABLE} -m unittest ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_halos_helpers.py)
+        set_tests_properties(HaLOSHelpers PROPERTIES LABELS "unit;halos")
+    endif()
 endif()
 
 # Qt 6.8.3's native arm64 host tools abort on some Apple Silicon hosts with an
@@ -517,6 +533,17 @@ if(NOT FAIRWINDSK_MOBILE)
 
         install(PROGRAMS extras/fairwindsk-startup
                 DESTINATION ${CMAKE_INSTALL_BINDIR})
+        if(FAIRWINDSK_HALOS_PACKAGE)
+            install(PROGRAMS extras/fairwindsk-halos-setup
+                    DESTINATION ${CMAKE_INSTALL_BINDIR})
+            install(FILES resources/json/configuration.json
+                    DESTINATION ${CMAKE_INSTALL_DATADIR}/fairwindsk)
+            install(FILES packaging/halos/fairwindsk.default
+                    DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/default
+                    RENAME fairwindsk)
+            install(FILES "${CMAKE_CURRENT_BINARY_DIR}/fairwindsk-startup.desktop"
+                    DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/xdg/autostart)
+        endif()
         install(FILES "${CMAKE_CURRENT_BINARY_DIR}/fairwindsk.desktop"
                 DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
         install(FILES resources/images/mainwindow/fairwind_icon.png
@@ -549,7 +576,25 @@ set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Marine multi-functional display for Signa
 set(CPACK_PACKAGE_VERSION "${FAIRWINDSK_SEMVER}")
 set(CPACK_PACKAGE_FILE_NAME "FairWindSK-${FAIRWINDSK_SEMVER}-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
-if(WIN32)
+if(FAIRWINDSK_HALOS_PACKAGE)
+    set(CPACK_GENERATOR "DEB")
+    set(CPACK_PACKAGE_NAME "fairwindsk")
+    set(CPACK_PACKAGE_FILE_NAME "fairwindsk_${FAIRWINDSK_SEMVER}-1~halos13_arm64")
+    set(CPACK_DEBIAN_PACKAGE_NAME "fairwindsk")
+    set(CPACK_DEBIAN_PACKAGE_VERSION "${FAIRWINDSK_SEMVER}-1~halos13")
+    set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "arm64")
+    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "OpenFairWind")
+    set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/OpenFairWind/FairWindSK")
+    set(CPACK_DEBIAN_PACKAGE_SECTION "utils")
+    set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+    set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "FairWindSK marine multi-functional display for HaLOS Desktop.\n Native Qt desktop shell for Signal K instruments, applications, navigation, and vessel operations.")
+    set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "python3, libqt6widgets6, libqt6network6, libqt6webenginewidgets6, libqt6svg6, qt6-virtualkeyboard-plugin, libqt6printsupport6, libqt6websockets6, libqt6positioning6, libqt6xml6, libqt6qml6, qt6-qpa-plugins")
+    set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
+            "${CMAKE_CURRENT_SOURCE_DIR}/packaging/halos/postinst"
+            "${CMAKE_CURRENT_SOURCE_DIR}/packaging/halos/prerm"
+            "${CMAKE_CURRENT_SOURCE_DIR}/packaging/halos/postrm")
+elseif(WIN32)
     # NSIS produces a normal Windows installer while Qt's deploy script places
     # the runtime DLLs and plug-ins inside the staged installation tree.
     set(CPACK_GENERATOR "NSIS")

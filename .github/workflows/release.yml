@@ -134,6 +134,54 @@ jobs:
           path: FairWindSK-*.deb
           if-no-files-found: error
 
+  halos:
+    name: HaLOS / Debian Trixie arm64
+    needs: validate
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build and test in Trixie ARM64
+        run: |
+          docker run --rm --platform linux/arm64 -v "${PWD}:/work" -w /work debian:trixie sh -ec '
+            apt-get update
+            apt-get install --yes git ca-certificates cmake ninja-build g++ dpkg-dev file python3 libavahi-client-dev \
+              libgl1-mesa-dev libxkbcommon-x11-0 qt6-base-dev qt6-declarative-dev qt6-positioning-dev \
+              qt6-svg-dev qt6-tools-dev qt6-virtualkeyboard-dev qt6-webengine-dev qt6-websockets-dev nlohmann-json3-dev
+            cmake -S . -B build-halos -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr \
+              -DBUILD_TESTING=ON -DFAIRWINDSK_HALOS_PACKAGE=ON
+            cmake --build build-halos --parallel 2
+            ctest --test-dir build-halos --output-on-failure
+            cpack --config build-halos/CPackConfig.cmake -G DEB
+          '
+      - name: Inspect and clean-install package
+        run: |
+          package="$(find build-halos -maxdepth 1 -type f -name 'fairwindsk_*~halos13_arm64.deb' -print -quit)"
+          test -n "${package}"
+          dpkg-deb --info "${package}"
+          dpkg-deb --contents "${package}"
+          scripts/validate-halos-package.sh "${package}"
+          docker run --rm --platform linux/arm64 -v "${PWD}:/work:ro" -w /work debian:trixie sh -ec '
+            apt-get update
+            apt-get install --yes "./'"${package}"'"
+            command -v FairWindSK
+            command -v fairwindsk-startup
+            command -v fairwindsk-halos-setup
+            test -f /usr/share/applications/fairwindsk.desktop
+            test -f /etc/xdg/autostart/fairwindsk-startup.desktop
+            fairwindsk-halos-setup --diagnose || test "$?" = 1
+            apt-get check
+          '
+          output="$(basename "${package}")"
+          cp "${package}" "${output}"
+          sha256sum "${output}" > "${output}.sha256"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: halos-trixie-arm64
+          path: |
+            fairwindsk_*~halos13_arm64.deb
+            fairwindsk_*~halos13_arm64.deb.sha256
+          if-no-files-found: error
+
   windows:
     name: Windows x86-64 installer
     needs: validate
@@ -329,7 +377,7 @@ jobs:
   publish:
     name: Sign manifest and publish release
     if: github.ref_type == 'tag'
-    needs: [validate, linux, raspberry-pi-os, windows, macos, android, ios]
+    needs: [validate, linux, raspberry-pi-os, halos, windows, macos, android, ios]
     runs-on: ubuntu-24.04
     environment: release
     permissions:

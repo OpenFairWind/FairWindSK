@@ -1,0 +1,4 @@
+#!/bin/sh
+set -e
+# Package-owned integration is removed by dpkg; user configuration is retained.
+exit 0

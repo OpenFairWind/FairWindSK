@@ -111,6 +111,22 @@ For every change:
 
 ## Release packages
 
+### HaLOS/Trixie ARM64
+
+HaLOS is a distinct binary-release target, not an alias for a Raspberry Pi OS source build. Official packages are built and install-tested in Debian Trixie ARM64:
+
+```bash
+cmake -S . -B build-halos -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=/usr \
+  -DFAIRWINDSK_HALOS_PACKAGE=ON
+cmake --build build-halos --parallel
+ctest --test-dir build-halos --output-on-failure
+cpack --config build-halos/CPackConfig.cmake -G DEB
+```
+
+The profile fixes DEB/ARM64 metadata, `/usr` paths, XDG autostart, the user-session setup helper, HaLOS naming, maintainer scripts, and runtime dependencies. Release validation inspects and clean-installs the package and publishes its SHA-256 sidecar. See [halos.md](halos.md) for operator and physical-hardware acceptance checks.
+
 Pushing a semantic-version tag matching `VERSION.txt` runs the release workflow and publishes
 native installers for every supported build: macOS arm64 and x86-64 DMGs, a Windows x86-64
 installer, Debian and RPM x86-64 packages, a Raspberry Pi OS arm64 package, a signed Android
