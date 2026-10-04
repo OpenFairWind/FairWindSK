@@ -63,7 +63,9 @@ della traversata in ogni momento.
 \begin{itemize}
   \item Un server Signal~K in esecuzione e raggiungibile sulla rete Wi-Fi di bordo.
         Il server deve esporre l'API standard su \code{<server>/signalk} e il catalogo
-        app su \code{<server>/signalk/v1/apps/list}.
+        app su \code{<server>/signalk/v1/apps/list}. FairWindSK usa le posizioni di
+        avvio canoniche del catalogo e, quando disponibile, le arricchisce con nomi
+        e icone provenienti da \code{<server>/skServer/webapps}.
   \item I propri strumenti (GPS, vento, profondità, AIS, autopilota, monitor motore)
         che alimentano Signal~K via NMEA~0183, NMEA~2000 o SeaTalk.
   \item FairWindSK installato su un dispositivo di visualizzazione.

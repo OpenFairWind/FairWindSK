@@ -66,7 +66,9 @@ at all times.
   \item A running Signal~K server reachable on the boat's Wi-Fi network.
         The server must expose the standard API at
         \code{<server>/signalk} and the app catalogue at
-        \code{<server>/signalk/v1/apps/list}.
+        \code{<server>/signalk/v1/apps/list}. FairWindSK uses the catalogue's
+        canonical launch locations and, when available, enriches them with names
+        and icons from \code{<server>/skServer/webapps}.
   \item Your instruments (GPS, wind, depth, AIS, autopilot, engine monitor) feeding
         into Signal~K via NMEA~0183, NMEA~2000, or SeaTalk.
   \item FairWindSK installed on a display device.

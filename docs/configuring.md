@@ -19,7 +19,7 @@ FairWindSK stores its runtime settings in `fairwindsk.json`, with the location r
 }
 ```
 
-- `server`: Base URL of the Signal K server. The application appends `/signalk` for websocket data and `/signalk/v1/apps/list` for standard application discovery, with a legacy fallback to `/skServer/webapps`. Leave this empty to start offline; the desktop loads but no remote apps will appear.
+- `server`: Base URL of the Signal K server. The application appends `/signalk` for websocket data and `/signalk/v1/apps/list` for standard application discovery. When available, `/skServer/webapps` enriches those canonical launch records with package display names and icons; it also remains the fallback for older servers. Leave this empty to start offline; the desktop loads but no remote apps will appear.
 - `servers`: Optional list of the servers you connected to from **Settings > Connection**, most recent first (up to 10). Any host name, fully qualified domain name or IP address typed in the server field is added here when you press **Connect** (or Return), so it stays available in the drop-down list after a restart. A missing scheme defaults to `http://`.
 
 ## Application definitions

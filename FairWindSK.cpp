@@ -830,6 +830,44 @@ namespace fairwindsk {
             return token;
         }
 
+        nlohmann::json mergeApplicationCatalogs(const nlohmann::json &standardCatalog,
+                                                const nlohmann::json &legacyCatalog) {
+            if (!standardCatalog.is_array()) {
+                return legacyCatalog;
+            }
+            if (!legacyCatalog.is_array()) {
+                return standardCatalog;
+            }
+
+            QHash<QString, nlohmann::json> legacyAppsByName;
+            for (const auto &legacyApp : legacyCatalog) {
+                if (!legacyApp.is_object() || !legacyApp.contains("name") || !legacyApp["name"].is_string()) {
+                    continue;
+                }
+                legacyAppsByName.insert(QString::fromStdString(legacyApp["name"].get<std::string>()), legacyApp);
+            }
+
+            nlohmann::json mergedCatalog = nlohmann::json::array();
+            for (const auto &standardApp : standardCatalog) {
+                if (!standardApp.is_object()) {
+                    continue;
+                }
+
+                nlohmann::json mergedApp = standardApp;
+                if (standardApp.contains("name") && standardApp["name"].is_string()) {
+                    const QString appName = QString::fromStdString(standardApp["name"].get<std::string>());
+                    const auto legacyApp = legacyAppsByName.constFind(appName);
+                    if (legacyApp != legacyAppsByName.cend()) {
+                        mergedApp = legacyApp.value();
+                        // The standard endpoint is authoritative for launch locations and versions.
+                        mergedApp.update(standardApp, true);
+                    }
+                }
+                mergedCatalog.push_back(std::move(mergedApp));
+            }
+            return mergedCatalog;
+        }
+
         bool isOnHiddenStackPage(QWidget *widget) {
             if (!widget) {
                 return false;
@@ -1415,6 +1453,7 @@ namespace fairwindsk {
 
         ++m_appsReloadGeneration;
         const quint64 generation = m_appsReloadGeneration;
+        m_standardAppsPayload = nlohmann::json{};
         if (m_appsReply) {
             m_appsReply->abort();
             m_appsReply->deleteLater();
@@ -1424,8 +1463,10 @@ namespace fairwindsk {
         setAppsState(AppsState::Loading,
                      m_mapHash2AppItem.isEmpty() ? tr("Loading apps") : tr("Refreshing apps"));
         emit appsReloadStarted();
-        // Prefer the full catalog because it carries display names and application icons.
-        startAppsRequest(QUrl(signalKServerUrl + "/skServer/webapps"), generation, false);
+        // Start with the standard catalog because it owns canonical launch locations.
+        startAppsRequest(QUrl(signalKServerUrl + "/signalk/v1/apps/list"),
+                         generation,
+                         AppsRequestKind::StandardCatalog);
     }
 
     bool FairWindSK::rebuildAppRegistry(const nlohmann::json *appsPayload) {
@@ -1593,7 +1634,9 @@ namespace fairwindsk {
         refreshRuntimeHealth();
     }
 
-    void FairWindSK::startAppsRequest(const QUrl &url, const quint64 generation, const bool fallbackRequest) {
+    void FairWindSK::startAppsRequest(const QUrl &url,
+                                      const quint64 generation,
+                                      const AppsRequestKind requestKind) {
         if (!m_runtimeNetworkAccessManager || !url.isValid()) {
             finalizeAppsReload(false, tr("Apps refresh failed"));
             return;
@@ -1606,7 +1649,7 @@ namespace fairwindsk {
             m_appsReply = reply;
         }
 
-        connect(reply, &QNetworkReply::finished, this, [this, reply, url, generation, fallbackRequest]() {
+        connect(reply, &QNetworkReply::finished, this, [this, reply, url, generation, requestKind]() {
             const QScopedPointer<QNetworkReply, QScopedPointerDeleteLater> guard(reply);
             if (generation != m_appsReloadGeneration) {
                 return;
@@ -1620,16 +1663,42 @@ namespace fairwindsk {
             const bool success = guard->error() == QNetworkReply::NoError && statusCode >= 200 && statusCode < 300;
             const nlohmann::json appsPayload = success ? parseJsonPayload(guard->readAll(), url, isDebug()) : nlohmann::json{};
             if (appsPayload.is_array()) {
+                if (requestKind == AppsRequestKind::StandardCatalog) {
+                    m_standardAppsPayload = appsPayload;
+                    // Enrich the standard records with optional names, descriptions, and icons.
+                    startAppsRequest(QUrl(m_configuration.getSignalKServerUrl().trimmed() + "/skServer/webapps"),
+                                     generation,
+                                     AppsRequestKind::LegacyEnrichment);
+                    return;
+                }
+
+                if (requestKind == AppsRequestKind::LegacyEnrichment) {
+                    const nlohmann::json mergedPayload = mergeApplicationCatalogs(m_standardAppsPayload, appsPayload);
+                    m_standardAppsPayload = nlohmann::json{};
+                    finalizeAppsReload(true, tr("Apps ready"), &mergedPayload);
+                    return;
+                }
+
                 finalizeAppsReload(true, tr("Apps ready"), &appsPayload);
                 return;
             }
 
-            if (!fallbackRequest) {
-                // Older or restricted servers may expose only the compact applications endpoint.
-                startAppsRequest(QUrl(m_configuration.getSignalKServerUrl().trimmed() + "/signalk/v1/apps/list"), generation, true);
+            if (requestKind == AppsRequestKind::StandardCatalog) {
+                // Older servers may expose only the legacy package catalog.
+                startAppsRequest(QUrl(m_configuration.getSignalKServerUrl().trimmed() + "/skServer/webapps"),
+                                 generation,
+                                 AppsRequestKind::LegacyFallback);
                 return;
             }
 
+            if (requestKind == AppsRequestKind::LegacyEnrichment && m_standardAppsPayload.is_array()) {
+                const nlohmann::json standardPayload = std::move(m_standardAppsPayload);
+                m_standardAppsPayload = nlohmann::json{};
+                finalizeAppsReload(true, tr("Apps ready"), &standardPayload);
+                return;
+            }
+
+            m_standardAppsPayload = nlohmann::json{};
             finalizeAppsReload(false,
                                m_mapHash2AppItem.isEmpty()
                                    ? tr("Apps refresh failed")
