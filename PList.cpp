@@ -195,7 +195,7 @@ QString PList::toPList(const QVariant &variant) {
 	return document.toString();
 }
 
-QMap<QString, QVariant> PList::toMap()
+QMap<QString, QVariant> PList::toMap() const
 {
 	return m_plist.toMap();
 }

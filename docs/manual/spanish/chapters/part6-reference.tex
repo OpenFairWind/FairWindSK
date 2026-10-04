@@ -1,0 +1,417 @@
+\part{Reference}
+
+\chapter{Confort Presets y Visibilidad}
+\label{ch:comfort-presets}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{C{1.4cm}L{2.0cm}L{4.0cm}L{6.7cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Icon &
+\color{white}\sffamily\bfseries Preset &
+\color{white}\sffamily\bfseries Conditions &
+\color{white}\sffamily\bfseries Key characteristics \\
+\midrule
+\iconlg{comfort-default} & Default & General fallback &
+  Balanced mid-contrast; usable in most conditions. \\
+\iconlg{comfort-dawn}    & Dawn    & Around sunrise &
+  Warm tones, slightly reduced brightness. \\
+\iconlg{comfort-day}     & Day     & Full daylight, direct sun &
+  Maximum brightness and contrast. For open-ocean sailing. \\
+\iconlg{comfort-sunset}  & Sunset  & Around sunset &
+  Warmer, transitional brightness. \\
+\iconlg{comfort-dusk}    & Dusk    & Twilight &
+  Reduced brightness; begins night-vision preservation. \\
+\iconlg{comfort-night}   & Night   & Full dark, offshore watches &
+El brillo mínimo, los fondos oscuros, los iconos en rojo.
+Preserva la visión nocturna.
+  Alarms remain high-contrast on every preset. \\
+\bottomrule
+\end{longtable}
+
+\section{Orientación práctica}
+
+\begin{itemize}
+  \item Use brighter, higher-contrast presets in daylight.
+  \item Use dimmer, night-oriented presets when preserving night vision matters.
+  \item Keep alarms and safety-critical text easy to read in every preset.
+  \item Prefer readability over appearance. If a preset looks attractive but makes
+información urgente más difícil de ver, cambiar a uno más claro.
+  \item The Night preset sets the icon tint to red by default.
+Esto es intencional --- la luz roja minimiza el tiempo necesario para
+re-adapt to darkness after looking at the display.
+\end{itemize}
+
+\chapter{Operación de visualización, tacto y condiciones Rough}
+\label{ch:roughconditions}
+
+\section{Visualización de lectura}
+
+FairWindSK debe permanecer legible en luz brillante, atardecer, noche y duro
+condiciones.
+Si la pantalla es difícil de leer, corregir eso primero antes de diagnosticar cualquier
+cuestiones de aplicación.
+
+Empieza con:
+\begin{enumerate}
+  \item Screen brightness.
+  \item Comfort preset (correct for the current light conditions).
+  \item Viewing angle and helm position.
+  \item The app or page shown in the Application Area.
+\end{enumerate}
+
+Mantenga los números críticos de seguridad fácil de identificar de un vistazo.
+Evite presets que reduzcan demasiado el contraste.
+Utilice pantallas más grandes para la navegación primaria siempre que sea posible.
+Utilice una pantalla de sol o capucha en la luz solar directa.
+
+\section{Uso del tacto en condiciones de tono}
+
+\begin{itemize}
+  \item Brace yourself first. One hand on the boat, one on the screen.
+  \item Use deliberate, single taps. Hesitant pressure and repeated rapid taps
+causar acciones no intencionadas.
+  \item Never explore the autopilot controls by tapping speculatively ---
+cada comando tiene un efecto físico inmediato.
+  \item Keep the screen clean. Salt spray reduces touch accuracy significantly.
+  \item Pre-configure what you need while conditions are calm.
+  \item Prefer the large, stable targets of the Bottom Bar main icons.
+  \item Confirm dialogs and mode changes before acting on them.
+\end{itemize}
+
+Para uso de helm, diseño estable y buena lectura importa más que estilo decorativo.
+
+\chapter{Flujo de trabajo recomendado del operador}
+\label{ch:workflow}
+
+Para la mayoría de los pasajes, esta secuencia mantiene la cáscara predecible y fácil de confiar.
+
+\section{Antes de partir}
+
+\begin{enumerate}
+  \item Start FairWindSK and confirm the shell health state is normal.
+  \item Verify that expected key data is live in the Top Bar.
+  \item Open the app most relevant to the current passage phase.
+  \item Confirm brightness and comfort preset.
+  \item Complete the pre-departure checklist (Chapter~2).
+\end{enumerate}
+
+\section{Durante el paso}
+
+\begin{enumerate}
+  \item Watch for stale or missing values in the Top Bar.
+  \item Cross-check route, depth, and heading whenever conditions change.
+  \item Use the launcher to switch tasks rather than forcing a stuck app.
+  \item Treat degraded states as operational warnings.
+  \item If the current screen stops feeling clear or trustworthy, tap
+        \iconlg{applications}~\key{Apps} to return to the launcher.
+\end{enumerate}
+
+\section{Después de una reconexión o reinicio del servidor}
+
+\begin{enumerate}
+  \item Wait briefly for automatic recovery to complete.
+  \item Confirm the status shows \textit{Live}.
+  \item Reopen the app if the foreground application was degraded.
+  \item Reconfirm key navigation values before depending on them.
+\end{enumerate}
+
+\section{Interruptor de tareas}
+
+Use el Bottom Bar en lugar de forzar la aplicación actual para hacer todo:
+
+\begin{itemize}
+  \item Use \iconlg{applications}~Apps to return to the launcher and switch tasks.
+  \item Use the open-apps strip to jump directly to a loaded application.
+  \item Use operational bars (\iconlg{alarm-pob}~POB, \iconlg{anchor-iec}~Anchor,
+        \iconlg{command-autopilot}~Autopilot) for vessel-operation tasks
+sin dejar tu aplicación de navegación.
+\end{itemize}
+
+\chapter{Signal K Server en Docker}
+\label{ch:docker}
+
+\section{Imagen oficial Docker}
+
+\begin{lstlisting}
+cr.signalk.io/signalk/signalk-server:latest
+\end{lstlisting}
+
+Supported architectures: \code{linux/amd64}, \code{linux/arm/v7},
+\code{linux/arm64} (all Raspberry~Pi~4 and~5 configurations).
+
+\section{Inicio rápido con datos Demo NMEA}
+
+\begin{lstlisting}
+mkdir $HOME/.signalk
+docker run --init -it --rm \
+  --name signalk-server \
+  --publish 3000:3000 \
+  -v $HOME/.signalk:/home/node/.signalk \
+  cr.signalk.io/signalk/signalk-server \
+  --sample-nmea0183-data
+\end{lstlisting}
+
+\section{Despliegue de la producción}
+
+\begin{lstlisting}
+docker run -d --init \
+  --name signalk-server \
+  -p 3000:3000 \
+  -v $HOME/.signalk:/home/node/.signalk \
+  cr.signalk.io/signalk/signalk-server
+\end{lstlisting}
+
+\section{Actualización de la señal K}
+
+\begin{lstlisting}
+docker pull cr.signalk.io/signalk/signalk-server:latest
+docker stop signalk-server
+docker rm signalk-server
+# Re-run the production docker run command above
+\end{lstlisting}
+
+\chapter{Solución de problemas}
+\label{ch:troubleshooting}
+
+\section{Veo valores perdidos}
+
+Posibles causas: el sensor o el instrumento fuente está fuera de línea; Signal~K no
+recibir ese camino; el valor no se configura para mostrar; la conexión tiene
+Se cayó.
+
+\begin{enumerate}
+  \item Check shell health state.
+  \item See whether other values are still live.
+  \item Confirm the source instrument is operating.
+  \item Check \ui{Settings~> Signal~K Paths} --- is the correct path configured?
+  \item Return to the launcher and reopen the affected app if needed.
+\end{enumerate}
+
+\section{Veo valores de estalla}
+
+Posibles causas: la interrupción temporal de los datos; la reconexión en el progreso; la demora en la red;
+degradación parcial en la fuente de datos.
+
+\begin{enumerate}
+  \item Treat the values cautiously.
+  \item Wait briefly for recovery.
+  \item Cross-check with other instruments.
+  \item Investigate if the stale state persists beyond 60 seconds.
+\end{enumerate}
+
+\section{Una aplicación web está en blanco o congelado}
+
+\begin{enumerate}
+  \item Retry once if the shell offers the option.
+  \item Return to the launcher.
+  \item Check shell health and Signal~K connection state.
+  \item Use another app if the shell is otherwise healthy.
+  \item A failed application does not mean FairWindSK has failed.
+\end{enumerate}
+
+\section{El Shell está desconectado}
+
+\begin{enumerate}
+  \item Is Signal~K running? Check LEDs on the Raspberry~Pi; check the Docker
+        container status: \code{docker ps -a | grep signalk}.
+  \item Is your device on the correct Wi-Fi network?
+  \item Is the server address in \ui{Settings~> Connection} correct?
+  \item Can a browser on another device reach \code{http://server-address:3000}?
+  \item Allow FairWindSK 60 seconds to attempt automatic reconnection.
+  \item Reconfirm all safety-critical values after reconnection.
+\end{enumerate}
+
+\section{No hay aplicaciones en el lanzador}
+
+\begin{enumerate}
+  \item Confirm status shows \textit{Live}.
+  \item Are apps installed in the Signal~K App Store?
+  \item In \ui{Settings~> Connection}, tap \key{Connect} to force a reconnect and
+App Discover.
+\end{enumerate}
+
+\section{Autopilot o Anchor Icon está Greyed Out}
+
+\begin{enumerate}
+  \item Is the required plugin installed in the Signal~K App Store?
+  \item Is the plugin enabled and configured in Signal~K settings?
+  \item Is the correct plugin action path configured in
+        \ui{Settings~> Signal~K Paths}?
+\end{enumerate}
+
+\section{FairWindSK corriendo lentamente en Raspberry Pi}
+
+\begin{enumerate}
+  \item Check CPU temperature: \code{vcgencmd measure\_temp}.
+Arriba de 80°C indica el acelerador térmico --- mejorar el enfriamiento.
+  \item Check \ui{Settings~> System~> Performance} for memory usage.
+        FairWindSK should use under 250\,MB at idle.
+  \item Use a Class~A2 high-speed microSD card.
+Una tarjeta lenta es la causa más común de rendimiento sluggish en Raspberry~Pi.
+  \item Set Log Level to \textit{Off} in \ui{Settings~> System~> Diagnostics}
+para minimizar la tarjeta SD escribe.
+\end{enumerate}
+
+\chapter{Lista de comprobación de funcionamiento diario}
+\label{ch:checklist}
+
+\section*{Before Departure}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{C{0.8cm}L{12.9cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries $\square$ &
+\color{white}\sffamily\bfseries Check \\
+\midrule
+$\square$ & FairWindSK started --- status shows \textit{Live} \\
+$\square$ & Position live and plausible \\
+$\square$ & SOG updating --- valid GPS fix \\
+$\square$ & Depth updating (if fitted) \\
+$\square$ & Heading showing \\
+$\square$ & Chart plotter open; vessel in correct position \\
+$\square$ & Route or waypoint active (if proceeding to a destination) \\
+$\square$ & AIS targets visible (if AIS fitted) \\
+$\square$ & Comfort preset set for current light conditions \\
+$\square$ & Screen brightness readable from helm \\
+$\square$ & POB button location confirmed \\
+$\square$ & Autopilot available and responding (if required) \\
+$\square$ & Anchor watch available (if anchoring tonight) \\
+\bottomrule
+\end{longtable}
+
+\section*{After Arrival}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{C{0.8cm}L{12.9cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries $\square$ &
+\color{white}\sffamily\bfseries Check \\
+\midrule
+$\square$ & Return to launcher --- no active alarms \\
+$\square$ & Anchor watch set with appropriate radius (if anchoring) \\
+$\square$ & Comfort preset changed to Dusk or Night \\
+$\square$ & Track exported for logbook (if required) \\
+\bottomrule
+\end{longtable}
+
+\chapter{Tarjeta de referencia rápida}
+\label{ch:quickref}
+
+\section*{Immediate Action Guide}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3.6cm}L{4.4cm}L{5.7cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Situation &
+\color{white}\sffamily\bfseries Immediate action &
+\color{white}\sffamily\bfseries Then \\
+\midrule
+Person Over Board&
+  Tap \iconlg{alarm-pob}~\key{POB}. Once. &
+  Call MAYDAY on VHF Ch~16. Deploy SAR route. \\
+Alarma flash&
+  Tap \iconlg{alarm-general}~\key{Alarms}. Read it. &
+  Act per emergency procedures. \\
+Pantalla congelada&
+  Wait 10~s. Tap \iconlg{applications}~\key{Apps}. &
+  Check status. Try reopening the application. \\
+Shell disconnected&
+Espera 60 para la reconexión automática.&
+  If still disconnected: check Signal~K and Wi-Fi. \\
+Profundidad en agua salada&
+Revise inmediatamente con un instrumento de respaldo.&
+  Slow down. Use a hand lead or backup echo sounder. \\
+Autopilot no responde&
+  Tap \key{Stand By}. Take manual helm. &
+  Investigate the cause before re-engaging. \\
+Data stale everywhere&
+Revisa el estado de conexión.&
+  Allow recovery or check Signal~K server. \\
+Datos faltantes para un valor&
+Comprueba con otra fuente.&
+  Check the sensor and the Signal~K path. \\
+\bottomrule
+\end{longtable}
+
+\section*{One-Tap Navigation}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{5.8cm}L{7.9cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Goal &
+\color{white}\sffamily\bfseries Action \\
+\midrule
+Return to home screen              & Tap \iconlg{applications}~\key{Apps} --- always available \\
+Switch to another open app         & Tap its icon in the open-apps strip \\
+Change comfort preset              & \ui{Settings~> Comfort} \\
+Check connection status            & Status area in Top Bar (right side) \\
+Mark anchor position               & Tap \iconlg{anchor-iec}~\key{Anchor} \textrightarrow{} \iconlg{anchor-drop}~\key{Drop} \\
+Cancel anchor watch                & Tap \iconlg{anchor-iec}~\key{Anchor} \textrightarrow{} \iconlg{anchor-raise}~\key{Raise} \\
+Cancel a POB event                 & POB bar \textrightarrow{} select incident \textrightarrow{} \key{Cancel} \\
+Export voyage track                & \ui{My~Data~> Tracks} \textrightarrow{} \key{Export} \\
+\bottomrule
+\end{longtable}
+
+\chapter{Notas de seguridad}
+\label{ch:safety}
+
+\begin{warningbox}
+FairWindSK es una ayuda para la navegación.
+No reemplaza la navegación, la vigilancia, el papel o los gráficos propulsados independientemente,
+o cualquier procedimiento de seguridad certificado.
+El amo y la tripulación del buque siguen siendo los únicos responsables de la conducción segura de la nave
+el viaje.
+\end{warningbox}
+
+\begin{warningbox}
+Siempre revisa información crítica de seguridad --- posición, profundidad, rumbo,
+riesgo de colisión --- con instrumentos independientes antes de actuar en él.
+Si FairWindSK contradice lo que ves fuera del barco o en instrumentos de confianza,
+Confía en tus ojos y referencias de navegación independientes primero.
+\end{warningbox}
+
+\begin{warningbox}
+La profundidad perdida no es cero profundidad.
+Un valor perdido significa que la medición no está disponible.
+Tratarlo como completamente desconocido y navegar con toda precaución.
+\end{warningbox}
+
+\begin{warningbox}
+Después de una reconexión o reinicio del servidor, reconfirme todos los valores clave de navegación antes
+dependiendo de ellos.
+Dale tiempo al GPS, la profundidad, el viento y los sensores de rumbo para volver a consultar y establecer.
+\end{warningbox}
+
+\begin{warningbox}
+Los comandos de Autopilot deben confirmarse contra el comportamiento real del buque.
+Nunca asuma un cambio de modo entró en vigor porque el botón respondió.
+Prepárate para desconectar y tomar el timón manual en cualquier momento.
+\end{warningbox}
+
+\begin{warningbox}
+Activar una alarma en FairWindSK eleva una notificación Signal~K a bordo
+red.
+No se pone en contacto con guardacostas, MRCC, ni con ninguna autoridad externa.
+Haga una llamada de emergencia DSC y/o voz en VHF Channel~16 en cualquier emergencia real.
+\end{warningbox}
+
+\begin{warningbox}
+En una emergencia, el manejo de botes priorizados, seguridad de la tripulación y observación directa sobre
+cualquier interacción con una pantalla electrónica.
+Una pantalla es una herramienta; su navegación es su seguridad.
+\end{warningbox}
+
+\vfill
+\begin{center}
+  {\color{Teal}\rule{0.5\textwidth}{1pt}}\\[10pt]
+  {\Large\sffamily\bfseries\color{Navy}Safe sailing.}\\[8pt]
+  {\normalsize\sffamily\color{gray}
+    The OpenFairWind Team \textbullet{}
+    University of Naples 'Parthenope'}\\[4pt]
+  {\small\sffamily\color{Teal}\url{https://github.com/OpenFairWind/FairWindSK}}
+\end{center}

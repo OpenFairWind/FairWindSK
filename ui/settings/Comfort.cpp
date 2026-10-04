@@ -14,6 +14,7 @@
 #include <QHBoxLayout>
 #include <QIcon>
 #include <QLabel>
+#include <QMessageBox>
 #include <QPushButton>
 #include <QSaveFile>
 #include <QSignalBlocker>
@@ -311,6 +312,16 @@ namespace fairwindsk::ui::settings {
 
     void Comfort::resetAllPresets() {
         if (!m_settings || !m_settings->getConfiguration()) {
+            return;
+        }
+
+        // Wiping six presets at once is not recoverable: ask before doing it.
+        if (fairwindsk::ui::drawer::question(
+                this,
+                tr("Reset all comfort presets"),
+                tr("Clear custom colors, images, and QSS for every comfort preset") + QStringLiteral("?"),
+                QMessageBox::Yes | QMessageBox::No,
+                QMessageBox::No) != QMessageBox::Yes) {
             return;
         }
 
@@ -641,6 +652,8 @@ namespace fairwindsk::ui::settings {
 
         if (path.isEmpty()) {
             m_backgroundPathLabel->setText(tr("No image selected"));
+            // Drop the path of the previous image, otherwise the tooltip keeps advertising it.
+            m_backgroundPathLabel->setToolTip(QString());
             if (m_clearBackgroundButton) {
                 m_clearBackgroundButton->setEnabled(false);
             }

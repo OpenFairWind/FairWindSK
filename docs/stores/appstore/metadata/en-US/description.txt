@@ -1,0 +1,25 @@
+FairWindSK is a touch-first marine Multi-Functional Display and Signal K application host for your vessel.
+
+ONE HELM, ONE CLEAR WORKSPACE
+
+Keep live marine instruments, vessel operations, configuration, and embedded Signal K web applications inside a consistent single-window interface designed for use at the helm.
+
+MARINE INSTRUMENTS
+
+Monitor position, course and speed over ground, heading, speed through water, depth, waypoint information, bearing, distance, ETA, cross-track error, velocity made good, connection health, and more.
+
+YOUR SIGNAL K APPLICATIONS
+
+Discover compatible applications from your selected Signal K server, organize them into pages and sub-pages, and launch them without leaving the FairWindSK workspace.
+
+VESSEL DATA AND SAFETY
+
+Work with waypoints, routes, regions, notes, charts, tracks, and files. Use Person Over Board, anchor, alarm, and compatible autopilot workflows from the shared operational shell.
+
+BUILT FOR TOUCH
+
+Large controls, high-contrast presentation, and Default, Dawn, Day, Sunset, Dusk, and Night comfort presets support clear operation in changing light.
+
+FairWindSK requires access to a compatible Signal K server for server-backed data and applications. Feature availability depends on the server, installed plugins, connected sensors, and operator configuration.
+
+FairWindSK is not a certified navigation, collision-avoidance, or lifesaving device. Always maintain a proper lookout and use approved charts, instruments, and safety procedures.

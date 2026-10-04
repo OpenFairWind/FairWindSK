@@ -85,7 +85,14 @@ namespace fairwindsk::ui::widgets {
             definition.id = jsonString(object, "id");
             definition.name = jsonString(object, "name", definition.id);
             definition.icon = jsonString(object, "icon");
-            definition.signalKPath = jsonString(object, "signalKPath");
+            definition.signalKPath = jsonString(object, "signalKPath").trimmed();
+            // Data widgets always subscribe in the own-vessel context, so a path that already
+            // carries the "vessels.self." prefix would be requested as vessels/<self>/vessels/self/...
+            // and never deliver a value. Earlier factory defaults shipped COG and SOG that way.
+            const QString selfPrefix = QStringLiteral("vessels.self.");
+            if (definition.signalKPath.startsWith(selfPrefix)) {
+                definition.signalKPath.remove(0, selfPrefix.size());
+            }
             definition.sourceUnit = jsonString(object, "sourceUnit");
             definition.defaultUnit = jsonString(object, "defaultUnit");
             definition.updatePolicy = normalizedUpdatePolicy(jsonString(object, "updatePolicy", QStringLiteral("instant")));

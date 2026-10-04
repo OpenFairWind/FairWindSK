@@ -1,0 +1,1 @@
+{"$schema":"https://json-schema.org/draft/2020-12/schema","title":"FairWindSK Signal K path labels","type":"object","required":["paths"],"properties":{"paths":{"type":"object","minProperties":1,"additionalProperties":{"type":"string","minLength":1}}},"additionalProperties":false}

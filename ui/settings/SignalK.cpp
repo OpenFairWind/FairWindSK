@@ -30,37 +30,47 @@ namespace fairwindsk::ui::settings {
 
             if (m_signalk.contains("paths") && m_signalk["paths"].is_object()) {
 
-                auto signalkPaths =  m_settings->getConfiguration()->getRoot()["signalk"];
+                // Read the configured mappings without creating the node as a side effect.
+                const auto &root = m_settings->getConfiguration()->getRoot();
+                const auto signalkPaths = root.contains("signalk") && root["signalk"].is_object()
+                                              ? root["signalk"]
+                                              : nlohmann::json::object();
 
                 int row = 1;
                 for (const auto &pathItem: m_signalk["paths"].items()) {
 
-                    auto key = pathItem.key();
+                    const auto &key = pathItem.key();
 
-
-                    if (signalkPaths.contains(key) && signalkPaths[key].is_string()) {
-
-                        auto currentPath = signalkPaths[key].get<std::string>();
-
-                        if (m_signalk["paths"].contains(key) && m_signalk["paths"][key].is_string()) {
-
-                            auto text = QString::fromStdString(m_signalk["paths"][key].get<std::string>());
-
-                            const auto textLabel = new QLabel();
-                            textLabel->setText(text);
-
-                            const auto lineEdit = new QLineEdit();
-                            lineEdit->setObjectName(QString::fromStdString(key));
-                            lineEdit->setText(QString::fromStdString(currentPath));
-
-                            ui->gridLayout_Paths->addWidget(textLabel, row, 1);
-                            ui->gridLayout_Paths->addWidget(lineEdit, row, 2);
-
-                            row++;
-
-                            connect(lineEdit, &QLineEdit::textChanged, this, &SignalK::onTextChanged);
-                        }
+                    // Only catalog entries with a readable description become a row.
+                    if (!pathItem.value().is_string()) {
+                        continue;
                     }
+
+                    // A mapping missing from an older configuration file is shown empty,
+                    // so it can still be filled in from this page.
+                    const auto currentPath = signalkPaths.contains(key) && signalkPaths[key].is_string()
+                                                 ? signalkPaths[key].get<std::string>()
+                                                 : std::string();
+
+                    const auto text = QString::fromStdString(pathItem.value().get<std::string>());
+
+                    const auto textLabel = new QLabel(this);
+                    textLabel->setText(text);
+
+                    const auto lineEdit = new QLineEdit(this);
+                    lineEdit->setObjectName(QString::fromStdString(key));
+                    lineEdit->setText(QString::fromStdString(currentPath));
+                    // Signal K paths are identifiers: keep keyboards from "correcting" them.
+                    lineEdit->setInputMethodHints(Qt::ImhNoAutoUppercase | Qt::ImhNoPredictiveText);
+                    lineEdit->setAccessibleName(text);
+                    textLabel->setBuddy(lineEdit);
+
+                    ui->gridLayout_Paths->addWidget(textLabel, row, 1);
+                    ui->gridLayout_Paths->addWidget(lineEdit, row, 2);
+
+                    row++;
+
+                    connect(lineEdit, &QLineEdit::textChanged, this, &SignalK::onTextChanged);
                 }
             }
         }
@@ -73,12 +83,20 @@ namespace fairwindsk::ui::settings {
     }
 
     void SignalK::onTextChanged(const QString &text) {
-        // get sender
-        auto lineEdit = qobject_cast<QLineEdit*>(sender());
+        // Identify the edited mapping from the line edit that emitted the signal.
+        const auto lineEdit = qobject_cast<QLineEdit*>(sender());
+        if (!lineEdit) {
+            return;
+        }
 
-        qDebug() << "onTextChanged: " << lineEdit->objectName() << " --> " << lineEdit->text();
+        // Repair a missing or malformed "signalk" node before writing into it.
+        auto &root = m_settings->getConfiguration()->getRoot();
+        if (!root.contains("signalk") || !root["signalk"].is_object()) {
+            root["signalk"] = nlohmann::json::object();
+        }
 
-        m_settings->getConfiguration()->getRoot()["signalk"][lineEdit->objectName().toStdString()] = lineEdit->text().toStdString();
+        // Stray spaces would silently break the subscription path.
+        root["signalk"][lineEdit->objectName().toStdString()] = text.trimmed().toStdString();
         m_settings->markDirty(FairWindSK::RuntimeSignalKPaths, 400);
     }
 } // fairwindsk::ui::settings

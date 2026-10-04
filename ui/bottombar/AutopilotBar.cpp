@@ -4,6 +4,8 @@
 
 // You may need to build the project (run Qt uic code generator) to get "ui_Autopilot.h" resolved
 
+#include <QTimer>
+#include <QDateTime>
 #include <QtWidgets/QAbstractButton>
 #include "AutopilotBar.hpp"
 
@@ -55,6 +57,9 @@ namespace fairwindsk::ui::bottombar {
         m_slider->setRange(rudderMin, rudderMax);
         m_slider->setTickInterval(rudderStep);
         m_slider->setEnabled(false);
+        // The rudder slider is an indicator: it must never look or act like a control.
+        m_slider->setAttribute(Qt::WA_TransparentForMouseEvents, true);
+        m_slider->setFocusPolicy(Qt::NoFocus);
         m_slider->setTickPosition(QSlider::TicksBelow);
 
 
@@ -244,8 +249,20 @@ namespace fairwindsk::ui::bottombar {
     void AutopilotBar::updateState(const QJsonObject &update) {
         m_lastStateUpdate = update;
 
-        const QString value = fairwindsk::signalk::Client::getStringFromUpdateByPath(update);
-        const bool hasValue = !update.isEmpty() && !value.isEmpty();
+        // A command answer is being shown: the stream repeats the state every second and
+        // would wipe the message before the operator can read it.
+        if (m_feedbackUntil.isValid() && QDateTime::currentDateTimeUtc() < m_feedbackUntil) {
+            return;
+        }
+
+        QString value = fairwindsk::signalk::Client::getStringFromUpdateByPath(update);
+        bool hasValue = !update.isEmpty() && !value.isEmpty();
+        // Some pilots report their state only through the autopilot API: keep showing the state
+        // read there instead of falling back to "NO PILOT" when the stream has nothing to say.
+        if (!hasValue && m_autopilotAvailable && !m_lastApiState.isEmpty()) {
+            value = m_lastApiState;
+            hasValue = true;
+        }
         fairwindsk::ui::widgets::applySignalKMetricPresentation(
             ui->label_State,
             nullptr,
@@ -377,6 +394,9 @@ namespace fairwindsk::ui::bottombar {
         ui->toolButton_NextWPT->setEnabled(enabled);
         ui->toolButton_Wind->setEnabled(enabled);
         ui->toolButton_PTack->setEnabled(enabled);
+        // Gybe buttons command the pilot too: they follow the same availability.
+        ui->toolButton_PGybe->setEnabled(enabled);
+        ui->toolButton_SGybe->setEnabled(enabled);
         ui->toolButton_Minus10->setEnabled(enabled);
         ui->toolButton_Minus1->setEnabled(enabled);
         ui->toolButton_Plus1->setEnabled(enabled);
@@ -392,7 +412,8 @@ namespace fairwindsk::ui::bottombar {
         const auto client = fairWindSK->getSignalKClient();
         const auto result = client->signalkGet(autopilotUrl("options"));
 
-        m_autopilotAvailable = !result.isEmpty() && !result.contains("statusCode");
+        // Available only when the server really answered with the pilot options.
+        m_autopilotAvailable = client->lastRequestSucceeded() && !result.isEmpty() && !result.contains("statusCode");
         setAutopilotControlsEnabled(m_autopilotAvailable);
 
         if (!m_autopilotAvailable) {
@@ -404,13 +425,41 @@ namespace fairwindsk::ui::bottombar {
             return;
         }
 
-        if (result.contains("modes") && result["modes"].isArray()) {
-            const auto modes = result["modes"].toArray();
-            ui->toolButton_Route->setVisible(modes.contains("route"));
-            ui->toolButton_Wind->setVisible(modes.contains("wind"));
-            ui->toolButton_Auto->setVisible(modes.contains("auto"));
-            ui->toolButton_Dodge->setVisible(modes.contains("dodge"));
+        // The autopilot API describes what the pilot can do in two lists: "states" (standby, auto,
+        // wind, route... as objects with a name) and "modes". Providers differ in which one they
+        // fill, so both are read; before, only "modes" was, and a pilot listing its capabilities
+        // as states showed no Auto/Wind/Route buttons at all.
+        m_autopilotStates.clear();
+        m_autopilotModes.clear();
+        for (const auto &stateValue : result.value("states").toArray()) {
+            const QString name = stateValue.isObject() ? stateValue.toObject().value("name").toString() : stateValue.toString();
+            if (!name.isEmpty()) {
+                m_autopilotStates.append(name);
+            }
         }
+        for (const auto &modeValue : result.value("modes").toArray()) {
+            const QString name = modeValue.isObject() ? modeValue.toObject().value("name").toString() : modeValue.toString();
+            if (!name.isEmpty()) {
+                m_autopilotModes.append(name);
+            }
+        }
+
+        // Actions (tack, gybe, dodge...) are optional in the API: collect the ones on offer.
+        QStringList actions;
+        for (const auto &actionValue : result.value("actions").toArray()) {
+            const QString id = actionValue.isObject() ? actionValue.toObject().value("id").toString() : actionValue.toString();
+            if (!id.isEmpty()) {
+                actions.append(id);
+            }
+        }
+
+        const auto supports = [this](const QString &name) {
+            return m_autopilotStates.contains(name) || m_autopilotModes.contains(name);
+        };
+        ui->toolButton_Route->setVisible(supports(QStringLiteral("route")));
+        ui->toolButton_Wind->setVisible(supports(QStringLiteral("wind")));
+        ui->toolButton_Auto->setVisible(supports(QStringLiteral("auto")));
+        ui->toolButton_Dodge->setVisible(supports(QStringLiteral("dodge")) || actions.contains(QStringLiteral("dodge")));
     }
 
     QJsonObject AutopilotBar::setMode(const QString& mode) {
@@ -420,7 +469,11 @@ namespace fairwindsk::ui::bottombar {
 
         const auto client = FairWindSK::getInstance()->getSignalKClient();
         auto payload = R"({ "value": ")" + mode + R"(" })";
-        result = client->signalkPut(autopilotUrl("mode"), payload);
+        // Address the list the pilot actually advertises the value in.
+        const QString target = m_autopilotStates.contains(mode) || !m_autopilotModes.contains(mode)
+                                   ? QStringLiteral("state")
+                                   : QStringLiteral("mode");
+        result = client->signalkPut(autopilotUrl(target), payload);
         checkStateAndUpdateUI(result);
 
         // Return the value
@@ -484,6 +537,11 @@ namespace fairwindsk::ui::bottombar {
         // Get the Signal K client
         auto client = FairWindSK::getInstance()->getSignalKClient();
 
+        // Without a configured path there is nothing to command.
+        if (!m_signalkPaths.contains("autopilot.target.windAngle") || !m_signalkPaths["autopilot.target.windAngle"].is_string()) {
+            return {};
+        }
+
         // Get the path
         auto path = "vessels.self." + QString::fromStdString(m_signalkPaths["autopilot.target.windAngle"].get<std::string>());
 
@@ -511,7 +569,20 @@ namespace fairwindsk::ui::bottombar {
         return result;
     }
 
+    void AutopilotBar::showCommandFeedback(const QString &text) {
+        // Keep the pilot's answer on the panel for a few seconds, then return to the live state.
+        constexpr int kFeedbackMs = 5000;
+        m_feedbackUntil = QDateTime::currentDateTimeUtc().addMSecs(kFeedbackMs);
+        ui->label_State->setText(text);
+        QTimer::singleShot(kFeedbackMs + 50, this, [this]() { updateState(m_lastStateUpdate); });
+    }
+
     void AutopilotBar::checkStateAndUpdateUI(QJsonObject result) {
+
+        // The command has just been sent: remember how it ended before any other request runs.
+        const auto commandClient = FairWindSK::getInstance()->getSignalKClient();
+        const bool commandAccepted = commandClient->lastRequestSucceeded();
+        const int commandStatus = commandClient->lastHttpStatus();
 
         // Check if the result has the status code
         if (result.contains("statusCode") && result["statusCode"].isDouble()) {
@@ -537,7 +608,8 @@ namespace fairwindsk::ui::bottombar {
                         if (result["value"].isString()) {
 
                             // Get the string and update the state
-                            ui->label_State->setText(result["value"].toString());
+                            m_lastApiState = result["value"].toString();
+                            ui->label_State->setText(m_lastApiState);
                         }
                     }
                 }
@@ -547,16 +619,22 @@ namespace fairwindsk::ui::bottombar {
                 if (result.contains("message") && result["message"].isString()) {
 
                     // Update the UI with the message
-                    ui->label_State->setText(result["message"].toString());
+                    showCommandFeedback(result["message"].toString());
                 } else {
 
                     // Update the UI with the status code
-                    ui->label_State->setText(tr("Error: %1").arg(result["statusCode"].toInt()));
+                    showCommandFeedback(tr("Error: %1").arg(result["statusCode"].toInt()));
                 }
             }
         }
 
         refreshAutopilotOptions();
+
+        // A refusal without a structured reply (access denied, no answer) must still be visible
+        // on the pilot panel, where the operator is looking.
+        if (!commandAccepted && !result.contains("statusCode")) {
+            showCommandFeedback(tr("Error: %1").arg(commandStatus));
+        }
     }
 
     AutopilotBar::~AutopilotBar() {

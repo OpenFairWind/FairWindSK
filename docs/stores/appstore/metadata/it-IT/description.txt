@@ -1,0 +1,25 @@
+FairWindSK è un display marino multifunzione touch e un host per applicazioni Signal K dedicato alla tua imbarcazione.
+
+UNA SOLA POSTAZIONE, UN AMBIENTE CHIARO
+
+Riunisce strumenti marini in tempo reale, operazioni di bordo, configurazione e applicazioni web Signal K in un'interfaccia coerente a finestra singola, progettata per l'uso al timone.
+
+STRUMENTI MARINI
+
+Controlla posizione, rotta e velocità rispetto al fondo, prora, velocità sull'acqua, profondità, waypoint, rilevamento, distanza, ETA, errore di fuori rotta, VMG, stato della connessione e altro.
+
+LE TUE APPLICAZIONI SIGNAL K
+
+Trova le applicazioni compatibili sul server Signal K selezionato, organizzale in pagine e sottopagine e avviale senza uscire dall'ambiente FairWindSK.
+
+DATI DI BORDO E SICUREZZA
+
+Gestisci waypoint, rotte, regioni, note, carte, tracce e file. Utilizza le funzioni Persona Fuori Bordo, ancora, allarmi e, quando compatibili, pilota automatico.
+
+PROGETTATO PER IL TOUCH
+
+Comandi grandi, alto contrasto e profili Default, Alba, Giorno, Tramonto, Crepuscolo e Notte favoriscono la leggibilità nelle diverse condizioni di luce.
+
+FairWindSK richiede un server Signal K compatibile per dati e applicazioni forniti dal server. Le funzioni disponibili dipendono dal server, dai plugin installati, dai sensori connessi e dalla configurazione dell'operatore.
+
+FairWindSK non è un dispositivo certificato per la navigazione, la prevenzione delle collisioni o il salvataggio. Mantieni sempre un'adeguata vedetta e usa carte, strumenti e procedure di sicurezza approvati.

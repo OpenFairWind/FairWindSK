@@ -18,7 +18,11 @@
 #include <functional>
 #include <nlohmann/json.hpp>
 
+#include "FairWindSK.hpp"
 #include "Settings.hpp"
+
+class QLabel;
+class QProgressBar;
 
 namespace fairwindsk::ui::settings {
     QT_BEGIN_NAMESPACE
@@ -126,12 +130,15 @@ namespace fairwindsk::ui::settings {
         void saveAppsDetails();
         void savePageDetails();
         QString uniqueAppName(const QString &baseName) const;
+        bool isAndroidApplication(const QString &appName) const;
+        bool currentAvailableApplicationIsAndroid() const;
         void refreshAvailableAppActionButtons() const;
         void refreshPageTreeActionButtons() const;
         void rebuildAvailableAppsList();
         void rebuildPageTree();
         void rebuildPageEditor();
-        bool synchronizeAvailableApps(bool showErrors);
+        bool synchronizeAvailableApps(bool showErrors, bool requestRefresh = true);
+        void updateAppsLoadingState(FairWindSK::AppsState state, const QString &stateText);
         void normalizeLauncherLayout();
         void normalizeLauncherNodes(nlohmann::json &nodes);
         void appendOverflowPages(nlohmann::json &nodes, int insertIndex, const QStringList &overflowItems, const QString &baseName);
@@ -198,6 +205,9 @@ namespace fairwindsk::ui::settings {
         LauncherPageGridWidget *m_pageGrid = nullptr;
         AppDetailsWidget *m_appDetailsWidget = nullptr;
         PageDetailsWidget *m_pageDetailsWidget = nullptr;
+        QWidget *m_loadingPanel = nullptr;
+        QLabel *m_loadingLabel = nullptr;
+        QProgressBar *m_loadingProgressBar = nullptr;
         QTimer *m_appDetailsSaveTimer = nullptr;
         QTimer *m_pageDetailsSaveTimer = nullptr;
     };

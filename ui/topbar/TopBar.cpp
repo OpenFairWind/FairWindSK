@@ -78,6 +78,8 @@ namespace fairwindsk::ui::topbar {
 
     QWidget *TopBar::createContextWidget() {
         auto *container = new QWidget(this);
+        // Reusable shell widgets stay hidden until the configured layout assigns their position.
+        container->hide();
         auto *layout = new QHBoxLayout(container);
         layout->setContentsMargins(0, 0, 0, 0);
         layout->setSpacing(6);
@@ -90,6 +92,8 @@ namespace fairwindsk::ui::topbar {
         auto *container = new QWidget(this);
         container->setObjectName(QStringLiteral("widget_StatusBlock"));
         container->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+        // Avoid exposing an unconfigured status badge at the parent's top-left origin.
+        container->hide();
 
         auto *layout = new QHBoxLayout(container);
         layout->setContentsMargins(0, 0, 0, 0);
@@ -173,6 +177,9 @@ namespace fairwindsk::ui::topbar {
             ui->horizontalLayout,
             m_dynamicLayoutWidgets,
             m_dataWidgets);
+        // A reusable widget omitted from the active layout must never float above another control.
+        m_contextWidget->hide();
+        m_statusWidget->hide();
         ui->toolButton_UL->setVisible(true);
         ui->horizontalLayout->addWidget(ui->toolButton_UL, 0, Qt::AlignVCenter);
 
@@ -499,9 +506,9 @@ namespace fairwindsk::ui::topbar {
         m_currentApp = appItem;
         if (m_currentApp) {
             auto *widget = m_currentApp->getWidget();
-            ui->toolButton_UR->setIcon(m_currentApp->getIcon(true));
+            ui->toolButton_UR->setIcon(m_currentApp->getIcon(false));
             ui->toolButton_UR->setIconSize(QSize(36, 36));
-            ui->label_ApplicationName->setText(m_currentApp->getDisplayName(true));
+            ui->label_ApplicationName->setText(m_currentApp->getDisplayName(false));
             ui->label_ApplicationName->setToolTip(m_currentApp->getDescription());
             ui->toolButton_UR->setEnabled(qobject_cast<fairwindsk::ui::web::Web *>(widget) != nullptr);
         } else {

@@ -311,9 +311,6 @@ namespace fairwindsk::ui::widgets {
         // Stretch mode and collapse the name column to icon-only width.
         m_view->header()->setStretchLastSection(false);
         m_view->header()->setSortIndicatorShown(false);
-        m_view->header()->setSectionResizeMode(0, QHeaderView::Stretch);
-        m_view->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
-        m_view->header()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
         m_view->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
         m_view->setMinimumHeight(0);
         m_view->sortByColumn(0, Qt::AscendingOrder);
@@ -344,6 +341,10 @@ namespace fairwindsk::ui::widgets {
         }
 
         m_view->setModel(m_model);
+        // Configure only sections created by the model; Android's Qt build rejects pre-model indexes.
+        m_view->header()->setSectionResizeMode(0, QHeaderView::Stretch);
+        m_view->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+        m_view->header()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
         m_view->hideColumn(2);
         browserFrame->setMinimumHeight(0);
 

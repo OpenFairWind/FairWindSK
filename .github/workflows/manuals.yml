@@ -1,0 +1,66 @@
+name: Manuals
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "docs/**"
+      - "ui/**"
+      - "resources/i18n/**"
+      - "main.cpp"
+      - "scripts/manual/**"
+      - ".github/workflows/manuals.yml"
+  push:
+    branches: [main, master]
+    paths:
+      - "docs/**"
+      - "ui/**"
+      - "resources/i18n/**"
+      - "main.cpp"
+      - "scripts/manual/**"
+      - ".github/workflows/manuals.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: English, French, Spanish, and Italian PDFs
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: "6.8.3"
+          arch: linux_gcc_64
+          modules: qtpositioning qtvirtualkeyboard qtwebchannel qtwebengine qtwebsockets
+          cache: true
+      - name: Install application and manual dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes cmake ninja-build g++ dbus-x11 xvfb xauth fonts-dejavu \
+            libavahi-client-dev libgl1-mesa-dev libxkbcommon-x11-0 nlohmann-json3-dev poppler-utils \
+            texlive-xetex texlive-latex-extra texlive-fonts-recommended
+      - name: Build FairWindSK
+        run: |
+          cmake -S . -B build-manual -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
+          cmake --build build-manual --target QtZeroConf qhotkey --parallel 2
+          cmake --build build-manual --parallel 2
+      - name: Capture screenshots and build manuals
+        env:
+          QTWEBENGINE_DISABLE_SANDBOX: "1"
+          LIBGL_ALWAYS_SOFTWARE: "1"
+        run: xvfb-run -a -s '-screen 0 1280x800x24' scripts/manual/build_manuals.sh --build-dir build-manual
+      - name: Upload manuals
+        uses: actions/upload-artifact@v4
+        with:
+          name: fairwindsk-owner-manuals
+          path: |
+            docs/manual/english/fairwindsk_manual_en.pdf
+            docs/manual/french/fairwindsk_manual_fr.pdf
+            docs/manual/spanish/fairwindsk_manual_es.pdf
+            docs/manual/italian/fairwindsk_manual_it.pdf
+          if-no-files-found: error

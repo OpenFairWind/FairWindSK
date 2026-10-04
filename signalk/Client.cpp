@@ -16,6 +16,7 @@
 #include <QUrlQuery>
 
 #include "Client.hpp"
+#include "ProtocolUtils.hpp"
 #include "FairWindSK.hpp"
 #include "Waypoint.hpp"
 #include <QTimer>
@@ -58,6 +59,11 @@ namespace fairwindsk::signalk {
 
         if (!m_Cookie.isEmpty()) {
             request.setRawHeader("Cookie", m_Cookie.toLatin1());
+        }
+
+        // The bearer header is the documented way to authenticate REST calls with an access token.
+        if (!m_Token.isEmpty()) {
+            request.setRawHeader("Authorization", "Bearer " + m_Token.toLatin1());
         }
 
         return request;
@@ -116,9 +122,6 @@ namespace fairwindsk::signalk {
             if (!cookie.isEmpty()) {
                 const_cast<Client *>(this)->m_Cookie = cookie;
 
-                if (m_Debug) {
-                    qDebug() << "m_Cookie: " << m_Cookie;
-                }
             }
         }
 
@@ -153,10 +156,61 @@ namespace fairwindsk::signalk {
         }
     }
 
-    void Client::endRequest(const bool success, const QUrl &url, const int httpStatus, const QString &message) {
+    void Client::releaseRequest() {
+        // Balance beginRequest() and tell the UI how many requests are still running.
         m_activeRequests = std::max(0, m_activeRequests - 1);
         emit requestActivityChanged(m_activeRequests > 0);
         emit requestCountChanged(m_activeRequests);
+    }
+
+    void Client::cancelPendingDiscovery() {
+        // Any reply carrying an older generation is ignored when it finally completes.
+        ++m_discoveryGeneration;
+        m_reconnectAttemptInFlight = false;
+    }
+
+    bool Client::lastRequestSucceeded() const {
+        return m_lastRequestSucceeded;
+    }
+
+    int Client::lastHttpStatus() const {
+        return m_lastHttpStatus;
+    }
+
+    bool Client::handleRejectedToken(const int httpStatus, const QByteArray &body) {
+        // Signal K answers "bad auth token" when the token is expired, revoked or issued by
+        // another server. A plain 401 on a write only means "not enough permission".
+        if (httpStatus != 401 || m_Token.isEmpty() || !body.contains("bad auth token")) {
+            return false;
+        }
+
+        qWarning() << "SignalK::Client access token rejected by" << m_Url << "- continuing in public mode";
+        // Drop the credential so reads keep working in public mode.
+        clearTokenAndCookie();
+        emit serverMessageChanged(tr("Access token rejected: request a new token in Settings > Connection"));
+        emit tokenRejected();
+        return true;
+    }
+
+    void Client::endRequest(const bool success, const QUrl &url, const int httpStatus, const QString &message,
+                            const bool recordOutcome) {
+        releaseRequest();
+
+        // Remember the outcome so callers can tell a refused write from an accepted one.
+        // Background requests finish at arbitrary moments and must not overwrite the result
+        // of the command the operator has just issued.
+        if (recordOutcome) {
+            m_lastRequestSucceeded = success && (httpStatus == 0 || (httpStatus >= 200 && httpStatus < 300));
+            m_lastHttpStatus = httpStatus;
+        }
+
+        // Permission problems deserve a message the operator can act on.
+        if (httpStatus == 401 || httpStatus == 403) {
+            emit serverMessageChanged(m_Token.isEmpty()
+                                          ? tr("Access denied: request an access token in Settings > Connection")
+                                          : tr("Access denied: the access token does not grant this permission"));
+            return;
+        }
 
         const bool suppressMessage = shouldSuppressServerMessage(url, httpStatus);
         if (success) {
@@ -182,6 +236,11 @@ namespace fairwindsk::signalk {
     }
 
     bool Client::shouldSuppressServerMessage(const QUrl &url, const int httpStatus) const {
+        // A 404 on a read means the server has no value for that path (for example course data
+        // with no active route): that is "no data", not a fault to show on the helm display.
+        if (httpStatus == 404) {
+            return true;
+        }
         return httpStatus == 501 && url.path().startsWith(QStringLiteral("/signalk/v2/api/history"));
     }
 
@@ -209,6 +268,13 @@ namespace fairwindsk::signalk {
             }
         }
 
+        // With both channels up there is one thing to say. Otherwise the summary flipped between
+        // "REST online" and "Stream online" on every request and every delta, and each flip was
+        // broadcast as a health change to the whole interface.
+        if (m_restHealthy && m_streamHealthy) {
+            summary = tr("REST + Stream online");
+        }
+
         const ConnectionHealthState state = currentConnectionHealthState();
         const bool serverHealthy = m_restHealthy && m_streamHealthy;
         if (m_connectivityStateEmitted &&
@@ -216,8 +282,8 @@ namespace fairwindsk::signalk {
             m_lastStreamHealthyEmitted == m_streamHealthy &&
             m_lastServerHealthyEmitted == serverHealthy &&
             m_lastConnectionHealthStateEmitted == state &&
-            m_lastStreamActivityEmitted == m_lastStreamActivity &&
             m_lastConnectivitySummaryEmitted == summary) {
+            // Activity timestamps change for every delta, but they do not represent a health-state change.
             return;
         }
 
@@ -226,7 +292,6 @@ namespace fairwindsk::signalk {
         m_lastStreamHealthyEmitted = m_streamHealthy;
         m_lastServerHealthyEmitted = serverHealthy;
         m_lastConnectionHealthStateEmitted = state;
-        m_lastStreamActivityEmitted = m_lastStreamActivity;
         m_lastConnectivitySummaryEmitted = summary;
 
         emit serverHealthChanged(serverHealthy, summary);
@@ -303,6 +368,8 @@ namespace fairwindsk::signalk {
         qInfo() << "SignalK::Client::init entered";
         m_connectionParams = params;
         m_reconnectTimer.stop();
+        // Drop any discovery still in flight: its answer belongs to the previous settings.
+        cancelPendingDiscovery();
 
         // Get the FairWindSK instance
         auto fairWindSK = fairwindsk::FairWindSK::getInstance();
@@ -311,8 +378,9 @@ namespace fairwindsk::signalk {
         // Reset websocket signal wiring before reconnecting.
         disconnect(&m_WebSocket, nullptr, this, nullptr);
         if (m_WebSocket.state() != QAbstractSocket::UnconnectedState) {
+            // abort() already tears the socket down; a following close() would try to write
+            // a close frame to the dead socket and only log "device not open".
             m_WebSocket.abort();
-            m_WebSocket.close();
         }
 
         // Connect the on connected event
@@ -320,8 +388,21 @@ namespace fairwindsk::signalk {
 
         // Connect the on disconnected event
         connect(&m_WebSocket, &QWebSocket::disconnected, this, &Client::onDisconnected, Qt::UniqueConnection);
-        connect(&m_WebSocket, &QWebSocket::errorOccurred, this, [this](QAbstractSocket::SocketError error) {
+        // Qt 6.5 renamed the WebSocket error signal to match QAbstractSocket.
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+        const auto webSocketErrorSignal = &QWebSocket::errorOccurred;
+#else
+        // Raspberry Pi OS Bookworm ships Qt 6.4 with the original overloaded signal name.
+        const auto webSocketErrorSignal = qOverload<QAbstractSocket::SocketError>(&QWebSocket::error);
+#endif
+        // Log transport failures through the signal exposed by the selected Qt version.
+        connect(&m_WebSocket, webSocketErrorSignal, this, [this](QAbstractSocket::SocketError error) {
             qWarning() << "SignalK::Client websocket error" << error << m_WebSocket.errorString();
+            // Some failures (for example a refused handshake) never emit disconnected(),
+            // so make sure the recovery loop is armed; scheduleReconnect() ignores duplicates.
+            if (m_Active && !m_Url.isEmpty() && m_WebSocket.state() == QAbstractSocket::UnconnectedState) {
+                scheduleReconnect();
+            }
         });
 
         // Check if the url is present in parameters
@@ -379,15 +460,20 @@ namespace fairwindsk::signalk {
             qDebug() << "SignalKAPIClient::onInit(" << params << ")";
 
         if (m_Active) {
-            setRestHealth(false, tr("Connecting to Signal K"));
-            setStreamHealth(false, tr("Connecting to Signal K"));
+            // Drop both flags before notifying, so listeners never see a half-updated state.
+            m_restHealthy = false;
+            m_streamHealthy = false;
+            emitConnectivityState(tr("Connecting to Signal K"));
             emit serverMessageChanged(tr("Connecting to Signal K"));
             startAsyncReconnectDiscovery();
             result = true;
         }  else {
             qInfo() << "SignalK::Client::init skipped because client is inactive";
-            setRestHealth(false, tr("Signal K disabled"));
-            setStreamHealth(false, tr("Signal K disabled"));
+            // Drop both flags before notifying, so listeners never see a half-updated state.
+            m_restHealthy = false;
+            m_streamHealthy = false;
+            m_streamHealthTimer.stop();
+            emitConnectivityState(tr("Signal K disabled"));
             emit serverMessageChanged(tr("Signal K connection disabled"));
             if (m_Debug)
                     qDebug() << "Data connection not active!";
@@ -417,6 +503,10 @@ namespace fairwindsk::signalk {
 
         // Fallback: ask the REST API; ensure the path separator is present
         const QString baseUrl = http().toString();
+        // Before discovery there is no REST endpoint to ask.
+        if (baseUrl.isEmpty()) {
+            return {};
+        }
         const QString selfUrl = baseUrl.endsWith('/') ? baseUrl + QStringLiteral("self")
                                                       : baseUrl + QStringLiteral("/self");
         auto result = httpGet(QUrl(selfUrl));
@@ -503,6 +593,10 @@ namespace fairwindsk::signalk {
 
         // Build the URL; ensure a slash separates the base endpoint and the path
         const QString baseUrl = http().toString();
+        // Before discovery there is no REST endpoint: a request would go out without a host.
+        if (baseUrl.isEmpty()) {
+            return {};
+        }
         const auto url = QUrl(baseUrl.endsWith('/') ? baseUrl + processedPath
                                                     : baseUrl + '/' + processedPath);
 
@@ -535,12 +629,8 @@ namespace fairwindsk::signalk {
      */
     QJsonObject Client::signalkGet(const QUrl& url,  QJsonObject& payload) {
 
-        // Check if the token is available
-        if (!m_Token.isEmpty()) {
-
-            // Add the token to the payload
-            payload["token"] = m_Token;
-        }
+        // Authentication travels in the request headers (see createJsonRequest): a token copied
+        // into the body would end up stored inside the resource being written.
 
         // Check if the debug is active
         if (m_Debug) {
@@ -614,6 +704,10 @@ namespace fairwindsk::signalk {
 
         // Build the URL; ensure a slash separates the base endpoint and the path
         const QString baseUrlPost = http().toString();
+        // Before discovery there is no REST endpoint: a request would go out without a host.
+        if (baseUrlPost.isEmpty()) {
+            return {};
+        }
         auto url = QUrl(baseUrlPost.endsWith('/') ? baseUrlPost + processedPath
                                                   : baseUrlPost + '/' + processedPath);
 
@@ -646,12 +740,8 @@ namespace fairwindsk::signalk {
      */
     QJsonObject Client::signalkPost(const QUrl& url,  QJsonObject& payload) {
 
-        // Check if the token is available
-        if (!m_Token.isEmpty()) {
-
-            // Add the token to the payload
-            payload["token"] = m_Token;
-        }
+        // Authentication travels in the request headers (see createJsonRequest): a token copied
+        // into the body would end up stored inside the resource being written.
 
         // Check if the debug is active
        if (m_Debug) {
@@ -706,6 +796,10 @@ namespace fairwindsk::signalk {
         QString processedPath = path;
         processedPath = processedPath.replace(".","/");
         const QString baseUrlPut = http().toString();
+        // Before discovery there is no REST endpoint: a request would go out without a host.
+        if (baseUrlPut.isEmpty()) {
+            return {};
+        }
         auto url = QUrl(baseUrlPut.endsWith('/') ? baseUrlPut + processedPath
                                                  : baseUrlPut + '/' + processedPath);
         if (m_Debug)
@@ -729,12 +823,10 @@ namespace fairwindsk::signalk {
      * Give path as URL, payload as JSON object
      */
     QJsonObject Client::signalkPut(const QUrl& url,  QJsonObject& payload) {
-        if (!m_Token.isEmpty()) {
-            payload["token"] = m_Token;
-        }
-
+        // Authentication travels in the request headers (see createJsonRequest): a token copied
+        // into the body would end up stored inside the resource being written.
        if (m_Debug) {
-           qDebug() << "SignalKClient::signalkPut payload: " << m_Token << " " << payload;
+           qDebug() << "SignalKClient::signalkPut payload: " << payload;
        }
         auto data = httpPut(url,payload);
         return QJsonDocument::fromJson(data).object();
@@ -797,6 +889,10 @@ namespace fairwindsk::signalk {
 
         // Create the URL object; ensure a slash separates the base endpoint and the path
         const QString baseUrlDel = http().toString();
+        // Before discovery there is no REST endpoint: a request would go out without a host.
+        if (baseUrlDel.isEmpty()) {
+            return {};
+        }
         const auto url = QUrl(baseUrlDel.endsWith('/') ? baseUrlDel + processedPath
                                                        : baseUrlDel + '/' + processedPath);
 
@@ -830,12 +926,8 @@ namespace fairwindsk::signalk {
      */
     QJsonObject Client::signalkDelete(const QUrl& url,  QJsonObject& payload) {
 
-        // Check if the token is available
-        if (!m_Token.isEmpty()) {
-
-            // Add the token to the payload
-            payload["token"] = m_Token;
-        }
+        // Authentication travels in the request headers (see createJsonRequest): a token copied
+        // into the body would end up stored inside the resource being written.
 
         // Check if debug is active
         if (m_Debug) {
@@ -861,11 +953,19 @@ namespace fairwindsk::signalk {
  */
     QByteArray Client::httpGet(const QUrl& url) {
         beginRequest(QStringLiteral("GET"), url);
-        auto *reply = m_NetworkAccessManager.get(createJsonRequest(url));
+        QNetworkRequest request = createJsonRequest(url);
+        request.setTransferTimeout(kRequestTimeoutMs);
+        auto *reply = m_NetworkAccessManager.get(request);
         bool success = false;
         QString message;
         int httpStatus = 0;
-        const QByteArray data = finishReply(reply, false, &success, &message, &httpStatus);
+        QByteArray data = finishReply(reply, false, &success, &message, &httpStatus);
+        if (handleRejectedToken(httpStatus, data)) {
+            // The token is gone now: ask again in public mode so the caller still gets its data.
+            QNetworkRequest retryRequest = createJsonRequest(url);
+            retryRequest.setTransferTimeout(kRequestTimeoutMs);
+            data = finishReply(m_NetworkAccessManager.get(retryRequest), false, &success, &message, &httpStatus);
+        }
         endRequest(success, url, httpStatus, message);
         return data;
     }
@@ -883,6 +983,8 @@ namespace fairwindsk::signalk {
         QString message;
         int httpStatus = 0;
         const QByteArray data = finishReply(reply, false, &success, &message, &httpStatus);
+        // A rejected token is dropped here; the request itself is not replayed.
+        handleRejectedToken(httpStatus, data);
         endRequest(success, url, httpStatus, message);
         return data;
     }
@@ -909,6 +1011,8 @@ namespace fairwindsk::signalk {
         QString message;
         int httpStatus = 0;
         const QByteArray data = finishReply(reply, true, &success, &message, &httpStatus);
+        // A rejected token is dropped here; the request itself is not replayed.
+        handleRejectedToken(httpStatus, data);
         endRequest(success, url, httpStatus, message);
         return data;
     }
@@ -928,6 +1032,8 @@ namespace fairwindsk::signalk {
         QString message;
         int httpStatus = 0;
         const QByteArray data = finishReply(reply, false, &success, &message, &httpStatus);
+        // A rejected token is dropped here; the request itself is not replayed.
+        handleRejectedToken(httpStatus, data);
         endRequest(success, url, httpStatus, message);
         return data;
     }
@@ -946,6 +1052,8 @@ namespace fairwindsk::signalk {
         QString message;
         int httpStatus = 0;
         const QByteArray data = finishReply(reply, false, &success, &message, &httpStatus);
+        // A rejected token is dropped here; the request itself is not replayed.
+        handleRejectedToken(httpStatus, data);
         endRequest(success, url, httpStatus, message);
         return data;
     }
@@ -959,14 +1067,10 @@ namespace fairwindsk::signalk {
         QJsonObject data = signalkPost( QUrl(m_Url.toString() + "/v1/auth/login"), payload);
         qInfo() << "SignalK::Client::login reply keys =" << data.keys();
 
-        if (m_Debug)
-            qDebug() << "SignalKClient::login : " << data;
+        // The reply contains the access token: never write it to the log.
 
         if (data.contains("token") && data["token"].isString()) {
             m_Token = data["token"].toString();
-
-            if (m_Debug)
-                qDebug() << "SignalKClient::login token: " << m_Token;
 
             result = true;
         } else if (data.contains("message") && data["message"].isString() ){
@@ -1013,19 +1117,21 @@ namespace fairwindsk::signalk {
                 auto jsonObjectVersion = jsonObjectEndponts[version].toObject();
                 if (jsonObjectVersion.contains("signalk-" + protocol) &&
                     jsonObjectVersion["signalk-" + protocol].isString()) {
-                    qInfo() << "SignalK::Client::getEndpointByProtocol" << protocol << version
-                            << "->" << jsonObjectVersion["signalk-" + protocol].toString();
                     return jsonObjectVersion["signalk-" + protocol].toString();
                 }
             }
         }
-        qWarning() << "SignalK::Client::getEndpointByProtocol missing endpoint for" << protocol << version;
+        // Not a warning: http()/ws() probe the secure variant first and fall back to the plain one.
+        if (m_Debug) {
+            qDebug() << "SignalK::Client::getEndpointByProtocol no endpoint for" << protocol << version;
+        }
         return {};
     }
 
 //! [onConnected]
     void Client::onConnected() {
-        if (m_Debug) qDebug() << "WebSocket connected";
+        if (m_Debug)
+            qDebug() << "WebSocket connected";
 
         m_reconnectTimer.stop();
         m_plannedRestartTimer.stop();
@@ -1036,25 +1142,24 @@ namespace fairwindsk::signalk {
         connect(&m_WebSocket, &QWebSocket::textMessageReceived,
                 this, &Client::onTextMessageReceived, Qt::UniqueConnection);
 
-        // FIX: Non resettiamo tutto se siamo già connessi
-        if (m_hadStreamConnection) {
-     		if (m_hadStreamConnection) {
-     		qInfo() << "Riconnessione rapida rilevata";
-     		resubscribeAll(false);
-     		return; 
-		}
-	}
-
-        // ... (il resto del codice originale rimane qui)
+        // Pre-fetch and cache the self URN once so resubscribeAll() resolves all
+        // "vessels.self" contexts consistently without N blocking HTTP calls
         if (m_selfUrn.isEmpty()) {
             const QString resolvedSelf = getSelf();
-            // ...
+            if (!resolvedSelf.isEmpty()) {
+                m_selfUrn = resolvedSelf;
+                qInfo() << "SignalK::Client::onConnected cached selfUrn =" << m_selfUrn;
+            } else {
+                qWarning() << "SignalK::Client::onConnected getSelf() returned empty; "
+                              "live-stream matching will rely on vessels.self alias";
+            }
         }
-        
-        // La chiamata originale rimane solo al primissimo avvio
-        resubscribeAll(false);
+
+        const bool recoveredFromDisconnect = m_reconnectRecoveryPending;
+        resubscribeAll(true);
         m_hadStreamConnection = true;
-        // ...
+        m_reconnectRecoveryPending = false;
+        emit serverStateResynchronized(recoveredFromDisconnect);
     }
 //! [onConnected]
 
@@ -1081,32 +1186,24 @@ namespace fairwindsk::signalk {
 
 //! [onTextMessageReceived]
     void Client::onTextMessageReceived(QString message) {
-    markStreamActivity(tr("Stream online"));
+        const DeltaParseResult parsedDelta = parseDelta(message.toUtf8());
 
-    QJsonDocument jsonDocument = QJsonDocument::fromJson(message.toUtf8());
-
-    // FIX: Tolleranza ai messaggi vuoti o corrotti
-    if (jsonDocument.isNull() || !jsonDocument.isObject()) {
-        if (m_Debug) {
-            qDebug() << "SignalK::Client::onTextMessageReceived: ignored non-object/null message";
+        // Keep malformed traffic isolated from connection state and subscriptions.
+        if (!parsedDelta.validEnvelope) {
+            if (m_Debug) {
+                qDebug() << "SignalK::Client::onTextMessageReceived: ignored non-object/null message";
+            }
+            return;
         }
-        return; // Invece di uscire e far cadere la connessione, ignoriamo solo il pacchetto
-    }
 
-    auto updateObject = jsonDocument.object();
-    
-    // Controlliamo che esistano gli oggetti necessari prima di accedervi
-    if (!updateObject.contains("updates") || !updateObject["updates"].isArray()) {
-        if (m_Debug) qDebug() << "Messaggio senza update, saltato.";
-        return;
-    }
+        // Only a structurally valid delta proves that the data stream is healthy.
+        markStreamActivity(tr("Stream online"));
 
-    const auto context = updateObject["context"].toString();
-    const auto updates = updateObject["updates"].toArray();
+        const QString context = parsedDelta.values.isEmpty() ? QString() : parsedDelta.values.first().context;
 
         if (m_Debug)
             qDebug() << "SignalK::Client::onTextMessageReceived context=" << context
-                     << "updates=" << updates.size();
+                     << "values=" << parsedDelta.values.size();
 
         // Determine once per message whether context is the self vessel.
         // If m_selfUrn is not yet cached, fall back to the discovery-document self field
@@ -1119,39 +1216,34 @@ namespace fairwindsk::signalk {
             qInfo() << "SignalK::Client::onTextMessageReceived cached selfUrn from live message =" << m_selfUrn;
         }
 
-        for (auto updateItem: updates) {
-            auto values = updateItem.toObject()["values"].toArray();
-            for (auto valueItem: values) {
-                const auto valueObj = valueItem.toObject();
-                const QString path = valueObj[QStringLiteral("path")].toString();
-                if (path.isEmpty()) {
-                    continue;
-                }
-                const QString fullPath = context + "." + path;
+        for (const DeltaValue &deltaValue : parsedDelta.values) {
+            const QString path = deltaValue.path;
+            const QString fullPath = context + "." + path;
 
                 // Build a single-path delta so slots receive exactly the one value they
                 // subscribed for; passing the full batched update would cause
                 // getDoubleFromUpdateByPath("") to average all numeric values in the message
-                const QJsonValue value = valueObj[QStringLiteral("value")];
-                const QJsonObject perPathUpdate = buildDeltaUpdate(context, path, value);
+            const QJsonObject perPathUpdate = buildDeltaUpdate(context, path, deltaValue.value);
 
                 // If the server sends updates with the actual vessel URN but some subscriptions
                 // still hold the "vessels.self" context (getSelf failed at startup), build an
                 // alias path so those subscriptions can still match.
-                const QString selfAliasPath = isSelfContext
-                    ? QStringLiteral("vessels.self.") + path
-                    : QString();
+            const QString selfAliasPath = isSelfContext
+                ? QStringLiteral("vessels.self.") + path
+                : QString();
 
-                if (m_Debug)
-                    qDebug() << "SignalK::Client::onTextMessageReceived dispatching"
-                             << fullPath
-                             << (isSelfContext ? "(+ vessels.self alias)" : "");
+            if (m_Debug)
+                qDebug() << "SignalK::Client::onTextMessageReceived dispatching"
+                         << fullPath
+                         << (isSelfContext ? "(+ vessels.self alias)" : "");
 
-                for (auto subscription: m_subscriptions) {
-                    subscription.match(fullPath, perPathUpdate);
-                    if (!selfAliasPath.isEmpty()) {
-                        subscription.match(selfAliasPath, perPathUpdate);
-                    }
+            // Receivers may subscribe or unsubscribe from inside their slot, so dispatch
+            // over a snapshot of the list instead of the live container.
+            const QList<Subscription> subscriptions = m_subscriptions;
+            for (auto subscription : subscriptions) {
+                subscription.match(fullPath, perPathUpdate);
+                if (!selfAliasPath.isEmpty()) {
+                    subscription.match(selfAliasPath, perPathUpdate);
                 }
             }
         }
@@ -1163,7 +1255,7 @@ namespace fairwindsk::signalk {
             return;
         }
 
-        if (m_lastStreamActivity.msecsTo(QDateTime::currentDateTimeUtc()) > kStreamTimeoutMs) {
+        if (isDataStale(m_lastStreamActivity, QDateTime::currentDateTimeUtc(), kStreamTimeoutMs)) {
             setStreamHealth(false, tr("Data stale"));
             emit serverMessageChanged(tr("Using cached Signal K data"));
         }
@@ -1247,14 +1339,17 @@ namespace fairwindsk::signalk {
     }
 
     void Client::refreshAuthenticationState() {
-        if (m_Token.isEmpty()) {
+        // Logging in needs credentials: without a user name the request can only fail,
+        // and it would delay every connection made in public mode.
+        if (m_Token.isEmpty() && !m_Username.trimmed().isEmpty()) {
             qInfo() << "SignalK::Client token missing, attempting login";
             login();
             qInfo() << "SignalK::Client login finished; token present =" << !m_Token.isEmpty();
         }
 
         if (!m_Token.isEmpty()) {
-            m_Cookie = "JAUTHENTICATION=" + m_Token + "; Path=/; HttpOnly";
+            // A request Cookie header carries only name=value; attributes belong to Set-Cookie.
+            m_Cookie = "JAUTHENTICATION=" + m_Token;
         } else {
             m_Cookie.clear();
             emit serverMessageChanged(tr("Connected in public mode"));
@@ -1265,28 +1360,34 @@ namespace fairwindsk::signalk {
         }
     }
 
-   void Client::openWebSocket() {
-    auto webSocketUrl = QUrl(ws().toString() + "?subscribe=none&heartbeat=5000");
+    void Client::openWebSocket() {
+        // Resolve the stream endpoint advertised by the discovery document.
+        QUrl webSocketUrl = ws();
 
-    // FIX ANDROID: Aggiornamento forzato della sicurezza
-    if (m_Url.scheme() == "https" && webSocketUrl.scheme() == "ws") {
-        webSocketUrl.setScheme("wss");
-    }
-
-    qInfo() << "SignalK::Client websocket URL =" << webSocketUrl;
-    if (webSocketUrl.isValid() && !webSocketUrl.isEmpty()) {
-        m_WebSocket.open(webSocketUrl);
-    }
-	
-
-        qInfo() << "SignalK::Client websocket URL =" << webSocketUrl;
-        if (webSocketUrl.isValid() && !webSocketUrl.isEmpty()) {
-            qInfo() << "SignalK::Client opening websocket";
-            m_WebSocket.open(webSocketUrl);
-            qInfo() << "SignalK::Client websocket open issued";
-        } else if (m_Debug) {
-            qDebug() << "No valid websocket endpoint available for" << m_Url;
+        // Without an endpoint there is nothing to open: retry discovery later instead of stalling.
+        if (!webSocketUrl.isValid() || webSocketUrl.isEmpty() || webSocketUrl.host().isEmpty()) {
+            qWarning() << "SignalK::Client no valid websocket endpoint available for" << m_Url;
+            setStreamHealth(false, tr("Stream disconnected"));
+            scheduleReconnect();
+            return;
         }
+
+        // A server reached through HTTPS must be streamed through a secure socket as well.
+        if (m_Url.scheme() == "https" && webSocketUrl.scheme() == "ws") {
+            webSocketUrl.setScheme("wss");
+        }
+
+        // Start silent and subscribe explicitly; the heartbeat keeps the stale-data watchdog fed.
+        webSocketUrl.setQuery(QStringLiteral("subscribe=none&heartbeat=5000"));
+
+        // Open the socket exactly once: a second open() would tear down the first handshake.
+        qInfo() << "SignalK::Client opening websocket" << webSocketUrl;
+        QNetworkRequest streamRequest(webSocketUrl);
+        // Authenticate the stream too, otherwise a server without public read access stays silent.
+        if (!m_Token.isEmpty()) {
+            streamRequest.setRawHeader("Authorization", "Bearer " + m_Token.toLatin1());
+        }
+        m_WebSocket.open(streamRequest);
     }
 
     void Client::scheduleReconnect(const int delayMs) {
@@ -1305,6 +1406,8 @@ namespace fairwindsk::signalk {
         }
 
         m_reconnectAttemptInFlight = true;
+        // Tag this attempt so a later init() or planned restart can invalidate it.
+        const quint64 generation = ++m_discoveryGeneration;
         emitConnectivityState(m_hadStreamConnection ? tr("Reconnecting to Signal K") : tr("Connecting to Signal K"));
         beginRequest(QStringLiteral("GET"), m_Url);
         auto *reply = m_NetworkAccessManager.get(createJsonRequest(m_Url));
@@ -1318,8 +1421,13 @@ namespace fairwindsk::signalk {
         });
         timeoutTimer->start(kRequestTimeoutMs);
 
-        connect(reply, &QNetworkReply::finished, this, [this, reply]() {
+        connect(reply, &QNetworkReply::finished, this, [this, reply, generation]() {
             const QScopedPointer<QNetworkReply, QScopedPointerDeleteLater> guard(reply);
+            // A superseded attempt must not touch the connection state of the current one.
+            if (generation != m_discoveryGeneration) {
+                releaseRequest();
+                return;
+            }
             m_reconnectAttemptInFlight = false;
 
             const bool success = guard->error() == QNetworkReply::NoError;
@@ -1333,7 +1441,7 @@ namespace fairwindsk::signalk {
             if (!success) {
                 setRestHealth(false, tr("Signal K offline"));
                 emit serverMessageChanged(tr("Signal K server not available"));
-                endRequest(false, guard->request().url(), httpStatus, message);
+                endRequest(false, guard->request().url(), httpStatus, message, false);
                 scheduleReconnect();
                 return;
             }
@@ -1341,7 +1449,7 @@ namespace fairwindsk::signalk {
             const QJsonDocument document = QJsonDocument::fromJson(guard->readAll());
             const QJsonObject discoveredServer = document.isObject() ? document.object() : QJsonObject{};
             const bool applied = applyDiscoveredServer(discoveredServer);
-            endRequest(applied, guard->request().url(), httpStatus, applied ? QString() : tr("Invalid Signal K discovery payload"));
+            endRequest(applied, guard->request().url(), httpStatus, applied ? QString() : tr("Invalid Signal K discovery payload"), false);
             if (!applied) {
                 setRestHealth(false, tr("Signal K offline"));
                 emit serverMessageChanged(tr("Signal K server not available"));
@@ -1371,11 +1479,14 @@ namespace fairwindsk::signalk {
         qInfo() << "SignalK::Client::resubscribeAll hydrateSnapshots=" << hydrateSnapshots
                 << "subscriptions=" << m_subscriptions.size();
 
-        int antiFloodDelayMs = 0; // <-- TRUCCO ANTI-FLOOD
+        // Delay between subscription frames, so rate-limiting proxies do not drop the burst.
+        int antiFloodDelayMs = 0;
 
+        // First pass: no blocking calls here, so the live list can be edited safely.
         QMutableListIterator<Subscription> iterator(m_subscriptions);
         while (iterator.hasNext()) {
             auto &subscription = iterator.next();
+            // Forget subscriptions whose receiver has been destroyed.
             if (!subscription.getReceiver()) {
                 iterator.remove();
                 continue;
@@ -1383,53 +1494,67 @@ namespace fairwindsk::signalk {
 
             const QString effectiveContext = normalizedSubscriptionContext(subscription.getRequestedContext());
             subscription.retargetContext(effectiveContext);
-            
-            // Creiamo il messaggio JSON per l'iscrizione
+
+            // Build the JSON subscription frame.
             const QString msg = subscriptionMessage(effectiveContext,
                                                     subscription.getPath(),
                                                     subscription.getPeriod(),
                                                     subscription.getPolicy(),
                                                     subscription.getMinPeriod());
 
-            // FIX ANDROID/CLOUD: Invio scaglionato per bypassare i firewall (Rate Limiting)
+            // Staggered send; skipped if the socket dropped in the meantime.
             QTimer::singleShot(antiFloodDelayMs, this, [this, msg]() {
                 if (m_WebSocket.state() == QAbstractSocket::ConnectedState) {
                     m_WebSocket.sendTextMessage(msg);
                 }
             });
-            
-            antiFloodDelayMs += 100; // Aggiunge 100 millisecondi di ritardo per ogni widget
 
-            if (!hydrateSnapshots || !canHydrateSubscriptionPath(subscription.getPath())) {
+            antiFloodDelayMs += 100;
+        }
+
+        if (!hydrateSnapshots) {
+            qInfo() << "SignalK::Client::resubscribeAll done";
+            return;
+        }
+
+        // Second pass: signalkGet() spins a nested event loop, during which receivers can
+        // subscribe, unsubscribe or be destroyed. Walk a snapshot so the live list may change.
+        const QList<Subscription> snapshotTargets = m_subscriptions;
+        for (Subscription subscription : snapshotTargets) {
+            // Stop hydrating as soon as the stream is gone: the next connection starts over.
+            if (m_WebSocket.state() != QAbstractSocket::ConnectedState) {
+                break;
+            }
+            if (!subscription.getReceiver() || !canHydrateSubscriptionPath(subscription.getPath())) {
                 continue;
             }
 
+            // Only vessel data has a REST snapshot at this address; other contexts (such as
+            // "resources") are loaded by their own models and would just answer 404 here.
+            if (!subscription.getContext().startsWith(QStringLiteral("vessels"))) {
+                continue;
+            }
+
+            const QString effectiveContext = subscription.getContext();
             const QString fullPath = effectiveContext + "." + subscription.getPath();
             const QJsonObject snapshot = signalkGet(fullPath);
 
-            if (m_Debug) {
-                qDebug() << "SignalK::Client::resubscribeAll snapshot for" << fullPath
-                         << "isEmpty=" << snapshot.isEmpty()
-                         << "hasValue=" << snapshot.contains(QStringLiteral("value"));
+            // The receiver may have gone away or unsubscribed while the request was running.
+            if (!subscription.getReceiver()
+                || !hasSubscription(subscription.getRequestedContext(), subscription.getPath(), subscription.getReceiver())) {
+                continue;
             }
 
-            if (!snapshot.isEmpty()) {
-                const QJsonValue snapshotValue = deltaValueFromSnapshot(snapshot);
-
-                if (m_Debug) {
-                    qDebug() << "SignalK::Client::resubscribeAll snapshotValue type="
-                             << snapshotValue.type() << "for" << subscription.getPath();
-                }
-
-                const QJsonObject update = buildDeltaUpdate(effectiveContext, subscription.getPath(), snapshotValue);
-                const bool matched = subscription.match(fullPath, update);
-
-                if (m_Debug) {
-                    qDebug() << "SignalK::Client::resubscribeAll match result=" << matched
-                             << "for" << fullPath;
-                }
-            } else {
+            if (snapshot.isEmpty()) {
                 qInfo() << "SignalK::Client::resubscribeAll empty snapshot for" << fullPath;
+                continue;
+            }
+
+            const QJsonObject update = buildDeltaUpdate(effectiveContext, subscription.getPath(), deltaValueFromSnapshot(snapshot));
+            const bool matched = subscription.match(fullPath, update);
+
+            if (m_Debug) {
+                qDebug() << "SignalK::Client::resubscribeAll match result=" << matched << "for" << fullPath;
             }
         }
 
@@ -1482,17 +1607,17 @@ namespace fairwindsk::signalk {
         m_reconnectTimer.stop();
         m_streamHealthTimer.stop();
 
-        if (m_reconnectAttemptInFlight) {
-            m_reconnectAttemptInFlight = false;
-        }
+        // A discovery answered by the server that is about to restart is worthless.
+        cancelPendingDiscovery();
 
         setRestHealth(false, tr("Signal K restarting"));
         setStreamHealth(false, tr("Signal K restarting"));
         emit serverMessageChanged(tr("Signal K restart requested"));
 
         if (m_WebSocket.state() != QAbstractSocket::UnconnectedState) {
+            // abort() already tears the socket down; a following close() would try to write
+            // a close frame to the dead socket and only log "device not open".
             m_WebSocket.abort();
-            m_WebSocket.close();
         }
 
         m_plannedRestartTimer.start(std::max(5000, gracePeriodMs));
@@ -1520,6 +1645,30 @@ namespace fairwindsk::signalk {
     QJsonDocument Client::getJsonDocument(const QUrl &url, const QJsonObject &payload) {
         const auto data = payload.isEmpty() ? httpGet(url) : httpGet(url, payload);
         return QJsonDocument::fromJson(data);
+    }
+
+    void Client::getJsonAsync(const QUrl &url,
+                              QObject *context,
+                              std::function<void(const QJsonDocument &, const QString &)> completion) {
+        if (!url.isValid() || !context || !completion) {
+            return;
+        }
+
+        beginRequest(QStringLiteral("GET"), url);
+        auto *reply = m_NetworkAccessManager.get(createJsonRequest(url));
+        QPointer<QObject> guardedContext(context);
+        connect(reply, &QNetworkReply::finished, this,
+                [this, reply, guardedContext, completion = std::move(completion), url]() mutable {
+            const QScopedPointer<QNetworkReply, QScopedPointerDeleteLater> guard(reply);
+            const int statusCode = guard->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+            const bool success = guard->error() == QNetworkReply::NoError && statusCode >= 200 && statusCode < 300;
+            const QString message = success ? QString() : guard->errorString();
+            const QJsonDocument document = success ? QJsonDocument::fromJson(guard->readAll()) : QJsonDocument();
+            endRequest(success, url, statusCode, message, false);
+            if (guardedContext) {
+                completion(document, message);
+            }
+        });
     }
 
     QUrl Client::withQuery(const QUrl &url, const QVariantMap &query) const {
@@ -1591,16 +1740,37 @@ namespace fairwindsk::signalk {
         return result;
     }
 
+    void Client::getResourcesAsync(const QString &collection,
+                                   QObject *context,
+                                   std::function<void(const QMap<QString, QJsonObject> &, const QString &)> completion,
+                                   const QVariantMap &query) {
+        getJsonAsync(resourceUrl(collection, QString(), query), context,
+                     [completion = std::move(completion)](const QJsonDocument &document, const QString &error) mutable {
+            QMap<QString, QJsonObject> resources;
+            const QJsonObject object = document.object();
+            for (auto it = object.begin(); it != object.end(); ++it) {
+                if (it.value().isObject()) {
+                    resources.insert(it.key(), it.value().toObject());
+                }
+            }
+            if (completion) {
+                completion(resources, error);
+            }
+        });
+    }
+
     QJsonObject Client::getResource(const QString &collection, const QString &id, const QVariantMap &query) {
         return getJsonDocument(resourceUrl(collection, id, query)).object();
     }
 
     QJsonObject Client::createResource(const QString &collection, const QJsonObject &payload, const QVariantMap &query) {
-        QJsonDocument jsonDocument;
-        jsonDocument.setObject(payload);
-        const auto response = finishReply(m_NetworkAccessManager.post(createJsonRequest(resourceUrl(collection, QString(), query)),
-                                                                      jsonDocument.toJson()));
-        const QJsonObject object = QJsonDocument::fromJson(response).object();
+        // Go through the common POST path so activity, health and permission errors are reported.
+        QJsonObject mutablePayload = payload;
+        const QJsonObject object = signalkPost(resourceUrl(collection, QString(), query), mutablePayload);
+        // A refused creation must not look like a new resource to the caller.
+        if (!m_lastRequestSucceeded) {
+            return {};
+        }
         emit resourcesChanged(collection);
         return object;
     }
@@ -1608,15 +1778,22 @@ namespace fairwindsk::signalk {
     QJsonObject Client::putResource(const QString &collection, const QString &id, const QJsonObject &payload) {
         QJsonObject mutablePayload = payload;
         const QJsonObject response = signalkPut(resourceUrl(collection, id), mutablePayload);
+        // Keep the outcome of the PUT: the refresh triggered below issues its own requests.
+        const bool updated = m_lastRequestSucceeded;
+        const int status = m_lastHttpStatus;
         emit resourcesChanged(collection);
+        m_lastRequestSucceeded = updated;
+        m_lastHttpStatus = status;
         return response;
     }
 
     bool Client::deleteResource(const QString &collection, const QString &id) {
         QJsonObject payload;
         signalkDelete(resourceUrl(collection, id), payload);
+        // Report what the server actually did instead of assuming success.
+        const bool deleted = m_lastRequestSucceeded;
         emit resourcesChanged(collection);
-        return true;
+        return deleted;
     }
 
     bool Client::navigateToWaypoint(const QString &href) {
@@ -1626,8 +1803,9 @@ namespace fairwindsk::signalk {
 
         QJsonObject payload;
         payload["href"] = href;
-        const auto response = signalkPut(QUrl(m_Url.toString() + "/v2/api/vessels/self/navigation/course/destination"), payload);
-        return !response.isEmpty() || !m_Active;
+        signalkPut(QUrl(m_Url.toString() + "/v2/api/vessels/self/navigation/course/destination"), payload);
+        // An error body is not empty either: only the HTTP outcome tells whether the course was set.
+        return m_lastRequestSucceeded || !m_Active;
     }
 
     QJsonArray Client::getHistoryPaths(const QVariantMap &query) {
@@ -1642,6 +1820,17 @@ namespace fairwindsk::signalk {
         }
 
         return getJsonDocument(historyUrl("values", effectiveQuery)).object();
+    }
+
+    void Client::getHistoryValuesAsync(const QStringList &paths,
+                                       const QVariantMap &query,
+                                       QObject *context,
+                                       std::function<void(const QJsonDocument &, const QString &)> completion) {
+        QVariantMap effectiveQuery = query;
+        if (!paths.isEmpty()) {
+            effectiveQuery["paths"] = paths.join(",");
+        }
+        getJsonAsync(historyUrl("values", effectiveQuery), context, std::move(completion));
     }
 
     QJsonObject Client::getUnitPreferencesActive() {
@@ -1864,7 +2053,9 @@ namespace fairwindsk::signalk {
         QMutableListIterator<Subscription> i(m_subscriptions);
         while (i.hasNext()) {
             auto subscription = i.next();
-            if (subscription.checkReceiver(receiver)) {
+            // By the time destroyed() is emitted the guarded pointer is already null,
+            // so receiver-less entries are purged together with explicit matches.
+            if (subscription.checkReceiver(receiver) || !subscription.getReceiver()) {
                 i.remove();
             }
         }
@@ -2073,8 +2264,9 @@ namespace fairwindsk::signalk {
         if (!message.contains("requestId")) {
             message["requestId"] =  QUuid::createUuid().toString().replace("{","").replace("}","");
         }
-        if (!message.contains("token")) {
-            message["token"] = getToken();
+        // Stream requests carry the token in the message itself; omit the field in public mode.
+        if (!message.contains("token") && !m_Token.isEmpty()) {
+            message["token"] = m_Token;
         }
         const QJsonDocument doc(message);
         QString text = doc.toJson(QJsonDocument::Compact);

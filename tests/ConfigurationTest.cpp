@@ -1,0 +1,138 @@
+#include "Configuration.hpp"
+
+#include <QFile>
+#include <QTemporaryDir>
+#include <QtTest>
+
+class ConfigurationTest final : public QObject {
+    Q_OBJECT
+
+private slots:
+    void readsAndWritesSettings();
+    void savesAndLoadsAtomically();
+    void rejectsInvalidDocuments();
+    void copiesIndependently();
+    void findAppReturnsArrayIndex();
+    void remembersSignalKServers();
+};
+
+void ConfigurationTest::readsAndWritesSettings() {
+    fairwindsk::Configuration configuration;
+    configuration.setRoot(nlohmann::json::object());
+
+    configuration.setSignalKServerUrl(QStringLiteral("https://signalk.example:3443"));
+    configuration.setSignalKConnectionEnabled(false);
+    configuration.setVirtualKeyboard(true);
+    configuration.setLanguage(QStringLiteral("it-IT"));
+    configuration.setLauncherRows(4);
+    configuration.setLauncherColumns(6);
+    configuration.setCoordinateFormat(QStringLiteral("decimal_degrees"));
+    configuration.setDiagnosticsLogLevel(QStringLiteral("debug"));
+
+    QCOMPARE(configuration.getSignalKServerUrl(), QStringLiteral("https://signalk.example:3443"));
+    QVERIFY(!configuration.getSignalKConnectionEnabled());
+    QVERIFY(configuration.getVirtualKeyboard());
+    QCOMPARE(configuration.getLanguage(), QStringLiteral("it"));
+    configuration.setLanguage(QStringLiteral("fr-FR"));
+    QCOMPARE(configuration.getLanguage(), QStringLiteral("fr"));
+    configuration.setLanguage(QStringLiteral("es_ES"));
+    QCOMPARE(configuration.getLanguage(), QStringLiteral("es"));
+    QCOMPARE(configuration.getLauncherRows(), 4);
+    QCOMPARE(configuration.getLauncherColumns(), 6);
+    QCOMPARE(configuration.getCoordinateFormat(), QStringLiteral("decimal_degrees"));
+    QCOMPARE(configuration.getDiagnosticsLogLevel(), QStringLiteral("debug"));
+}
+
+void ConfigurationTest::savesAndLoadsAtomically() {
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString path = directory.filePath(QStringLiteral("nested/configuration.json"));
+
+    fairwindsk::Configuration source;
+    source.setRoot(nlohmann::json{{"connection", {{"server", "http://localhost:3000"}, {"active", true}}},
+                                  {"main", {{"language", "en"}}}});
+    source.save(path);
+    QVERIFY(QFile::exists(path));
+
+    fairwindsk::Configuration loaded(path);
+    QCOMPARE(loaded.getSignalKServerUrl(), QStringLiteral("http://localhost:3000"));
+    QVERIFY(loaded.getSignalKConnectionEnabled());
+    QCOMPARE(loaded.getLanguage(), QStringLiteral("en"));
+}
+
+void ConfigurationTest::rejectsInvalidDocuments() {
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString invalidJsonPath = directory.filePath(QStringLiteral("invalid.json"));
+    QFile invalidJson(invalidJsonPath);
+    QVERIFY(invalidJson.open(QIODevice::WriteOnly));
+    QCOMPARE(invalidJson.write("{broken"), qint64(7));
+    invalidJson.close();
+
+    fairwindsk::Configuration configuration;
+    QVERIFY(!configuration.load(invalidJsonPath));
+    QVERIFY(configuration.getRoot().is_object());
+
+    const QString arrayPath = directory.filePath(QStringLiteral("array.json"));
+    QFile arrayFile(arrayPath);
+    QVERIFY(arrayFile.open(QIODevice::WriteOnly));
+    QCOMPARE(arrayFile.write("[]"), qint64(2));
+    arrayFile.close();
+    QVERIFY(!configuration.load(arrayPath));
+    QVERIFY(configuration.getRoot().is_object());
+}
+
+void ConfigurationTest::copiesIndependently() {
+    fairwindsk::Configuration original;
+    original.setRoot(nlohmann::json::object());
+    original.setSignalKServerUrl(QStringLiteral("http://original"));
+
+    fairwindsk::Configuration copy(original);
+    copy.setSignalKServerUrl(QStringLiteral("http://copy"));
+
+    QCOMPARE(original.getSignalKServerUrl(), QStringLiteral("http://original"));
+    QCOMPARE(copy.getSignalKServerUrl(), QStringLiteral("http://copy"));
+}
+
+void ConfigurationTest::findAppReturnsArrayIndex() {
+    fairwindsk::Configuration configuration;
+    // A stray non-object entry sits before the application being looked up.
+    configuration.setRoot(nlohmann::json{
+        {"apps", nlohmann::json::array({
+            nlohmann::json{{"name", "first"}},
+            "garbage",
+            nlohmann::json{{"name", "second"}}})}});
+
+    // The result is used with at(), so it must be the real array position.
+    QCOMPARE(configuration.findApp(QStringLiteral("first")), 0);
+    QCOMPARE(configuration.findApp(QStringLiteral("second")), 2);
+    QCOMPARE(configuration.findApp(QStringLiteral("missing")), -1);
+}
+
+void ConfigurationTest::remembersSignalKServers() {
+    fairwindsk::Configuration configuration;
+    configuration.setRoot(nlohmann::json::object());
+
+    // A configuration without the list simply has no remembered servers.
+    QVERIFY(configuration.getSignalKServerUrls().isEmpty());
+
+    configuration.rememberSignalKServerUrl(QStringLiteral("http://192.168.1.50:3000"));
+    configuration.rememberSignalKServerUrl(QStringLiteral("http://boat.local:3000"));
+    // Connecting again moves the address to the front instead of duplicating it.
+    configuration.rememberSignalKServerUrl(QStringLiteral(" http://192.168.1.50:3000 "));
+    configuration.rememberSignalKServerUrl(QString());
+
+    QCOMPARE(configuration.getSignalKServerUrls(),
+             QStringList({QStringLiteral("http://192.168.1.50:3000"), QStringLiteral("http://boat.local:3000")}));
+
+    // The list is capped so the drop-down stays usable.
+    for (int index = 0; index < 20; ++index) {
+        configuration.rememberSignalKServerUrl(QStringLiteral("http://host%1:3000").arg(index));
+    }
+    QCOMPARE(configuration.getSignalKServerUrls().size(), 10);
+    QCOMPARE(configuration.getSignalKServerUrls().first(), QStringLiteral("http://host19:3000"));
+}
+
+QTEST_APPLESS_MAIN(ConfigurationTest)
+
+#include "ConfigurationTest.moc"

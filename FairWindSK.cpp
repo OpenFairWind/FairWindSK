@@ -76,6 +76,16 @@ namespace fairwindsk {
 
             QFileInfo fileInfo(trimmed);
             if (fileInfo.isAbsolute()) {
+#if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
+                // Mobile data-container roots can change after an app reinstall or update.
+                const QString currentConfigDirectory = QFileInfo(defaultConfigFilename()).absolutePath();
+                const QString normalizedCurrentDirectory = QDir::cleanPath(currentConfigDirectory);
+                const QString normalizedCandidateDirectory = QDir::cleanPath(fileInfo.absolutePath());
+                if (normalizedCandidateDirectory != normalizedCurrentDirectory) {
+                    // Preserve the selected file name while rebasing it into the current writable sandbox.
+                    return QDir(currentConfigDirectory).filePath(fileInfo.fileName());
+                }
+#endif
                 QDir().mkpath(fileInfo.absolutePath());
                 return fileInfo.absoluteFilePath();
             }
@@ -164,9 +174,9 @@ namespace fairwindsk {
                     return QStringLiteral("AllowPersistentCookies");
                 case QWebEngineProfile::ForcePersistentCookies:
                     return QStringLiteral("ForcePersistentCookies");
+                default:
+                    return QStringLiteral("Unknown");
             }
-
-            return QStringLiteral("Unknown");
         }
 #endif
 
@@ -793,6 +803,9 @@ namespace fairwindsk {
             }
         }
 
+        // Applications missing from the server catalog are parked at this order and above.
+        constexpr int kMissingAppOrderBase = 10000;
+
         void ensureFairwindMetadata(nlohmann::json &appJsonObject, const int order) {
             if (!appJsonObject.contains("fairwind") || !appJsonObject["fairwind"].is_object()) {
                 appJsonObject["fairwind"] = nlohmann::json::object();
@@ -805,6 +818,16 @@ namespace fairwindsk {
             if (!fairwindJsonObject.contains("order") || !fairwindJsonObject["order"].is_number_integer()) {
                 fairwindJsonObject["order"] = order;
             }
+        }
+
+        QString normalizedAppIdentityToken(const QString &identity) {
+            const QUrl url(identity);
+            QString path = url.isValid() && !url.scheme().isEmpty() ? url.path() : identity;
+            while (path.endsWith(QLatin1Char('/'))) {
+                path.chop(1);
+            }
+            const QString token = path.section(QLatin1Char('/'), -1).trimmed().toLower();
+            return token;
         }
 
         bool isOnHiddenStackPage(QWidget *widget) {
@@ -904,10 +927,21 @@ namespace fairwindsk {
                 return;
             }
 
-            if (fairwindsk::Configuration::getToken() != token) {
-                fairwindsk::Configuration::setToken(token);
+            // Keep the token tied to the server it works on.
+            const QString serverUrl = m_configuration.getSignalKServerUrl();
+            if (fairwindsk::Configuration::getToken(serverUrl) != token) {
+                fairwindsk::Configuration::setToken(token, serverUrl);
             }
             updateWebProfileCookie();
+            refreshRuntimeHealth();
+        });
+
+        // A token the server refuses (expired, revoked) is useless: forget it so the Connection
+        // page offers Request Token again, while the client carries on in public mode.
+        connect(&m_signalkClient, &signalk::Client::tokenRejected, this, [this]() {
+            if (!fairwindsk::Configuration::getToken(m_configuration.getSignalKServerUrl()).isEmpty()) {
+                fairwindsk::Configuration::clearToken();
+            }
             refreshRuntimeHealth();
         });
 
@@ -1211,11 +1245,14 @@ namespace fairwindsk {
             applyWebProfileLocalization();
         }
 
-        if (runtimeChanges & (RuntimeUnits | RuntimeSignalKConnection | RuntimeSignalKPaths)) {
+        // Server unit preferences depend on the server and on the unit overrides, not on path mappings.
+        if (runtimeChanges & (RuntimeUnits | RuntimeSignalKConnection)) {
             Units::getInstance()->refreshSignalKPreferences();
         }
 
-        if (signalKSettingsChanged) {
+        // Only a connection change needs a new session. Remapped paths are picked up when the
+        // bars rebuild their widgets below, so the stream stays up while the operator edits them.
+        if (runtimeChanges & RuntimeSignalKConnection) {
             if (m_configuration.getSignalKConnectionEnabled() && !m_configuration.getSignalKServerUrl().isEmpty()) {
                 startSignalK();
             } else {
@@ -1249,7 +1286,7 @@ namespace fairwindsk {
         }
 
         const auto serverUrl = m_configuration.getSignalKServerUrl();
-        const auto token = fairwindsk::Configuration::getToken();
+        const auto token = fairwindsk::Configuration::getToken(serverUrl);
         if (serverUrl.isEmpty() || token.isEmpty()) {
             return;
         }
@@ -1309,7 +1346,8 @@ namespace fairwindsk {
 
             // Always pass the token so Client::init() resets m_Token even when
             // the token has been removed; an empty value clears the in-memory token.
-            params["token"] = fairwindsk::Configuration::getToken();
+            // Only the token issued by this server is offered to it.
+            params["token"] = fairwindsk::Configuration::getToken(signalKServerUrl);
 
             qInfo() << "FairWindSK::startSignalK starting non-blocking client initialization";
             result = m_signalkClient.init(params);
@@ -1386,12 +1424,14 @@ namespace fairwindsk {
         setAppsState(AppsState::Loading,
                      m_mapHash2AppItem.isEmpty() ? tr("Loading apps") : tr("Refreshing apps"));
         emit appsReloadStarted();
-        startAppsRequest(QUrl(signalKServerUrl + "/signalk/v1/apps/list"), generation, false);
+        // Prefer the full catalog because it carries display names and application icons.
+        startAppsRequest(QUrl(signalKServerUrl + "/skServer/webapps"), generation, false);
     }
 
     bool FairWindSK::rebuildAppRegistry(const nlohmann::json *appsPayload) {
         auto &configurationJsonObject = m_configuration.getRoot();
-        if (!configurationJsonObject.contains("apps")) {
+        // A missing or hand-edited non-array "apps" entry would make every later array access throw.
+        if (!configurationJsonObject.contains("apps") || !configurationJsonObject["apps"].is_array()) {
             configurationJsonObject["apps"] = nlohmann::json::array();
         }
 
@@ -1412,11 +1452,14 @@ namespace fairwindsk {
                 }
 
                 if (appJsonObject.contains("keywords") && appJsonObject["keywords"].is_array()) {
-                    std::vector<std::string> keywords = appJsonObject["keywords"];
+                    // The payload comes from the network: skip non-string entries instead of
+                    // letting an implicit conversion throw out of the reply handler.
                     QStringList stringListKeywords;
-                    std::transform(keywords.begin(), keywords.end(), std::back_inserter(stringListKeywords), [](const std::string &value) {
-                        return QString::fromStdString(value);
-                    });
+                    for (const auto &keyword : appJsonObject["keywords"]) {
+                        if (keyword.is_string()) {
+                            stringListKeywords.append(QString::fromStdString(keyword.get<std::string>()));
+                        }
+                    }
                     if (!stringListKeywords.contains("signalk-webapp")) {
                         continue;
                     }
@@ -1432,6 +1475,8 @@ namespace fairwindsk {
                     m_configuration.getRoot()["apps"].push_back(appItem->asJson());
                 }
 
+                // A catalog listing the same application twice must not leak the first item.
+                delete m_mapHash2AppItem.value(appName, nullptr);
                 m_mapHash2AppItem[appName] = appItem;
                 m_mapAppId2Hash[appName] = appName;
                 count++;
@@ -1455,20 +1500,56 @@ namespace fairwindsk {
                 const int idx = m_configuration.findApp(appName);
                 if (idx != -1) {
                     auto mergedJson = appItem->asJson();
+                    const int liveOrder = appItem->getOrder();
                     mergedJson.update(app, true);
+
+                    // An application parked as "missing" (inactive, order 10000+) while the server
+                    // catalog was unavailable is back in the catalog: put it on the launcher again.
+                    // Without this the stored "inactive" flag wins the merge forever.
+                    auto &mergedFairwind = mergedJson["fairwind"];
+                    if (mergedFairwind.is_object()
+                        && mergedFairwind.contains("active") && mergedFairwind["active"].is_boolean()
+                        && !mergedFairwind["active"].get<bool>()
+                        && mergedFairwind.contains("order") && mergedFairwind["order"].is_number_integer()
+                        && mergedFairwind["order"].get<int>() >= kMissingAppOrderBase) {
+                        mergedFairwind["active"] = true;
+                        mergedFairwind["order"] = liveOrder;
+                    }
                     m_configuration.getRoot()["apps"].at(idx) = mergedJson;
                     appItem->update(mergedJson);
                 }
                 continue;
             }
 
-            if (appName.startsWith("http://") || appName.startsWith("https://") || appName.startsWith("file://")) {
+            // Resolve legacy URL-based launcher IDs to their live package-catalog application.
+            const QString configuredIdentityToken = normalizedAppIdentityToken(appName);
+            QString matchingLiveHash;
+            for (auto it = m_mapHash2AppItem.cbegin(); it != m_mapHash2AppItem.cend(); ++it) {
+                if (!configuredIdentityToken.isEmpty() &&
+                    configuredIdentityToken == normalizedAppIdentityToken(it.key())) {
+                    matchingLiveHash = it.key();
+                    break;
+                }
+            }
+            if (!matchingLiveHash.isEmpty()) {
+                m_mapAppId2Hash[appName] = matchingLiveHash;
+                continue;
+            }
+
+            AppItem configuredCandidate(app);
+            if (appName.startsWith("http://") || appName.startsWith("https://") || appName.startsWith("file://") ||
+                configuredCandidate.isAndroidApplication()) {
                 auto *appItem = new AppItem(app);
                 if (appItem->getOrder() == 0) {
                     appItem->setOrder(count);
                     const int idx = m_configuration.findApp(appName);
                     if (idx != -1) {
-                        m_configuration.getRoot()["apps"].at(idx)["fairwind"]["order"] = count;
+                        auto &configuredApp = m_configuration.getRoot()["apps"].at(idx);
+                        // Repair a malformed "fairwind" block before writing into it.
+                        if (!configuredApp.contains("fairwind") || !configuredApp["fairwind"].is_object()) {
+                            configuredApp["fairwind"] = nlohmann::json::object();
+                        }
+                        configuredApp["fairwind"]["order"] = count;
                     }
                     count++;
                 }
@@ -1477,10 +1558,21 @@ namespace fairwindsk {
                 continue;
             }
 
+            // Only a catalog that was actually received can tell that an application is gone.
+            // The offline rebuild done at startup and before every refresh has no catalog, and
+            // parking everything there used to empty the launcher permanently.
+            if (!hadServerPayload) {
+                continue;
+            }
+
             const int idx = m_configuration.findApp(appName);
             if (idx != -1) {
                 auto &configuredApp = m_configuration.getRoot()["apps"].at(idx);
-                configuredApp["fairwind"]["order"] = 10000 + count;
+                // Repair a malformed "fairwind" block before writing into it.
+                if (!configuredApp.contains("fairwind") || !configuredApp["fairwind"].is_object()) {
+                    configuredApp["fairwind"] = nlohmann::json::object();
+                }
+                configuredApp["fairwind"]["order"] = kMissingAppOrderBase + count;
                 configuredApp["fairwind"]["active"] = false;
                 count++;
             }
@@ -1533,7 +1625,8 @@ namespace fairwindsk {
             }
 
             if (!fallbackRequest) {
-                startAppsRequest(QUrl(m_configuration.getSignalKServerUrl().trimmed() + "/skServer/webapps"), generation, true);
+                // Older or restricted servers may expose only the compact applications endpoint.
+                startAppsRequest(QUrl(m_configuration.getSignalKServerUrl().trimmed() + "/signalk/v1/apps/list"), generation, true);
                 return;
             }
 
@@ -1549,6 +1642,10 @@ namespace fairwindsk {
                                         const nlohmann::json *appsPayload) {
         const bool hasRegistry = success ? rebuildAppRegistry(appsPayload) : !m_mapHash2AppItem.isEmpty();
         if (success) {
+            // Fetch catalog artwork independently so launcher input never waits for remote images.
+            prefetchAppIcons(m_appsReloadGeneration);
+        }
+        if (success) {
             setAppsState(AppsState::Loaded, statusText);
         } else if (hasRegistry) {
             setAppsState(AppsState::Stale, statusText);
@@ -1560,6 +1657,64 @@ namespace fairwindsk {
 
         if (auto *mainWindow = fairwindsk::ui::MainWindow::instance()) {
             mainWindow->applyRuntimeConfiguration();
+        }
+    }
+
+    void FairWindSK::prefetchAppIcons(const quint64 generation) {
+        if (!m_runtimeNetworkAccessManager) {
+            return;
+        }
+
+        for (AppItem *appItem : std::as_const(m_mapHash2AppItem)) {
+            if (!appItem) {
+                continue;
+            }
+
+            const QString iconReference = appItem->getAppIcon().trimmed();
+            QUrl appUrl(appItem->getUrl());
+            if (iconReference.isEmpty() || !appUrl.isValid()) {
+                continue;
+            }
+
+            // Bundled icons (":/resources/..." or "qrc:") are local: asking the server for them
+            // only produces a 404 for every application on every refresh.
+            if (iconReference.startsWith(QLatin1Char(':')) || iconReference.startsWith(QStringLiteral("qrc:"))
+                || iconReference.startsWith(QStringLiteral("file:"))) {
+                continue;
+            }
+
+            // Treat the web-app location as a directory even when the catalog omits its trailing slash.
+            QString appPath = appUrl.path();
+            if (!appPath.endsWith(QLatin1Char('/'))) {
+                appPath.append(QLatin1Char('/'));
+                appUrl.setPath(appPath);
+            }
+
+            const QUrl iconUrl = appUrl.resolved(QUrl(iconReference));
+            if (!iconUrl.isValid() || (iconUrl.scheme() != QStringLiteral("http") && iconUrl.scheme() != QStringLiteral("https"))) {
+                continue;
+            }
+
+            QNetworkRequest request(iconUrl);
+            request.setTransferTimeout(kAppsRequestTimeoutMs);
+            QPointer<AppItem> guardedAppItem(appItem);
+            QNetworkReply *reply = m_runtimeNetworkAccessManager->get(request);
+            connect(reply, &QNetworkReply::finished, this, [this, reply, guardedAppItem, generation]() {
+                const QScopedPointer<QNetworkReply, QScopedPointerDeleteLater> guard(reply);
+                if (generation != m_appsReloadGeneration || !guardedAppItem || guard->error() != QNetworkReply::NoError) {
+                    qWarning() << "Signal K application icon request failed" << guard->request().url() << guard->errorString();
+                    return;
+                }
+
+                if (!guardedAppItem->setCachedIconData(guard->readAll())) {
+                    qWarning() << "Signal K application icon could not be decoded" << guard->request().url();
+                    return;
+                }
+
+                qInfo() << "Signal K application icon loaded" << guard->request().url();
+                // Notify launcher surfaces only after the live application owns a decoded pixmap.
+                emit appIconReady(guardedAppItem->getName());
+            });
         }
     }
 

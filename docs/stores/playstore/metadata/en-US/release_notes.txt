@@ -1,0 +1,1 @@
+Initial Google Play release of the FairWindSK marine MFD and Signal K application host.

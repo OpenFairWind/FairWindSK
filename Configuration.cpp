@@ -78,10 +78,19 @@ namespace fairwindsk {
         }
 
         QSaveFile file(filename);
-        if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-            const QByteArray data = QByteArray::fromStdString(m_jsonData.dump(2));
-            file.write(data);
-            file.commit();
+        if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+            qWarning() << "Unable to open configuration for writing" << filename << file.errorString();
+            return;
+        }
+
+        const QByteArray data = QByteArray::fromStdString(m_jsonData.dump(2));
+        if (file.write(data) != data.size()) {
+            qWarning() << "Unable to write complete configuration" << filename << file.errorString();
+            file.cancelWriting();
+            return;
+        }
+        if (!file.commit()) {
+            qWarning() << "Unable to commit configuration" << filename << file.errorString();
         }
     }
 
@@ -142,12 +151,100 @@ namespace fairwindsk {
         settings.sync();
     }
 
+    namespace {
+        // Compare servers without being fooled by case or a trailing slash.
+        QString normalizedTokenServer(QString serverUrl) {
+            serverUrl = serverUrl.trimmed().toLower();
+            while (serverUrl.endsWith(QLatin1Char('/'))) {
+                serverUrl.chop(1);
+            }
+            return serverUrl;
+        }
+    }
+
+    QString Configuration::getToken(const QString &serverUrl) {
+        QSettings settings(settingsFilename(), QSettings::IniFormat);
+
+        // Tokens saved by earlier versions carry no server: keep honoring them.
+        const QString tokenServer = normalizedTokenServer(settings.value("tokenServer", "").toString());
+        if (!tokenServer.isEmpty() && tokenServer != normalizedTokenServer(serverUrl)) {
+            // Sending server A's token to server B only gets every request rejected.
+            return {};
+        }
+        return settings.value("token", "").toString();
+    }
+
+    void Configuration::setToken(const QString &token, const QString &serverUrl) {
+        QSettings settings(settingsFilename(), QSettings::IniFormat);
+        settings.setValue("token", token);
+        settings.setValue("tokenServer", normalizedTokenServer(serverUrl));
+        settings.sync();
+    }
+
+    void Configuration::clearToken() {
+        QSettings settings(settingsFilename(), QSettings::IniFormat);
+        settings.remove("token");
+        settings.remove("tokenServer");
+        settings.remove("expirationTime");
+        settings.sync();
+    }
+
     QString Configuration::settingsFilename() {
         return defaultSettingsFilename();
     }
 
     void Configuration::setSignalKServerUrl(const QString& signalKServerUrl) {
         ensureObject("connection")["server"] = signalKServerUrl.toStdString();
+    }
+
+    QStringList Configuration::getSignalKServerUrls() const {
+        QStringList result;
+
+        // The list is optional: older configuration files simply do not have it.
+        const auto connectionIt = m_jsonData.find("connection");
+        if (connectionIt == m_jsonData.end() || !connectionIt->is_object()) {
+            return result;
+        }
+        const auto serversIt = connectionIt->find("servers");
+        if (serversIt == connectionIt->end() || !serversIt->is_array()) {
+            return result;
+        }
+
+        // Keep well-formed, non-empty, unique entries in their stored order.
+        for (const auto &server : *serversIt) {
+            if (!server.is_string()) {
+                continue;
+            }
+            const QString url = QString::fromStdString(server.get<std::string>()).trimmed();
+            if (!url.isEmpty() && !result.contains(url)) {
+                result.append(url);
+            }
+        }
+        return result;
+    }
+
+    void Configuration::rememberSignalKServerUrl(const QString &signalKServerUrl) {
+        const QString url = signalKServerUrl.trimmed();
+        if (url.isEmpty()) {
+            return;
+        }
+
+        // Most recently used first, without duplicates.
+        QStringList urls = getSignalKServerUrls();
+        urls.removeAll(url);
+        urls.prepend(url);
+
+        // A short list stays usable in a touch drop-down.
+        constexpr int kMaximumRememberedServers = 10;
+        while (urls.size() > kMaximumRememberedServers) {
+            urls.removeLast();
+        }
+
+        auto servers = nlohmann::json::array();
+        for (const auto &item : urls) {
+            servers.push_back(item.toStdString());
+        }
+        ensureObject("connection")["servers"] = servers;
     }
 
     bool Configuration::getSignalKConnectionEnabled() const {
@@ -492,21 +589,20 @@ namespace fairwindsk {
         int result = -1;
 
         if (m_jsonData.contains("apps") && m_jsonData["apps"].is_array()) {
-            auto appsJsonArray = m_jsonData["apps"];
+            // Walk the array in place: copying it for every lookup is wasteful.
+            const auto &appsJsonArray = m_jsonData["apps"];
 
-            int idx=0;
-            for (auto app: appsJsonArray) {
-                if (app.is_object()) {
-
-                    if (app.contains("name") && app["name"].is_string()) {
-                        auto appName = QString::fromStdString(app["name"].get<std::string>());
-                        if (appName == name) {
-                            result = idx;
-                            break;
-                        }
+            // The index counts every array slot, because callers use it with at().
+            int idx = 0;
+            for (const auto &app : appsJsonArray) {
+                if (app.is_object() && app.contains("name") && app["name"].is_string()) {
+                    const auto appName = QString::fromStdString(app["name"].get<std::string>());
+                    if (appName == name) {
+                        result = idx;
+                        break;
                     }
-                    idx++;
                 }
+                idx++;
             }
         }
 

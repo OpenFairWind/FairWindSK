@@ -7,6 +7,7 @@
 
 #include <QLabel>
 #include <QMap>
+#include <QJsonDocument>
 #include <QSet>
 #include <QWidget>
 
@@ -41,6 +42,7 @@ namespace fairwindsk::ui::settings {
         };
 
         void refreshServerData();
+        void finishAsyncServerData();
         void rebuildRows();
         void clearRows();
         void applyLocalOverride(const QString &category, const QString &serverTargetUnit, const QString &targetUnit);
@@ -63,6 +65,8 @@ namespace fairwindsk::ui::settings {
         QMap<QString, PresetInfo> m_presets;
         QString m_serverActivePresetName;
         bool m_isUpdatingUi = false;
+        int m_pendingServerRequests = 0;
+        QMap<QString, QJsonDocument> m_serverDocuments;
     };
 }
 

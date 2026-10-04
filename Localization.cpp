@@ -15,6 +15,14 @@ namespace fairwindsk::localization {
         }
 
         QLocale defaultLocaleForLanguage(const QString &languageCode) {
+            if (languageCode == QStringLiteral("fr")) {
+                return QLocale(QLocale::French, QLocale::France);
+            }
+
+            if (languageCode == QStringLiteral("es")) {
+                return QLocale(QLocale::Spanish, QLocale::Spain);
+            }
+
             if (languageCode == QStringLiteral("it")) {
                 return QLocale(QLocale::Italian, QLocale::Italy);
             }
@@ -23,7 +31,10 @@ namespace fairwindsk::localization {
         }
 
         bool isSupportedSystemLanguage(const QLocale &locale) {
-            return locale.language() == QLocale::English || locale.language() == QLocale::Italian;
+            return locale.language() == QLocale::English
+                   || locale.language() == QLocale::French
+                   || locale.language() == QLocale::Spanish
+                   || locale.language() == QLocale::Italian;
         }
     }
 
@@ -35,7 +46,10 @@ namespace fairwindsk::localization {
         }
 
         const QString languageCode = normalized.section(QLatin1Char('_'), 0, 0);
-        if (languageCode == QStringLiteral("en") || languageCode == QStringLiteral("it")) {
+        if (languageCode == QStringLiteral("en")
+            || languageCode == QStringLiteral("fr")
+            || languageCode == QStringLiteral("es")
+            || languageCode == QStringLiteral("it")) {
             return languageCode;
         }
 
@@ -44,11 +58,20 @@ namespace fairwindsk::localization {
 
     QString effectiveLanguageCodeForSelection(const QString &value) {
         const QString normalized = normalizeLanguageSelection(value);
-        if (normalized == QStringLiteral("en") || normalized == QStringLiteral("it")) {
+        if (normalized != QStringLiteral("system")) {
             return normalized;
         }
 
-        return QLocale::system().language() == QLocale::Italian ? QStringLiteral("it") : QStringLiteral("en");
+        switch (QLocale::system().language()) {
+            case QLocale::French:
+                return QStringLiteral("fr");
+            case QLocale::Spanish:
+                return QStringLiteral("es");
+            case QLocale::Italian:
+                return QStringLiteral("it");
+            default:
+                return QStringLiteral("en");
+        }
     }
 
     QString effectiveLanguageCode(const Configuration &configuration) {

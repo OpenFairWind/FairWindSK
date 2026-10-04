@@ -15,6 +15,7 @@
 #include <QDateTime>
 #include <QTimer>
 #include <QVariantMap>
+#include <functional>
 
 #include "Waypoint.hpp"
 #include "Subscription.hpp"
@@ -89,12 +90,19 @@ namespace fairwindsk::signalk {
 
         QString getToken();
         void clearTokenAndCookie();
+        // Outcome of the most recent blocking REST request (2xx and no transport error).
+        bool lastRequestSucceeded() const;
+        int lastHttpStatus() const;
 
         qint64 sendMessage(QJsonObject message);
 
         Waypoint getWaypointByHref(const QString &href);
         QMap<QString, Waypoint> getWaypoints();
         QMap<QString, QJsonObject> getResources(const QString &collection, const QVariantMap &query = {});
+        void getResourcesAsync(const QString &collection,
+                               QObject *context,
+                               std::function<void(const QMap<QString, QJsonObject> &, const QString &)> completion,
+                               const QVariantMap &query = {});
         QJsonObject getResource(const QString &collection, const QString &id, const QVariantMap &query = {});
         QJsonObject createResource(const QString &collection, const QJsonObject &payload, const QVariantMap &query = {});
         QJsonObject putResource(const QString &collection, const QString &id, const QJsonObject &payload);
@@ -102,6 +110,13 @@ namespace fairwindsk::signalk {
         bool navigateToWaypoint(const QString &href);
         QJsonArray getHistoryPaths(const QVariantMap &query = {});
         QJsonObject getHistoryValues(const QStringList &paths, const QVariantMap &query = {});
+        void getHistoryValuesAsync(const QStringList &paths,
+                                   const QVariantMap &query,
+                                   QObject *context,
+                                   std::function<void(const QJsonDocument &, const QString &)> completion);
+        void getJsonAsync(const QUrl &url,
+                          QObject *context,
+                          std::function<void(const QJsonDocument &, const QString &)> completion);
         QJsonObject getUnitPreferencesActive();
         QJsonObject getUnitPreferencesConfig();
         QJsonDocument getUnitPreferencesPresets();
@@ -142,6 +157,8 @@ namespace fairwindsk::signalk {
                                           const QDateTime &lastStreamUpdate,
                                           const QString &statusText);
         void serverMessageChanged(const QString &message);
+        // The server refused the stored access token; the client keeps running in public mode.
+        void tokenRejected();
         void serverStateResynchronized(bool recoveredFromDisconnect);
         void resourcesChanged(const QString &collection);
 
@@ -183,7 +200,10 @@ namespace fairwindsk::signalk {
         QByteArray httpPut(const QUrl& url, const QJsonObject& payload);
         QByteArray httpDelete(const QUrl& url, const QJsonObject& payload);
         void beginRequest(const QString &method, const QUrl &url);
-        void endRequest(bool success, const QUrl &url = {}, int httpStatus = 0, const QString &message = QString());
+        void releaseRequest();
+        bool handleRejectedToken(int httpStatus, const QByteArray &body);
+        void cancelPendingDiscovery();
+        void endRequest(bool success, const QUrl &url = {}, int httpStatus = 0, const QString &message = QString(), bool recordOutcome = true);
         QString discoveryMessage() const;
         bool shouldSuppressServerMessage(const QUrl &url, int httpStatus) const;
         void setRestHealth(bool healthy, const QString &statusText = QString());
@@ -225,13 +245,15 @@ namespace fairwindsk::signalk {
         bool m_hadStreamConnection = false;
         bool m_reconnectRecoveryPending = false;
         bool m_reconnectAttemptInFlight = false;
+        quint64 m_discoveryGeneration = 0;
+        bool m_lastRequestSucceeded = false;
+        int m_lastHttpStatus = 0;
         bool m_plannedRestartInProgress = false;
         bool m_connectivityStateEmitted = false;
         bool m_lastRestHealthyEmitted = false;
         bool m_lastStreamHealthyEmitted = false;
         bool m_lastServerHealthyEmitted = false;
         ConnectionHealthState m_lastConnectionHealthStateEmitted = ConnectionHealthState::Disconnected;
-        QDateTime m_lastStreamActivityEmitted;
         QString m_lastConnectivitySummaryEmitted;
         QTimer m_plannedRestartTimer;
     };

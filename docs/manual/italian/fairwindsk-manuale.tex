@@ -1,0 +1,254 @@
+% ============================================================
+%  FairWindSK Manuale d'Uso --- Qualità tipografica professionale
+%  Motore: XeLaTeX | Compilare con: bash build-manuale-it.sh
+% ============================================================
+\documentclass[a4paper,11pt,twoside,openright]{book}
+
+\usepackage{fontspec}
+\setmainfont{DejaVu Serif}
+\setsansfont{DejaVu Sans}
+\setmonofont{DejaVu Sans Mono}[Scale=0.88]
+
+\input{version}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\usepackage[a4paper,top=24mm,bottom=26mm,inner=28mm,outer=22mm,
+            headsep=8mm,footskip=14mm,bindingoffset=5mm]{geometry}
+
+\usepackage[dvipsnames,table]{xcolor}
+\definecolor{Navy}{HTML}{0D2B45}
+\definecolor{Teal}{HTML}{1B7A8B}
+\definecolor{LtBlue}{HTML}{D8EAF0}
+\definecolor{LtGray}{HTML}{F2F2F2}
+\definecolor{MidGray}{HTML}{E8E8E8}
+\definecolor{WarnRed}{HTML}{7A1A00}
+\definecolor{WarnBg}{HTML}{FFF0EC}
+\definecolor{NoteBg}{HTML}{EAF5F8}
+\definecolor{TipBg}{HTML}{EEF0F6}
+\definecolor{GreenBg}{HTML}{EAF5EE}
+\definecolor{GreenOk}{HTML}{0A5C36}
+\definecolor{CodeBg}{HTML}{F4F4F4}
+\definecolor{VersBg}{HTML}{E8EFF5}
+
+\usepackage{microtype}
+\usepackage{setspace}
+\setstretch{1.18}
+\usepackage{parskip}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+\usepackage{ragged2e}
+
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\captionsetup{font={small,sf},labelfont={bf,color=Navy},labelsep=period,skip=6pt}
+\graphicspath{{figures/}}
+
+% Comandi per le icone
+\newcommand{\icon}[1]{\raisebox{-2.5pt}{\includegraphics[height=13pt]{icon-#1}}}
+\newcommand{\iconlg}[1]{\raisebox{-4pt}{\includegraphics[height=18pt]{icon-#1}}}
+\newcommand{\iconlabel}[2]{\iconlg{#1}\enspace{\sffamily\small\textbf{#2}}}
+
+% Schermate acquisite automaticamente dall'applicazione in esecuzione
+\newcommand{\screenshot}[3][0.9\textwidth]{%
+  \begin{figure}[H]\centering
+    \includegraphics[width=#1]{#2.png}
+    \caption{#3}\label{fig:#2}
+  \end{figure}}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE]{\small\sffamily\color{Navy}\thepage\enspace\textbar\enspace FairWindSK~\fwVersion}
+\fancyhead[RO]{\small\sffamily\color{Navy}\leftmark\enspace\textbar\enspace\thepage}
+\fancyfoot[C]{\scriptsize\sffamily\color{gray}Progetto OpenFairWind \textbar\ Compilato \fwBuildDate\ \textbar\ commit \texttt{\fwGitHash}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.2pt}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\small\sffamily\color{gray}\thepage}\renewcommand{\headrulewidth}{0pt}}
+
+\usepackage{titlesec}
+
+\newcommand{\chapterbanner}[1]{%
+  \colorbox{Navy}{%
+    \parbox{\dimexpr\textwidth\relax}{%
+      \vspace{6pt}\hspace{10pt}\thechapter\enspace #1\vspace{6pt}}}}
+
+\titleformat{\chapter}[block]
+  {\normalfont\sffamily\huge\bfseries\color{white}}{}
+  {0pt}{\chapterbanner}
+  [\vspace{2pt}\color{Teal}\rule{\textwidth}{2pt}\vspace{4pt}]
+
+\titleformat{\section}
+  {\normalfont\sffamily\Large\bfseries\color{Navy}}{\thesection}{0.6em}{}
+  [\vspace{-2pt}\color{Teal}\rule{\textwidth}{0.7pt}\vspace{2pt}]
+\titleformat{\subsection}
+  {\normalfont\sffamily\large\bfseries\color{Teal}}{\thesubsection}{0.5em}{}
+\titleformat{\subsubsection}
+  {\normalfont\sffamily\normalsize\bfseries\color{Navy}}{\thesubsubsection}{0.4em}{}
+\titlespacing*{\chapter}{0pt}{0pt}{18pt}
+\titlespacing*{\section}{0pt}{14pt}{5pt}
+\titlespacing*{\subsection}{0pt}{10pt}{3pt}
+
+\usepackage{enumitem}
+\setlist[itemize]{leftmargin=1.6em,itemsep=2pt,topsep=4pt}
+\setlist[enumerate]{leftmargin=1.8em,itemsep=2pt,topsep=4pt}
+\setlist[itemize,1]{label={\color{Teal}\textbullet}}
+\setlist[itemize,2]{label={\color{Navy}--},leftmargin=2.6em}
+
+\usepackage{booktabs,longtable,tabularx,multirow,array}
+\newcolumntype{L}[1]{>{\RaggedRight\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+\setlength{\arrayrulewidth}{0.4pt}
+\renewcommand{\arraystretch}{1.32}
+
+\usepackage{tcolorbox}
+\tcbuselibrary{skins,breakable}
+
+\newtcolorbox{warningbox}{
+  breakable,enhanced,boxrule=0pt,leftrule=4pt,arc=3pt,
+  colback=WarnBg,colframe=WarnRed,
+  left=10pt,right=10pt,top=7pt,bottom=7pt,
+  before skip=10pt,after skip=10pt,
+  fonttitle=\sffamily\bfseries\small,fontupper=\small,
+  title={\color{WarnRed}\textbf{ATTENZIONE}}}
+
+\newtcolorbox{notebox}{
+  breakable,enhanced,boxrule=0pt,leftrule=4pt,arc=3pt,
+  colback=NoteBg,colframe=Teal,
+  left=10pt,right=10pt,top=7pt,bottom=7pt,
+  before skip=10pt,after skip=10pt,
+  fonttitle=\sffamily\bfseries\small,fontupper=\small,
+  title={\color{Teal}\textbf{NOTA}}}
+
+\newtcolorbox{tipbox}{
+  breakable,enhanced,boxrule=0pt,leftrule=4pt,arc=3pt,
+  colback=TipBg,colframe=Navy,
+  left=10pt,right=10pt,top=7pt,bottom=7pt,
+  before skip=10pt,after skip=10pt,
+  fonttitle=\sffamily\bfseries\small,fontupper=\small,
+  title={\color{Navy}\textbf{SUGGERIMENTO}}}
+
+\usepackage{listings}
+\lstset{backgroundcolor=\color{CodeBg},
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,frame=single,rulecolor=\color{MidGray},
+  framexleftmargin=4pt,xleftmargin=6pt,aboveskip=6pt,belowskip=6pt}
+\newcommand{\code}[1]{{\ttfamily\small\color{Navy}#1}}
+\newcommand{\key}[1]{{\sffamily\small\bfseries #1}}
+\newcommand{\ui}[1]{{\sffamily\small\itshape #1}}
+\newcommand{\skpath}[1]{{\ttfamily\footnotesize\color{Teal}#1}}
+
+\newcommand{\settingstab}[2]{%
+  \section{Scheda #1 --- #2}%
+  \begin{tcolorbox}[enhanced,boxrule=0pt,leftrule=0pt,arc=5pt,
+    colback=Navy,colframe=Navy,top=6pt,bottom=6pt,left=14pt,right=14pt,
+    before skip=4pt,after skip=10pt]
+    {\sffamily\large\bfseries\color{white}Scheda #1 --- #2}
+  \end{tcolorbox}}
+
+\newcommand{\versionbanner}{%
+  \begin{tcolorbox}[enhanced,boxrule=0.8pt,arc=4pt,
+    colback=VersBg,colframe=Navy,
+    top=8pt,bottom=8pt,left=14pt,right=14pt,
+    before skip=6pt,after skip=6pt]
+    \sffamily\small
+    \begin{tabular}{@{}lL{4cm}@{\quad}lL{4.5cm}@{}}
+      \color{Navy}\bfseries Versione: & \fwVersion &
+      \color{Navy}\bfseries Commit:   & \texttt{\fwGitHash} \\
+      \color{Navy}\bfseries Ramo:     & \texttt{\fwGitBranch} &
+      \color{Navy}\bfseries Conteggio: & \fwGitCount \\
+      \color{Navy}\bfseries Rilascio: & \fwGitDate &
+      \color{Navy}\bfseries Compilato: & \fwBuildDate \\
+    \end{tabular}
+  \end{tcolorbox}}
+
+\usepackage[
+  colorlinks=true,linkcolor=Navy,urlcolor=Teal,citecolor=Teal,
+  bookmarks=true,bookmarksnumbered=true,
+  pdfauthor={Progetto OpenFairWind},
+  pdftitle={FairWindSK Manuale d'Uso v\fwVersion},
+  pdfsubject={FairWindSK \fwVersion\ (\fwGitHash) --- Sistema di visualizzazione nautica Signal K},
+  pdfkeywords={FairWindSK, Signal K, nautica, navigazione, plancia}
+]{hyperref}
+
+\setcounter{tocdepth}{2}
+\setcounter{secnumdepth}{3}
+
+% ============================================================
+\begin{document}
+
+% PAGINA DEL TITOLO
+\begin{titlepage}
+  \pagecolor{Navy}\thispagestyle{empty}
+  \vspace*{18mm}
+  \begin{center}
+    \includegraphics[width=0.55\textwidth]{splash-logo}\\[8pt]
+    {\fontsize{50}{58}\selectfont\sffamily\bfseries\color{white}FairWindSK}\\[8pt]
+    {\color{Teal}\rule{0.65\textwidth}{2pt}}\\[10pt]
+    {\fontsize{24}{30}\selectfont\sffamily\color{white}Manuale d'Uso}\\[6pt]
+    {\fontsize{13}{18}\selectfont\sffamily\color{LtBlue}\itshape
+      Il sistema di visualizzazione nautica Signal~K per la plancia}\\[24pt]
+    \begin{tcolorbox}[enhanced,boxrule=1pt,arc=6pt,
+      colback=Navy,colframe=Teal,
+      top=7pt,bottom=7pt,left=16pt,right=16pt,
+      width=0.64\textwidth,halign=center,
+      before skip=0pt,after skip=0pt]
+      {\sffamily\color{white}\bfseries v\fwVersion}%
+      \quad{\color{MidGray}|}%
+      \quad{\sffamily\color{LtBlue}\texttt{\fwGitHash}}%
+      \quad{\color{MidGray}|}%
+      \quad{\sffamily\color{LtBlue}\fwGitDate}
+    \end{tcolorbox}\vspace{18pt}
+    {\small\sffamily\color{MidGray}Guida operativa completa per navigatori}\\[32pt]
+    {\color{Teal}\rule{0.38\textwidth}{1pt}}\\[10pt]
+    {\large\sffamily\color{white}Edizione \fwEdition}\\[4pt]
+    {\normalsize\sffamily\color{LtBlue}Progetto OpenFairWind}\\[3pt]
+    {\small\sffamily\color{MidGray}Università degli Studi di Napoli 'Parthenope' · Programma DYNAMO}\\[3pt]
+    {\small\sffamily\color{MidGray}Compilato il \fwBuildDate}
+  \end{center}
+  \vfill
+  \begin{center}
+    {\color{WarnRed}\rule{0.78\textwidth}{1pt}}\\[5pt]
+    {\small\sffamily\color{WarnBg}%
+      FairWindSK supporta la consapevolezza situazionale a bordo.
+      Non sostituisce la guardia visiva, la navigazione tradizionale,
+      le carte nautiche o le procedure di sicurezza certificate.}
+  \end{center}
+\end{titlepage}
+\nopagecolor
+
+% COLOPHON E COPYRIGHT
+\clearpage\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}\small\sffamily
+  \includegraphics[height=36pt]{splash-logo}\\[8pt]
+  {\bfseries FairWindSK Manuale d'Uso} --- Edizione \fwEdition\\[4pt]
+  \copyright~\fwBuildYear~Progetto OpenFairWind,
+  Università degli Studi di Napoli 'Parthenope'\\[4pt]
+  \href{https://creativecommons.org/licenses/by/4.0/}{%
+    Creative Commons Attribuzione 4.0 Internazionale}\\[10pt]
+  \url{https://github.com/OpenFairWind/FairWindSK}\\[14pt]
+  \versionbanner\vspace{10pt}
+  {\color{WarnRed}\bfseries Avvertenza di sicurezza:}
+  Questo manuale descrive un ausilio alla navigazione.
+  Il comandante dell'imbarcazione è il solo responsabile della condotta
+  in sicurezza della traversata in ogni momento.
+\end{center}
+\vspace*{\fill}
+
+\clearpage
+\tableofcontents
+
+\include{chapters/parte1-introduzione}
+\include{chapters/parte2-interfaccia}
+\include{chapters/parte3-operativo}
+\include{chapters/parte4-mydata}
+\include{chapters/parte5-impostazioni}
+\include{chapters/parte6-riferimento}
+
+\appendix
+\include{chapters/appendice-installazione}
+
+\end{document}

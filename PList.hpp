@@ -18,7 +18,7 @@ class PList {
     public:
         explicit PList(QIODevice *device);
         QString toPList(const QVariant &variant);
-        QMap<QString, QVariant> toMap();
+        QMap<QString, QVariant> toMap() const;
 
     private:
         QVariant parseElement(const QDomElement &e);

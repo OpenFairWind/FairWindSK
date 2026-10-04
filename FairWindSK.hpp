@@ -143,6 +143,7 @@ namespace fairwindsk {
     signals:
         void appsReloadStarted();
         void appsReloadFinished(bool success);
+        void appIconReady(const QString &appId);
         void appsStateChanged(AppsState state, const QString &stateText);
         void runtimeHealthChanged(RuntimeHealthState state, const QString &summary, const QString &badgeText);
 
@@ -156,6 +157,7 @@ namespace fairwindsk {
         bool rebuildAppRegistry(const nlohmann::json *appsPayload = nullptr);
         void setAppsState(AppsState state, const QString &stateText = QString());
         void startAppsRequest(const QUrl &url, quint64 generation, bool fallbackRequest);
+        void prefetchAppIcons(quint64 generation);
         void finalizeAppsReload(bool success, const QString &statusText, const nlohmann::json *appsPayload = nullptr);
         void handleAutomaticComfortEnvironmentUpdate(const QJsonObject &update);
 

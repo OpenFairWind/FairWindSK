@@ -61,6 +61,10 @@ namespace fairwindsk::ui::settings {
     }
 
     void Units::syncLegacyUnitsForCategory(nlohmann::json &root, const QString &category, const QString &targetUnit) {
+        // Repair a missing or malformed "units" node before writing into it.
+        if (!root.contains("units") || !root["units"].is_object()) {
+            root["units"] = nlohmann::json::object();
+        }
         auto &units = root["units"];
 
         if (category == QStringLiteral("speed")) {
@@ -125,6 +129,15 @@ namespace fairwindsk::ui::settings {
 
     void Units::setLocalOverrideForCategory(const QString &category, const QString &targetUnit) {
         auto &root = m_settings->getConfiguration()->getRoot();
+        // Make sure both levels are objects, or the nested assignment below would throw.
+        const auto unitPreferencesKey = kUnitOverrideRoot.toStdString();
+        const auto overridesKey = kUnitOverrideNode.toStdString();
+        if (!root.contains(unitPreferencesKey) || !root[unitPreferencesKey].is_object()) {
+            root[unitPreferencesKey] = nlohmann::json::object();
+        }
+        if (!root[unitPreferencesKey].contains(overridesKey) || !root[unitPreferencesKey][overridesKey].is_object()) {
+            root[unitPreferencesKey][overridesKey] = nlohmann::json::object();
+        }
         root[kUnitOverrideRoot.toStdString()][kUnitOverrideNode.toStdString()][category.toStdString()] = targetUnit.toStdString();
         syncLegacyUnitsForCategory(root, category, targetUnit);
     }
@@ -142,6 +155,10 @@ namespace fairwindsk::ui::settings {
     }
 
     void Units::applyLocalOverride(const QString &category, const QString &serverTargetUnit, const QString &targetUnit) {
+        // Every branch below writes through the settings page.
+        if (!m_settings) {
+            return;
+        }
         if (targetUnit != serverTargetUnit) {
             setLocalOverrideForCategory(category, targetUnit);
         } else {
@@ -149,9 +166,7 @@ namespace fairwindsk::ui::settings {
             auto &root = m_settings->getConfiguration()->getRoot();
             syncLegacyUnitsForCategory(root, category, serverTargetUnit);
         }
-        if (m_settings) {
-            m_settings->markDirty(FairWindSK::RuntimeUnits, 0);
-        }
+        m_settings->markDirty(FairWindSK::RuntimeUnits, 0);
     }
 
     QString Units::canonicalUnitToken(const QString &value) {
@@ -258,17 +273,43 @@ namespace fairwindsk::ui::settings {
             return;
         }
 
-        fairwindsk::Units::getInstance()->refreshSignalKPreferences();
-
-        const auto configObject = signalKClient->getUnitPreferencesConfig();
-        if (configObject.contains(QStringLiteral("activePreset")) && configObject.value(QStringLiteral("activePreset")).isString()) {
-            m_serverActivePresetName = configObject.value(QStringLiteral("activePreset")).toString();
+        // Gather every unit-preference document asynchronously on all platforms: the page opens
+        // at once and never freezes the helm display while a slow server answers.
+        m_serverDocuments.clear();
+        const QMap<QString, QString> endpoints = {
+            {QStringLiteral("active"), QStringLiteral("/v1/unitpreferences/active")},
+            {QStringLiteral("categories"), QStringLiteral("/v1/unitpreferences/categories")},
+            {QStringLiteral("config"), QStringLiteral("/v1/unitpreferences/config")},
+            {QStringLiteral("defaults"), QStringLiteral("/v1/unitpreferences/default-categories")},
+            {QStringLiteral("definitions"), QStringLiteral("/v1/unitpreferences/definitions")},
+            {QStringLiteral("presets"), QStringLiteral("/v1/unitpreferences/presets")}
+        };
+        m_pendingServerRequests = endpoints.size();
+        for (auto it = endpoints.cbegin(); it != endpoints.cend(); ++it) {
+            const QString key = it.key();
+            signalKClient->getJsonAsync(QUrl(signalKClient->url().toString() + it.value()), this,
+                                        [this, key](const QJsonDocument &document, const QString &) {
+                m_serverDocuments.insert(key, document);
+                --m_pendingServerRequests;
+                if (m_pendingServerRequests == 0) {
+                    finishAsyncServerData();
+                }
+            });
         }
+    }
 
-        const auto activePresetObject = signalKClient->getUnitPreferencesActive();
+    void Units::finishAsyncServerData() {
+        const QJsonObject activePresetObject = m_serverDocuments.value(QStringLiteral("active")).object();
+        fairwindsk::Units::getInstance()->applySignalKPreferences(
+            activePresetObject,
+            m_serverDocuments.value(QStringLiteral("categories")).object(),
+            m_serverDocuments.value(QStringLiteral("definitions")).object(),
+            m_serverDocuments.value(QStringLiteral("defaults")).object());
+
+        const QJsonObject configObject = m_serverDocuments.value(QStringLiteral("config")).object();
+        m_serverActivePresetName = configObject.value(QStringLiteral("activePreset")).toString();
         QString activePresetKey = activePresetObject.value(QStringLiteral("id")).toString(
-            activePresetObject.value(QStringLiteral("key")).toString()
-        );
+            activePresetObject.value(QStringLiteral("key")).toString());
         if (activePresetKey.isEmpty()) {
             activePresetKey = m_serverActivePresetName;
         }
@@ -276,32 +317,26 @@ namespace fairwindsk::ui::settings {
             m_presets.insert(activePresetKey, parsePresetInfo(activePresetKey, activePresetObject));
         }
 
-        const auto presetsDocument = signalKClient->getUnitPreferencesPresets();
+        const QJsonDocument presetsDocument = m_serverDocuments.value(QStringLiteral("presets"));
         if (presetsDocument.isObject()) {
-            const auto presetsObject = presetsDocument.object();
-            const QStringList groups{QStringLiteral("builtIn"), QStringLiteral("custom")};
-            for (const auto &groupName : groups) {
-                if (!presetsObject.contains(groupName) || !presetsObject.value(groupName).isArray()) {
-                    continue;
-                }
-                const auto presetArray = presetsObject.value(groupName).toArray();
-                for (const auto &presetValue : presetArray) {
-                    if (!presetValue.isObject()) {
-                        continue;
-                    }
-                    const auto presetObject = presetValue.toObject();
+            const QJsonObject presetsObject = presetsDocument.object();
+            for (const QString &groupName : {QStringLiteral("builtIn"), QStringLiteral("custom")}) {
+                const QJsonArray presetArray = presetsObject.value(groupName).toArray();
+                for (const QJsonValue &presetValue : presetArray) {
+                    const QJsonObject presetObject = presetValue.toObject();
                     const QString presetName = presetObject.value(QStringLiteral("name")).toString();
                     if (presetName.isEmpty()) {
                         continue;
                     }
-
                     auto info = m_presets.value(presetName);
                     info.name = presetName;
-                    info.displayName = presetObject.value(QStringLiteral("displayName")).toString(presetObject.value(QStringLiteral("name")).toString());
+                    info.displayName = presetObject.value(QStringLiteral("displayName")).toString(presetName);
                     m_presets.insert(presetName, info);
                 }
             }
         }
+
+        rebuildRows();
     }
 
     void Units::rebuildRows() {

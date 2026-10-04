@@ -1,0 +1,358 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  BUILD_TYPE: Release
+  QT_VERSION: "6.8.3"
+  ANDROID_API: "35"
+  ANDROID_NDK: "26.1.10909125"
+
+jobs:
+  validate:
+    name: Validate version and signing inputs
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: version
+        shell: bash
+        run: |
+          version="$(tr -d '[:space:]' < VERSION.txt)"
+          tag="v${version}"
+          [[ "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]] || exit 1
+          if [[ "${GITHUB_REF_TYPE}" == "tag" && "${GITHUB_REF_NAME}" != "${tag}" ]]; then
+            echo "Tag ${GITHUB_REF_NAME} does not match VERSION.txt (${tag})" >&2
+            exit 1
+          fi
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+          echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
+      - name: Require mobile signing secrets for tagged releases
+        if: github.ref_type == 'tag'
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_ALIAS: ${{ secrets.ANDROID_KEYSTORE_ALIAS }}
+          ANDROID_KEYSTORE_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_STORE_PASSWORD }}
+          ANDROID_KEYSTORE_KEY_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_KEY_PASSWORD }}
+          IOS_CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
+          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+          IOS_TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
+        run: |
+          missing=0
+          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_ALIAS ANDROID_KEYSTORE_STORE_PASSWORD \
+            ANDROID_KEYSTORE_KEY_PASSWORD IOS_CERTIFICATE_BASE64 IOS_CERTIFICATE_PASSWORD \
+            IOS_PROVISIONING_PROFILE_BASE64 IOS_TEAM_ID; do
+            if [[ -z "${!name}" ]]; then echo "Missing release secret: ${name}" >&2; missing=1; fi
+          done
+          exit "${missing}"
+
+  linux:
+    name: Linux x86-64 / ${{ matrix.format }}
+    needs: validate
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {format: Debian, cmake_format: DEB, extension: deb, artifact: linux-debian-x86-64, package_name: linux-debian-x86_64}
+          - {format: Red Hat, cmake_format: RPM, extension: rpm, artifact: linux-redhat-x86-64, package_name: linux-redhat-x86_64}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          arch: linux_gcc_64
+          modules: qtpositioning qtvirtualkeyboard qtwebchannel qtwebengine qtwebsockets
+          cache: true
+      - name: Install packaging dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes cmake ninja-build g++ libgl1-mesa-dev libxkbcommon-x11-0 nlohmann-json3-dev dpkg-dev rpm file
+      - name: Build package
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DBUILD_TESTING=OFF \
+            -DFAIRWINDSK_LINUX_PACKAGE_FORMAT=${{ matrix.cmake_format }}
+          cmake --build build --target package --parallel 2
+          package="$(find build -maxdepth 1 -type f -name '*.${{ matrix.extension }}' -print -quit)"
+          test -n "${package}"
+          mv "${package}" "FairWindSK-${{ needs.validate.outputs.version }}-${{ matrix.package_name }}.${{ matrix.extension }}"
+      - name: Inspect package
+        run: |
+          package="FairWindSK-${{ needs.validate.outputs.version }}-${{ matrix.package_name }}.${{ matrix.extension }}"
+          if [[ "${{ matrix.cmake_format }}" == "DEB" ]]; then
+            test "$(dpkg-deb --field "${package}" Architecture)" = "amd64"
+            dpkg-deb --field "${package}" Depends | grep .
+            dpkg-deb --contents "${package}" | grep '/FairWindSK$'
+          else
+            rpm -qip "${package}" | grep -Eq 'Architecture[[:space:]]*:[[:space:]]*x86_64'
+            rpm -qp --requires "${package}"
+            rpm -qlp "${package}" | grep '/FairWindSK$'
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: FairWindSK-*.${{ matrix.extension }}
+          if-no-files-found: error
+
+  raspberry-pi-os:
+    name: Raspberry Pi OS arm64
+    needs: validate
+    runs-on: ubuntu-24.04-arm
+    container: debian:bookworm
+    steps:
+      - run: apt-get update && apt-get install --yes git ca-certificates
+      - uses: actions/checkout@v5
+      - name: Install dependencies
+        run: |
+          apt-get install --yes cmake ninja-build g++ dpkg-dev file libavahi-client-dev libgl1-mesa-dev libxkbcommon-x11-0 \
+            qt6-base-dev qt6-declarative-dev qt6-positioning-dev qt6-svg-dev qt6-tools-dev \
+            qt6-virtualkeyboard-dev qt6-webengine-dev qt6-websockets-dev nlohmann-json3-dev
+          qt_vk_dir="/usr/lib/$(dpkg-architecture -qDEB_HOST_MULTIARCH)/cmake/Qt6VirtualKeyboard"
+          touch "${qt_vk_dir}/Qt6VirtualKeyboardConfigVersionImpl.cmake"
+      - name: Build and inspect package
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DBUILD_TESTING=OFF -DFAIRWINDSK_RASPBERRY_PI_OS=ON
+          cmake --build build --target package --parallel 2
+          package="$(find build -maxdepth 1 -type f -name '*.deb' -print -quit)"
+          mv "${package}" "FairWindSK-${{ needs.validate.outputs.version }}-raspberry-pi-os-arm64.deb"
+          package="FairWindSK-${{ needs.validate.outputs.version }}-raspberry-pi-os-arm64.deb"
+          test "$(dpkg-deb --field "${package}" Architecture)" = "arm64"
+          dpkg-deb --field "${package}" Depends | grep .
+          dpkg-deb --contents "${package}" | grep '/FairWindSK$'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: raspberry-pi-os-arm64
+          path: FairWindSK-*.deb
+          if-no-files-found: error
+
+  windows:
+    name: Windows x86-64 installer
+    needs: validate
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v5
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          arch: win64_msvc2022_64
+          modules: qtpositioning qtvirtualkeyboard qtwebchannel qtwebengine qtwebsockets
+          cache: true
+      - run: choco install nsis --yes --no-progress
+      - name: Build installer
+        run: |
+          cmake -S . -B build -A x64 -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DBUILD_TESTING=OFF
+          cmake --build build --config ${{ env.BUILD_TYPE }} --target package --parallel 2
+      - name: Normalize and inspect installer
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem build/FairWindSK-*.exe | Select-Object -First 1
+          if (-not $installer) { throw "NSIS installer was not generated" }
+          Move-Item $installer.FullName "FairWindSK-${{ needs.validate.outputs.version }}-windows-x86_64-setup.exe"
+          if ((Get-Item "FairWindSK-${{ needs.validate.outputs.version }}-windows-x86_64-setup.exe").Length -lt 1MB) { throw "Installer is unexpectedly small" }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-x86-64
+          path: FairWindSK-*-setup.exe
+          if-no-files-found: error
+
+  macos:
+    name: macOS ${{ matrix.arch }} DMG
+    needs: validate
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: macos-15, arch: arm64}
+          - {os: macos-15-intel, arch: x86_64}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          arch: clang_64
+          modules: qtpositioning qtvirtualkeyboard qtwebchannel qtwebengine qtwebsockets
+          cache: true
+      - name: Build DMG
+        run: |
+          test "$(uname -m)" = "${{ matrix.arch }}"
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DBUILD_TESTING=OFF -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }}
+          cmake --build build --target package --parallel 2
+          dmg="$(find build -maxdepth 1 -type f -name '*.dmg' -print -quit)"
+          mv "${dmg}" "FairWindSK-${{ needs.validate.outputs.version }}-macos-${{ matrix.arch }}.dmg"
+      - name: Inspect bundle
+        run: |
+          mount="$(mktemp -d)"
+          hdiutil attach "FairWindSK-${{ needs.validate.outputs.version }}-macos-${{ matrix.arch }}.dmg" -mountpoint "${mount}" -nobrowse
+          file "${mount}/FairWindSK.app/Contents/MacOS/FairWindSK" | grep '${{ matrix.arch }}'
+          test -d "${mount}/FairWindSK.app/Contents/Frameworks/QtCore.framework"
+          hdiutil detach "${mount}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-${{ matrix.arch }}
+          path: FairWindSK-*.dmg
+          if-no-files-found: error
+
+  android:
+    name: Android arm64 signed APK
+    needs: validate
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: "17"}
+      - uses: android-actions/setup-android@v3
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          target: android
+          arch: android_arm64_v8a
+          modules: qtpositioning qtvirtualkeyboard qtwebsockets qtwebview
+          cache: true
+      - run: sdkmanager 'platform-tools' 'platforms;android-${{ env.ANDROID_API }}' 'build-tools;35.0.0' 'ndk;${{ env.ANDROID_NDK }}'
+      - name: Restore keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: echo "${ANDROID_KEYSTORE_BASE64}" | base64 --decode > "${RUNNER_TEMP}/fairwindsk-release.jks"
+      - name: Build signed APK
+        env:
+          QT_ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/fairwindsk-release.jks
+          QT_ANDROID_KEYSTORE_ALIAS: ${{ secrets.ANDROID_KEYSTORE_ALIAS }}
+          QT_ANDROID_KEYSTORE_STORE_PASS: ${{ secrets.ANDROID_KEYSTORE_STORE_PASSWORD }}
+          QT_ANDROID_KEYSTORE_KEY_PASS: ${{ secrets.ANDROID_KEYSTORE_KEY_PASSWORD }}
+        run: |
+          "${QT_ROOT_DIR}/bin/qt-cmake" -S . -B build -G Ninja \
+            -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-${ANDROID_API} \
+            -DANDROID_SDK_ROOT=${ANDROID_SDK_ROOT} -DANDROID_NDK_ROOT=${ANDROID_SDK_ROOT}/ndk/${ANDROID_NDK} \
+            -DQT_CHAINLOAD_TOOLCHAIN_FILE=${ANDROID_SDK_ROOT}/ndk/${ANDROID_NDK}/build/cmake/android.toolchain.cmake \
+            -DQT_HOST_PATH=${QT_HOST_PATH} -DQT_ANDROID_SIGN_APK=ON -DQT_ANDROID_DEPLOYMENT_TYPE=Release \
+            -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
+          cmake --build build --parallel 2
+          apk="$(find build -type f -name '*signed.apk' -print -quit)"
+          test -n "${apk}"
+          cp "${apk}" "FairWindSK-${{ needs.validate.outputs.version }}-android-arm64-v8a.apk"
+      - name: Verify APK
+        run: |
+          apk="FairWindSK-${{ needs.validate.outputs.version }}-android-arm64-v8a.apk"
+          tools="${ANDROID_SDK_ROOT}/build-tools/35.0.0"
+          "${tools}/apksigner" verify --verbose --print-certs "${apk}"
+          "${tools}/aapt2" dump badging "${apk}" | grep "package: name='org.openfairwind.fairwindsk'"
+          unzip -l "${apk}" | grep 'lib/arm64-v8a/libFairWindSK_arm64-v8a.so'
+          unzip -l "${apk}" | grep 'lib/arm64-v8a/libQt6Core_arm64-v8a.so'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-arm64-v8a
+          path: FairWindSK-*.apk
+          if-no-files-found: error
+
+  ios:
+    name: iOS arm64 signed IPA
+    needs: validate
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          target: ios
+          modules: qtpositioning qtvirtualkeyboard qtwebsockets qtwebview
+          cache: true
+      - name: Install signing identity and profile
+        env:
+          IOS_CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
+          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+          KEYCHAIN_PASSWORD: ${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          certificate="${RUNNER_TEMP}/fairwindsk.p12"
+          profile="${RUNNER_TEMP}/fairwindsk.mobileprovision"
+          keychain="${RUNNER_TEMP}/fairwindsk.keychain-db"
+          echo "${IOS_CERTIFICATE_BASE64}" | base64 --decode > "${certificate}"
+          echo "${IOS_PROVISIONING_PROFILE_BASE64}" | base64 --decode > "${profile}"
+          security create-keychain -p "${KEYCHAIN_PASSWORD}" "${keychain}"
+          security unlock-keychain -p "${KEYCHAIN_PASSWORD}" "${keychain}"
+          security import "${certificate}" -P "${IOS_CERTIFICATE_PASSWORD}" -A -t cert -f pkcs12 -k "${keychain}"
+          security list-keychains -d user -s "${keychain}" login.keychain-db
+          security set-key-partition-list -S apple-tool:,apple: -s -k "${KEYCHAIN_PASSWORD}" "${keychain}"
+          plist="${RUNNER_TEMP}/profile.plist"
+          security cms -D -i "${profile}" > "${plist}"
+          uuid="$(/usr/libexec/PlistBuddy -c 'Print UUID' "${plist}")"
+          name="$(/usr/libexec/PlistBuddy -c 'Print Name' "${plist}")"
+          mkdir -p "${HOME}/Library/MobileDevice/Provisioning Profiles"
+          cp "${profile}" "${HOME}/Library/MobileDevice/Provisioning Profiles/${uuid}.mobileprovision"
+          echo "IOS_PROFILE_NAME=${name}" >> "${GITHUB_ENV}"
+      - name: Archive device build
+        env:
+          IOS_TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
+        run: |
+          "${QT_ROOT_DIR}/bin/qt-cmake" -S . -B build-ios -G Xcode \
+            -DQT_HOST_PATH="${QT_HOST_PATH}" -DCMAKE_OSX_SYSROOT=iphoneos -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM="${IOS_TEAM_ID}" \
+            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_STYLE=Manual \
+            -DCMAKE_XCODE_ATTRIBUTE_PROVISIONING_PROFILE_SPECIFIER="${IOS_PROFILE_NAME}"
+          xcodebuild archive -project build-ios/FairWindSK.xcodeproj -scheme FairWindSK -configuration Release \
+            -destination 'generic/platform=iOS' -archivePath "${RUNNER_TEMP}/FairWindSK.xcarchive" \
+            DEVELOPMENT_TEAM="${IOS_TEAM_ID}" CODE_SIGN_STYLE=Manual PROVISIONING_PROFILE_SPECIFIER="${IOS_PROFILE_NAME}"
+      - name: Export and verify IPA
+        env:
+          IOS_TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
+          IOS_EXPORT_METHOD: ${{ vars.IOS_EXPORT_METHOD || 'ad-hoc' }}
+        run: |
+          options="${RUNNER_TEMP}/ExportOptions.plist"
+          /usr/libexec/PlistBuddy -c "Add :method string ${IOS_EXPORT_METHOD}" "${options}"
+          /usr/libexec/PlistBuddy -c "Add :teamID string ${IOS_TEAM_ID}" "${options}"
+          /usr/libexec/PlistBuddy -c 'Add :signingStyle string manual' "${options}"
+          /usr/libexec/PlistBuddy -c 'Add :provisioningProfiles dict' "${options}"
+          /usr/libexec/PlistBuddy -c "Add :provisioningProfiles:org.openfairwind.fairwindsk string ${IOS_PROFILE_NAME}" "${options}"
+          xcodebuild -exportArchive -archivePath "${RUNNER_TEMP}/FairWindSK.xcarchive" \
+            -exportPath "${RUNNER_TEMP}/ios-export" -exportOptionsPlist "${options}"
+          ipa="$(find "${RUNNER_TEMP}/ios-export" -type f -name '*.ipa' -print -quit)"
+          cp "${ipa}" "FairWindSK-${{ needs.validate.outputs.version }}-ios-arm64.ipa"
+          app="${RUNNER_TEMP}/FairWindSK.xcarchive/Products/Applications/FairWindSK.app"
+          codesign --verify --deep --strict "${app}"
+          file "${app}/FairWindSK" | grep arm64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-arm64
+          path: FairWindSK-*.ipa
+          if-no-files-found: error
+
+  publish:
+    name: Sign manifest and publish release
+    if: github.ref_type == 'tag'
+    needs: [validate, linux, raspberry-pi-os, windows, macos, android, ios]
+    runs-on: ubuntu-24.04
+    environment: release
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with: {path: dist, merge-multiple: true}
+      - name: Create manifest and checksums
+        run: |
+          python3 scripts/release/create-manifest.py --version "${{ needs.validate.outputs.version }}" \
+            --tag "${{ needs.validate.outputs.tag }}" --commit "${GITHUB_SHA}" \
+            --artifacts dist --output dist/release-manifest.json
+      - uses: sigstore/cosign-installer@v3.9.2
+      - name: Sign release manifest
+        run: |
+          cosign sign-blob --yes --output-signature dist/release-manifest.sig \
+            --output-certificate dist/release-manifest.pem dist/release-manifest.json
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: FairWindSK ${{ needs.validate.outputs.tag }}
+          body_path: CHANGELOG.md
+          prerelease: ${{ contains(needs.validate.outputs.version, '-') }}
+          files: dist/*
+          fail_on_unmatched_files: true

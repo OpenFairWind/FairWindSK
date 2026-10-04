@@ -1,0 +1,337 @@
+\part{Riferimento}
+
+\chapter{Preset Comfort e Visibilità}
+\label{ch:preset-comfort}
+
+Usa sempre il preset più adatto alle condizioni di luce attuali.
+Se un preset sembra attraente ma rende più difficile vedere le informazioni urgenti,
+passa a uno più chiaro.
+
+\section{Guida Pratica}
+
+\begin{itemize}
+  \item Usa preset più luminosi e ad alto contrasto alla luce del giorno.
+  \item Usa preset più scuri orientati alla notte quando preservare la visione notturna
+        è importante.
+  \item Mantieni allarmi e testo critico per la sicurezza facilmente leggibili
+        su ogni preset.
+  \item Il preset Notte imposta l'icona tinta in rosso per impostazione predefinita.
+        Questo è intenzionale --- la luce rossa minimizza il tempo necessario per
+        riadattarsi all'oscurità dopo aver guardato il display.
+\end{itemize}
+
+\chapter{Display, Tocco e Operatività in Condizioni Difficili}
+\label{ch:condizioni-difficili}
+
+\section{Leggibilità del Display}
+
+FairWindSK deve rimanere leggibile alla luce del sole piena, al crepuscolo, di notte
+e in condizioni difficili. Inizia sempre con:
+
+\begin{enumerate}
+  \item Luminosità dello schermo.
+  \item Preset comfort (corretto per le condizioni di luce attuali).
+  \item Angolo di visione e posizione di plancia.
+  \item L'app o la pagina mostrata nell'Area Applicazioni.
+\end{enumerate}
+
+\section{Uso del Tocco in Condizioni Difficili}
+
+\begin{itemize}
+  \item Prima mettiti in sicurezza. Una mano all'imbarcazione, una allo schermo.
+  \item Usa tocchi deliberati e singoli. La pressione esitante e i tocchi rapidi
+        ripetuti causano azioni indesiderate.
+  \item Non esplorare mai i controlli dell'autopilota toccando in modo speculativo ---
+        ogni comando ha un effetto fisico immediato.
+  \item Mantieni lo schermo pulito. La salsedine riduce significativamente la precisione
+        del tocco.
+  \item Pre-configura quello che ti serve mentre le condizioni sono calme.
+  \item Preferisci i target grandi e stabili delle icone principali della Barra Inferiore.
+\end{itemize}
+
+\chapter{Procedura Operativa Consigliata}
+\label{ch:procedura}
+
+\section{Prima della Partenza}
+
+\begin{enumerate}
+  \item Avvia FairWindSK e conferma che lo stato della shell sia normale.
+  \item Verifica che i dati chiave attesi siano live nella Barra Superiore.
+  \item Apri l'app più rilevante per la fase di navigazione corrente.
+  \item Conferma luminosità e preset comfort.
+  \item Completa la lista di controllo pre-partenza (Cap.~2).
+\end{enumerate}
+
+\section{Durante la Traversata}
+
+\begin{enumerate}
+  \item Controlla i valori obsoleti o mancanti nella Barra Superiore.
+  \item Verifica rotta, profondità e prua quando le condizioni cambiano.
+  \item Usa il launcher per cambiare attività invece di forzare un'app bloccata.
+  \item Tratta gli stati degradati come avvisi operativi.
+  \item Quando la schermata corrente smette di sembrare chiara o affidabile, tocca
+        \iconlg{applications}~\key{App} per tornare al launcher.
+\end{enumerate}
+
+\section{Dopo una Riconnessione o Riavvio del Server}
+
+\begin{enumerate}
+  \item Attendi brevemente il completamento del recupero automatico.
+  \item Conferma che lo stato mostri \textit{Live}.
+  \item Riapri l'app se l'applicazione in primo piano era degradata.
+  \item Riconferma i valori di navigazione chiave prima di affidarti ad essi.
+\end{enumerate}
+
+\chapter{Signal K Server su Docker}
+\label{ch:docker}
+
+\section{Immagine Docker Ufficiale}
+
+\begin{lstlisting}
+cr.signalk.io/signalk/signalk-server:latest
+\end{lstlisting}
+
+Architetture supportate: \code{linux/amd64}, \code{linux/arm/v7}, \code{linux/arm64}
+(tutte le configurazioni Raspberry~Pi~4 e~5).
+
+\section{Avvio Rapido con Dati NMEA Demo}
+
+\begin{lstlisting}
+mkdir $HOME/.signalk
+docker run --init -it --rm \
+  --name signalk-server \
+  --publish 3000:3000 \
+  -v $HOME/.signalk:/home/node/.signalk \
+  cr.signalk.io/signalk/signalk-server \
+  --sample-nmea0183-data
+\end{lstlisting}
+
+\section{Deployment in Produzione}
+
+\begin{lstlisting}
+docker run -d --init \
+  --name signalk-server \
+  -p 3000:3000 \
+  -v $HOME/.signalk:/home/node/.signalk \
+  cr.signalk.io/signalk/signalk-server
+\end{lstlisting}
+
+\section{Aggiornamento di Signal K}
+
+\begin{lstlisting}
+docker pull cr.signalk.io/signalk/signalk-server:latest
+docker stop signalk-server
+docker rm signalk-server
+# Riesegui il comando docker run di produzione sopra
+\end{lstlisting}
+
+\chapter{Risoluzione dei Problemi}
+\label{ch:problemi}
+
+\section{Valori Mancanti}
+
+\begin{enumerate}
+  \item Controlla lo stato della shell.
+  \item Verifica se altri valori sono ancora live.
+  \item Conferma che lo strumento sorgente funzioni.
+  \item Controlla \ui{Impostazioni~> Percorsi Signal~K} --- è configurato il percorso corretto?
+  \item Torna al launcher e riapri l'app interessata se necessario.
+\end{enumerate}
+
+\section{Valori Non Aggiornati}
+
+\begin{enumerate}
+  \item Tratta i valori con cautela.
+  \item Attendi brevemente il recupero.
+  \item Verifica con altri strumenti.
+  \item Indaga se lo stato persiste oltre 60 secondi.
+\end{enumerate}
+
+\section{Un'App Web è Vuota o Bloccata}
+
+\begin{enumerate}
+  \item Riprova una volta se la shell lo propone.
+  \item Torna al launcher.
+  \item Controlla la salute della shell e lo stato della connessione Signal~K.
+  \item Usa un'altra app se la shell è altrimenti integra.
+  \item Un'app in errore non significa che FairWindSK abbia smesso di funzionare.
+\end{enumerate}
+
+\section{Shell Disconnessa}
+
+\begin{enumerate}
+  \item Signal~K è in esecuzione? Controlla i LED sul Raspberry~Pi; controlla lo stato
+        del container Docker: \code{docker ps -a | grep signalk}.
+  \item Il dispositivo è sulla rete Wi-Fi corretta?
+  \item L'indirizzo del server in \ui{Impostazioni~> Connessione} è corretto?
+  \item Un browser su un altro dispositivo raggiunge \code{http://indirizzo-server:3000}?
+  \item Attendi 60 secondi per il tentativo di riconnessione automatica.
+  \item Riconferma tutti i valori critici per la sicurezza dopo la riconnessione.
+\end{enumerate}
+
+\section{FairWindSK Lento su Raspberry Pi}
+
+\begin{enumerate}
+  \item Controlla la temperatura CPU: \code{vcgencmd measure\_temp}.
+        Sopra 80°C indica throttling termico --- migliora il raffreddamento.
+  \item Controlla \ui{Impostazioni~> Sistema~> Prestazioni} per l'utilizzo della memoria.
+  \item Usa una scheda microSD Classe~A2 ad alta velocità.
+        Una scheda lenta è la causa più comune di prestazioni scadenti su Raspberry~Pi.
+  \item Imposta il Livello di Log su \textit{Nessun log} in
+        \ui{Impostazioni~> Sistema~> Diagnostica}.
+\end{enumerate}
+
+\chapter{Lista di Controllo Operativa Giornaliera}
+\label{ch:checklist}
+
+\section*{Prima della Partenza}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{C{0.8cm}L{12.9cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries $\square$ &
+\color{white}\sffamily\bfseries Controllo \\
+\midrule
+$\square$ & FairWindSK avviato --- stato mostra Live \\
+$\square$ & Posizione live e plausibile \\
+$\square$ & SOG in aggiornamento --- fix GPS valido \\
+$\square$ & Profondità in aggiornamento (se installata) \\
+$\square$ & Rotta (HDG) visualizzata \\
+$\square$ & Plotter aperto; imbarcazione nella posizione corretta \\
+$\square$ & Rotta o waypoint attivo (se si procede verso una destinazione) \\
+$\square$ & Target AIS visibili (se AIS installato) \\
+$\square$ & Preset comfort impostato per le condizioni di luce attuali \\
+$\square$ & Luminosità schermo leggibile dalla plancia \\
+$\square$ & Posizione del pulsante POB confermata \\
+$\square$ & Autopilota disponibile e funzionante (se richiesto) \\
+$\square$ & Guardia ancora disponibile (se si prevede di ancorare) \\
+\bottomrule
+\end{longtable}
+
+\section*{Dopo l'Arrivo}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{C{0.8cm}L{12.9cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries $\square$ &
+\color{white}\sffamily\bfseries Controllo \\
+\midrule
+$\square$ & Torna al launcher --- nessun allarme attivo \\
+$\square$ & Guardia ancora impostata con raggio appropriato (se all'ancora) \\
+$\square$ & Preset comfort cambiato in Crepuscolo o Notte \\
+$\square$ & Traccia esportata per il giornale di bordo (se richiesto) \\
+\bottomrule
+\end{longtable}
+
+\chapter{Scheda di Riferimento Rapido}
+\label{ch:riferimento-rapido}
+
+\section*{Guida alle Azioni Immediate}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3.6cm}L{4.4cm}L{5.7cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Situazione &
+\color{white}\sffamily\bfseries Azione immediata &
+\color{white}\sffamily\bfseries Poi \\
+\midrule
+Persona in mare &
+  Tocca \iconlg{alarm-pob}~\key{POB}. Una volta. &
+  Chiama MAYDAY sul VHF Can.~16. Usa percorso SAR. \\
+Allarme lampeggiante &
+  Tocca \iconlg{alarm-general}~\key{Allarmi}. Leggi. &
+  Agisci secondo le procedure di emergenza. \\
+Schermo bloccato &
+  Attendi 10~s. Tocca \iconlg{applications}~\key{App}. &
+  Controlla lo stato. Prova a riaprire l'app. \\
+Shell disconnessa &
+  Attendi 60~s per la riconnessione automatica. &
+  Se ancora disconnessa: controlla Signal~K e Wi-Fi. \\
+Profondità obsoleta in acque basse &
+  Verifica subito con uno strumento di backup. &
+  Riduci la velocità. Usa scandaglio a mano o ecoscand. di backup. \\
+Autopilota non risponde &
+  Tocca \key{Standby}. Prendi il timone. &
+  Indaga la causa prima di innestare di nuovo. \\
+\bottomrule
+\end{longtable}
+
+\section*{Navigazione con Un Tocco}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{5.8cm}L{7.9cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Obiettivo &
+\color{white}\sffamily\bfseries Azione \\
+\midrule
+Torna alla schermata principale  & Tocca \iconlg{applications}~\key{App} --- sempre disponibile \\
+Passa a un'altra app aperta      & Tocca la sua icona nella striscia app aperte \\
+Cambia preset comfort            & \ui{Impostazioni~> Comfort} \\
+Controlla lo stato connessione   & Area di stato nella Barra Superiore (destra) \\
+Segna posizione ancora           & Tocca \iconlg{anchor-iec}~\key{Ancora} \textrightarrow{} \iconlg{anchor-drop}~\key{Cala} \\
+Annulla guardia ancora           & Tocca \iconlg{anchor-iec}~\key{Ancora} \textrightarrow{} \iconlg{anchor-raise}~\key{Salpa} \\
+Annulla un evento POB            & Barra POB \textrightarrow{} seleziona incidente \textrightarrow{} \key{Annulla} \\
+Esporta traccia traversata       & \ui{MyData~> Tracce} \textrightarrow{} \key{Esporta} \\
+\bottomrule
+\end{longtable}
+
+\chapter{Note di Sicurezza}
+\label{ch:sicurezza}
+
+\begin{warningbox}
+FairWindSK è un ausilio alla navigazione.
+Non sostituisce la perizia nautica, la guardia visiva, le carte nautiche cartacee
+o qualsiasi procedura di sicurezza certificata.
+Il comandante e l'equipaggio dell'imbarcazione sono i soli responsabili della condotta
+in sicurezza del viaggio.
+\end{warningbox}
+
+\begin{warningbox}
+Verifica sempre le informazioni critiche per la sicurezza --- posizione, profondità, rotta,
+rischio di collisione --- con strumenti indipendenti prima di agire su di esse.
+Se FairWindSK contraddice ciò che vedi fuori dall'imbarcazione o su strumenti affidabili,
+dai priorità all'osservazione diretta e ai riferimenti di navigazione indipendenti.
+\end{warningbox}
+
+\begin{warningbox}
+Profondità mancante non è profondità zero.
+Un valore mancante significa che la misura non è disponibile.
+Trattala come completamente sconosciuta e naviga con la massima cautela.
+\end{warningbox}
+
+\begin{warningbox}
+I comandi all'autopilota devono essere confermati rispetto al comportamento reale
+dell'imbarcazione.
+Non dare mai per scontato che un cambio di modalità sia avvenuto perché il pulsante
+ha risposto.
+Sii pronto a disinnestare e prendere il timone manuale in qualsiasi momento.
+\end{warningbox}
+
+\begin{warningbox}
+L'attivazione di un allarme in FairWindSK genera una notifica Signal~K solo sulla rete
+di bordo.
+Non contatta la guardia costiera, l'MRCC o alcuna autorità esterna.
+Effettua una chiamata di soccorso DSC e/o vocale sul Canale VHF~16 in qualsiasi
+emergenza reale.
+\end{warningbox}
+
+\begin{warningbox}
+In un'emergenza, dai priorità alla gestione dell'imbarcazione, alla sicurezza
+dell'equipaggio e all'osservazione diretta rispetto a qualsiasi interazione
+con un display elettronico.
+Uno schermo è uno strumento; la tua perizia nautica è la tua sicurezza.
+\end{warningbox}
+
+\vfill
+\begin{center}
+  {\color{Teal}\rule{0.5\textwidth}{1pt}}\\[10pt]
+  {\Large\sffamily\bfseries\color{Navy}Buona navigazione.}\\[8pt]
+  {\normalsize\sffamily\color{gray}
+    Il team OpenFairWind \textbullet{}
+    Università degli Studi di Napoli 'Parthenope'}\\[4pt]
+  {\small\sffamily\color{Teal}\url{https://github.com/OpenFairWind/FairWindSK}}
+\end{center}

@@ -352,6 +352,11 @@ namespace fairwindsk::ui::widgets {
         }
 
         m_client = client;
+        // Units are resolved in the background: draw again when the server's choice is known.
+        if (m_units) {
+            connect(m_units, &fairwindsk::Units::displayUnitsChanged, this, &DataWidget::renderCurrentUpdate,
+                    Qt::UniqueConnection);
+        }
         connect(client, &fairwindsk::signalk::Client::connectionHealthStateChanged, this,
                 [this](fairwindsk::signalk::Client::ConnectionHealthState,
                        const QString &,

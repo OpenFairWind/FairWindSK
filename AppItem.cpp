@@ -635,6 +635,29 @@ namespace fairwindsk {
         return m_cachedIcon;
     }
 
+    void AppItem::setCachedIcon(const QPixmap& icon) {
+        // Ignore invalid downloads so the existing touch-friendly fallback remains visible.
+        if (icon.isNull()) {
+            return;
+        }
+
+        // Cache the decoded image so every launcher surface can reuse it without network I/O.
+        m_cachedIcon = icon;
+        m_hasCachedIcon = true;
+    }
+
+    bool AppItem::setCachedIconData(const QByteArray& iconData) {
+        // Decode both raster artwork and SVG artwork through the shared icon decoder.
+        const QPixmap icon = loadPixmapFromPayload(iconData);
+        if (icon.isNull()) {
+            return false;
+        }
+
+        // Store the decoded artwork on the live application object used by the launcher.
+        setCachedIcon(icon);
+        return true;
+    }
+
     /*
      * getHash
      * Returns the app's generated hash
@@ -743,7 +766,10 @@ namespace fairwindsk {
      * Returns the app's license
      */
     QString AppItem::getUrl() {
-
+        // Native Android activities do not have a web URL.
+        if (isAndroidApplication()) {
+            return {};
+        }
 
         QString url;
 
@@ -774,6 +800,35 @@ namespace fairwindsk {
             url = QUrl(serverUrl + "/").resolved(QUrl(url)).toString();
         }
         return url;
+    }
+
+    bool AppItem::isAndroidApplication() const {
+        if (!m_jsonApp.contains("fairwind") || !m_jsonApp["fairwind"].is_object()) {
+            return false;
+        }
+        const auto &fairwindJsonObject = m_jsonApp["fairwind"];
+        return fairwindJsonObject.contains("source") && fairwindJsonObject["source"].is_string() &&
+               fairwindJsonObject["source"].get<std::string>() == "android";
+    }
+
+    QString AppItem::getAndroidPackage() const {
+        if (!isAndroidApplication()) {
+            return {};
+        }
+        const auto &fairwindJsonObject = m_jsonApp["fairwind"];
+        return fairwindJsonObject.contains("androidPackage") && fairwindJsonObject["androidPackage"].is_string()
+                   ? QString::fromStdString(fairwindJsonObject["androidPackage"].get<std::string>())
+                   : QString();
+    }
+
+    QString AppItem::getAndroidActivity() const {
+        if (!isAndroidApplication()) {
+            return {};
+        }
+        const auto &fairwindJsonObject = m_jsonApp["fairwind"];
+        return fairwindJsonObject.contains("androidActivity") && fairwindJsonObject["androidActivity"].is_string()
+                   ? QString::fromStdString(fairwindJsonObject["androidActivity"].get<std::string>())
+                   : QString();
     }
 
     void AppItem::setWidget(QWidget *pWidget) {

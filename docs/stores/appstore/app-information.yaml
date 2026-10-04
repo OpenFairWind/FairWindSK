@@ -1,0 +1,24 @@
+name: FairWindSK
+bundle_id: org.openfairwind.fairwindsk
+sku: TODO(PUBLISHER)
+primary_language: en-US
+primary_category: NAVIGATION
+secondary_category: WEATHER
+content_rights: "Contains operator-selected web applications and data; confirm rights before submission."
+copyright: "2026 TODO(PUBLISHER)"
+price: FREE
+release_method: MANUAL
+availability: TODO(PUBLISHER)
+age_rating:
+  advertising: false
+  gambling: false
+  loot_boxes: false
+  messaging_and_chat: false
+  unrestricted_web_access: true
+  user_generated_content: true
+  location_services: true
+regulated_medical_device: false
+notes:
+  - "FairWindSK is not a certified navigation, collision-avoidance, or lifesaving device."
+  - "The operator supplies and controls the Signal K server and embedded web applications."
+

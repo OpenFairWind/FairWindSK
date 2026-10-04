@@ -1,0 +1,157 @@
+\part{Getting Started}
+
+\chapter{Introducción}
+
+FairWindSK es una concha de pantalla marina táctil construida alrededor de Signal~K.
+Reúne datos en barco en vivo, una suite de aplicaciones web a bordo y nativos
+herramientas de operación de vasos dentro de un único marco persistente diseñado para el timón.
+
+\begin{notebox}
+FairWindSK forma parte del programa de investigación DYNAMO en la Universidad de Nápoles
+'Parthenope', ahora apoyado por el proyecto DataX4Sea financiado por los Laboratorios NEC
+América.
+El objetivo es el crowdsourcing de datos ambientales costeros a través de una flota de ocio
+barcos.
+Todos los resultados son de código abierto y de código abierto.
+\end{notebox}
+
+\section{Lo que FairWindsK hace}
+
+FairWindSK is a display \emph{shell}, not a data server.
+Envuelve un servidor Signal~K en ejecución, descubre las aplicaciones web instaladas en él,
+y los presenta en un marco estable y persistente junto con los controles operativos nativos.
+
+Piense en FairWindSK como el marco alrededor de las aplicaciones de su barco y datos de navegación en vivo.
+Ayuda a mantener la información clave visible mientras se mueve entre tareas.
+
+\subsection{Plataformas de apoyo}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3.0cm}L{4.8cm}L{5.9cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Platform &
+\color{white}\sffamily\bfseries Typical use &
+\color{white}\sffamily\bfseries Notes \\
+\midrule
+Raspberry Pi OS&Pantalla de helm dedicada, autostart de kiosco&
+  Full desktop feature set; kiosk helpers in \code{extras/} \\
+Linux           & Navigation station laptop or PC    & Full desktop feature set \\
+macOS           & Navigation station MacBook         & Full desktop feature set \\
+Windows         & Navigation station PC              & Full desktop feature set \\
+Android         & Helm tablet, secondary display     & Qt WebView mobile path \\
+iOS / iPadOS    & iPad at helm or roving display     & Qt WebView mobile path \\
+\bottomrule
+\end{longtable}
+
+\section{Qué FairWindsK No}
+
+FairWindSK depende completamente de un servidor Signal~K en funcionamiento en su red a bordo.
+Sin Signal~K no tiene datos para mostrar, no hay aplicaciones para lanzar, ni instrumentos
+para leer.
+No se procesan las oraciones de NMEA, se conectan directamente a los instrumentos o se almacenan
+Gráficos.
+
+\begin{warningbox}
+FairWindSK es una ayuda para la navegación.
+No sustituye a la marinería, vigilancia, gráficos de papel o seguridad certificada
+procedimientos.
+El maestro del buque tiene plena responsabilidad por la conducta segura del pasaje
+en todo momento.
+\end{warningbox}
+
+\section{Lo que necesitas antes de empezar}
+
+\begin{itemize}
+  \item A running Signal~K server reachable on the boat's Wi-Fi network.
+El servidor debe exponer la API estándar
+        \code{<server>/signalk} and the app catalogue at
+        \code{<server>/signalk/v1/apps/list}.
+  \item Your instruments (GPS, wind, depth, AIS, autopilot, engine monitor) feeding
+en Signal~K vía NMEA~0183, NMEA~2000, o SeaTalk.
+  \item FairWindSK installed on a display device.
+\end{itemize}
+
+\section{Orientación del dispositivo}
+
+\subsection{Tabletas y pantallas de helm}
+
+Tablas y pantallas marinas más grandes son el mejor ajuste para el uso primario de helm porque
+proporcionan objetivos táctiles más grandes, mejor estabilidad de diseño, lectura más fácil en helm
+distancia, y más espacio para la ruta simultánea y la toma de conciencia.
+
+\subsection{Teléfonos}
+
+Los teléfonos funcionan como pantallas de acompañantes.
+Espere un diseño denser y menos espacio para la conciencia simultánea.
+Para un pilotaje cercano, operaciones de recuperación o situaciones de alta carga de trabajo, un mayor
+La pantalla es más segura.
+
+\subsection{Sistemas de escritorio}
+
+En plataformas de escritorio, FairWindSK se puede utilizar como una estación de navegación fija
+Pantalla.
+La interfaz debe ser tratada como una pantalla operacional marina primero independientemente
+de método de entrada.
+
+\chapter{Antes de dejar el muelle}
+
+Ejecutar estos cheques antes de cada salida.
+Cinco minutos en el muelle vale una hora en el mar.
+
+\section{Configuración de primer tiempo}
+
+Cuando FairWindSK está instalado en una nueva pantalla o sistema configurado recientemente, trabaje
+a través de estos pasos antes de confiar en él en curso:
+
+\begin{enumerate}
+  \item Open \ui{Settings~> Connection}.
+        Enter the Signal~K server address, e.g.\ \code{http://192.168.1.100:3000}.
+        Tap \key{Connect}.
+        Watch the status change to \textit{Live}.
+  \item Open \ui{Settings~> Units}.
+Elige nudos para velocidad, millas náuticas para distancia, metros o pies para profundidad.
+  \item Open \ui{Settings~> Applications}.
+Verifique que las aplicaciones que usted espera están presentes.
+Organizar página~1 con las aplicaciones que utilizas en cada pasaje.
+  \item Open \ui{Settings~> Comfort} and choose the \textit{Day} preset.
+Verifique la legibilidad de su posición de timón.
+  \item If your installation includes autopilot, anchor, alarms, or other
+funciones respaldadas por plugins, confirma que cada uno está disponible y responde correctamente
+antes de la salida.
+  \item If the device has no physical keyboard, enable the virtual keyboard in
+        \ui{Settings~> Main} and restart FairWindSK.
+  \item Run a short test passage in calm conditions before relying on FairWindSK
+offshore.
+\end{enumerate}
+
+\begin{warningbox}
+No asuma una característica está lista simplemente porque su icono es visible.
+Confirme los datos en vivo, la respuesta del control y el comportamiento real primero.
+\end{warningbox}
+
+\section{Lista de verificación previa a la salida}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{C{0.8cm}L{12.9cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries $\square$ &
+\color{white}\sffamily\bfseries Check \\
+\midrule
+$\square$ & FairWindSK starts normally and the shell health state is normal \\
+$\square$ & Signal~K connection is healthy (\textit{Live} in the status area) \\
+$\square$ & Position live in Top Bar --- latitude and longitude plausible \\
+$\square$ & SOG updating --- vessel has a valid GPS fix \\
+$\square$ & Depth updating (if depth sounder is fitted) \\
+$\square$ & Heading showing from compass or GPS \\
+$\square$ & Chart plotter open and vessel in correct position on chart \\
+$\square$ & Route or waypoint active if proceeding to a destination \\
+$\square$ & AIS targets visible in chart plotter (if AIS receiver is fitted) \\
+$\square$ & Display brightness and comfort preset match the current light conditions \\
+$\square$ & Screen is readable and reachable from the normal operating position \\
+$\square$ & POB button location confirmed --- know exactly where it is \\
+$\square$ & Autopilot available and responding correctly (if required) \\
+$\square$ & Anchor watch function confirmed available (if anchoring tonight) \\
+\bottomrule
+\end{longtable}

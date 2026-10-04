@@ -56,6 +56,7 @@ namespace fairwindsk::ui::settings {
         void ensureRpiDiagnosticsWidgets();
         bool confirmAction(const QString &title, const QString &message, const QString &confirmText);
         void refreshRpiDiagnostics();
+        void applyRpiDiagnostics(const QJsonObject &rpiRoot);
         double fetchSignalKRpiMetric(const QJsonObject &root, const QString &path, bool *available = nullptr) const;
         void setRpiMetricValue(const QString &path, const QString &text);
         void syncLoggingSettings();
@@ -70,6 +71,7 @@ namespace fairwindsk::ui::settings {
     private:
         Ui::System *ui = nullptr;
         Settings *m_settings = nullptr;
+        bool m_diagnosticsPrimed = false;
         QVector<QWidget *> m_coreRows;
         QVector<CpuSnapshot> m_previousCpuStats;
         QGroupBox *m_networkGroupBox = nullptr;
@@ -92,6 +94,7 @@ namespace fairwindsk::ui::settings {
         QVBoxLayout *m_loggingDetailsLayout = nullptr;
         QDateTime m_lastRpiRefresh;
         bool m_hasRpiMetrics = false;
+        bool m_rpiRequestInFlight = false;
     };
 }
 

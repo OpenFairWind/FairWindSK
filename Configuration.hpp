@@ -37,12 +37,18 @@ namespace fairwindsk {
 
         QString getSignalKServerUrl();
         void setSignalKServerUrl(const QString& signalKServerUrl);
+        QStringList getSignalKServerUrls() const;
+        void rememberSignalKServerUrl(const QString &signalKServerUrl);
         bool getSignalKConnectionEnabled() const;
         void setSignalKConnectionEnabled(bool enabled);
         QString getSignalKPath(const QString &key) const;
 
         static QString getToken();
         static void setToken(const QString& token);
+        // Access tokens belong to the server that issued them.
+        static QString getToken(const QString &serverUrl);
+        static void setToken(const QString &token, const QString &serverUrl);
+        static void clearToken();
         static QString settingsFilename();
 
         QString getAutopilotApp();

@@ -1,0 +1,685 @@
+% ============================================================
+%  PART V --- Settings
+% ============================================================
+\part{Settings}
+
+% ── Chapter 20: Settings Overview ───────────────────────────
+\chapter{Ajustes --- Sinopsis}
+\label{ch:settings}
+
+Open Settings by tapping \iconlabel{settings-iec}{Settings} in the Bottom Bar.
+La configuración de escritorio e iOS se organiza en diez pestañas. Android añade un
+eleventh \textbf{Android} tab after System.
+Los cambios tienen efecto inmediatamente a menos que se observe explícitamente un reinicio.
+
+\screenshot{settings-overview}{Panel de configuración con las pestañas apropiadas para plataformas visibles en la barra de pestañas}{}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{C{0.6cm}L{3.0cm}L{6.8cm}L{3.3cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries \# &
+\color{white}\sffamily\bfseries Tab name &
+\color{white}\sffamily\bfseries Primary function &
+\color{white}\sffamily\bfseries Restart needed? \\
+\midrule
+0 & Main           & Window mode, language, UI scale, comfort preset, launcher grid, coordinate format & Language and virtual keyboard only \\
+1 & Top Bar        & Drag-and-drop layout of the Top Bar instrument strip & No \\
+2 & Bottom Bar     & Drag-and-drop layout of the Bottom Bar action strip & No \\
+3 & Widgets        & Define and edit reusable data widget definitions & No \\
+4 & Comfort        & Select and customise visual comfort presets & No \\
+5 & Connection     & Signal~K server URL, authentication token, mDNS discovery & No \\
+6 & Signal~K       & Map semantic names to actual Signal~K paths & No \\
+7 & Units          & Choose display units per measurement category & No \\
+8 & Applications   & Manage the launcher: pages, tiles, folders, app details & No \\
+9 & System         & Diagnostics, logging, performance, configuration management & No (some actions restart) \\
+10 & Android       & Optional Home role, native launcher application selection, soft navigation controls & No (Android only) \\
+\bottomrule
+\end{longtable}
+
+On Android, the Android tab lists only launchable \code{MAIN + LAUNCHER}
+actividades. Selección de una aplicación la añade a la paleta de aplicaciones compartidas sin
+solicitando una amplia visibilidad del paquete. Identidad de aplicación nativa, icono, paquete y
+actividad son gestionados por Android. Deseleccionar una aplicación elimina su página de lanzamiento
+referencias. FairWindSK nunca se convierte en la aplicación Home predeterminada automáticamente, y la
+La intención del lanzador ordinario sigue disponible. Controles de espalda suave, hogar y recientes
+aparecen sólo cuando Android informa que las teclas de hardware correspondientes están ausentes;
+Recents contains only native activities launched through FairWindSK.
+
+% ── Chapter 21: Tab 0 Main ──────────────────────────────────
+\chapter{Ajustes --- Main}
+\label{ch:settings-main}
+\settingstab{0}{Main}
+
+La pestaña Principal controla el comportamiento básico del tiempo de ejecución: modo de visualización de ventanas, idioma, elemento UI
+escala, preset de confort activo, dimensiones de la red de lanzamiento y formato de coordenadas.
+
+\screenshot{settings-main}{Ajustes --- Ficha principal: modo de ventana, idioma, escala UI, preset de confort, rejilla de lanzamiento, formato de coordenadas}{}
+
+\section{Modo de ventana}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{2.4cm}L{5.6cm}L{5.7cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Mode &
+\color{white}\sffamily\bfseries Behaviour &
+\color{white}\sffamily\bfseries Notes \\
+\midrule
+Ventana&Ventana de escritorio removible en la izquierda/Top/Width/Height configurada.&
+  Development, testing, multi-monitor setups. \\
+Centred&Ventana centrada de la anchura configurada y la altura. Campos de posición discapacitados.&
+  Preferred windowed mode without an exact position. \\
+Maximizado&Área de trabajo de escritorio completa.&
+En Raspberry Pi~OS, utiliza la geometría del área de trabajo de pantalla directamente,
+  bypassing the window manager. \\
+Pantalla completa&Ventana de kiosco sin marco, siempre en la parte superior.&
+Recomendado para pantallas de helm dedicadas.
+  On labwc desktops, set \code{autohide=true}
+  in \code{wf-panel-pi.ini} if the panel overlays FairWindSK. \\
+\bottomrule
+\end{longtable}
+
+\section{Idioma}
+
+FairWindSK barcos con cuatro idiomas de interfaz totalmente compatibles.
+La configuración del lenguaje afecta a todo el texto de cáscara nativo --- etiquetas de barras, páginas de configuración,
+drawers, warnings, and status messages --- as well as the \code{Accept-Language}
+header sent to embedded web content.
+
+\begin{itemize}
+  \item \textbf{System default} --- follows the OS locale when FairWindSK supports
+ese idioma; vuelve al inglés por cada lenguaje OS no compatible.
+  \item \textbf{English} --- forces English regardless of OS locale.
+  \item \textbf{Français} --- forces French.
+  \item \textbf{Español} --- forces Spanish.
+  \item \textbf{Italiano} --- forces Italian. All native shell text is displayed in Italian.
+\end{itemize}
+
+\subsection{Cómo funciona la localización}
+
+The \code{Localization} module normalises the selected language, chooses the
+effective \code{QLocale}, and builds the web \code{Accept-Language} header.
+The Qt translator (\code{.qm} resource) is loaded during startup, so native widgets
+y las vistas web incrustadas comienzan con el mismo idioma y cultura.
+Translation source files live in \code{resources/i18n/} (for example,
+\code{fairwindsk\_fr.ts}, \code{fairwindsk\_es.ts}, and
+\code{fairwindsk\_it.ts}).
+
+\subsection{Añadiendo o mejorando un idioma}
+
+See \code{docs/multilingual.md} in the repository for the full contributor workflow:
+adding translatable strings with \code{tr(\ldots)}, updating \code{.ts} files with
+Qt Linguist, registering a new language in \code{Localization.cpp} and
+\code{ui/settings/Main.cpp}, and updating \code{CMakeLists.txt}.
+
+\begin{warningbox}
+Se requiere un reinicio después de cambiar el idioma.
+FairWindSK muestra un cajón informativo cuando se cambia el idioma.
+Sin reiniciar, los widgets nativos Qt y la vista web incrustada pueden utilizar diferentes
+idiomas.
+\end{warningbox}
+
+\section{UI Scale Preset}
+
+Cuatro presets: Pequeño, Normal (por defecto), Grande, Extra Grande.
+When \key{Auto Scale} is ticked, FairWindSK selects the preset based on display resolution
+y DPI.
+
+\section{Vista Comfort Preset y conmutación automática}
+
+Selecciona el preset de confort activo directamente desde la pestaña Principal.
+When \key{Auto Comfort View} is enabled, FairWindSK switches presets automatically
+using Signal~K sun-position data (\skpath{environment.sun}).
+Ambas condiciones deben cumplirse para que el modo auto esté disponible:
+
+\begin{enumerate}
+  \item The \skpath{environment.sun} path must be configured in the Signal~K tab.
+  \item The Signal~K server must be connected and delivering values on that path.
+\end{enumerate}
+
+\section{Lanzador Grid}
+
+Dos cajas de giro fijan el número de filas y columnas de fichas de aplicación por página de lanzamiento.
+Menos filas y columnas producen azulejos más grandes que son más fáciles de tocar.
+Más producir más aplicaciones visibles por página.
+
+\section{Coordinate Format}
+
+Tres formatos están disponibles a lo largo de la interfaz (propulsor de posición de la barra, barra de POB,
+Anchor bar, My~Data waypoints:
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3.2cm}L{4.8cm}L{5.7cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Format &
+\color{white}\sffamily\bfseries Example &
+\color{white}\sffamily\bfseries When to use \\
+\midrule
+DD.DDDDD\textdegree{} & 48.85341\textdegree{} N & GPS logs, digital charting software. \\
+DD\textdegree{}MM.MMM' & 48\textdegree{}51.205' N & Standard nautical format. Recommended for most sailors. \\
+DD\textdegree{}MM'SS.S'' & 48\textdegree{}51'12.3'' N & Traditional celestial navigation format. \\
+\bottomrule
+\end{longtable}
+
+\section{Teclado virtual}
+
+Permite el teclado virtual Qt para implementaciones de pantalla táctil.
+Se requiere un reinicio después de regatear.
+En Raspberry~Pi~OS, el script de ayuda de arranque aplica la variable de entorno correcto
+(\code{QT\_IM\_MODULE=qtvirtualkeyboard}) automatically.
+
+% ── Chapter 22: Tabs 1 and 2 --- Bar Editors ──────────────────
+\chapter{Ajustes --- Top Bar and Bottom Bar Editors}
+\label{ch:settings-bars}
+\settingstab{1}{Top Bar} \settingstab{2}{Bottom Bar}
+
+Tabs~1 y~2 comparten el mismo editor visual de arrastrar y soltar --- uno para el Top~Bar y uno
+Para el Bottom~Bar.
+
+\screenshot{settings-topbar-editor}{Ajustes --- Top Bar editor: cinta de vista previa en vivo, barra de herramientas de edición y paleta widget}{}
+
+\section{Vista previa en vivo}
+
+La vista previa en la parte superior hace una simulación de ancho completo de la barra utilizando la comodidad actual
+preajustar colores y datos reales de widget.
+Toque cualquier artículo en la vista previa para seleccionarlo.
+
+\section{Edición de botones de barra de herramientas}
+
+These are the exact icons defined in \code{BarLayoutSettings.cpp}.
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{C{1.5cm}L{4.0cm}L{8.2cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Icon &
+\color{white}\sffamily\bfseries Button &
+\color{white}\sffamily\bfseries Action \\
+\midrule
+\iconlg{layout-horizontal-minimize} & Minimize width  &
+  Widget uses only the space its content requires. \\
+\iconlg{layout-horizontal-maximize} & Maximize width  &
+  Widget expands to fill all available space horizontally. \\
+\iconlg{layout-vertical-minimize}   & Minimize height &
+  Widget uses the standard bar height. \\
+\iconlg{layout-vertical-maximize}   & Maximize height &
+  Widget uses the full bar height (both header and value rows fully visible). \\
+\iconlg{arrow-left-google}          & Move left       &
+  Moves the selected widget one position to the left. \\
+\iconlg{arrow-right-google}         & Move right      &
+  Moves the selected widget one position to the right. \\
+\iconlg{delete-google}              & Remove selected &
+  Returns the selected widget to the palette. \\
+\iconlg{refresh-google}             & Reset defaults  &
+  Restores the bar to its built-in default layout. \\
+\bottomrule
+\end{longtable}
+
+\section{Pantalla Toggles}
+
+Con un widget seleccionado, cuatro casillas controlan lo que se muestra:
+\key{Show Icon}, \key{Show Text} (label), \key{Show Units}, \key{Show Trend} (arrow).
+
+\section{Widget Palette}
+
+La paleta debajo de la barra de herramientas lista todos los elementos disponibles.
+\textbf{Data widgets} are backed by Signal~K paths.
+\textbf{Fixed shell controls} --- Apps, POB, Autopilot, Anchor, Alarms, My~Data, Settings,
+Signal~K status, Clock --- se puede mover entre el Top~Bar y Bottom~Bar.
+\textbf{Separators} (\iconlg{layout-separator}) and \textbf{Stretches}
+(\iconlg{layout-elastic-extender}) are invisible layout helpers.
+
+% ── Chapter 23: Tab 3 --- Widgets ─────────────────────────────
+\chapter{Ajustes --- Widgets}
+\label{ch:settings-widgets}
+\settingstab{3}{Widgets}
+
+La pestaña Widgets gestiona la biblioteca de definiciones widget de datos utilizadas por ambas barras.
+
+\screenshot{settings-widgets}{Ajustes --- pestaña Widgets con widget lista y campos de definición}{}
+
+\section{Campo de definición de Widget}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{2.8cm}L{10.9cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Field &
+\color{white}\sffamily\bfseries Purpose \\
+\midrule
+id            & Unique identifier used internally and in bar layout entries. \\
+name          & Human-readable label shown in bars and this editor. \\
+icon          & Optional SVG icon path. Accepts Qt resource paths or filesystem paths. \\
+type          & Rendering format: \code{numerical}, \code{gauge}, \code{position},
+                \code{datetime}, or \code{waypoint}. \\
+signalKPath   & Full dot-separated Signal~K data path. \\
+sourceUnit    & Unit in which Signal~K delivers the value (e.g.\ \code{m/s}, \code{rad}). \\
+defaultUnit   & Unit to display in (e.g.\ \code{kn}, \code{deg}).
+                Overridden by active unit preferences. \\
+updatePolicy  & \code{instant} (default) or \code{fixed}. \\
+period        & Target update period in milliseconds (default 1000). \\
+minPeriod     & Minimum update period in milliseconds (default 200). \\
+\bottomrule
+\end{longtable}
+
+% ── Chapter 24: Tab 4 --- Comfort ─────────────────────────────
+\chapter{Ajustes --- Comfort}
+\label{ch:settings-comfort}
+\settingstab{4}{Comfort}
+
+La pestaña Comfort es el editor de temas visuales para los seis presets de confort incorporados.
+
+\screenshot{settings-comfort}{Ajustes --- pestaña Comfort: selector de presets, relojes de color y sección de imagen de fondo}{}
+
+\section{Los Six Comfort Presets}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{C{1.5cm}L{2.0cm}L{4.2cm}L{6.0cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Icon &
+\color{white}\sffamily\bfseries Preset &
+\color{white}\sffamily\bfseries Conditions &
+\color{white}\sffamily\bfseries Key characteristics \\
+\midrule
+\iconlg{comfort-default} & Default & General fallback &
+  Balanced mid-contrast. Usable in most conditions. \\
+\iconlg{comfort-dawn}    & Dawn    & Around sunrise &
+  Warm tones, slightly reduced brightness. Good contrast. \\
+\iconlg{comfort-day}     & Day     & Full daylight, direct sun &
+  Maximum brightness and contrast. For open-ocean sailing. \\
+\iconlg{comfort-sunset}  & Sunset  & Around sunset &
+  Warmer, transitional brightness. \\
+\iconlg{comfort-dusk}    & Dusk    & Twilight &
+  Reduced brightness, begins night-vision preservation. \\
+\iconlg{comfort-night}   & Night   & Full dark, offshore watches &
+Brillo mínimo, fondo oscuro, acentos rojos.
+  Preserves night vision. Alarms remain high-contrast. \\
+\bottomrule
+\end{longtable}
+
+\section{Botones de acción}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{C{1.5cm}L{3.0cm}L{9.2cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Icon &
+\color{white}\sffamily\bfseries Button &
+\color{white}\sffamily\bfseries Action \\
+\midrule
+\iconlg{anchor-reset}     & Reset       &
+  Clears all custom colour overrides, background images, and QSS for the selected preset. \\
+\iconlg{delete-google}    & Reset All   &
+  Clears customisation for all six presets. \\
+\iconlg{route-export-iec} & Export QSS  &
+  Saves the selected preset's effective stylesheet to a \code{.qss} file. \\
+\iconlg{route-import-iec} & Import QSS  &
+  Loads a \code{.qss} file as the custom stylesheet for the selected preset. \\
+\bottomrule
+\end{longtable}
+
+\section{Propiedades de anulación de color}
+
+Diez propiedades de color son personalizables por preset:
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3.6cm}L{10.1cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Property &
+\color{white}\sffamily\bfseries What it controls \\
+\midrule
+Window background  & Background colour of the Application Area and settings pages. \\
+Text               & Primary text colour throughout the interface. \\
+Button background  & Background of buttons and tool buttons in bars and drawers. \\
+Button text        & Text and icon tint on buttons. \\
+Border             & Borders, dividers, and frame outlines. \\
+Accent             & Primary accent colour for highlights and selected states. \\
+Accent text        & Text colour on accent-coloured backgrounds. \\
+Icon               & Default tint for monochrome SVG icons. Set to red for Night preset to aid night vision. \\
+Scroll track       & Background of scroll bar tracks. \\
+Scroll knob        & Colour of the scroll bar handle. \\
+\bottomrule
+\end{longtable}
+
+\begin{warningbox}
+Nunca configure un preset que haga texto de alarma, información de POB o crítica de seguridad
+lecturas difíciles de leer.
+La lectura en todas las condiciones tiene precedencia sobre la estética.
+\end{warningbox}
+
+% ── Chapter 25: Tab 5 --- Connection ──────────────────────────
+\chapter{Ajustes --- Conexión}
+\label{ch:settings-connection}
+\settingstab{5}{Connection}
+
+\screenshot{settings-connection}{Ajustes --- Ficha de conexión: campo URL del servidor, línea de estado, botones de acción y registro de consola}{}
+
+\section{Campo de URL del servidor}
+
+An editable combo box pre-populated with the configured URL, \code{http://localhost:3000},
+and \code{https://demo.signalk.org}.
+FairWindSK normalises the URL: prepends \code{http://} if no scheme is present,
+strips trailing slashes, and validates that only \code{http://} or \code{https://} are accepted.
+Typed URLs are committed to the saved configuration only when you tap \key{Connect}.
+
+\section{Status Line}
+
+Una sola línea debajo del campo URL muestra el estado actual de token y conexión utilizando
+three dot-separated fields: \textbf{State}, \textbf{Permission}, and \textbf{Expires}.
+
+\section{Botones de acción}
+
+\subsection{Conectar y Pausa}
+
+Toggles the Signal~K connection.
+\key{Connect} starts the connection; \key{Pause} suspends it without clearing the URL.
+
+\subsection{Solicitud Token}
+
+Inicia el flujo de autenticación de Signal~K:
+
+\begin{enumerate}
+  \item FairWindSK posts a new access request to \skpath{/signalk/v1/access/requests}.
+  \item On HTTP~202 + \code{PENDING}, FairWindSK opens the Signal~K admin interface in the
+Cajón de la barra inferior, navegado a la seguridad~ Página de peticiones de acceso.
+  \item FairWindSK polls the \code{href} every second until resolved.
+  \item On \code{COMPLETED} with \code{APPROVED}, the token is stored in
+        \code{fairwindsk.ini} and injected as the \code{JAUTHENTICATION} cookie in the
+tienda de galletas del navegador incrustado.
+\end{enumerate}
+
+\subsection{Cancelar}
+
+Aborta la solicitud de señal de vuelo y aclara el href pendiente.
+
+\subsection{Quitar Token}
+
+Removes the stored token from memory, \code{fairwindsk.ini}, and the browser cookie store.
+Provoca una reconexión en el modo público (no autenticado).
+
+\section{Consola Log}
+
+Un área de texto de sólo lectura desplazable debajo de los botones muestra eventos de conexión:
+mDNS mensajes de descubrimiento, eventos del ciclo de vida de conexión y resultados de petición de fichas.
+
+\section{mDNS Automatic Discovery}
+
+En plataformas de escritorio, FairWindSK escanea la red local para servidores Signal~K usando
+mDNS/Zeroconf en cuatro tipos de servicio:
+\code{\_signalk-http.\_tcp}, \code{\_signalk-https.\_tcp}, \code{\_http.\_tcp},
+and \code{\_https.\_tcp}.
+Los servidores descubiertos se añaden automáticamente al cuadro combo URL.
+mDNS está deshabilitado en Android e iOS construye.
+
+% ── Chapter 26: Tab 6 --- Signal K Paths ──────────────────────
+\chapter{Ajustes --- Signal K Paths}
+\label{ch:settings-signalk}
+\settingstab{6}{Signal K Paths}
+
+Maps the semantic names that FairWindSK uses internally to the actual Signal~K data paths
+en su servidor.
+Editar cualquier campo para cambiar donde FairWindSK lee o escribe ese valor.
+Los cambios tienen efecto después de un breve retraso en el desembolso sin necesidad de reiniciar.
+
+\screenshot{settings-signalk}{Ajustes --- Señal K Paths pestaña con campos de etiqueta y ruta editable}{}
+
+\section{Mappings de sendero clave}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3.0cm}L{5.6cm}L{5.1cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Key &
+\color{white}\sffamily\bfseries Default Signal~K path &
+\color{white}\sffamily\bfseries Feature \\
+\midrule
+\code{pos}              & \skpath{navigation.position}                              & Top~Bar position, POB position \\
+\code{sog}              & \skpath{navigation.speedOverGround}                       & Top~Bar SOG widget \\
+\code{cog}              & \skpath{navigation.courseOverGroundTrue}                   & Top~Bar COG widget \\
+\code{hdg}              & \skpath{navigation.headingTrue}                           & Top~Bar HDG widget \\
+\code{dpt}              & \skpath{environment.depth.belowTransducer}                & Top~Bar depth widget \\
+\code{notifications.pob}& \skpath{notifications.mob}                                & POB alarm \\
+\code{anchor.position}  & \skpath{navigation.anchor.position}                      & Anchor Watch \\
+\code{anchor.radius}    & \skpath{navigation.anchor.currentRadius}                 & Anchor Watch \\
+\code{anchor.max}       & \skpath{navigation.anchor.maxRadius}                     & Anchor Watch \\
+\code{anchor.rode}      & \skpath{winches.windlass.rode}                           & Anchor rode display \\
+\code{anchor.actions.drop}   & \skpath{plugins.anchoralarm.dropAnchor}          & Anchor Drop button \\
+\code{anchor.actions.raise}  & \skpath{plugins.anchoralarm.raiseAnchor}         & Anchor Raise button \\
+\code{anchor.actions.radius} & \skpath{plugins.anchoralarm.setRadius}           & Anchor Set Radius button \\
+\code{anchor.actions.up}     & \skpath{plugins.windlassctl.up}                  & Anchor Up button \\
+\code{anchor.actions.down}   & \skpath{plugins.windlassctl.down}                & Anchor Down button \\
+\code{environment.sun}  & \skpath{environment.sun}                                  & Auto comfort preset switching \\
+\code{autopilot.state}  & \skpath{steering.autopilot.state}                        & Autopilot bar mode display \\
+\code{autopilot.mode}   & \skpath{steering.autopilot.mode}                         & Autopilot engage commands \\
+\code{rsa}              & \skpath{steering.rudderAngle}                            & Autopilot rudder indicator \\
+\bottomrule
+\end{longtable}
+
+% ── Chapter 27: Tab 7 --- Units ────────────────────────────────
+\chapter{Ajustes --- Unidades}
+\label{ch:settings-units}
+\settingstab{7}{Units}
+
+\screenshot{settings-units}{Ajustes --- Ficha de unidades: nombre predefinido del servidor y filas de anulación por categoría}{}
+
+\section{Cómo funcionan las preferencias de la unidad}
+
+FairWindSK lee las preferencias de la unidad del servidor Signal~K conectado.
+Cada fila de categoría muestra: la etiqueta de categoría, una caja combo de anulación (su preferencia local),
+y el valor actual del servidor (sólo lectura).
+Si elige la misma unidad que el servidor, no se almacena la anulación.
+If different, it is saved in \code{unitPreferences.overrides.CATEGORY} in
+\code{fairwindsk.json} and takes precedence.
+
+% ── Chapter 28: Tab 8 --- Applications ────────────────────────
+\chapter{Ajustes --- Aplicaciones}
+\label{ch:settings-apps}
+\settingstab{8}{Applications}
+
+Un editor de dos pane: el panel izquierdo administra las páginas de lanzamiento y carpetas; el panel derecho es
+la paleta de aplicaciones.
+
+\screenshot{settings-apps}{Ajustes --- Ficha de aplicaciones: árbol de página (izquierda) y paleta de aplicaciones (derecha)}{}
+
+\section{Acciones del árbol de página}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{C{1.5cm}L{3.8cm}L{8.4cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Icon &
+\color{white}\sffamily\bfseries Action &
+\color{white}\sffamily\bfseries What it does \\
+\midrule
+\iconlg{add-new-page}                    & Add page       & Creates a new empty launcher page. \\
+\iconlg{show-page-details}               & Page details   & Opens the page details drawer (name, icon). \\
+\iconlg{add-all-apps-to-current-page}    & Assign all apps & Adds all palette apps to the current page. \\
+\iconlg{remove-all-apps-from-current-page}& Clear page    & Removes all tiles from the current page. \\
+\iconlg{remove-all-apps-from-all-pages}  & Clear all pages & Removes all tiles from every page. \\
+\bottomrule
+\end{longtable}
+
+\section{Palette Actions}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{C{1.5cm}L{4.0cm}L{8.2cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Icon &
+\color{white}\sffamily\bfseries Action &
+\color{white}\sffamily\bfseries What it does \\
+\midrule
+\iconlg{define-new-application-in-palette}  & Create app    & Opens the App Details drawer to create a new custom application. \\
+\iconlg{show-details-selected-app-in-palette} & App details & Opens the App Details drawer to edit the selected application. \\
+\iconlg{remove-selected-app-from-palette}   & Remove app    & Permanently removes the selected application from the palette. \\
+\iconlg{add-selected-app-to-current-page}   & Add to page   & Adds the selected palette app to the current launcher page. \\
+\bottomrule
+\end{longtable}
+
+\section{Detalles de la aplicación}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{2.8cm}L{10.9cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Field &
+\color{white}\sffamily\bfseries Description \\
+\midrule
+Display name    & Name shown on the launcher tile and in the Top Bar when the app is active. \\
+URL             & Full URL (\code{http://} or \code{https://}). \\
+Icon path       & Qt resource path, filesystem path, or bundled icon path. \\
+Web zoom level  & Percentage (default 100\%). Increase for larger buttons; decrease for more content. \\
+Active          & Whether the tile is visible on the launcher. \\
+Order           & Secondary sort hint within a page. \\
+\bottomrule
+\end{longtable}
+
+% ── Chapter 29: Tab 9 --- System ──────────────────────────────
+\chapter{Ajustes --- Sistema}
+\label{ch:settings-system}
+\settingstab{9}{System}
+
+The System tab is divided into two panes: \textbf{Performance} (left) and
+\textbf{Diagnostics and Logging} (right).
+
+\screenshot{settings-system-perf}{Ajustes --- Ficha del sistema Pane de rendimiento: barras de memoria, CPU por núcleo, red, métricas Raspberry Pi}{}
+
+\section{Performance Pane}
+
+\subsection{Memory Readouts}
+
+\begin{itemize}
+  \item \textbf{Process memory} --- resident RAM used by FairWindSK
+        (from \code{/proc/self/statm} on Linux; Mach task API on macOS).
+  \item \textbf{Total memory} --- installed RAM
+        (from \code{/proc/meminfo} on Linux; \code{sysctl hw.memsize} on macOS).
+  \item \textbf{Memory usage bar} --- process memory as a percentage of total RAM.
+\end{itemize}
+
+\subsection{Carga CPU}
+
+Una fila de barras horizontales de progreso, una por núcleo de CPU, actualizada cada segundo.
+On Linux, data is read from \code{/proc/stat};
+on macOS from the Mach \code{host\_processor\_info} API.
+
+\subsection{Direcciones de red}
+
+Listas direcciones IPv4 de todas las interfaces de red activas y no retrocesivas, refrescada cada 10 segundos.
+Útil para confirmar qué dirección IP deben usar otros dispositivos para llegar a esta instalación.
+
+\subsection{Diagnósticos de fresa Pi}
+
+Cuando el servidor Signal~K conectado expone las métricas Raspberry~Pi
+(via the \code{signalk-server-raspberrypi} plugin on path \skpath{environment.rpi}),
+un grupo Raspberry~Pi aparece mostrando:
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3.6cm}L{10.1cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Metric &
+\color{white}\sffamily\bfseries Description \\
+\midrule
+CPU temperature   & SoC CPU temperature in \textdegree{}C. Above 80\textdegree{}C indicates thermal throttling. \\
+GPU temperature   & VideoCore GPU temperature in \textdegree{}C. \\
+CPU utilisation   & Overall CPU load as a percentage. \\
+Memory utilisation& RAM usage as a percentage. \\
+SD utilisation    & Storage usage on the SD card as a percentage. \\
+\bottomrule
+\end{longtable}
+
+\section{Diagnósticos y Panes de Logging}
+
+\screenshot{settings-system-log}{Ajustes --- Ficha del sistema Diagnósticos pane: nivel de registro, registros persistentes, historia de interacción, caminos, ver registros y ver los informes botones}{}
+
+\subsection{Nivel de registro}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{2.4cm}L{4.6cm}L{6.7cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Level &
+\color{white}\sffamily\bfseries Messages included &
+\color{white}\sffamily\bfseries When to use \\
+\midrule
+Off (default) & No messages. & Normal operation. Minimises SD card writes on Raspberry~Pi. \\
+Critical      & Fatal errors only. & Minimal logging with crash detection. \\
+Warning       & Critical + non-fatal anomalies. & Initial installation testing. \\
+Info          & Warning + lifecycle events. & Commissioning and setup. \\
+Debug         & Info + detailed internal state. & Troubleshooting. Significant overhead. \\
+Full          & All of the above + verbose tracing. & Developer use only. Very high overhead. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Registros persistentes}
+
+Cuando está habilitado, FairWindSK escribe un registro completo de mensajes para cada carrera al usuario
+directorio de datos de aplicación, con el timetamp de inicio de proceso en el nombre de archivo.
+
+\subsection{Historia de la interacción}
+
+Cuando está habilitado, FairWindSK escribe una revista ligera de navegación y control del operador
+acciones junto a cada registro de ejecución.
+Útil para la revisión posterior al incidente.
+
+\subsection{Ver registros y ver informes Botones}
+
+Abra el explorador de registro de aplicación en el cajón horizontal Bottom Bar.
+Los archivos de registro aparecen a la izquierda; las entradas de registro pares aparecen a la derecha.
+Crash-report packs (creados automáticamente cuando FairWindSK no salió limpiamente) son
+accessible via \key{View Reports}.
+
+\section{Botones de gestión de configuración}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3.2cm}L{10.5cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Button &
+\color{white}\sffamily\bfseries Action \\
+\midrule
+Reset&
+Discuta cambios sin salvar y recarga la configuración activa.
+  FairWindSK keeps running. \\
+Restore Defaults&
+Reemplaza todas las configuraciones con los predeterminados agrupados.
+  All customisation is lost. Confirmation required. \\
+Importación&
+  Imports a \code{fairwindsk.json} file from the filesystem.
+  Validates, atomically replaces the active configuration, and reloads immediately. \\
+Exportación&
+  Copies the current \code{fairwindsk.json} to a chosen location. \\
+\bottomrule
+\end{longtable}
+
+\begin{warningbox}
+\key{Restore Defaults} is irreversible without a backup.
+Exporte su configuración primero si desea restaurarla.
+\end{warningbox}
+
+\section{Botones de control de sistemas}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3.2cm}L{10.5cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Button &
+\color{white}\sffamily\bfseries Action \\
+\midrule
+Restart FairWindSK&
+Ahorra configuración, luego cierra FairWindSK con código de salida~1.
+  The Raspberry~Pi~OS startup helper relaunches on exit code~1. \\
+Quit FairWindsK&
+Guarda la configuración y cierra limpiamente (código de salida~0).
+  The startup helper does \textbf{not} relaunch after a clean exit. \\
+\bottomrule
+\end{longtable}
+
+\begin{warningbox}
+Quitting FairWindSK en una pantalla de helm dedicada deja la pantalla en blanco.
+Asegurar que otro miembro de la tripulación mantenga un reloj seguro antes de dejar de fumar.
+\end{warningbox}

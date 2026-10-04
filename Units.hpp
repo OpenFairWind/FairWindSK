@@ -53,7 +53,16 @@ namespace fairwindsk {
         void clearLocalUnitOverride(const QString &category);
         void syncLocalUnitsFromServer();
         void refreshSignalKPreferences();
+        void applySignalKPreferences(const QJsonObject &activePreset,
+                                     const QJsonObject &categoriesObject,
+                                     const QJsonObject &definitionsObject,
+                                     const QJsonObject &defaultCategoriesObject);
         nlohmann::json &getUnits();
+
+    signals:
+        // Server unit preferences or a path's display units arrived: values shown with the
+        // fallback units in the meantime should be rendered again.
+        void displayUnitsChanged();
 
     private:
         struct DisplayUnitsInfo {
@@ -87,6 +96,11 @@ namespace fairwindsk {
         nlohmann::json m_units;
         bool m_signalKPreferencesLoaded = false;
         bool m_signalKLookupInProgress = false;
+        // Asynchronous loading state: one generation per refresh, so late replies are ignored.
+        bool m_preferencesRequestInFlight = false;
+        quint64 m_preferencesGeneration = 0;
+        int m_pendingPreferenceReplies = 0;
+        QMap<QString, QJsonObject> m_pendingPreferenceDocuments;
         QString m_signalKActivePresetName;
         QMap<QString, DisplayUnitsInfo> m_categoryDisplayUnits;
         QMap<QString, QMap<QString, DisplayUnitsInfo>> m_definitionsByBaseUnit;

@@ -654,6 +654,8 @@ namespace fairwindsk::ui::mydata {
         qInfo() << "Configuring MyData table headers for" << pageTitle();
         m_tableWidget->verticalHeader()->setVisible(false);
         m_tableWidget->verticalHeader()->setDefaultSectionSize(kTouchRowHeight);
+        // Create the model-backed sections before assigning per-column resize modes.
+        m_tableWidget->setColumnCount(m_model->columnCount());
         m_tableWidget->horizontalHeader()->setStretchLastSection(true);
         if (kUseSafeTextOnlyToolbarOnThisPlatform) {
             m_tableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);

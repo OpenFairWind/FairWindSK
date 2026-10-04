@@ -1,0 +1,382 @@
+\part{Funzioni Operative}
+
+\chapter{Signal K e Qualità dei Dati}
+\label{ch:qualitadati}
+
+In mare, un numero sullo schermo è utile solo se sai se è ancora fresco.
+FairWindSK usa tre stati dei dati in modo uniforme in tutta l'interfaccia.
+
+\section{Stati dei Singoli Valori}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{2.4cm}L{5.2cm}L{6.1cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Stato &
+\color{white}\sffamily\bfseries Significato &
+\color{white}\sffamily\bfseries Azione consigliata \\
+\midrule
+\textbf{Live}         &
+  Valore ricevuto di recente e in aggiornamento normale. &
+  Usa normalmente. Continua a guardare la Barra Superiore periodicamente. \\
+\textbf{Non aggiornato} &
+  Gli aggiornamenti si sono rallentati o fermati. Viene mostrato l'ultimo valore
+  noto, attenuato. Un avviso, non la verità attuale. &
+  Tratta con cautela. Controlla con strumenti indipendenti.
+  Indaga se lo stato persiste. \\
+\textbf{Mancante}     &
+  Nessun valore utilizzabile. Viene mostrato un trattino o un segnaposto.
+  \textbf{Mancante non significa zero.} Significa non disponibile. &
+  Tratta come completamente sconosciuto.
+  Non usare mai come valore di default sicuro.
+  Verifica con un'altra fonte. \\
+\bottomrule
+\end{longtable}
+
+\section{Stati di Salute della Connessione}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3.2cm}L{4.8cm}L{5.7cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Stato &
+\color{white}\sffamily\bfseries Significato &
+\color{white}\sffamily\bfseries Risposta \\
+\midrule
+Live               & Completamente integra. &
+  Continua normalmente. \\
+Connessione        & Stabilendo la connessione iniziale. &
+  Attendi 30--60 secondi. \\
+Riconnessione      & Connessione persa; recupero automatico in corso. &
+  Attendi brevemente. Di solito si risolve automaticamente. \\
+Non aggiornato     & Connesso ma aggiornamenti rallentati o ritardati. &
+  Controlla gli strumenti. Indaga se persiste. \\
+REST degradato     & Canale richieste/risposte compromesso. &
+  Le pagine Impostazioni potrebbero fallire; monitora. \\
+Stream degradato   & Stream live compromesso. &
+  Le letture potrebbero smettere di aggiornarsi; tratta come obsoleto. \\
+Disconnesso        & Nessuna connessione. &
+  Controlla il server Signal~K e il Wi-Fi. \\
+App in caricamento & Catalogo app in recupero. &
+  Attendi; le app appariranno quando pronto. \\
+App non aggiornat. & Il catalogo app potrebbe non essere aggiornato. &
+  Le app funzionano ancora; l'elenco potrebbe essere incompleto. \\
+App primo piano deg.& L'applicazione corrente ha un problema. &
+  Riprova una volta; se ancora in errore, torna al launcher. \\
+\bottomrule
+\end{longtable}
+
+\section{Quando Agire Immediatamente}
+
+Agisci senza indugio quando:
+
+\begin{itemize}
+  \item la profondità diventa obsoleta o mancante in acque basse o ristrette
+  \item la posizione o la rotta scompaiono durante la navigazione in spazi ristretti
+  \item si verifica un evento POB (Persona in Mare)
+  \item un comando all'autopilota non corrisponde alla risposta reale dell'imbarcazione
+\end{itemize}
+
+Monitora brevemente e poi verifica quando:
+
+\begin{itemize}
+  \item la shell si sta riconnettendo dopo una breve interruzione
+  \item il caricamento delle app richiede più tempo del solito
+  \item i valori di guida rotta smettono di aggiornarsi
+  \item solo una app sembra degradata mentre il resto della shell è integro
+\end{itemize}
+
+\section{Ciclo di Recupero Automatico}
+
+Quando viene persa una connessione, FairWindSK automaticamente:
+
+\begin{enumerate}
+  \item Rileva la disconnessione o il degrado.
+  \item Esegue un nuovo rilevamento del server Signal~K.
+  \item Ristabilisce lo stream WebSocket.
+  \item Reinvia tutte le sottoscrizioni attive.
+  \item Esegue uno snapshot REST immediato affinché i widget mostrino valori aggiornati.
+  \item Aggiorna il catalogo app e tutti i modelli di risorse MyData.
+  \item Aggiorna le preferenze di unità dal server.
+\end{enumerate}
+
+\begin{warningbox}
+Dopo un'interruzione di corrente, i ricevitori GPS e gli strumenti impiegano tempo
+per riacquisire e stabilizzarsi.
+Anche dopo che FairWindSK mostra \textit{Live}, verifica ogni valore critico per
+la sicurezza prima di affidarti ad esso.
+\end{warningbox}
+
+\chapter{Persona in Mare (POB)}
+\label{ch:pob}
+
+\begin{warningbox}
+Segnala immediatamente un evento di persona in mare.
+Non ritardare perché pensi di ricordare la posizione dopo.
+Segnala prima, poi continua le azioni di recupero.
+La funzione POB assiste nel riferimento per il recupero.
+Non sostituisce la risposta immediata dell'equipaggio, la guardia visiva,
+il timone o le procedure di emergenza consolidate.
+\end{warningbox}
+
+\section{Attivazione POB}
+
+Tocca \iconlabel{alarm-pob}{POB} nella Barra Inferiore.
+È sempre visibile e mai disabilitato.
+Esercitati a trovarlo al buio e in condizioni difficili.
+
+Nell'istante in cui tocchi POB, FairWindSK simultaneamente:
+
+\begin{itemize}
+  \item Acquisisce la posizione GPS corrente come posizione dell'incidente.
+  \item Crea una risorsa waypoint su Signal~K con timestamp, denominata
+        \code{POB HH:MM:SS} (UTC).
+  \item Imposta quel waypoint come destinazione di navigazione attiva ---
+        tutte le app di navigazione mostrano immediatamente rilevamento e distanza dal POB.
+  \item Attiva l'allarme standard Signal~K \skpath{notifications.mob} a livello di emergenza,
+        avvisando tutti i dispositivi connessi.
+  \item Avvia il cronometro del tempo trascorso, che conta ogni secondo.
+  \item Si abbona a rilevamento e distanza in tempo reale dall'imbarcazione al waypoint POB.
+  \item Sostituisce la Barra Inferiore normale con il dialogo POB.
+\end{itemize}
+
+\screenshot{pob-bar-active}{Barra POB: rilevamento, distanza, tempo trascorso, pulsanti ricerca SAR}{}
+
+\section{Controlli e Letture della Barra POB}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{C{1.4cm}L{3.0cm}L{9.3cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Icona &
+\color{white}\sffamily\bfseries Controllo &
+\color{white}\sffamily\bfseries Descrizione \\
+\midrule
+---                      & Selettore POB  &
+  Elenco a discesa di tutti gli eventi POB attivi.
+  Seleziona un evento per visualizzarne i dati. \\
+---                      & Ultima pos. nota &
+  Lat e lon al momento della pressione di POB, nel formato coordinate configurato. \\
+---                      & Rilevamento     &
+  Rilevamento bussola in tempo reale dall'imbarcazione al waypoint POB.
+  Si aggiorna continuamente. \\
+---                      & Distanza        &
+  Distanza in tempo reale dall'imbarcazione al waypoint POB. Si aggiorna continuamente. \\
+---                      & Tempo trascorso &
+  HH:MM:SS che conta dal momento della pressione di POB. \\
+---                      & Annulla         &
+  Annulla l'incidente selezionato.
+  Rimuove l'allarme Signal~K e la destinazione di navigazione per quell'evento. \\
+\iconlg{search-spiral}   & Ricerca a spirale &
+  Genera un percorso SAR a spirale centrato sulla posizione POB. \\
+\iconlg{search-parallel} & Ricerca parallela &
+  Genera un percorso SAR a linee parallele centrato sulla posizione POB. \\
+\iconlg{close-google}    & Chiudi dialogo  &
+  Torna alla Barra Inferiore normale.
+  \textbf{L'allarme e il waypoint rimangono attivi su Signal~K.} \\
+\bottomrule
+\end{longtable}
+
+\begin{warningbox}
+Toccare \iconlg{close-google}~Chiudi \textbf{non} annulla il POB.
+L'allarme Signal~K e il waypoint rimangono attivi finché non vengono esplicitamente annullati.
+Solo il pulsante \key{Annulla} rimuove un incidente specifico.
+\end{warningbox}
+
+\section{Schemi di Ricerca SAR}
+
+\subsection{Ricerca a Spirale}
+
+Tocca \iconlabel{search-spiral}{Ricerca a spirale}.
+FairWindSK crea una regione SAR di $500 \times 500$\,m centrata sulla posizione POB
+e un percorso a spirale che parte dal POB e si irradia verso l'esterno con spaziatura di 50\,m.
+Sia la regione che il percorso vengono salvati come risorse Signal~K e appaiono immediatamente
+in \ui{MyData~> Regioni} e \ui{MyData~> Rotte}.
+
+\subsection{Ricerca a Linee Parallele}
+
+Tocca \iconlabel{search-parallel}{Ricerca parallela}.
+FairWindSK crea la stessa regione SAR di $500 \times 500$\,m e un percorso a linee
+parallele che la copre con spaziatura di 60\,m.
+
+\section{Annullare un POB}
+
+\begin{enumerate}
+  \item Seleziona l'incidente nel selettore POB (se ci sono più incidenti attivi).
+  \item Tocca \key{Annulla}.
+  \item FairWindSK rimuove l'allarme Signal~K e cancella la destinazione di navigazione.
+  \item Se non ci sono più incidenti attivi, il dialogo POB si chiude automaticamente.
+\end{enumerate}
+
+\begin{notebox}
+Il waypoint POB \textbf{non} viene eliminato all'annullamento.
+Viene conservato in \ui{MyData~> Waypoint} con il suo timestamp e la sua posizione
+per la documentazione di eventuali incidenti e il debriefing post-incidente.
+\end{notebox}
+
+\chapter{Controlli Autopilota}
+\label{ch:autopilota}
+
+Tocca \iconlabel{command-autopilot}{Autopilota} nella Barra Inferiore per aprire la barra
+Autopilota, che sostituisce la Barra Inferiore normale.
+L'icona Autopilota è attiva solo quando il plugin richiesto è installato e FairWindSK
+può interagire con esso.
+
+\begin{warningbox}
+Verifica sempre l'effetto reale di un comando autopilota sull'imbarcazione.
+Non dare mai per scontato che un cambio di modalità sia avvenuto solo perché hai toccato
+un controllo.
+Sii pronto a disinnestare o sovrascrivere immediatamente se la risposta è pericolosa
+o inattesa.
+\end{warningbox}
+
+\screenshot{autopilot-bar}{Barra Autopilota: pulsanti modalità, controlli di assetto, indicatore timone}{}
+
+\section{Controlli della Barra Autopilota}
+
+Le icone sono gli asset esatti definiti in \code{AutopilotBar.cpp}.
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{C{1.4cm}L{2.4cm}L{4.6cm}L{5.3cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Icona &
+\color{white}\sffamily\bfseries Controllo &
+\color{white}\sffamily\bfseries Azione Signal~K &
+\color{white}\sffamily\bfseries Quando usarlo \\
+\midrule
+\iconlg{close-google}                & Standby      & Disinnesta           & Qualsiasi volta si voglia il timone manuale. \\
+\iconlg{command-autopilot}           & Auto         & Modalità bussola     & Traversate in mare aperto; mantiene la prua. \\
+\iconlg{up-iec}                      & Vento        & Modalità vento       & Bolina/poppa; mantiene l'angolo di vento. \\
+\iconlg{navigation-route}            & Rotta        & Modalità GPS         & Navigazione su percorso waypoint. \\
+\iconlg{spinbox-minus}               & $-1\textdegree$ sx & Assetto $-1\textdegree$ & Regolazione fine a sinistra. \\
+\iconlg{spinbox-plus}                & $+1\textdegree$ dr & Assetto $+1\textdegree$ & Regolazione fine a dritta. \\
+\iconlg{chevron-double-left-google}  & $-10\textdegree$ sx & Correggi $-10\textdegree$ & Correzione di rotta maggiore a sinistra. \\
+\iconlg{chevron-double-right-google} & $+10\textdegree$ dr & Correggi $+10\textdegree$ & Correzione di rotta maggiore a dritta. \\
+\iconlg{arrow-left-google}           & Virata sin.  & Esegui virata sx     & Navigazione a vela in bolina. \\
+\iconlg{arrow-right-google}          & Virata dr.   & Esegui virata dr     & Navigazione a vela in bolina. \\
+\iconlg{chevron-double-left-google}  & Strambata sx & Esegui strambata sx  & Condizioni da lievi a moderate; supervisionare. \\
+\iconlg{chevron-double-right-google} & Strambata dr & Esegui strambata dr  & Supervisionare al timone in vento forte. \\
+\iconlg{waypoint-optional-iec}       & WPT succ.    & Avanza leg rotta     & Navigazione su rotta. \\
+\iconlg{alerts}                      & Scarto       & Manovra evitamento   & Nassa, imbarcazione, ostacolo. \\
+\bottomrule
+\end{longtable}
+
+\section{Indicatore Timone}
+
+La barra Autopilota mostra uno slider orizzontale \textbf{di sola lettura} che visualizza
+la deflessione corrente del timone da $-30\textdegree$ (tutto a sinistra) a
+$+30\textdegree$ (tutto a dritta).
+Riflette la posizione effettiva del timone riportata dal pilota --- non una prua comandata.
+Usalo per confermare che l'autopilota risponde ai comandi come atteso.
+
+\chapter{Guardia Ancora}
+\label{ch:ancora}
+
+Tocca \iconlabel{anchor-iec}{Ancora} per aprire la barra Guardia Ancora.
+
+\begin{warningbox}
+La guardia ancora elettronica è solo un ausilio.
+In un ancoraggio esposto, con tempo in peggioramento o con fondale scarso,
+mantieni una guardia umana indipendentemente da ciò che mostra qualsiasi
+dispositivo elettronico.
+\end{warningbox}
+
+\screenshot{anchor-bar}{Barra Guardia Ancora: posizione, profondità, calumo, raggio, controlli argano}{}
+
+\section{Controlli e Letture della Barra Ancora}
+
+Le icone sono gli asset esatti definiti in \code{AnchorBar.ui}.
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{C{1.4cm}L{3.0cm}L{9.3cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Icona &
+\color{white}\sffamily\bfseries Controllo &
+\color{white}\sffamily\bfseries Descrizione \\
+\midrule
+\iconlg{anchor-drop}    & Cala          & Registra la posizione GPS come punto di ancoraggio e avvia il monitoraggio. \\
+\iconlg{anchor-raise}   & Salpa         & Ferma il monitoraggio e cancella la posizione dell'ancora. \\
+\iconlg{anchor-release} & Fila          & Invia comando di fila catena all'argano elettrico (se supportato). \\
+\iconlg{anchor-up}      & Su (tieni)    & Comando continuo di alaggio all'argano elettrico. Rilascia per fermare. \\
+\iconlg{anchor-down}    & Giù (tieni)   & Comando continuo di filatura all'argano elettrico. Rilascia per fermare. \\
+\iconlg{anchor-reset}   & Reimposta     & Reimposta la posizione dell'ancora alla posizione GPS corrente. \\
+---                      & Slider raggio & Distanza massima consentita prima dell'allarme. \\
+---                      & Imposta Raggio & Conferma il raggio e lo invia al plugin ancora. \\
+---                      & LAT / LON     & Coordinate GPS del punto di ancoraggio registrato. \\
+---                      & Profondità    & Profondità attuale dell'acqua dall'ecoscandaglio. \\
+---                      & Calumo        & Lunghezza di calumo filato. \\
+---                      & Raggio att./Rilev. & Distanza e rilevamento in tempo reale dall'imbarcazione all'ancora. \\
+---                      & Raggio max    & Distanza massima raggiunta dall'ancora dall'inizio della guardia. \\
+\bottomrule
+\end{longtable}
+
+\section{Impostazione della Guardia Ancora --- Passo per Passo}
+
+\begin{enumerate}
+  \item Ancora normalmente e fila il calumo previsto.
+  \item Dopo che l'imbarcazione si è assestata, tocca \iconlg{anchor-iec} nella Barra Inferiore.
+  \item Conferma che la posizione GPS visualizzata corrisponda a dove giace l'ancora.
+  \item Tocca \iconlg{anchor-drop}~\key{Cala}. FairWindSK registra la posizione e avvia il monitoraggio.
+  \item Imposta il raggio, tenendo conto di: calumo, cerchio di bordata, precisione GPS
+        ($\pm3$--$10$\,m) e margine di sicurezza.
+  \item Tocca \key{Imposta Raggio} per confermare.
+  \item Chiudi la barra. Il monitoraggio continua in background.
+\end{enumerate}
+
+\chapter{Allarmi}
+\label{ch:allarmi}
+
+Tocca \iconlabel{alarm-general}{Allarmi} per aprire la barra Allarmi.
+Quando un allarme è attivo, l'icona viene evidenziata con il colore accent su tutti i preset
+comfort --- progettato per attirare l'attenzione anche durante la guardia notturna.
+
+\screenshot{alarms-bar}{Barra Allarmi: pulsanti di emergenza SOLAS ed elenco allarmi attivi}{}
+
+\section{Pulsanti di Allarme di Emergenza}
+
+Le icone sono gli asset esatti definiti in \code{AlarmsBar.ui}.
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{C{1.4cm}L{2.2cm}L{4.0cm}L{6.5cm}}
+\toprule
+\rowcolor{Navy}
+\color{white}\sffamily\bfseries Icona &
+\color{white}\sffamily\bfseries Pulsante &
+\color{white}\sffamily\bfseries Percorso Signal~K &
+\color{white}\sffamily\bfseries Tipo di emergenza \\
+\midrule
+\iconlg{alarm-pob}     & POB          & \skpath{notifications.mob}     & Persona / uomo in mare \\
+\iconlg{alarm-sinking} & Affondamento & \skpath{notifications.sinking} & Imbarcazione che imbarca acqua o affonda \\
+\iconlg{alarm-fire}    & Incendio     & \skpath{notifications.fire}    & Incendio a bordo \\
+\iconlg{alarm-piracy}  & Pirateria    & \skpath{notifications.piracy}  & Pirateria o attacco armato \\
+\iconlg{alarm-abandon} & Abbandono    & \skpath{notifications.abandon} & Abbandono della nave \\
+\iconlg{alarm-adrift}  & Alla deriva  & \skpath{notifications.adrift}  & Imbarcazione alla deriva e incontrollata \\
+\bottomrule
+\end{longtable}
+
+\begin{warningbox}
+L'attivazione di un allarme in FairWindSK genera una notifica Signal~K solo sulla
+rete di bordo.
+\textbf{Non} contatta la guardia costiera, l'MRCC o alcuna autorità esterna.
+Effettua una chiamata di soccorso DSC e/o vocale sul Canale VHF~16 in qualsiasi
+emergenza reale.
+\end{warningbox}
+
+\section{Priorità degli Allarmi e Risposta}
+
+Gestisci gli allarmi in questo ordine:
+
+\begin{enumerate}
+  \item Prima i valori critici per la sicurezza --- profondità, posizione, rotta.
+  \item Poi la salute della connessione e della shell.
+  \item Infine i problemi specifici dell'applicazione.
+\end{enumerate}
+
+\section{Elenco Allarmi Attivi}
+
+Sotto i pulsanti, la barra Allarmi elenca tutte le notifiche Signal~K attualmente attive,
+mostrando percorso, stato (emergenza/allarme/avviso), testo del messaggio e timestamp.
+Mostra anche lo stato corrente della connessione Signal~K e il timestamp dell'ultimo
+aggiornamento dello stream --- un sommario compatto della salute senza dover uscire dalla barra.

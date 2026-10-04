@@ -334,7 +334,10 @@ namespace fairwindsk::ui::mydata {
         if (m_model->columnCount() > 1) {
             m_tableWidget->setColumnWidth(1, 240);
         }
-        resourceHeader->setSectionResizeMode(m_model->columnCount(), QHeaderView::Fixed);
+        // The final valid section is columnCount - 1; never address the sentinel after it.
+        if (m_model->columnCount() > 0) {
+            resourceHeader->setSectionResizeMode(m_model->columnCount() - 1, QHeaderView::Fixed);
+        }
         resourceHeader->setStretchLastSection(false);
     }
 

@@ -17,6 +17,7 @@
 #endif
 #include <QPushButton>
 #include <QSettings>
+#include <QShowEvent>
 #include <QSignalBlocker>
 #include <QTextEdit>
 #include <QUuid>
@@ -329,6 +330,7 @@ namespace fairwindsk::ui::settings {
         settings.remove("href");
         if (clearToken) {
             settings.remove("token");
+            settings.remove("tokenServer");
             settings.remove("expirationTime");
         }
         settings.sync();
@@ -341,7 +343,10 @@ namespace fairwindsk::ui::settings {
     void Connection::syncTokenUiState() {
         const QSettings settings(Configuration::settingsFilename(), QSettings::IniFormat);
         const QString href = settings.value("href", "").toString();
-        const QString token = settings.value("token", "").toString();
+        // Only a token issued by the configured server counts as "having a token".
+        const QString token = m_settings
+                                  ? Configuration::getToken(m_settings->getConfiguration()->getSignalKServerUrl())
+                                  : QString();
         const QString expirationTime = settings.value("expirationTime", "").toString();
 
         const bool hasPendingRequest = !href.isEmpty();
@@ -387,6 +392,7 @@ namespace fairwindsk::ui::settings {
             m_permissionText = tr("Denied");
             m_expirationText.clear();
             settings.remove("token");
+            settings.remove("tokenServer");
             settings.remove("expirationTime");
             settings.sync();
         } else if (permission == "APPROVED") {
@@ -402,8 +408,12 @@ namespace fairwindsk::ui::settings {
 
             if (accessRequest.contains("token") && accessRequest["token"].isString()) {
                 settings.setValue("token", accessRequest["token"].toString());
+                // Remember which server issued it, so it is never offered to another one.
+                settings.setValue("tokenServer",
+                                  m_settings->getConfiguration()->getSignalKServerUrl().trimmed().toLower());
             } else {
                 settings.remove("token");
+            settings.remove("tokenServer");
             }
 
             settings.sync();
@@ -412,6 +422,7 @@ namespace fairwindsk::ui::settings {
             m_permissionText = permission;
             m_expirationText.clear();
             settings.remove("token");
+            settings.remove("tokenServer");
             settings.remove("expirationTime");
             settings.sync();
         }
@@ -439,9 +450,21 @@ namespace fairwindsk::ui::settings {
     // URL / connection management
     // -------------------------------------------------------------------------
 
-    void Connection::commitSignalKServerUrl(const bool restartWhenActive) {
+    bool Connection::typedServerUrlDiffersFromConfigured() const {
+        if (!m_comboBox || !m_settings) {
+            return false;
+        }
+        // Compare in normalized form so "host:3000" equals "http://host:3000".
+        const QString typed = normalizedSignalKServerUrlText(m_comboBox->currentText());
+        const QString configured = normalizedSignalKServerUrlText(m_settings->getConfiguration()->getSignalKServerUrl());
+        return typed != configured;
+    }
+
+    // Stores the address shown in the editor as the configured server.
+    // Returns true when the configured server actually changed.
+    bool Connection::commitSignalKServerUrl(const bool restartWhenActive) {
         if (!m_comboBox || !m_settings || m_committingServerUrl) {
-            return;
+            return false;
         }
 
         const QString normalized = normalizedSignalKServerUrlText(m_comboBox->currentText());
@@ -452,13 +475,13 @@ namespace fairwindsk::ui::settings {
                 m_settings->markDirty(FairWindSK::RuntimeSignalKConnection, 0);
             }
             updateConnectionToggle();
-            return;
+            return changed;
         }
 
         const QUrl signalKServerUrl = validatedSignalKServerUrl(normalized);
         if (!signalKServerUrl.isValid()) {
             updateConnectionToggle();
-            return;
+            return false;
         }
 
         m_committingServerUrl = true;
@@ -475,6 +498,7 @@ namespace fairwindsk::ui::settings {
             m_settings->markDirty(FairWindSK::RuntimeSignalKConnection, 400);
         }
         updateConnectionToggle();
+        return changed;
     }
 
     void Connection::addServerUrlOption(const QString &serverUrl) const {
@@ -497,6 +521,19 @@ namespace fairwindsk::ui::settings {
         return m_settings && m_settings->getConfiguration()->getSignalKConnectionEnabled();
     }
 
+    bool Connection::connectionEstablished() const {
+        auto *fairWindSK = FairWindSK::getInstance();
+        const auto *client = fairWindSK ? fairWindSK->getSignalKClient() : nullptr;
+        if (!client) {
+            return false;
+        }
+
+        const auto state = client->connectionHealthState();
+        return state == signalk::Client::ConnectionHealthState::Live ||
+               state == signalk::Client::ConnectionHealthState::Stale ||
+               state == signalk::Client::ConnectionHealthState::Degraded;
+    }
+
     void Connection::setConnectionEnabled(const bool enabled) {
         if (!m_settings || !m_settings->getConfiguration()) {
             return;
@@ -517,9 +554,14 @@ namespace fairwindsk::ui::settings {
             return;
         }
 
-        const bool enabled = connectionEnabled();
-        m_connectButton->setText(enabled ? tr("Pause") : tr("Connect"));
-        m_connectButton->setToolTip(enabled
+        // A typed address that is not the configured one is always something to connect to,
+        // even while the previous server is still live.
+        const bool connected = connectionEstablished() && !typedServerUrlDiffersFromConfigured();
+        m_connectButton->setText(connected ? tr("Pause") : tr("Connect"));
+        m_connectButton->setIcon(QIcon(connected
+                                           ? QStringLiteral(":/resources/svg/OpenBridge/close-google.svg")
+                                           : QStringLiteral(":/resources/svg/OpenBridge/refresh-google.svg")));
+        m_connectButton->setToolTip(connected
                                         ? tr("Pause the Signal K connection without clearing the selected URL")
                                         : tr("Connect to the Signal K server using the selected URL"));
         m_connectButton->setAccessibleName(m_connectButton->text());
@@ -722,13 +764,22 @@ namespace fairwindsk::ui::settings {
         connect(m_cancelButton, &QPushButton::clicked, this, &Connection::onCancelRequest);
         connect(m_removeTokenButton, &QPushButton::clicked, this, &Connection::onRemoveToken);
 
-        // Only commit the URL when the user selects an item from the dropdown.
-        // Typed URLs are added to the combo on connect so accidental keystrokes
-        // don't overwrite the saved server URL.
+        // Selecting or typing a server never changes the saved one by itself;
+        // the address is committed when the operator presses Connect.
         connect(m_comboBox,
                 qOverload<int>(&fairwindsk::ui::widgets::TouchComboBox::currentIndexChanged),
                 this,
                 &Connection::onUpdateSignalKServerUrl);
+        // Keep the Connect/Pause label truthful while an address is being typed.
+        connect(m_comboBox, &fairwindsk::ui::widgets::TouchComboBox::editTextChanged, this,
+                [this](const QString &) { updateConnectionToggle(); });
+        // Return/Enter on a typed address connects to it, like pressing the button.
+        connect(m_comboBox, &fairwindsk::ui::widgets::TouchComboBox::editTextCommitted, this,
+                [this](const QString &) {
+                    if (typedServerUrlDiffersFromConfigured() || !connectionEstablished()) {
+                        onToggleConnection();
+                    }
+                });
     }
 
     // -------------------------------------------------------------------------
@@ -782,6 +833,19 @@ namespace fairwindsk::ui::settings {
 
         m_networkAccessManager = new QNetworkAccessManager(this);
 
+        // Keep the action label and icon aligned with real connectivity, not only configuration intent.
+        if (auto *client = FairWindSK::getInstance()->getSignalKClient()) {
+            connect(client, &signalk::Client::connectionHealthStateChanged, this,
+                    [this](const signalk::Client::ConnectionHealthState,
+                           const QString &,
+                           const QDateTime &,
+                           const QString &) { updateConnectionToggle(); });
+            // A token refused by the server is forgotten: offer Request Token again right away.
+            // Queued, so the settings file has been updated when the buttons are refreshed.
+            connect(client, &signalk::Client::tokenRejected, this, [this]() { syncTokenUiState(); },
+                    Qt::QueuedConnection);
+        }
+
         // Populate combo with the configured URL and defaults.
         const QString configuredServerUrl = m_settings->getConfiguration()->getSignalKServerUrl();
         addServerUrlOption(configuredServerUrl);
@@ -789,11 +853,16 @@ namespace fairwindsk::ui::settings {
             const QSignalBlocker blocker(m_comboBox);
             m_comboBox->setCurrentText(configuredServerUrl);
         }
+        // Addresses the operator connected to before stay available across restarts.
+        for (const QString &rememberedServerUrl : m_settings->getConfiguration()->getSignalKServerUrls()) {
+            addServerUrlOption(rememberedServerUrl);
+        }
+#if defined(Q_OS_ANDROID)
+        // The Android emulator reaches a server running on the development host through this alias.
         addServerUrlOption(QStringLiteral("http://10.0.2.2:3000"));
-        addServerUrlOption(QStringLiteral("[http://demo.signalk.org](https://demo.signalk.org)"));
-
+#endif
+        // Public demo server: a safe starting point when no server has been discovered yet.
         addServerUrlOption(QStringLiteral("http://demo.signalk.org"));
-        addServerUrlOption(QStringLiteral("http://92.168.1.115:3000"));
 
         // Load persisted token/href state.
         const QSettings settings(Configuration::settingsFilename(), QSettings::IniFormat);
@@ -801,8 +870,9 @@ namespace fairwindsk::ui::settings {
         const QString expirationTime = settings.value("expirationTime", "").toString();
 
         if (FairWindSK::getInstance()->isDebug()) {
+            // Never write the access token itself to the log: it is a credential.
             qDebug() << "href:" << href
-                     << "token:" << settings.value("token", "").toString()
+                     << "token present:" << !settings.value("token", "").toString().isEmpty()
                      << "expirationTime:" << expirationTime;
         }
 
@@ -836,6 +906,13 @@ namespace fairwindsk::ui::settings {
     // event override — refresh chrome on palette change
     // -------------------------------------------------------------------------
 
+    void Connection::showEvent(QShowEvent *event) {
+        QWidget::showEvent(event);
+        // The token can change while this page is hidden (rejected by the server, removed):
+        // bring the buttons back in line every time the page is shown.
+        syncTokenUiState();
+    }
+
     bool Connection::event(QEvent *event) {
         if (event && (event->type() == QEvent::PaletteChange ||
                       event->type() == QEvent::ApplicationPaletteChange)) {
@@ -851,11 +928,12 @@ namespace fairwindsk::ui::settings {
     /*
      * onUpdateSignalKServerUrl
      * Invoked when the user picks an item from the combo dropdown.
-     * Saves the selected URL to config without restarting the active connection;
-     * typed URLs are committed only when the Connect button is pressed.
+     * Picking a server only selects it: the configured server keeps describing the
+     * connection that is really in use until Connect (or Request token) is pressed,
+     * so the Connect/Pause button never claims a server that is not the live one.
      */
     void Connection::onUpdateSignalKServerUrl() {
-        commitSignalKServerUrl(false);
+        updateConnectionToggle();
     }
 
     /*
@@ -880,15 +958,37 @@ namespace fairwindsk::ui::settings {
      * Commits (and adds to the combo) any URL the user typed before toggling.
      */
     void Connection::onToggleConnection() {
-        commitSignalKServerUrl(false);
-        const bool nextEnabled = !connectionEnabled();
-        if (nextEnabled && !currentSignalKServerUrl().isValid()) {
+        // Text that is not a usable address must never be mistaken for a Pause request.
+        const QString typedText = m_comboBox ? m_comboBox->currentText().trimmed() : QString();
+        if (!typedText.isEmpty() && !currentSignalKServerUrl().isValid()) {
+            showConsole();
             appendMessage(tr("Please provide a valid Signal K server URL before starting the connection."));
             updateConnectionToggle();
             return;
         }
 
-        setConnectionEnabled(nextEnabled);
+        // A newly entered address means "connect there", even if another server is live.
+        const bool serverChanged = commitSignalKServerUrl(false);
+        const bool nextEnabled = serverChanged || !connectionEstablished();
+        if (nextEnabled && !currentSignalKServerUrl().isValid()) {
+            showConsole();
+            appendMessage(tr("Please provide a valid Signal K server URL before starting the connection."));
+            updateConnectionToggle();
+            return;
+        }
+
+        if (nextEnabled) {
+            // Keep the address in the drop-down list for the next sessions.
+            m_settings->getConfiguration()->rememberSignalKServerUrl(currentSignalKServerUrl().toString());
+        }
+
+        if (nextEnabled && connectionEnabled()) {
+            // Retry an enabled but disconnected connection, or move to the new server, immediately.
+            updateConnectionToggle();
+            m_settings->markDirty(FairWindSK::RuntimeSignalKConnection, 0);
+        } else {
+            setConnectionEnabled(nextEnabled);
+        }
         m_stateText = nextEnabled ? tr("Starting") : tr("Paused");
         updateStatusLabel();
         appendMessage(nextEnabled
@@ -915,6 +1015,7 @@ namespace fairwindsk::ui::settings {
         }
 
         m_settings->getConfiguration()->setSignalKServerUrl(signalKServerUrl.toString());
+        m_settings->getConfiguration()->rememberSignalKServerUrl(signalKServerUrl.toString());
         m_settings->getConfiguration()->setSignalKConnectionEnabled(true);
         m_settings->markDirty(FairWindSK::RuntimeSignalKConnection, 0);
         updateConnectionToggle();
@@ -931,7 +1032,15 @@ namespace fairwindsk::ui::settings {
         networkRequest.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
         networkRequest.setTransferTimeout(kTokenRequestTimeoutMs);
 
-        const QString clientId = QUuid::createUuid().toString(QUuid::WithoutBraces);
+        // The server identifies a device by its client id: keep one per installation, otherwise
+        // every request registers one more device in the server's access list.
+        QSettings clientSettings(Configuration::settingsFilename(), QSettings::IniFormat);
+        QString clientId = clientSettings.value("clientId", "").toString().trimmed();
+        if (clientId.isEmpty()) {
+            clientId = QUuid::createUuid().toString(QUuid::WithoutBraces);
+            clientSettings.setValue("clientId", clientId);
+            clientSettings.sync();
+        }
         const QJsonObject requestObject{
             {"clientId", clientId},
             {"description", "FairWindSK"}
@@ -996,6 +1105,8 @@ namespace fairwindsk::ui::settings {
             m_stateText = tr("Login required");
             updateStatusLabel();
             syncTokenUiState();
+            // The server explains the refusal (for example a request already waiting for approval).
+            appendMessage(replyMessage(responsePayload, nullptr));
 
             if (signalKServerUrl.isValid()) {
                 showBrowserPage(buildSignalKUrl(signalKServerUrl, "/admin/#/login"));
@@ -1063,6 +1174,13 @@ namespace fairwindsk::ui::settings {
             m_stateText = tr("Pending...");
             updateStatusLabel();
             syncTokenUiState();
+            return;
+        }
+
+        if (statusCode == 404) {
+            // The server no longer knows this request (for example after a restart):
+            // polling it forever would never complete, so close the flow.
+            finishTokenFlowWithError(tr("Request failed"), replyMessage(responsePayload, nullptr));
             return;
         }
 

@@ -1,0 +1,351 @@
+{
+  "schema": 1,
+  "description": "Upload-ready FairWindSK App Store and Google Play raster assets.",
+  "asset_count": 43,
+  "assets": [
+    {
+      "path": "appstore/app-icon-1024.png",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "bytes": 703828,
+      "sha256": "a57b5407f9f5cefa8a4885dd6092c6206affdec8db0ce5af939db69be0ebd7b0"
+    },
+    {
+      "path": "appstore/screenshots/en-US/ipad-13-landscape/01-launcher-overview.png",
+      "width": 2752,
+      "height": 2064,
+      "mode": "RGB",
+      "bytes": 1421278,
+      "sha256": "75273cea3121fa47bc2ae8c26c634cb6ff2e64fb89745ce8751711c659447d80"
+    },
+    {
+      "path": "appstore/screenshots/en-US/ipad-13-landscape/02-screen-layout-overview.png",
+      "width": 2752,
+      "height": 2064,
+      "mode": "RGB",
+      "bytes": 1406806,
+      "sha256": "9d3eefef99a0cad1d6d65861c2926f00452712dbc7f78af172b00216f888256c"
+    },
+    {
+      "path": "appstore/screenshots/en-US/ipad-13-landscape/03-mydata-waypoints-list.png",
+      "width": 2752,
+      "height": 2064,
+      "mode": "RGB",
+      "bytes": 936000,
+      "sha256": "1196da4c43ce7be4ca7255b5ba22089d90975d4ea88a98c823dee420fada23b4"
+    },
+    {
+      "path": "appstore/screenshots/en-US/ipad-13-landscape/04-settings-overview.png",
+      "width": 2752,
+      "height": 2064,
+      "mode": "RGB",
+      "bytes": 999159,
+      "sha256": "bb3816bf3c51d02a99fe41f283a43738adf93df80573fc5853d7c124c4a0fdc7"
+    },
+    {
+      "path": "appstore/screenshots/en-US/ipad-13-landscape/05-pob-bar-active.png",
+      "width": 2752,
+      "height": 2064,
+      "mode": "RGB",
+      "bytes": 1082585,
+      "sha256": "5186221ccecff41f09787d6c75d77c6a33d40f2638fe7608fdf2a67fcf0235cd"
+    },
+    {
+      "path": "appstore/screenshots/en-US/iphone-6.9-landscape/01-launcher-overview.png",
+      "width": 2796,
+      "height": 1290,
+      "mode": "RGB",
+      "bytes": 1432254,
+      "sha256": "4f0a8219deed971c3f222fd0c401b10c5bf9c82ab63701e74c3669a752031948"
+    },
+    {
+      "path": "appstore/screenshots/en-US/iphone-6.9-landscape/02-screen-layout-overview.png",
+      "width": 2796,
+      "height": 1290,
+      "mode": "RGB",
+      "bytes": 1424059,
+      "sha256": "0cd61a8f1c9f6bf52120de7b98c1d01235d4c772d9db9517c6294523f68a25ff"
+    },
+    {
+      "path": "appstore/screenshots/en-US/iphone-6.9-landscape/03-mydata-waypoints-list.png",
+      "width": 2796,
+      "height": 1290,
+      "mode": "RGB",
+      "bytes": 1181371,
+      "sha256": "cc7cfb1e25ac65b7634c6d0f41b92cf08d5d335e0a19828fb63abeff0aac6eb7"
+    },
+    {
+      "path": "appstore/screenshots/en-US/iphone-6.9-landscape/04-settings-overview.png",
+      "width": 2796,
+      "height": 1290,
+      "mode": "RGB",
+      "bytes": 1212564,
+      "sha256": "de0464bc1f9b7f09fea09351f8a7e114580182c00a5ccc0fb84bb58be674bcf6"
+    },
+    {
+      "path": "appstore/screenshots/en-US/iphone-6.9-landscape/05-pob-bar-active.png",
+      "width": 2796,
+      "height": 1290,
+      "mode": "RGB",
+      "bytes": 1255037,
+      "sha256": "913cc64465f2f768892e2452105da209111c140b8b5610af6058b8b99382c89d"
+    },
+    {
+      "path": "appstore/screenshots/it-IT/ipad-13-landscape/01-launcher-overview.png",
+      "width": 2752,
+      "height": 2064,
+      "mode": "RGB",
+      "bytes": 1421242,
+      "sha256": "7ca0778837f76b69ebb47a64c5d7c8cf3fe378598349c2d0ce7b97bb6ffc8e2c"
+    },
+    {
+      "path": "appstore/screenshots/it-IT/ipad-13-landscape/02-screen-layout-overview.png",
+      "width": 2752,
+      "height": 2064,
+      "mode": "RGB",
+      "bytes": 1408004,
+      "sha256": "9ab4e9585d892c9e207a2c1728f7e78e206568c35fdf8accc4bb6e7f2d859f77"
+    },
+    {
+      "path": "appstore/screenshots/it-IT/ipad-13-landscape/03-mydata-waypoints-list.png",
+      "width": 2752,
+      "height": 2064,
+      "mode": "RGB",
+      "bytes": 923602,
+      "sha256": "59456f73d3230f0b71eb350ee525784a760b87e974e79f9a9439c94b5d9f57e4"
+    },
+    {
+      "path": "appstore/screenshots/it-IT/ipad-13-landscape/04-settings-overview.png",
+      "width": 2752,
+      "height": 2064,
+      "mode": "RGB",
+      "bytes": 1025442,
+      "sha256": "0a008adc2d1bb42e9b2dce483e3d21e9e7fc678bf304ac11e9db25f48a7744de"
+    },
+    {
+      "path": "appstore/screenshots/it-IT/ipad-13-landscape/05-pob-bar-active.png",
+      "width": 2752,
+      "height": 2064,
+      "mode": "RGB",
+      "bytes": 1079975,
+      "sha256": "18d3182c77dce97c43ecdb2f82ae6bd0bcfc21d659f357433f6d63fa7b5bb804"
+    },
+    {
+      "path": "appstore/screenshots/it-IT/iphone-6.9-landscape/01-launcher-overview.png",
+      "width": 2796,
+      "height": 1290,
+      "mode": "RGB",
+      "bytes": 1431117,
+      "sha256": "8b998cde34f49ccbc8db6a250474c6f997676fb759ba5c17a26df867b74f9f74"
+    },
+    {
+      "path": "appstore/screenshots/it-IT/iphone-6.9-landscape/02-screen-layout-overview.png",
+      "width": 2796,
+      "height": 1290,
+      "mode": "RGB",
+      "bytes": 1422518,
+      "sha256": "a73db378d5e8fc2a7854615d8da1fe761ed1ea8c72b216cd0c109eafb8450a1a"
+    },
+    {
+      "path": "appstore/screenshots/it-IT/iphone-6.9-landscape/03-mydata-waypoints-list.png",
+      "width": 2796,
+      "height": 1290,
+      "mode": "RGB",
+      "bytes": 1173052,
+      "sha256": "ec8f922d898298d139f6dd1a67598fbe96a92f4112732087e5277c064cf8ac15"
+    },
+    {
+      "path": "appstore/screenshots/it-IT/iphone-6.9-landscape/04-settings-overview.png",
+      "width": 2796,
+      "height": 1290,
+      "mode": "RGB",
+      "bytes": 1224749,
+      "sha256": "9cef4542b753eed65b6439d8e5aaa2ce4db1258894de35b434f31bc7098aaefb"
+    },
+    {
+      "path": "appstore/screenshots/it-IT/iphone-6.9-landscape/05-pob-bar-active.png",
+      "width": 2796,
+      "height": 1290,
+      "mode": "RGB",
+      "bytes": 1251600,
+      "sha256": "cbcefb77380593bb6ee39baffd092fe8c0188154d4cea40001eb57ca73279eb7"
+    },
+    {
+      "path": "playstore/graphics/app-icon-512.png",
+      "width": 512,
+      "height": 512,
+      "mode": "RGB",
+      "bytes": 219464,
+      "sha256": "60c4d46ff11ffc6965b0205a6b97d457ec9cb18fafe87aebc6d8f48a93b8fb9d"
+    },
+    {
+      "path": "playstore/graphics/feature-graphic-1024x500.png",
+      "width": 1024,
+      "height": 500,
+      "mode": "RGB",
+      "bytes": 407447,
+      "sha256": "7ee1bfaab80115e6422dc607a6dddd8ec955090615e552e9c95f656999441e28"
+    },
+    {
+      "path": "playstore/screenshots/en-US/phone/01-launcher-overview.png",
+      "width": 1920,
+      "height": 1080,
+      "mode": "RGB",
+      "bytes": 928845,
+      "sha256": "c099ad9a26d6b0d59ea114501b5073f8ef8cfcbd50425c6c9aefdc8de8904528"
+    },
+    {
+      "path": "playstore/screenshots/en-US/phone/02-screen-layout-overview.png",
+      "width": 1920,
+      "height": 1080,
+      "mode": "RGB",
+      "bytes": 922193,
+      "sha256": "6ef6aba57edbae02a448f5aab71db3c441353c3a1ccbec11ea6b7ae3c701f97c"
+    },
+    {
+      "path": "playstore/screenshots/en-US/phone/03-mydata-waypoints-list.png",
+      "width": 1920,
+      "height": 1080,
+      "mode": "RGB",
+      "bytes": 734300,
+      "sha256": "5eb2aa0cf302e1dae4dee61a4a0107c239b62ed12b97ba4da7a58c1dd6c8e705"
+    },
+    {
+      "path": "playstore/screenshots/en-US/phone/04-settings-overview.png",
+      "width": 1920,
+      "height": 1080,
+      "mode": "RGB",
+      "bytes": 757307,
+      "sha256": "c93ec8bfd4d26da1f0a261dfa543c6a48771eb814ef270de4bf77ec59069b341"
+    },
+    {
+      "path": "playstore/screenshots/en-US/phone/05-pob-bar-active.png",
+      "width": 1920,
+      "height": 1080,
+      "mode": "RGB",
+      "bytes": 790475,
+      "sha256": "c281bf7baaf3875cc7caf3d1ceb38851ca50209dbdd235d88934657d73438446"
+    },
+    {
+      "path": "playstore/screenshots/en-US/tablet/01-launcher-overview.png",
+      "width": 2560,
+      "height": 1600,
+      "mode": "RGB",
+      "bytes": 1319717,
+      "sha256": "ca8333b898911550c6d77b5ae161f97e4990bcce5c5d96ea588e2618853f3662"
+    },
+    {
+      "path": "playstore/screenshots/en-US/tablet/02-screen-layout-overview.png",
+      "width": 2560,
+      "height": 1600,
+      "mode": "RGB",
+      "bytes": 1309695,
+      "sha256": "1acceadc29ca09cc3c434d0b65b8a18bef36c2449390a3ab77de8c4eb052bb0d"
+    },
+    {
+      "path": "playstore/screenshots/en-US/tablet/03-mydata-waypoints-list.png",
+      "width": 2560,
+      "height": 1600,
+      "mode": "RGB",
+      "bytes": 971417,
+      "sha256": "f3f14cc04b9a2b99b3bb22db642e5723661f795ac5b805c25423720d3cac17a7"
+    },
+    {
+      "path": "playstore/screenshots/en-US/tablet/04-settings-overview.png",
+      "width": 2560,
+      "height": 1600,
+      "mode": "RGB",
+      "bytes": 1019984,
+      "sha256": "3fa0f27c561a5dc546629819c1293bcef74604c157af531a421bb5c4d37d3000"
+    },
+    {
+      "path": "playstore/screenshots/en-US/tablet/05-pob-bar-active.png",
+      "width": 2560,
+      "height": 1600,
+      "mode": "RGB",
+      "bytes": 1072413,
+      "sha256": "823c588ba95aae9af6275b1a0ef30094c263a8617245bd827cd4f49be595565c"
+    },
+    {
+      "path": "playstore/screenshots/it-IT/phone/01-launcher-overview.png",
+      "width": 1920,
+      "height": 1080,
+      "mode": "RGB",
+      "bytes": 927159,
+      "sha256": "d90271b4dd3f45e218a55ae88eab91e8eadb4699020d102969b36c219e8eff44"
+    },
+    {
+      "path": "playstore/screenshots/it-IT/phone/02-screen-layout-overview.png",
+      "width": 1920,
+      "height": 1080,
+      "mode": "RGB",
+      "bytes": 921911,
+      "sha256": "cb94366e41bf7b224ad03d0c3e161f65ec15c2086b1769a9a0b0c055142d74dd"
+    },
+    {
+      "path": "playstore/screenshots/it-IT/phone/03-mydata-waypoints-list.png",
+      "width": 1920,
+      "height": 1080,
+      "mode": "RGB",
+      "bytes": 728413,
+      "sha256": "8a469239618b2156672adc811f2c801b43e191b1c418872ea04bdd794141b078"
+    },
+    {
+      "path": "playstore/screenshots/it-IT/phone/04-settings-overview.png",
+      "width": 1920,
+      "height": 1080,
+      "mode": "RGB",
+      "bytes": 767378,
+      "sha256": "f94759832273705567647c8b1c18f97dbb85f2bab9d2fd10b7c69e4fdca641e6"
+    },
+    {
+      "path": "playstore/screenshots/it-IT/phone/05-pob-bar-active.png",
+      "width": 1920,
+      "height": 1080,
+      "mode": "RGB",
+      "bytes": 789124,
+      "sha256": "01d6a6458f709f43241aa57f21e97ff490a9645f8431f689789dc3e81324a5e8"
+    },
+    {
+      "path": "playstore/screenshots/it-IT/tablet/01-launcher-overview.png",
+      "width": 2560,
+      "height": 1600,
+      "mode": "RGB",
+      "bytes": 1317575,
+      "sha256": "d5918e2d89ce9279201e7146004f305a2bfcb31b3c23de53cd730e3c598849d5"
+    },
+    {
+      "path": "playstore/screenshots/it-IT/tablet/02-screen-layout-overview.png",
+      "width": 2560,
+      "height": 1600,
+      "mode": "RGB",
+      "bytes": 1310174,
+      "sha256": "e865e8733d98d8779683d8cbf4dad0593a550fee7579fd78061104c5421ef296"
+    },
+    {
+      "path": "playstore/screenshots/it-IT/tablet/03-mydata-waypoints-list.png",
+      "width": 2560,
+      "height": 1600,
+      "mode": "RGB",
+      "bytes": 962664,
+      "sha256": "1c410b531331ef2b290a767e6ac5d6c71fc59d8e6ebd52714c00064695fc03c5"
+    },
+    {
+      "path": "playstore/screenshots/it-IT/tablet/04-settings-overview.png",
+      "width": 2560,
+      "height": 1600,
+      "mode": "RGB",
+      "bytes": 1034035,
+      "sha256": "e24e296b8037a4775c21a459da2507f99f5e09cc8bc1b5d5696bee0e85d47ee3"
+    },
+    {
+      "path": "playstore/screenshots/it-IT/tablet/05-pob-bar-active.png",
+      "width": 2560,
+      "height": 1600,
+      "mode": "RGB",
+      "bytes": 1068648,
+      "sha256": "1a7656f46b1f85b3b49e423bb7b566ee4e3a76fa53975faf8b032e881160e93d"
+    }
+  ]
+}

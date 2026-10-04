@@ -5,6 +5,8 @@
 #ifndef WEB_UI_JSON_SIGNALKSUBSCRIPTION_HPP
 #define WEB_UI_JSON_SIGNALKSUBSCRIPTION_HPP
 
+#include <QObject>
+#include <QPointer>
 #include <QString>
 #include <QRegularExpression>
 #include <QJsonObject>
@@ -47,7 +49,8 @@ namespace fairwindsk::signalk {
         void rebuildRegularExpression();
 
         QRegularExpression m_regularExpression;
-        QObject *m_receiver = nullptr;
+        // Guarded pointer: it resets itself when the receiver is destroyed, so copies never dangle.
+        QPointer<QObject> m_receiver;
         QString m_memberName;
         QString m_path;
         QString m_requestedContext;

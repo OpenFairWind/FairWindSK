@@ -14,6 +14,39 @@
 #include "ui/layout/BarLayout.hpp"
 
 namespace fairwindsk::ui::settings::barsettings {
+    inline QString horizontalScrollBarChrome(const fairwindsk::ui::ComfortChromeColors &colors) {
+        return QStringLiteral(
+            "QScrollBar:horizontal {"
+            " height: 18px;"
+            " margin: 2px 4px;"
+            " border: 1px solid %1;"
+            " border-radius: 8px;"
+            " background: %2;"
+            " }"
+            "QScrollBar::handle:horizontal {"
+            " min-width: 72px;"
+            " border: 1px solid %3;"
+            " border-radius: 7px;"
+            " background: %4;"
+            " }"
+            "QScrollBar::handle:horizontal:hover, QScrollBar::handle:horizontal:pressed {"
+            " background: %5;"
+            " }"
+            "QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {"
+            " width: 0px;"
+            " border: none;"
+            " background: transparent;"
+            " }"
+            "QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {"
+            " background: transparent;"
+            " }")
+            .arg(colors.border.name(),
+                 fairwindsk::ui::comfortAlpha(colors.buttonBackground, 34).name(QColor::HexArgb),
+                 colors.accentTop.name(),
+                 colors.accentBottom.name(),
+                 colors.accentTop.name());
+    }
+
     inline QString previewEntryText(const fairwindsk::ui::layout::LayoutEntry &entry) {
         using fairwindsk::ui::layout::EntryKind;
 
@@ -70,7 +103,7 @@ namespace fairwindsk::ui::settings::barsettings {
                  colors.text.name(),
                  colors.accentTop.name(),
                  fairwindsk::ui::comfortAlpha(colors.accentTop, 46).name(QColor::HexArgb),
-                 colors.text.name());
+                 colors.text.name()) + horizontalScrollBarChrome(colors);
     }
 
     inline QString previewFrameChrome(const fairwindsk::ui::ComfortChromeColors &colors) {
@@ -83,10 +116,9 @@ namespace fairwindsk::ui::settings::barsettings {
     }
 
     inline QString paletteChrome(const fairwindsk::ui::ComfortChromeColors &colors) {
-        Q_UNUSED(colors)
         return QStringLiteral(
             "QScrollArea { border: none; background: transparent; }"
-            "QWidget { background: transparent; }");
+            "QWidget { background: transparent; }") + horizontalScrollBarChrome(colors);
     }
 
     inline void applySecondaryLabelStyle(QLabel *label,

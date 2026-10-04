@@ -21,6 +21,9 @@
 #include "SignalK.hpp"
 #include "Apps.hpp"
 #include "System.hpp"
+#if defined(Q_OS_ANDROID)
+#include "AndroidApps.hpp"
+#endif
 
 
 #include "ui_Settings.h"
@@ -31,22 +34,32 @@ namespace fairwindsk::ui::settings {
     }
 
     void Settings::applyConfiguration() {
+        // Applying can spin nested event loops (blocking Signal K requests). A change made in the
+        // meantime must wait its turn: re-entering here restarted the connection several times.
+        if (m_applyingConfiguration) {
+            if (m_applyTimer) {
+                m_applyTimer->start(kLiveApplyDelayMs);
+            }
+            return;
+        }
+        m_applyingConfiguration = true;
+
         const quint32 runtimeChanges = m_pendingRuntimeChanges == 0 ? FairWindSK::RuntimeAll : m_pendingRuntimeChanges;
+        // Take the pending flags now, so changes arriving while applying are kept for the next pass.
+        m_pendingRuntimeChanges = 0;
+        m_hasPendingUiChanges = false;
 
         // Get the configuration root element
         const auto configurationAsJson = m_configuration.getRoot();
 
-        // Persist the edited local configuration snapshot first.
-        m_configuration.save();
-
         // Set the new configuration in the FairWindSK singleton instance
         FairWindSK::getInstance()->getConfiguration()->setRoot(configurationAsJson);
 
-        // Save the configuration permanently
+        // Save the configuration permanently; the edited copy shares the same file,
+        // so a single write is enough.
         FairWindSK::getInstance()->getConfiguration()->save();
         FairWindSK::getInstance()->reconfigureRuntime(runtimeChanges);
-        m_hasPendingUiChanges = false;
-        m_pendingRuntimeChanges = 0;
+        m_applyingConfiguration = false;
     }
 
 
@@ -70,6 +83,9 @@ namespace fairwindsk::ui::settings {
 
         // Set the local configuration with the json object
         m_configuration.setRoot(configurationAsJson);
+
+        // Remember the configuration as it was when Settings opened, so Reset can go back to it.
+        m_sessionSnapshot = configurationAsJson;
 
         // Set the default tab
         auto currentIndex = 0;
@@ -103,7 +119,7 @@ namespace fairwindsk::ui::settings {
  * removeTabs
  * Remove all  tabs
  */
-    void Settings::removeTabs() {
+    void Settings::removeTabs(const bool deleteImmediately) {
         if (!ui || !ui->tabWidget) {
             m_tabPages.clear();
             return;
@@ -123,8 +139,16 @@ namespace fairwindsk::ui::settings {
             // Remove the tab
             ui->tabWidget->removeTab(0);
 
-            // Delete the object
-            delete tab;
+            if (deleteImmediately) {
+                // Tear-down path: the pages must not outlive the Settings members they point to.
+                delete tab;
+            } else {
+                // A rebuild is usually requested by a button living inside one of these pages
+                // (Reset, Restore Defaults, Import). Deleting the page while its own slot is
+                // still running would be a use-after-free, so let the event loop do it later.
+                tab->hide();
+                tab->deleteLater();
+            }
         }
 
         m_tabPages.clear();
@@ -137,20 +161,25 @@ namespace fairwindsk::ui::settings {
     void Settings::initTabs(const int currentIndex) {
         m_rebuildingTabs = true;
 
-        // Remove tabs if present
-        removeTabs();
+        // Remove tabs if present; deletion is deferred because a page may be the caller.
+        removeTabs(false);
 
-        m_tabPages = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
-        for (const auto &tabTitle : {tr("Main"),
-                                     tr("Top Bar"),
-                                     tr("Bottom Bar"),
-                                     tr("Widgets"),
-                                     tr("Comfort"),
-                                     tr("Connection"),
-                                     tr("Signal K"),
-                                     tr("Units"),
-                                     tr("Applications"),
-                                     tr("System")}) {
+        QStringList tabTitles = {tr("Main"),
+                                 tr("Top Bar"),
+                                 tr("Bottom Bar"),
+                                 tr("Widgets"),
+                                 tr("Comfort"),
+                                 tr("Connection"),
+                                 tr("Signal K"),
+                                 tr("Units"),
+                                 tr("Applications"),
+                                 tr("System")};
+#if defined(Q_OS_ANDROID)
+        // Keep the platform-specific selector after System and omit it from every other build.
+        tabTitles.append(tr("Android"));
+#endif
+        m_tabPages.resize(tabTitles.size());
+        for (const auto &tabTitle : tabTitles) {
             auto *container = new QWidget(ui->tabWidget);
             auto *layout = new QVBoxLayout(container);
             layout->setContentsMargins(0, 0, 0, 0);
@@ -162,6 +191,9 @@ namespace fairwindsk::ui::settings {
         const int resolvedIndex = std::clamp(currentIndex, 0, ui->tabWidget->count() - 1);
         ensureTabCreated(resolvedIndex);
         ui->tabWidget->setCurrentIndex(resolvedIndex);
+        // removeTabs() detaches this handler while the tabs are torn down; without it the
+        // pages are never created again and every other tab stays blank after a rebuild.
+        connect(ui->tabWidget, &QTabWidget::currentChanged, this, &Settings::onTabChanged, Qt::UniqueConnection);
         m_rebuildingTabs = false;
     }
 
@@ -187,6 +219,10 @@ namespace fairwindsk::ui::settings {
                 return new Apps(this);
             case 9:
                 return new System(this);
+#if defined(Q_OS_ANDROID)
+            case 10:
+                return new AndroidApps(this);
+#endif
             default:
                 return new QWidget(this);
         }
@@ -271,10 +307,12 @@ namespace fairwindsk::ui::settings {
         m_pendingRuntimeChanges |= (runtimeChanges == 0 ? FairWindSK::RuntimeAll : runtimeChanges);
 
         const auto configurationAsJson = m_configuration.getRoot();
-        m_configuration.save();
         if (m_currentConfiguration) {
+            // Both configuration objects share one file: write it once through the live one.
             m_currentConfiguration->setRoot(configurationAsJson);
             m_currentConfiguration->save();
+        } else {
+            m_configuration.save();
         }
 
         scheduleApplyConfiguration(delayMs >= 0 ? delayMs : kLiveApplyDelayMs);
@@ -327,9 +365,28 @@ namespace fairwindsk::ui::settings {
         emit layoutEditHighlightModeChanged(currentIndex == 1, currentIndex == 2);
     }
 
+    void Settings::beginEditSession() {
+        // Changes are saved as they are made, so the undo point is the state at opening time.
+        if (m_currentConfiguration) {
+            m_sessionSnapshot = m_currentConfiguration->getRoot();
+        }
+    }
+
     void Settings::resetToCurrentConfiguration() {
-        resetFromCurrentConfiguration(ui->tabWidget->currentIndex());
+        // Without a usable snapshot there is nothing to go back to: just reload the pages.
+        if (!m_sessionSnapshot.is_object()) {
+            resetFromCurrentConfiguration(ui->tabWidget->currentIndex());
+            FairWindSK::getInstance()->applyUiPreferences(&m_configuration);
+            return;
+        }
+
+        // Put back the configuration captured when Settings was opened.
+        m_configuration.setRoot(m_sessionSnapshot);
+        // Rebuild the pages so every control shows the restored values.
+        initTabs(ui->tabWidget->currentIndex());
+        // Preview the restored theme at once, then save and apply everything else.
         FairWindSK::getInstance()->applyUiPreferences(&m_configuration);
+        markDirty(FairWindSK::RuntimeAll, 0);
     }
 
     void Settings::restoreDefaultConfiguration() {
@@ -371,8 +428,8 @@ namespace fairwindsk::ui::settings {
             m_applyTimer->stop();
         }
 
-        // Remove the tabs
-        removeTabs();
+        // Remove the tabs right away: nothing is executing inside them during destruction.
+        removeTabs(true);
 
         // Check if the ui pointer is valid
         if (ui) {

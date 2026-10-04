@@ -55,6 +55,8 @@ namespace fairwindsk::ui::bottombar {
     private:
         Ui::AlarmsBar *ui = nullptr;
         QMap<QString, QToolButton*> m_alarmToolButtons;
+        // Alarm state as last confirmed by the server, independent of the button toggle.
+        QMap<QString, bool> m_alarmActive;
         fairwindsk::signalk::Client::ConnectionHealthState m_connectionState =
             fairwindsk::signalk::Client::ConnectionHealthState::Disconnected;
         QString m_connectionStatusText;

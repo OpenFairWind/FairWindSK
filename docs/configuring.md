@@ -13,12 +13,14 @@ FairWindSK stores its runtime settings in `fairwindsk.json`, with the location r
 ```jsonc
 {
   "connection": {
-    "server": "http://your-signalk-host:3000"
+    "server": "http://your-signalk-host:3000",
+    "servers": ["http://your-signalk-host:3000", "http://192.168.1.50:3000"]
   }
 }
 ```
 
 - `server`: Base URL of the Signal K server. The application appends `/signalk` for websocket data and `/signalk/v1/apps/list` for standard application discovery, with a legacy fallback to `/skServer/webapps`. Leave this empty to start offline; the desktop loads but no remote apps will appear.
+- `servers`: Optional list of the servers you connected to from **Settings > Connection**, most recent first (up to 10). Any host name, fully qualified domain name or IP address typed in the server field is added here when you press **Connect** (or Return), so it stays available in the drop-down list after a restart. A missing scheme defaults to `http://`.
 
 ## Application definitions
 
@@ -131,7 +133,7 @@ If an older configuration does not contain `dataWidgets`, FairWindSK derives the
 ```jsonc
 {
   "main": {
-    "language": "system", // or "en", "it"
+    "language": "system", // or "en", "fr", "es", "it"
     "windowMode": "windowed", // "windowed", "centered", "maximized", or "fullscreen"
     "windowWidth": 1024,
     "windowHeight": 600,
@@ -143,7 +145,7 @@ If an older configuration does not contain `dataWidgets`, FairWindSK derives the
 }
 ```
 
-- `language`: Selects the application language. `system` follows the operating-system language when FairWindSK supports it and falls back to English for every unsupported language; `en` forces English; `it` forces Italian. Any other value is treated as English. Restart FairWindSK after changing it so all native widgets and embedded web views start with the same language and culture.
+- `language`: Selects the application language. `system` follows the operating-system language when FairWindSK supports it and falls back to English for every unsupported language; `en` forces English, `fr` French, `es` Spanish, and `it` Italian. Any other value is treated as English. Restart FairWindSK after changing it so all native widgets and embedded web views start with the same language and culture.
 - `windowMode`: Choose `windowed`, `centered`, `maximized`, or `fullscreen`. On Raspberry Pi OS Linux ARM builds, `maximized` uses the desktop work area directly instead of relying on the window manager's maximize geometry, while `fullscreen` requests a frameless topmost kiosk window.
 - `windowWidth/Height/Left/Top`: Window geometry when using `windowed` or `centered`; the settings UI constrains these values to the current screen work area.
 - `virtualKeyboard`: Enables the Qt virtual keyboard module if available. The setting is read during startup, so restart FairWindSK after changing it.
@@ -206,6 +208,10 @@ The editor now exposes grouped actions for:
 - palette-level actions such as creating applications, showing selected application details, removing selected applications from the palette, and adding all available applications to the current page
 
 Application details also expose the stored web zoom percentage so each embedded web app can be enlarged or reduced without affecting the others.
+
+On Android 13/API 33 and newer builds, **Settings > Android** lists installed activities that advertise themselves to the Android application launcher. Discovery runs outside the GUI thread so slow package metadata and icon loading cannot freeze scrolling on physical devices. The **Start FairWindSK as the Android launcher** touch checkbox opens Android's system-owned Home-role chooser; clearing it opens Home settings so the operator can choose another launcher. The native app icon is an immediate launch target; a separate reusable marine checkbox controls palette availability without overlapping the icon. Checked applications are stored as typed entries in the shared `apps` array and therefore appear alongside Signal K and configured web applications in **Settings > Applications**. They can be dragged or assigned to any launcher page. Android application identity, icon, package, and activity metadata are managed by the Android selector, so web-only edit and remove actions are disabled when an Android entry is selected; deselect it from **Settings > Android** instead. Deselecting it also clears its existing launcher-page slots.
+
+Android entries use a stable name in the form `android:<package>/<activity>` and store `fairwind.source` as `android`, with `fairwind.androidPackage` and `fairwind.androidActivity` identifying the explicit launch component. Other platforms preserve these configuration records but do not expose the Android settings page or attempt to launch them.
 Launcher, settings, and embedded web interactions should follow the formal shell vocabulary from [docs/ui_shell.md](./ui_shell.md), especially when a flow uses the Bottom Bar horizontal drawer or the Application Area vertical drawer.
 
 ## Authentication and tokens

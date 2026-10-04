@@ -132,6 +132,29 @@ namespace fairwindsk::ui::mydata {
         return applyHistoryPayload(QJsonDocument(payload), message);
     }
 
+    void HistoryTrackModel::reloadAsync(const QString &duration,
+                                        const QString &resolution,
+                                        std::function<void(bool, const QString &)> completion) {
+        const auto configuration = fairwindsk::FairWindSK::getInstance()->getConfiguration();
+        const auto path = configuration->getRoot()["signalk"]["pos"].is_string()
+                ? QString::fromStdString(configuration->getRoot()["signalk"]["pos"].get<std::string>())
+                : QStringLiteral("navigation.position");
+
+        QVariantMap query;
+        query["duration"] = duration;
+        query["resolution"] = resolution;
+        auto *client = fairwindsk::FairWindSK::getInstance()->getSignalKClient();
+        client->getHistoryValuesAsync({path}, query, this,
+                                      [this, completion = std::move(completion)](const QJsonDocument &document,
+                                                                                const QString &networkError) mutable {
+            QString message = networkError;
+            const bool loaded = networkError.isEmpty() && applyHistoryPayload(document, &message);
+            if (completion) {
+                completion(loaded, message);
+            }
+        });
+    }
+
     bool HistoryTrackModel::importDocument(const QJsonDocument &document, QString *message) {
         return applyHistoryPayload(document, message);
     }

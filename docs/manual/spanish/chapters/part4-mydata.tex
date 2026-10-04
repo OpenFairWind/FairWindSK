@@ -1,0 +1,788 @@
+% ============================================================
+%  PART IV  --  My Data
+% ============================================================
+\part{My Data}
+
+% ── Chapter 12: My Data Overview ──────────────────────────────
+\chapter{Mis datos... Sinopsis}
+\label{ch:mydata}
+
+Mis datos son el administrador de recursos integrado de FairWindSK.
+Proporciona una interfaz dedicada y optimizada para todos los datos de navegación almacenados en el Signal~K
+servidor: waypoints, rutas, regiones, notas, gráficos, historial y archivos.
+
+Open My Data by tapping the \key{My Data} icon (≡) in the Bottom Bar, or by tapping its tile on the
+lanzador.
+
+\screenshot{mydata-main-tabs}{Mis datos --- tab bar mostrando las siete pestañas}{}
+
+\begin{notebox}
+Todos los recursos en Mis datos se almacenan en el servidor Signal~K, no en el dispositivo FairWindSK.
+Son accesibles desde cualquier dispositivo conectado al mismo servidor Signal~K simultáneamente.
+\end{notebox}
+
+\section{My Data Tab Overview}
+
+Mis datos se organizan en siete pestañas.
+Cada pestaña carga lazily --- se crea sólo la primera vez que se toca, manteniendo el arranque rápido.
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{C{0.7cm} L{2.8cm} L{10.2cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} Tab} &
+{\sffamily\bfseries\color{white} Name} &
+{\sffamily\bfseries\color{white} Contents} \\
+\midrule
+0 & Waypoints & Named positions: anchorages, hazards, marinas, fishing marks, race marks. \\
+1 & Routes & Ordered sequences of waypoints forming planned passages. \\
+2 & Regions & Geographic boundary areas --- SAR search regions, exclusion zones, anchorage limits. \\
+3 & Notes & Free-text annotations attached to positions. \\
+4 & Charts & Chart tile source catalogue for installed chart providers. \\
+5 & Tracks & Historical GPS track --- the vessel's recorded position history. \\
+6 & Files & Direct filesystem browser for files accessible through Signal~K. \\
+\bottomrule
+\end{longtable}
+
+\section{La barra de herramientas común}
+
+Tabs 0--4 (Waypoints, Routes, Regiones, Notes, Charts) comparten un diseño de interfaz común:
+
+\begin{itemize}
+  \item A \textbf{title label} showing the resource type.
+  \item A \textbf{search field} for real-time filtering of the list. Searching is case-insensitive and checks all visible columns simultaneously.
+  \item A \textbf{scrollable table} showing all resources from the Signal~K server. Rows are 64\,px tall for comfortable touch selection. Alternating row colours aid readability. Column headers are clickable for sorting.
+  \item A \textbf{toolbar} of icon buttons:
+\end{itemize}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3cm} L{10.7cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} Button} &
+{\sffamily\bfseries\color{white} Action} \\
+\midrule
+Open ($\rightarrow$) & Opens the selected resource --- shows its details, opens an embedded map preview (Waypoints), or views the attachment (Notes). Accent-coloured; primary action. \\
+Edit & Opens the resource editor drawer for the selected resource. \\
+New (+) & Opens the resource editor drawer to create a new resource. \\
+Delete & Deletes the selected resource after confirmation. Cannot be undone. \\
+Import & Imports resources from a GeoJSON or JSON file. File picker opens in the Bottom Bar drawer. \\
+Export & Exports the selected resource (or all resources if none selected) to a GeoJSON file. \\
+Refresh & Forces a reload of all resources from the Signal~K server. \\
+\bottomrule
+\end{longtable}
+
+\begin{notebox}
+En Raspberry Pi OS (ARM Linux), la barra de herramientas utiliza botones solo de texto para evitar la reproducción de iconos
+cuestiones en esa plataforma.
+El diseño de botones y la funcionalidad son idénticos; sólo la presentación visual difiere.
+\end{notebox}
+
+% ── Chapter 13: Waypoints ─────────────────────────────────────
+\chapter{Waypoints}
+\label{ch:waypoints}
+
+Waypoints son nombrados posiciones almacenadas en el servidor Signal~K.
+Se utilizan para anclajes, peligros, puertos deportivos, paradas de combustible, marcas de pesca, marcas de carreras, y cualquier
+otra posición a la que quieres grabar y navegar.
+
+\screenshot{mydata-waypoints-list}{Mis datos... Ficha Waypoints, vista lista con nombre, descripción, tipo, lat/lon, timestamp}{}
+
+\section{Waypoints Table Columns}
+
+La tabla waypoints muestra seis columnas:
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{2.4cm} L{11.3cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} Column} &
+{\sffamily\bfseries\color{white} Description} \\
+\midrule
+Name & Display name of the waypoint, taken from the \code{name} field or from \code{feature.properties.name} in the GeoJSON resource. \\
+Description & Free-text description of the waypoint. \\
+Type & The waypoint type tag, e.g.\ \code{alarm-mob} (POB waypoints created by FairWindSK), \code{anchor}, \code{marina}, or any custom type. POB waypoints are visually distinguishable by their type. \\
+Latitude & Latitude in your configured coordinate format (right-aligned). \\
+Longitude & Longitude in your configured coordinate format (right-aligned). \\
+Timestamp & ISO 8601 creation or last-update timestamp. \\
+\bottomrule
+\end{longtable}
+
+\section{Searching Waypoints}
+
+El campo de búsqueda por encima de la tabla filtra waypoints por cualquier columna visible.
+Escriba parte de un nombre, descripción, tipo o valor de coordenadas.
+La tabla actualiza en tiempo real como escribes.
+
+\section{Crear un waypoint}
+
+Tap \key{New} to open the Waypoint Editor drawer.
+
+
+\subsection{Editor Fields}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3cm} L{10.7cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} Field} &
+{\sffamily\bfseries\color{white} Description} \\
+\midrule
+Name & The display name shown in the table, Top Bar waypoint widget, and chart plotter. \\
+Description & Free-text notes about this position. \\
+Type & Optional type tag. Leave blank for a generic waypoint. Use \code{anchor} for anchoring positions, \code{hazard} for obstructions, etc. \\
+Latitude & Degrees with decimal minutes or decimal degrees, depending on the active coordinate format. Range: $-90$ to $+90$. \\
+Longitude & Range: $-180$ to $+180$. \\
+Altitude & Altitude in metres (optional). Leave as 0 if not relevant. \\
+\bottomrule
+\end{longtable}
+
+After filling in the fields, tap \key{OK} in the editor.
+El waypoint se crea inmediatamente en el servidor Signal~K y aparece en la tabla.
+
+\section{Edición de un waypoint}
+
+Select a waypoint in the table, then tap \key{Edit}.
+El mismo cajón del editor se abre con los valores existentes pre-filled.
+Modify any field and tap \key{OK}.
+El cambio está escrito inmediatamente a Signal~K.
+
+\section{Eliminar un waypoint}
+
+Select a waypoint and tap \key{Delete}.
+Aparece un cajón de confirmación.
+Tap \key{Delete} to confirm.
+El waypoint se elimina del servidor Signal~K permanentemente.
+
+\begin{warningbox}
+La eliminación no se puede deshacer.
+POB waypoints (type \code{alarm-mob}) should generally be retained for accident reporting and debrief,
+no eliminado.
+\end{warningbox}
+
+\section{Abrir un waypoint --- la vista de detalle}
+
+Select a waypoint and tap \key{Open} (or double-tap the row).
+La vista Waypoint Detail abre.
+
+
+La vista detallada muestra:
+
+\begin{itemize}
+  \item Full name, description, type, and formatted coordinates.
+  \item An embedded Freeboard-SK map preview centred on the waypoint's position, if Freeboard-SK is installed on the connected Signal~K server. The map uses a JavaScript function to compute the view bounding box from the waypoint coordinates and zoom level.
+  \item A \key{Navigate} button to set the waypoint as the active navigation destination.
+\end{itemize}
+
+\begin{notebox}
+La vista previa integrada Freeboard-SK está deshabilitada en Raspberry Pi OS (ARM Linux) se construye para evitar
+problemas de rendimiento con casos WebEngine simultáneos en esa plataforma.
+Las coordenadas y descripciones siempre se muestran en forma de texto independientemente.
+\end{notebox}
+
+\section{Navegando a un Waypoint}
+
+From the detail view, tap \key{Navigate}.
+FairWindSK calls \path{navigateToWaypoint} on the Signal~K client, which writes the waypoint's
+resource path (e.g.\ \path{/resources/waypoints/\{uuid\}}) as the active navigation destination on
+Signal~K.
+Inmediatamente:
+
+\begin{itemize}
+  \item The Top Bar BTW, DTW, TTG, and ETA widgets begin showing values relative to this waypoint.
+  \item Freeboard-SK and any other navigation application subscribed to \skpath{navigation.course} show the destination.
+  \item The POB bearing and distance displays (when the POB bar is active) use this same destination.
+\end{itemize}
+
+\section{Importing Waypoints}
+
+Tap \key{Import}. A file picker opens in the Bottom Bar drawer.
+Select a GeoJSON file containing \code{Feature} objects with \code{Point} geometry.
+
+FairWindSK:
+\begin{enumerate}
+  \item Reads the GeoJSON file.
+  \item Extracts each \code{Point} feature as a waypoint.
+  \item Creates or updates each waypoint on the Signal~K server (update if a matching UUID is found; create if not).
+  \item Reports the count of imported waypoints in an informational drawer.
+  \item Selects the first imported waypoint in the table.
+\end{enumerate}
+
+The import file filter accepts \code{.geojson} and \code{.json} files.
+
+\section{Exporting Waypoints}
+
+Tap \key{Export}. If a waypoint is selected, only that waypoint is exported.
+Si no se selecciona nada, se exportan todos los puntos.
+Se abre un selector de archivo. Elija un nombre de archivo y ubicación.
+The output is a valid GeoJSON \code{FeatureCollection} with \code{Point} geometry features.
+
+% ── Chapter 14: Routes ────────────────────────────────────────
+\chapter{Rutas}
+\label{ch:routes}
+
+Las rutas se ordenan secuencias de waypoints formando pasajes planeados.
+Normalmente se crean en un plotter de gráficos (Freeboard-SK) y se almacenan en el servidor Signal~K.
+
+\screenshot{mydata-routes-list}{Mis datos... Ficha de ruta, vista de lista con nombre, tipo geometría, conteo de puntos, timetamp}{}
+
+\section{Rutas Columnas de mesa}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{2.4cm} L{11.3cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} Column} &
+{\sffamily\bfseries\color{white} Description} \\
+\midrule
+Name & Display name of the route. \\
+Description & Free-text description or summary. \\
+Geometry & The GeoJSON geometry type --- typically \code{LineString} for simple routes, \code{MultiLineString} for multi-leg routes with gaps, or \code{sar-spiral} / \code{sar-parallel} for SAR patterns created by the POB feature. \\
+Points & The number of coordinate points in the route geometry. Displayed centred. \\
+Timestamp & ISO 8601 creation or last-update timestamp. \\
+\bottomrule
+\end{longtable}
+
+\section{Abrir una ruta --- la vista Detalle}
+
+Select a route and tap \key{Open}.
+
+
+La vista detallada muestra:
+\begin{itemize}
+  \item Name, description, geometry type, and point count.
+  \item A GeoJSON geometry preview if available.
+  \item An \key{Activate} button to set the route's first waypoint as the active navigation destination.
+\end{itemize}
+
+\section{Creación y edición de rutas}
+
+\subsection{Crear una ruta}
+
+Tap \key{New}. The Route Editor drawer opens.
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3cm} L{10.7cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} Field} &
+{\sffamily\bfseries\color{white} Description} \\
+\midrule
+Name & Display name of the route. \\
+Description & Free-text notes. \\
+Coordinates (JSON) & The GeoJSON coordinate array for the route geometry. Enter as a JSON array of \code{[longitude, latitude]} pairs. \\
+Geometry (JSON) & Advanced: edit the full GeoJSON geometry object if needed. \\
+Properties (JSON) & Advanced: additional GeoJSON feature properties. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Activando una ruta}
+
+From the route detail view, tap \key{Activate}.
+FairWindSK establece el primer punto de la ruta como el destino activo de navegación Signal~K.
+The Autopilot Route mode (Chapter~\ref{ch:autopilot}) will then follow the active route automatically.
+
+\section{Rutas de importación y exportación}
+
+Import and export use the same GeoJSON \code{FeatureCollection} format as Waypoints.
+El tipo de geometría en el GeoJSON determina cómo se almacena la ruta en Signal~K.
+
+\begin{tipbox}
+SAR search routes created by the POB feature (Chapter~\ref{ch:pob}) appear in the Routes tab
+automáticamente después de la creación.
+They have geometry types \code{sar-spiral} and \code{sar-parallel} and can be exported as GeoJSON
+para los registros de viaje.
+\end{tipbox}
+
+% ── Chapter 15: Regions ───────────────────────────────────────
+\chapter{Regiones}
+\label{ch:regions}
+
+Las regiones son áreas fronterizas geográficas definidas como poligones GeoJSON.
+Se utilizan para áreas de búsqueda SAR (automáticamente creadas por la función POB), área protegida marina
+límites, zonas de exclusión, límites de anclaje y zonas de pesca.
+
+\screenshot{mydata-regions-list}{Mis datos... Ficha de regiones, vista de lista con nombre, tipo de geometría, timetamp}{}
+
+\section{Regiones Columnas Tabla}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{2.4cm} L{11.3cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} Column} &
+{\sffamily\bfseries\color{white} Description} \\
+\midrule
+Name & Display name of the region. \\
+Description & Free-text description. \\
+Geometry & The GeoJSON geometry type --- typically \code{Polygon} or \code{MultiPolygon}. SAR regions use \code{Polygon}. \\
+Timestamp & ISO 8601 creation or last-update timestamp. \\
+\bottomrule
+\end{longtable}
+
+\section{Creación de una región}
+
+Tap \key{New}. The Region Editor drawer opens.
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3cm} L{10.7cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} Field} &
+{\sffamily\bfseries\color{white} Description} \\
+\midrule
+Name & Display name. \\
+Description & Free-text notes. \\
+Coordinates (JSON) & The GeoJSON coordinate array for the polygon. Polygons require an outer ring (first and last coordinate identical to close the ring). \\
+Geometry (JSON) & Advanced: full GeoJSON geometry object. \\
+Properties (JSON) & Advanced: additional GeoJSON feature properties. \\
+\bottomrule
+\end{longtable}
+
+\begin{notebox}
+Áreas de búsqueda SAR creadas por la función POB aparecen en la pestaña Regiones automáticamente.
+Their \code{properties} include the \code{pobUuid} linking them to the originating POB incident.
+\end{notebox}
+
+% ── Chapter 16: Notes ─────────────────────────────────────────
+\chapter{Notas}
+\label{ch:notes}
+
+Las notas son anotaciones de texto libre adjuntas a posiciones geográficas.
+Funcionan como notas pegajosas en el gráfico --- útil para grabar consejos de pilotaje, peligros locales no
+en el gráfico, detalles del puerto o observaciones de la tripulación.
+
+\screenshot{mydata-notes-list}{Mis datos... Notas, vista de lista con título, descripción, href, tipo MIME, timetamp}{}
+
+\section{Notas Columnas de tabla}
+
+Las notas tienen un conjunto de columnas que reflejan su naturaleza orientada hacia el apego:
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{2.4cm} L{11.3cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} Column} &
+{\sffamily\bfseries\color{white} Description} \\
+\midrule
+Title & The display name of the note (the first column is labelled \textit{Title} for notes, not \textit{Name}, to reflect the note-taking context). \\
+Description & Summary text. For imported text files, this is set to the first 120 characters of the file content. \\
+Href & An optional file path or URL linking the note to an attachment --- a PDF pilot book page, an image, a text file. When present, tapping \key{Open} opens the attachment directly in the built-in viewer. \\
+MIME Type & The MIME type of the attachment, e.g.\ \code{application/pdf}, \code{image/jpeg}, \code{text/plain}. Used to route the file to the correct viewer. \\
+Timestamp & ISO 8601 creation or last-update timestamp. \\
+\bottomrule
+\end{longtable}
+
+\section{Crear una nota}
+
+Tap \key{New}. The Note Editor drawer opens.
+
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3cm} L{10.7cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} Field} &
+{\sffamily\bfseries\color{white} Description} \\
+\midrule
+Title & The note title (displayed in the \textit{Title} column). \\
+Description & Main text content of the note. \\
+Href & Optional path or URL to an attachment file. Enter an absolute path (e.g.\ \path{/home/pi/charts/harbour.pdf}) or a URL. \\
+MIME Type & Optional MIME type for the attachment. FairWindSK uses this to select the correct viewer. If left blank, FairWindSK detects the type from the file extension. \\
+Has position & Check this box to attach a geographic position to the note. \\
+Latitude & Latitude when \textit{Has position} is checked. \\
+Longitude & Longitude when \textit{Has position} is checked. \\
+\bottomrule
+\end{longtable}
+
+\section{Apertura de una nota}
+
+\subsection{Notas sin un adjunto}
+
+Tapping \key{Open} opens the note editor in read-only mode, showing the title, description, and position.
+
+\subsection{Notas con un acoplamiento (conjunto de href)}
+
+Tapping \key{Open} immediately opens the attachment:
+
+\begin{itemize}
+  \item \textbf{Local file that exists:} opens in the built-in FileViewer (PDF, image, or text viewer depending on the MIME type).
+  \item \textbf{HTTP/HTTPS URL:} opens in an embedded web view inside the Bottom Bar horizontal drawer.
+  \item \textbf{Local directory path:} shows a message directing you to use My Data~> Files to browse the folder (single-window model prevents opening a separate file manager).
+\end{itemize}
+
+\section{Notas de importación}
+
+La pestaña Notas acepta un conjunto más amplio de tipos de archivos de importación que otras pestañas.
+Además de GeoJSON/JSON:
+
+\begin{itemize}
+  \item \textbf{Text files} (\code{.txt}, \code{.md}, \code{.html}): FairWindSK creates a note with the filename as the title and the first 120 characters of the file content as the description, setting the \code{href} to the absolute file path and detecting the MIME type automatically.
+  \item \textbf{Images} (\code{.jpg}, \code{.jpeg}, \code{.png}): Creates a note with the filename as title and sets the \code{href} and \code{mimeType} accordingly.
+  \item \textbf{PDF files}: Creates a note pointing to the PDF file via \code{href}.
+\end{itemize}
+
+The import filter text reads: \textit{Notes and attachments (*.geojson *.json *.txt *.md *.markdown *.html *.htm *.pdf *.jpg *.jpeg *.png)}.
+
+% ── Chapter 17: Charts ────────────────────────────────────────
+\chapter{Gráficos}
+\label{ch:charts}
+
+La pestaña Charts lista las fuentes disponibles de fichas de mapa registradas en el servidor Signal~K.
+Gestiona el catálogo fuente de la gráfica --- no la pantalla de la gráfica real, que sucede dentro
+Freeboard-SK u otro plotter gráfico que se ejecuta en el Área de Aplicación.
+
+\screenshot{mydata-charts-list}{Mis datos... Ficha de gráficos, vista de lista con nombre, formato, identificador, URL, timetamp}{}
+
+\section{Columnas Tabla Columnas}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{2.4cm} L{11.3cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} Column} &
+{\sffamily\bfseries\color{white} Description} \\
+\midrule
+Name & Display name of the chart source. \\
+Description & Free-text description. \\
+Format & The chart tile format. Supported formats include: \code{mbtiles} (MBTiles SQLite database), \code{kap} (BSB/KAP raster charts), \code{gemf} (GEMF tile archive), \code{tilemapresource} (TileMapResource XML), \code{package} (ZIP chart package). \\
+Identifier & The chart identifier used by Signal~K and chart plotters to reference this source. \\
+Chart URL & The local filesystem path or URL where the chart tiles are served. \\
+Timestamp & ISO 8601 registration timestamp. \\
+\bottomrule
+\end{longtable}
+
+\section{Añadiendo una fuente de carga}
+
+Tap \key{New}. The Chart Editor drawer opens.
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3cm} L{10.7cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} Field} &
+{\sffamily\bfseries\color{white} Description} \\
+\midrule
+Name & Display name for this chart source. \\
+Description & Free-text description. \\
+Identifier & Unique identifier string used by chart plotters to reference this source. \\
+Chart format & The format of the chart tiles. FairWindSK detects the format from the file extension when importing. \\
+Chart URL & Path or URL to the chart tiles. For MBTiles, this is the absolute path to the \code{.mbtiles} file. \\
+Tilemap URL & For \code{tilemapresource} format only: the path to the \code{tilemapresource.xml} file. The Chart URL is then set to the directory containing it. \\
+Chart region & Optional: a GeoJSON bounding box or geometry describing the geographic coverage of this chart. \\
+Chart scale & Optional: the chart scale denominator (e.g.\ \code{50000} for 1:50,000). \\
+Chart layers & Optional: comma-separated list of layer names for tile sources that support multiple layers. \\
+Chart bounds & Optional: GeoJSON coordinates describing the chart bounds. \\
+\bottomrule
+\end{longtable}
+
+\section{Importar una fuente de carga}
+
+Tap \key{Import}. Select a chart file.
+FairWindSK detecta el formato de la gráfica desde la extensión de archivo y construye un objeto de recurso de la gráfica
+automáticamente.
+For \code{tilemapresource.xml} files, FairWindSK sets both the tile URL (the directory) and the
+URL de tilemap (la ruta de archivo XML).
+
+La importación crea o actualiza el registro gráfico en el servidor Signal~K.
+
+\section{Exportar el catálogo de carga}
+
+Tap \key{Export}. The chart catalogue is exported as a JSON manifest document with structure:
+
+\begin{lstlisting}
+{
+  "type": "FairWindSKChartPackage",
+  "charts": [ { ... }, { ... } ]
+}
+\end{lstlisting}
+
+Este manifiesto puede ser importado en otra instalación de FairWindSK para reproducir el catálogo de gráficos
+configuración (que describe las fuentes de gráficos, no los datos de la ficha propia).
+
+% ── Chapter 18: Tracks ────────────────────────────────────────
+\chapter{Pistas... Historia}
+\label{ch:tracks}
+
+La ficha Tracks muestra la pista histórica del GPS del buque --- la secuencia registrada de la posición
+se arregla con el tiempo.
+Las pistas se generan automáticamente por Signal~K cuando el plugin de pistas está habilitado.
+
+\screenshot{mydata-tracks-list}{Mis datos... Tabla de pistas, tabla de puntos de pista con tiempo, lat/lon, altitud}{}
+
+\section{Columnas de mesa de seguimiento}
+
+La tabla de pistas muestra fijaciones individuales de posición (puntos) en orden cronológico:
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{2.4cm} L{11.3cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} Column} &
+{\sffamily\bfseries\color{white} Description} \\
+\midrule
+Time & The timestamp of the position fix, formatted in local time using the system locale. \\
+Latitude & Latitude to 6 decimal places. \\
+Longitude & Longitude to 6 decimal places. \\
+Altitude & Altitude in metres (if available from the GPS fix; otherwise shown as 0). \\
+\bottomrule
+\end{longtable}
+
+\section{Grabación de pistas en vivo}
+
+Si Signal~K está proporcionando actualizaciones de posición activas, nuevos puntos de pista se adjuntan a la tabla en
+tiempo real.
+Los pergaminos de mesa para mostrar el punto más reciente automáticamente.
+
+\section{Ver un punto de seguimiento}
+
+Select a row and tap \key{Open}. A read-only dialog opens showing the timestamp, latitude, longitude,
+y altitud para ese punto en detalle.
+
+\subsection{Edición de un punto de seguimiento}
+
+Select a row and tap \key{Edit}. The Track Point Editor opens.
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3cm} L{10.7cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} Field} &
+{\sffamily\bfseries\color{white} Description} \\
+\midrule
+Timestamp & Date and time of the fix. Uses a date/time picker with up/down arrows. \\
+Latitude & Latitude (8 decimal places, range $-90$ to $+90$). \\
+Longitude & Longitude (8 decimal places, range $-180$ to $+180$). \\
+Altitude & Altitude in metres. \\
+\bottomrule
+\end{longtable}
+
+\section{Agregar un punto de seguimiento manualmente}
+
+Tap \key{New}. The same editor opens with default values (current time and position 0,0).
+Enter the correct values and tap \key{OK}.
+El punto se inserta en la pista en orden cronológico.
+
+\section{Eliminar un punto de pista}
+
+Select a row and tap \key{Delete}. Confirm when prompted. The point is removed from the track.
+
+\section{Exportar la pista}
+
+Tap \key{Export} to save the complete track as a GeoJSON \code{LineString} or
+\code{FeatureCollection}:
+
+\begin{lstlisting}
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [[lon, lat, alt], ...]
+      }
+    }
+  ]
+}
+\end{lstlisting}
+
+The default export filename is \path{tracks-history.geojson}.
+
+\begin{tipbox}
+Exportar la pista después de cada pasaje y almacenarla con el diario de viaje.
+El archivo GeoJSON se puede importar en la mayoría de herramientas GIS, plotters de gráficos y software de planificación de viajes
+para su examen y análisis.
+\end{tipbox}
+
+\section{Importar una pista}
+
+Tap \key{Import} and select a GeoJSON file containing a \code{LineString} geometry.
+FairWindSK extrae cada coordenadas en la línea como un punto de pista con un timetamp sintético,
+los pasa a la pista actual en orden.
+
+\section{Usos de la pestaña de pista}
+
+\begin{itemize}
+  \item \textbf{Passage review:} compare the actual track against the planned route. Identify deviations, traffic avoidance manoeuvres, and current effects.
+  \item \textbf{Anchorage assessment:} see the swing circle after anchoring overnight.
+  \item \textbf{Safety investigation:} reconstruct the vessel's path before and during an incident for formal reporting.
+  \item \textbf{Logbook cross-reference:} correlate positions at specific times with logbook entries.
+\end{itemize}
+
+% ── Chapter 19: Files ─────────────────────────────────────────
+\chapter{Archivos}
+\label{ch:files}
+
+La pestaña Archivos es un navegador directo para archivos y directorios accesibles en el dispositivo
+Corriendo FairWindSK.
+Proporciona operaciones de navegación, búsqueda, visualización y gestión de archivos (copia, corte, pasta, renombre,
+borrar, nueva carpeta) sin dejar la interfaz FairWindSK.
+
+\screenshot{mydata-files-browser}{Mis datos... Ficha de archivos, navegador del directorio con barra de herramientas}{}
+
+\section{Interface Layout}
+
+La pestaña Archivos se divide en tres áreas:
+
+\begin{itemize}
+  \item \textbf{Toolbar} at the top: navigation and action buttons, path bar, and search field.
+  \item \textbf{File list} in the centre: the current directory contents as a tree view with columns for Name, Size, and Date. Row height is 58\,px for comfortable touch selection. Alternating row colours aid readability.
+  \item \textbf{Actions row} below the toolbar: file operation buttons that appear when items are selected.
+\end{itemize}
+
+\section{Navegación}
+
+\subsection{Directorio Navegación}
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3cm} L{10.7cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} Action} &
+{\sffamily\bfseries\color{white} How to trigger} \\
+\midrule
+Enter a folder & Double-tap a folder row in the file list, or select and tap \key{Open}. \\
+Go up one level & Tap \key{↑} (Up) button in the toolbar. \\
+Navigate by path & Tap the path bar at the top of the toolbar, type an absolute path, and press Return. \\
+Go home & Tap \key{Home} button. Returns to the home directory of the running user. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Clasificación de columnas}
+
+Toque cualquier encabezado de columna para ordenar por esa columna.
+La dirección del tipo se mueve entre ascender y descender en los golpes posteriores.
+El tipo predeterminado es por Nombre, ascendente.
+
+\section{Búsqueda de archivos}
+
+\subsection{Búsqueda básica}
+
+Tap \key{Search} or press Return in the search field.
+FairWindSK busca recursivamente el árbol del directorio actual para archivos y subdirectorios cuyos nombres
+contiene el texto de búsqueda.
+
+Los resultados se muestran en una lista plana en la vista del archivo.
+Toque un resultado para seleccionarlo; doble punción para abrir.
+La búsqueda continúa hasta la raíz del árbol del directorio navegado.
+
+
+\subsection{Opciones de búsqueda}
+
+Tap \key{Options} (or the filter button) to expand the search options:
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{3.5cm} L{10.2cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} Option} &
+{\sffamily\bfseries\color{white} Description} \\
+\midrule
+Case Sensitive & When enabled, the search matches the exact capitalisation of the search text. Default: off (case-insensitive). \\
+Search Hidden & When enabled, hidden files and directories (names beginning with \code{.}) are included in search results. Default: off. \\
+Search System & When enabled, system files and directories (e.g.\ \code{/proc}, \code{/sys} on Linux) are included. Default: off. \\
+\bottomrule
+\end{longtable}
+
+The search options button label updates to show a compact summary of active options (e.g.\
+\textit{Options: case, hidden}).
+
+\section{File Actions}
+
+\subsection{Archivos de apertura}
+
+Select a file and tap \key{Open}, or double-tap the row.
+
+FairWindSK detecta el tipo de archivo mediante detección de tipo MIME y lo dirige al espectador adecuado:
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{4cm} L{9.7cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} File type} &
+{\sffamily\bfseries\color{white} Viewer} \\
+\midrule
+Images (\code{.jpg}, \code{.jpeg}, \code{.png}, \code{.gif}) & Built-in image viewer with pinch-to-zoom and pan. \\
+PDF (\code{.pdf}) & Built-in PDF viewer, page by page. \\
+Text files (\code{.txt}, \code{.md}, \code{.log}, \code{.html}) & Built-in text viewer, formatted as plain text or HTML. \\
+Other file types & A message is shown; the file cannot be previewed but can be managed. \\
+\bottomrule
+\end{longtable}
+
+Los directorios se abren en el navegador del directorio (navegando en ellos) en lugar de en un espectador.
+Intento abrir una ruta de directorio desde un Notes href muestra un mensaje que le dirige a utilizar los archivos
+pestaña para navegar en su lugar (principio modelo de ventanilla única).
+
+
+\subsection{Recuperar archivos y carpetas}
+
+Select an item and tap \key{Rename}.
+Un diálogo de entrada se abre en el cajón horizontal Bottom Bar.
+Enter the new name and tap \key{OK}.
+El archivo o directorio se renombra inmediatamente en el sistema de archivos.
+
+\subsection{Crear una nueva carpeta}
+
+Tap \key{New Folder}.
+Se abre un diálogo de entrada.
+Enter the folder name and tap \key{OK}.
+La nueva carpeta se crea en el directorio actual.
+
+\subsection{Copiar, Cortar y Pegar}
+
+\begin{enumerate}
+  \item Select one or more files or folders.
+  \item Tap \key{Copy} to mark them for copying, or \key{Cut} to mark them for moving.
+  \item Navigate to the destination directory.
+  \item Tap \key{Paste}.
+\end{enumerate}
+
+FairWindSK realiza controles de seguridad antes de las operaciones de pasta:
+
+\begin{itemize}
+  \item Copying a directory into itself or one of its subdirectories is blocked.
+  \item Pasting into the source directory of a cut operation shows a warning.
+  \item The self-paste safety check runs a self-test at startup to verify the detection logic is working correctly.
+\end{itemize}
+
+Las operaciones de copia y movimiento del directorio son recursivas --- todo el subárbol es copiado o movido.
+
+\subsection{Eliminar archivos y carpetas}
+
+Select one or more items and tap \key{Delete}.
+Un diálogo de confirmación se abre en el cajón horizontal Bottom Bar.
+Confirme su eliminación.
+
+\begin{warningbox}
+La eliminación de archivos es permanente.
+No hay papel de reciclaje o deshacer para las operaciones de archivos.
+Tenga especial cuidado al eliminar directorios --- todos los contenidos se eliminan recursivamente.
+\end{warningbox}
+
+\section{Columnas Lista de Archivo}
+
+La lista de archivos muestra tres columnas:
+
+\rowcolors{2}{LtGray}{white}
+\begin{longtable}{L{2cm} L{11.7cm}}
+\toprule
+\rowcolor{Navy}
+{\sffamily\bfseries\color{white} Column} &
+{\sffamily\bfseries\color{white} Description} \\
+\midrule
+Name & Filename or directory name, with an icon indicating the file type (folder, image, document, etc.). \\
+Size & File size in human-readable units (B, KB, MB, GB). Directories show the size of their immediate contents. \\
+Date & Last modification timestamp. The \textit{Type} column (column index 2) is hidden by default. \\
+\bottomrule
+\end{longtable}
+
+\section{Usos prácticos de la pestaña Archivos}
+
+\begin{itemize}
+  \item Browse pilot book excerpts stored as PDFs on the Raspberry Pi.
+  \item View passage planning images (harbour photos, aerial views, approach charts).
+  \item Access voyage log files or NMEA recordings.
+  \item Manage chart tile archives before registering them in the Charts tab.
+  \item Review diagnostic log files generated by FairWindSK (see Chapter~\ref{ch:settings-system}).
+\end{itemize}

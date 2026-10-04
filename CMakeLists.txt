@@ -1,5 +1,13 @@
 cmake_minimum_required(VERSION 3.16)
-project(FairWindSK VERSION 0.1.0 LANGUAGES CXX)
+
+# Keep the public SemVer string in one plain-text file so CMake, CI, and release
+# tooling cannot silently disagree about the version being shipped.
+file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION.txt" FAIRWINDSK_SEMVER LIMIT_COUNT 1)
+if(NOT FAIRWINDSK_SEMVER MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?$")
+    message(FATAL_ERROR "VERSION.txt must contain a valid semantic version")
+endif()
+string(REGEX MATCH "^[0-9]+\\.[0-9]+\\.[0-9]+" FAIRWINDSK_PROJECT_VERSION "${FAIRWINDSK_SEMVER}")
+project(FairWindSK VERSION ${FAIRWINDSK_PROJECT_VERSION} LANGUAGES CXX)
 
 include(CTest)
 
@@ -23,12 +31,9 @@ execute_process(
         ERROR_QUIET)
 
 if(FAIRWINDSK_GIT_COMMIT_COUNT MATCHES "^[0-9]+$")
-    math(EXPR FAIRWINDSK_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")
-    math(EXPR FAIRWINDSK_VERSION_MINOR "${FAIRWINDSK_GIT_COMMIT_COUNT} / 100")
-    math(EXPR FAIRWINDSK_VERSION_PATCH "${FAIRWINDSK_GIT_COMMIT_COUNT} % 100")
-    set(FAIRWINDSK_SEMVER "${FAIRWINDSK_VERSION_MAJOR}.${FAIRWINDSK_VERSION_MINOR}.${FAIRWINDSK_VERSION_PATCH}")
+    math(EXPR FAIRWINDSK_ANDROID_VERSION_CODE "${FAIRWINDSK_GIT_COMMIT_COUNT} + 1")
 else()
-    set(FAIRWINDSK_SEMVER ${PROJECT_VERSION})
+    set(FAIRWINDSK_ANDROID_VERSION_CODE 1)
 endif()
 
 if(NOT FAIRWINDSK_GIT_VERSION)
@@ -66,13 +71,63 @@ endif()
 # 3. RICERCA COMPONENTI QT6
 # ==========================================
 find_package(Qt6 REQUIRED COMPONENTS
-        Core Gui Widgets Qml Concurrent Network WebSockets Xml Svg Positioning VirtualKeyboard LinguistTools
+        Core Gui Widgets Qml Concurrent Network WebSockets Xml Svg SvgWidgets Positioning VirtualKeyboard LinguistTools
 )
 
 if(FAIRWINDSK_MOBILE)
     find_package(Qt6 REQUIRED COMPONENTS Quick QuickWidgets WebView)
 else()
     find_package(Qt6 REQUIRED COMPONENTS WebEngineWidgets PrintSupport)
+endif()
+
+# Build host-runnable unit tests only for desktop kits. Mobile binaries require a
+# device or simulator and therefore cannot be executed directly by host CTest.
+if(BUILD_TESTING AND NOT FAIRWINDSK_MOBILE)
+    find_package(Qt6 REQUIRED COMPONENTS Test)
+endif()
+
+# Qt 6.8.3's native arm64 host tools abort on some Apple Silicon hosts with an
+# incorrect NEON feature check. Their universal x86_64 slices work under Rosetta
+# while continuing to generate arm64 Android and x86_64 Simulator target output.
+if(ANDROID AND CMAKE_HOST_APPLE AND CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$"
+        AND Qt6_VERSION VERSION_EQUAL "6.8.3")
+    set(FAIRWINDSK_ORIGINAL_QT_HOST_PATH "${QT_HOST_PATH}")
+    set(FAIRWINDSK_ROSETTA_QT_HOST_PATH "${CMAKE_BINARY_DIR}/fairwindsk-qt-host")
+    file(MAKE_DIRECTORY "${FAIRWINDSK_ROSETTA_QT_HOST_PATH}/bin")
+    file(WRITE "${FAIRWINDSK_ROSETTA_QT_HOST_PATH}/bin/androiddeployqt"
+        "#!/bin/sh\nexec /usr/bin/arch -x86_64 \"${QT_HOST_PATH}/${QT6_HOST_INFO_BINDIR}/androiddeployqt\" \"$@\"\n")
+    file(CHMOD "${FAIRWINDSK_ROSETTA_QT_HOST_PATH}/bin/androiddeployqt"
+        PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+
+    function(fairwindsk_use_rosetta_qt_tool target_name)
+        if(NOT TARGET ${target_name})
+            return()
+        endif()
+        get_target_property(tool_path ${target_name} IMPORTED_LOCATION)
+        if(NOT tool_path)
+            return()
+        endif()
+        string(REPLACE "Qt6::" "" tool_name "${target_name}")
+        set(wrapper_path "${CMAKE_BINARY_DIR}/fairwindsk-${tool_name}")
+        file(WRITE "${wrapper_path}"
+            "#!/bin/sh\nexec /usr/bin/arch -x86_64 \"${tool_path}\" \"$@\"\n")
+        file(CHMOD "${wrapper_path}"
+            PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+        set_property(TARGET ${target_name} PROPERTY IMPORTED_LOCATION "${wrapper_path}")
+        # Override every imported configuration because config-specific locations
+        # take precedence over the generic location when CMake generates commands.
+        foreach(configuration IN ITEMS DEBUG RELEASE RELWITHDEBINFO MINSIZEREL)
+            set_property(TARGET ${target_name} PROPERTY
+                IMPORTED_LOCATION_${configuration} "${wrapper_path}")
+        endforeach()
+    endfunction()
+
+    foreach(tool_target IN ITEMS
+            Qt6::moc Qt6::uic Qt6::rcc Qt6::lrelease Qt6::lupdate
+            Qt6::qmlimportscanner Qt6::qmlcachegen Qt6::qmltyperegistrar
+            Qt6::androiddeployqt)
+        fairwindsk_use_rosetta_qt_tool(${tool_target})
+    endforeach()
 endif()
 
 # ==========================================
@@ -83,7 +138,7 @@ include_directories(SYSTEM ${EXTERNAL_INSTALL_LOCATION}/include)
 link_directories(${EXTERNAL_INSTALL_LOCATION}/lib)
 
 set(FAIRWINDSK_LINK_LIBRARIES
-        Qt::Core Qt::Gui Qt::Concurrent Qt::Widgets Qt::Qml Qt::Network Qt::WebSockets Qt::Xml Qt::Svg Qt::Positioning Qt::VirtualKeyboard
+        Qt::Core Qt::Gui Qt::Concurrent Qt::Widgets Qt::Qml Qt::Network Qt::WebSockets Qt::Xml Qt::Svg Qt::SvgWidgets Qt::Positioning Qt::VirtualKeyboard
 )
 
 if(FAIRWINDSK_MOBILE)
@@ -108,9 +163,19 @@ if(NOT nlohmann_json_FOUND)
     else()
         set(NLOHMANN_JSON_INCLUDE_DIR ${CMAKE_BINARY_DIR}/third_party/nlohmann)
         set(NLOHMANN_JSON_HEADER ${NLOHMANN_JSON_INCLUDE_DIR}/nlohmann/json.hpp)
+        set(NLOHMANN_JSON_SHA256 9bea4c8066ef4a1c206b2be5a36302f8926f7fdc6087af5d20b417d0cf103ea6)
         file(MAKE_DIRECTORY ${NLOHMANN_JSON_INCLUDE_DIR}/nlohmann)
-        if(NOT EXISTS ${NLOHMANN_JSON_HEADER})
-            file(DOWNLOAD https://raw.githubusercontent.com/nlohmann/json/v3.11.3/single_include/nlohmann/json.hpp ${NLOHMANN_JSON_HEADER} TIMEOUT 120)
+        if(EXISTS ${NLOHMANN_JSON_HEADER})
+            file(SHA256 ${NLOHMANN_JSON_HEADER} NLOHMANN_JSON_ACTUAL_SHA256)
+        endif()
+        if(NOT NLOHMANN_JSON_ACTUAL_SHA256 STREQUAL NLOHMANN_JSON_SHA256)
+            file(DOWNLOAD
+                    https://raw.githubusercontent.com/nlohmann/json/v3.11.3/single_include/nlohmann/json.hpp
+                    ${NLOHMANN_JSON_HEADER}
+                    EXPECTED_HASH SHA256=${NLOHMANN_JSON_SHA256}
+                    TLS_VERIFY ON
+                    TIMEOUT 120
+            )
         endif()
         add_library(nlohmann_json INTERFACE)
         add_library(nlohmann_json::nlohmann_json ALIAS nlohmann_json)
@@ -121,45 +186,11 @@ list(APPEND FAIRWINDSK_LINK_LIBRARIES nlohmann_json::nlohmann_json)
 
 # Sotto-progetti esterni (Esclusi su Mobile per velocizzare e ripulire i pacchetti)
 if(NOT FAIRWINDSK_MOBILE)
-    ExternalProject_Add(QtZeroConf
-            GIT_REPOSITORY https://github.com/OpenFairWind/QtZeroConf.git
-            GIT_TAG f7744716dff7fad22ca9edd4e3182477afe43b8d
-            CMAKE_ARGS -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH} -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION} -DBUILD_SHARED_LIBS=ON -DCMAKE_POLICY_VERSION_MINIMUM=3.16 -DCMAKE_INSTALL_REMOVE_ENVIRONMENT_RPATH=FALSE
-            TIMEOUT 360
-    )
-
-    if(APPLE)
-        ExternalProject_Add_Step(QtZeroConf sanitize_install_script
-                COMMAND ${CMAKE_COMMAND}
-                -DINPUT=${CMAKE_BINARY_DIR}/QtZeroConf-prefix/src/QtZeroConf-build/cmake_install.cmake
-                -P ${CMAKE_SOURCE_DIR}/cmake/SanitizeAppleInstallScript.cmake
-                DEPENDEES configure
-                DEPENDERS install
-        )
-    endif()
-
     if(WIN32)
         set(LIBQTZEROCONF ${EXTERNAL_INSTALL_LOCATION}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_IMPORT_LIBRARY_PREFIX}QtZeroConf${CMAKE_IMPORT_LIBRARY_SUFFIX})
         set(RUNTIMEQTZEROCONF ${EXTERNAL_INSTALL_LOCATION}/${CMAKE_INSTALL_BINDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}QtZeroConf${CMAKE_SHARED_LIBRARY_SUFFIX})
     else()
         set(LIBQTZEROCONF ${EXTERNAL_INSTALL_LOCATION}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}QtZeroConf${CMAKE_SHARED_LIBRARY_SUFFIX})
-    endif()
-
-    ExternalProject_Add(qhotkey
-            GIT_REPOSITORY https://github.com/Skycoder42/QHotkey.git
-            GIT_TAG 1.5.0
-            CMAKE_ARGS -DBUILD_SHARED_LIBS=on -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION} -DQT_DEFAULT_MAJOR_VERSION=6 -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_INSTALL_REMOVE_ENVIRONMENT_RPATH=FALSE -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}
-            TIMEOUT 360
-    )
-
-    if(APPLE)
-        ExternalProject_Add_Step(qhotkey sanitize_install_script
-                COMMAND ${CMAKE_COMMAND}
-                -DINPUT=${CMAKE_BINARY_DIR}/qhotkey-prefix/src/qhotkey-build/cmake_install.cmake
-                -P ${CMAKE_SOURCE_DIR}/cmake/SanitizeAppleInstallScript.cmake
-                DEPENDEES configure
-                DEPENDERS install
-        )
     endif()
 
     if(WIN32)
@@ -169,7 +200,25 @@ if(NOT FAIRWINDSK_MOBILE)
         set(LIBQHOTKEY ${EXTERNAL_INSTALL_LOCATION}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}qhotkey${CMAKE_SHARED_LIBRARY_SUFFIX})
     endif()
 
-    list(APPEND FAIRWINDSK_EXTERNAL_DEPENDENCIES QtZeroConf qhotkey)
+    if(EXISTS "${LIBQTZEROCONF}" AND EXISTS "${LIBQHOTKEY}")
+        message(STATUS "Using previously installed QtZeroConf and QHotkey from ${EXTERNAL_INSTALL_LOCATION}")
+    else()
+        ExternalProject_Add(QtZeroConf
+                GIT_REPOSITORY https://github.com/OpenFairWind/QtZeroConf.git
+                GIT_TAG f7744716dff7fad22ca9edd4e3182477afe43b8d
+                CMAKE_ARGS -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH} -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION} -DBUILD_SHARED_LIBS=ON -DCMAKE_POLICY_VERSION_MINIMUM=3.16 -DCMAKE_INSTALL_REMOVE_ENVIRONMENT_RPATH=FALSE "-DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}"
+                BUILD_BYPRODUCTS ${LIBQTZEROCONF}
+                TIMEOUT 360
+        )
+        ExternalProject_Add(qhotkey
+                GIT_REPOSITORY https://github.com/Skycoder42/QHotkey.git
+                GIT_TAG 1.5.0
+                CMAKE_ARGS -DBUILD_SHARED_LIBS=on -DCMAKE_INSTALL_PREFIX=${EXTERNAL_INSTALL_LOCATION} -DQT_DEFAULT_MAJOR_VERSION=6 -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_INSTALL_REMOVE_ENVIRONMENT_RPATH=FALSE -DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH} "-DCMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}"
+                BUILD_BYPRODUCTS ${LIBQHOTKEY}
+                TIMEOUT 360
+        )
+        list(APPEND FAIRWINDSK_EXTERNAL_DEPENDENCIES QtZeroConf qhotkey)
+    endif()
     list(APPEND FAIRWINDSK_LINK_LIBRARIES ${LIBQTZEROCONF} ${LIBQHOTKEY})
 
     if(WIN32)
@@ -191,8 +240,10 @@ set(FAIRWINDSK_SOURCES
         signalk/Note.cpp signalk/Note.hpp
         signalk/Waypoint.cpp signalk/Waypoint.hpp
         signalk/Subscription.cpp signalk/Subscription.hpp
+        signalk/ProtocolUtils.cpp signalk/ProtocolUtils.hpp
         signalk/Client.cpp signalk/Client.hpp
         runtime/DiagnosticsSupport.cpp runtime/DiagnosticsSupport.hpp
+        runtime/ManualScreenshotCapture.cpp runtime/ManualScreenshotCapture.hpp
         ui/layout/BarLayout.cpp ui/layout/BarLayout.hpp
         ui/layout/BarRuntime.cpp ui/layout/BarRuntime.hpp
         ui/settings/Settings.cpp ui/settings/Settings.hpp ui/settings/Settings.ui
@@ -233,6 +284,8 @@ set(FAIRWINDSK_SOURCES
         ui/settings/SignalK.cpp ui/settings/SignalK.hpp ui/settings/SignalK.ui
         ui/settings/Units.cpp ui/settings/Units.hpp ui/settings/Units.ui
         ui/settings/System.cpp ui/settings/System.hpp ui/settings/System.ui
+        ui/settings/AndroidApps.cpp ui/settings/AndroidApps.hpp
+        platform/android/AndroidApplicationBridge.cpp platform/android/AndroidApplicationBridge.hpp
         Configuration.cpp Configuration.hpp
         ui/bottombar/POBBar.cpp ui/bottombar/POBBar.hpp ui/bottombar/POBBar.ui
         ui/bottombar/AlarmsBar.cpp ui/bottombar/AlarmsBar.hpp ui/bottombar/AlarmsBar.ui
@@ -273,36 +326,75 @@ endif()
 # ==========================================
 qt_add_executable(${PROJECT_NAME} MANUAL_FINALIZATION ${FAIRWINDSK_SOURCES})
 
-qt_add_translations(${PROJECT_NAME} TS_FILES resources/i18n/fairwindsk_it.ts RESOURCE_PREFIX /resources/i18n)
+qt_add_translations(${PROJECT_NAME}
+        TS_FILES
+            resources/i18n/fairwindsk_es.ts
+            resources/i18n/fairwindsk_fr.ts
+            resources/i18n/fairwindsk_it.ts
+        RESOURCE_PREFIX
+            /resources/i18n
+)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
         MACOSX_BUNDLE TRUE WIN32_EXECUTABLE TRUE MACOSX_BUNDLE_BUNDLE_NAME "FairWindSK"
         MACOSX_BUNDLE_GUI_IDENTIFIER "org.openfairwind.fairwindsk" MACOSX_BUNDLE_BUNDLE_VERSION ${FAIRWINDSK_SEMVER} MACOSX_BUNDLE_SHORT_VERSION_STRING ${FAIRWINDSK_SEMVER}
 )
 
+if(UNIX AND NOT APPLE AND NOT FAIRWINDSK_MOBILE)
+    # Resolve the two bundled project libraries relative to the installed
+    # executable without relying on a machine-specific global library path.
+    set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN/../${CMAKE_INSTALL_LIBDIR}")
+endif()
+
+if(IOS)
+    # Keep the marine MFD shell in its intended wide layout on both iPhone and iPadOS.
+    set(FAIRWINDSK_IOS_ASSET_CATALOG "${CMAKE_CURRENT_SOURCE_DIR}/apple/Assets.xcassets")
+    target_sources(${PROJECT_NAME} PRIVATE "${FAIRWINDSK_IOS_ASSET_CATALOG}")
+    set_source_files_properties("${FAIRWINDSK_IOS_ASSET_CATALOG}" PROPERTIES
+        MACOSX_PACKAGE_LOCATION Resources
+    )
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/apple/Info.plist.in"
+        XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
+    )
+endif()
+
 target_compile_definitions(${PROJECT_NAME} PRIVATE
         FAIRWINDSK_VERSION="${FAIRWINDSK_SEMVER}" FAIRWINDSK_BUILD_YEAR="${FAIRWINDSK_BUILD_YEAR}" FAIRWINDSK_GIT_BRANCH="${FAIRWINDSK_GIT_BRANCH}"
 )
 
+if(WIN32 AND NOT FAIRWINDSK_MOBILE)
+    # Import QHotkey's exported Qt meta-object data from its shared Windows DLL.
+    target_compile_definitions(${PROJECT_NAME} PRIVATE QHOTKEY_SHARED)
+endif()
+
 if(ANDROID)
+    if(COMMAND qt_policy)
+        qt_policy(SET QTP0002 OLD)
+    endif()
+
     set_target_properties(${PROJECT_NAME} PROPERTIES
+        QT_ANDROID_APP_ICON "@mipmap/ic_launcher"
+        QT_ANDROID_APP_NAME "FairWindSK"
         QT_ANDROID_PACKAGE_NAME "org.openfairwind.fairwindsk"
         QT_ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android"
+        QT_ANDROID_MIN_SDK_VERSION 33
+        QT_ANDROID_VERSION_CODE "${FAIRWINDSK_ANDROID_VERSION_CODE}"
+        QT_ANDROID_VERSION_NAME "${FAIRWINDSK_SEMVER}"
     )
 
-    # --- INIZIO INTEGRAZIONE OPENSSL PER ANDROID ---
+    # Pin the Android TLS helper so clean builds remain reproducible.
     include(FetchContent)
     FetchContent_Declare(
         android_openssl
-        DOWNLOAD_EXTRACT_TIMESTAMP true
-        URL https://github.com/KDAB/android_openssl/archive/refs/heads/master.zip
+        GIT_REPOSITORY https://github.com/KDAB/android_openssl.git
+        GIT_TAG b71f1470962019bd89534a2919f5925f93bc5779
+        GIT_SHALLOW FALSE
     )
     FetchContent_MakeAvailable(android_openssl)
     include(${android_openssl_SOURCE_DIR}/android_openssl.cmake)
 
-    # Usiamo la variabile del target corretto
     add_android_openssl_libraries(${PROJECT_NAME})
-    # --- FINE INTEGRAZIONE OPENSSL ---
 endif()
 foreach(_dependency IN LISTS FAIRWINDSK_EXTERNAL_DEPENDENCIES)
     add_dependencies(${PROJECT_NAME} ${_dependency})
@@ -313,23 +405,174 @@ if(FAIRWINDSK_MOBILE)
     target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::WebView)
 endif()
 
-if(NOT WIN32 AND NOT FAIRWINDSK_MOBILE)
-    set(_FAIRWINDSK_EXTERNAL_LIB_DIR "${EXTERNAL_INSTALL_LOCATION}/${CMAKE_INSTALL_LIBDIR}")
-    set_target_properties(${PROJECT_NAME} PROPERTIES BUILD_RPATH "${_FAIRWINDSK_EXTERNAL_LIB_DIR}")
-    if(APPLE)
-        set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "@executable_path/../Frameworks;@loader_path/../Frameworks")
-    else()
-        set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN;$ORIGIN/../lib")
-    endif()
+# Keep test executables independent from the application target so CTest can run
+# them headlessly on every supported desktop platform, including Windows.
+if(BUILD_TESTING AND NOT FAIRWINDSK_MOBILE)
+    function(fairwindsk_add_unit_test target_name test_name)
+        qt_add_executable(${target_name} ${ARGN})
+        target_link_libraries(${target_name} PRIVATE Qt6::Core Qt6::Test)
+        add_test(NAME ${test_name} COMMAND ${target_name})
+    endfunction()
+
+    fairwindsk_add_unit_test(FairWindSKGeoCoordinateUtilsTest GeoCoordinateUtils
+            tests/GeoCoordinateUtilsTest.cpp
+            ui/GeoCoordinateUtils.cpp ui/GeoCoordinateUtils.hpp)
+    target_link_libraries(FairWindSKGeoCoordinateUtilsTest PRIVATE Qt6::Positioning)
+
+    fairwindsk_add_unit_test(FairWindSKPListTest PList
+            tests/PListTest.cpp
+            PList.cpp PList.hpp)
+    target_link_libraries(FairWindSKPListTest PRIVATE Qt6::Xml)
+
+    fairwindsk_add_unit_test(FairWindSKSignalKValueObjectsTest SignalKValueObjects
+            tests/SignalKValueObjectsTest.cpp
+            signalk/Waypoint.cpp signalk/Waypoint.hpp
+            signalk/Subscription.cpp signalk/Subscription.hpp)
+    target_link_libraries(FairWindSKSignalKValueObjectsTest PRIVATE Qt6::Positioning)
+
+    fairwindsk_add_unit_test(FairWindSKSignalKProtocolTest SignalKProtocol
+            tests/SignalKProtocolTest.cpp
+            signalk/ProtocolUtils.cpp signalk/ProtocolUtils.hpp)
+
+    fairwindsk_add_unit_test(FairWindSKSimulatedSignalKServiceTest SimulatedSignalKService
+            tests/SimulatedSignalKServiceTest.cpp
+            tests/support/SimulatedSignalKService.cpp tests/support/SimulatedSignalKService.hpp)
+    target_link_libraries(FairWindSKSimulatedSignalKServiceTest PRIVATE Qt6::Network Qt6::WebSockets Qt6::Widgets)
+    fairwindsk_add_unit_test(FairWindSKDataWidgetConfigTest DataWidgetConfig
+            tests/DataWidgetConfigTest.cpp
+            ui/widgets/DataWidgetConfig.cpp ui/widgets/DataWidgetConfig.hpp)
+    target_link_libraries(FairWindSKDataWidgetConfigTest PRIVATE Qt6::Gui nlohmann_json::nlohmann_json)
+
+    fairwindsk_add_unit_test(FairWindSKConfigurationTest Configuration
+            tests/ConfigurationTest.cpp
+            Configuration.cpp Configuration.hpp
+            Localization.cpp Localization.hpp)
+    target_link_libraries(FairWindSKConfigurationTest PRIVATE Qt6::Gui nlohmann_json::nlohmann_json)
+
+    add_test(NAME UnitsReentrancy
+            COMMAND $<TARGET_FILE:${PROJECT_NAME}> --self-test-units-reentrancy)
+    add_test(NAME DirectorySafety
+            COMMAND $<TARGET_FILE:${PROJECT_NAME}> --self-test-directory-safety)
+    add_test(NAME ConfigurationImport
+            COMMAND $<TARGET_FILE:${PROJECT_NAME}> --self-test-configuration-import)
+    add_test(NAME EditableCombo
+            COMMAND $<TARGET_FILE:${PROJECT_NAME}> --self-test-editable-combo)
+    # The widget self-test has no display on CI machines.
+    set_tests_properties(EditableCombo PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+    set_tests_properties(GeoCoordinateUtils PList SignalKValueObjects SignalKProtocol
+            DataWidgetConfig Configuration UnitsReentrancy DirectorySafety ConfigurationImport EditableCombo
+            PROPERTIES LABELS "unit")
+    set_tests_properties(SimulatedSignalKService PROPERTIES LABELS "component;signalk")
 endif()
 
-if(NOT FAIRWINDSK_MOBILE)
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_SOURCE_DIR}/resources/images/icons $<TARGET_FILE_DIR:${PROJECT_NAME}>/icons/
-            ${FAIRWINDSK_POST_BUILD_COMMANDS})
-endif()
 # ==========================================
 # 7. INSTALLAZIONE E FINALIZE
 # ==========================================
+if(FAIRWINDSK_ROSETTA_QT_HOST_PATH)
+    # Qt's Android finalizer constructs androiddeployqt directly from QT_HOST_PATH.
+    set(QT_HOST_PATH "${FAIRWINDSK_ROSETTA_QT_HOST_PATH}")
+endif()
 qt_finalize_executable(${PROJECT_NAME})
+if(FAIRWINDSK_ORIGINAL_QT_HOST_PATH)
+    set(QT_HOST_PATH "${FAIRWINDSK_ORIGINAL_QT_HOST_PATH}")
+endif()
+
+# ==========================================
+# 8. INSTALLATION
+# ==========================================
+install(TARGETS ${PROJECT_NAME}
+        BUNDLE DESTINATION .
+        # Android executables are CMake module libraries and require an explicit
+        # destination even though androiddeployqt creates the distributable APK.
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+if(NOT FAIRWINDSK_MOBILE)
+    if(WIN32)
+        install(FILES ${RUNTIMEQTZEROCONF} ${RUNTIMEQHOTKEY}
+                DESTINATION ${CMAKE_INSTALL_BINDIR})
+    elseif(APPLE)
+        # Place non-Qt shared libraries where macdeployqt can discover and fix
+        # their install names before the application bundle becomes a DMG.
+        install(DIRECTORY "${EXTERNAL_INSTALL_LOCATION}/${CMAKE_INSTALL_LIBDIR}/"
+                DESTINATION FairWindSK.app/Contents/Frameworks
+                FILES_MATCHING PATTERN "*.dylib" PATTERN "cmake" EXCLUDE)
+    elseif(UNIX AND NOT APPLE)
+        # Install each shared library's versioned payload together with its linker symlinks.
+        install(DIRECTORY "${EXTERNAL_INSTALL_LOCATION}/${CMAKE_INSTALL_LIBDIR}/"
+                DESTINATION ${CMAKE_INSTALL_LIBDIR}
+                FILES_MATCHING PATTERN "*.so*")
+
+        configure_file(cmake/fairwindsk.desktop.in fairwindsk.desktop @ONLY)
+        configure_file(cmake/fairwindsk-startup.desktop.in fairwindsk-startup.desktop @ONLY)
+        configure_file(cmake/InstallRaspberryDesktopIntegration.cmake.in
+                InstallRaspberryDesktopIntegration.cmake @ONLY)
+
+        install(PROGRAMS extras/fairwindsk-startup
+                DESTINATION ${CMAKE_INSTALL_BINDIR})
+        install(FILES "${CMAKE_CURRENT_BINARY_DIR}/fairwindsk.desktop"
+                DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
+        install(FILES resources/images/mainwindow/fairwind_icon.png
+                DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/256x256/apps
+                RENAME fairwindsk.png)
+        install(SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/InstallRaspberryDesktopIntegration.cmake")
+    endif()
+endif()
+
+# Let Qt collect the platform plug-ins, libraries, and frameworks needed by a
+# portable desktop installation. Run this after custom shared libraries have
+# been installed so macdeployqt and windeployqt can resolve every dependency.
+# Qt 6.4 exposes this command with an older positional signature, while Qt 6.5
+# and newer accept OUTPUT_SCRIPT and can generate the portable package script.
+if(NOT FAIRWINDSK_MOBILE AND Qt6_VERSION VERSION_GREATER_EQUAL "6.5"
+        AND COMMAND qt_generate_deploy_app_script)
+    qt_generate_deploy_app_script(
+            TARGET ${PROJECT_NAME}
+            OUTPUT_SCRIPT FAIRWINDSK_DEPLOY_SCRIPT
+            NO_UNSUPPORTED_PLATFORM_ERROR
+    )
+    install(SCRIPT ${FAIRWINDSK_DEPLOY_SCRIPT})
+endif()
+
+# CPack provides consistent archive names while retaining native macOS DMG and
+# Debian package formats where they improve the installation experience.
+set(CPACK_PACKAGE_NAME "FairWindSK")
+set(CPACK_PACKAGE_VENDOR "OpenFairWind")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Marine multi-functional display for Signal K")
+set(CPACK_PACKAGE_VERSION "${FAIRWINDSK_SEMVER}")
+set(CPACK_PACKAGE_FILE_NAME "FairWindSK-${FAIRWINDSK_SEMVER}-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+if(WIN32)
+    # NSIS produces a normal Windows installer while Qt's deploy script places
+    # the runtime DLLs and plug-ins inside the staged installation tree.
+    set(CPACK_GENERATOR "NSIS")
+    set(CPACK_NSIS_DISPLAY_NAME "FairWindSK")
+    set(CPACK_NSIS_PACKAGE_NAME "FairWindSK")
+    set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
+elseif(APPLE)
+    set(CPACK_GENERATOR "DragNDrop")
+elseif(FAIRWINDSK_RASPBERRY_PI_OS)
+    set(CPACK_GENERATOR "DEB")
+    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "OpenFairWind")
+    set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "arm64")
+    set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+elseif(UNIX)
+    # Native Linux installers declare any system libraries not collected by
+    # Qt's deployment script, allowing apt/dnf to resolve them atomically.
+    set(FAIRWINDSK_LINUX_PACKAGE_FORMAT "DEB" CACHE STRING "Linux package format: DEB or RPM")
+    set_property(CACHE FAIRWINDSK_LINUX_PACKAGE_FORMAT PROPERTY STRINGS DEB RPM)
+    if(FAIRWINDSK_LINUX_PACKAGE_FORMAT STREQUAL "DEB")
+        set(CPACK_GENERATOR "DEB")
+        set(CPACK_DEBIAN_PACKAGE_MAINTAINER "OpenFairWind")
+        set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+    elseif(FAIRWINDSK_LINUX_PACKAGE_FORMAT STREQUAL "RPM")
+        set(CPACK_GENERATOR "RPM")
+        set(CPACK_RPM_PACKAGE_AUTOREQ ON)
+        set(CPACK_RPM_PACKAGE_LICENSE "GPL-3.0-or-later")
+    else()
+        message(FATAL_ERROR "FAIRWINDSK_LINUX_PACKAGE_FORMAT must be DEB or RPM")
+    endif()
+endif()
+include(CPack)
