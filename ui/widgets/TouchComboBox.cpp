@@ -287,6 +287,15 @@ namespace fairwindsk::ui::widgets {
         connect(ui->pushButtonPopup, &QPushButton::clicked, this, &TouchComboBox::togglePopup);
         connect(m_listWidget, &QListWidget::itemClicked, this, &TouchComboBox::handleItemClicked);
         connect(m_editor, &QLineEdit::textChanged, this, &TouchComboBox::editTextChanged);
+        // textEdited fires only for operator input, never for programmatic setText().
+        connect(m_editor, &QLineEdit::textEdited, this, [this]() {
+            m_editorTextEdited = true;
+        });
+        connect(m_editor, &QLineEdit::returnPressed, this, [this]() {
+            if (m_editable) {
+                emit editTextCommitted(m_editor->text());
+            }
+        });
 
         setFocusProxy(m_editor);
         applyTouchStyle();
@@ -305,6 +314,63 @@ namespace fairwindsk::ui::widgets {
         m_iconLabel = nullptr;
         delete ui;
         ui = nullptr;
+    }
+
+    bool TouchComboBox::runEditableSelfTest(QString *failureReason) {
+        auto fail = [failureReason](const QString &message) {
+            if (failureReason) {
+                *failureReason = message;
+            }
+            return false;
+        };
+
+        TouchComboBox comboBox;
+        comboBox.setEditable(true);
+        comboBox.addItem(QStringLiteral("http://demo.signalk.org"));
+        if (comboBox.currentText() != QStringLiteral("http://demo.signalk.org")) {
+            return fail(QStringLiteral("The first item is not shown as the current text"));
+        }
+
+        // Simulate the operator replacing the selected address with a typed one.
+        comboBox.m_editor->selectAll();
+        comboBox.m_editor->insert(QStringLiteral("192.168.1.50:3000"));
+        if (comboBox.currentText() != QStringLiteral("192.168.1.50:3000")) {
+            return fail(QStringLiteral("Typed text is not reported as the current text"));
+        }
+
+        // A server discovered in the meantime must not overwrite what is being typed.
+        comboBox.addItem(QStringLiteral("http://discovered.local:3000"));
+        if (comboBox.currentText() != QStringLiteral("192.168.1.50:3000")) {
+            return fail(QStringLiteral("Adding an item overwrote the typed text"));
+        }
+
+        // Return/Enter reports the typed text.
+        QString committedText;
+        QObject::connect(&comboBox, &TouchComboBox::editTextCommitted, &comboBox,
+                         [&committedText](const QString &text) { committedText = text; });
+        emit comboBox.m_editor->returnPressed();
+        if (committedText != QStringLiteral("192.168.1.50:3000")) {
+            return fail(QStringLiteral("Return did not commit the typed text"));
+        }
+
+        // Committing an address the way the Connection page does keeps it in the list.
+        comboBox.addItem(QStringLiteral("http://192.168.1.50:3000"));
+        comboBox.setCurrentText(QStringLiteral("http://192.168.1.50:3000"));
+        if (comboBox.currentText() != QStringLiteral("http://192.168.1.50:3000")
+            || comboBox.findText(QStringLiteral("http://192.168.1.50:3000")) != comboBox.currentIndex()) {
+            return fail(QStringLiteral("The committed address is not selected in the list"));
+        }
+
+        // Picking another item replaces the editor content again.
+        comboBox.setCurrentIndex(0);
+        if (comboBox.currentText() != QStringLiteral("http://demo.signalk.org")) {
+            return fail(QStringLiteral("Selecting an item did not replace the typed text"));
+        }
+
+        if (failureReason) {
+            failureReason->clear();
+        }
+        return true;
     }
 
     bool TouchComboBox::event(QEvent *event) {
@@ -339,7 +405,8 @@ namespace fairwindsk::ui::widgets {
         item->setFont(popupFont);
         item->setSizeHint(QSize(item->sizeHint().width(), comboItemHeightForFont(popupFont)));
 
-        if (m_currentIndex < 0) {
+        // Do not auto-select the first item over text the operator is typing.
+        if (m_currentIndex < 0 && !(m_editable && m_editorTextEdited)) {
             setCurrentIndex(0);
         } else {
             applyTouchStyle();
@@ -361,6 +428,12 @@ namespace fairwindsk::ui::widgets {
     }
 
     QString TouchComboBox::currentText() const {
+        // As in QComboBox, an editable combo reports what is in the editor: a manually
+        // typed value must win over the item that happens to be selected.
+        if (m_editable && m_editor) {
+            return m_editor->text();
+        }
+
         const auto *item = m_listWidget->item(m_currentIndex);
         if (item) {
             return item->text();
@@ -423,6 +496,9 @@ namespace fairwindsk::ui::widgets {
             return;
         }
 
+        // An explicit selection replaces whatever was typed in the editor.
+        m_editorTextEdited = false;
+
         if (m_currentIndex == index) {
             updateDisplay();
             return;
@@ -442,6 +518,8 @@ namespace fairwindsk::ui::widgets {
         }
 
         if (m_editable) {
+            // Programmatic text is not operator input.
+            m_editorTextEdited = false;
             if (m_currentIndex != -1) {
                 m_currentIndex = -1;
                 emit currentIndexChanged(-1);
@@ -665,7 +743,8 @@ namespace fairwindsk::ui::widgets {
 
         const auto *item = m_listWidget->item(m_currentIndex);
         m_displayText = item ? item->text() : QString();
-        if (m_editable && item) {
+        // Restyling or adding an item must not wipe text the operator is still typing.
+        if (m_editable && item && !m_editorTextEdited) {
             m_editor->setText(m_displayText);
         } else if (!m_editable && !m_editor->text().isEmpty()) {
             const QSignalBlocker blocker(m_editor);

@@ -5,6 +5,8 @@
 #ifndef FAIRWINDSK_AUTOPILOTBAR_HPP
 #define FAIRWINDSK_AUTOPILOTBAR_HPP
 
+#include <QDateTime>
+#include <QStringList>
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <QWidget>
@@ -74,6 +76,14 @@ namespace fairwindsk::ui::bottombar {
         Units *m_units = nullptr;
         nlohmann::json m_signalkPaths;
         bool m_autopilotAvailable = false;
+        // Last pilot state read from the autopilot API.
+        QString m_lastApiState;
+        // While set in the future, the state label shows the answer to the last command.
+        QDateTime m_feedbackUntil;
+        void showCommandFeedback(const QString &text);
+        // Capabilities advertised by the pilot.
+        QStringList m_autopilotStates;
+        QStringList m_autopilotModes;
         QJsonObject m_lastRsaUpdate;
         QJsonObject m_lastStateUpdate;
         QJsonObject m_lastTargetHeadingUpdate;

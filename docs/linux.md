@@ -130,5 +130,6 @@ Before calling a Linux change complete, verify:
 
 - [Cross-platform build overview](building.md)
 - [Raspberry Pi OS](raspberrypi.md)
+- [HaLOS binary package installation and operations](halos.md)
 - [Container-based Linux checks](container.md)
 - [Configuration](configuring.md)

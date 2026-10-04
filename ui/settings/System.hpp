@@ -71,6 +71,7 @@ namespace fairwindsk::ui::settings {
     private:
         Ui::System *ui = nullptr;
         Settings *m_settings = nullptr;
+        bool m_diagnosticsPrimed = false;
         QVector<QWidget *> m_coreRows;
         QVector<CpuSnapshot> m_previousCpuStats;
         QGroupBox *m_networkGroupBox = nullptr;

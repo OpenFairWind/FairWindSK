@@ -46,6 +46,16 @@ string(TIMESTAMP FAIRWINDSK_BUILD_YEAR "%Y")
 
 include(GNUInstallDirs)
 
+option(FAIRWINDSK_HALOS_PACKAGE "Build the HaLOS/Trixie ARM64 Debian package profile" OFF)
+if(FAIRWINDSK_HALOS_PACKAGE)
+    if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux" OR ANDROID OR IOS)
+        message(FATAL_ERROR "FAIRWINDSK_HALOS_PACKAGE requires a Linux desktop target")
+    endif()
+    if(NOT CMAKE_INSTALL_PREFIX STREQUAL "/usr")
+        message(FATAL_ERROR "HaLOS packages must be configured with -DCMAKE_INSTALL_PREFIX=/usr")
+    endif()
+endif()
+
 # ==========================================
 # 2. CONFIGURAZIONE TARGET E COMPILATORE
 # ==========================================
@@ -84,6 +94,12 @@ endif()
 # device or simulator and therefore cannot be executed directly by host CTest.
 if(BUILD_TESTING AND NOT FAIRWINDSK_MOBILE)
     find_package(Qt6 REQUIRED COMPONENTS Test)
+    if(UNIX AND NOT APPLE)
+        find_package(Python3 REQUIRED COMPONENTS Interpreter)
+        add_test(NAME HaLOSHelpers
+                COMMAND ${Python3_EXECUTABLE} -m unittest ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_halos_helpers.py)
+        set_tests_properties(HaLOSHelpers PROPERTIES LABELS "unit;halos")
+    endif()
 endif()
 
 # Qt 6.8.3's native arm64 host tools abort on some Apple Silicon hosts with an
@@ -220,6 +236,12 @@ if(NOT FAIRWINDSK_MOBILE)
         list(APPEND FAIRWINDSK_EXTERNAL_DEPENDENCIES QtZeroConf qhotkey)
     endif()
     list(APPEND FAIRWINDSK_LINK_LIBRARIES ${LIBQTZEROCONF} ${LIBQHOTKEY})
+
+    if(WIN32)
+        list(APPEND FAIRWINDSK_POST_BUILD_COMMANDS
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different ${RUNTIMEQTZEROCONF} $<TARGET_FILE_DIR:${PROJECT_NAME}>
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different ${RUNTIMEQHOTKEY} $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+    endif()
 endif()
 
 # ==========================================
@@ -437,6 +459,11 @@ if(BUILD_TESTING AND NOT FAIRWINDSK_MOBILE)
             ui/widgets/DataWidgetConfig.cpp ui/widgets/DataWidgetConfig.hpp)
     target_link_libraries(FairWindSKDataWidgetConfigTest PRIVATE Qt6::Gui nlohmann_json::nlohmann_json)
 
+    fairwindsk_add_unit_test(FairWindSKSignalKMetricStateTest SignalKMetricState
+            tests/SignalKMetricStateTest.cpp
+            ui/widgets/SignalKMetricState.hpp)
+    target_link_libraries(FairWindSKSignalKMetricStateTest PRIVATE ${FAIRWINDSK_LINK_LIBRARIES})
+
     fairwindsk_add_unit_test(FairWindSKConfigurationTest Configuration
             tests/ConfigurationTest.cpp
             Configuration.cpp Configuration.hpp
@@ -449,9 +476,13 @@ if(BUILD_TESTING AND NOT FAIRWINDSK_MOBILE)
             COMMAND $<TARGET_FILE:${PROJECT_NAME}> --self-test-directory-safety)
     add_test(NAME ConfigurationImport
             COMMAND $<TARGET_FILE:${PROJECT_NAME}> --self-test-configuration-import)
+    add_test(NAME EditableCombo
+            COMMAND $<TARGET_FILE:${PROJECT_NAME}> --self-test-editable-combo)
+    # The widget self-test has no display on CI machines.
+    set_tests_properties(EditableCombo PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
     set_tests_properties(GeoCoordinateUtils PList SignalKValueObjects SignalKProtocol
-            DataWidgetConfig Configuration UnitsReentrancy DirectorySafety ConfigurationImport
+            DataWidgetConfig SignalKMetricState Configuration UnitsReentrancy DirectorySafety ConfigurationImport EditableCombo
             PROPERTIES LABELS "unit")
     set_tests_properties(SimulatedSignalKService PROPERTIES LABELS "component;signalk")
 endif()
@@ -502,6 +533,17 @@ if(NOT FAIRWINDSK_MOBILE)
 
         install(PROGRAMS extras/fairwindsk-startup
                 DESTINATION ${CMAKE_INSTALL_BINDIR})
+        if(FAIRWINDSK_HALOS_PACKAGE)
+            install(PROGRAMS extras/fairwindsk-halos-setup
+                    DESTINATION ${CMAKE_INSTALL_BINDIR})
+            install(FILES resources/json/configuration.json
+                    DESTINATION ${CMAKE_INSTALL_DATADIR}/fairwindsk)
+            install(FILES packaging/halos/fairwindsk.default
+                    DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/default
+                    RENAME fairwindsk)
+            install(FILES "${CMAKE_CURRENT_BINARY_DIR}/fairwindsk-startup.desktop"
+                    DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/xdg/autostart)
+        endif()
         install(FILES "${CMAKE_CURRENT_BINARY_DIR}/fairwindsk.desktop"
                 DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
         install(FILES resources/images/mainwindow/fairwind_icon.png
@@ -534,8 +576,31 @@ set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Marine multi-functional display for Signa
 set(CPACK_PACKAGE_VERSION "${FAIRWINDSK_SEMVER}")
 set(CPACK_PACKAGE_FILE_NAME "FairWindSK-${FAIRWINDSK_SEMVER}-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
-if(WIN32)
-    set(CPACK_GENERATOR "ZIP")
+if(FAIRWINDSK_HALOS_PACKAGE)
+    set(CPACK_GENERATOR "DEB")
+    set(CPACK_PACKAGE_NAME "fairwindsk")
+    set(CPACK_PACKAGE_FILE_NAME "fairwindsk_${FAIRWINDSK_SEMVER}-1~halos13_arm64")
+    set(CPACK_DEBIAN_PACKAGE_NAME "fairwindsk")
+    set(CPACK_DEBIAN_PACKAGE_VERSION "${FAIRWINDSK_SEMVER}-1~halos13")
+    set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "arm64")
+    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "OpenFairWind")
+    set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/OpenFairWind/FairWindSK")
+    set(CPACK_DEBIAN_PACKAGE_SECTION "utils")
+    set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+    set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "FairWindSK marine multi-functional display for HaLOS Desktop.\n Native Qt desktop shell for Signal K instruments, applications, navigation, and vessel operations.")
+    set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "python3, libqt6widgets6, libqt6network6, libqt6webenginewidgets6, libqt6svg6, qt6-virtualkeyboard-plugin, libqt6printsupport6, libqt6websockets6, libqt6positioning6, libqt6xml6, libqt6qml6, qt6-qpa-plugins")
+    set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
+            "${CMAKE_CURRENT_SOURCE_DIR}/packaging/halos/postinst"
+            "${CMAKE_CURRENT_SOURCE_DIR}/packaging/halos/prerm"
+            "${CMAKE_CURRENT_SOURCE_DIR}/packaging/halos/postrm")
+elseif(WIN32)
+    # NSIS produces a normal Windows installer while Qt's deploy script places
+    # the runtime DLLs and plug-ins inside the staged installation tree.
+    set(CPACK_GENERATOR "NSIS")
+    set(CPACK_NSIS_DISPLAY_NAME "FairWindSK")
+    set(CPACK_NSIS_PACKAGE_NAME "FairWindSK")
+    set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
 elseif(APPLE)
     set(CPACK_GENERATOR "DragNDrop")
 elseif(FAIRWINDSK_RASPBERRY_PI_OS)
@@ -543,7 +608,21 @@ elseif(FAIRWINDSK_RASPBERRY_PI_OS)
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "OpenFairWind")
     set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "arm64")
     set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
-else()
-    set(CPACK_GENERATOR "TGZ")
+elseif(UNIX)
+    # Native Linux installers declare any system libraries not collected by
+    # Qt's deployment script, allowing apt/dnf to resolve them atomically.
+    set(FAIRWINDSK_LINUX_PACKAGE_FORMAT "DEB" CACHE STRING "Linux package format: DEB or RPM")
+    set_property(CACHE FAIRWINDSK_LINUX_PACKAGE_FORMAT PROPERTY STRINGS DEB RPM)
+    if(FAIRWINDSK_LINUX_PACKAGE_FORMAT STREQUAL "DEB")
+        set(CPACK_GENERATOR "DEB")
+        set(CPACK_DEBIAN_PACKAGE_MAINTAINER "OpenFairWind")
+        set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+    elseif(FAIRWINDSK_LINUX_PACKAGE_FORMAT STREQUAL "RPM")
+        set(CPACK_GENERATOR "RPM")
+        set(CPACK_RPM_PACKAGE_AUTOREQ ON)
+        set(CPACK_RPM_PACKAGE_LICENSE "GPL-3.0-or-later")
+    else()
+        message(FATAL_ERROR "FAIRWINDSK_LINUX_PACKAGE_FORMAT must be DEB or RPM")
+    endif()
 endif()
 include(CPack)

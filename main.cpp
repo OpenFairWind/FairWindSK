@@ -19,6 +19,7 @@
 #include <QtWebView/QtWebView>
 #endif
 
+#include "ui/widgets/TouchComboBox.hpp"
 #include "FairWindSK.hpp"
 #include "Configuration.hpp"
 #include "Localization.hpp"
@@ -200,6 +201,21 @@ namespace {
         return 1;
     }
 
+    int runEditableComboSelfTest(int argc, char *argv[]) {
+        // Widgets need a full QApplication, unlike the file-only self-tests.
+        QApplication app(argc, argv);
+
+        QString failureReason;
+        const bool passed = fairwindsk::ui::widgets::TouchComboBox::runEditableSelfTest(&failureReason);
+        if (passed) {
+            qInfo() << "Editable combo self-test passed";
+            return 0;
+        }
+
+        qCritical() << "Editable combo self-test failed:" << failureReason;
+        return 1;
+    }
+
     int runConfigurationImportSelfTest(int argc, char *argv[]) {
         QCoreApplication app(argc, argv);
         QCoreApplication::setOrganizationName("uniparthenope.it");
@@ -277,6 +293,9 @@ int main(int argc, char *argv[]) {
     }
     if (hasArgument(argc, argv, "--self-test-configuration-import")) {
         return runConfigurationImportSelfTest(argc, argv);
+    }
+    if (hasArgument(argc, argv, "--self-test-editable-combo")) {
+        return runEditableComboSelfTest(argc, argv);
     }
 
 

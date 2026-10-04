@@ -1,0 +1,8 @@
+#!/bin/sh
+set -e
+command -v ldconfig >/dev/null 2>&1 && ldconfig || true
+command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database /usr/share/applications || true
+command -v gtk-update-icon-cache >/dev/null 2>&1 && gtk-update-icon-cache -q /usr/share/icons/hicolor || true
+test -f /etc/xdg/autostart/fairwindsk-startup.desktop || echo "Warning: FairWindSK autostart entry is missing." >&2
+echo "FairWindSK will start in the next graphical user session; reboot or log out and back in."
+exit 0

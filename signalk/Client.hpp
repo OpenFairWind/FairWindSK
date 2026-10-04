@@ -90,6 +90,9 @@ namespace fairwindsk::signalk {
 
         QString getToken();
         void clearTokenAndCookie();
+        // Outcome of the most recent blocking REST request (2xx and no transport error).
+        bool lastRequestSucceeded() const;
+        int lastHttpStatus() const;
 
         qint64 sendMessage(QJsonObject message);
 
@@ -154,6 +157,8 @@ namespace fairwindsk::signalk {
                                           const QDateTime &lastStreamUpdate,
                                           const QString &statusText);
         void serverMessageChanged(const QString &message);
+        // The server refused the stored access token; the client keeps running in public mode.
+        void tokenRejected();
         void serverStateResynchronized(bool recoveredFromDisconnect);
         void resourcesChanged(const QString &collection);
 
@@ -196,8 +201,9 @@ namespace fairwindsk::signalk {
         QByteArray httpDelete(const QUrl& url, const QJsonObject& payload);
         void beginRequest(const QString &method, const QUrl &url);
         void releaseRequest();
+        bool handleRejectedToken(int httpStatus, const QByteArray &body);
         void cancelPendingDiscovery();
-        void endRequest(bool success, const QUrl &url = {}, int httpStatus = 0, const QString &message = QString());
+        void endRequest(bool success, const QUrl &url = {}, int httpStatus = 0, const QString &message = QString(), bool recordOutcome = true);
         QString discoveryMessage() const;
         bool shouldSuppressServerMessage(const QUrl &url, int httpStatus) const;
         void setRestHealth(bool healthy, const QString &statusText = QString());
@@ -240,6 +246,8 @@ namespace fairwindsk::signalk {
         bool m_reconnectRecoveryPending = false;
         bool m_reconnectAttemptInFlight = false;
         quint64 m_discoveryGeneration = 0;
+        bool m_lastRequestSucceeded = false;
+        int m_lastHttpStatus = 0;
         bool m_plannedRestartInProgress = false;
         bool m_connectivityStateEmitted = false;
         bool m_lastRestHealthyEmitted = false;

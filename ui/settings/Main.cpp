@@ -6,6 +6,8 @@
 
 #include <QScreen>
 #include <QIntValidator>
+#include <QLineEdit>
+#include <QSignalBlocker>
 #include <QIcon>
 
 #include <algorithm>
@@ -20,6 +22,12 @@
 #include "ui/widgets/TouchSpinBox.hpp"
 
 namespace fairwindsk::ui::settings {
+    namespace {
+        // Smallest window that still shows the Top Bar, the Bottom Bar and a usable Application Area.
+        constexpr int kMinimumWindowWidth = 480;
+        constexpr int kMinimumWindowHeight = 320;
+    }
+
     void Main::setWindowGeometryFieldsEnabled(const QString &windowMode) const {
         const bool isWindowed = windowMode == "windowed";
         const bool isCentered = windowMode == "centered";
@@ -192,10 +200,12 @@ namespace fairwindsk::ui::settings {
                 this,
                 &Main::onLanguageChanged);
 
-        connect(ui->lineEdit_left,&QLineEdit::textChanged,this, &Main::onWindowLeftTextChanged);
-        connect(ui->lineEdit_top,&QLineEdit::textChanged,this, &Main::onWindowTopTextChanged);
-        connect(ui->lineEdit_width,&QLineEdit::textChanged,this, &Main::onWindowWidthTextChanged);
-        connect(ui->lineEdit_height,&QLineEdit::textChanged,this, &Main::onWindowHeightTextChanged);
+        // Commit geometry only when the operator finishes editing: applying every keystroke
+        // would resize the window to half-typed values such as "1" while entering "1280".
+        connect(ui->lineEdit_left,&QLineEdit::editingFinished,this, &Main::onWindowLeftTextChanged);
+        connect(ui->lineEdit_top,&QLineEdit::editingFinished,this, &Main::onWindowTopTextChanged);
+        connect(ui->lineEdit_width,&QLineEdit::editingFinished,this, &Main::onWindowWidthTextChanged);
+        connect(ui->lineEdit_height,&QLineEdit::editingFinished,this, &Main::onWindowHeightTextChanged);
         connect(ui->comboBox_uiScalePreset,
                 qOverload<int>(&fairwindsk::ui::widgets::TouchComboBox::currentIndexChanged),
                 this,
@@ -296,24 +306,56 @@ namespace fairwindsk::ui::settings {
 
     }
 
+    bool Main::committedGeometryValue(QLineEdit *lineEdit, const int minimum, const int current, int *value) const {
+        // Parse what the operator typed; an unparsable entry falls back to the stored value.
+        bool parsed = false;
+        int candidate = lineEdit->text().trimmed().toInt(&parsed);
+        if (!parsed) {
+            candidate = current;
+        }
+
+        // Never accept a size that would make the window unusable.
+        candidate = std::max(minimum, candidate);
+
+        // Show the value that is really going to be used.
+        const QSignalBlocker blocker(lineEdit);
+        lineEdit->setText(QString::number(candidate));
+
+        *value = candidate;
+        // Report whether the configuration needs to be touched at all.
+        return candidate != current;
+    }
+
     void Main::onWindowLeftTextChanged() {
-        m_settings->getConfiguration()->setWindowLeft(ui->lineEdit_left->text().toInt());
-        m_settings->markDirty(FairWindSK::RuntimeUi, 300);
+        int value = 0;
+        if (committedGeometryValue(ui->lineEdit_left, 0, m_settings->getConfiguration()->getWindowLeft(), &value)) {
+            m_settings->getConfiguration()->setWindowLeft(value);
+            m_settings->markDirty(FairWindSK::RuntimeUi, 0);
+        }
     }
 
     void Main::onWindowTopTextChanged() {
-        m_settings->getConfiguration()->setWindowTop(ui->lineEdit_top->text().toInt());
-        m_settings->markDirty(FairWindSK::RuntimeUi, 300);
+        int value = 0;
+        if (committedGeometryValue(ui->lineEdit_top, 0, m_settings->getConfiguration()->getWindowTop(), &value)) {
+            m_settings->getConfiguration()->setWindowTop(value);
+            m_settings->markDirty(FairWindSK::RuntimeUi, 0);
+        }
     }
 
     void Main::onWindowWidthTextChanged() {
-        m_settings->getConfiguration()->setWindowWidth(ui->lineEdit_width->text().toInt());
-        m_settings->markDirty(FairWindSK::RuntimeUi, 300);
+        int value = 0;
+        if (committedGeometryValue(ui->lineEdit_width, kMinimumWindowWidth, m_settings->getConfiguration()->getWindowWidth(), &value)) {
+            m_settings->getConfiguration()->setWindowWidth(value);
+            m_settings->markDirty(FairWindSK::RuntimeUi, 0);
+        }
     }
 
     void Main::onWindowHeightTextChanged() {
-        m_settings->getConfiguration()->setWindowHeight(ui->lineEdit_height->text().toInt());
-        m_settings->markDirty(FairWindSK::RuntimeUi, 300);
+        int value = 0;
+        if (committedGeometryValue(ui->lineEdit_height, kMinimumWindowHeight, m_settings->getConfiguration()->getWindowHeight(), &value)) {
+            m_settings->getConfiguration()->setWindowHeight(value);
+            m_settings->markDirty(FairWindSK::RuntimeUi, 0);
+        }
     }
 
     void Main::onLauncherRowsValueChanged(const int value) {

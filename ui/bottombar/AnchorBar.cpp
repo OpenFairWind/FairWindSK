@@ -5,11 +5,14 @@
 // You may need to build the project (run Qt uic code generator) to get "ui_AnchorBar.h" resolved
 
 
+#include <algorithm>
+#include <QSignalBlocker>
 #include <QPushButton>
 #include <QSlider>
 #include <QLabel>
 #include <QToolButton>
 
+#include "ui/DrawerDialogHost.hpp"
 #include "AnchorBar.hpp"
 
 #include "FairWindSK.hpp"
@@ -20,6 +23,11 @@
 
 
 namespace fairwindsk::ui::bottombar {
+    namespace {
+        // How many times a windlass stop is sent before giving up and warning the operator.
+        constexpr int kWindlassStopAttempts = 3;
+    }
+
     AnchorBar::AnchorBar(QWidget *parent) :
             QWidget(parent), ui(new Ui::AnchorBar) {
         ui->setupUi(this);
@@ -32,6 +40,8 @@ namespace fairwindsk::ui::bottombar {
 
         // Get units converter instance
         m_units = Units::getInstance();
+        // Units resolve in the background: refresh labels and values when they arrive.
+        connect(m_units, &Units::displayUnitsChanged, this, &AnchorBar::refreshFromConfiguration);
 
         // Get the configuration json object
 
@@ -133,6 +143,8 @@ namespace fairwindsk::ui::bottombar {
         connect(ui->toolButton_Raise, &QToolButton::clicked, this, &AnchorBar::onRaiseClicked);
         connect(ui->pushButton_SetRadius, &QPushButton::clicked, this, &AnchorBar::onSetRadiusClicked);
         connect(ui->horizontalSlider_CurrentRadius, &QSlider::valueChanged, this, &AnchorBar::onCurrentRadiusChanged);
+        // While dragging, the radius is sent once, when the handle is released.
+        connect(ui->horizontalSlider_CurrentRadius, &QSlider::sliderReleased, this, &AnchorBar::onCurrentRadiusChanged);
         connect(ui->toolButton_Drop, &QToolButton::clicked, this, &AnchorBar::onDropClicked);
         connect(ui->toolButton_Down, &QToolButton::pressed, this, &AnchorBar::onDownPressed);
         connect(ui->toolButton_Down, &QToolButton::released, this, &AnchorBar::onDownReleased);
@@ -242,246 +254,128 @@ namespace fairwindsk::ui::bottombar {
         emit hidden();
     }
 
+    bool AnchorBar::sendAnchorAction(const char *actionKey,
+                                     const bool stopRequest,
+                                     const QJsonObject &payload,
+                                     const int attempts) {
+        // An action without a configured endpoint cannot be sent.
+        if (!m_signalkPaths.contains(actionKey) || !m_signalkPaths[actionKey].is_string()) {
+            return false;
+        }
+
+        const auto signalKClient = fairwindsk::FairWindSK::getInstance()->getSignalKClient();
+
+        // Plugin actions are addressed as <server>/<path with slashes>.
+        const QUrl url(signalKClient->server().toString() + "/" +
+                       QString::fromStdString(m_signalkPaths[actionKey].get<std::string>()).replace(".", "/"));
+
+        // Stop requests are repeated: a windlass that keeps running is worse than a duplicate stop.
+        for (int attempt = 0; attempt < std::max(1, attempts); ++attempt) {
+            if (stopRequest) {
+                signalKClient->signalkDelete(url);
+            } else {
+                QJsonObject mutablePayload = payload;
+                signalKClient->signalkPost(url, mutablePayload);
+            }
+            // Only the server's answer tells whether the command was taken.
+            if (signalKClient->lastRequestSucceeded()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void AnchorBar::warnWindlassStopFailed() {
+        // The operator must know at once that the remote stop did not go through.
+        fairwindsk::ui::drawer::warning(
+            this,
+            tr("Anchor"),
+            tr("The windlass did not confirm the stop command. Stop it with the manual control."));
+    }
+
     void AnchorBar::onResetClicked() {
-
-        // Check if the Options object has the rsa key and if it is a string
-        if (m_signalkPaths.contains("anchor.actions.reset") && m_signalkPaths["anchor.actions.reset"].is_string())
-        {
-            // Get the FairWind singleton
-            const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
-
-            // Get the Signal K client
-            const auto signalKClient = fairWindSK->getSignalKClient();
-
-            const auto url = signalKClient->server().toString() + "/" +
-                QString::fromStdString(
-                    m_signalkPaths["anchor.actions.reset"].get<std::string>()).replace(".","/"
-                        );
-
-            // Rise the alarm
-            auto result = signalKClient->signalkPost(QUrl(url));
-
+        if (sendAnchorAction("anchor.actions.reset")) {
             emit resetCounter();
         }
     }
 
     void AnchorBar::onUpPressed() {
-
-        // Check if the Options object has the rsa key and if it is a string
-        if (m_signalkPaths.contains("anchor.actions.up") && m_signalkPaths["anchor.actions.up"].is_string())
-        {
-            // Get the FairWind singleton
-            const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
-
-            // Get the Signal K client
-            const auto signalKClient = fairWindSK->getSignalKClient();
-
-            const auto url = signalKClient->server().toString() + "/" +
-                QString::fromStdString(
-                    m_signalkPaths["anchor.actions.up"].get<std::string>()).replace(".","/"
-                        );
-
-            // Rise the alarm
-            auto result = signalKClient->signalkPost(QUrl(url));
-
+        if (sendAnchorAction("anchor.actions.up")) {
             emit chainUpPressed();
         }
-
-
     }
 
     void AnchorBar::onUpReleased() {
-
-        // Check if the Options object has the rsa key and if it is a string
-        if (m_signalkPaths.contains("anchor.actions.up") && m_signalkPaths["anchor.actions.up"].is_string())
-        {
-            // Get the FairWind singleton
-            const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
-
-            // Get the Signal K client
-            const auto signalKClient = fairWindSK->getSignalKClient();
-
-            const auto url = signalKClient->server().toString() + "/" +
-                QString::fromStdString(
-                    m_signalkPaths["anchor.actions.up"].get<std::string>()).replace(".","/"
-                        );
-
-            // Rise the alarm
-            auto result = signalKClient->signalkDelete(QUrl(url));
-
+        if (!m_signalkPaths.contains("anchor.actions.up") || !m_signalkPaths["anchor.actions.up"].is_string()) {
+            return;
+        }
+        if (sendAnchorAction("anchor.actions.up", true, {}, kWindlassStopAttempts)) {
             emit chainUpReleased();
+        } else {
+            warnWindlassStopFailed();
         }
     }
 
     void AnchorBar::onRaiseClicked() {
-
-        // Check if the Options object has the rsa key and if it is a string
-        if (m_signalkPaths.contains("anchor.actions.raise") && m_signalkPaths["anchor.actions.raise"].is_string())
-        {
-            // Get the FairWind singleton
-            const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
-
-            // Get the Signal K client
-            const auto signalKClient = fairWindSK->getSignalKClient();
-
-            const auto url = signalKClient->server().toString() + "/" +
-                QString::fromStdString(
-                    m_signalkPaths["anchor.actions.raise"].get<std::string>()).replace(".","/"
-                        );
-
-            // Rise the alarm
-            auto result = signalKClient->signalkPost(QUrl(url));
-
+        if (sendAnchorAction("anchor.actions.raise")) {
             emit raiseAnchor();
         }
     }
 
     void AnchorBar::onCurrentRadiusChanged() {
-
-        // Check if the Options object has the rsa key and if it is a string
-        if (m_signalkPaths.contains("anchor.actions.radius") && m_signalkPaths["anchor.actions.radius"].is_string()) {
-
-            // Convert m/s to knots
-            auto value = m_units->convert(
-                FairWindSK::getInstance()->getConfiguration()->getDepthUnits(),"m",
-                ui->horizontalSlider_CurrentRadius->value());
-
-            // Get the FairWind singleton
-            const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
-
-            // Get the Signal K client
-            const auto signalKClient = fairWindSK->getSignalKClient();
-
-            auto payload = QJsonObject();
-            payload["radius"] = value;
-
-            const auto url = signalKClient->server().toString() + "/" +
-                QString::fromStdString(
-                    m_signalkPaths["anchor.actions.radius"].get<std::string>()).replace(".","/"
-                        );
-
-            // Rise the alarm
-            auto result = signalKClient->signalkPost(QUrl(url), payload);
-
-            emit radiusChanged();
+        // A drag produces a value for every step: wait for the release instead of flooding the server.
+        if (ui->horizontalSlider_CurrentRadius->isSliderDown()) {
+            return;
         }
 
+        // The slider shows range units (see updateCurrentRadius): convert from the same units.
+        const auto value = m_units->convert(
+            FairWindSK::getInstance()->getConfiguration()->getRangeUnits(), "m",
+            ui->horizontalSlider_CurrentRadius->value());
 
+        QJsonObject payload;
+        payload["radius"] = value;
+        if (sendAnchorAction("anchor.actions.radius", false, payload)) {
+            emit radiusChanged();
+        } else {
+            // The server kept its own radius: show that one again instead of the refused value.
+            updateCurrentRadius(m_lastCurrentRadiusUpdate);
+        }
     }
 
     void AnchorBar::onDropClicked() {
-
-        // Check if the Options object has the rsa key and if it is a string
-        if (m_signalkPaths.contains("anchor.actions.drop") && m_signalkPaths["anchor.actions.drop"].is_string())
-        {
-            // Get the FairWind singleton
-            const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
-
-            // Get the Signal K client
-            const auto signalKClient = fairWindSK->getSignalKClient();
-
-            const auto url = signalKClient->server().toString() + "/" +
-                QString::fromStdString(
-                    m_signalkPaths["anchor.actions.drop"].get<std::string>()).replace(".","/"
-                        );
-
-            // Rise the alarm
-            auto result = signalKClient->signalkPost(QUrl(url));
-
+        if (sendAnchorAction("anchor.actions.drop")) {
             emit dropAnchor();
         }
     }
 
     void AnchorBar::onSetRadiusClicked() {
-
-        // Check if the Options object has the rsa key and if it is a string
-        if (m_signalkPaths.contains("anchor.actions.radius") && m_signalkPaths["anchor.actions.radius"].is_string())
-        {
-            // Get the FairWind singleton
-            const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
-
-            // Get the Signal K client
-            const auto signalKClient = fairWindSK->getSignalKClient();
-
-            const auto url = signalKClient->server().toString() + "/" +
-                QString::fromStdString(
-                    m_signalkPaths["anchor.actions.radius"].get<std::string>()).replace(".","/"
-                        );
-
-            // Rise the alarm
-            auto result = signalKClient->signalkPost(QUrl(url));
-
+        if (sendAnchorAction("anchor.actions.radius")) {
             emit radiusSet();
         }
     }
 
     void AnchorBar::onDownPressed() {
-
-        // Check if the Options object has the rsa key and if it is a string
-        if (m_signalkPaths.contains("anchor.actions.down") && m_signalkPaths["anchor.actions.down"].is_string())
-        {
-            // Get the FairWind singleton
-            const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
-
-            // Get the Signal K client
-            const auto signalKClient = fairWindSK->getSignalKClient();
-
-            const auto url = signalKClient->server().toString() + "/" +
-                QString::fromStdString(
-                    m_signalkPaths["anchor.actions.down"].get<std::string>()).replace(".","/"
-                        );
-
-            // Rise the alarm
-            auto result = signalKClient->signalkPost(QUrl(url));
-
+        if (sendAnchorAction("anchor.actions.down")) {
             emit chainDownPressed();
         }
     }
 
     void AnchorBar::onDownReleased() {
-        // Check if the Options object has the rsa key and if it is a string
-        if (m_signalkPaths.contains("anchor.actions.down") && m_signalkPaths["anchor.actions.down"].is_string())
-        {
-            // Get the FairWind singleton
-            const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
-
-            // Get the Signal K client
-            const auto signalKClient = fairWindSK->getSignalKClient();
-
-            const auto url = signalKClient->server().toString() + "/" +
-                QString::fromStdString(
-                    m_signalkPaths["anchor.actions.down"].get<std::string>()).replace(".","/"
-                        );
-
-            // Rise the alarm
-            auto result = signalKClient->signalkDelete(QUrl(url));
-
+        if (!m_signalkPaths.contains("anchor.actions.down") || !m_signalkPaths["anchor.actions.down"].is_string()) {
+            return;
+        }
+        if (sendAnchorAction("anchor.actions.down", true, {}, kWindlassStopAttempts)) {
             emit chainDownReleased();
+        } else {
+            warnWindlassStopFailed();
         }
     }
 
     void AnchorBar::onReleaseClicked() {
-
-        // Check if the Options object has the rsa key and if it is a string
-        if (m_signalkPaths.contains("anchor.actions.release") && m_signalkPaths["anchor.actions.release"].is_string())
-        {
-            // Get the FairWind singleton
-            const auto fairWindSK = fairwindsk::FairWindSK::getInstance();
-
-            // Get the Signal K client
-            const auto signalKClient = fairWindSK->getSignalKClient();
-
-            const auto url = signalKClient->server().toString() + "/" +
-                QString::fromStdString(
-                    m_signalkPaths["anchor.actions.release"].get<std::string>()).replace(".","/"
-                        );
-
-            // Rise the alarm
-            auto result = signalKClient->signalkPost(QUrl(url));
-
+        if (sendAnchorAction("anchor.actions.release")) {
             emit chainRelease();
         }
-
     }
 
     /*
@@ -628,7 +522,11 @@ namespace fairwindsk::ui::bottombar {
                 value,
                 "m",
                 FairWindSK::getInstance()->getConfiguration()->getRangeUnits());
-            ui->horizontalSlider_CurrentRadius->setValue(static_cast<int>(value));
+            // Showing the value reported by the server must not send it back as a new command.
+            {
+                const QSignalBlocker blocker(ui->horizontalSlider_CurrentRadius);
+                ui->horizontalSlider_CurrentRadius->setValue(static_cast<int>(value));
+            }
             text = m_units->formatSignalKValue(
                 QString::fromStdString(m_signalkPaths["anchor.radius"].get<std::string>()),
                 fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update),
@@ -659,7 +557,11 @@ namespace fairwindsk::ui::bottombar {
                 value,
                 "m",
                 FairWindSK::getInstance()->getConfiguration()->getRangeUnits());
-            ui->horizontalSlider_CurrentRadius->setMaximum(static_cast<int>(value));
+            // Changing the range can clamp the value; that is not an operator command either.
+            {
+                const QSignalBlocker blocker(ui->horizontalSlider_CurrentRadius);
+                ui->horizontalSlider_CurrentRadius->setMaximum(static_cast<int>(value));
+            }
             text = m_units->formatSignalKValue(
                 QString::fromStdString(m_signalkPaths["anchor.max"].get<std::string>()),
                 fairwindsk::signalk::Client::getDoubleFromUpdateByPath(update),

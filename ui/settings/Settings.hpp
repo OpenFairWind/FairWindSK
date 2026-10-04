@@ -40,6 +40,7 @@ namespace fairwindsk::ui::settings {
         //QList<QString> getAppsHashes();
 
         Configuration *getConfiguration();
+        void beginEditSession();
         void resetToCurrentConfiguration();
         void restoreDefaultConfiguration();
         void restartApplication();
@@ -56,7 +57,7 @@ namespace fairwindsk::ui::settings {
 
     private:
         void initTabs(int currentIndex);
-        void removeTabs();
+        void removeTabs(bool deleteImmediately);
         void applyConfiguration();
         void scheduleApplyConfiguration(int delayMs = 150);
         QWidget *createTabWidget(int index);
@@ -68,10 +69,12 @@ namespace fairwindsk::ui::settings {
 
         Configuration m_configuration;
         Configuration *m_currentConfiguration;
+        nlohmann::json m_sessionSnapshot;
         QWidget *m_currentWidget = nullptr;
         QVector<QPointer<QWidget>> m_tabPages;
         bool m_rebuildingTabs = false;
         bool m_hasPendingUiChanges = false;
+        bool m_applyingConfiguration = false;
         QTimer *m_applyTimer = nullptr;
         quint32 m_pendingRuntimeChanges = 0;
 

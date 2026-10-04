@@ -148,6 +148,12 @@ namespace fairwindsk {
         void runtimeHealthChanged(RuntimeHealthState state, const QString &summary, const QString &badgeText);
 
     private:
+        enum class AppsRequestKind {
+            StandardCatalog,
+            LegacyEnrichment,
+            LegacyFallback
+        };
+
         bool eventFilter(QObject *watched, QEvent *event) override;
         void updateWebProfileCookie();
         void applyWebProfileLocalization();
@@ -156,7 +162,7 @@ namespace fairwindsk {
         void refreshRuntimeHealth();
         bool rebuildAppRegistry(const nlohmann::json *appsPayload = nullptr);
         void setAppsState(AppsState state, const QString &stateText = QString());
-        void startAppsRequest(const QUrl &url, quint64 generation, bool fallbackRequest);
+        void startAppsRequest(const QUrl &url, quint64 generation, AppsRequestKind requestKind);
         void prefetchAppIcons(quint64 generation);
         void finalizeAppsReload(bool success, const QString &statusText, const nlohmann::json *appsPayload = nullptr);
         void handleAutomaticComfortEnvironmentUpdate(const QJsonObject &update);
@@ -205,6 +211,7 @@ namespace fairwindsk {
         QString m_lastUiThemeSignature;
         class QNetworkAccessManager *m_runtimeNetworkAccessManager = nullptr;
         QPointer<class QNetworkReply> m_appsReply;
+        nlohmann::json m_standardAppsPayload;
         quint64 m_appsReloadGeneration = 0;
         AppsState m_appsState = AppsState::Idle;
         QString m_appsStateText = QStringLiteral("Apps idle");

@@ -21,6 +21,8 @@ Use `--branch <release-tag>` instead when reproducing a published release.
 
 The [cross-platform build overview](building.md) links to the authoritative [macOS](macos.md), [Windows](windows.md), [Linux](linux.md), [Raspberry Pi OS](raspberrypi.md), [Android](android.md), [iOS/iPadOS](ios.md), and [container](container.md) guides. A generic host CMake command is valid only after the correct platform Qt kit and dependencies are selected.
 
+The repository also ships generated owner manuals in `manuals/FairWindSK_Owners_Manual_EN.pdf` and `manuals/FairWindSK_Owners_Manual_IT.pdf` for onboard or offline reference.
+
 ## First run and configuration bootstrap
 
 1. Launch the binary. On first run the app reads `fairwindsk.ini` from the per-user FairWindSK configuration directory to determine the configuration file path and debug flag. If no path is stored, it defaults to `fairwindsk.json` in that same directory.

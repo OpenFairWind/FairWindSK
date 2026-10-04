@@ -244,6 +244,9 @@ namespace fairwindsk {
     void Units::refreshSignalKPreferences() {
         m_signalKPreferencesLoaded = false;
         m_signalKLookupInProgress = false;
+        // Replies belonging to an earlier refresh must not be applied any more.
+        m_preferencesRequestInFlight = false;
+        ++m_preferencesGeneration;
         m_signalKActivePresetName.clear();
         m_categoryDisplayUnits.clear();
         m_definitionsByBaseUnit.clear();
@@ -254,11 +257,9 @@ namespace fairwindsk {
     }
 
     void Units::loadSignalKPreferences() {
-        if (m_signalKPreferencesLoaded || m_signalKLookupInProgress) {
+        if (m_signalKPreferencesLoaded || m_signalKLookupInProgress || m_preferencesRequestInFlight) {
             return;
         }
-
-        const QScopedValueRollback<bool> lookupGuard(m_signalKLookupInProgress, true);
 
         const auto fairWindSK = FairWindSK::getInstance();
         if (!fairWindSK) {
@@ -270,16 +271,43 @@ namespace fairwindsk {
             return;
         }
 
-#if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
-        // Mobile event dispatchers do not permit the nested event loops used by legacy synchronous REST helpers.
-        return;
-#else
-        const auto activePreset = client->getUnitPreferencesActive();
-        const auto categoriesObject = client->getUnitPreferencesCategories();
-        const auto definitionsObject = client->getUnitPreferencesDefinitions();
-        const auto defaultCategoriesObject = client->getUnitPreferencesDefaultCategories();
-        applySignalKPreferences(activePreset, categoriesObject, definitionsObject, defaultCategoriesObject);
-#endif
+        // The four documents are requested without blocking. This function is reached while
+        // widgets are being rendered: a nested event loop here let connection handling and
+        // settings re-enter each other, and froze the display on a slow server.
+        qInfo() << "Units requesting Signal K unit preferences from" << client->url();
+        m_preferencesRequestInFlight = true;
+        const quint64 generation = ++m_preferencesGeneration;
+        m_pendingPreferenceDocuments.clear();
+        const QMap<QString, QString> endpoints = {
+            {QStringLiteral("active"), QStringLiteral("/v1/unitpreferences/active")},
+            {QStringLiteral("categories"), QStringLiteral("/v1/unitpreferences/categories")},
+            {QStringLiteral("definitions"), QStringLiteral("/v1/unitpreferences/definitions")},
+            {QStringLiteral("defaults"), QStringLiteral("/v1/unitpreferences/default-categories")}
+        };
+        m_pendingPreferenceReplies = endpoints.size();
+        for (auto it = endpoints.cbegin(); it != endpoints.cend(); ++it) {
+            const QString key = it.key();
+            client->getJsonAsync(QUrl(client->url().toString() + it.value()), this,
+                                 [this, key, generation](const QJsonDocument &document, const QString &) {
+                // A newer refresh has started: this answer describes an older state.
+                if (generation != m_preferencesGeneration) {
+                    return;
+                }
+                m_pendingPreferenceDocuments.insert(key, document.object());
+                if (--m_pendingPreferenceReplies > 0) {
+                    return;
+                }
+
+                m_preferencesRequestInFlight = false;
+                applySignalKPreferences(m_pendingPreferenceDocuments.value(QStringLiteral("active")),
+                                        m_pendingPreferenceDocuments.value(QStringLiteral("categories")),
+                                        m_pendingPreferenceDocuments.value(QStringLiteral("definitions")),
+                                        m_pendingPreferenceDocuments.value(QStringLiteral("defaults")));
+                m_pendingPreferenceDocuments.clear();
+                // Values drawn with the fallback units can now be drawn with the server's.
+                emit displayUnitsChanged();
+            });
+        }
     }
 
     void Units::applySignalKPreferences(const QJsonObject &activePreset,
@@ -475,20 +503,32 @@ namespace fairwindsk {
             return info;
         }
 
+        // Until the preferences have arrived nothing can be decided for this path: answer with
+        // the fallback units and leave the path open for a later lookup.
+        if (!m_signalKPreferencesLoaded) {
+            return {};
+        }
+
         if (!m_attemptedDisplayUnitsPaths.contains(path)) {
             m_attemptedDisplayUnitsPaths.insert(path);
 
-#if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
-            // Mobile event dispatchers do not support the nested event loop used by getPathMeta().
-            // Keep the UI responsive and use the local/category unit definitions on mobile.
-            return {};
-#else
             const auto fairWindSK = FairWindSK::getInstance();
             const auto client = fairWindSK ? fairWindSK->getSignalKClient() : nullptr;
             if (client && !client->url().isEmpty()) {
-                const QScopedValueRollback<bool> lookupGuard(m_signalKLookupInProgress, true);
-                const auto metaObject = client->getPathMeta(path);
-                if (metaObject.contains("displayUnits") && metaObject["displayUnits"].isObject()) {
+                // Ask for the path metadata in the background; the caller keeps the fallback
+                // units for now and is told to render again when the answer is usable.
+                QString pathComponent = path;
+                pathComponent.replace('.', '/');
+                const QUrl metaUrl(client->url().toString() + "/v1/api/vessels/self/" + pathComponent + "/meta");
+                const quint64 generation = m_preferencesGeneration;
+                client->getJsonAsync(metaUrl, this, [this, path, generation](const QJsonDocument &document, const QString &) {
+                    if (generation != m_preferencesGeneration) {
+                        return;
+                    }
+                    const QJsonObject metaObject = document.object();
+                    if (!metaObject.contains("displayUnits") || !metaObject["displayUnits"].isObject()) {
+                        return;
+                    }
                     auto info = parseDisplayUnits(metaObject["displayUnits"].toObject());
                     if (info.baseUnit.isEmpty() && metaObject.contains("units") && metaObject["units"].isString()) {
                         info.baseUnit = metaObject["units"].toString();
@@ -504,11 +544,10 @@ namespace fairwindsk {
                     }
                     if (info.valid) {
                         m_displayUnitsCache.insert(path, info);
-                        return info;
+                        emit displayUnitsChanged();
                     }
-                }
+                });
             }
-#endif
         }
 
         return {};

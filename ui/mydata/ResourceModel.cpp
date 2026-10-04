@@ -523,19 +523,24 @@ namespace fairwindsk::ui::mydata {
     QString ResourceModel::createResource(const QJsonObject &resource) {
         const auto client = fairwindsk::FairWindSK::getInstance()->getSignalKClient();
         const QJsonObject response = client->createResource(collection(), resource);
+        // A refused write (for example without an access token) creates nothing on the server.
+        if (!client->lastRequestSucceeded()) {
+            return {};
+        }
         return upsertedResourceId(response, resource);
     }
 
     bool ResourceModel::updateResource(const QString &id, const QJsonObject &resource) {
         const auto client = fairwindsk::FairWindSK::getInstance()->getSignalKClient();
         client->putResource(collection(), id, resource);
-        return m_resources.contains(id);
+        // Trust the server's answer, not the local cache, which still holds the old copy.
+        return client->lastRequestSucceeded();
     }
 
     bool ResourceModel::deleteResource(const QString &id) {
         const auto client = fairwindsk::FairWindSK::getInstance()->getSignalKClient();
-        client->deleteResource(collection(), id);
-        return !m_resources.contains(id);
+        // The local cache is refreshed asynchronously, so only the server's answer is reliable here.
+        return client->deleteResource(collection(), id);
     }
 
     bool ResourceModel::importDocument(const QJsonDocument &document, QString *message, int *count) {

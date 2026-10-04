@@ -88,6 +88,14 @@
 <context>
     <name>AlarmsBar</name>
     <message>
+        <source>Raise alarm</source>
+        <translation>Attiva allarme</translation>
+    </message>
+    <message>
+        <source>Raise the %1 alarm?</source>
+        <translation>Attivare l&apos;allarme %1?</translation>
+    </message>
+    <message>
         <location filename="../../ui/bottombar/AlarmsBar.ui" line="77"/>
         <source>Piracy</source>
         <translation>Pirateria</translation>
@@ -120,6 +128,14 @@
 </context>
 <context>
     <name>AnchorBar</name>
+    <message>
+        <source>Anchor</source>
+        <translation>Ancora</translation>
+    </message>
+    <message>
+        <source>The windlass did not confirm the stop command. Stop it with the manual control.</source>
+        <translation>Il salpa ancora non ha confermato il comando di arresto. Fermarlo con il comando manuale.</translation>
+    </message>
     <message>
         <location filename="../../ui/bottombar/AnchorBar.ui" line="77"/>
         <source>Drop</source>
@@ -2159,6 +2175,18 @@ Ultimo aggiornamento live %1</translation>
 <context>
     <name>fairwindsk::signalk::Client</name>
     <message>
+        <source>Access token rejected: request a new token in Settings &gt; Connection</source>
+        <translation>Token di accesso rifiutato: richiedere un nuovo token in Impostazioni &gt; Connessione</translation>
+    </message>
+    <message>
+        <source>Access denied: request an access token in Settings &gt; Connection</source>
+        <translation>Accesso negato: richiedere un token di accesso in Impostazioni &gt; Connessione</translation>
+    </message>
+    <message>
+        <source>Access denied: the access token does not grant this permission</source>
+        <translation>Accesso negato: il token di accesso non concede questo permesso</translation>
+    </message>
+    <message>
         <location filename="../../signalk/Client.cpp" line="99"/>
         <source>Timeout while contacting %1</source>
         <translation>Timeout durante il contatto con %1</translation>
@@ -2467,6 +2495,14 @@ Ultimo aggiornamento live %1</translation>
 <context>
     <name>fairwindsk::ui::bottombar::AlarmsBar</name>
     <message>
+        <source>Raise alarm</source>
+        <translation>Attiva allarme</translation>
+    </message>
+    <message>
+        <source>Raise the %1 alarm?</source>
+        <translation>Attivare l&apos;allarme %1?</translation>
+    </message>
+    <message>
         <location filename="../../ui/bottombar/AlarmsBar.cpp" line="20"/>
         <source>Connecting</source>
         <translation>Connessione</translation>
@@ -2546,6 +2582,14 @@ Ultimo aggiornamento live %1</translation>
 </context>
 <context>
     <name>fairwindsk::ui::bottombar::AnchorBar</name>
+    <message>
+        <source>Anchor</source>
+        <translation>Ancora</translation>
+    </message>
+    <message>
+        <source>The windlass did not confirm the stop command. Stop it with the manual control.</source>
+        <translation>Il salpa ancora non ha confermato il comando di arresto. Fermarlo con il comando manuale.</translation>
+    </message>
     <message>
         <location filename="../../ui/bottombar/AnchorBar.cpp" line="514"/>
         <source>Anchor position</source>
@@ -6155,8 +6199,8 @@ Ultimo aggiornamento live %1</translation>
     </message>
     <message>
         <location filename="../../ui/settings/System.cpp" line="126"/>
-        <source>This will discard the unsaved changes currently shown in Settings and reload the active configuration. FairWindSK will keep running.</source>
-        <translation>Questa operazione scarterà le modifiche non salvate attualmente mostrate in Impostazioni e ricaricherà la configurazione attiva. FairWindSK continuerà a funzionare.</translation>
+        <source>This will undo the changes made since Settings was opened and apply the restored configuration. FairWindSK will keep running.</source>
+        <translation>Questa operazione annullerà le modifiche effettuate dall&apos;apertura di Impostazioni e applicherà la configurazione ripristinata. FairWindSK continuerà a funzionare.</translation>
     </message>
     <message>
         <location filename="../../ui/settings/System.cpp" line="135"/>

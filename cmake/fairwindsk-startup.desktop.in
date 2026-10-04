@@ -1,8 +1,8 @@
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=FairWindSK Startup
-Comment=Launch FairWindSK after Signal K is ready
+Name=FairWindSK
+Comment=Start FairWindSK marine display
 Exec=@CMAKE_INSTALL_FULL_BINDIR@/fairwindsk-startup
 Icon=fairwindsk
 Terminal=false

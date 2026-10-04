@@ -121,6 +121,14 @@
     <context>
         <name>AlarmsBar</name>
         <message>
+            <source>Raise alarm</source>
+            <translation>Activar alarma</translation>
+        </message>
+        <message>
+            <source>Raise the %1 alarm?</source>
+            <translation>¿Activar la alarma %1?</translation>
+        </message>
+        <message>
             <location filename="../../ui/bottombar/AlarmsBar.ui" line="77" />
             <location filename="../../build/FairWindSK_autogen/include/ui_AlarmsBar.h" line="253" />
             <location filename="../../cmake-build-debug/FairWindSK_autogen/include/ui_AlarmsBar.h" line="253" />
@@ -165,6 +173,14 @@
     </context>
     <context>
         <name>AnchorBar</name>
+        <message>
+            <source>Anchor</source>
+            <translation>Ancla</translation>
+        </message>
+        <message>
+            <source>The windlass did not confirm the stop command. Stop it with the manual control.</source>
+            <translation>El molinete no confirmó la orden de parada. Deténgalo con el mando manual.</translation>
+        </message>
         <message>
             <location filename="../../ui/bottombar/AnchorBar.ui" line="77" />
             <location filename="../../build/FairWindSK_autogen/include/ui_AnchorBar.h" line="565" />
@@ -2689,6 +2705,18 @@ Last live update %1</source>
     <context>
         <name>fairwindsk::signalk::Client</name>
         <message>
+            <source>Access token rejected: request a new token in Settings &gt; Connection</source>
+            <translation>Token de acceso rechazado: solicite un nuevo token en Ajustes &gt; Conexión</translation>
+        </message>
+        <message>
+            <source>Access denied: request an access token in Settings &gt; Connection</source>
+            <translation>Acceso denegado: solicite un token de acceso en Ajustes &gt; Conexión</translation>
+        </message>
+        <message>
+            <source>Access denied: the access token does not grant this permission</source>
+            <translation>Acceso denegado: el token de acceso no concede este permiso</translation>
+        </message>
+        <message>
             <location filename="../../signalk/Client.cpp" line="100" />
             <source>Timeout while contacting %1</source>
             <translation>Timeout al contactar con %1</translation>
@@ -2997,6 +3025,14 @@ Last live update %1</source>
     <context>
         <name>fairwindsk::ui::bottombar::AlarmsBar</name>
         <message>
+            <source>Raise alarm</source>
+            <translation>Activar alarma</translation>
+        </message>
+        <message>
+            <source>Raise the %1 alarm?</source>
+            <translation>¿Activar la alarma %1?</translation>
+        </message>
+        <message>
             <location filename="../../ui/bottombar/AlarmsBar.cpp" line="20" />
             <source>Connecting</source>
             <translation>Conexión</translation>
@@ -3075,6 +3111,14 @@ Last live update %1</source>
     </context>
     <context>
         <name>fairwindsk::ui::bottombar::AnchorBar</name>
+        <message>
+            <source>Anchor</source>
+            <translation>Ancla</translation>
+        </message>
+        <message>
+            <source>The windlass did not confirm the stop command. Stop it with the manual control.</source>
+            <translation>El molinete no confirmó la orden de parada. Deténgalo con el mando manual.</translation>
+        </message>
         <message>
             <location filename="../../ui/bottombar/AnchorBar.cpp" line="514" />
             <source>Anchor position</source>
@@ -6863,8 +6907,8 @@ Last live update %1</source>
         </message>
         <message>
             <location filename="../../ui/settings/System.cpp" line="126" />
-            <source>This will discard the unsaved changes currently shown in Settings and reload the active configuration. FairWindSK will keep running.</source>
-            <translation>Esto descartará los cambios no guardados que se muestran actualmente en Ajustes y recargará la configuración activa. FairWindSK seguirá corriendo.</translation>
+            <source>This will undo the changes made since Settings was opened and apply the restored configuration. FairWindSK will keep running.</source>
+            <translation>Esto deshará los cambios realizados desde que se abrió Ajustes y aplicará la configuración restaurada. FairWindSK seguirá funcionando.</translation>
         </message>
         <message>
             <location filename="../../ui/settings/System.cpp" line="135" />

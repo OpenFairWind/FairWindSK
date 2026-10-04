@@ -121,6 +121,14 @@
     <context>
         <name>AlarmsBar</name>
         <message>
+            <source>Raise alarm</source>
+            <translation>Déclencher l&apos;alarme</translation>
+        </message>
+        <message>
+            <source>Raise the %1 alarm?</source>
+            <translation>Déclencher l&apos;alarme %1 ?</translation>
+        </message>
+        <message>
             <location filename="../../ui/bottombar/AlarmsBar.ui" line="77" />
             <location filename="../../build/FairWindSK_autogen/include/ui_AlarmsBar.h" line="253" />
             <location filename="../../cmake-build-debug/FairWindSK_autogen/include/ui_AlarmsBar.h" line="253" />
@@ -165,6 +173,14 @@
     </context>
     <context>
         <name>AnchorBar</name>
+        <message>
+            <source>Anchor</source>
+            <translation>Ancre</translation>
+        </message>
+        <message>
+            <source>The windlass did not confirm the stop command. Stop it with the manual control.</source>
+            <translation>Le guindeau n&apos;a pas confirmé la commande d&apos;arrêt. Arrêtez-le avec la commande manuelle.</translation>
+        </message>
         <message>
             <location filename="../../ui/bottombar/AnchorBar.ui" line="77" />
             <location filename="../../build/FairWindSK_autogen/include/ui_AnchorBar.h" line="565" />
@@ -2689,6 +2705,18 @@ Last live update %1</source>
     <context>
         <name>fairwindsk::signalk::Client</name>
         <message>
+            <source>Access token rejected: request a new token in Settings &gt; Connection</source>
+            <translation>Jeton d&apos;accès refusé : demandez un nouveau jeton dans Paramètres &gt; Connexion</translation>
+        </message>
+        <message>
+            <source>Access denied: request an access token in Settings &gt; Connection</source>
+            <translation>Accès refusé : demandez un jeton d&apos;accès dans Paramètres &gt; Connexion</translation>
+        </message>
+        <message>
+            <source>Access denied: the access token does not grant this permission</source>
+            <translation>Accès refusé : le jeton d&apos;accès n&apos;accorde pas cette autorisation</translation>
+        </message>
+        <message>
             <location filename="../../signalk/Client.cpp" line="100" />
             <source>Timeout while contacting %1</source>
             <translation>Temps d'arrêt en contactant %1</translation>
@@ -2997,6 +3025,14 @@ Last live update %1</source>
     <context>
         <name>fairwindsk::ui::bottombar::AlarmsBar</name>
         <message>
+            <source>Raise alarm</source>
+            <translation>Déclencher l&apos;alarme</translation>
+        </message>
+        <message>
+            <source>Raise the %1 alarm?</source>
+            <translation>Déclencher l&apos;alarme %1 ?</translation>
+        </message>
+        <message>
             <location filename="../../ui/bottombar/AlarmsBar.cpp" line="20" />
             <source>Connecting</source>
             <translation>Connexion</translation>
@@ -3075,6 +3111,14 @@ Last live update %1</source>
     </context>
     <context>
         <name>fairwindsk::ui::bottombar::AnchorBar</name>
+        <message>
+            <source>Anchor</source>
+            <translation>Ancre</translation>
+        </message>
+        <message>
+            <source>The windlass did not confirm the stop command. Stop it with the manual control.</source>
+            <translation>Le guindeau n&apos;a pas confirmé la commande d&apos;arrêt. Arrêtez-le avec la commande manuelle.</translation>
+        </message>
         <message>
             <location filename="../../ui/bottombar/AnchorBar.cpp" line="514" />
             <source>Anchor position</source>
@@ -6863,8 +6907,8 @@ Last live update %1</source>
         </message>
         <message>
             <location filename="../../ui/settings/System.cpp" line="126" />
-            <source>This will discard the unsaved changes currently shown in Settings and reload the active configuration. FairWindSK will keep running.</source>
-            <translation>Cela permettra de supprimer les modifications non enregistrées actuellement affichées dans Paramètres et de recharger la configuration active. FairWindSK continuera à fonctionner.</translation>
+            <source>This will undo the changes made since Settings was opened and apply the restored configuration. FairWindSK will keep running.</source>
+            <translation>Cela annulera les modifications effectuées depuis l'ouverture de Paramètres et appliquera la configuration restaurée. FairWindSK continuera à fonctionner.</translation>
         </message>
         <message>
             <location filename="../../ui/settings/System.cpp" line="135" />

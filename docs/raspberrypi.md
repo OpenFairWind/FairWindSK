@@ -1,5 +1,7 @@
 # Building and running FairWindSK on Raspberry Pi OS
 
+> HaLOS users should normally install the prebuilt HaLOS/Trixie ARM64 `.deb`; see [halos.md](halos.md). Do not compile on the target unless developing or validating the platform. `/usr/local` paths in this guide are source-install paths; the HaLOS package installs under `/usr`.
+
 This is the authoritative step-by-step guide for building, configuring,
 installing, and operating FairWindSK directly on Raspberry Pi OS. The Raspberry
 Pi flavor is a Linux ARM desktop build: it uses Qt WebEngine Widgets, preserves

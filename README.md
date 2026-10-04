@@ -23,6 +23,7 @@ The runtime now supervises Signal K restarts as well: if the server drops and co
 * [Building FairWindSK on Windows](docs/windows.md)
 * [Building and running FairWindSK on Linux](docs/linux.md)
 * [Building and running FairWindSK on Raspberry Pi OS](docs/raspberrypi.md)
+* [Installing and running FairWindSK on HaLOS](docs/halos.md)
 * [Building and running FairWindSK in a container](docs/container.md)
 * [Android environment, APK build, signing, deployment, and launcher guide](docs/android.md)
 * [iOS environment, iPad Simulator build, deployment, and debugging guide](docs/ios.md)
@@ -87,6 +88,7 @@ The runtime now supervises Signal K restarts as well: if the server drops and co
 * Android discovery of installed `MAIN + LAUNCHER` activities, selection into the shared application palette, explicit native launching, and conditional soft Back/Home/Recents controls
 * iOS and iPadOS device and simulator builds with the FairWindSK application identity and mobile WebView backend
 * Raspberry Pi OS kiosk/autostart helpers and OpenPlotter-aware installation
+* HaLOS Desktop/Desktop-Marine ARM64 packages with XFCE autostart and a bounded, reconnect-safe Signal K startup wait
 * Linux container compilation, CTest, and headless Qt WebEngine startup checks
 
 Applications are normally Signal K web apps hosted by the connected server, but any compatible web application can be configured by URL.

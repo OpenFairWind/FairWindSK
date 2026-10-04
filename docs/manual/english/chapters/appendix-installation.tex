@@ -249,6 +249,8 @@ the system library path or bundled beside the binary.
 
 % ── A.5  Raspberry Pi OS --- nav station ───────────────────────
 \section{Raspberry Pi OS --- Navigation Station}
+
+HaLOS Desktop users should install the dedicated Trixie ARM64 Debian package rather than follow this source-build procedure. The package installs below \code{/usr}, starts FairWindSK from the XFCE user session through XDG autostart, preserves existing user configuration, and uses a bounded Signal K readiness wait. See \code{docs/halos.md} for supported images, installation, commissioning, upgrades, diagnostics, rollback, and removal.
 \label{app:rpi-station}
 
 This scenario installs FairWindSK on a Raspberry~Pi used as a normal

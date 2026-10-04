@@ -13,6 +13,7 @@ private slots:
     void rejectsInvalidDocuments();
     void copiesIndependently();
     void findAppReturnsArrayIndex();
+    void remembersSignalKServers();
 };
 
 void ConfigurationTest::readsAndWritesSettings() {
@@ -106,6 +107,30 @@ void ConfigurationTest::findAppReturnsArrayIndex() {
     QCOMPARE(configuration.findApp(QStringLiteral("first")), 0);
     QCOMPARE(configuration.findApp(QStringLiteral("second")), 2);
     QCOMPARE(configuration.findApp(QStringLiteral("missing")), -1);
+}
+
+void ConfigurationTest::remembersSignalKServers() {
+    fairwindsk::Configuration configuration;
+    configuration.setRoot(nlohmann::json::object());
+
+    // A configuration without the list simply has no remembered servers.
+    QVERIFY(configuration.getSignalKServerUrls().isEmpty());
+
+    configuration.rememberSignalKServerUrl(QStringLiteral("http://192.168.1.50:3000"));
+    configuration.rememberSignalKServerUrl(QStringLiteral("http://boat.local:3000"));
+    // Connecting again moves the address to the front instead of duplicating it.
+    configuration.rememberSignalKServerUrl(QStringLiteral(" http://192.168.1.50:3000 "));
+    configuration.rememberSignalKServerUrl(QString());
+
+    QCOMPARE(configuration.getSignalKServerUrls(),
+             QStringList({QStringLiteral("http://192.168.1.50:3000"), QStringLiteral("http://boat.local:3000")}));
+
+    // The list is capped so the drop-down stays usable.
+    for (int index = 0; index < 20; ++index) {
+        configuration.rememberSignalKServerUrl(QStringLiteral("http://host%1:3000").arg(index));
+    }
+    QCOMPARE(configuration.getSignalKServerUrls().size(), 10);
+    QCOMPARE(configuration.getSignalKServerUrls().first(), QStringLiteral("http://host19:3000"));
 }
 
 QTEST_APPLESS_MAIN(ConfigurationTest)

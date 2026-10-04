@@ -9,15 +9,19 @@ string for application and package metadata.
 
 1. Update `VERSION.txt` and move the relevant entries from **Unreleased** into a
    dated section in `CHANGELOG.md`.
-2. Commit the release preparation.
-3. Create and push a tag named `v` followed by the exact `VERSION.txt` value, for
-   example `v0.1.0-alpha`.
-4. Approve the protected `release` environment if repository policy requires it.
+2. Configure the Android and iOS signing secrets listed in [building.md](building.md).
+3. Commit the release preparation.
+4. Create and push a tag named `v` followed by the exact `VERSION.txt` value, for
+   example `v0.1.0`.
+5. Approve the protected `release` environment if repository policy requires it.
 
-The release workflow validates the tag, builds packages for Raspberry Pi OS
-64-bit, Linux x86-64, Windows, and macOS, and publishes them to a GitHub Release.
-It also publishes `SHA256SUMS`, `release-manifest.json`, the Sigstore signature,
-and the signing certificate.
+The release workflow validates the tag and signing configuration, then builds
+macOS arm64 and x86-64 DMGs, a Windows x86-64 installer, Debian and Red Hat
+x86-64 packages, a Raspberry Pi OS arm64 package, an Android arm64 APK, and an
+iOS arm64 IPA. Publication is atomic: a missing or invalid platform package
+prevents the GitHub Release from being created. The release also contains
+`SHA256SUMS`, `release-manifest.json`, its Sigstore signature, and the signing
+certificate.
 
 ## Verifying a download
 

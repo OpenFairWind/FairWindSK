@@ -41,10 +41,14 @@ def main() -> None:
         parser.error("no release artifacts were found")
 
     required_platforms = (
-        "linux-x86_64",
+        "linux-debian-x86_64",
+        "linux-redhat-x86_64",
         "raspberry-pi-os-arm64",
         "windows-x86_64",
         "macos-arm64",
+        "macos-x86_64",
+        "android-arm64-v8a",
+        "ios-arm64",
     )
     missing_platforms = [
         platform

@@ -68,6 +68,7 @@
         <file>resources/svg/OpenBridge/applications.svg</file>
         <file>resources/svg/OpenBridge/settings-iec.svg</file>
         <file>resources/svg/OpenBridge/alarm-general.svg</file>
+        <file>resources/svg/OpenBridge/alerts.svg</file>
         <file>resources/svg/OpenBridge/anchor-iec.svg</file>
         <file>resources/svg/OpenBridge/anchor-down.svg</file>
         <file>resources/svg/OpenBridge/anchor-drop.svg</file>
