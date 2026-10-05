@@ -97,7 +97,7 @@ if(BUILD_TESTING AND NOT FAIRWINDSK_MOBILE)
     if(UNIX AND NOT APPLE)
         find_package(Python3 REQUIRED COMPONENTS Interpreter)
         add_test(NAME HaLOSHelpers
-                COMMAND ${Python3_EXECUTABLE} -m unittest ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_halos_helpers.py)
+                COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_halos_helpers.py)
         set_tests_properties(HaLOSHelpers PROPERTIES LABELS "unit;halos")
     endif()
 endif()
