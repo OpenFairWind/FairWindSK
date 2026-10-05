@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Resolve the generated debug APK without coupling CI to a Qt patch release's directory layout.
-apk_path="$(find "$1" -type f -name '*.apk' -print -quit)"
+# Prefer the installable signed APK without coupling CI to a Qt patch release's directory layout.
+apk_path="$(find "$1" -type f -name '*signed.apk' -print -quit)"
+if [[ -z "${apk_path}" ]]; then
+    apk_path="$(find "$1" -type f -name '*.apk' -print -quit)"
+fi
 test -n "${apk_path}"
 adb install -r "${apk_path}"
 
