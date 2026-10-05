@@ -35,7 +35,7 @@ jobs:
       - name: Install CMake and clang-tidy system dependencies
         if: matrix.check == 'cmake' || matrix.check == 'clang-tidy'
         run: |
-          sudo apt-get install --yes libgl1-mesa-dev libxkbcommon-x11-0 nlohmann-json3-dev
+          sudo apt-get install --yes libavahi-client-dev libgl1-mesa-dev libxkbcommon-x11-0 nlohmann-json3-dev
       - name: Install Qt for CMake and clang-tidy validation
         if: matrix.check == 'cmake' || matrix.check == 'clang-tidy'
         uses: jurplel/install-qt-action@v4
@@ -126,7 +126,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes cmake ninja-build g++ dbus-x11 xvfb libgl1-mesa-dev libxkbcommon-x11-0 \
-            nlohmann-json3-dev
+            libavahi-client-dev nlohmann-json3-dev
       - name: Configure and build
         run: |
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DBUILD_TESTING=ON
@@ -193,7 +193,12 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
-      - uses: android-actions/setup-android@v3
+      - name: Accept Android SDK licenses
+        shell: bash
+        run: |
+          set +o pipefail
+          yes | sdkmanager --licenses >/dev/null
+          set -o pipefail
       - uses: jurplel/install-qt-action@v4
         with:
           version: ${{ env.QT_VERSION }}
@@ -244,7 +249,7 @@ jobs:
     runs-on: ubuntu-24.04-arm
     container: debian:bookworm
     steps:
-      - run: apt-get update && apt-get install --yes git ca-certificates cmake ninja-build g++ libgl1-mesa-dev libxkbcommon-x11-0 nlohmann-json3-dev qt6-base-dev qt6-declarative-dev qt6-positioning-dev qt6-svg-dev qt6-tools-dev qt6-virtualkeyboard-dev qt6-webengine-dev qt6-websockets-dev
+      - run: apt-get update && apt-get install --yes git ca-certificates cmake ninja-build g++ dpkg-dev libavahi-client-dev libgl1-mesa-dev libxkbcommon-x11-0 nlohmann-json3-dev qt6-base-dev qt6-declarative-dev qt6-positioning-dev qt6-svg-dev qt6-tools-dev qt6-virtualkeyboard-dev qt6-webengine-dev qt6-websockets-dev
       - name: Apply Debian Qt Virtual Keyboard CMake compatibility workaround
         run: |
           qt_vk_dir="/usr/lib/$(dpkg-architecture -qDEB_HOST_MULTIARCH)/cmake/Qt6VirtualKeyboard"
@@ -269,7 +274,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes cmake ninja-build g++ libgl1-mesa-dev libxkbcommon-x11-0 \
-            nlohmann-json3-dev
+            libavahi-client-dev nlohmann-json3-dev
       - name: Generate package
         run: |
           cmake -S . -B build -G Ninja -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
