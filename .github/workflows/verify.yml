@@ -239,6 +239,7 @@ jobs:
         with:
           api-level: 36
           arch: x86_64
+          disable-animations: false
           script: bash scripts/ci/android_smoke.sh build
 
   ios:
