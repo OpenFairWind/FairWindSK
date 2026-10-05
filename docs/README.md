@@ -19,7 +19,7 @@ are documented in [manual/README.md](manual/README.md).
 - [HaLOS installation and operations](./halos.md)
 - [App Store and Google Play publishing package](./stores/README.md)
 - [FairWindSK user guide](./fairwindsk_user_guide.md)
-- [Bundled owner manuals](../manuals/)
+- [Owner manual sources and PDF build instructions](./manual/README.md)
 - [Architecture overview](./architecture.md)
 - [UI shell definition](./ui_shell.md)
 - [Configuration guide](./configuring.md)

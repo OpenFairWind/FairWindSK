@@ -168,8 +168,6 @@ namespace fairwindsk {
             switch (policy) {
                 case QWebEngineProfile::NoPersistentCookies:
                     return QStringLiteral("NoPersistentCookies");
-                case QWebEngineProfile::OnlyPersistentCookies:
-                    return QStringLiteral("OnlyPersistentCookies");
                 case QWebEngineProfile::AllowPersistentCookies:
                     return QStringLiteral("AllowPersistentCookies");
                 case QWebEngineProfile::ForcePersistentCookies:

@@ -258,7 +258,11 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-java@v4
         with: {distribution: temurin, java-version: "17"}
-      - uses: android-actions/setup-android@v3
+      - name: Accept Android SDK licenses
+        run: |
+          set +o pipefail
+          yes | sdkmanager --licenses >/dev/null
+          set -o pipefail
       - uses: jurplel/install-qt-action@v4
         with:
           version: ${{ env.QT_VERSION }}

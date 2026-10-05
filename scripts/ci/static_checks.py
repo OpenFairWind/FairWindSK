@@ -90,13 +90,43 @@ def changed_sources() -> list[Path]:
     return [ROOT / name for name in output.splitlines() if Path(name).suffix in SOURCE_SUFFIXES]
 
 
+def changed_source_ranges() -> dict[Path, list[tuple[int, int]]]:
+    # Restrict formatter and analyzer diagnostics to lines introduced by the change.
+    base = os.environ.get("FAIRWINDSK_DIFF_BASE", "").strip()
+    command = ["git", "diff", "--unified=0"]
+    if base and set(base) != {"0"}:
+        command.append(base)
+    command.extend(["--", "*.cpp", "*.hpp"])
+    diff = subprocess.run(command, cwd=ROOT, check=True, capture_output=True, text=True).stdout
+    current = None
+    ranges: dict[Path, list[tuple[int, int]]] = {}
+    for line in diff.splitlines():
+        if line.startswith("+++ b/"):
+            current = ROOT / line[6:]
+            continue
+        if not line.startswith("@@") or current is None:
+            continue
+        match = re.search(r"\+(\d+)(?:,(\d+))?", line)
+        if not match:
+            continue
+        start = int(match.group(1))
+        count = int(match.group(2) or "1")
+        if count > 0:
+            ranges.setdefault(current, []).append((start, start + count - 1))
+    return ranges
+
+
 def clang_format_check() -> int:
     # Run the formatter in verification mode and never rewrite a contributor's files in CI.
-    sources = changed_sources()
-    if not sources:
+    ranges = changed_source_ranges()
+    if not ranges:
         print("No changed C++ sources require clang-format validation.")
         return 0
-    subprocess.run(["clang-format", "--dry-run", "--Werror", *map(str, sources)], cwd=ROOT, check=True)
+    for source, source_ranges in ranges.items():
+        arguments = ["clang-format", "--dry-run", "--Werror"]
+        arguments.extend(f"--lines={start}:{end}" for start, end in source_ranges)
+        arguments.append(str(source))
+        subprocess.run(arguments, cwd=ROOT, check=True)
     return 0
 
 
@@ -106,11 +136,19 @@ def clang_tidy_check(build_directory: str) -> int:
     if not config.is_file() or not config.read_text(encoding="utf-8").strip():
         print(".clang-tidy is missing or empty", file=sys.stderr)
         return 1
-    sources = changed_sources()
-    if not sources:
+    ranges = changed_source_ranges()
+    if not ranges:
         print("No changed C++ sources require clang-tidy validation.")
         return 0
-    subprocess.run(["clang-tidy", "-p", build_directory, *map(str, sources)], cwd=ROOT, check=True)
+    line_filter = [
+        {"name": str(source), "lines": [[start, end] for start, end in source_ranges]}
+        for source, source_ranges in ranges.items()
+    ]
+    subprocess.run(
+        ["clang-tidy", "-p", build_directory, f"-line-filter={json.dumps(line_filter)}", *map(str, ranges)],
+        cwd=ROOT,
+        check=True,
+    )
     return 0
 
 
