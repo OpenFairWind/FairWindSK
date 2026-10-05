@@ -212,6 +212,16 @@ jobs:
         run: |
           sdkmanager="$(find "${ANDROID_HOME}/cmdline-tools" -type f -name sdkmanager -print -quit)"
           "${sdkmanager}" 'platform-tools' 'platforms;android-${{ matrix.api }}' 'build-tools;35.0.0' 'ndk;26.1.10909125'
+      - name: Create CI signing key
+        shell: bash
+        run: |
+          keytool -genkeypair -keystore "${RUNNER_TEMP}/fairwindsk-ci.jks" -storepass android \
+            -alias androiddebugkey -keypass android -dname 'CN=FairWindSK CI,O=OpenFairWind,C=IT' \
+            -keyalg RSA -validity 10000
+          echo "QT_ANDROID_KEYSTORE_PATH=${RUNNER_TEMP}/fairwindsk-ci.jks" >> "${GITHUB_ENV}"
+          echo 'QT_ANDROID_KEYSTORE_ALIAS=androiddebugkey' >> "${GITHUB_ENV}"
+          echo 'QT_ANDROID_KEYSTORE_STORE_PASS=android' >> "${GITHUB_ENV}"
+          echo 'QT_ANDROID_KEYSTORE_KEY_PASS=android' >> "${GITHUB_ENV}"
       - name: Configure and compile APK
         shell: bash
         run: |
@@ -220,7 +230,7 @@ jobs:
             -DANDROID_SDK_ROOT=${ANDROID_SDK_ROOT} -DANDROID_NDK_ROOT=${ANDROID_SDK_ROOT}/ndk/26.1.10909125 \
             -DQT_CHAINLOAD_TOOLCHAIN_FILE=${ANDROID_SDK_ROOT}/ndk/26.1.10909125/build/cmake/android.toolchain.cmake \
             -DQT_HOST_PATH=${QT_HOST_PATH} -DQT_ANDROID_TARGET_SDK_VERSION=${{ matrix.api }} \
-            -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
+            -DQT_ANDROID_SIGN_APK=ON -DQT_ANDROID_DEPLOYMENT_TYPE=Release -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
           cmake --build build --parallel 2
           find build -type f -name '*.apk' -print -quit | grep .
       - name: Emulator smoke test
