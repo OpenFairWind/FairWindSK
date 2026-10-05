@@ -260,8 +260,10 @@ jobs:
         with: {distribution: temurin, java-version: "17"}
       - name: Accept Android SDK licenses
         run: |
+          sdkmanager="$(find "${ANDROID_HOME}/cmdline-tools" -type f -name sdkmanager -print -quit)"
+          test -n "${sdkmanager}"
           set +o pipefail
-          yes | sdkmanager --licenses >/dev/null
+          yes | "${sdkmanager}" --licenses >/dev/null
           set -o pipefail
       - uses: jurplel/install-qt-action@v4
         with:
@@ -270,7 +272,9 @@ jobs:
           arch: android_arm64_v8a
           modules: qtpositioning qtvirtualkeyboard qtwebsockets qtwebview
           cache: true
-      - run: sdkmanager 'platform-tools' 'platforms;android-${{ env.ANDROID_API }}' 'build-tools;35.0.0' 'ndk;${{ env.ANDROID_NDK }}'
+      - run: |
+          sdkmanager="$(find "${ANDROID_HOME}/cmdline-tools" -type f -name sdkmanager -print -quit)"
+          "${sdkmanager}" 'platform-tools' 'platforms;android-${{ env.ANDROID_API }}' 'build-tools;35.0.0' 'ndk;${{ env.ANDROID_NDK }}'
       - name: Restore keystore
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
