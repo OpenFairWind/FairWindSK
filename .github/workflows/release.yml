@@ -287,10 +287,11 @@ jobs:
           QT_ANDROID_KEYSTORE_KEY_PASS: ${{ secrets.ANDROID_KEYSTORE_KEY_PASSWORD }}
         run: |
           "${QT_ROOT_DIR}/bin/qt-cmake" -S . -B build -G Ninja \
-            -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-${ANDROID_API} \
+            -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=latest \
             -DANDROID_SDK_ROOT=${ANDROID_SDK_ROOT} -DANDROID_NDK_ROOT=${ANDROID_SDK_ROOT}/ndk/${ANDROID_NDK} \
             -DQT_CHAINLOAD_TOOLCHAIN_FILE=${ANDROID_SDK_ROOT}/ndk/${ANDROID_NDK}/build/cmake/android.toolchain.cmake \
-            -DQT_HOST_PATH=${QT_HOST_PATH} -DQT_ANDROID_SIGN_APK=ON -DQT_ANDROID_DEPLOYMENT_TYPE=Release \
+            -DQT_HOST_PATH=${QT_HOST_PATH} -DQT_ANDROID_TARGET_SDK_VERSION=${ANDROID_API} \
+            -DQT_ANDROID_SIGN_APK=ON -DQT_ANDROID_DEPLOYMENT_TYPE=Release \
             -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
           cmake --build build --parallel 2
           apk="$(find build -type f -name '*signed.apk' -print -quit)"
