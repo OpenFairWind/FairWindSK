@@ -494,7 +494,9 @@ if(BUILD_TESTING AND NOT FAIRWINDSK_MOBILE)
     set_tests_properties(GeoCoordinateUtils PList SignalKValueObjects SignalKProtocol
             DataWidgetConfig SignalKMetricState Configuration UnitsReentrancy DirectorySafety ConfigurationImport EditableCombo
             PROPERTIES LABELS "unit")
-    set_tests_properties(SimulatedSignalKService PROPERTIES LABELS "component;signalk")
+    set_tests_properties(SimulatedSignalKService PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+            LABELS "component;signalk")
 endif()
 
 # ==========================================
