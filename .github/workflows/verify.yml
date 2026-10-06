@@ -276,7 +276,7 @@ jobs:
         with:
           version: ${{ env.QT_VERSION }}
           arch: linux_gcc_64
-          modules: qtpositioning qtvirtualkeyboard qtwebchannel qtwebengine qtwebsockets
+          modules: qtpositioning qtserialport qtvirtualkeyboard qtwebchannel qtwebengine qtwebsockets
           cache: true
       - name: Install dependencies
         run: |
