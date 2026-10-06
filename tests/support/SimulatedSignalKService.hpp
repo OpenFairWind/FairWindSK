@@ -4,7 +4,6 @@
 #include <QHash>
 #include <QJsonObject>
 #include <QObject>
-#include <QPointer>
 #include <QTcpServer>
 #include <QWebSocketServer>
 
@@ -31,7 +30,7 @@ private:
 
     QTcpServer m_httpServer;
     QWebSocketServer m_webSocketServer;
-    QList<QPointer<QWebSocket>> m_streams;
+    QList<QWebSocket *> m_streams;
     QHash<QString, QJsonObject> m_resources;
     bool m_authenticationAccepted = true;
     int m_responseDelayMs = 0;

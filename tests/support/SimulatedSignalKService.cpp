@@ -7,20 +7,19 @@
 #include <QTimer>
 #include <QWebSocket>
 
-#include <utility>
-
 SimulatedSignalKService::SimulatedSignalKService(QObject *parent)
     : QObject(parent),
       m_webSocketServer(QStringLiteral("FairWindSK simulated Signal K"), QWebSocketServer::NonSecureMode) {
     connect(&m_httpServer, &QTcpServer::newConnection, this, &SimulatedSignalKService::acceptHttpConnection);
     connect(&m_webSocketServer, &QWebSocketServer::newConnection, this, [this]() {
         QWebSocket *stream = m_webSocketServer.nextPendingConnection();
-        if (!stream) return;
-        const QPointer<QWebSocket> guardedStream(stream);
-        m_streams.append(guardedStream);
-        connect(stream, &QWebSocket::disconnected, this, [this, guardedStream]() {
-            m_streams.removeAll(guardedStream);
-            if (guardedStream) guardedStream->deleteLater();
+        if (!stream) {
+            return;
+        }
+        m_streams.append(stream);
+        connect(stream, &QWebSocket::disconnected, this, [this, stream]() {
+            m_streams.removeAll(stream);
+            stream->deleteLater();
         });
     });
 }
@@ -71,21 +70,21 @@ void SimulatedSignalKService::sendDelta(const QString &path, const QJsonValue &v
     const QJsonObject envelope{{QStringLiteral("context"), QStringLiteral("vessels.self")},
                                {QStringLiteral("updates"), QJsonArray{update}}};
     const QString payload = QString::fromUtf8(QJsonDocument(envelope).toJson(QJsonDocument::Compact));
-    for (const QPointer<QWebSocket> &stream : std::as_const(m_streams)) {
-        if (stream) stream->sendTextMessage(payload);
+    for (QWebSocket *stream : m_streams) {
+        stream->sendTextMessage(payload);
     }
 }
 
 void SimulatedSignalKService::sendMalformedDelta() {
-    for (const QPointer<QWebSocket> &stream : std::as_const(m_streams)) {
-        if (stream) stream->sendTextMessage(QStringLiteral("{malformed"));
+    for (QWebSocket *stream : m_streams) {
+        stream->sendTextMessage(QStringLiteral("{malformed"));
     }
 }
 
 void SimulatedSignalKService::dropStreams() {
-    const QList<QPointer<QWebSocket>> streams = m_streams;
-    for (const QPointer<QWebSocket> &stream : streams) {
-        if (stream) stream->close(QWebSocketProtocol::CloseCodeGoingAway, QStringLiteral("simulated outage"));
+    const QList<QWebSocket *> streams = m_streams;
+    for (QWebSocket *stream : streams) {
+        stream->close(QWebSocketProtocol::CloseCodeGoingAway, QStringLiteral("simulated outage"));
     }
 }
 

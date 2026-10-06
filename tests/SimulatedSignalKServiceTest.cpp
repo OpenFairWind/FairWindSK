@@ -86,14 +86,17 @@ void SimulatedSignalKServiceTest::streamsValidAndMalformedDeltas() {
     QVERIFY(service.start());
     QWebSocket socket;
     QSignalSpy connected(&socket, &QWebSocket::connected);
-    QSignalSpy messages(&socket, &QWebSocket::textMessageReceived);
+    QStringList messages;
+    connect(&socket, &QWebSocket::textMessageReceived, &socket, [&messages](const QString &message) {
+        messages.append(message);
+    });
     socket.open(service.webSocketUrl());
     QVERIFY(connected.wait());
     service.sendMalformedDelta();
     service.sendDelta(QStringLiteral("navigation.speedOverGround"), 4.2);
-    QTRY_COMPARE(messages.count(), 2);
-    QCOMPARE(messages.at(0).at(0).toString(), QStringLiteral("{malformed"));
-    QVERIFY(messages.at(1).at(0).toString().contains(QStringLiteral("navigation.speedOverGround")));
+    QTRY_COMPARE(messages.size(), 2);
+    QCOMPARE(messages.at(0), QStringLiteral("{malformed"));
+    QVERIFY(messages.at(1).contains(QStringLiteral("navigation.speedOverGround")));
 }
 
 void SimulatedSignalKServiceTest::dropsConnections() {
