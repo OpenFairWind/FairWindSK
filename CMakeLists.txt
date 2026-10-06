@@ -542,6 +542,15 @@ if(NOT FAIRWINDSK_MOBILE)
                 DESTINATION ${CMAKE_INSTALL_LIBDIR}
                 FILES_MATCHING PATTERN "*.so*")
 
+        # Qt's WebEngine deployment hook validates the helper in the staged
+        # libexec directory; install it before the generated deploy script runs.
+        set(FAIRWINDSK_WEBENGINE_PROCESS
+                "${QT6_INSTALL_PREFIX}/${QT6_INSTALL_LIBEXECS}/QtWebEngineProcess")
+        if(EXISTS "${FAIRWINDSK_WEBENGINE_PROCESS}")
+            install(PROGRAMS "${FAIRWINDSK_WEBENGINE_PROCESS}"
+                    DESTINATION ${CMAKE_INSTALL_LIBEXECDIR})
+        endif()
+
         configure_file(cmake/fairwindsk.desktop.in fairwindsk.desktop @ONLY)
         configure_file(cmake/fairwindsk-startup.desktop.in fairwindsk-startup.desktop @ONLY)
         configure_file(cmake/InstallRaspberryDesktopIntegration.cmake.in
