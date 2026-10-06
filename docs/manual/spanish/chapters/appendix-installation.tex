@@ -251,6 +251,14 @@ la ruta de la biblioteca del sistema o junto al binario.
 \section{Raspberry Pi OS --- Estación de navegación}
 \label{app:rpi-station}
 
+Los usuarios de HaLOS Desktop deben instalar el paquete Debian ARM64 específico
+para Trixie en lugar de seguir este procedimiento de compilación desde las
+fuentes. El paquete se instala bajo \code{/usr}, inicia FairWindSK en la sesión
+de usuario XFCE mediante el inicio automático XDG, conserva la configuración
+del usuario y limita la espera de Signal~K. Consulte \code{docs/halos.md} para
+las imágenes compatibles, la instalación, la puesta en servicio, las
+actualizaciones, el diagnóstico, la reversión y la eliminación.
+
 Este escenario instala FairWindSK en un Raspberry~Pi usado como normal
 estación de navegación de escritorio --- pantalla, teclado, y ratón adjunto,
 dirigiendo el escritorio Raspberry~Pi~OS.

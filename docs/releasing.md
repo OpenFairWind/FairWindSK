@@ -23,6 +23,29 @@ prevents the GitHub Release from being created. The release also contains
 `SHA256SUMS`, `release-manifest.json`, its Sigstore signature, and the signing
 certificate.
 
+## Published installers
+
+Every binary release publishes the following versioned artifacts from the same
+tag and commit:
+
+| Build flavor | Release artifact | Dependency handling |
+| --- | --- | --- |
+| macOS Apple Silicon | `FairWindSK-<version>-macos-arm64.dmg` | Qt frameworks, plug-ins, and helper executables are embedded in the application bundle. |
+| macOS Intel | `FairWindSK-<version>-macos-x86_64.dmg` | Qt frameworks, plug-ins, and helper executables are embedded in the application bundle. |
+| Windows x86-64 | `FairWindSK-<version>-windows-x86_64-setup.exe` | The NSIS installer contains the MSVC Qt runtime, plug-ins, and WebEngine payload. |
+| Debian/Ubuntu x86-64 | `FairWindSK-<version>-linux-debian-x86_64.deb` | The package carries deployable Qt files and declares remaining system-library dependencies for APT. |
+| Red Hat x86-64 | `FairWindSK-<version>-linux-redhat-x86_64.rpm` | The package carries deployable Qt files and uses RPM automatic dependency generation for remaining system libraries. |
+| HaLOS Desktop / Debian Trixie ARM64 | `fairwindsk_<version>-1~halos13_arm64.deb` | The native package declares its Qt and system dependencies and is installed with APT. |
+| Raspberry Pi OS ARM64 | `FairWindSK-<version>-raspberry-pi-os-arm64.deb` | The native package derives its shared-library requirements for installation with APT. |
+| Android ARM64 | `FairWindSK-<version>-android-arm64-v8a.apk` | The signed APK contains the required Qt libraries and Android plug-ins. |
+| iOS ARM64 | `FairWindSK-<version>-ios-arm64.ipa` | The signed IPA embeds its frameworks and is exported with the configured provisioning profile. |
+
+Install the HaLOS, Raspberry Pi OS, and Debian packages with
+`sudo apt install ./<package>.deb`, rather than `dpkg -i`, so their declared
+dependencies are resolved in the same operation. Use the platform-native
+installer for every other flavor. Do not copy a build-tree executable between
+machines: it is not a substitute for the dependency-aware release artifact.
+
 ## Verifying a download
 
 Verify the package hash with `sha256sum -c SHA256SUMS`. Then install Cosign and
