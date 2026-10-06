@@ -186,7 +186,7 @@ jobs:
           - api: 36
             qt_arch: android_x86_64
             abi: x86_64
-            validation: configure, APK, emulator smoke
+            validation: target 36 APK, API 35 emulator smoke
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-java@v4
@@ -233,11 +233,11 @@ jobs:
             -DQT_ANDROID_SIGN_APK=ON -DQT_ANDROID_DEPLOYMENT_TYPE=Release -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
           cmake --build build --parallel 2
           find build -type f -name '*.apk' -print -quit | grep .
-      - name: Emulator smoke test
+      - name: Android API 35 emulator smoke test
         if: matrix.api == 36
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 36
+          api-level: 35
           arch: x86_64
           cores: 4
           ram-size: 4096M

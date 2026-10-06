@@ -290,6 +290,13 @@ Common failures:
 
 ## 10. Distribution checklist
 
+GitHub CI compiles and packages the x86_64 validation APK for the current API
+36 target, then runs that APK on an API 35 hosted emulator. The API 36 hosted
+emulator has shown intermittent Android system-service failures unrelated to
+the application. This CI smoke test supplements, but does not replace, release
+validation on API 33 and the current target API using a physical device or a
+stable local emulator.
+
 - Build from a clean, reviewed commit.
 - Confirm `git diff --check` and desktop regression builds.
 - Test an API 33 device/emulator and the current target API.
