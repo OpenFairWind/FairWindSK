@@ -19,7 +19,7 @@ public:
     void setResource(const QString &id, const QJsonObject &resource);
     QUrl discoveryUrl() const;
     QUrl webSocketUrl() const;
-    int streamCount() const;
+    qsizetype streamCount() const;
     void sendDelta(const QString &path, const QJsonValue &value);
     void sendMalformedDelta();
     void dropStreams();

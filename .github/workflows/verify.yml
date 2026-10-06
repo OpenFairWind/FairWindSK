@@ -58,6 +58,7 @@ jobs:
           FAIRWINDSK_DIFF_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: |
           cmake -S . -B build-tidy -G Ninja -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+          cmake --build build-tidy --target FairWindSKSimulatedSignalKServiceTest_autogen
           python3 scripts/ci/static_checks.py clang-tidy --build-directory build-tidy
       - name: CMake configuration validation
         if: matrix.check == 'cmake'
