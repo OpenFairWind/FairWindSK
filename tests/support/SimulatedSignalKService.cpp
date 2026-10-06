@@ -64,6 +64,10 @@ QUrl SimulatedSignalKService::webSocketUrl() const {
     return QUrl(QStringLiteral("ws://127.0.0.1:%1/signalk/v1/stream").arg(m_webSocketServer.serverPort()));
 }
 
+int SimulatedSignalKService::streamCount() const {
+    return m_streams.size();
+}
+
 void SimulatedSignalKService::sendDelta(const QString &path, const QJsonValue &value) {
     const QJsonObject item{{QStringLiteral("path"), path}, {QStringLiteral("value"), value}};
     const QJsonObject update{{QStringLiteral("values"), QJsonArray{item}}};
