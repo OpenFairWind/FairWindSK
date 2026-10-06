@@ -85,7 +85,8 @@ jobs:
       - name: Install packaging dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install --yes cmake ninja-build g++ libgl1-mesa-dev libxkbcommon-x11-0 nlohmann-json3-dev dpkg-dev rpm file
+          sudo apt-get install --yes cmake ninja-build g++ libavahi-client-dev libgl1-mesa-dev \
+            libxkbcommon-x11-0 nlohmann-json3-dev dpkg-dev rpm file
       - name: Build package
         run: |
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DBUILD_TESTING=OFF \
