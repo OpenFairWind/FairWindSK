@@ -64,7 +64,7 @@ QUrl SimulatedSignalKService::webSocketUrl() const {
     return QUrl(QStringLiteral("ws://127.0.0.1:%1/signalk/v1/stream").arg(m_webSocketServer.serverPort()));
 }
 
-int SimulatedSignalKService::streamCount() const {
+qsizetype SimulatedSignalKService::streamCount() const {
     return m_streams.size();
 }
 
