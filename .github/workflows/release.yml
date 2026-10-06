@@ -16,11 +16,13 @@ env:
 
 jobs:
   validate:
-    name: Validate version and signing inputs
+    name: Validate version and optional signing inputs
     runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.version.outputs.version }}
       tag: ${{ steps.version.outputs.tag }}
+      android_signing: ${{ steps.signing.outputs.android }}
+      ios_signing: ${{ steps.signing.outputs.ios }}
     steps:
       - uses: actions/checkout@v5
       - id: version
@@ -35,8 +37,8 @@ jobs:
           fi
           echo "version=${version}" >> "${GITHUB_OUTPUT}"
           echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
-      - name: Require mobile signing secrets for tagged releases
-        if: github.ref_type == 'tag'
+      - id: signing
+        name: Detect optional mobile signing inputs
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEYSTORE_ALIAS: ${{ secrets.ANDROID_KEYSTORE_ALIAS }}
@@ -47,13 +49,20 @@ jobs:
           IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
           IOS_TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
         run: |
-          missing=0
-          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_ALIAS ANDROID_KEYSTORE_STORE_PASSWORD \
-            ANDROID_KEYSTORE_KEY_PASSWORD IOS_CERTIFICATE_BASE64 IOS_CERTIFICATE_PASSWORD \
-            IOS_PROVISIONING_PROFILE_BASE64 IOS_TEAM_ID; do
-            if [[ -z "${!name}" ]]; then echo "Missing release secret: ${name}" >&2; missing=1; fi
+          android=true
+          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_ALIAS \
+            ANDROID_KEYSTORE_STORE_PASSWORD ANDROID_KEYSTORE_KEY_PASSWORD; do
+            if [[ -z "${!name}" ]]; then android=false; fi
           done
-          exit "${missing}"
+          ios=true
+          for name in IOS_CERTIFICATE_BASE64 IOS_CERTIFICATE_PASSWORD \
+            IOS_PROVISIONING_PROFILE_BASE64 IOS_TEAM_ID; do
+            if [[ -z "${!name}" ]]; then ios=false; fi
+          done
+          echo "android=${android}" >> "${GITHUB_OUTPUT}"
+          echo "ios=${ios}" >> "${GITHUB_OUTPUT}"
+          echo "Android signed artifact enabled: ${android}"
+          echo "iOS signed artifact enabled: ${ios}"
 
   linux:
     name: Linux x86-64 / ${{ matrix.format }}
@@ -253,6 +262,7 @@ jobs:
   android:
     name: Android arm64 signed APK
     needs: validate
+    if: needs.validate.outputs.android_signing == 'true'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
@@ -314,6 +324,7 @@ jobs:
   ios:
     name: iOS arm64 signed IPA
     needs: validate
+    if: needs.validate.outputs.ios_signing == 'true'
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v5
@@ -385,8 +396,17 @@ jobs:
 
   publish:
     name: Sign manifest and publish release
-    if: github.ref_type == 'tag'
     needs: [validate, linux, raspberry-pi-os, halos, windows, macos, android, ios]
+    if: >-
+      always() && github.ref_type == 'tag' &&
+      needs.validate.result == 'success' &&
+      needs.linux.result == 'success' &&
+      needs.raspberry-pi-os.result == 'success' &&
+      needs.halos.result == 'success' &&
+      needs.windows.result == 'success' &&
+      needs.macos.result == 'success' &&
+      (needs.android.result == 'success' || needs.android.result == 'skipped') &&
+      (needs.ios.result == 'success' || needs.ios.result == 'skipped')
     runs-on: ubuntu-24.04
     environment: release
     permissions:
