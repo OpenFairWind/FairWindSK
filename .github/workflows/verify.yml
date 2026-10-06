@@ -291,5 +291,5 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: release-candidate-linux-x86-64
-          path: build/FairWindSK-*.tar.gz
+          path: build/FairWindSK-*.deb
           if-no-files-found: error
