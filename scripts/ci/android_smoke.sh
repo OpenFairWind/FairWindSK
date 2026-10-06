@@ -8,14 +8,20 @@ if [[ -z "${apk_path}" ]]; then
 fi
 test -n "${apk_path}"
 
-# Android may report boot completion before Package Manager is ready on software-emulated runners.
-for attempt in $(seq 1 24); do
-    if adb shell service check package 2>/dev/null | grep -q 'found'; then
-        break
+# Android may report boot completion before Package Manager is stable on software-emulated runners.
+ready_checks=0
+for attempt in $(seq 1 36); do
+    if adb shell service check package 2>/dev/null | grep -q 'found' && adb shell cmd package list packages >/dev/null 2>&1; then
+        ready_checks=$((ready_checks + 1))
+        if [[ "${ready_checks}" -ge 3 ]]; then
+            break
+        fi
+    else
+        ready_checks=0
     fi
     sleep 5
 done
-adb shell service check package | grep -q 'found'
+test "${ready_checks}" -ge 3
 
 # Avoid incremental-install transport races and retry while late system services settle.
 for attempt in $(seq 1 5); do
