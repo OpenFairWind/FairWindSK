@@ -101,7 +101,7 @@ void SimulatedSignalKServiceTest::streamsValidAndMalformedDeltas() {
     QCOMPARE(messages.at(0), QStringLiteral("{malformed"));
     QVERIFY(messages.at(1).contains(QStringLiteral("navigation.speedOverGround")));
     socket.close();
-    QVERIFY(disconnected.wait());
+    QTRY_COMPARE(disconnected.count(), 1);
     QTRY_COMPARE(service.streamCount(), 0);
     QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
 }
