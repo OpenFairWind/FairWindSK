@@ -366,6 +366,11 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
         MACOSX_BUNDLE_GUI_IDENTIFIER "org.openfairwind.fairwindsk" MACOSX_BUNDLE_BUNDLE_VERSION ${FAIRWINDSK_SEMVER} MACOSX_BUNDLE_SHORT_VERSION_STRING ${FAIRWINDSK_SEMVER}
 )
 
+if(WIN32 AND BUILD_TESTING)
+    # Let CTest track the self-test process directly; release builds remain GUI-subsystem applications.
+    set_target_properties(${PROJECT_NAME} PROPERTIES WIN32_EXECUTABLE FALSE)
+endif()
+
 if(UNIX AND NOT APPLE AND NOT FAIRWINDSK_MOBILE)
     # Resolve the two bundled project libraries relative to the installed
     # executable without relying on a machine-specific global library path.

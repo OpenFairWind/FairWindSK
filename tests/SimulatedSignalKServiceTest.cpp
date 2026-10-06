@@ -1,6 +1,8 @@
 #include "tests/support/SimulatedSignalKService.hpp"
 
+#include <QCoreApplication>
 #include <QElapsedTimer>
+#include <QEvent>
 #include <QEventLoop>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
@@ -86,6 +88,7 @@ void SimulatedSignalKServiceTest::streamsValidAndMalformedDeltas() {
     QVERIFY(service.start());
     QWebSocket socket;
     QSignalSpy connected(&socket, &QWebSocket::connected);
+    QSignalSpy disconnected(&socket, &QWebSocket::disconnected);
     QStringList messages;
     connect(&socket, &QWebSocket::textMessageReceived, &socket, [&messages](const QString &message) {
         messages.append(message);
@@ -97,6 +100,10 @@ void SimulatedSignalKServiceTest::streamsValidAndMalformedDeltas() {
     QTRY_COMPARE(messages.size(), 2);
     QCOMPARE(messages.at(0), QStringLiteral("{malformed"));
     QVERIFY(messages.at(1).contains(QStringLiteral("navigation.speedOverGround")));
+    socket.close();
+    QVERIFY(disconnected.wait());
+    QTRY_COMPARE(service.streamCount(), 0);
+    QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
 }
 
 void SimulatedSignalKServiceTest::dropsConnections() {
