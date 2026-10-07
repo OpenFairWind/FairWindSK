@@ -251,9 +251,13 @@ jobs:
         run: |
           mount="$(mktemp -d)"
           hdiutil attach "FairWindSK-${{ needs.validate.outputs.version }}-macos-${{ matrix.arch }}.dmg" -mountpoint "${mount}" -nobrowse
-          file "${mount}/FairWindSK.app/Contents/MacOS/FairWindSK" | grep '${{ matrix.arch }}'
-          test -d "${mount}/FairWindSK.app/Contents/Frameworks/QtCore.framework"
+          trap 'hdiutil detach "${mount}" || true' EXIT
+          app="$(find "${mount}" -maxdepth 3 -type d -name 'FairWindSK.app' -print -quit)"
+          test -n "${app}"
+          lipo -archs "${app}/Contents/MacOS/FairWindSK" | tr ' ' '\n' | grep -Fx '${{ matrix.arch }}'
+          test -f "${app}/Contents/Frameworks/QtCore.framework/Versions/A/QtCore"
           hdiutil detach "${mount}"
+          trap - EXIT
       - uses: actions/upload-artifact@v4
         with:
           name: macos-${{ matrix.arch }}
