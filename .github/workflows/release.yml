@@ -182,8 +182,7 @@ jobs:
             apt-get check
           '
           output="$(basename "${package}")"
-          cp "${package}" "${output}"
-          sha256sum "${output}" > "${output}.sha256"
+          sha256sum "${package}" > "${output}.sha256"
       - uses: actions/upload-artifact@v4
         with:
           name: halos-trixie-arm64
