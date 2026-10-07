@@ -165,7 +165,7 @@ jobs:
           '
       - name: Inspect and clean-install package
         run: |
-          package="$(find . -maxdepth 2 -type f -name 'fairwindsk_*~halos13_arm64.deb' -print -quit)"
+          package="$(find . -maxdepth 2 -type f -name 'fairwindsk_*.halos13_arm64.deb' -print -quit)"
           test -n "${package}"
           dpkg-deb --info "${package}"
           dpkg-deb --contents "${package}"
@@ -187,8 +187,8 @@ jobs:
         with:
           name: halos-trixie-arm64
           path: |
-            fairwindsk_*~halos13_arm64.deb
-            fairwindsk_*~halos13_arm64.deb.sha256
+            fairwindsk_*.halos13_arm64.deb
+            fairwindsk_*.halos13_arm64.deb.sha256
           if-no-files-found: error
 
   windows:

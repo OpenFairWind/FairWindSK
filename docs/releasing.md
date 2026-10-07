@@ -40,7 +40,7 @@ inputs are configured:
 | Required | Windows x86-64 | `FairWindSK-<version>-windows-x86_64-setup.exe` | The NSIS installer contains the MSVC Qt runtime, plug-ins, and WebEngine payload. |
 | Required | Debian/Ubuntu x86-64 | `FairWindSK-<version>-linux-debian-x86_64.deb` | The package carries deployable Qt files and declares remaining system-library dependencies for APT. |
 | Required | Red Hat x86-64 | `FairWindSK-<version>-linux-redhat-x86_64.rpm` | The package carries deployable Qt files and uses RPM automatic dependency generation for remaining system libraries. |
-| Required | HaLOS Desktop / Debian Trixie ARM64 | `fairwindsk_<version>-1~halos13_arm64.deb` | The native package declares its Qt and system dependencies and is installed with APT. |
+| Required | HaLOS Desktop / Debian Trixie ARM64 | `fairwindsk_<version>-1.halos13_arm64.deb` | The native package declares its Qt and system dependencies and is installed with APT. |
 | Required | Raspberry Pi OS ARM64 | `FairWindSK-<version>-raspberry-pi-os-arm64.deb` | The native package derives its shared-library requirements for installation with APT. |
 | Optional, signed | Android ARM64 | `FairWindSK-<version>-android-arm64-v8a.apk` | The signed APK contains the required Qt libraries and Android plug-ins. |
 | Optional, signed | iOS ARM64 | `FairWindSK-<version>-ios-arm64.ipa` | The signed IPA embeds its frameworks and is exported with the configured provisioning profile. |

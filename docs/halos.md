@@ -28,8 +28,8 @@ dpkg --print-architecture
 The result must be `arm64`, and XFCE login must work. Download the `.deb` and `.sha256` from the FairWindSK release, then use APT so dependencies are resolved:
 
 ```bash
-sha256sum -c fairwindsk_<version>-1~halos13_arm64.deb.sha256
-sudo apt install ./fairwindsk_<version>-1~halos13_arm64.deb
+sha256sum -c fairwindsk_<version>-1.halos13_arm64.deb.sha256
+sudo apt install ./fairwindsk_<version>-1.halos13_arm64.deb
 ```
 
 Binary users do not need Qt build dependencies. Verify before reboot:
@@ -74,7 +74,7 @@ Restore it with `rm -f ~/.config/autostart/fairwindsk-startup.desktop`. Manual l
 
 ## Upgrade, rollback, and removal
 
-Upgrade with `sudo apt install ./fairwindsk_<new-version>-1~halos13_arm64.deb`; user configuration is preserved. No FairWindSK HaLOS APT repository is currently promised. Roll back by installing a retained older package after reviewing APT warnings.
+Upgrade with `sudo apt install ./fairwindsk_<new-version>-1.halos13_arm64.deb`; user configuration is preserved. No FairWindSK HaLOS APT repository is currently promised. Roll back by installing a retained older package after reviewing APT warnings.
 
 Use `sudo apt remove fairwindsk` or `sudo apt purge fairwindsk`. Both retain user data in `~/.config/FairWindSK`; back it up and remove it manually only when a personal-data reset is intended.
 
