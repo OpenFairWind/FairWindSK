@@ -54,6 +54,9 @@ if(FAIRWINDSK_HALOS_PACKAGE)
     if(NOT CMAKE_INSTALL_PREFIX STREQUAL "/usr")
         message(FATAL_ERROR "HaLOS packages must be configured with -DCMAKE_INSTALL_PREFIX=/usr")
     endif()
+    # HaLOS follows the FHS: host-wide configuration belongs directly below
+    # /etc even though application binaries use the /usr installation prefix.
+    set(CMAKE_INSTALL_SYSCONFDIR "/etc" CACHE PATH "HaLOS system configuration directory" FORCE)
 endif()
 
 # ==========================================
@@ -619,6 +622,7 @@ if(FAIRWINDSK_HALOS_PACKAGE)
             "${CMAKE_CURRENT_SOURCE_DIR}/packaging/halos/postinst"
             "${CMAKE_CURRENT_SOURCE_DIR}/packaging/halos/prerm"
             "${CMAKE_CURRENT_SOURCE_DIR}/packaging/halos/postrm")
+    set(CPACK_SET_DESTDIR ON)
 elseif(WIN32)
     # NSIS produces a normal Windows installer while Qt's deploy script places
     # the runtime DLLs and plug-ins inside the staged installation tree.

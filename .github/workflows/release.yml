@@ -250,8 +250,8 @@ jobs:
       - name: Inspect bundle
         run: |
           mount="$(mktemp -d)"
-          hdiutil attach "FairWindSK-${{ needs.validate.outputs.version }}-macos-${{ matrix.arch }}.dmg" \
-            -mountpoint "${mount}" -nobrowse -acceptlicense
+          printf 'Y\n' | hdiutil attach "FairWindSK-${{ needs.validate.outputs.version }}-macos-${{ matrix.arch }}.dmg" \
+            -mountpoint "${mount}" -nobrowse
           trap 'hdiutil detach "${mount}" || true' EXIT
           app="$(find "${mount}" -maxdepth 3 -type d -name 'FairWindSK.app' -print -quit)"
           test -n "${app}"
